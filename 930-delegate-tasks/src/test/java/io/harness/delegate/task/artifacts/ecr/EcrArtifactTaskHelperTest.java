@@ -14,8 +14,8 @@ import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -124,7 +124,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     List<EcrArtifactDelegateResponse> artifactDelegateResponse =
-        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes, null));
+        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes));
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(artifactDelegateResponse).build();
@@ -179,7 +179,7 @@ public class EcrArtifactTaskHelperTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().build();
 
     List<EcrArtifactDelegateResponse> artifactDelegateResponse =
-        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes, null));
+        Collections.singletonList(EcrRequestResponseMapper.toEcrResponse(buildDetailsInternal, attributes));
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(artifactDelegateResponse).build();

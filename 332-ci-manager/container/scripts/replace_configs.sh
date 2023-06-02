@@ -71,6 +71,10 @@ if [[ "" != "$ECR_PUSH_IMAGE" ]]; then
   export ECR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushECRConfig.image=env(ECR_PUSH_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ACR_PUSH_IMAGE" ]]; then
+  export ACR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushACRConfig.image=env(ACR_PUSH_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   export GCR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image=env(GCR_PUSH_IMAGE)' $CONFIG_FILE
 fi
@@ -135,6 +139,26 @@ if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
   export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CACHE_S3_BUCKET" ]]; then
+  export CACHE_S3_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.bucket=env(CACHE_S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_ACCESS_KEY" ]]; then
+  export CACHE_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.accessKey=env(CACHE_S3_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_ACCESS_SECRET" ]]; then
+  export CACHE_S3_ACCESS_SECRET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.accessSecret=env(CACHE_S3_ACCESS_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_REGION" ]]; then
+  export CACHE_S3_REGION; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.region=env(CACHE_S3_REGION)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_ENDPOINT" ]]; then
+  export CACHE_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.endpoint=env(CACHE_S3_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi
@@ -145,6 +169,15 @@ fi
 
 if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitWindowsAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HOSTED_VM_INTERNAL_ACCOUNTS" ]]; then
+  IFS=',' read -ra INTERNAL_ACCOUNTS <<< "$HOSTED_VM_INTERNAL_ACCOUNTS"
+  INDEX=0
+  for HOSTED_VM_INTERNAL_URL in "${INTERNAL_ACCOUNTS[@]}"; do
+    export HOSTED_VM_INTERNAL_URL; export INDEX; yq -i '.ciExecutionServiceConfig.hostedVmConfig.internalAccounts.[env(INDEX)]=env(HOSTED_VM_INTERNAL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -236,6 +269,10 @@ if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
   export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$IACM_SERVICE_ENDPOINT" ]]; then
   export IACM_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.baseUrl=env(IACM_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
@@ -270,6 +307,10 @@ fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$IACM_SERVICE_GLOBAL_TOKEN" ]]; then
@@ -445,14 +486,6 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
-if [[ "" != "$HSQS_BASE_URL" ]]; then
-  export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClient.queueServiceConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
-  export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClient.authToken=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
-fi
-
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -475,3 +508,6 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
+
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"

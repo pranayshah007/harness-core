@@ -14,7 +14,7 @@ import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -59,6 +59,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -73,6 +74,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -475,6 +477,27 @@ public class CVNGStepTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
+  public void testExecuteAsync_veriificationJobInstanceContainsPipelineExecutionDetails() {
+    Ambiance ambiance = getAmbiance();
+    metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    StepElementParameters stepElementParameters = getStepElementParameters();
+    AsyncExecutableResponse asyncExecutableResponse =
+        cvngStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
+    assertThat(asyncExecutableResponse.getCallbackIdsList()).hasSize(1);
+    String callbackId = asyncExecutableResponse.getCallbackIds(0);
+    VerificationJobInstance verificationJobInstance = verificationJobInstanceService.get(List.of(callbackId)).get(0);
+    assertThat(verificationJobInstance.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
+    assertThat(verificationJobInstance.getStageStepId())
+        .isEqualTo(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId());
+    assertThat(verificationJobInstance.getNodeExecutionId()).isEqualTo(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    assertThat(verificationJobInstance.getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.DEFAULT);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
   public void testExecuteAsync_verifyManagePerpetualTasks() {
     Ambiance ambiance = getAmbiance();
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
@@ -496,9 +519,9 @@ public class CVNGStepTest extends CvNextGenTestBase {
         .spec(CVNGStepParameter.builder()
                   .serviceIdentifier(ParameterField.createValueField(serviceIdentifier))
                   .envIdentifier(ParameterField.createValueField(envIdentifier))
-                  .verificationJobBuilder(getVerificationJobBuilder())
                   .deploymentTag(spec.getDeploymentTag())
                   .sensitivity(spec.getSensitivity())
+                  .spec(spec)
                   .build())
         .build();
   }

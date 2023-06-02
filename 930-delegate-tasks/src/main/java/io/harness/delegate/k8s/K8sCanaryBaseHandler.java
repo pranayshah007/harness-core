@@ -8,7 +8,10 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
+import static io.harness.k8s.manifest.VersionUtils.addSuffixToConfigmapsAndSecrets;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.InProgress;
@@ -23,6 +26,7 @@ import static java.util.Arrays.asList;
 import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.KubernetesTaskException;
@@ -33,11 +37,14 @@ import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.manifest.VersionUtils;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -52,11 +59,13 @@ import io.harness.logging.LogCallback;
 import software.wings.beans.LogColor;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,8 +76,8 @@ public class K8sCanaryBaseHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
 
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
-      K8sDelegateTaskParams k8sDelegateTaskParams, Boolean skipVersioning, LogCallback logCallback,
-      boolean isErrorFrameworkEnabled) throws Exception {
+      K8sRequestHandlerContext k8sRequestHandlerContext, K8sDelegateTaskParams k8sDelegateTaskParams,
+      Boolean skipVersioning, LogCallback logCallback, boolean isErrorFrameworkEnabled) throws Exception {
     boolean useDeclarativeRollback = canaryHandlerConfig.isUseDeclarativeRollback();
     if (isNotTrue(skipVersioning) && !useDeclarativeRollback) {
       markVersionedResources(canaryHandlerConfig.getResources());
@@ -115,7 +124,13 @@ public class K8sCanaryBaseHandler {
 
     if (isNotTrue(skipVersioning) && !useDeclarativeRollback) {
       logCallback.saveExecutionLog("\nVersioning resources.");
-      k8sTaskHelperBase.addRevisionNumber(canaryHandlerConfig.getResources(), currentReleaseNumber);
+      k8sTaskHelperBase.addRevisionNumber(k8sRequestHandlerContext, currentReleaseNumber);
+    }
+
+    if (useDeclarativeRollback) {
+      logCallback.saveExecutionLog(format("Adding canary suffix [%s] to Configmap and Secret names.",
+          K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR));
+      addSuffixToConfigmapsAndSecrets(k8sRequestHandlerContext, K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME, logCallback);
     }
 
     KubernetesResource canaryWorkload = workloads.get(0);
@@ -164,7 +179,7 @@ public class K8sCanaryBaseHandler {
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback) throws Exception {
     KubernetesResource canaryWorkload = canaryHandlerConfig.getCanaryWorkload();
     Integer currentInstances = k8sTaskHelperBase.getCurrentReplicas(
-        canaryHandlerConfig.getClient(), canaryWorkload.getResourceId(), k8sDelegateTaskParams);
+        canaryHandlerConfig.getClient(), canaryWorkload.getResourceId(), k8sDelegateTaskParams, logCallback);
     if (currentInstances != null) {
       logCallback.saveExecutionLog("\nCurrent replica count is " + currentInstances);
     }
@@ -180,15 +195,24 @@ public class K8sCanaryBaseHandler {
     return currentInstances;
   }
 
-  public void updateTargetInstances(
-      K8sCanaryHandlerConfig canaryHandlerConfig, Integer targetInstances, LogCallback logCallback) {
+  public void updateTargetInstances(K8sCanaryHandlerConfig canaryHandlerConfig,
+      K8sRequestHandlerContext k8sRequestHandlerContext, Integer targetInstances, LogCallback logCallback) {
     canaryHandlerConfig.setTargetInstances(targetInstances);
     KubernetesResource canaryWorkload = canaryHandlerConfig.getCanaryWorkload();
-    canaryWorkload.appendSuffixInName(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME);
+    canaryWorkload.appendSuffixInName(
+        K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR, k8sRequestHandlerContext);
     canaryWorkload.addLabelsInPodSpec(ImmutableMap.of(HarnessLabels.releaseName, canaryHandlerConfig.getReleaseName(),
         HarnessLabels.track, HarnessLabelValues.trackCanary));
-    canaryWorkload.addLabelsInDeploymentSelector(ImmutableMap.of(HarnessLabels.track, HarnessLabelValues.trackCanary));
+    canaryWorkload.addLabelsInResourceSelector(
+        ImmutableMap.of(HarnessLabels.track, HarnessLabelValues.trackCanary), k8sRequestHandlerContext);
     canaryWorkload.setReplicaCount(canaryHandlerConfig.getTargetInstances());
+
+    // do the name update for all the resources (HPA and PDB)
+    if (k8sRequestHandlerContext.isEnabledSupportHPAAndPDB()
+        && EmptyPredicate.isNotEmpty(k8sRequestHandlerContext.getResourcesForNameUpdate())) {
+      k8sRequestHandlerContext.getResourcesForNameUpdate().forEach(
+          resource -> { resource.appendSuffixInName(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR, null); });
+    }
 
     logCallback.saveExecutionLog(
         "\nCanary Workload is: " + color(canaryWorkload.getResourceId().kindNameRef(), LogColor.Cyan, Bold));
@@ -235,5 +259,38 @@ public class K8sCanaryBaseHandler {
     k8sTaskHelperBase.saveRelease(canaryHandlerConfig.isUseDeclarativeRollback(), false,
         canaryHandlerConfig.getKubernetesConfig(), canaryHandlerConfig.getCurrentRelease(),
         canaryHandlerConfig.getReleaseHistory(), canaryHandlerConfig.getReleaseName());
+  }
+
+  public String appendSecretAndConfigMapNamesToCanaryWorkloads(
+      String canaryWorkloadName, List<KubernetesResource> resources) {
+    return appendResourceNamesToCanaryWorkloads(canaryWorkloadName, resources, VersionUtils::shouldVersion);
+  }
+
+  public String appendHPAAndPDBNamesToCanaryWorkloads(String canaryWorkloadName, List<KubernetesResource> resources) {
+    return appendResourceNamesToCanaryWorkloads(canaryWorkloadName, resources,
+        resource
+        -> ImmutableSet.of(Kind.HorizontalPodAutoscaler.name(), Kind.PodDisruptionBudget.name())
+               .contains(resource.getResourceId().getKind()));
+  }
+
+  public String appendResourceNamesToCanaryWorkloads(
+      String canaryWorkloadName, List<KubernetesResource> resources, Predicate<KubernetesResource> filter) {
+    if (isEmpty(resources)) {
+      return canaryWorkloadName;
+    }
+
+    StringBuilder canaryWorkloadNameBuilder = new StringBuilder(canaryWorkloadName);
+
+    String resourceNames = resources.stream()
+                               .filter(filter)
+                               .map(KubernetesResource::getResourceId)
+                               .map(KubernetesResourceId::namespaceKindNameRef)
+                               .collect(Collectors.joining(","));
+
+    if (isNotEmpty(resourceNames)) {
+      canaryWorkloadNameBuilder.append(',');
+      canaryWorkloadNameBuilder.append(resourceNames);
+    }
+    return canaryWorkloadNameBuilder.toString();
   }
 }

@@ -17,11 +17,13 @@ import static io.harness.security.encryption.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
 import io.harness.exception.SecretManagementException;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretService;
 import io.harness.secrets.SecretsDao;
+import io.harness.utils.featureflaghelper.CGFeatureFlagHelperServiceImpl;
 
 import software.wings.beans.VaultConfig;
 
@@ -42,6 +44,8 @@ public class SecretYamlHandlerImpl implements SecretYamlHandler {
   private final SecretService secretService;
   private final SecretManagerConfigService secretManagerConfigService;
   private final SecretsDao secretsDao;
+
+  @Inject private CGFeatureFlagHelperServiceImpl smFeatureFlagHelper;
 
   @Inject
   public SecretYamlHandlerImpl(
@@ -68,7 +72,9 @@ public class SecretYamlHandlerImpl implements SecretYamlHandler {
 
   @Override
   public String toYaml(EncryptedData encryptedData) {
-    if (encryptedData.getEncryptionType() == VAULT) {
+    if (encryptedData.getEncryptionType() == VAULT
+        && !smFeatureFlagHelper.isEnabled(
+            encryptedData.getAccountId(), FeatureName.SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML)) {
       return encryptedData.getEncryptionType().getYamlName() + ":" + getVaultSecretRefUrl(encryptedData);
     } else {
       return encryptedData.getEncryptionType().getYamlName() + ":" + encryptedData.getName();

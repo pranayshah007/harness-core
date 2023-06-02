@@ -19,7 +19,6 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.observer.PipelineActionObserver;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;

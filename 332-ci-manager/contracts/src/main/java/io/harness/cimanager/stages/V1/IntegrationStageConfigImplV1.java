@@ -10,7 +10,6 @@ package io.harness.cimanager.stages.V1;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.platform.V1.Arch;
 import io.harness.beans.yaml.extended.platform.V1.OS;
 import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
@@ -21,6 +20,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.clone.Clone;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

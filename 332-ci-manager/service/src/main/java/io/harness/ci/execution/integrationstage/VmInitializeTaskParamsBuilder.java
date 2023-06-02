@@ -29,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -36,6 +37,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -49,7 +51,6 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
@@ -80,15 +81,18 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.steps.StepUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.vm.VmExecuteStepUtils;
+import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -124,6 +128,7 @@ public class VmInitializeTaskParamsBuilder {
 
   @Inject StepExecutionHelper stepExecutionHelper;
   @Inject private VmExecuteStepUtils vmExecuteStepUtils;
+  @Inject private SSCAServiceUtils sscaServiceUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
 
@@ -131,8 +136,15 @@ public class VmInitializeTaskParamsBuilder {
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
     String accountId = AmbianceUtils.getAccountId(ambiance);
-    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
-    CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
+    String poolId;
+    List<String> fallbackPoolIds = new ArrayList<>();
+    if (isBareMetalEnabled(accountId, hostedVmInfraYaml.getSpec().getPlatform(), initializeStepInfo)) {
+      poolId = getHostedBareMetalPoolId(hostedVmInfraYaml.getSpec().getPlatform());
+      fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId));
+    } else {
+      poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
+    }
+    CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
     List<ExecuteStepRequest> services = new ArrayList<>();
     if (isNotEmpty(params.getServiceDependencies())) {
@@ -154,11 +166,11 @@ public class VmInitializeTaskParamsBuilder {
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     String poolId = getPoolName(vmPoolYaml);
-    return getVmInitializeParams(initializeStepInfo, ambiance, poolId);
+    return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList());
   }
 
   public CIVmInitializeTaskParams getVmInitializeParams(
-      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId) {
+      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId, List<String> fallbackPoolIds) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
@@ -204,12 +216,18 @@ public class VmInitializeTaskParamsBuilder {
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 
-    Map<String, String> stoEnvVars = vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountID);
     Map<String, String> commonEnvVars =
         vmInitializeUtils.getCommonStepEnvVariables(stageDetails.getStageID(), ambiance);
+    Map<String, String> envVariables = getEnvVariables(ambiance);
 
-    envVars.putAll(stoEnvVars);
+    envVars.putAll(envVariables);
     envVars.putAll(commonEnvVars);
+
+    Caching caching = initializeStepInfo.getStageElementConfig().getCaching();
+    if (caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false)) {
+      Map<String, String> cacheEnvVars = vmInitializeUtils.getCacheEnvironmentVariable();
+      envVars.putAll(cacheEnvVars);
+    }
 
     // Order of precedence is Pipeline -> Stage -> Step
     // First pipeline variables will be put in the map, then stage and then step variables
@@ -227,6 +245,7 @@ public class VmInitializeTaskParamsBuilder {
 
     return CIVmInitializeTaskParams.builder()
         .poolID(poolId)
+        .fallbackPoolIDs(fallbackPoolIds)
         .workingDir(workDir)
         .environment(envVars)
         .gitConnector(gitConnector)
@@ -251,6 +270,17 @@ public class VmInitializeTaskParamsBuilder {
         .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
         .infraInfo(infraInfo)
         .build();
+  }
+
+  private Map<String, String> getEnvVariables(Ambiance ambiance) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    Map<String, String> envVars = new HashMap<>();
+    envVars.putAll(vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountId));
+    envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId));
+    return envVars;
   }
 
   public static void validateInfrastructure(Infrastructure infrastructure) {
@@ -428,9 +458,10 @@ public class VmInitializeTaskParamsBuilder {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
         if (parameterFieldValue.getValue() == null) {
-          throw new CIStageExecutionException(String.format("Env. variable [%s] value found to be null", key));
+          log.warn(String.format("Env variable [%s] value found to be null", key));
+        } else {
+          res.put(key, parameterFieldValue.getValue().toString());
         }
-        res.put(key, parameterFieldValue.getValue().toString());
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {
@@ -527,12 +558,61 @@ public class VmInitializeTaskParamsBuilder {
 
     if ((isLinux && isSplitLinuxPool(arch)) || (isWindowsAmd && isSplitWindowsPool())) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+      if (licensesWithSummaryDTO == null) {
+        throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+      }
+
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
       }
     }
 
     return pool;
+  }
+
+  private String getHostedBareMetalPoolId(ParameterField<Platform> platform) {
+    // Bare metal is only available for Linux/Amd64
+    OSType os = OSType.Linux;
+    ArchType arch = ArchType.Amd64;
+    if (platform != null && platform.getValue() != null) {
+      os = resolveOSType(platform.getValue().getOs());
+      arch = resolveArchType(platform.getValue().getArch());
+    }
+    return format("%s-%s-bare-metal", os.toString().toLowerCase(), arch.toString().toLowerCase());
+  }
+
+  public boolean isBareMetalEnabled(
+      String accountID, ParameterField<Platform> platform, InitializeStepInfo initializeStepInfo) {
+    if (platform == null || platform.getValue() == null) {
+      return false;
+    }
+    OSType os = resolveOSType(platform.getValue().getOs());
+    ArchType arch = resolveArchType(platform.getValue().getArch());
+    // Bare metal is only enabled for linux/amd64
+    if (os != OSType.Linux || arch != ArchType.Amd64) {
+      return false;
+    }
+    // If the bare metal feature flag is enabled
+    if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountID)) {
+      return true;
+    }
+    // If the account is an internal account and has a pipeline variable set for bare metal, return true
+    // TODO: This should be removed once bare metal is GA'ed
+    List<String> internalAccounts = ciExecutionServiceConfig.getHostedVmConfig().getInternalAccounts();
+    if (internalAccounts == null || !internalAccounts.contains(accountID)) {
+      return false;
+    }
+    if (initializeStepInfo == null || initializeStepInfo.getVariables() == null) {
+      return false;
+    }
+    // Check if pipeline variables enable bare metal
+    for (NGVariable var : initializeStepInfo.getVariables()) {
+      if (var.getName().equals(FeatureName.CI_ENABLE_BARE_METAL.toString())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isSplitLinuxPool(ArchType arch) {
@@ -585,6 +665,7 @@ public class VmInitializeTaskParamsBuilder {
         .tags(params.getTags())
         //            .correlationID(taskId)
         .poolID(params.getPoolID())
+        .fallbackPoolIDs(params.getFallbackPoolIDs())
         .config(config)
         .logKey(params.getLogKey())
         .infraType(Infrastructure.Type.HOSTED_VM.toString())

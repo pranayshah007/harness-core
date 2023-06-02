@@ -32,7 +32,6 @@ import io.harness.timeout.contracts.TimeoutObtainment;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -53,8 +52,11 @@ public class OrchestrationUtils {
   }
 
   public static boolean isStageNode(NodeExecution nodeExecution) {
-    StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
-    return currentStepType.getStepCategory() == StepCategory.STAGE;
+    if (nodeExecution == null) {
+      return false;
+    }
+    StepType currentStepType = AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance());
+    return currentStepType != null && currentStepType.getStepCategory() == StepCategory.STAGE;
   }
 
   public static boolean isStageOrParallelStageNode(NodeExecution nodeExecution) {
@@ -71,8 +73,11 @@ public class OrchestrationUtils {
   }
 
   public static boolean isPipelineNode(NodeExecution nodeExecution) {
-    StepType currentStepType = Objects.requireNonNull(AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance()));
-    return currentStepType.getStepCategory() == StepCategory.PIPELINE;
+    if (nodeExecution == null) {
+      return false;
+    }
+    StepType currentStepType = AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance());
+    return currentStepType != null && currentStepType.getStepCategory() == StepCategory.PIPELINE;
   }
 
   public static NodeType currentNodeType(Ambiance ambiance) {

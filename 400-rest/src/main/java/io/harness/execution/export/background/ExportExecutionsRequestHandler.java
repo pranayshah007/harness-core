@@ -20,7 +20,7 @@ import io.harness.execution.export.request.ExportExecutionsRequest;
 import io.harness.execution.export.request.ExportExecutionsRequest.ExportExecutionsRequestKeys;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -40,8 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 public class ExportExecutionsRequestHandler
-    extends IteratorPumpModeHandler implements Handler<ExportExecutionsRequest> {
-  private static final int ACCEPTABLE_DELAY_MINUTES = 10;
+    extends IteratorPumpAndRedisModeHandler implements Handler<ExportExecutionsRequest> {
+  private static final Duration ACCEPTABLE_DELAY_MINUTES = ofMinutes(10);
 
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -60,13 +60,32 @@ public class ExportExecutionsRequestHandler
                     .clazz(ExportExecutionsRequest.class)
                     .fieldName(ExportExecutionsRequestKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_DELAY_MINUTES))
+                    .acceptableNoAlertDelay(ACCEPTABLE_DELAY_MINUTES)
                     .handler(this)
                     .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                     .filterExpander(query -> query.field(ExportExecutionsRequestKeys.status).equal(Status.QUEUED))
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                ExportExecutionsRequestHandler.class,
+                MongoPersistenceIterator
+                    .<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>builder()
+                    .clazz(ExportExecutionsRequest.class)
+                    .fieldName(ExportExecutionsRequestKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_DELAY_MINUTES)
+                    .handler(this)
+                    .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                    .filterExpander(query -> query.field(ExportExecutionsRequestKeys.status).equal(Status.QUEUED))
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

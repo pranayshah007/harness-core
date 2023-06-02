@@ -35,19 +35,20 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.delegate.k8s.beans.K8sHandlerConfig;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesResource;
@@ -84,6 +85,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -174,7 +176,7 @@ public class K8sTaskHelper {
         }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag, "");
+            timeoutInMillis, helmCommandFlag);
 
       case HelmChartRepo:
         manifestFilesDirectory = Paths
@@ -188,7 +190,7 @@ public class K8sTaskHelper {
         }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag, "");
+            timeoutInMillis, helmCommandFlag);
 
       case KustomizeSourceRepo:
         KustomizeConfig kustomizeConfig = k8sDelegateManifestConfig.getKustomizeConfig();
@@ -200,7 +202,7 @@ public class K8sTaskHelper {
           k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         }
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            pluginRootDir, kustomizeDirPath, executionLogCallback);
+            pluginRootDir, kustomizeDirPath, executionLogCallback, Collections.emptyMap());
       case OC_TEMPLATES:
         return openShiftDelegateService.processTemplatization(manifestFilesDirectory, k8sDelegateTaskParams.getOcPath(),
             k8sDelegateManifestConfig.getGitFileConfig().getFilePath(), executionLogCallback, manifestOverrideFiles);
@@ -268,7 +270,7 @@ public class K8sTaskHelper {
         String pluginRootDir = kustomizeConfig != null ? kustomizeConfig.getPluginRootDir() : null;
         return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(), pluginRootDir,
             manifestFilesDirectory, filesList, k8sTaskParameters.isUseLatestKustomizeVersion(), manifestOverrideFiles,
-            executionLogCallback);
+            executionLogCallback, Collections.emptyMap());
 
       default:
         unhandled(storeType);
@@ -542,8 +544,8 @@ public class K8sTaskHelper {
       executionLogCallback.saveExecutionLog("Restoring inherited resources: \n");
       executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(kubernetesResources));
       k8sHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(clusterConfig, false));
-      k8sHandlerConfig.setClient(
-          Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+      k8sHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
       k8sHandlerConfig.setResources(kubernetesResources);
       executionLogCallback.saveExecutionLog("Done.. \n", INFO, SUCCESS);
     } catch (Exception e) {

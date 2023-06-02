@@ -20,14 +20,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @OwnedBy(CDC)
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 @RecasterAlias("io.harness.steps.shellscript.ShellScriptSourceWrapper")
 public class ShellScriptSourceWrapper {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

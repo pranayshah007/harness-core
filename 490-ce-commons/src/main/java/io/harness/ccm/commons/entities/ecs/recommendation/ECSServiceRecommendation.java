@@ -76,6 +76,7 @@ public final class ECSServiceRecommendation
   @NotEmpty String clusterName;
   @NotEmpty String serviceArn; // instanceId from utilData
   @NotEmpty String serviceName; // last part of serviceArn
+  String awsAccountId;
   LaunchType launchType;
 
   // Recommendation

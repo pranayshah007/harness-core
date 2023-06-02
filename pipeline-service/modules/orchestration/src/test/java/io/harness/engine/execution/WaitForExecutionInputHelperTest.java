@@ -11,14 +11,14 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.OrchestrationTestBase;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -29,14 +29,18 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Optional;
 import org.junit.Before;
@@ -48,7 +52,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
+public class WaitForExecutionInputHelperTest extends CategoryTest {
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private ExecutionInputService executionInputService;
@@ -66,7 +70,7 @@ public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testWaitForExecutionInput() {
+  public void testWaitForExecutionInput() throws IOException {
     String nodeExecutionId = "nodeExecutionId";
     String template = "template";
     NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).build();
@@ -74,15 +78,22 @@ public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
         ArgumentCaptor.forClass(WaitForExecutionInputCallback.class);
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
-    doReturn(Optional.of(PlanExecutionMetadata.builder().yaml("pipeline:\n  name: pipeline1\n").build()))
+    String fieldYaml = "pipeline:\n  name: \"pipeline1\"\n  var: \"var/<+pipeline.name>\"\n";
+    String resolvedFieldYaml = "pipeline:\n  name: pipeline1\"\n"
+        + "  var: var/pipeline1\n";
+    doReturn(Optional.of(PlanExecutionMetadata.builder().yaml(fieldYaml).build()))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(any());
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
+                            .putSetupAbstractions("accountId", "accountId")
+                            .build();
+    doReturn(YamlUtils.readTree(resolvedFieldYaml).getNode().getCurrJsonNode())
+        .when(pmsEngineExpressionService)
+        .resolve(ambiance, YamlNode.getNodeYaml(fieldYaml, ambiance),
+            ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     waitForExecutionInputHelper.waitForExecutionInput(
-        Ambiance.newBuilder()
-            .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
-            .putSetupAbstractions("accountId", "accountId")
-            .build(),
-        nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());
+        ambiance, nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());
     verify(waitNotifyEngine, times(1)).waitForAllOnInList(any(), callbackArgumentCaptor.capture(), any(), any());
     WaitForExecutionInputCallback waitForExecutionInputCallback = callbackArgumentCaptor.getValue();
 
@@ -95,6 +106,8 @@ public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
     assertNotNull(inputInstance);
     assertEquals(inputInstance.getNodeExecutionId(), nodeExecutionId);
     assertEquals(inputInstance.getTemplate(), template);
+    // expressions will be resolved in the fieldYaml and then saved in executionInputInstance.
+    assertEquals(inputInstance.getFieldYaml(), resolvedFieldYaml);
 
     // InputInstanceId should be same in inputInstance and callback.
     assertEquals(inputInstance.getInputInstanceId(), waitForExecutionInputCallback.getInputInstanceId());

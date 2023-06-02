@@ -16,6 +16,8 @@ import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.ceviewfolder.CEViewFolderClient;
 import io.harness.ccm.ceviewfolder.CEViewFolderClientModule;
+import io.harness.ccm.governance.GovernanceRuleClient;
+import io.harness.ccm.governance.GovernanceRuleClientModule;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.DelegateServiceResourceClient;
@@ -117,6 +119,7 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(GitopsResourceClient.class);
     requireBinding(EnvironmentGroupResourceClient.class);
     requireBinding(CEViewFolderClient.class);
+    requireBinding(GovernanceRuleClient.class);
   }
 
   private void installResourceValidators() {
@@ -160,6 +163,9 @@ public class ResourceGroupModule extends AbstractModule {
         resourceClients.getGitopsService().getSecret(), RESOUCE_GROUP_SERVICE.toString()));
     install(new FileStoreClientModule(ngManagerHttpClientConfig, ngManagerSecret, RESOUCE_GROUP_SERVICE.toString()));
     install(new CEViewFolderClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
+        resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+    install(new GovernanceRuleClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
   }

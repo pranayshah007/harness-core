@@ -18,7 +18,7 @@ import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

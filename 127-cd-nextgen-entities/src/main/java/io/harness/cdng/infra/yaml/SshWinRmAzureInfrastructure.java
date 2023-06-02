@@ -16,39 +16,42 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping.SshWinRmAzureInfraMappingBuilder;
-import io.harness.filters.ConnectorRefExtractorHelper;
-import io.harness.filters.WithConnectorRef;
+import io.harness.filters.GenericEntityRefExtractorHelper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
-import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AZURE)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = GenericEntityRefExtractorHelper.class)
 @TypeAlias("SshWinRmAzureInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure")
 public class SshWinRmAzureInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef, AzureInfrastructure {
+    extends InfrastructureDetailsAbstract implements SshWinRmInfrastructure, AzureInfrastructure {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -147,6 +150,9 @@ public class SshWinRmAzureInfrastructure
     if (!ParameterField.isNull(config.getHostConnectionType())) {
       resultantInfra = resultantInfra.withHostConnectionType(config.getHostConnectionType());
     }
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
+    }
 
     return resultantInfra;
   }
@@ -156,5 +162,10 @@ public class SshWinRmAzureInfrastructure
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractSecretRefs() {
+    return Collections.singletonMap(YAMLFieldNameConstants.CREDENTIALS_REF, credentialsRef);
   }
 }

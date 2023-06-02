@@ -10,6 +10,7 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveNumberParameterWithDefaultValue;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
@@ -22,14 +23,17 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MEMORY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.commonconstants.CIExecutionConstants.UNDERSCORE_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.ParameterField.isNull;
 
 import static java.lang.String.format;
 
@@ -75,6 +79,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -152,7 +157,7 @@ public class K8InitializeStepUtils {
         }
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         List<ContainerDefinitionInfo> stepGroupDefinitionInfos = handleStepGroup(executionWrapper, stageNode,
-            ciExecutionArgs, portFinder, accountId, os, ambiance, stageMemoryRequest, stageCpuRequest, stepIndex);
+            ciExecutionArgs, portFinder, accountId, os, ambiance, stageMemoryRequest, stageCpuRequest, stepIndex, "");
         if (stepGroupDefinitionInfos != null) {
           stepIndex += stepGroupDefinitionInfos.size();
           if (stepGroupDefinitionInfos.size() > 0) {
@@ -178,7 +183,8 @@ public class K8InitializeStepUtils {
     Integer extraMemoryPerStep = 0;
     Integer extraCPUPerStep = 0;
 
-    if ((stepNode.getStrategy() == null) && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo)) {
+    if (((isNull(stepNode.getStrategy())) || stepNode.getStrategy().getValue() == null)
+        && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo)) {
       extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
       extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
     }
@@ -189,7 +195,8 @@ public class K8InitializeStepUtils {
 
   private List<ContainerDefinitionInfo> handleStepGroup(ExecutionWrapperConfig executionWrapper,
       IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex) {
+      OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
+      String parentIdentifier) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
     if (isEmpty(stepGroupElementConfig.getSteps())) {
@@ -197,11 +204,14 @@ public class K8InitializeStepUtils {
     }
 
     for (ExecutionWrapperConfig step : stepGroupElementConfig.getSteps()) {
+      String stepGroupParentIdentifier = isEmpty(parentIdentifier)
+          ? stepGroupElementConfig.getIdentifier()
+          : parentIdentifier + UNDERSCORE_SEPARATOR + stepGroupElementConfig.getIdentifier();
       if (step.getStep() != null && !step.getStep().isNull()) {
         stepIndex++;
-        ContainerDefinitionInfo containerDefinitionInfo = handleSingleStep(step, integrationStage, ciExecutionArgs,
-            portFinder, accountId, os, ambiance, maxAllocatableMemoryRequest, maxAllocatableCpuRequest, stepIndex,
-            stepGroupElementConfig.getIdentifier());
+        ContainerDefinitionInfo containerDefinitionInfo =
+            handleSingleStep(step, integrationStage, ciExecutionArgs, portFinder, accountId, os, ambiance,
+                maxAllocatableMemoryRequest, maxAllocatableCpuRequest, stepIndex, stepGroupParentIdentifier);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -210,11 +220,21 @@ public class K8InitializeStepUtils {
         int extraCpu = calculateExtraCPU(step, accountId, maxAllocatableCpuRequest);
         List<ContainerDefinitionInfo> parallelStepDefinitionInfos =
             handleParallelStep(step, integrationStage, ciExecutionArgs, portFinder, accountId, os, ambiance,
-                extraMemory, extraCpu, stepIndex, stepGroupElementConfig.getIdentifier());
+                extraMemory, extraCpu, stepIndex, stepGroupParentIdentifier);
         if (parallelStepDefinitionInfos != null) {
           stepIndex += parallelStepDefinitionInfos.size();
           if (parallelStepDefinitionInfos.size() > 0) {
             containerDefinitionInfos.addAll(parallelStepDefinitionInfos);
+          }
+        }
+      } else if (step.getStepGroup() != null && !step.getStepGroup().isNull()) {
+        List<ContainerDefinitionInfo> stepGroupDefinitionInfos =
+            handleStepGroup(step, integrationStage, ciExecutionArgs, portFinder, accountId, os, ambiance,
+                maxAllocatableMemoryRequest, maxAllocatableCpuRequest, stepIndex, stepGroupParentIdentifier);
+        if (stepGroupDefinitionInfos != null) {
+          stepIndex += stepGroupDefinitionInfos.size();
+          if (stepGroupDefinitionInfos.size() > 0) {
+            containerDefinitionInfos.addAll(stepGroupDefinitionInfos);
           }
         }
       }
@@ -260,7 +280,8 @@ public class K8InitializeStepUtils {
         List<ContainerDefinitionInfo> stepGroupDefinitionInfos =
             handleStepGroup(executionWrapperInParallel, integrationStage, ciExecutionArgs, portFinder, accountId, os,
                 ambiance, extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
-                extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex);
+                extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex,
+                stepGroupIdOfParent);
         if (stepGroupDefinitionInfos != null) {
           stepIndex += stepGroupDefinitionInfos.size();
           if (stepGroupDefinitionInfos.size() > 0) {
@@ -273,7 +294,7 @@ public class K8InitializeStepUtils {
     return containerDefinitionInfos;
   }
 
-  private ContainerDefinitionInfo createStepContainerDefinition(CIAbstractStepNode stepElement,
+  public ContainerDefinitionInfo createStepContainerDefinition(CIAbstractStepNode stepElement,
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String accountId, OSType os, Ambiance ambiance, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
@@ -306,6 +327,8 @@ public class K8InitializeStepUtils {
       case UPLOAD_S3:
       case UPLOAD_GCS:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -342,7 +365,8 @@ public class K8InitializeStepUtils {
     }
   }
 
-  private ContainerDefinitionInfo createPluginCompatibleStepContainerDefinition(PluginCompatibleStep stepInfo,
+  // Todo: Merge with k8sInitialiseServiceImpl
+  public ContainerDefinitionInfo createPluginCompatibleStepContainerDefinition(PluginCompatibleStep stepInfo,
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String stepName, String stepType, long timeout, String accountId, OSType os, Ambiance ambiance,
       Integer extraMemoryPerStep, Integer extraCPUPerStep) {
@@ -350,17 +374,22 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = new HashMap<>();
-    envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
-    envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
-    envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
+    if (stageNode != null) {
+      envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+      envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+      envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
+      setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
+    }
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
-        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false));
-    setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
+        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false, true));
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    if (stageNode != null) {
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    }
+    secretVarMap.putAll(pluginSettingUtils.getPluginCompatibleSecretVars(stepInfo, identifier));
 
     Boolean privileged = null;
     if (CIStepInfoUtils.getPrivilegedMode(stepInfo) != null) {
@@ -437,7 +466,8 @@ public class K8InitializeStepUtils {
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
-    if (runStepInfo.getImage() == null) {
+    String image = resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), true);
+    if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
     }
 
@@ -459,8 +489,9 @@ public class K8InitializeStepUtils {
     stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
     if (!isEmpty(envvars)) {
       stepEnvVars.putAll(envvars);
     }
@@ -499,7 +530,7 @@ public class K8InitializeStepUtils {
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
     String image = resolveStringParameter("Image", "Background", identifier, backgroundStepInfo.getImage(), true);
-    if (isEmpty(image)) {
+    if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
     }
 
@@ -520,19 +551,25 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> stepEnvVars = new HashMap<>();
-    stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
-    stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+    if (stageNode != null) {
+      stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+      stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+    }
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    Map<String, String> envVars =
-        resolveMapParameter("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+
+    Map<String, String> envVars = resolveMapParameterV2(
+        "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
     if (!isEmpty(envVars)) {
       stepEnvVars.putAll(envVars);
     }
     Integer runAsUser = resolveIntegerParameter(backgroundStepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    if (stageNode != null) {
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    }
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)
@@ -561,7 +598,8 @@ public class K8InitializeStepUtils {
       String identifier, String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     Integer port = portFinder.getNextPort();
 
-    if (runTestsStepInfo.getImage() == null) {
+    String image = resolveStringParameter("Image", "RunTest", identifier, runTestsStepInfo.getImage(), true);
+    if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
     }
 
@@ -574,8 +612,10 @@ public class K8InitializeStepUtils {
     stepEnvVars.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false, fVal);
     if (!isEmpty(envvars)) {
       stepEnvVars.putAll(envvars);
     }
@@ -619,9 +659,10 @@ public class K8InitializeStepUtils {
     envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
     envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
     envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    if (!isEmpty(pluginStepInfo.getEnvVariables())) {
-      envVarMap.putAll(pluginStepInfo.getEnvVariables());
-    }
+
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+    envVarMap.putAll(
+        resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false, fVal));
 
     setEnvVariablesForHostedCachingSteps(stageNode, identifier, envVarMap);
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);
@@ -660,8 +701,7 @@ public class K8InitializeStepUtils {
     Integer cpuLimit;
     Integer memoryLimit;
 
-    if (featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId)
-        || accountId.equals(AXA_ACCOUNT_ID)) {
+    if (accountId.equals(AXA_ACCOUNT_ID)) {
       cpuLimit = getContainerCpuLimit(resource, stepType, stepId, accountId);
       memoryLimit = getContainerMemoryLimit(resource, stepType, stepId, accountId);
     } else {
@@ -1076,6 +1116,8 @@ public class K8InitializeStepUtils {
       case SAVE_CACHE_GCS:
       case SECURITY:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(
@@ -1084,8 +1126,8 @@ public class K8InitializeStepUtils {
   }
 
   public Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(
-      IntegrationStageConfig integrationStageConfig, Ambiance ambiance) {
-    List<ExecutionWrapperConfig> executionWrappers = integrationStageConfig.getExecution().getSteps();
+      ExecutionElementConfig executionElementConfig, Ambiance ambiance) {
+    List<ExecutionWrapperConfig> executionWrappers = executionElementConfig.getSteps();
     if (isEmpty(executionWrappers)) {
       return Collections.emptyMap();
     }

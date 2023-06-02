@@ -19,6 +19,7 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
@@ -28,7 +29,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,9 +70,8 @@ public class EnvironmentRefreshHelper {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
       if (NGExpressionUtils.isRuntimeField(envRefValue)) {
-        if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)
-            || (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
-            || (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs))) {
+        if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode) || (isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
+            || (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs))) {
           errorNodeSummary.setValid(false);
         }
         return;
@@ -149,13 +148,13 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
     YamlNode envNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
     if (envNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("env node in Resolved templates yaml is null");
       return;
     }
     if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
@@ -198,7 +197,7 @@ public class EnvironmentRefreshHelper {
 
     ObjectNode linkedServiceOverridesInputs = mapper.createObjectNode();
     linkedServiceOverridesInputs.set(YamlTypes.SERVICE_OVERRIDE_INPUTS, serviceOverrideInputs);
-    String linkedServiceOverridesYaml = YamlPipelineUtils.writeYamlString(linkedServiceOverridesInputs);
+    String linkedServiceOverridesYaml = CDYamlUtils.writeYamlString(linkedServiceOverridesInputs);
     if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(
             linkedServiceOverridesYaml, serviceOverrideInputsYaml)) {
       errorNodeSummary.setValid(false);
@@ -245,10 +244,10 @@ public class EnvironmentRefreshHelper {
       JsonNode envInputsNode = envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS);
       if (NGExpressionUtils.isRuntimeField(envRefValue)) {
         envObjectNode.put(YamlTypes.ENVIRONMENT_INPUTS, "<+input>");
-        if (infraDefsNode != null && isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode)) {
+        if (isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode)) {
           envObjectNode.put(YamlTypes.INFRASTRUCTURE_DEFS, "<+input>");
         }
-        if (serviceOverrideInputs != null && isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
+        if (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {
           envObjectNode.put(YamlTypes.SERVICE_OVERRIDE_INPUTS, "<+input>");
         }
         return envObjectNode;
@@ -299,6 +298,7 @@ public class EnvironmentRefreshHelper {
 
     // ex. use from stage
     if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
       return;
     }
 
@@ -312,6 +312,9 @@ public class EnvironmentRefreshHelper {
       JsonNode serviceOverrideInputs, JsonNode serviceRefInResolvedTemplatesYaml,
       JsonNode envRefInResolvedTemplatesYaml) {
     if (serviceRefInResolvedTemplatesYaml == null || envRefInResolvedTemplatesYaml == null) {
+      if (serviceOverrideInputs != null) {
+        envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+      }
       log.warn("Service ref or env ref in yaml is null. Exiting.");
       return;
     }
@@ -335,7 +338,7 @@ public class EnvironmentRefreshHelper {
 
     ObjectNode linkedServiceOverridesInputs = mapper.createObjectNode();
     linkedServiceOverridesInputs.set(YamlTypes.SERVICE_OVERRIDE_INPUTS, serviceOverrideInputs);
-    String linkedServiceOverridesYaml = YamlPipelineUtils.writeYamlString(linkedServiceOverridesInputs);
+    String linkedServiceOverridesYaml = CDYamlUtils.writeYamlString(linkedServiceOverridesInputs);
 
     JsonNode refreshedJsonNode =
         YamlRefreshHelper.refreshYamlFromSourceYaml(linkedServiceOverridesYaml, serviceOverrideInputsYaml);
@@ -347,7 +350,7 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
     YamlNode envNodeInResolvedTemplatesYaml =
@@ -358,6 +361,7 @@ public class EnvironmentRefreshHelper {
     }
     if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
         || envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
       log.warn("Service ref or env ref in yaml is null. Exiting.");
       return;
     }
@@ -425,9 +429,8 @@ public class EnvironmentRefreshHelper {
       JsonNode infraInputsNode = readTree(infraInputs);
       JsonNode dummyInfraInputsNode = addDummyRootToJsonNode(infraInputsNode, mapper);
 
-      JsonNode refreshedJsonNode =
-          YamlRefreshHelper.refreshYamlFromSourceYaml(YamlPipelineUtils.writeYamlString(dummyLinkedInfraDefs),
-              YamlPipelineUtils.writeYamlString(dummyInfraInputsNode));
+      JsonNode refreshedJsonNode = YamlRefreshHelper.refreshYamlFromSourceYaml(
+          CDYamlUtils.writeYamlString(dummyLinkedInfraDefs), CDYamlUtils.writeYamlString(dummyInfraInputsNode));
       if (refreshedJsonNode != null) {
         envObjectNode.setAll((ObjectNode) refreshedJsonNode.get(DUMMY_NODE));
       }
@@ -445,7 +448,7 @@ public class EnvironmentRefreshHelper {
 
     ObjectNode linkedEnvInputs = mapper.createObjectNode();
     linkedEnvInputs.set(YamlTypes.ENVIRONMENT_INPUTS, linkedEnvInputsValue);
-    String linkedEnvInputsYaml = YamlPipelineUtils.writeYamlString(linkedEnvInputs);
+    String linkedEnvInputsYaml = CDYamlUtils.writeYamlString(linkedEnvInputs);
     JsonNode refreshedJsonNode = YamlRefreshHelper.refreshYamlFromSourceYaml(linkedEnvInputsYaml, envInputsYaml);
     envObjectNode.set(YamlTypes.ENVIRONMENT_INPUTS, refreshedJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS));
   }
@@ -482,8 +485,7 @@ public class EnvironmentRefreshHelper {
 
       // TODO(@Inder): Create another validation method taking jsonNodes instead of yaml
       if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(
-              YamlPipelineUtils.writeYamlString(dummyLinkedInfraDefs),
-              YamlPipelineUtils.writeYamlString(dummyInfraInputsNode))) {
+              CDYamlUtils.writeYamlString(dummyLinkedInfraDefs), CDYamlUtils.writeYamlString(dummyInfraInputsNode))) {
         errorNodeSummary.setValid(false);
         return false;
       }
@@ -515,7 +517,7 @@ public class EnvironmentRefreshHelper {
 
     ObjectNode linkedEnvInputs = mapper.createObjectNode();
     linkedEnvInputs.set(YamlTypes.ENVIRONMENT_INPUTS, envInputsNode);
-    String linkedEnvInputsYaml = YamlPipelineUtils.writeYamlString(linkedEnvInputs);
+    String linkedEnvInputsYaml = CDYamlUtils.writeYamlString(linkedEnvInputs);
     if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedEnvInputsYaml, envInputsYaml)) {
       errorNodeSummary.setValid(false);
       return false;

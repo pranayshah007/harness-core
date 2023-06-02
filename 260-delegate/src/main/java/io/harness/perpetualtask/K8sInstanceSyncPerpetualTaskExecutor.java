@@ -130,7 +130,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
   private List<PodDetailsRequest> populatePodDetailsRequest(K8sDeploymentReleaseData releaseData) {
     containerBaseHelper.decryptK8sInfraDelegateConfig(releaseData.getK8sInfraDelegateConfig());
     KubernetesConfig kubernetesConfig =
-        containerBaseHelper.createKubernetesConfig(releaseData.getK8sInfraDelegateConfig());
+        containerBaseHelper.createKubernetesConfig(releaseData.getK8sInfraDelegateConfig(), null);
     LinkedHashSet<String> namespaces = releaseData.getNamespaces();
     String releaseName = releaseData.getReleaseName();
     return namespaces.stream()

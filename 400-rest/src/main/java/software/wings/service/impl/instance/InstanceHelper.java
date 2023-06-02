@@ -34,6 +34,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.exception.GeneralException;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
@@ -58,9 +59,11 @@ import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.CodeDeployInfrastructureMapping;
 import software.wings.beans.ElementExecutionSummary;
+import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.PhaseStepType;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.infrastructure.Host;
@@ -78,6 +81,7 @@ import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
@@ -150,6 +154,7 @@ public class InstanceHelper {
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private InstanceSyncMonitoringService instanceSyncMonitoringService;
   @Inject private CgInstanceSyncTaskDetailsService taskDetailsService;
+  @Inject private EnvironmentService environmentService;
 
   /**
    * The phaseExecutionData is used to process the instance information that is used by the service and infra
@@ -744,6 +749,17 @@ public class InstanceHelper {
             perpetualTaskId, infrastructureMappingId, instanceSyncV2TaskDetails.getPerpetualTaskId(),
             instanceSyncV2TaskDetails.getUuid());
         return;
+      }
+    }
+    Environment environment = environmentService.get(appId, infrastructureMapping.getEnvId(), false);
+    Service service = serviceResourceService.getWithDetails(appId, infrastructureMapping.getServiceId());
+    if (environment == null || service == null) {
+      instanceSyncPerpetualTaskService.deletePerpetualTask(
+          infrastructureMapping.getAccountId(), infrastructureMappingId, perpetualTaskId, true);
+      if (environment == null) {
+        throw new GeneralException("Environment is null for the given id: " + infrastructureMapping.getEnvId());
+      } else {
+        throw new GeneralException("Service is null for the given id: " + infrastructureMapping.getServiceId());
       }
     }
 

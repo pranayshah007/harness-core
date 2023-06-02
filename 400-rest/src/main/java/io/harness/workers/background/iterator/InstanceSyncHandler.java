@@ -16,7 +16,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -41,7 +41,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class InstanceSyncHandler extends IteratorPumpModeHandler implements Handler<InfrastructureMapping> {
+public class InstanceSyncHandler extends IteratorPumpAndRedisModeHandler implements Handler<InfrastructureMapping> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(10);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
+
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private InstanceHelper instanceHelper;
@@ -58,13 +61,31 @@ public class InstanceSyncHandler extends IteratorPumpModeHandler implements Hand
                     .clazz(InfrastructureMapping.class)
                     .fieldName(InfrastructureMappingKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofMinutes(10))
-                    .acceptableExecutionTime(ofSeconds(30))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                     .handler(this)
                     .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<InfrastructureMapping, MorphiaFilterExpander<InfrastructureMapping>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                InstanceSyncHandler.class,
+                MongoPersistenceIterator.<InfrastructureMapping, MorphiaFilterExpander<InfrastructureMapping>>builder()
+                    .clazz(InfrastructureMapping.class)
+                    .fieldName(InfrastructureMappingKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                    .handler(this)
+                    .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

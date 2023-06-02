@@ -117,7 +117,7 @@ public class VariableCreatorHelperTest extends CategoryTest {
             "pipeline.stages.stage1.tags", "pipeline.stages.stage1.type"));
 
     // enum when condition expression
-    fqnExtraPropertiesList = yamlExtraPropertiesMap.get(stageElementConfig.getWhen().getUuid())
+    fqnExtraPropertiesList = yamlExtraPropertiesMap.get(stageElementConfig.getWhen().getValue().getUuid())
                                  .getPropertiesList()
                                  .stream()
                                  .map(YamlProperties::getFqn)
@@ -133,8 +133,10 @@ public class VariableCreatorHelperTest extends CategoryTest {
     assertThat(yamlPropertiesMap.get(stageElementConfig.getDescription().getResponseField()).getFqn())
         .isEqualTo("pipeline.stages.stage1.description");
 
-    assertThat(yamlPropertiesMap.containsKey(stageElementConfig.getWhen().getCondition().getResponseField())).isTrue();
-    assertThat(yamlPropertiesMap.get(stageElementConfig.getWhen().getCondition().getResponseField()).getFqn())
+    assertThat(yamlPropertiesMap.containsKey(stageElementConfig.getWhen().getValue().getCondition().getResponseField()))
+        .isTrue();
+    assertThat(
+        yamlPropertiesMap.get(stageElementConfig.getWhen().getValue().getCondition().getResponseField()).getFqn())
         .isEqualTo("pipeline.stages.stage1.when.condition");
   }
 

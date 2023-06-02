@@ -7,17 +7,20 @@
 
 package io.harness.ci.execution;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
+import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
 import io.harness.ci.config.PluginField;
 import io.harness.ci.config.StepImageConfig;
+import io.harness.ci.config.VmContainerlessStepConfig;
 import io.harness.ci.config.VmImageConfig;
 import io.harness.repositories.CIExecutionConfigRepository;
 
@@ -33,6 +36,7 @@ public class CIExecutionConfigService {
   @Inject CIExecutionConfigRepository configRepository;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
 
+  private static final String UNEXPECTED_ERR_FORMAT = "Unexpected value: %s";
   public CIExecutionServiceConfig getCiExecutionServiceConfig() {
     return ciExecutionServiceConfig;
   }
@@ -124,8 +128,14 @@ public class CIExecutionConfigService {
       case SECURITY:
         executionConfig.setSecurityImage(value);
         break;
+      case SSCA_ORCHESTRATION:
+        executionConfig.setSscaOrchestrationTag(value);
+        break;
+      case SSCA_ENFORCEMENT:
+        executionConfig.setSscaEnforcementTag(value);
+        break;
       default:
-        throw new BadRequestException(String.format("Field %s does not exist for infra type: K8", field));
+        throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
     }
   }
 
@@ -173,7 +183,7 @@ public class CIExecutionConfigService {
         vmImageConfig.setSecurity(value);
         break;
       default:
-        throw new BadRequestException(String.format("Field %s does not exist for infra type: VM", field));
+        throw new BadRequestException(format("Field %s does not exist for infra type: VM", field));
     }
   }
 
@@ -274,6 +284,8 @@ public class CIExecutionConfigService {
         .cacheGCSTag(vmImageConfig.getCacheGCS())
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
+        .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
+        .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
         .build();
   }
 
@@ -322,6 +334,8 @@ public class CIExecutionConfigService {
         .cacheGCSTag(vmImageConfig.getCacheGCS())
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
+        .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
+        .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
         .build();
   }
 
@@ -343,6 +357,8 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSConfig().getImage())
         .cacheS3Tag(config.getCacheS3Config().getImage())
         .securityTag(config.getSecurityConfig().getImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
+        .sscaEnforcementTag(config.getSscaEnforcementConfig().getImage())
         .build();
   }
 
@@ -361,6 +377,8 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSTag())
         .cacheS3Tag(config.getCacheS3Tag())
         .securityTag(config.getSecurityImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationTag())
+        .sscaEnforcementTag(config.getSscaEnforcementTag())
         .build();
   }
 
@@ -383,6 +401,28 @@ public class CIExecutionConfigService {
     return deprecatedTags;
   }
 
+  public CIExecutionImages getDeprecatedImages(String accountId) {
+    Optional<CIExecutionConfig> configOptional = configRepository.findFirstByAccountIdentifier(accountId);
+    CIExecutionImagesBuilder builder = CIExecutionImages.builder();
+
+    if (configOptional.isPresent()) {
+      CIExecutionConfig ciExecutionConfig = configOptional.get();
+      String addonOverride = ciExecutionConfig.getAddOnImage();
+      String liteEngineOverride = ciExecutionConfig.getLiteEngineImage();
+      if (Strings.isNotBlank(addonOverride)) {
+        if (hasLowerMajorVersion(ciExecutionServiceConfig.getAddonImage(), addonOverride)) {
+          builder.addonTag(addonOverride);
+        }
+      }
+      if (Strings.isNotBlank(liteEngineOverride)) {
+        if (hasLowerMajorVersion(ciExecutionServiceConfig.getLiteEngineImage(), liteEngineOverride)) {
+          builder.liteEngineTag(liteEngineOverride);
+        }
+      }
+    }
+    return builder.build();
+  }
+
   private boolean checkForCIImage(String defaultImage, String customImage) {
     String defaultImageTag = defaultImage.split(":")[1];
     String customImageTag = customImage.split(":")[1];
@@ -390,6 +430,14 @@ public class CIExecutionConfigService {
     Version customVersion = Version.parseVersion(customImageTag);
     // we are supporting 2 back versions
     return defaultVersion.isLowerThanOrEqualTo(customVersion.nextMinor().nextMinor());
+  }
+
+  private boolean hasLowerMajorVersion(String defaultImage, String customImage) {
+    String defaultImageTag = defaultImage.split(":")[1];
+    String customImageTag = customImage.split(":")[1];
+    Version defaultVersion = Version.parseVersion(defaultImageTag);
+    Version customVersion = Version.parseVersion(customImageTag);
+    return customVersion.getMajor() <= defaultVersion.getMajor() - 1;
   }
 
   public StepImageConfig getPluginVersionForK8(CIStepInfoType stepInfoType, String accountId) {
@@ -464,8 +512,18 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getGitCloneImage();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaOrchestrationTag())) {
+          image = ciExecutionConfig.getSscaOrchestrationTag();
+        }
+        break;
+      case SSCA_ENFORCEMENT:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaEnforcementTag())) {
+          image = ciExecutionConfig.getSscaEnforcementTag();
+        }
+        break;
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
     return StepImageConfig.builder()
         .entrypoint(stepImageConfig.getEntrypoint())
@@ -501,8 +559,12 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig();
       case GIT_CLONE:
         return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
+      case SSCA_ORCHESTRATION:
+        return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
+      case SSCA_ENFORCEMENT:
+        return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
   }
 
@@ -582,10 +644,62 @@ public class CIExecutionConfigService {
           image = vmImageConfig.getIacmTerraform();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(vmImageConfig.getSscaOrchestration())) {
+          image = vmImageConfig.getSscaOrchestration();
+        }
+        break;
+      case SSCA_ENFORCEMENT:
+        if (Strings.isNotBlank(vmImageConfig.getSscaEnforcement())) {
+          image = vmImageConfig.getSscaEnforcement();
+        }
+        break;
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
     return image;
+  }
+
+  public String getContainerlessPluginNameForVM(CIStepInfoType stepInfoType) {
+    VmContainerlessStepConfig vmContainerlessStepConfig =
+        ciExecutionServiceConfig.getStepConfig().getVmContainerlessStepConfig();
+    String name = null;
+    switch (stepInfoType) {
+      case UPLOAD_S3:
+        name = vmContainerlessStepConfig.getS3UploadConfig().getName();
+        break;
+      case UPLOAD_GCS:
+        name = vmContainerlessStepConfig.getGcsUploadConfig().getName();
+        break;
+      case SAVE_CACHE_S3:
+      case RESTORE_CACHE_S3:
+        name = vmContainerlessStepConfig.getCacheS3Config().getName();
+        break;
+      case SAVE_CACHE_GCS:
+      case RESTORE_CACHE_GCS:
+        name = vmContainerlessStepConfig.getCacheGCSConfig().getName();
+        break;
+      case GIT_CLONE:
+        name = vmContainerlessStepConfig.getGitCloneConfig().getName();
+        break;
+      case DOCKER:
+        name = vmContainerlessStepConfig.getDockerBuildxConfig().getName();
+        break;
+      case ECR:
+        name = vmContainerlessStepConfig.getDockerBuildxEcrConfig().getName();
+        break;
+      case GCR:
+      case ACR:
+      case SECURITY:
+      case UPLOAD_ARTIFACTORY:
+      case IACM:
+      case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
+        break;
+      default:
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
+    }
+    return name;
   }
 
   private String getStepImageConfigForVM(
@@ -616,10 +730,14 @@ public class CIExecutionConfigService {
         return vmImageConfig.getArtifactoryUpload();
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
-      case IACM_TERRAFORM_PLAN:
+      case IACM_TERRAFORM_PLUGIN:
         return vmImageConfig.getIacmTerraform();
+      case SSCA_ORCHESTRATION:
+        return vmImageConfig.getSscaOrchestration();
+      case SSCA_ENFORCEMENT:
+        return vmImageConfig.getSscaEnforcement();
       default:
-        throw new BadRequestException("Unexpected value: " + stepInfoType);
+        throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
   }
 }

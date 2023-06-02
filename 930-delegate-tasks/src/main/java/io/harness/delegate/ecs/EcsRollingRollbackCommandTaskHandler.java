@@ -44,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
+import software.amazon.awssdk.services.ecs.model.ServiceNotFoundException;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -121,31 +122,30 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
 
         rollbackLogCallback.saveExecutionLog(format("Deleting service %s..", serviceName), LogLevel.INFO);
 
-        ecsCommandTaskHelper.deleteService(
-            serviceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
+        try {
+          ecsCommandTaskHelper.deleteService(serviceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+              ecsInfraConfig.getAwsConnectorDTO());
+        } catch (Exception e) {
+          if (e.getCause() instanceof ServiceNotFoundException) {
+            rollbackLogCallback.saveExecutionLog(format("service %s doesn't exist, so "
+                                                         + "skipping deletion of service",
+                                                     serviceName),
+                LogLevel.INFO);
+            rollbackSuccessfulLogs(rollbackLogCallback, ecsRollingRollbackRequest);
+            return getResponseForFirstTimeRollback();
+          }
+          throw e;
+        }
         ecsCommandTaskHelper.ecsServiceInactiveStateCheck(rollbackLogCallback, ecsInfraConfig.getAwsConnectorDTO(),
             ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(),
             (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
 
         rollbackLogCallback.saveExecutionLog(format("Deleted service %s", serviceName), LogLevel.INFO);
 
-        EcsRollingRollbackResult ecsRollingRollbackResult =
-            EcsRollingRollbackResult.builder()
-                .firstDeployment(isFirstDeployment)
-                .region(ecsInfraConfig.getRegion())
-                .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
-                .build();
-
-        ecsRollingRollbackResponse = EcsRollingRollbackResponse.builder()
-                                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                         .ecsRollingRollbackResult(ecsRollingRollbackResult)
-                                         .build();
+        ecsRollingRollbackResponse = getResponseForFirstTimeRollback();
       }
 
-      rollbackLogCallback.saveExecutionLog(color(format("%n Rollback Successful."), LogColor.Green, LogWeight.Bold),
-          LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
+      rollbackSuccessfulLogs(rollbackLogCallback, ecsRollingRollbackRequest);
       return ecsRollingRollbackResponse;
 
     } catch (Exception ex) {
@@ -160,5 +160,25 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
       long timeoutInMillis) {
     ecsCommandTaskHelper.createOrUpdateService(createServiceRequest, ecsScalableTargetManifestContentList,
         ecsScalingPolicyManifestContentList, ecsInfraConfig, rollbackLogCallback, timeoutInMillis, false, false);
+  }
+
+  private EcsRollingRollbackResponse getResponseForFirstTimeRollback() {
+    EcsRollingRollbackResult ecsRollingRollbackResult = EcsRollingRollbackResult.builder()
+                                                            .firstDeployment(true)
+                                                            .region(ecsInfraConfig.getRegion())
+                                                            .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
+                                                            .build();
+
+    return EcsRollingRollbackResponse.builder()
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .ecsRollingRollbackResult(ecsRollingRollbackResult)
+        .build();
+  }
+
+  private void rollbackSuccessfulLogs(
+      LogCallback rollbackLogCallback, EcsRollingRollbackRequest ecsRollingRollbackRequest) {
+    rollbackLogCallback.saveExecutionLog(color(format("%n Rollback Successful."), LogColor.Green, LogWeight.Bold),
+        LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    log.info("Completed task execution for command: {}", ecsRollingRollbackRequest.getEcsCommandType().name());
   }
 }

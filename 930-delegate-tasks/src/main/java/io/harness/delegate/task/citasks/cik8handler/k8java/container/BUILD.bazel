@@ -1,0 +1,26 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler/params:module",
+        "//950-delegate-tasks-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/validation:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:io_kubernetes_client_java_api_fluent",
+    ],
+)
+
+run_analysis_per_module()

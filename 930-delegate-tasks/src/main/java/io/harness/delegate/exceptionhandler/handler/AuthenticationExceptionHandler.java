@@ -39,7 +39,8 @@ public class AuthenticationExceptionHandler implements ExceptionHandler {
       AuthenticationRuntimeException ex = (AuthenticationRuntimeException) exception;
 
       return new ExplanationException(
-          String.format("While trying to make http request to %s ,I got Authentication error!!", ex.getMessage()),
+          String.format("While trying to make http request to %s ,I got Authentication error!!. Response code: 401",
+              ex.getMessage()),
           new HintException("Make sure your credentials are valid",
               new HintException("Check you have provided the correct necessary headers",
                   new io.harness.exception.AuthenticationException(ex.getMessage(), WingsException.USER))));
@@ -48,7 +49,8 @@ public class AuthenticationExceptionHandler implements ExceptionHandler {
       AuthorizationRuntimeException ex = (AuthorizationRuntimeException) exception;
 
       return new ExplanationException(
-          String.format("While trying to make http request to %s ,I got Authorization error!!", ex.getMessage()),
+          String.format("While trying to make http request to %s ,I got Authorization error!!. Response Code: 403",
+              ex.getMessage()),
           new HintException("Make your you have provide the correct values in the headers",
               new HintException("Check if you have the correct access to the required resource with given credentials",
                   new HintException("Make sure to connect to VPN if harness url is behind VPN",

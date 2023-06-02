@@ -235,7 +235,7 @@ public class RetryAdviserTest extends PmsSdkCoreTestBase {
             .toStatus(Status.INTERVENTION_WAITING)
             .adviserParameters(kryoSerializer.asBytes(getRetryParams(RepairActionCode.IGNORE)))
             .build();
-    assertThat(retryAdviser.canAdvise(advisingEvent)).isTrue();
+    assertThat(retryAdviser.canAdvise(advisingEvent)).isFalse();
   }
 
   @Test

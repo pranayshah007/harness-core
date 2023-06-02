@@ -57,7 +57,7 @@ public class NexusArtifactTaskHelper {
             (RepositoryFormat.docker.name().equals(nexusArtifactDelegateResponse.getRepositoryFormat())
                 && nexusArtifactDelegateResponse.getBuildDetails() != null
                 && nexusArtifactDelegateResponse.getBuildDetails().getMetadata() != null)
-            ? "\nImage pull command: docker pull "
+            ? "\nTo pull image use: docker pull "
                 + nexusArtifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
             : null;
         saveLogs(executionLogCallback,
@@ -85,6 +85,16 @@ public class NexusArtifactTaskHelper {
         saveLogs(executionLogCallback, "Validating  Artifact Server");
         artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getRepositories(attributes));
         saveLogs(executionLogCallback, "validated artifact server: " + registryUrl);
+        break;
+      case GET_NEXUS_GROUP_IDS:
+        saveLogs(executionLogCallback, "Fetching GroupIds for Nexus");
+        artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getGroupIds(attributes));
+        saveLogs(executionLogCallback, "Fetched GroupIds for Nexus");
+        break;
+      case GET_NEXUS_ARTIFACTIDS:
+        saveLogs(executionLogCallback, "Fetching ArtifactIds for Nexus");
+        artifactTaskResponse = getSuccessTaskResponse(nexusArtifactTaskHandler.getArtifactIds(attributes));
+        saveLogs(executionLogCallback, "Fetched ArtifactIds for Nexus");
         break;
       default:
         saveLogs(executionLogCallback,

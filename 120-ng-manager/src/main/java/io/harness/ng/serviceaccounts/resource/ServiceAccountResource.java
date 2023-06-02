@@ -14,6 +14,7 @@ import static io.harness.NGResourceFilterConstants.IDENTIFIER;
 import static io.harness.NGResourceFilterConstants.IDENTIFIERS;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.SERVICEACCOUNT;
 import static io.harness.utils.PageUtils.getPageRequest;
 
@@ -22,6 +23,9 @@ import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.ng.accesscontrol.PlatformPermissions;
@@ -35,6 +39,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.ServiceAccountFilterDTO;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.serviceaccounts.dto.ServiceAccountAggregateDTO;
+import io.harness.ng.serviceaccounts.entities.ServiceAccount;
+import io.harness.ng.serviceaccounts.service.ServiceAccountDTOMapper;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.security.annotations.InternalApi;
 import io.harness.serviceaccount.ServiceAccountDTO;
@@ -54,6 +60,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -98,6 +105,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(PL)
 public class ServiceAccountResource {
   @Inject private final ServiceAccountService serviceAccountService;
+  @Inject private final AccessControlClient accessControlClient;
 
   @POST
   @ApiOperation(value = "Create service account", nickname = "createServiceAccount")
@@ -186,7 +194,6 @@ public class ServiceAccountResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of Service Accounts.")
       })
-  @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<List<ServiceAccountDTO>>
   listServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -197,9 +204,15 @@ public class ServiceAccountResource {
       @Parameter(
           description = "This is the list of Service Account IDs. Details specific to these IDs would be fetched.")
       @Optional @QueryParam(IDENTIFIERS) List<String> identifiers) {
-    List<ServiceAccountDTO> requestDTOS =
+    List<ServiceAccount> serviceAccounts =
         serviceAccountService.listServiceAccounts(accountIdentifier, orgIdentifier, projectIdentifier, identifiers);
-    return ResponseDTO.newResponse(requestDTOS);
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(SERVICEACCOUNT, null), VIEW_SERVICEACCOUNT_PERMISSION)) {
+      serviceAccounts = serviceAccountService.getPermittedServiceAccounts(serviceAccounts);
+    }
+    List<ServiceAccountDTO> serviceAccountDTOS =
+        serviceAccounts.stream().map(ServiceAccountDTOMapper::getDTOFromServiceAccount).collect(Collectors.toList());
+    return ResponseDTO.newResponse(serviceAccountDTOS);
   }
 
   @GET
@@ -212,7 +225,6 @@ public class ServiceAccountResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Returns the paginated list of Aggregated Service Accounts.")
       })
-  @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<PageResponse<ServiceAccountAggregateDTO>>
   listAggregatedServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
                                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,

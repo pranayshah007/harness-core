@@ -26,6 +26,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -45,6 +46,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -88,24 +91,31 @@ public class EcsCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
-    EcsCanaryDeployRequest ecsCanaryDeployRequest =
-        EcsCanaryDeployRequest.builder()
-            .accountId(accountId)
-            .ecsCommandType(EcsCommandTypeNG.ECS_CANARY_DEPLOY)
-            .commandName(ECS_CANARY_DEPLOY_COMMAND_NAME)
-            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
-            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
-            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
-            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
-            .desiredCountOverride(1l)
-            .ecsServiceNameSuffix(canarySuffix)
-            .build();
+    TaskChainResponse response;
 
-    TaskChainResponse response = ecsStepCommonHelper.queueEcsTask(
-        stepElementParameters, ecsCanaryDeployRequest, ambiance, executionPassThroughData, true);
+    if (ecsStepExecutorParams.getEcsTaskDefinitionManifestContent() == null) {
+      response = executeEcsTaskWithTaskArn(
+          stepElementParameters, ambiance, unitProgressData, ecsStepExecutorParams, executionPassThroughData);
+    } else {
+      EcsCanaryDeployRequest ecsCanaryDeployRequest =
+          EcsCanaryDeployRequest.builder()
+              .accountId(accountId)
+              .ecsCommandType(EcsCommandTypeNG.ECS_CANARY_DEPLOY)
+              .commandName(ECS_CANARY_DEPLOY_COMMAND_NAME)
+              .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+              .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+              .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+              .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
+              .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
+              .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+              .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+              .desiredCountOverride(1l)
+              .ecsServiceNameSuffix(canarySuffix)
+              .build();
+
+      response = ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsCanaryDeployRequest, ambiance,
+          executionPassThroughData, true, TaskType.ECS_COMMAND_TASK_NG);
+    }
 
     EcsCanaryDeleteDataOutcome ecsCanaryDeleteDataOutcome =
         EcsCanaryDeleteDataOutcome.builder()
@@ -184,5 +194,30 @@ public class EcsCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
+  }
+
+  private TaskChainResponse executeEcsTaskWithTaskArn(StepElementParameters stepElementParameters, Ambiance ambiance,
+      UnitProgressData unitProgressData, EcsStepExecutorParams ecsStepExecutorParams,
+      EcsExecutionPassThroughData executionPassThroughData) {
+    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsTaskArnCanaryDeployRequest ecsTaskArnCanaryDeployRequest =
+        EcsTaskArnCanaryDeployRequest.builder()
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_TASK_ARN_CANARY_DEPLOY)
+            .commandName(ECS_CANARY_DEPLOY_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .ecsTaskDefinitionArn(ecsStepCommonHelper.getTaskDefinitionArn(ambiance))
+            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
+            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+            .desiredCountOverride(1l)
+            .ecsServiceNameSuffix(canarySuffix)
+            .build();
+
+    return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsTaskArnCanaryDeployRequest, ambiance,
+        executionPassThroughData, true, TaskType.ECS_TASK_ARN_CANARY_DEPLOY_NG);
   }
 }

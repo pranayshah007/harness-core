@@ -10,6 +10,7 @@ package io.harness.artifacts.beans;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -34,6 +35,7 @@ public class BuildDetailsInternal {
   String buildFullDisplayName;
   String artifactFileSize;
   String uiDisplayName;
+  Date imagePushedAt;
   BuildStatus status;
   Map<String, String> metadata;
   Map<String, String> buildParameters;

@@ -10,6 +10,8 @@ package io.harness.service;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
+import io.harness.entities.InstanceSyncPerpetualTaskMappingServiceImpl;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.persistence.HPersistence;
 import io.harness.repositories.instancestats.InstanceStatsRepository;
@@ -72,6 +74,7 @@ public class InstanceModule extends AbstractModule {
     bind(InstanceStatsRepository.class).to(InstanceStatsRepositoryImpl.class);
     bind(BroadcasterFactory.class).to(DefaultBroadcasterFactory.class);
     bind(GitopsInstanceSyncService.class).to(GitopsInstanceSyncServiceImpl.class);
+    bind(InstanceSyncPerpetualTaskMappingService.class).to(InstanceSyncPerpetualTaskMappingServiceImpl.class);
     install(new InstanceSyncMonitoringModule());
   }
 

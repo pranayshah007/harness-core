@@ -16,9 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -73,8 +73,8 @@ public abstract class ServiceLevelIndicator
   private long createdAt;
   private String healthSourceIdentifier;
   private String monitoredServiceIdentifier;
-  private ServiceLevelIndicatorType type;
   private boolean enabled;
+  private SLIEvaluationType sliEvaluationType;
   private SLIMetricType sliMetricType;
   private SLIMissingDataType sliMissingDataType;
   private int version;
@@ -85,9 +85,23 @@ public abstract class ServiceLevelIndicator
     tags.put("monitoredServiceIdentifier", monitoredServiceIdentifier);
     return tags;
   }
+
+  public static String getEvaluationAndMetricType(SLIEvaluationType sliEvaluationType, SLIMetricType sliMetricType) {
+    if (sliMetricType != null) {
+      return sliEvaluationType.name() + "_" + sliMetricType.name();
+    }
+    return sliEvaluationType.name();
+  }
+
   public abstract SLIMetricType getSLIMetricType();
 
+  public abstract SLIEvaluationType getSLIEvaluationType();
+
   public abstract List<String> getMetricNames();
+
+  public abstract Integer getConsiderConsecutiveMinutes();
+
+  public abstract Boolean getConsiderAllConsecutiveMinutesFromStartAsBad();
 
   public abstract boolean isUpdatable(ServiceLevelIndicator serviceLevelIndicator);
 
@@ -98,7 +112,6 @@ public abstract class ServiceLevelIndicator
       if (this.shouldReAnalysis(serviceLevelIndicator)) {
         return true;
       }
-      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       return false;
     } catch (IllegalArgumentException ex) {
       return true;
@@ -122,10 +135,7 @@ public abstract class ServiceLevelIndicator
   public abstract static class ServiceLevelIndicatorUpdatableEntity<T extends ServiceLevelIndicator, D
                                                                         extends ServiceLevelIndicator>
       implements UpdatableEntity<T, D> {
-    protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
-      updateOperations.set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType())
-          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
-    }
+    protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {}
   }
   @FdIndex Long createNextTaskIteration;
   public static List<MongoIndex> mongoIndexes() {

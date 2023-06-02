@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.git.Constants.COMMIT_MESSAGE;
+import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.Constants.EXCEPTION_STRING;
 import static io.harness.git.Constants.GIT_YAML_LOG_PREFIX;
 import static io.harness.git.Constants.HARNESS_IO_KEY_;
@@ -90,8 +91,10 @@ import java.nio.file.StandardCopyOption;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -150,6 +153,8 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
   private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
+  private static final String REFS_HEADS = "refs/heads/";
+  private static final String ORIGIN = "origin/";
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -260,13 +265,26 @@ public class GitClientV2Impl implements GitClientV2 {
     log.info(GIT_YAML_LOG_PREFIX + "cloning repo, Git repo directory :{}", gitRepoDirectory);
 
     CloneCommand cloneCommand = (CloneCommand) getAuthConfiguredCommand(Git.cloneRepository(), request);
-    try (Git git = cloneCommand.setURI(request.getRepoUrl())
-                       .setDirectory(new File(gitRepoDirectory))
-                       .setBranch(isEmpty(request.getBranch()) ? null : request.getBranch())
-                       // if set to <code>true</code> no branch will be checked out, after the clone.
-                       // This enhances performance of the clone command when there is no need for a checked out branch.
-                       .setNoCheckout(noCheckout)
-                       .call()) {
+    cloneCommand.setURI(request.getRepoUrl()).setDirectory(new File(gitRepoDirectory));
+    if (!request.isUnsureOrNonExistentBranch()) {
+      cloneCommand
+          .setBranch(isEmpty(request.getBranch()) ? null : request.getBranch())
+          // if set to <code>true</code> no branch will be checked out, after the clone.
+          // This enhances performance of the clone command when there is no need for a checked out branch.
+          .setNoCheckout(noCheckout);
+    } else {
+      Map<String, Ref> refs = listRemote(request);
+      if (refs.containsKey(REFS_HEADS + request.getBranch())) {
+        cloneCommand.setBranch(isEmpty(request.getBranch()) ? null : request.getBranch());
+        cloneCommand.setNoCheckout(noCheckout);
+      } else {
+        String branchToClone = refs.get("HEAD").getTarget().getName();
+        cloneCommand.setBranch(branchToClone);
+        cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
+        cloneCommand.setNoCheckout(true);
+      }
+    }
+    try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
       log.error(GIT_YAML_LOG_PREFIX + "Error in cloning repo: " + ExceptionSanitizer.sanitizeForLogging(ex));
       gitClientHelper.checkIfGitConnectivityIssue(ex);
@@ -278,12 +296,21 @@ public class GitClientV2Impl implements GitClientV2 {
     Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig());
     try {
       if (isNotEmpty(request.getBranch())) {
-        git.checkout()
-            .setCreateBranch(true)
-            .setName(request.getBranch())
-            .setUpstreamMode(SetupUpstreamMode.TRACK)
-            .setStartPoint("origin/" + request.getBranch())
-            .call();
+        CheckoutCommand checkoutCommand = git.checkout();
+        checkoutCommand.setCreateBranch(true).setName(request.getBranch());
+        if (!request.isUnsureOrNonExistentBranch()) {
+          checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint(ORIGIN + request.getBranch());
+        } else {
+          Map<String, Ref> refs = listRemote(request);
+          if (refs.containsKey(REFS_HEADS + request.getBranch())) {
+            checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint(ORIGIN + request.getBranch());
+          } else {
+            String branchToClone = refs.get("HEAD").getTarget().getName();
+            checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK)
+                .setStartPoint(ORIGIN + branchToClone.replace(REFS_HEADS, ""));
+          }
+        }
+        checkoutCommand.call();
       }
 
     } catch (RefAlreadyExistsException refExIgnored) {
@@ -326,7 +353,8 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.info(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
 
       if (e instanceof InvalidRemoteException || e.getCause() instanceof NoRemoteRepositoryException) {
         return "Invalid git repo " + repoUrl;
@@ -367,7 +395,8 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.info(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
@@ -401,8 +430,20 @@ public class GitClientV2Impl implements GitClientV2 {
         .handle(Exception.class)
         .withMaxAttempts(GIT_COMMAND_RETRY)
         .withBackoff(5, 10, ChronoUnit.SECONDS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event -> {
+          if (event.getLastFailure() instanceof TransportException) {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure().getMessage());
+          } else {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          }
+        })
+        .onFailure(event -> {
+          if (event.getFailure() instanceof TransportException) {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure().getMessage());
+          } else {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure());
+          }
+        });
   }
   @Override
   public DiffResult diff(DiffRequest request) {
@@ -1026,6 +1067,11 @@ public class GitClientV2Impl implements GitClientV2 {
 
   @Override
   public FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException {
+    return fetchFilesByPath(DEFAULT_FETCH_IDENTIFIER, request);
+  }
+
+  @Override
+  public FetchFilesResult fetchFilesByPath(String identifier, FetchFilesByPathRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
     File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
@@ -1034,7 +1080,8 @@ public class GitClientV2Impl implements GitClientV2 {
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        checkoutFiles(request);
+        String latestCommitSHA = checkoutFiles(request);
+        GitFetchMetadataLocalThread.putCommitId(identifier, latestCommitSHA);
         List<GitFile> gitFiles = getFilteredGitFiles(request);
         resetWorkingDir(request);
 
@@ -1210,6 +1257,17 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  @Override
+  public Map<String, Ref> listRemote(GitBaseRequest request) {
+    try {
+      LsRemoteCommand lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(Git.lsRemoteRepository(), request);
+      return lsRemoteCommand.setRemote(request.getRepoUrl()).callAsMap();
+    } catch (GitAPIException e) {
+      log.error(GIT_YAML_LOG_PREFIX + "Error in listing remote: " + ExceptionSanitizer.sanitizeForLogging(e));
+      throw new YamlException("Error in listing remote", USER);
+    }
+  }
+
   private void tryResetWorkingDir(GitBaseRequest request) {
     try {
       resetWorkingDir(request);
@@ -1289,7 +1347,7 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info("Checking out Branch: " + request.getBranch());
       CheckoutCommand checkoutCommand = git.checkout()
                                             .setCreateBranch(true)
-                                            .setStartPoint("origin/" + request.getBranch())
+                                            .setStartPoint(ORIGIN + request.getBranch())
                                             .setForce(true)
                                             .setUpstreamMode(SetupUpstreamMode.TRACK)
                                             .setName(request.getBranch());

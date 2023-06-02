@@ -11,7 +11,9 @@ import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.NGCommonUtilitiesTestBase;
+import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -28,8 +30,9 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class MatrixConfigServiceTest extends NGCommonUtilitiesTestBase {
-  private MatrixConfigService matrixConfigService = new MatrixConfigService();
+@OwnedBy(HarnessTeam.PIPELINE)
+public class MatrixConfigServiceTest extends CategoryTest {
+  MatrixConfigService matrixConfigService = new MatrixConfigService(new MatrixConfigServiceHelper());
 
   @Test
   @Owner(developers = SAHIL)

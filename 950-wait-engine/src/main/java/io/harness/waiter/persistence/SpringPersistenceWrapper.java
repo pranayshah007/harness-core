@@ -19,7 +19,6 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
@@ -39,14 +38,13 @@ import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 import io.harness.waiter.WaitInstanceTimeoutCallback;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,23 +93,16 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
    * in a batch operation
    * @param correlationIds
    */
-  public void deleteWaitInstancesAndMetadata(Set<String> correlationIds) {
-    Set<String> batchCorrelationIds = new HashSet<>();
-    for (String correlationId : correlationIds) {
-      batchCorrelationIds.add(correlationId);
-      if (batchCorrelationIds.size() >= MAX_BATCH_SIZE) {
-        deleteWaitInstancesAndMetadataInternal(batchCorrelationIds);
-        batchCorrelationIds.clear();
-      }
-    }
-    if (EmptyPredicate.isNotEmpty(batchCorrelationIds)) {
+  public void deleteWaitInstancesAndMetadata(List<String> correlationIds) {
+    List<List<String>> partition = Lists.partition(correlationIds, MAX_BATCH_SIZE);
+    for (List<String> batchCorrelationIds : partition) {
       deleteWaitInstancesAndMetadataInternal(batchCorrelationIds);
     }
   }
 
-  private void deleteWaitInstancesAndMetadataInternal(Set<String> correlationIds) {
+  private void deleteWaitInstancesAndMetadataInternal(List<String> correlationIds) {
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      deleteNotifyResponses(new ArrayList<>(correlationIds));
+      deleteNotifyResponses(correlationIds);
       Query query = query(where(WaitInstanceKeys.correlationIds).in(correlationIds));
       query.fields().include(WaitInstanceKeys.timeoutInstanceId);
       // Uses - correlationIds_1 idx

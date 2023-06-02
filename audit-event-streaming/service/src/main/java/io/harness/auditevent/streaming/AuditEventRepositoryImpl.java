@@ -7,6 +7,8 @@
 
 package io.harness.auditevent.streaming;
 
+import static io.harness.mongo.helper.MongoConstants.SECONDARY;
+
 import io.harness.audit.entities.AuditEvent;
 
 import com.mongodb.client.FindIterable;
@@ -14,6 +16,7 @@ import com.mongodb.client.MongoCursor;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -25,7 +28,7 @@ public class AuditEventRepositoryImpl implements AuditEventRepository {
   private final BatchConfig batchConfig;
 
   @Autowired
-  public AuditEventRepositoryImpl(MongoTemplate mongoTemplate, BatchConfig batchConfig) {
+  public AuditEventRepositoryImpl(@Qualifier(SECONDARY) MongoTemplate mongoTemplate, BatchConfig batchConfig) {
     this.mongoTemplate = mongoTemplate;
     this.batchConfig = batchConfig;
   }

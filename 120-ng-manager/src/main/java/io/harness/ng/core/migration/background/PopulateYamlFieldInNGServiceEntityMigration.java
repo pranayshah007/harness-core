@@ -9,23 +9,20 @@ package io.harness.ng.core.migration.background;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.mongo.MongoPersistence;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.HIterator;
-import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -37,17 +34,13 @@ import org.springframework.data.mongodb.core.query.Update;
 public class PopulateYamlFieldInNGServiceEntityMigration implements NGMigration {
   @Inject private MongoPersistence mongoPersistence;
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private AccountClient accountClient;
+  @Inject private AccountUtils accountUtils;
   private static final String DEBUG_LOG = "[PopulateYamlFieldInNGServiceEntityMigration]: ";
   @Override
   public void migrate() {
     try {
       log.info(DEBUG_LOG + "Starting migration of populating yaml field in service entity");
-      List<AccountDTO> allAccounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
-      List<String> accountIdentifiers = allAccounts.stream()
-                                            .filter(AccountDTO::isNextGenEnabled)
-                                            .map(AccountDTO::getIdentifier)
-                                            .collect(Collectors.toList());
+      List<String> accountIdentifiers = accountUtils.getAllNGAccountIds();
 
       accountIdentifiers.forEach(accountId -> {
         try {
@@ -59,17 +52,24 @@ public class PopulateYamlFieldInNGServiceEntityMigration implements NGMigration 
           try (HIterator<ServiceEntity> iterator = new HIterator<>(serviceQuery.fetch())) {
             for (ServiceEntity svcEntity : iterator) {
               if (isBlank(svcEntity.getYaml())) {
-                NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(svcEntity);
-                String yaml = NGServiceEntityMapper.toYaml(ngServiceConfig);
+                try {
+                  NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(svcEntity);
+                  String yaml = NGServiceEntityMapper.toYaml(ngServiceConfig);
 
-                Criteria criteria = Criteria.where(ServiceEntityKeys.id).is(svcEntity.getId());
-                org.springframework.data.mongodb.core.query.Query query =
-                    new org.springframework.data.mongodb.core.query.Query(criteria);
-                Update update = new Update();
-                update.set(ServiceEntityKeys.yaml, yaml);
+                  Criteria criteria = Criteria.where(ServiceEntityKeys.id).is(svcEntity.getId());
+                  org.springframework.data.mongodb.core.query.Query query =
+                      new org.springframework.data.mongodb.core.query.Query(criteria);
+                  Update update = new Update();
+                  update.set(ServiceEntityKeys.yaml, yaml);
 
-                mongoTemplate.findAndModify(
-                    query, update, new FindAndModifyOptions().returnNew(true), ServiceEntity.class);
+                  mongoTemplate.findAndModify(
+                      query, update, new FindAndModifyOptions().returnNew(true), ServiceEntity.class);
+                } catch (Exception e) {
+                  log.info(String.format(DEBUG_LOG
+                          + "Migration of populating yaml failed for serviceIdentifier: [%s], serviceName: [%s], projectId: [%s], orgId: [%s], accountId: [%s]",
+                      svcEntity.getIdentifier(), svcEntity.getName(), svcEntity.getProjectIdentifier(),
+                      svcEntity.getOrgIdentifier(), svcEntity.getAccountId()));
+                }
               }
             }
           }

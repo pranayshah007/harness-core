@@ -14,7 +14,7 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -31,6 +31,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
+import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
+import io.harness.cdng.provision.terraform.TerraformCliOptionFlag;
 import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
@@ -63,6 +65,7 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.telemetry.TelemetryReporter;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -124,8 +127,10 @@ public class TerraformRollbackStepTest extends CategoryTest {
   public void testObtainTaskDestroyScenario() {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
-    TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
+    TerraformRollbackStepParameters rollbackSpec = TerraformRollbackStepParameters.builder()
+                                                       .provisionerIdentifier(ParameterField.createValueField("id"))
+                                                       .skipRefreshCommand(ParameterField.createValueField(true))
+                                                       .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -161,6 +166,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
     verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test
@@ -170,7 +176,14 @@ public class TerraformRollbackStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
+        TerraformRollbackStepParameters.builder()
+            .provisionerIdentifier(ParameterField.createValueField("id"))
+            .skipRefreshCommand(ParameterField.createValueField(true))
+            .commandFlags(List.of(TerraformCliOptionFlag.builder()
+                                      .commandType(TerraformCommandFlagType.APPLY)
+                                      .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                      .build()))
+            .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -191,6 +204,12 @@ public class TerraformRollbackStepTest extends CategoryTest {
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder().build();
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -207,6 +226,8 @@ public class TerraformRollbackStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
     verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -283,9 +304,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn(null).when(executionSweepingOutputService).consume(any(), any(), any(), any());
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig = ArtifactoryStoreDelegateConfig.builder().build();
-    doReturn(artifactoryStoreDelegateConfig)
-        .when(terraformStepHelper)
-        .getFileStoreFetchFilesConfig(any(), any(), any());
+    doReturn(artifactoryStoreDelegateConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))

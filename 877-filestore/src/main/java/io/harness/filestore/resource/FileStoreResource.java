@@ -40,6 +40,7 @@ import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.pms.rbac.NGResourceType.FILE;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
@@ -58,6 +59,7 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -90,6 +92,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -174,9 +177,8 @@ public class FileStoreResource {
   update(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier(maxLength = 128) @PathParam(
-          IDENTIFIER_KEY) String identifier,
-      @Parameter(description = FILE_TAGS_MESSAGE) @FormDataParam("tags") String tagsJson,
+      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(IDENTIFIER_KEY)
+      String identifier, @Parameter(description = FILE_TAGS_MESSAGE) @FormDataParam("tags") String tagsJson,
       @NotNull @BeanParam FileDTO file,
       @Parameter(description = FILE_CONTENT_MESSAGE) @FormDataParam("content") InputStream content) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
@@ -203,8 +205,8 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Get the Folder or File metadata")
       })
   public ResponseDTO<FileDTO>
-  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @NotBlank @EntityIdentifier(
-              maxLength = 128) String identifier,
+  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+              IDENTIFIER_KEY) @NotBlank @EntityIdentifier String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
@@ -233,8 +235,8 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Download File content")
       })
   public Response
-  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @NotBlank @EntityIdentifier(
-                   maxLength = 128) String fileIdentifier,
+  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+                   IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
@@ -284,7 +286,7 @@ public class FileStoreResource {
   delete(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier(maxLength = 128) @PathParam(
+      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(
           IDENTIFIER_KEY) String identifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_DELETE_PERMISSION);
@@ -379,8 +381,7 @@ public class FileStoreResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @EntityIdentifier(
-          maxLength = 128) String identifier,
+      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @EntityIdentifier String identifier,
       @RequestBody(required = true,
           description = FILE_YAML_DEFINITION_MESSAGE) @NotNull @Valid FileStoreRequest fileStoreRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
@@ -408,24 +409,23 @@ public class FileStoreResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of entities where file is referenced by")
       })
-  public ResponseDTO<Page<EntitySetupUsageDTO>>
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   getReferencedBy(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
                       PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          SIZE_KEY) @DefaultValue("100") int size,
+          SIZE_KEY) @DefaultValue("100") @Max(1000) int size,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier(maxLength = 128) @PathParam(
-          IDENTIFIER_KEY) String identifier,
-      @Parameter(description = ENTITY_TYPE_MESSAGE) @QueryParam(ENTITY_TYPE) EntityType entityType,
+      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(IDENTIFIER_KEY)
+      String identifier, @Parameter(description = ENTITY_TYPE_MESSAGE) @QueryParam(ENTITY_TYPE) EntityType entityType,
       @QueryParam(SEARCH_TERM_KEY) String searchTerm) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
 
-    return ResponseDTO.newResponse(fileStoreService.listReferencedBy(
+    return ResponseDTO.newResponse(getNGPageResponse(fileStoreService.listReferencedBy(
         SearchPageParams.builder().page(page).size(size).searchTerm(searchTerm).build(), accountIdentifier,
-        orgIdentifier, projectIdentifier, identifier, entityType));
+        orgIdentifier, projectIdentifier, identifier, entityType)));
   }
 
   @GET

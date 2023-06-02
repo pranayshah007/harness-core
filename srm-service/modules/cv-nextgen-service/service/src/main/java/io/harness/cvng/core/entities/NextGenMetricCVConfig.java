@@ -27,6 +27,7 @@ import io.harness.data.structure.UUIDGenerator;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import com.google.inject.Singleton;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -147,6 +148,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
                                 .build());
   }
 
+  @Singleton
   public static class UpdatableEntity
       extends MetricCVConfigUpdatableEntity<NextGenMetricCVConfig, NextGenMetricCVConfig> {
     @Override

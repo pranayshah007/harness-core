@@ -72,26 +72,28 @@ public class VaultSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    VaultConnectorDTOBuilder connectorDTO =
-        VaultConnectorDTO.builder()
-            .namespace(StringUtils.isNotBlank(vaultConfig.getNamespace()) ? vaultConfig.getNamespace() : "/")
-            .basePath(vaultConfig.getBasePath())
-            .vaultUrl(vaultConfig.getVaultUrl())
-            // Setting renewal interval to `0` as per PL team's recommendation instead of
-            // vaultConfig.getRenewalInterval()
-            .renewalIntervalMinutes(0)
-            .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
-            .secretEngineName(vaultConfig.getSecretEngineName())
-            .secretEngineVersion(vaultConfig.getSecretEngineVersion())
-            .useVaultAgent(vaultConfig.isUseVaultAgent())
-            .useAwsIam(false)
-            .isDefault(vaultConfig.isDefault())
-            .isReadOnly(vaultConfig.isReadOnly())
-            .delegateSelectors(vaultConfig.getDelegateSelectors());
+    VaultConnectorDTOBuilder connectorDTO = VaultConnectorDTO.builder()
+                                                .basePath(vaultConfig.getBasePath())
+                                                .vaultUrl(vaultConfig.getVaultUrl())
+                                                // Setting renewal interval to `0` as per PL team's recommendation
+                                                // instead of vaultConfig.getRenewalInterval()
+                                                .renewalIntervalMinutes(0)
+                                                .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
+                                                .secretEngineName(vaultConfig.getSecretEngineName())
+                                                .secretEngineVersion(vaultConfig.getSecretEngineVersion())
+                                                .useVaultAgent(vaultConfig.isUseVaultAgent())
+                                                .useAwsIam(false)
+                                                .isDefault(vaultConfig.isDefault())
+                                                .isReadOnly(vaultConfig.isReadOnly())
+                                                .delegateSelectors(vaultConfig.getDelegateSelectors());
+    if (StringUtils.isNotBlank(vaultConfig.getNamespace())) {
+      connectorDTO.namespace(vaultConfig.getNamespace());
+    }
 
-    String secretIdentifier =
-        String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));
+    String secretIdentifier = String.format("migratedHarnessSecret_%s",
+        MigratorUtility.generateIdentifier(vaultConfig.getName(), inputDTO.getIdentifierCaseFormat()));
     NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
+                                            .entityType(NGMigrationEntityType.SECRET)
                                             .identifier(secretIdentifier)
                                             .orgIdentifier(orgIdentifier)
                                             .projectIdentifier(projectIdentifier)

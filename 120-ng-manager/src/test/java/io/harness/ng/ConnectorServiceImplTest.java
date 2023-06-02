@@ -34,10 +34,10 @@ import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
@@ -153,17 +153,17 @@ public class ConnectorServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
-  public void createUpdateSNowConnector_AdfsAuthWithFFDisabled() {
-    ConnectorDTO connectorDTO = getServiceNowConnectorAdfsDTO();
+  public void createUpdateJiraConnector_PatAuthWithFFDisabled() {
+    ConnectorDTO connectorDTO = getJiraConnectorPatDTO();
     String accountIdentifier = randomAlphabetic(10);
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
 
     assertThatThrownBy(() -> connectorService.create(connectorDTO, accountIdentifier))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unsupported servicenow auth type provided : ADFS");
+        .hasMessage("Unsupported jira auth type provided : PAT");
     assertThatThrownBy(() -> connectorService.update(connectorDTO, accountIdentifier))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unsupported servicenow auth type provided : ADFS");
+        .hasMessage("Unsupported jira auth type provided : PAT");
   }
 
   @Test
@@ -181,7 +181,8 @@ public class ConnectorServiceImplTest extends CategoryTest {
         FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountIdentifier, null, null, connectorIdentifier);
     int page = 0;
     int size = 2;
-    when(defaultConnectorService.list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null))
+    when(
+        defaultConnectorService.list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null))
         .thenReturn(connectorsPage);
     when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
              fullyQualifiedIdentifier, null, null, accountIdentifier, true))
@@ -196,23 +197,17 @@ public class ConnectorServiceImplTest extends CategoryTest {
     }
   }
 
-  private ConnectorDTO getServiceNowConnectorAdfsDTO() {
+  private ConnectorDTO getJiraConnectorPatDTO() {
     SecretRefData secretRefData = new SecretRefData(randomAlphabetic(10));
     secretRefData.setDecryptedValue(randomAlphabetic(5).toCharArray());
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().build();
-    connectorInfo.setConnectorType(ConnectorType.SERVICENOW);
-    connectorInfo.setConnectorConfig(ServiceNowConnectorDTO.builder()
-                                         .auth(ServiceNowAuthenticationDTO.builder()
-                                                   .authType(ServiceNowAuthType.ADFS)
-                                                   .credentials(ServiceNowADFSDTO.builder()
-                                                                    .adfsUrl("https://test.adfs.com")
-                                                                    .certificateRef(secretRefData)
-                                                                    .privateKeyRef(secretRefData)
-                                                                    .clientIdRef(secretRefData)
-                                                                    .resourceIdRef(secretRefData)
-                                                                    .build())
+    connectorInfo.setConnectorType(ConnectorType.JIRA);
+    connectorInfo.setConnectorConfig(JiraConnectorDTO.builder()
+                                         .auth(JiraAuthenticationDTO.builder()
+                                                   .authType(JiraAuthType.PAT)
+                                                   .credentials(JiraPATDTO.builder().patRef(secretRefData).build())
                                                    .build())
-                                         .serviceNowUrl("https://test.service-now.com")
+                                         .jiraUrl("https://test.atlassian.com")
                                          .build());
     connectorInfo.setName("name");
     connectorInfo.setIdentifier("identifier");

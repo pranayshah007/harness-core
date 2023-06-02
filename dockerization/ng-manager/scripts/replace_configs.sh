@@ -71,7 +71,7 @@ fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   yq -i 'del(.allowedOrigins)' $CONFIG_FILE
-  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
@@ -122,6 +122,10 @@ fi
 
 if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
   export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then
@@ -367,6 +371,18 @@ if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
   export GITLAB_OAUTH_CALLBACK_URL; yq -i '.gitlabConfig.callbackUrl=env(GITLAB_OAUTH_CALLBACK_URL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BITBUCKET_OAUTH_CLIENT" ]]; then
+  export BITBUCKET_OAUTH_CLIENT; yq -i '.bitbucketConfig.clientId=env(BITBUCKET_OAUTH_CLIENT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BITBUCKET_OAUTH_SECRET" ]]; then
+  export BITBUCKET_OAUTH_SECRET; yq -i '.bitbucketConfig.clientSecret=env(BITBUCKET_OAUTH_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BITBUCKET_OAUTH_CALLBACK_URL" ]]; then
+  export BITBUCKET_OAUTH_CALLBACK_URL; yq -i '.bitbucketConfig.callbackUrl=env(BITBUCKET_OAUTH_CALLBACK_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
   export OAUTH_REFRESH_FREQUECY; yq -i '.oauthRefreshFrequency=env(OAUTH_REFRESH_FREQUECY)' $CONFIG_FILE
 fi
@@ -592,3 +608,7 @@ replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLI
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value signupDomainDenylistConfig.gcsCreds "$MINING_GCS_CREDS"
+replace_key_value signupDomainDenylistConfig.projectId "$MINING_GCS_PROJECT_ID"
+replace_key_value signupDomainDenylistConfig.bucketName "$MINING_GCS_BUCKET_NAME"

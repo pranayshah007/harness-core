@@ -76,7 +76,8 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, SpringFilterExpander filterExpander, boolean unsorted) {
+      SchedulingType schedulingType, Duration targetInterval, SpringFilterExpander filterExpander, boolean unsorted,
+      boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
     Query query = createQuery(now, fieldName, filterExpander, unsorted);
     Update update = new Update();
@@ -98,7 +99,8 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
   }
 
   @Override
-  public T findInstance(Class<T> clazz, String fieldName, SpringFilterExpander filterExpander) {
+  public T findInstance(
+      Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, boolean isDelegateTaskMigrationEnabled) {
     return persistence.findOne(createQuery(fieldName, filterExpander, false), clazz);
   }
 

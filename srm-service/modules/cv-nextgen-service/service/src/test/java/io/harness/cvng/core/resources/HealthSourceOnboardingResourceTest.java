@@ -45,7 +45,9 @@ import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.TimeSeries;
 import io.harness.cvng.core.beans.healthsource.TimeSeriesDataPoint;
 import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
+import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
 import io.harness.cvng.core.services.api.OnboardingService;
+import io.harness.cvng.core.services.impl.ElasticSearchLogNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.TimeSeriesRecord;
@@ -53,6 +55,7 @@ import io.harness.ng.core.CorrelationContext;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,7 +67,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Entity;
@@ -86,6 +91,11 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
 
   @Inject private Injector injector;
   @Inject private HealthSourceOnboardingService healthSourceOnboardingService;
+
+  @Inject private Map<DataSourceType, NextGenHealthSourceHelper> dataSourceTypeNextGenHelperMapBinder;
+
+  @Inject private ElasticSearchLogNextGenHealthSourceHelper elasticSearchLogNextGenHealthSourceHelper;
+
   private String accountIdentifier;
   private String orgIdentifier;
   private String tracingId;
@@ -115,7 +125,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
-  public void fetchRawDataForMetrics() throws JsonProcessingException, IllegalAccessException {
+  public void fetchRawDataForNonArray() throws JsonProcessingException, IllegalAccessException {
     long startTime = 1671102931000L;
     long endTime = 1671103231000L;
     String metricQuery = "metric=Mem_UsedPercent";
@@ -139,6 +149,38 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     assertThat(healthSourceRecordsResponse.getProviderType()).isEqualTo(DataSourceType.SUMOLOGIC_METRICS);
   }
 
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchRawDataForMultipleJsonArray() throws JsonProcessingException, IllegalAccessException {
+    long startTime = 1671102931000L;
+    long endTime = 1671103231000L;
+    String metricQuery = "metric=*";
+    HealthSourceRecordsRequest healthSourceRecordsRequest = new HealthSourceRecordsRequest();
+    healthSourceRecordsRequest.setStartTime(startTime);
+    healthSourceRecordsRequest.setEndTime(endTime);
+    healthSourceRecordsRequest.setQuery(metricQuery);
+    healthSourceRecordsRequest.setProviderType(DataSourceType.SUMOLOGIC_METRICS);
+    healthSourceRecordsRequest.setConnectorIdentifier(connectorIdentifier);
+    List<TimeSeriesDataPoint> timeSeriesDataPoints =
+        List.of(TimeSeriesDataPoint.builder().timestamp(startTime).value(34.3434).build(),
+            TimeSeriesDataPoint.builder().timestamp(1671103231000L).value(12.3434).build());
+    OnboardingRequestDTO onboardingRequestDTO = getOnboardingRequestDTOMetric(startTime, endTime, metricQuery);
+    mockOnboardingService(onboardingRequestDTO, timeSeriesDataPoints);
+    Response response = RESOURCES.client()
+                            .target(baseURL + HEALTH_SOURCE_RECORDS_API)
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(healthSourceRecordsRequest)));
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    HealthSourceRecordsResponse healthSourceRecordsResponse =
+        response.readEntity(new GenericType<RestResponse<HealthSourceRecordsResponse>>() {}).getResource();
+    assertThat(healthSourceRecordsResponse.getRawRecords().size()).isEqualTo(2);
+    assertThat(JsonUtils.asJson(healthSourceRecordsResponse.getRawRecords()))
+        .isEqualTo(JsonUtils.asJson(timeSeriesDataPoints));
+    assertThat(healthSourceRecordsResponse.getProviderType()).isEqualTo(DataSourceType.SUMOLOGIC_METRICS);
+  }
+
   private OnboardingRequestDTO getOnboardingRequestDTOMetric(long startTime, long endTime, String metricQuery) {
     SumologicMetricSampleDataRequest request = SumologicMetricSampleDataRequest.builder()
                                                    .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
@@ -148,15 +190,14 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
                                                    .dsl(MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL)
                                                    .build();
 
-    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
-                                                    .dataCollectionRequest(request)
-                                                    .connectorIdentifier(connectorIdentifier)
-                                                    .accountId(accountIdentifier)
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .tracingId(tracingId)
-                                                    .build();
-    return onboardingRequestDTO;
+    return OnboardingRequestDTO.builder()
+        .dataCollectionRequest(request)
+        .connectorIdentifier(connectorIdentifier)
+        .accountId(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .tracingId(tracingId)
+        .build();
   }
 
   @Test
@@ -184,7 +225,6 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
                                                 .query(logQuery)
                                                 .dsl(MetricPackServiceImpl.SUMOLOGIC_LOG_SAMPLE_DSL)
                                                 .build();
-
     OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
                                                     .dataCollectionRequest(request)
                                                     .connectorIdentifier(connectorIdentifier)
@@ -274,10 +314,10 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
   private OnboardingRequestDTO createOnboardingRequestDTOForMetric(long startTime, long endTime, String metricQuery) {
     DataCollectionInfo sumologicMetricDataCollectionInfo =
         SumologicMetricDataCollectionInfo.builder()
-            .groupName("Default_Group")
+            .groupName("onboarding_default_group")
             .metricDefinitions(List.of(SumologicMetricDataCollectionInfo.MetricCollectionInfo.builder()
-                                           .metricName("sample_metric")
-                                           .metricIdentifier("sample_metric")
+                                           .metricName("onboarding_sample_metric")
+                                           .metricIdentifier("onboarding_sample_metric")
                                            .query(metricQuery)
                                            .build()))
             .build();
@@ -291,29 +331,36 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
                                         .startTime(Instant.ofEpochMilli(startTime))
                                         .build();
 
-    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
-                                                    .dataCollectionRequest(request)
-                                                    .connectorIdentifier(connectorIdentifier)
-                                                    .accountId(accountIdentifier)
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .tracingId(tracingId)
-                                                    .build();
-    return onboardingRequestDTO;
+    return OnboardingRequestDTO.builder()
+        .dataCollectionRequest(request)
+        .connectorIdentifier(connectorIdentifier)
+        .accountId(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .tracingId(tracingId)
+        .build();
   }
 
   private void mockOnboardingService(OnboardingRequestDTO onboardingRequestDTO, Object result)
       throws IllegalAccessException {
     OnboardingService mockedOnboardingService = mock(OnboardingService.class);
-    FieldUtils.writeField(healthSourceOnboardingService, "onboardingService", mockedOnboardingService, true);
+    FieldUtils.writeField(
+        elasticSearchLogNextGenHealthSourceHelper, "onboardingService", mockedOnboardingService, true);
+    Map<DataSourceType, NextGenHealthSourceHelper> mockedMap = new HashMap<>(dataSourceTypeNextGenHelperMapBinder);
+    mockedMap.put(DataSourceType.ELASTICSEARCH, elasticSearchLogNextGenHealthSourceHelper);
+
     FieldUtils.writeField(
         healthSourceOnboardingResource, "healthSourceOnboardingService", healthSourceOnboardingService, true);
-    when(mockedOnboardingService.getOnboardingResponse(eq(accountIdentifier), eq(onboardingRequestDTO)))
+    FieldUtils.writeField(healthSourceOnboardingService, "onboardingService", mockedOnboardingService, true);
+    FieldUtils.writeField(healthSourceOnboardingService, "dataSourceTypeNextGenHelperMapBinder", mockedMap, true);
+
+    when(mockedOnboardingService.getOnboardingResponse(
+             eq(onboardingRequestDTO.getAccountId()), eq(onboardingRequestDTO)))
         .thenReturn(OnboardingResponseDTO.builder()
-                        .accountId(accountIdentifier)
-                        .connectorIdentifier(connectorIdentifier)
-                        .orgIdentifier(orgIdentifier)
-                        .projectIdentifier(projectIdentifier)
+                        .accountId(onboardingRequestDTO.getAccountId())
+                        .connectorIdentifier(onboardingRequestDTO.getConnectorIdentifier())
+                        .orgIdentifier(onboardingRequestDTO.getOrgIdentifier())
+                        .projectIdentifier(onboardingRequestDTO.getProjectIdentifier())
                         .result(result)
                         .build());
   }

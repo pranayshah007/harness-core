@@ -17,6 +17,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -120,6 +121,9 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     AsgBlueGreenExecutionPassThroughData asgBlueGreenExecutionPassThroughData =
         (AsgBlueGreenExecutionPassThroughData) executionPassThroughData;
 
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters =
+        (AsgBlueGreenDeployStepParameters) stepElementParameters.getSpec();
+
     String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
 
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest =
@@ -133,6 +137,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .asgName(asgBlueGreenExecutionPassThroughData.getAsgName())
             .firstDeployment(asgBlueGreenExecutionPassThroughData.isFirstDeployment())
             .asgLoadBalancerConfig(asgBlueGreenExecutionPassThroughData.getLoadBalancerConfig())
+            .useAlreadyRunningInstances(ParameterFieldHelper.getBooleanParameterFieldValue(
+                asgBlueGreenDeployStepParameters.getUseAlreadyRunningInstances()))
             .amiImageId(amiImageId)
             .build();
 
@@ -203,7 +209,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         AsgBlueGreenDeployOutcome.builder()
-            .stageAutoScalingGroupContainer(asgBlueGreenDeployResult.getStageAutoScalingGroupContainer())
+            .stageAsg(asgBlueGreenDeployResult.getStageAutoScalingGroupContainer())
+            .prodAsg(asgBlueGreenDeployResult.getProdAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME,
@@ -215,7 +222,13 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(asgBlueGreenDeployOutcome)
+                         .build())
+        .stepOutcome(stepOutcome)
+        .build();
   }
 
   @Override

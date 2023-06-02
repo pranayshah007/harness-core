@@ -39,8 +39,8 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -55,6 +55,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -125,6 +126,7 @@ public class AwsLambdaStateTest extends CategoryTest {
   @Mock private DelegateService delegateService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Spy @InjectMocks AwsLambdaState awsLambdaState;
   private SettingAttribute awsSetting =

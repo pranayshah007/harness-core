@@ -46,7 +46,7 @@ public class GitFileConfigHelperService {
     GitFileConfig newGitFileConfig = createNewGitFileConfig(gitFileConfig);
 
     SettingAttribute settingAttribute =
-        settingsService.getByName(accountId, appId, newGitFileConfig.getConnectorName());
+        settingsService.getConnectorByName(accountId, appId, newGitFileConfig.getConnectorName());
     if (settingAttribute == null) {
       throw new WingsException(ErrorCode.INVALID_ARGUMENT)
           .addParam("args", "No git connector exists with name " + newGitFileConfig.getConnectorName());
@@ -149,6 +149,13 @@ public class GitFileConfigHelperService {
     SettingAttribute settingAttribute = settingsService.get(gitFileConfig.getConnectorId());
     if (null == settingAttribute) {
       throw new InvalidRequestException("Invalid git connector provided.", USER);
+    }
+
+    if (!(settingAttribute.getValue() instanceof GitConfig)) {
+      throw new InvalidRequestException(
+          String.format("Invalid git connector provided [connectorId=%s, name=%s, type=%s]",
+              gitFileConfig.getConnectorId(), settingAttribute.getName(), settingAttribute.getValue().getType()),
+          USER);
     }
 
     GitConfig gitConfig = (GitConfig) settingAttribute.getValue();

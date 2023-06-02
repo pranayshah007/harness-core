@@ -44,7 +44,9 @@ import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -83,6 +85,8 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
   @Mock NGSettingsClient settingsClient;
 
   @Mock HPersistence hPersistence;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
@@ -96,7 +100,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
-        serviceEntityService, accountClient, settingsClient));
+        serviceEntityService, accountClient, settingsClient, environmentEntitySetupUsageHelper));
     environmentRefreshHelper =
         spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);

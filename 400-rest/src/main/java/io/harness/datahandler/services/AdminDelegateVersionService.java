@@ -29,9 +29,9 @@ import org.joda.time.DateTime;
 public class AdminDelegateVersionService {
   private final HPersistence persistence;
 
-  public void setDelegateImageTag(
+  public String setDelegateImageTag(
       final String delegateTag, final String accountId, final boolean validTillNextRelease, final int validFor) {
-    setVersionOverride(accountId, DELEGATE_IMAGE_TAG, delegateTag, validTillNextRelease, validFor);
+    return setVersionOverride(accountId, DELEGATE_IMAGE_TAG, delegateTag, validTillNextRelease, validFor);
   }
 
   public void setUpgraderImageTag(
@@ -49,7 +49,7 @@ public class AdminDelegateVersionService {
     setVersionOverride(accountId, WATCHER_JAR, watcherVersion, validTillNextRelease, validFor);
   }
 
-  private void setVersionOverride(final String accountId, final VersionOverrideType overrideType,
+  private String setVersionOverride(final String accountId, final VersionOverrideType overrideType,
       final String overrideValue, final boolean validTillNextRelease, final int validFor) {
     final Query<VersionOverride> filter = persistence.createQuery(VersionOverride.class)
                                               .filter(VersionOverrideKeys.accountId, accountId)
@@ -66,6 +66,6 @@ public class AdminDelegateVersionService {
       updateOperation.set(VersionOverrideKeys.validUntil, validity.toDate());
       log.info("Setting {} with {} for accountID, will be valid till {} days ", overrideType, overrideValue, validFor);
     }
-    persistence.upsert(filter, updateOperation);
+    return persistence.upsert(filter, updateOperation, HPersistence.upsertReturnNewOptions).getVersion();
   }
 }

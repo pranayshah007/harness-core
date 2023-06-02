@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
@@ -23,6 +24,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
 @FieldNameConstants(innerTypeName = "PrincipalKeys")
+@EqualsAndHashCode
 public abstract class Principal {
   @NotNull protected PrincipalType type;
   /*

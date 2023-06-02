@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.core.beans.GitFullSyncEntityInfo;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -56,7 +57,7 @@ public class GitFullSyncEntityRepositoryCustomImpl implements GitFullSyncEntityR
   }
 
   @Override
-  public List<GitFullSyncEntityInfo> deleteAll(Criteria criteria) {
-    return mongoTemplate.findAllAndRemove(new Query(criteria), GitFullSyncEntityInfo.class);
+  public DeleteResult deleteAll(Criteria criteria) {
+    return mongoTemplate.remove(new Query(criteria), GitFullSyncEntityInfo.class);
   }
 }

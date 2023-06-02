@@ -26,14 +26,19 @@ import io.harness.aggregates.AggregateNgServiceInstanceStats;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
+import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.mapper.ActiveServiceMapper;
+import io.harness.cdng.usage.mapper.ServiceInstancesDateUsageMapper;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -92,6 +97,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
   private static final int PAGE_SIZE_ACTIVE_SERVICE_DOWNLOAD_CSV = 500;
   private static final String[] ACTIVE_SERVICES_CSV_REPORT_HEADER = new String[] {
       "SERVICE", "ORGANIZATIONS", "PROJECTS", "SERVICE ID", "SERVICE INSTANCES", "LAST DEPLOYED", "LICENSES CONSUMED"};
+  private static final String ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG = "Account Identifier cannot be null or empty";
 
   @Inject TimeScaleDAL timeScaleDAL;
   @Inject CDLicenseUsageDAL licenseUsageDAL;
@@ -131,7 +137,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
       throw new InvalidArgumentsException(format("Invalid Module type %s provided, expected CD", module.toString()));
     }
     if (isEmpty(accountIdentifier)) {
-      throw new InvalidArgumentsException("Account Identifier cannot be null or empty");
+      throw new InvalidArgumentsException(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG);
     }
 
     DefaultPageableUsageRequestParams defaultUsageRequestParams =
@@ -143,7 +149,31 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
 
     ActiveServiceFetchData activeServiceFetchData =
         buildActiveServiceFetchData(scope, serviceIdentifier, pageRequest, currentTsInMs);
-    return listActiveServiceDTOS(activeServiceFetchData, pageRequest, currentTsInMs);
+    return listActiveServiceDTOs(activeServiceFetchData, pageRequest, currentTsInMs);
+  }
+
+  public LicenseDateUsageDTO getLicenseDateUsage(
+      String accountIdentifier, LicenseDateUsageParams licenseDateUsageParams, CDLicenseType licenseType) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG);
+    }
+    if (licenseType == null) {
+      throw new InvalidArgumentsException("CD license type cannot be null");
+    }
+
+    LicenseDateUsageFetchData licenseDateUsageFetchData =
+        ServiceInstancesDateUsageMapper.buildServiceInstancesDateUsageFetchData(
+            accountIdentifier, licenseDateUsageParams, licenseType);
+    log.info("Start fetching license date usage, accountIdentifier: {}, fromDate: {}, toDate: {}, reportType: {}",
+        accountIdentifier, licenseDateUsageFetchData.getFromDate(), licenseDateUsageFetchData.getToDate(),
+        licenseDateUsageFetchData.getReportType());
+    Map<String, Integer> licenseUsage = licenseUsageDAL.fetchLicenseDateUsage(licenseDateUsageFetchData);
+
+    return LicenseDateUsageDTO.builder()
+        .licenseUsage(licenseUsage)
+        .reportType(licenseDateUsageFetchData.getReportType())
+        .licenseType(licenseType)
+        .build();
   }
 
   @Override
@@ -157,7 +187,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
           format("Invalid Module type %s provided, expected CD", moduleType.toString()));
     }
     if (isEmpty(accountIdentifier)) {
-      throw new InvalidArgumentsException("Account Identifier cannot be null or empty");
+      throw new InvalidArgumentsException(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG);
     }
 
     Path accountCSVReportDir = createAccountCSVReportDirIfNotExist(accountIdentifier);
@@ -170,7 +200,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
           Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_QUERY_PROPERTY));
       ActiveServiceFetchData activeServiceFetchData =
           buildActiveServiceFetchData(accountIdentifier, pageRequest, reportEndTSInMS);
-      activeServiceDTOS = listActiveServiceDTOS(activeServiceFetchData, pageRequest, reportEndTSInMS);
+      activeServiceDTOS = listActiveServiceDTOs(activeServiceFetchData, pageRequest, reportEndTSInMS);
 
       CSVFormat format = page == 0 ? CSVFormat.DEFAULT.withHeader(ACTIVE_SERVICES_CSV_REPORT_HEADER)
                                    : CSVFormat.DEFAULT.withSkipHeaderRecord();
@@ -184,7 +214,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     return csvReportFilePath.toFile();
   }
 
-  private PageImpl<ActiveServiceDTO> listActiveServiceDTOS(
+  private PageImpl<ActiveServiceDTO> listActiveServiceDTOs(
       ActiveServiceFetchData activeServiceFetchData, Pageable pageRequest, long currentTsInMs) {
     String accountIdentifier = activeServiceFetchData.getAccountIdentifier();
     log.info("Start fetching active services for accountIdentifier: {}, startTSInMs: {}, endTSInMs: {}",

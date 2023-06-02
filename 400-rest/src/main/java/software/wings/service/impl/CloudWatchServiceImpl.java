@@ -12,9 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 import static software.wings.common.VerificationConstants.DEFAULT_GROUP_NAME;
 import static software.wings.common.VerificationConstants.STATIC_CLOUD_WATCH_METRIC_URL;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;

@@ -1,0 +1,23 @@
+# K8S Deployments example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment-2
+  labels:
+    app: myapp-2
+    type: front-end
+spec:
+  template:
+    metadata:
+      name: myapp-pod-2
+      labels:
+        app: myapp-2
+        type: front-end
+    spec:
+      containers:
+        - name: nginx-container
+          dummy: nginx
+  replicas: 1
+  selector:
+    matchLabels:
+      type: front-end

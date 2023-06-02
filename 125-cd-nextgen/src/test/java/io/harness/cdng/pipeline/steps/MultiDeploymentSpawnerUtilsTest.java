@@ -9,6 +9,7 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -211,6 +212,20 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
     Map<String, String> envMap = MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
         environmentYamlV2, infraStructureDefinitionYaml, Scope.ACCOUNT);
     assertThat(envMap.get("environmentRef")).isEqualTo("account.env1");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetMapFromEnvironmentYamlInfraAsNull() {
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("account.env1")).build();
+
+    assertThatThrownBy(
+        () -> MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, null, Scope.ACCOUNT))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Infrastructure Definition is not provided for environment account.env1, Please provide infrastructure definition and try again");
   }
 
   @Test

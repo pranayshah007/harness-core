@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.scm.github;
 
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
+import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -25,10 +26,14 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GithubAppSpec")
+@OneOfField(fields = {"installationId", "installationIdRef"})
+@OneOfField(fields = {"applicationId", "applicationIdRef"})
 @Schema(name = "GithubAppSpec",
     description = "This contains details of the Github API access credentials Specs such as references of private key")
 public class GithubAppSpecDTO implements GithubApiAccessSpecDTO {
-  @NotNull String installationId;
-  @NotNull String applicationId;
+  String installationId;
+  String applicationId;
+  @SecretReference @ApiModelProperty(dataType = "string") SecretRefData installationIdRef;
+  @SecretReference @ApiModelProperty(dataType = "string") SecretRefData applicationIdRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData privateKeyRef;
 }

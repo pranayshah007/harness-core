@@ -11,7 +11,6 @@ import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT_LIMIT_MILLI_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_MEM;
-import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigAsJsonNode;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.getRunStepElementConfigWithVariables;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -24,6 +23,7 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
@@ -41,7 +41,6 @@ import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.NumberNGVariable;
-import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -183,6 +182,49 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(map.get("step_g_run3").getResourceLimitMilliCpu()).isEqualTo(200);
     assertThat(map.get("step_g_run4").getResourceLimitMemoryMiB()).isEqualTo(100);
     assertThat(map.get("step_g_run4").getResourceLimitMilliCpu()).isEqualTo(200);
+
+    ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(steps).build();
+    IntegrationStageConfig integrationStageConfig =
+        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
+    List<String> identifiers =
+        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+    assertThat(identifiers).isNotEmpty();
+    assertThat(identifiers.get(0)).isEqualTo("step-2");
+    assertThat(identifiers.get(1)).isEqualTo("step_g_run2");
+    assertThat(identifiers.get(2)).isEqualTo("step_g_run3");
+    assertThat(identifiers.get(3)).isEqualTo("step_g_run4");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testNestedStepGroup() throws Exception {
+    List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithNestedStepGroup();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeWithStepGroup1();
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+
+    HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
+    assertThat(map.get("step_g_run2").getResourceLimitMemoryMiB()).isEqualTo(150);
+    assertThat(map.get("step_g_run2").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_g_sg1_run3").getResourceLimitMemoryMiB()).isEqualTo(150);
+    assertThat(map.get("step_g_sg1_run3").getResourceLimitMilliCpu()).isEqualTo(200);
+
+    ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(steps).build();
+    IntegrationStageConfig integrationStageConfig =
+        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
+    List<String> identifiers =
+        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+    assertThat(identifiers).isNotEmpty();
+    assertThat(identifiers.get(0)).isEqualTo("step_g_run2");
+    assertThat(identifiers.get(1)).isEqualTo("step_g_sg1_run3");
   }
 
   @Test
@@ -319,11 +361,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
                            .build());
 
     ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(wrapperConfigs).build();
-    IntegrationStageConfig integrationStageConfig =
-        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, List<ConnectorConversionInfo>> stepConnectorRefs =
-        k8InitializeStepUtils.getStepConnectorRefs(integrationStageConfig, ambiance);
+        k8InitializeStepUtils.getStepConnectorRefs(executionElementConfig, ambiance);
     assertThat(stepConnectorRefs.size()).isEqualTo(2);
     assertThat(stepConnectorRefs.containsKey("step-docker")).isTrue();
     assertThat(stepConnectorRefs.containsKey("step-group1_step-docker")).isTrue();

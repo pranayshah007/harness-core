@@ -10,9 +10,9 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sBlueGreenStepInfo;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -23,10 +23,10 @@ import software.wings.sm.states.k8s.K8sBlueGreenDeploy;
 
 import java.util.Map;
 
-public class K8sBlueGreenDeployStepMapperImpl extends StepMapper {
+public class K8sBlueGreenDeployStepMapperImpl extends K8sAbstractStepMapperImpl {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -43,10 +43,11 @@ public class K8sBlueGreenDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sBlueGreenDeploy state = (K8sBlueGreenDeploy) getState(graphNode);
     K8sBlueGreenStepNode stepNode = new K8sBlueGreenStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
     K8sBlueGreenStepInfo stepInfo =
         K8sBlueGreenStepInfo.infoBuilder()
             .pruningEnabled(ParameterField.createValueField(false))

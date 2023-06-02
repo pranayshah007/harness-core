@@ -11,12 +11,19 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.setupusage.InfraDefinitionRefProtoDTOHelper.createInfraDefinitionReferenceProtoDTO;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.InfraDefReference;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.UnexpectedException;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -27,18 +34,25 @@ import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisit
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class InfrastructureEntitySetupUsageHelper {
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject private SetupUsageHelper setupUsageHelper;
   @Inject private EnvironmentService environmentService;
+
+  @Inject private EntitySetupUsageService entitySetupUsageService;
 
   /**
    * Update setup usages for the current infrastructure entity
@@ -54,7 +68,7 @@ public class InfrastructureEntitySetupUsageHelper {
   }
 
   /**
-   * Update setup usages for the current infrastructure entity with referred entities
+   * Update setup usages for the current infrastructure entity with referred entities already provided
    */
   public void updateSetupUsages(@NonNull InfrastructureEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
     if (isEmpty(referredEntities)) {
@@ -75,6 +89,36 @@ public class InfrastructureEntitySetupUsageHelper {
   public void createSetupUsages(@NonNull InfrastructureEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
     if (isNotEmpty(referredEntities)) {
       publishEntitySetupUsage(entity, referredEntities);
+    }
+  }
+
+  public void checkThatInfraIsNotReferredByOthers(InfrastructureEntity infrastructure) {
+    List<EntityDetail> referredByEntities;
+    InfraDefReference identifierRef = InfraDefReference.builder()
+                                          .accountIdentifier(infrastructure.getAccountId())
+                                          .orgIdentifier(infrastructure.getOrgIdentifier())
+                                          .projectIdentifier(infrastructure.getProjectIdentifier())
+                                          .envIdentifier(infrastructure.getEnvIdentifier())
+                                          .identifier(infrastructure.getIdentifier())
+                                          .build();
+    try {
+      Page<EntitySetupUsageDTO> entitySetupUsageDTOS = entitySetupUsageService.listAllEntityUsage(
+          0, 10, infrastructure.getAccountId(), identifierRef.getFullyQualifiedName(), EntityType.INFRASTRUCTURE, "");
+      referredByEntities = entitySetupUsageDTOS != null ? entitySetupUsageDTOS.stream()
+                                                              .map(EntitySetupUsageDTO::getReferredByEntity)
+                                                              .collect(Collectors.toCollection(LinkedList::new))
+                                                        : List.of();
+    } catch (Exception ex) {
+      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
+          infrastructure.getIdentifier(), ex);
+      throw new UnexpectedException(
+          "Error while deleting the infrastructure as was not able to check entity reference records.");
+    }
+    if (isNotEmpty(referredByEntities)) {
+      throw new ReferencedEntityException(String.format(
+          "The infrastructure %s cannot be deleted because it is being referenced in %d %s. To delete your infrastructure, please remove the reference infrastructure from these entities.",
+          infrastructure.getIdentifier(), referredByEntities.size(),
+          referredByEntities.size() > 1 ? "entities" : "entity"));
     }
   }
 

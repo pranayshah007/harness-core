@@ -14,7 +14,9 @@ import static io.harness.rule.OwnerRule.vivekveman;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +27,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -35,6 +38,7 @@ import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -44,7 +48,9 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -55,6 +61,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.assertj.core.util.Maps;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,7 +75,9 @@ import org.mockito.junit.MockitoRule;
 public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+  @Mock private EnvironmentGroupService environmentGroupService;
   @Mock private AccessControlClient accessControlClient;
+  @Mock SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @InjectMocks private final MultiDeploymentSpawnerStep multiDeploymentSpawnerStep = new MultiDeploymentSpawnerStep();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -82,6 +91,22 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
             .handleChildrenResponseInternal(prepareAmbience(), null, Maps.newHashMap("a", stepResponseNotifyData))
             .getStatus())
         .isEqualTo(Status.SUCCEEDED);
+
+    stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SKIPPED).build();
+    StepResponseNotifyData stepResponseNotifyData1 = StepResponseNotifyData.builder().status(Status.SKIPPED).build();
+    assertThat(multiDeploymentSpawnerStep
+                   .handleChildrenResponseInternal(
+                       prepareAmbience(), null, Map.of("a", stepResponseNotifyData, "b", stepResponseNotifyData1))
+                   .getStatus())
+        .isEqualTo(Status.SKIPPED);
+
+    stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SUCCEEDED).build();
+    stepResponseNotifyData1 = StepResponseNotifyData.builder().status(Status.FAILED).build();
+    assertThat(multiDeploymentSpawnerStep
+                   .handleChildrenResponseInternal(
+                       prepareAmbience(), null, Map.of("a", stepResponseNotifyData, "b", stepResponseNotifyData1))
+                   .getStatus())
+        .isEqualTo(Status.FAILED);
   }
 
   @Test
@@ -95,19 +120,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testValidateResourcesWithEnvironmentGroup() {
-    Map<String, String> setupAbstractions = new HashMap<>();
-    setupAbstractions.put(SetupAbstractionKeys.accountId, "account1");
-    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
-    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putAllSetupAbstractions(setupAbstractions)
-                            .setMetadata(ExecutionMetadata.newBuilder()
-                                             .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
-                                                                   .setPrincipalType(PrincipalType.USER)
-                                                                   .setPrincipal("Principal")
-                                                                   .build())
-                                             .build())
-                            .build();
+    Ambiance ambiance = prepareTestAmbiance();
 
     MultiDeploymentStepParameters multiDeploymentStepParameters =
         MultiDeploymentStepParameters.builder()
@@ -115,6 +128,10 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
             .environmentGroup(
                 EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("org.envGroup1")).build())
             .build();
+
+    doReturn(Optional.of(EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("envGroupRef"))))
+        .when(environmentGroupService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     multiDeploymentSpawnerStep.validateResources(ambiance, multiDeploymentStepParameters);
 
     ArgumentCaptor<ResourceScope> resourceScopeCaptor = ArgumentCaptor.forClass(ResourceScope.class);
@@ -133,6 +150,25 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
     assertThat(resource).isNotNull();
     assertThat(resource.getResourceIdentifier()).isEqualTo("envGroup1");
     assertThat(resource.getResourceType()).isEqualTo(NGResourceType.ENVIRONMENT_GROUP);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testValidateResourcesWithEnvironmentGroupDeleted() {
+    Ambiance ambiance = prepareTestAmbiance();
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environmentGroup(
+                EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("org.envGroup1")).build())
+            .build();
+    doReturn(Optional.empty())
+        .when(environmentGroupService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    assertThatThrownBy(() -> multiDeploymentSpawnerStep.validateResources(ambiance, multiDeploymentStepParameters))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Could not find environment group with identifier: org.envGroup1");
   }
 
   @Test
@@ -155,12 +191,20 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT)
-                                               .putAllMatrixValues(Maps.newHashMap("serviceRef", "svc1"))
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT)
+                                .addMatrixCombination(0)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .putAllMatrixValues(Maps.newHashMap("serviceRef", "svc1"))
+                                .build())
                         .build()))
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(1).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -196,11 +240,19 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                                 .setTotalIterations(1)
                                                 .setMatrixMetadata(
                                                     MatrixMetadata.newBuilder()
+                                                        .addMatrixCombination(0)
+                                                        .addAllMatrixKeysToSkipInName(
+                                                            MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
                                                         .setSubType(MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT)
                                                         .putAllMatrixValues(map))
                                                 .build())
                                         .build())
                        .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(1).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -232,7 +284,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(true).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(true)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -254,22 +307,33 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(0)
+                                .putAllMatrixValues(map)
+                                .build())
                         .build()))
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map2)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(1)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map2)
+                                .build())
                         .build()))
                 .setMaxConcurrency(2)
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(2).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -301,7 +365,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(false)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -323,22 +388,33 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(0)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map)
+                                .build())
                         .build()))
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map2)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(1)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map2)
+                                .build())
                         .build()))
                 .setMaxConcurrency(1)
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(2).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -372,7 +448,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(false)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -394,22 +471,33 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .addMatrixCombination(0)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .putAllMatrixValues(map)
+                                .build())
                         .build()))
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map2)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addMatrixCombination(1)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map2)
+                                .build())
                         .build()))
                 .setMaxConcurrency(1)
                 .build());
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(1).envCount(1).build();
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(
+            prepareAmbience(), multiDeploymentSpawnerStepDetailsInfo, "svcEnvCount", StepCategory.STRATEGY);
   }
 
   @Test
@@ -442,5 +530,21 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
 
   private Ambiance prepareAmbience() {
     return Ambiance.newBuilder().build();
+  }
+
+  private Ambiance prepareTestAmbiance() {
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, "account1");
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
+                                               .setPrincipalType(PrincipalType.USER)
+                                               .setPrincipal("Principal")
+                                               .build())
+                         .build())
+        .build();
   }
 }

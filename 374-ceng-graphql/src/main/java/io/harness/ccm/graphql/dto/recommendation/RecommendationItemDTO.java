@@ -32,4 +32,6 @@ public class RecommendationItemDTO {
   String jiraIssueKey;
   String jiraStatus;
   RecommendationDetailsDTO recommendationDetails;
+  String perspectiveId;
+  String perspectiveName;
 }

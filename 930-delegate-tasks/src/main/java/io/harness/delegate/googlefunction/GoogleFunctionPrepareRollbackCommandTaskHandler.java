@@ -70,7 +70,7 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
       CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
       googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
           googleFunctionPrepareRollbackRequest.getGoogleFunctionDeployManifestContent(), createFunctionRequestBuilder,
-          "createFunctionRequest");
+          executionLogCallback, "createFunctionRequest");
 
       // get function name
       String functionName = googleFunctionCommandTaskHelper.getFunctionName(googleFunctionInfraConfig.getProject(),
@@ -84,7 +84,7 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
 
       Optional<Function> existingFunctionOptional =
           googleFunctionCommandTaskHelper.getFunction(functionName, googleFunctionInfraConfig.getGcpConnectorDTO(),
-              googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+              googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(), executionLogCallback);
       if (existingFunctionOptional.isPresent()) {
         // if function exist
         executionLogCallback.saveExecutionLog(format("Fetched Function Details for function %s %n%n",
@@ -107,7 +107,7 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
             LogLevel.INFO);
         Service existingService = googleFunctionCommandTaskHelper.getCloudRunService(cloudRunServiceNameOptional.get(),
             googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
-            googleFunctionInfraConfig.getRegion());
+            googleFunctionInfraConfig.getRegion(), executionLogCallback);
 
         executionLogCallback.saveExecutionLog(
             format("Fetched Service Details for Cloud-Run service %s ..%n%n",

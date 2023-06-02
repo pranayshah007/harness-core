@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
@@ -98,7 +98,7 @@ public class OnFailRollbackAdviserTest extends CategoryTest {
             .failureInfo(FailureInfo.newBuilder().build())
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
             .build();
-    assertTrue(onFailRollbackAdviser.canAdvise(advisingEvent));
+    assertFalse(onFailRollbackAdviser.canAdvise(advisingEvent));
 
     advisingEvent =
         AdvisingEvent.builder()

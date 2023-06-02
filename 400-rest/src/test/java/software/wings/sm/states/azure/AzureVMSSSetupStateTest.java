@@ -15,11 +15,11 @@ import static software.wings.sm.states.azure.AzureVMSSSetupState.AZURE_VMSS_SETU
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -37,6 +37,7 @@ import io.harness.delegate.task.azure.AzureVMSSPreDeploymentData;
 import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeployment;
 import io.harness.delegate.task.azure.response.AzureVMSSSetupTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -79,6 +80,7 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
   @Mock private AzureVMSSStateHelper azureVMSSStateHelper;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Spy @InjectMocks AzureVMSSSetupState state = new AzureVMSSSetupState("Azure VMSS Setup State");
 

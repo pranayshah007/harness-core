@@ -7,6 +7,7 @@
 
 package io.harness.azure.client;
 
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.azure.model.AzureConstants;
 
 import software.wings.helpers.ext.azure.AcrGetRepositoriesResponse;
@@ -46,4 +47,18 @@ public interface AzureContainerRegistryRestClient {
   Call<AcrGetTokenResponse> getAccessToken(@Field(AzureConstants.GRANT_TYPE) String grantType,
       @Field(AzureConstants.REFRESH_TOKEN) String refreshToken, @Field(AzureConstants.SERVICE) String service,
       @Field(AzureConstants.SCOPE) String scope);
+
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v1+json, application/vnd.docker.distribution.manifest.v1+prettyjws, application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json")
+  @GET("/v2/{repository}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV1(@Header("Authorization") String authHeader,
+      @Path(value = "repository", encoded = true) String repository, @Path(value = "tag", encoded = true) String tag);
+
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json")
+  @GET("/v2/{repository}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV2(@Header("Authorization") String authHeader,
+      @Path(value = "repository", encoded = true) String repository, @Path(value = "tag", encoded = true) String tag);
 }

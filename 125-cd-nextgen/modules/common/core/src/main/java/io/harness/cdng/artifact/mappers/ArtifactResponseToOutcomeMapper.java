@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactConfigHelper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
@@ -29,6 +31,7 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
@@ -37,6 +40,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -49,6 +53,7 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
@@ -57,6 +62,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegat
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -77,11 +83,14 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(CDC)
 public class ArtifactResponseToOutcomeMapper {
   private final String IMAGE_PULL_SECRET_START = "<+imagePullSecret.";
+  private final String DOCKER_CONFIG_JSON_START = "<+dockerConfigJsonSecret.";
+
   private final String IMAGE_PULL_SECRET_END = ">";
 
   public ArtifactOutcome toArtifactOutcome(
@@ -169,6 +178,11 @@ public class ArtifactResponseToOutcomeMapper {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
         return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
+            (BambooArtifactDelegateResponse) artifactDelegateResponse;
+        return getBambooArtifactOutcome(bambooArtifactConfig, bambooArtifactDelegateResponse, useDelegateResponse);
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
@@ -226,6 +240,7 @@ public class ArtifactResponseToOutcomeMapper {
         .project(azureArtifactsConfig.getProject().getValue())
         .packageType(azureArtifactsConfig.getPackageType().getValue())
         .scope(azureArtifactsConfig.getScope().getValue())
+        .metadata(useDelegateResponse ? getMetadata(azureArtifactsDelegateResponse) : null)
         .build();
   }
 
@@ -246,9 +261,13 @@ public class ArtifactResponseToOutcomeMapper {
   private static GithubPackagesArtifactOutcome getGithubPackagesArtifactOutcome(
       GithubPackagesArtifactConfig githubPackagesArtifactConfig,
       GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse, boolean useDelegateResponse) {
+    checkSHAEquality(
+        githubPackagesArtifactDelegateResponse, githubPackagesArtifactConfig.getDigest(), useDelegateResponse);
     return GithubPackagesArtifactOutcome.builder()
         .image(useDelegateResponse ? githubPackagesArtifactDelegateResponse.getPackageUrl() : "")
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
+        .dockerConfigJsonSecret(
+            createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
         .packageName(githubPackagesArtifactConfig.getPackageName().getValue())
         .version(useDelegateResponse ? githubPackagesArtifactDelegateResponse.getVersion() : "")
         .connectorRef(githubPackagesArtifactConfig.getConnectorRef().getValue())
@@ -256,6 +275,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(githubPackagesArtifactConfig.getIdentifier())
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .metadata(useDelegateResponse ? getMetadata(githubPackagesArtifactDelegateResponse) : null)
+        .label(getLabels(githubPackagesArtifactDelegateResponse))
+        .digest(githubPackagesArtifactConfig.getDigest() != null ? githubPackagesArtifactConfig.getDigest().getValue()
+                                                                 : null)
         .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
         .build();
   }
@@ -272,6 +295,10 @@ public class ArtifactResponseToOutcomeMapper {
         .repository(googleCloudSourceArtifactConfig.getRepository().getValue())
         .sourceDirectory(googleCloudSourceArtifactConfig.getSourceDirectory().getValue())
         .primaryArtifact(googleCloudSourceArtifactConfig.isPrimaryArtifact())
+        .branch(ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getBranch()))
+        .gitTag(ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getTag()))
+        .commitId(ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getCommitId()))
+        .fetchType(googleCloudSourceArtifactConfig.getFetchType().getName())
         .build();
   }
 
@@ -292,23 +319,8 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
-    Map<String, String> metadata = null;
     String displayName = null;
-    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
-        && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
-      metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
-      if (dockerConfig.getDigest() != null && isNotEmpty(dockerConfig.getDigest().getValue())) {
-        // If user explicitly passes a digest for the image, we validate it against available image's SHA256 digests.
-        String digest = dockerConfig.getDigest().getValue();
-        String sha256V1 = metadata.get(ArtifactMetadataKeys.SHA);
-        String sha256V2 = metadata.get(ArtifactMetadataKeys.SHAV2);
-        if (!digest.equals(sha256V1) && !digest.equals(sha256V2)) {
-          throw new ArtifactServerException(
-              "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: " + digest
-              + "\nAvailable digests:\n" + sha256V1 + " (V1)\n" + sha256V2 + " (V2)");
-        }
-      }
-    }
+    checkSHAEquality(dockerDelegateResponse, dockerConfig.getDigest(), useDelegateResponse);
     if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
         && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
       displayName = dockerDelegateResponse.getBuildDetails().getUiDisplayName();
@@ -327,14 +339,16 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
         .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
         .digest(dockerConfig.getDigest() != null ? dockerConfig.getDigest().getValue() : null)
-        .metadata(metadata)
+        .metadata(useDelegateResponse ? getMetadata(dockerDelegateResponse) : null)
         .build();
   }
 
   private GcrArtifactOutcome getGcrArtifactOutcome(GcrArtifactConfig gcrArtifactConfig,
       GcrArtifactDelegateResponse gcrArtifactDelegateResponse, boolean useDelegateResponse) {
+    checkSHAEquality(gcrArtifactDelegateResponse, gcrArtifactConfig.getDigest(), useDelegateResponse);
     return GcrArtifactOutcome.builder()
         .image(getImageValue(gcrArtifactDelegateResponse))
         .connectorRef(gcrArtifactConfig.getConnectorRef().getValue())
@@ -347,10 +361,16 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.GCR.getDisplayName())
         .primaryArtifact(gcrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
+        .metadata(useDelegateResponse ? getMetadata(gcrArtifactDelegateResponse) : null)
+        .label(getLabels(gcrArtifactDelegateResponse))
+        .digest(gcrArtifactConfig.getDigest() != null ? gcrArtifactConfig.getDigest().getValue() : null)
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
         .build();
   }
+
   private static GarArtifactOutcome getGarArtifactOutcome(GoogleArtifactRegistryConfig googleArtifactRegistryConfig,
       GarDelegateResponse garDelegateResponse, boolean useDelegateResponse) {
+    checkSHAEquality(garDelegateResponse, googleArtifactRegistryConfig.getDigest(), useDelegateResponse);
     return GarArtifactOutcome.builder()
         .version(useDelegateResponse ? garDelegateResponse.getVersion()
                                      : (googleArtifactRegistryConfig.getVersion() != null
@@ -369,13 +389,20 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(googleArtifactRegistryConfig.getIdentifier())
         .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
         .image(getImageValue(garDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(garDelegateResponse) : null)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .label(getLabels(garDelegateResponse))
+        .digest(googleArtifactRegistryConfig.getDigest() != null ? googleArtifactRegistryConfig.getDigest().getValue()
+                                                                 : null)
+        .dockerConfigJsonSecret(
+            createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
         .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
 
   private EcrArtifactOutcome getEcrArtifactOutcome(EcrArtifactConfig ecrArtifactConfig,
       EcrArtifactDelegateResponse ecrArtifactDelegateResponse, boolean useDelegateResponse) {
+    checkSHAEquality(ecrArtifactDelegateResponse, ecrArtifactConfig.getDigest(), useDelegateResponse);
     return EcrArtifactOutcome.builder()
         .image(getImageValue(ecrArtifactDelegateResponse))
         .connectorRef(ecrArtifactConfig.getConnectorRef().getValue())
@@ -388,7 +415,10 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ECR.getDisplayName())
         .primaryArtifact(ecrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
         .label(getEcrLabels(ecrArtifactDelegateResponse))
+        .digest(ecrArtifactConfig.getDigest() != null ? ecrArtifactConfig.getDigest().getValue() : null)
+        .metadata(getMetadata(ecrArtifactDelegateResponse))
         .build();
   }
 
@@ -406,6 +436,7 @@ public class ArtifactResponseToOutcomeMapper {
     String tag = null;
 
     if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
+      checkSHAEquality(artifactDelegateResponse, artifactConfig.getDigest(), useDelegateResponse);
       NexusRegistryDockerConfig nexusRegistryDockerConfig =
           (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
       artifactPath = nexusRegistryDockerConfig.getArtifactPath() != null
@@ -448,6 +479,8 @@ public class ArtifactResponseToOutcomeMapper {
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .displayName(displayName)
+        .digest(artifactConfig.getDigest() != null ? artifactConfig.getDigest().getValue() : null)
+        .label(getLabels(artifactDelegateResponse))
         .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
@@ -479,9 +512,11 @@ public class ArtifactResponseToOutcomeMapper {
 
   private ArtifactoryArtifactOutcome getArtifactoryArtifactOutcome(ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    checkSHAEquality(artifactDelegateResponse, artifactConfig.getDigest(), useDelegateResponse);
     return ArtifactoryArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
+        .imagePath(artifactConfig.getArtifactPath().getValue())
         .connectorRef(artifactConfig.getConnectorRef().getValue())
         .artifactPath(artifactConfig.getArtifactPath().getValue())
         .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
@@ -492,7 +527,10 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
+        .digest(artifactConfig.getDigest() != null ? artifactConfig.getDigest().getValue() : null)
         .label(getArtifactoryLabels(artifactDelegateResponse))
         .build();
   }
@@ -505,17 +543,17 @@ public class ArtifactResponseToOutcomeMapper {
 
     return artifactDelegateResponse.getLabel();
   }
+
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
-    String artifactPath = useDelegateResponse ? artifactDelegateResponse.getArtifactPath()
-                                              : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
-                                                      : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-                                                      ? Paths
-                                                            .get(artifactConfig.getArtifactDirectory().getValue(),
-                                                                artifactConfig.getArtifactPath().getValue())
-                                                            .toString()
-                                                      : artifactConfig.getArtifactPath().getValue());
+    String artifactPath = useDelegateResponse
+        ? artifactDelegateResponse.getArtifactPath()
+        : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
+                : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
+                ? getArtifactoryGenericArtifactPath(
+                    artifactConfig.getArtifactDirectory().getValue(), artifactConfig.getArtifactPath().getValue())
+                : artifactConfig.getArtifactPath().getValue());
 
     return ArtifactoryGenericArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
@@ -535,6 +573,13 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
+  private String getArtifactoryGenericArtifactPath(String artifactDirectory, String artifactPath) {
+    if (StringUtils.isNotEmpty(artifactDirectory) && StringUtils.isNotEmpty(artifactPath)) {
+      return Paths.get(artifactDirectory, artifactPath).toString();
+    }
+    return null;
+  }
+
   private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig) {
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
@@ -545,11 +590,16 @@ public class ArtifactResponseToOutcomeMapper {
 
   private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig,
       CustomArtifactDelegateResponse customArtifactDelegateResponse, boolean useDelegateResponse) {
+    String version = artifactConfig.getVersion().getValue();
+    if (useDelegateResponse) {
+      version = customArtifactDelegateResponse.getVersion() != null ? customArtifactDelegateResponse.getVersion()
+                                                                    : artifactConfig.getVersion().getValue();
+    }
     return CustomArtifactOutcome.builder()
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .version(artifactConfig.getVersion().getValue())
-        .image(artifactConfig.getVersion().getValue())
+        .version(version)
+        .image(version)
         .displayName(useDelegateResponse ? customArtifactDelegateResponse.getBuildDetails().getUiDisplayName() : null)
         .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
@@ -557,6 +607,7 @@ public class ArtifactResponseToOutcomeMapper {
 
   private AcrArtifactOutcome getAcrArtifactOutcome(AcrArtifactConfig acrArtifactConfig,
       AcrArtifactDelegateResponse acrArtifactDelegateResponse, boolean useDelegateResponse) {
+    checkSHAEquality(acrArtifactDelegateResponse, acrArtifactConfig.getDigest(), useDelegateResponse);
     return AcrArtifactOutcome.builder()
         .subscription(acrArtifactConfig.getSubscriptionId().getValue())
         .registry(getRegistryHostnameValue(acrArtifactDelegateResponse))
@@ -569,6 +620,10 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.ACR.getDisplayName())
         .primaryArtifact(acrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
+        .metadata(useDelegateResponse ? getMetadata(acrArtifactDelegateResponse) : null)
+        .label(getLabels(acrArtifactDelegateResponse))
+        .digest(acrArtifactConfig.getDigest() != null ? acrArtifactConfig.getDigest().getValue() : null)
+        .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
         .build();
   }
 
@@ -586,6 +641,20 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
+  private static BambooArtifactOutcome getBambooArtifactOutcome(BambooArtifactConfig bambooArtifactConfig,
+      BambooArtifactDelegateResponse bambooArtifactDelegateResponse, boolean useDelegateResponse) {
+    return BambooArtifactOutcome.builder()
+        .planKey(bambooArtifactConfig.getPlanKey().getValue())
+        .build(getBambooBuild(useDelegateResponse, bambooArtifactDelegateResponse, bambooArtifactConfig))
+        .artifactPath(bambooArtifactConfig.getArtifactPaths().getValue())
+        .connectorRef(bambooArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.BAMBOO.getDisplayName())
+        .identifier(bambooArtifactConfig.getIdentifier())
+        .primaryArtifact(bambooArtifactConfig.isPrimaryArtifact())
+        .metadata(useDelegateResponse ? bambooArtifactDelegateResponse.getBuildDetails().getMetadata() : Map.of())
+        .build();
+  }
+
   public GoogleCloudStorageArtifactOutcome getGoogleCloudStorageArtifactOutcome(
       GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig,
       GoogleCloudStorageArtifactDelegateResponse googleCloudStorageArtifactDelegateResponse,
@@ -598,6 +667,7 @@ public class ArtifactResponseToOutcomeMapper {
         .bucket(googleCloudStorageArtifactConfig.getBucket().getValue())
         .artifactPath(useDelegateResponse ? googleCloudStorageArtifactDelegateResponse.getArtifactPath() : "")
         .primaryArtifact(googleCloudStorageArtifactConfig.isPrimaryArtifact())
+        .metadata(getMetadata(googleCloudStorageArtifactDelegateResponse))
         .build();
   }
 
@@ -615,6 +685,13 @@ public class ArtifactResponseToOutcomeMapper {
         : (jenkinsArtifactConfig.getBuild() != null ? jenkinsArtifactConfig.getBuild().getValue() : null);
   }
 
+  private String getBambooBuild(boolean useDelegateResponse,
+      BambooArtifactDelegateResponse bambooArtifactDelegateResponse, BambooArtifactConfig bambooArtifactConfig) {
+    return useDelegateResponse
+        ? bambooArtifactDelegateResponse.getBuild()
+        : (bambooArtifactConfig.getBuild() != null ? bambooArtifactConfig.getBuild().getValue() : null);
+  }
+
   private String getImageValue(ArtifactDelegateResponse artifactDelegateResponse) {
     if (artifactDelegateResponse == null || artifactDelegateResponse.getBuildDetails() == null) {
       return null;
@@ -625,11 +702,46 @@ public class ArtifactResponseToOutcomeMapper {
   }
 
   private Map<String, String> getLabels(DockerArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(GithubPackagesArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(NexusArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(GarDelegateResponse artifactDelegateResponse) {
     if (artifactDelegateResponse == null || artifactDelegateResponse.getLabel() == null) {
       return Collections.emptyMap();
     }
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getLabel()) ? artifactDelegateResponse.getLabel()
                                                                           : Collections.emptyMap();
+  }
+
+  private Map<String, String> getLabels(GcrArtifactDelegateResponse gcrArtifactDelegateResponse) {
+    if (gcrArtifactDelegateResponse == null || isEmpty(gcrArtifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return gcrArtifactDelegateResponse.getLabel();
+  }
+
+  private Map<String, String> getLabels(AcrArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || EmptyPredicate.isEmpty(artifactDelegateResponse.getLabel())) {
+      return Collections.emptyMap();
+    }
+    return artifactDelegateResponse.getLabel();
   }
 
   private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {
@@ -652,5 +764,26 @@ public class ArtifactResponseToOutcomeMapper {
 
   private String createImagePullSecret(String artifactKey) {
     return String.format("%s%s%s", IMAGE_PULL_SECRET_START, artifactKey, IMAGE_PULL_SECRET_END);
+  }
+
+  private String createDockerConfigJsonSecret(String artifactKey) {
+    return String.format("%s%s%s", DOCKER_CONFIG_JSON_START, artifactKey, IMAGE_PULL_SECRET_END);
+  }
+
+  private void checkSHAEquality(ArtifactDelegateResponse artifactDelegateResponse, ParameterField<String> digestField,
+      boolean useDelegateResponse) {
+    if (!ArtifactConfigHelper.checkNullOrInput(digestField)) {
+      String digest = (String) digestField.fetchFinalValue();
+      Map<String, String> metaData = getMetadata(artifactDelegateResponse);
+      if (useDelegateResponse && EmptyPredicate.isNotEmpty(metaData)) {
+        String sha = metaData.get(ArtifactMetadataKeys.SHA);
+        String shaV2 = metaData.get(ArtifactMetadataKeys.SHAV2);
+        if (!digest.equals(sha) && !digest.equals(shaV2)) {
+          throw new ArtifactServerException(
+              "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: " + digest
+              + "\nAvailable digests:\n" + sha + " (V1)\n" + shaV2 + " (V2)");
+        }
+      }
+    }
   }
 }

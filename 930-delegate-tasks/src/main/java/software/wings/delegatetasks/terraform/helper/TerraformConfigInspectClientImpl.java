@@ -46,9 +46,10 @@ public class TerraformConfigInspectClientImpl implements TerraformConfigInspectC
   private static final String jsonArg = "--json";
 
   @Override
-  public List<String> parseFieldsUnderBlock(String directory, String category, boolean useLatestVersion) {
+  public List<String> parseFieldsUnderBlock(
+      String directory, String category, TerraformConfigInspectVersion terraformConfigInspectVersion) {
     try {
-      String config = executeTerraformInspect(directory, useLatestVersion);
+      String config = executeTerraformInspect(directory, terraformConfigInspectVersion);
       JSONObject parsedConfig = new JSONObject(config);
       JSONObject blockVariables = parsedConfig.getJSONObject(category);
       List<String> fields = new ArrayList<>(blockVariables.keySet());
@@ -64,16 +65,10 @@ public class TerraformConfigInspectClientImpl implements TerraformConfigInspectC
     }
   }
 
-  String executeTerraformInspect(final String directory, final boolean useLatestVersion) {
-    String cmd = getTerraformConfigInspectPath(useLatestVersion);
+  String executeTerraformInspect(
+      final String directory, final TerraformConfigInspectVersion terraformConfigInspectVersion) {
+    String cmd = InstallUtils.getPath(TERRAFORM_CONFIG_INSPECT, terraformConfigInspectVersion);
     return executeShellCommand(HarnessStringUtils.join(SPACE, cmd, jsonArg, directory));
-  }
-
-  private String getTerraformConfigInspectPath(final boolean useLatestVersion) {
-    if (useLatestVersion) {
-      return InstallUtils.getLatestVersionPath(TERRAFORM_CONFIG_INSPECT);
-    }
-    return InstallUtils.getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_0);
   }
 
   /*

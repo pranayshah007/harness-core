@@ -48,6 +48,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
@@ -88,7 +89,6 @@ import software.wings.beans.SumoConfig;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.TaskType;
 import software.wings.beans.ValidationResult;
-import software.wings.beans.WinRmCommandParameter;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.beans.ce.CEAzureConfig;
@@ -198,6 +198,7 @@ public class SettingValidationService {
         sshVaultConfig = sshVaultService.getSSHVaultConfig(settingAttribute.getAccountId(),
             ((HostConnectionAttributes) settingAttribute.getValue()).getSshVaultConfigId());
       }
+      settingServiceHelper.setFeatureFlagIfRequired(settingValue, settingAttribute.getAccountId());
       ConnectivityValidationDelegateRequest request = ConnectivityValidationDelegateRequest.builder()
                                                           .encryptedDataDetails(encryptionDetails)
                                                           .settingAttribute(settingAttribute.toDTO())
@@ -296,6 +297,7 @@ public class SettingValidationService {
 
     SettingValue settingValue = settingAttribute.getValue();
     settingServiceHelper.setCertValidationRequired(settingAttribute.getAccountId(), settingValue);
+    settingServiceHelper.setFeatureFlagIfRequired(settingValue, settingAttribute.getAccountId());
     List<EncryptedDataDetail> encryptedDataDetails = fetchEncryptionDetails(settingValue);
 
     if (settingValue instanceof GcpConfig) {

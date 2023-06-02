@@ -83,7 +83,7 @@ public class SecretsManagerRBACServiceImpl implements SecretsManagerRBACService 
     UsageRestrictions restrictionsFromUserPermissions = restrictionsAndAppEnvMap.getUsageRestrictions();
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId);
+    Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId, accountId);
 
     return usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appId, envId, false,
         scopedEntity.getUsageRestrictions(), restrictionsFromUserPermissions, appEnvMapFromPermissions,

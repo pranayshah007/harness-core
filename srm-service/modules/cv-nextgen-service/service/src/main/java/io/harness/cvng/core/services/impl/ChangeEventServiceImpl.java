@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.QueryChecks.COUNT;
@@ -17,15 +19,20 @@ import static dev.morphia.aggregation.Group.id;
 
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
+import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.beans.MSHealthReport;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO.CategoryCountDetails;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.beans.change.ChangeSummaryDTO.CategoryCountDetails;
+import io.harness.cvng.beans.change.CustomChangeEvent;
+import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.ChangeTimelineBuilder;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
@@ -38,10 +45,14 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.ChangeEventService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
+import io.harness.cvng.utils.MathUtils;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -52,9 +63,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import com.mongodb.ReadPreference;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
-import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.time.Duration;
@@ -66,6 +78,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,6 +96,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @Inject ActivityService activityService;
   @Inject HPersistence hPersistence;
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject MSHealthReportService msHealthReportService;
+  @Inject FeatureFlagService featureFlagService;
 
   @Override
   public Boolean register(ChangeEventDTO changeEventDTO) {
@@ -125,6 +140,27 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     if (StringUtils.isEmpty(changeEventDTO.getChangeSourceIdentifier())) {
       changeEventDTO.setChangeSourceIdentifier(changeSourceOptional.get().getIdentifier());
     }
+    activityService.upsert(transformer.getEntity(changeEventDTO));
+    return true;
+  }
+
+  @Override
+  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String channelUrl) {
+    register(changeEventDTO);
+
+    MSHealthReport msHealthReport =
+        msHealthReportService.getMSHealthReport(ProjectParams.builder()
+                                                    .accountIdentifier(changeEventDTO.getAccountId())
+                                                    .orgIdentifier(changeEventDTO.getOrgIdentifier())
+                                                    .projectIdentifier(changeEventDTO.getProjectIdentifier())
+                                                    .build(),
+            changeEventDTO.getMonitoredServiceIdentifier());
+    CustomChangeEvent customChangeEvent =
+        ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent();
+    customChangeEvent.setChannelUrl(channelUrl);
+    customChangeEvent.setMsHealthReport(msHealthReport);
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).setCustomChangeEvent(customChangeEvent);
+
     activityService.upsert(transformer.getEntity(changeEventDTO));
     return true;
   }
@@ -184,7 +220,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       String searchText, List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
       Instant startTime, Instant endTime, Integer pointCount, boolean isMonitoredServiceIdentifierScoped) {
     Map<ChangeCategory, Map<Integer, TimeRangeDetail>> categoryMilliSecondFromStartDetailMap =
-        Arrays.stream(ChangeCategory.values()).collect(Collectors.toMap(Function.identity(), c -> new HashMap<>()));
+        Arrays.stream(ChangeCategory.values())
+            .collect(Collectors.toMap(Function.identity(), c -> new HashMap<>(), (u, v) -> u, LinkedHashMap::new));
 
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
 
@@ -206,6 +243,11 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           timeRangeDetail.incrementCount(timelineObject.count);
           milliSecondFromStartDetailMap.put(timelineObject.id.index, timeRangeDetail);
         });
+    if (!featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
+      categoryMilliSecondFromStartDetailMap.remove(ChangeCategory.CHAOS_EXPERIMENT);
+    }
+
     ChangeTimelineBuilder changeTimelineBuilder = ChangeTimeline.builder();
     categoryMilliSecondFromStartDetailMap.forEach(
         (key, value) -> changeTimelineBuilder.categoryTimeline(key, new ArrayList<>(value.values())));
@@ -217,6 +259,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<String> environmentIdentifiers, List<String> monitoredServiceIdentifiers,
       boolean isMonitoredServiceIdentifierScoped, String searchText, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount) {
+    startTime = roundDownTo5MinBoundary(startTime);
+    endTime = roundUpTo5MinBoundary(endTime);
     if (isNotEmpty(monitoredServiceIdentifiers)) {
       Preconditions.checkState(isEmpty(serviceIdentifiers) && isEmpty(environmentIdentifiers),
           "serviceIdentifier, envIdentifier filter can not be used with monitoredServiceIdentifier filter");
@@ -239,27 +283,33 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     return getTimeline(monitoredServiceParams, List.of(monitoredServiceIdentifier), searchText, null, changeSourceTypes,
         trendStartTime, trendEndTime, CVNextGenConstants.CVNG_TIMELINE_BUCKET_COUNT, false);
   }
+
   private Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams,
       List<String> monitoredServiceIdentifiers, String searchText, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount,
       boolean isMonitoredServiceIdentifierScoped) {
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
-    return hPersistence.getDatastore(Activity.class)
-        .createAggregation(Activity.class)
-        .match(createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText, changeCategories,
-            changeSourceTypes, isMonitoredServiceIdentifierScoped))
-        .group(id(grouping("type", "type"),
-                   grouping("index",
-                       accumulator("$floor",
-                           accumulator("$divide",
-                               Arrays.asList(accumulator("$subtract",
-                                                 Arrays.asList("$eventTime", new Date(startTime.toEpochMilli()))),
-                                   timeRangeDuration.toMillis()))))),
-            grouping("count", accumulator("$sum", 1)))
-        .aggregate(TimelineObject.class,
-            AggregationOptions.builder()
-                .maxTime(hPersistence.getMaxTimeMs(Activity.class), TimeUnit.MILLISECONDS)
-                .build());
+    AggregationPipeline aggregationPipeline =
+        hPersistence.getDatastore(ActivityBucket.class)
+            .createAggregation(ActivityBucket.class)
+            .match(createQueryForActivityBucket(startTime, endTime, projectParams, monitoredServiceIdentifiers,
+                searchText, changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped))
+            .group(id(grouping("type", "type"),
+                       grouping("index",
+                           accumulator("$floor",
+                               accumulator("$divide",
+                                   Arrays.asList(accumulator("$subtract",
+                                                     Arrays.asList("$bucketTime", new Date(startTime.toEpochMilli()))),
+                                       timeRangeDuration.toMillis()))))),
+                grouping("count", accumulator("$sum", "count")));
+    int limit = hPersistence.getMaxDocumentLimit(ActivityBucket.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    return aggregationPipeline.aggregate(TimelineObject.class,
+        AggregationOptions.builder()
+            .maxTime(hPersistence.getMaxTimeMs(ActivityBucket.class), TimeUnit.MILLISECONDS)
+            .build());
   }
   @VisibleForTesting
   Iterator<TimelineObject> getTimelineObject(ProjectParams projectParams, List<String> serviceIdentifiers,
@@ -298,7 +348,10 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime, boolean isMonitoredServiceIdentifierScoped) {
     Map<ChangeCategory, Map<Integer, Integer>> changeCategoryToIndexToCount =
-        Arrays.stream(ChangeCategory.values()).collect(Collectors.toMap(Function.identity(), c -> new HashMap<>()));
+        Arrays.stream(ChangeCategory.values())
+            .collect(Collectors.toMap(Function.identity(), c -> new HashMap<>(), (u, v) -> u, LinkedHashMap::new));
+    startTime = roundDownTo5MinBoundary(startTime);
+    endTime = roundUpTo5MinBoundary(endTime);
     getTimelineObject(projectParams, monitoredServiceIdentifiers, null, changeCategories, changeSourceTypes,
         startTime.minus(Duration.between(startTime, endTime)), endTime, 2, isMonitoredServiceIdentifierScoped)
         .forEachRemaining(timelineObject -> {
@@ -309,15 +362,21 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           countSoFar = countSoFar + timelineObject.count;
           changeCategoryToIndexToCount.get(changeCategory).put(timelineObject.id.index, countSoFar);
         });
+    if (!featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
+      changeCategoryToIndexToCount.remove(ChangeCategory.CHAOS_EXPERIMENT);
+    }
+
     long currentTotalCount =
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(1, 0)).mapToLong(num -> num).sum();
     long previousTotalCount =
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(0, 0)).mapToLong(num -> num).sum();
-    CategoryCountDetails total = CategoryCountDetails.builder()
-                                     .count(currentTotalCount)
-                                     .countInPrecedingWindow(previousTotalCount)
-                                     .percentageChange(getPercentageChange(currentTotalCount, previousTotalCount))
-                                     .build();
+    CategoryCountDetails total =
+        CategoryCountDetails.builder()
+            .count(currentTotalCount)
+            .countInPrecedingWindow(previousTotalCount)
+            .percentageChange(MathUtils.getPercentageChange(currentTotalCount, previousTotalCount))
+            .build();
 
     return ChangeSummaryDTO.builder()
         .total(total)
@@ -326,48 +385,25 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             -> CategoryCountDetails.builder()
                    .count(entry.getValue().getOrDefault(1, 0))
                    .countInPrecedingWindow(entry.getValue().getOrDefault(0, 0))
-                   .percentageChange(
-                       getPercentageChange(entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
-                   .build())))
+                   .percentageChange(MathUtils.getPercentageChange(
+                       entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
+                   .build(),
+            (u, v) -> u, LinkedHashMap::new)))
         .build();
-  }
-
-  private double getPercentageChange(long current, long previous) {
-    if (previous == 0 && current > 0) {
-      return 100;
-    } else if (previous == 0 && current == 0) {
-      return 0;
-    }
-    return ((double) (current - previous) * 100) / previous;
-  }
-
-  private Criteria[] getCriteriasForInfraEvents(Query<Activity> q, Instant startTime, Instant endTime,
-      ProjectParams projectParams, List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes) {
-    List<Criteria> criterias = getCriterias(q, changeCategories, changeSourceTypes, startTime, endTime);
-    criterias.addAll(Arrays.asList(q.criteria(ActivityKeys.accountId).equal(projectParams.getAccountIdentifier()),
-        q.criteria(ActivityKeys.orgIdentifier).equal(projectParams.getOrgIdentifier()),
-        q.criteria(ActivityKeys.projectIdentifier).equal(projectParams.getProjectIdentifier()),
-        q.criteria(
-             KubernetesClusterActivityKeys.relatedAppServices + "." + ServiceEnvironmentKeys.monitoredServiceIdentifier)
-            .in(CollectionUtils.emptyIfNull(monitoredServiceIdentifiers))));
-    return criterias.toArray(new Criteria[criterias.size()]);
-  }
-
-  private Criteria[] getCriteriasForAppEvents(Query<Activity> q, Instant startTime, Instant endTime,
-      ProjectParams projectParams, List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes) {
-    List<Criteria> criterias = getCriterias(q, changeCategories, changeSourceTypes, startTime, endTime);
-    criterias.addAll(Arrays.asList(q.criteria(ActivityKeys.accountId).equal(projectParams.getAccountIdentifier()),
-        q.criteria(ActivityKeys.orgIdentifier).equal(projectParams.getOrgIdentifier()),
-        q.criteria(ActivityKeys.projectIdentifier).equal(projectParams.getProjectIdentifier()),
-        q.criteria(ActivityKeys.monitoredServiceIdentifier)
-            .in(CollectionUtils.emptyIfNull(monitoredServiceIdentifiers))));
-    return criterias.toArray(new Criteria[criterias.size()]);
   }
 
   private List<Criteria> getCriterias(Query<Activity> q, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime) {
+    Stream<ChangeSourceType> changeSourceTypeStream = getChangeSourceEvent(changeCategories, changeSourceTypes);
+    return new ArrayList<>(Arrays.asList(
+        q.criteria(ActivityKeys.type)
+            .in(changeSourceTypeStream.map(ChangeSourceType::getActivityType).collect(Collectors.toList())),
+        q.criteria(ActivityKeys.eventTime).lessThan(endTime),
+        q.criteria(ActivityKeys.eventTime).greaterThanOrEq(startTime)));
+  }
+
+  private Stream<ChangeSourceType> getChangeSourceEvent(
+      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes) {
     Stream<ChangeSourceType> changeSourceTypeStream = Arrays.stream(ChangeSourceType.values());
     if (CollectionUtils.isNotEmpty(changeCategories)) {
       changeSourceTypeStream = changeSourceTypeStream.filter(
@@ -376,11 +412,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     if (CollectionUtils.isNotEmpty(changeSourceTypes)) {
       changeSourceTypeStream = changeSourceTypeStream.filter(changeSourceTypes::contains);
     }
-    return new ArrayList<>(Arrays.asList(
-        q.criteria(ActivityKeys.type)
-            .in(changeSourceTypeStream.map(ChangeSourceType::getActivityType).collect(Collectors.toList())),
-        q.criteria(ActivityKeys.eventTime).lessThan(endTime),
-        q.criteria(ActivityKeys.eventTime).greaterThanOrEq(startTime)));
+    return changeSourceTypeStream;
   }
 
   private Query<Activity> createQuery(Instant startTime, Instant endTime, ProjectParams projectParams,
@@ -399,6 +431,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         query, projectParams, monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped);
     query.and(criteria.toArray(new Criteria[criteria.size()]));
     query.and(criteriasForAppAndInfraEvents);
+    query.useReadPreference(ReadPreference.secondaryPreferred());
     return query;
   }
 
@@ -446,27 +479,60 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                       .in(monitoredServiceIdentifiers)))};
     }
   }
+
+  private Query<ActivityBucket> createQueryForActivityBucket(Instant startTime, Instant endTime,
+      ProjectParams projectParams, List<String> monitoredServiceIdentifiers, String searchText,
+      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
+      boolean isMonitoredServiceIdentifierScoped) {
+    Query<ActivityBucket> query = hPersistence.createQuery(ActivityBucket.class);
+    Stream<ChangeSourceType> changeSourceTypeStream = getChangeSourceEvent(changeCategories, changeSourceTypes);
+    List<Criteria> criteria = new ArrayList<>(Arrays.asList(
+        query.criteria(ActivityBucketKeys.type)
+            .in(changeSourceTypeStream.map(ChangeSourceType::getActivityType).collect(Collectors.toList())),
+        query.criteria(ActivityBucketKeys.bucketTime).lessThan(endTime),
+        query.criteria(ActivityBucketKeys.bucketTime).greaterThanOrEq(startTime)));
+    Criteria[] criteriaForAppAndInfraEvents = getCriteriaForAppAndInfraEventsFromActivityBucket(
+        query, projectParams, monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped);
+    query.and(criteria.toArray(new Criteria[0]));
+    query.and(criteriaForAppAndInfraEvents);
+    query.useReadPreference(ReadPreference.secondaryPreferred());
+    return query;
+  }
+  private Criteria[] getCriteriaForAppAndInfraEventsFromActivityBucket(Query<?> query, ProjectParams projectParams,
+      List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped) {
+    if (isMonitoredServiceIdentifierScoped) {
+      List<ResourceParams> monitoredServiceIdentifiersWithParams =
+          ScopedInformation.getResourceParamsFromScopedIdentifiers(monitoredServiceIdentifiers);
+      Criteria[] criteria = new Criteria[monitoredServiceIdentifiersWithParams.size()];
+      for (int i = 0; i < monitoredServiceIdentifiersWithParams.size(); i++) {
+        criteria[i] = query.and(query.criteria(ActivityBucketKeys.accountId)
+                                    .equal(monitoredServiceIdentifiersWithParams.get(i).getAccountIdentifier()),
+            query.criteria(ActivityBucketKeys.orgIdentifier)
+                .equal(monitoredServiceIdentifiersWithParams.get(i).getOrgIdentifier()),
+            query.criteria(ActivityBucketKeys.projectIdentifier)
+                .equal(monitoredServiceIdentifiersWithParams.get(i).getProjectIdentifier()),
+            query.criteria(ActivityBucketKeys.monitoredServiceIdentifiers)
+                .equal(monitoredServiceIdentifiersWithParams.get(i).getIdentifier()));
+      }
+      return new Criteria[] {query.or(criteria)};
+    } else {
+      return new Criteria[] {
+          query.and(query.criteria(ActivityBucketKeys.accountId).equal(projectParams.getAccountIdentifier()),
+              query.criteria(ActivityBucketKeys.orgIdentifier).equal(projectParams.getOrgIdentifier()),
+              query.criteria(ActivityBucketKeys.projectIdentifier).equal(projectParams.getProjectIdentifier()),
+              query.criteria(ActivityBucketKeys.monitoredServiceIdentifiers).in(monitoredServiceIdentifiers))};
+    }
+  }
   @VisibleForTesting
   Query<Activity> createTextSearchQuery(Instant startTime, Instant endTime, String searchText,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes) {
-    Query<Activity> query = hPersistence.createQuery(Activity.class)
-                                .search(searchText)
-                                .field(ActivityKeys.eventTime)
-                                .lessThan(endTime)
-                                .field(ActivityKeys.eventTime)
-                                .greaterThanOrEq(startTime)
-                                .disableValidation();
-    Stream<ChangeSourceType> changeSourceTypeStream = Arrays.stream(ChangeSourceType.values());
-    if (CollectionUtils.isNotEmpty(changeCategories)) {
-      changeSourceTypeStream = changeSourceTypeStream.filter(
-          changeSourceType -> changeCategories.contains(changeSourceType.getChangeCategory()));
-    }
-    if (CollectionUtils.isNotEmpty(changeSourceTypes)) {
-      changeSourceTypeStream = changeSourceTypeStream.filter(changeSourceTypes::contains);
-    }
-    query = query.field(ActivityKeys.type)
-                .in(changeSourceTypeStream.map(ChangeSourceType::getActivityType).collect(Collectors.toList()));
-    return query;
+    return hPersistence.createQuery(Activity.class)
+        .search(searchText)
+        .field(ActivityKeys.eventTime)
+        .lessThan(endTime)
+        .field(ActivityKeys.eventTime)
+        .greaterThanOrEq(startTime)
+        .disableValidation();
   }
 
   @VisibleForTesting

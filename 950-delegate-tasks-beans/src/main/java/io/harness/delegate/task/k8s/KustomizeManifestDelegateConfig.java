@@ -7,8 +7,12 @@
 
 package io.harness.delegate.task.k8s;
 
-import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.expression.Expression;
+
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,6 +23,7 @@ public class KustomizeManifestDelegateConfig implements ManifestDelegateConfig {
   String pluginPath;
   String kustomizeDirPath;
   String kustomizeYamlFolderPath;
+  @Expression(ALLOW_SECRETS) Map<String, String> commandFlags;
 
   @Override
   public ManifestType getManifestType() {

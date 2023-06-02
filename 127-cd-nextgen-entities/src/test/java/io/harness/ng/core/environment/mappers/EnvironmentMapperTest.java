@@ -44,12 +44,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class EnvironmentMapperTest extends CategoryTest {
-  EnvironmentRequestDTO environmentRequestDTO;
-  EnvironmentResponseDTO environmentResponseDTO;
-  Environment requestEnvironment;
-  Environment responseEnvironment;
-  List<NGTag> tags;
-  NGEnvironmentConfig ngEnvironmentConfig;
+  private EnvironmentRequestDTO environmentRequestDTO;
+  private EnvironmentResponseDTO environmentResponseDTO;
+  private Environment requestEnvironment;
+  private Environment responseEnvironment;
+  private List<NGTag> tags;
+  private NGEnvironmentConfig ngEnvironmentConfig;
 
   @Before
   public void setUp() {
@@ -323,7 +323,7 @@ public class EnvironmentMapperTest extends CategoryTest {
 
     List<EnvironmentResponse> environmentResponseList = EnvironmentMapper.toResponseWrapper(Arrays.asList(env1, env2));
     assertThat(environmentResponseList.size()).isEqualTo(2);
-    assertThat(environmentResponseList.get(0).getEnvironment().getVersion()).isEqualTo(10l);
+    assertThat(environmentResponseList.get(0).getEnvironment().getVersion()).isEqualTo(10L);
     assertThat(environmentResponseList.get(1).getEnvironment().getVersion()).isEqualTo(20L);
   }
 
@@ -344,14 +344,14 @@ public class EnvironmentMapperTest extends CategoryTest {
                                   .build();
     String yaml = EnvironmentMapper.toYaml(cfg);
     assertThat(yaml).isEqualTo("environment:\n"
-        + "  orgIdentifier: \"orgId\"\n"
-        + "  projectIdentifier: \"projId\"\n"
-        + "  identifier: \"id1\"\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projId\n"
+        + "  identifier: id1\n"
         + "  tags:\n"
-        + "    k1: \"v2\"\n"
-        + "  name: \"name\"\n"
-        + "  description: \"desc\"\n"
-        + "  type: \"PreProduction\"\n");
+        + "    k1: v2\n"
+        + "  name: name\n"
+        + "  description: desc\n"
+        + "  type: PreProduction\n");
   }
 
   @Test
@@ -437,6 +437,6 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
-            "Found mismatch in following fields between yaml and requested value respectively: {Environment type=[Production, PreProduction], Org Identifier=[ORG_ID, null], Project Identifier =[PROJECT_ID, invalidProjectId], Environment Identifier=[ENV, invalidId], Environment name=[envtest, invalidName]}");
+            "For the environment [name: invalidName, identifier: invalidId], Found mismatch in following fields between yaml and requested value respectively: {Environment type=[Production, PreProduction], Org Identifier=[ORG_ID, null], Project Identifier =[PROJECT_ID, invalidProjectId], Environment Identifier=[ENV, invalidId], Environment name=[envtest, invalidName]}");
   }
 }

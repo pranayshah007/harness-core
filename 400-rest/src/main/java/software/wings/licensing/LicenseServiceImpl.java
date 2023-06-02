@@ -10,10 +10,10 @@ package software.wings.licensing;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.validation.Validator.notNullCheck;
 
-import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -23,9 +23,7 @@ import io.harness.configuration.DeployVariant;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
-import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
@@ -81,8 +79,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.joda.time.DateTime;
 
 /**
  *
@@ -93,8 +91,15 @@ import org.joda.time.DateTime;
 @Slf4j
 @TargetModule(HarnessModule._820_PLATFORM_SERVICE)
 public class LicenseServiceImpl implements LicenseService {
-  private static final Long TEST_FF_NUMBER_OF_CLIENT_MAUS = 1000000L;
-  private static final int TEST_FF_NUMBER_OF_USERS = 50;
+  private static final Long FREE_CLIENT_MAUS = 25000L;
+  private static final Long TEAM_CLIENT_MAUS = 100000L;
+  private static final Long ENTERPRISE_CLIENT_MAUS = 1000000L;
+  private static final String PREMIER = "PRMR";
+  private static final String TEAM = "TEAM";
+  private static final String TEAM_SHORT = "TM";
+  private static final String ENTERPRISE = "ENTERPRISE";
+  private static final String ENTERPRISE_SHORT = "EN";
+  private static final String PAID = "PAID";
   private static final String EMAIL_SUBJECT_ACCOUNT_EXPIRED = "Harness License Expired!";
   private static final String EMAIL_SUBJECT_ACCOUNT_ABOUT_TO_EXPIRE = "Harness License about to Expire!";
 
@@ -514,7 +519,7 @@ public class LicenseServiceImpl implements LicenseService {
         throw new InvalidRequestException(msg);
       }
 
-      try (HIterator<Account> accountList = new HIterator<>(query.fetch())) {
+      try (HIterator<Account> accountList = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
         accountList.forEach(account -> {
           if (!account.getAccountName().equalsIgnoreCase("Global")) {
             byte[] encryptedLicenseInfo = Base64.getDecoder().decode(encryptedLicenseInfoBase64String.getBytes());
@@ -633,9 +638,26 @@ public class LicenseServiceImpl implements LicenseService {
 
   @Override
   public boolean updateLicenseForProduct(
-      String productCode, String accountId, Integer orderQuantity, long expirationTime) {
+      String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension) {
     final MarketPlaceConfig marketPlaceConfig = mainConfiguration.getMarketPlaceConfig();
-    if (marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)) {
+    log.info("productCode:{}, accountId:{}, orderQuantity:{}, expirationTime:{}, dimension:{}", productCode, accountId,
+        orderQuantity, expirationTime, dimension);
+
+    boolean premiumSupport = hasPremierSupport(dimension);
+    Edition plan = getDimensionPlan(dimension);
+    LicenseType licenseType = getModuleLicenseType(plan);
+    // HARNESS_TEST_2_PRODUCT_CODE is an internal way for us to test dimensions that belong not to the same listing
+    // because when published, prices are high
+    String HARNESS_TEST_2_PRODUCT_CODE = "9g3jcw6iic4tpylipcti8vwcx";
+
+    log.info("plan:{}, premiumSupport:{}, licenseType:{}", plan, premiumSupport, licenseType);
+    if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)
+        || marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)
+        || marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)
+        || marketPlaceConfig.getAwsMarketPlaceCiProductCode().equals(productCode)
+        || marketPlaceConfig.getAwsMarketPlaceSrmProductCode().equals(productCode)
+        || marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)
+        || HARNESS_TEST_2_PRODUCT_CODE.equals(productCode)) {
       updateAccountLicense(accountId,
           LicenseInfo.builder()
               .accountType(AccountType.PAID)
@@ -643,28 +665,76 @@ public class LicenseServiceImpl implements LicenseService {
               .accountStatus(AccountStatus.ACTIVE)
               .expiryTime(expirationTime)
               .build());
-    } else if (marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)) {
-      updateCeLicense(
-          accountId, CeLicenseInfo.builder().expiryTime(expirationTime).licenseType(CeLicenseType.PAID).build());
-    } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
-      adminLicenseHttpClient.createAccountLicense(accountId,
-          CFModuleLicenseDTO.builder()
-              .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)
-              .numberOfUsers(TEST_FF_NUMBER_OF_USERS)
-              .accountIdentifier(accountId)
-              .moduleType(ModuleType.CF)
-              .edition(Edition.ENTERPRISE)
-              .licenseType(LicenseType.PAID)
-              .status(LicenseStatus.ACTIVE)
-              .startTime(DateTime.now().getMillis())
-              .expiryTime(expirationTime)
-              .build());
+
     } else {
       log.error("Invalid AWS productcode received:[{}],", productCode);
       return false;
     }
     accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
     return true;
+  }
+
+  // Gets plan from dimension string
+  public Edition getDimensionPlan(String dimension) {
+    Edition plan = null;
+    if (StringUtils.isNotBlank(dimension)) {
+      String[] result = dimension.split("_");
+      if (result.length < 2) {
+        log.error("Failed to get plan for dimension:[{}]", dimension);
+        return plan;
+      }
+
+      String tempPlan = result[1];
+      if (TEAM.equals(tempPlan) || TEAM_SHORT.equals(tempPlan)) {
+        plan = Edition.TEAM;
+      } else if (ENTERPRISE.equals(tempPlan) || ENTERPRISE_SHORT.equals(tempPlan)) {
+        plan = Edition.ENTERPRISE;
+      } else {
+        log.error("Unresolved plan for dimension:[{}]", dimension, tempPlan);
+      }
+    }
+    return plan;
+  }
+
+  // Gets Number of Client MAUs from plan
+  public Long getNumberOfClientMAUs(Edition plan) {
+    Long numberOfClientMAUs = FREE_CLIENT_MAUS;
+    if (Edition.TEAM.equals(plan)) {
+      numberOfClientMAUs = TEAM_CLIENT_MAUS;
+    } else if (Edition.ENTERPRISE.equals(plan)) {
+      numberOfClientMAUs = ENTERPRISE_CLIENT_MAUS;
+    } else {
+      log.error("Failed to get Number of Client MAUs for plan:[{}]", plan);
+    }
+
+    return numberOfClientMAUs;
+  }
+
+  // Gets Module License from dimension/plan
+  public LicenseType getModuleLicenseType(Edition plan) {
+    LicenseType licenseType = null;
+    if (Edition.TEAM.equals(plan) || Edition.ENTERPRISE.equals(plan)) {
+      licenseType = LicenseType.PAID;
+    }
+    return licenseType;
+  }
+
+  // Gets Module License from dimension/plan
+  public boolean hasPremierSupport(String dimension) {
+    boolean premierSupport = false;
+    if (StringUtils.isNotBlank(dimension)) {
+      String[] result = dimension.split("_");
+
+      if (result.length < 4) {
+        return premierSupport;
+      }
+
+      if (PREMIER.equals(result[2])) {
+        premierSupport = true;
+      }
+    }
+
+    return premierSupport;
   }
 
   /**

@@ -10,6 +10,7 @@ package io.harness.ngtriggers.beans.config;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.YamlDTO;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,6 +21,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(PIPELINE)
-public class NgTriggerConfigSchemaWrapper {
+public class NgTriggerConfigSchemaWrapper implements YamlDTO {
   NGTriggerConfigV2 trigger;
 }

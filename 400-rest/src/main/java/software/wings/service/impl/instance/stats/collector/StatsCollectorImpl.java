@@ -87,6 +87,31 @@ public class StatsCollectorImpl implements StatsCollector {
   }
 
   @Override
+  public boolean createStatsAtIfMissing(String accountId, long timestamp) {
+    Instant snapshotTimestamp = Instant.ofEpochMilli(timestamp);
+    Instant lastSnapshotTimestamp = statService.getLastSnapshotTime(accountId);
+    if (lastSnapshotTimestamp != null && lastSnapshotTimestamp.isAfter(snapshotTimestamp)) {
+      log.info(
+          "Instance stats snapshots already exist for account {}, lastSnapshotTimestamp: {}, snapshotTimestamp: {}",
+          accountId, lastSnapshotTimestamp, snapshotTimestamp);
+      return true;
+    } else {
+      log.info(
+          "Start creating instance stats snapshot for account {}, lastSnapshotTimestamp: {}, snapshotTimestamp: {}",
+          accountId, lastSnapshotTimestamp, snapshotTimestamp);
+      boolean statsSaved = createStats(accountId, alignedWithMinute(snapshotTimestamp, SYNC_INTERVAL_MINUTES));
+      if (statsSaved) {
+        log.info("Instance stats snapshot is created successfully for account {}", accountId);
+      }
+      if (!statsSaved) {
+        log.info("Failed to create instance stats for account {}", accountId);
+      }
+
+      return statsSaved;
+    }
+  }
+
+  @Override
   public boolean createServerlessStats(String accountId) {
     Instant lastSnapshot = serverlessInstanceStatService.getLastSnapshotTime(accountId);
     if (null == lastSnapshot) {
@@ -132,11 +157,23 @@ public class StatsCollectorImpl implements StatsCollector {
   boolean createStats(String accountId, Instant timestamp) {
     List<Instance> instances = null;
     try {
-      instances = dashboardStatisticsService.getAppInstancesForAccount(accountId, timestamp.toEpochMilli());
-      log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, timestamp);
+      InstanceStatsSnapshot stats;
+      int count = 0;
 
-      Mapper<Collection<Instance>, InstanceStatsSnapshot> instanceMapper = new InstanceMapper(timestamp, accountId);
-      InstanceStatsSnapshot stats = instanceMapper.map(instances);
+      if (dashboardStatisticsService.isInstanceConsumerEnabled(accountId)) {
+        InstanceMapperConsumer instanceMapper = new InstanceMapperConsumer(timestamp, accountId);
+        count = dashboardStatisticsService.consumeAppInstancesForAccount(
+            accountId, timestamp.toEpochMilli(), instanceMapper);
+        log.info("Fetched instances. Count: {}, Account: {}, Time: {}", count, accountId, timestamp);
+
+        stats = instanceMapper.map(null);
+      } else {
+        instances = dashboardStatisticsService.getAppInstancesForAccount(accountId, timestamp.toEpochMilli());
+        log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, timestamp);
+
+        Mapper<Collection<Instance>, InstanceStatsSnapshot> instanceMapper = new InstanceMapper(timestamp, accountId);
+        stats = instanceMapper.map(instances);
+      }
       boolean saved = statService.save(stats);
       if (!saved) {
         log.error("Error saving instance usage stats. AccountId: {}, Timestamp: {}", accountId, timestamp);

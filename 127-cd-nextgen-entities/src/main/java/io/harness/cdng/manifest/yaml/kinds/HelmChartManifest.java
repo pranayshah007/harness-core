@@ -11,18 +11,23 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
+import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
+import io.harness.cdng.manifest.yaml.StoreConfigHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.manifest.HelmChartManifestVisitorHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -38,7 +43,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -86,8 +93,10 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @YamlSchemaTypes({string})
   @SkipAutoEvaluation
   ParameterField<Boolean> skipResourceVersioning;
+
+  @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither List<HelmManifestCommandFlag> commandFlags;
-  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartName;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartPath;
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
@@ -123,8 +132,13 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withCommandFlags(new ArrayList<>(helmChartManifest.getCommandFlags()));
     }
 
-    if (helmChartManifest.getSubChartName() != null) {
-      resultantManifest = resultantManifest.withSubChartName(helmChartManifest.getSubChartName());
+    if (helmChartManifest.getSubChartPath() != null) {
+      resultantManifest = resultantManifest.withSubChartPath(helmChartManifest.getSubChartPath());
+    }
+
+    if (helmChartManifest.getEnableDeclarativeRollback() != null) {
+      resultantManifest =
+          resultantManifest.withEnableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback());
     }
 
     return resultantManifest;
@@ -151,7 +165,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new HelmChartManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), chartName, chartVersion, helmVersion,
-        valuesPaths, skipResourceVersioning, commandFlags, subChartName);
+        valuesPaths, skipResourceVersioning, commandFlags, subChartPath, enableDeclarativeRollback);
   }
 
   @Value
@@ -164,6 +178,29 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
     ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
     List<HelmManifestCommandFlag> commandFlags;
-    ParameterField<String> subChartName;
+    ParameterField<String> subChartPath;
+    ParameterField<Boolean> enableDeclarativeRollback;
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    StoreConfig storeConfig = getStoreConfig();
+    if (storeConfig != null) {
+      invalidParameters.addAll(storeConfig.validateAtRuntime());
+      String storeKind = storeConfig.getKind();
+      if (EmptyPredicate.isNotEmpty(storeKind)) {
+        validateHelmChartNameValueAtRuntime(invalidParameters, storeKind);
+      }
+    }
+    return invalidParameters;
+  }
+
+  private void validateHelmChartNameValueAtRuntime(Set<String> invalidParameters, String storeKind) {
+    if (!(ManifestStoreType.isInGitSubset(storeKind)) && !(HARNESS_STORE_TYPE.equals(storeKind))) {
+      if (StoreConfigHelper.checkStringParameterNullOrInput(chartName)) {
+        invalidParameters.add(HelmChartManifestKeys.chartName);
+      }
+    }
   }
 }

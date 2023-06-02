@@ -21,14 +21,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 @Data
-@AllArgsConstructor
+@SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName("Zap")
 @JsonIgnoreProperties(ignoreUnknown = true)

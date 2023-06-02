@@ -14,8 +14,8 @@ import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -266,11 +266,12 @@ public class RetryHelperTest extends OrchestrationTestBase {
                                             .setCurrentIteration(1)
                                             .setTotalIterations(1)
                                             .build();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
-                            .setPlanId(planId)
-                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode, strategyMetadata))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
+            .setPlanId(planId)
+            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode, strategyMetadata, false))
+            .build();
 
     NodeExecution nodeExecution =
         NodeExecution.builder()

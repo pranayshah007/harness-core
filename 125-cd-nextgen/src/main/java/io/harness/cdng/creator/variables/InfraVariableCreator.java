@@ -151,6 +151,14 @@ public class InfraVariableCreator {
           addVariablesForGoogleCloudFunctionsInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.AWS_LAMBDA:
+          addVariablesForAwsLambdaInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
+        case InfrastructureKind.KUBERNETES_AWS:
+          addVariablesForKubernetesAwsInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         default:
           throw new InvalidRequestException("Invalid infra definition type");
       }
@@ -308,5 +316,28 @@ public class InfraVariableCreator {
     if (yamlNode != null) {
       VariableCreatorHelper.addFieldToPropertiesMap(yamlNode, yamlPropertiesMap, YamlTypes.PIPELINE_INFRASTRUCTURE);
     }
+  }
+
+  private void addVariablesForAwsLambdaInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForKubernetesAwsInfra(
+      YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.NAMESPACE, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.RELEASE_NAME, infraSpecNode, yamlPropertiesMap);
   }
 }

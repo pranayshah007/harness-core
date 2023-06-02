@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @OwnedBy(CDP)
-public enum TerraformStepConfigurationType {
+public enum TerraformStepConfigurationType implements TerraformStepConfigurationEnumInterface {
   @JsonProperty("Inline") INLINE("Inline"),
   @JsonProperty("InheritFromPlan") INHERIT_FROM_PLAN("InheritFromPlan"),
   @JsonProperty("InheritFromApply") INHERIT_FROM_APPLY("InheritFromApply");
@@ -34,5 +34,9 @@ public enum TerraformStepConfigurationType {
       }
     }
     throw new IllegalArgumentException("Invalid value: " + displayName);
+  }
+
+  public String getDisplayName() {
+    return displayName;
   }
 }

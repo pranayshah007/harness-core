@@ -154,6 +154,7 @@ import software.wings.graphql.datafetcher.secrets.UpdateSecretDataFetcher;
 import software.wings.graphql.datafetcher.service.ServiceConnectionDataFetcher;
 import software.wings.graphql.datafetcher.service.ServiceDataFetcher;
 import software.wings.graphql.datafetcher.service.ServiceStatsDataFetcher;
+import software.wings.graphql.datafetcher.service.UpdateServiceMetadataDataFetcher;
 import software.wings.graphql.datafetcher.service.batch.ServiceBatchDataFetcher;
 import software.wings.graphql.datafetcher.service.batch.ServiceBatchDataLoader;
 import software.wings.graphql.datafetcher.ssoProvider.SsoProviderConnectionDataFetcher;
@@ -378,6 +379,7 @@ public class WingsGraphQLModule extends AbstractModule {
     bindDataFetcherWithAnnotation(ChangeContentConnectionDataFetcher.class);
     bindDataFetcherWithAnnotation(CreateApplicationDataFetcher.class);
     bindDataFetcherWithAnnotation(UpdateApplicationDataFetcher.class);
+    bindDataFetcherWithAnnotation(UpdateServiceMetadataDataFetcher.class);
     bindDataFetcherWithAnnotation(DeleteApplicationDataFetcher.class);
     bindDataFetcherWithAnnotation(UpdateUserGroupPermissionsDataFetcher.class);
     bindDataFetcherWithAnnotation(AddAccountPermissionDataFetcher.class);

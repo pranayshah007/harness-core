@@ -19,6 +19,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.shell.CustomArtifactScriptExecutionOnDelegateNG;
 import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
@@ -26,6 +28,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.delegate.task.shell.SshExecutorFactoryNG;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
@@ -62,6 +65,9 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
   @Mock ShellExecutorFactoryNG shellExecutorFactory;
   private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
 
+  private final LogCallback logCallback =
+      new NGDelegateLogCallback(null, "Execute", false, CommandUnitsProgress.builder().build());
+
   private static final String JSON_RESPONSE =
       "{\"items\":[{\"id\":\"bWF2ZW4tcmVsZWFzZXM6MWM3ODdhMDNkYjgyMDllYjhjY2IyMDYwMTJhMWU0MmI\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"group\":\"mygroup\",\"name\":\"myartifact\",\"version\":\"1.0\",\"assets\":[{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.0/myartifact-1.0.war\",\"path\":\"mygroup/myartifact/1.0/myartifact-1.0.war\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6ZDQ4MTE3NTQxZGNiODllYzYxM2IyMzk3MzIwMWQ3YmE\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"da39a3ee5e6b4b0d3255bfef95601890afd80709\",\"md5\":\"d41d8cd98f00b204e9800998ecf8427e\"}},{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.0/myartifact-1.0.war.md5\",\"path\":\"mygroup/myartifact/1.0/myartifact-1.0.war.md5\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6MGFiODBhNzQzOTIxZTQyNjYxOWJlZjJiYmRhYTU5MWQ\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"67a74306b06d0c01624fe0d0249a570f4d093747\",\"md5\":\"74be16979710d4c4e7c6647856088456\"}},{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.0/myartifact-1.0.war.sha1\",\"path\":\"mygroup/myartifact/1.0/myartifact-1.0.war.sha1\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6MTNiMjllNDQ5ZjBlM2I4ZDM5OTY0ZWQzZTExMGUyZTM\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"10a34637ad661d98ba3344717656fcc76209c2f8\",\"md5\":\"0144712dd81be0c3d9724f5e56ce6685\"}}]},{\"id\":\"bWF2ZW4tcmVsZWFzZXM6ZGZiZWYwOWVmZTE2NDRlYTYzNTAwMWQ3MjVhYzgxMTY\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"group\":\"mygroup\",\"name\":\"myartifact\",\"version\":\"1.1\",\"assets\":[{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.1/myartifact-1.1.war\",\"path\":\"mygroup/myartifact/1.1/myartifact-1.1.war\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6MGFiODBhNzQzOTIxZTQyNmQ1ZThjYjBmNWY0ODYwODc\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"da39a3ee5e6b4b0d3255bfef95601890afd80709\",\"md5\":\"d41d8cd98f00b204e9800998ecf8427e\"}},{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.1/myartifact-1.1.war.md5\",\"path\":\"mygroup/myartifact/1.1/myartifact-1.1.war.md5\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6ZDQ4MTE3NTQxZGNiODllYzlhMzlhNjIzMGVkMzI2ZTY\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"67a74306b06d0c01624fe0d0249a570f4d093747\",\"md5\":\"74be16979710d4c4e7c6647856088456\"}},{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.1/myartifact-1.1.war.sha1\",\"path\":\"mygroup/myartifact/1.1/myartifact-1.1.war.sha1\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6ODUxMzU2NTJhOTc4YmU5YTRjOWY0MGI0ZWY0MjM1NTk\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"10a34637ad661d98ba3344717656fcc76209c2f8\",\"md5\":\"0144712dd81be0c3d9724f5e56ce6685\"}}]},{\"id\":\"bWF2ZW4tcmVsZWFzZXM6NzZkN2Q3ZTQxODZhMzkwZmQ5NmRiMjk1YjgwOTg2YWI\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"group\":\"mygroup\",\"name\":\"myartifact\",\"version\":\"1.2\",\"assets\":[{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.2/myartifact-1.2.war\",\"path\":\"mygroup/myartifact/1.2/myartifact-1.2.war\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6MTNiMjllNDQ5ZjBlM2I4ZDYwZGQ0ZjAyNmY4ZjVkYWU\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"da39a3ee5e6b4b0d3255bfef95601890afd80709\",\"md5\":\"d41d8cd98f00b204e9800998ecf8427e\"}},{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.2/myartifact-1.2.war.md5\",\"path\":\"mygroup/myartifact/1.2/myartifact-1.2.war.md5\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6ODUxMzU2NTJhOTc4YmU5YWZhNjRiNTEwYzAwODUzOGU\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"67a74306b06d0c01624fe0d0249a570f4d093747\",\"md5\":\"74be16979710d4c4e7c6647856088456\"}},{\"downloadUrl\":\"http://localhost:8081/repository/maven-releases/mygroup/myartifact/1.2/myartifact-1.2.war.sha1\",\"path\":\"mygroup/myartifact/1.2/myartifact-1.2.war.sha1\",\"id\":\"bWF2ZW4tcmVsZWFzZXM6MGFiODBhNzQzOTIxZTQyNjRkOTU3MWZkZTEzNTJmYzQ\",\"repository\":\"maven-releases\",\"format\":\"maven2\",\"checksum\":{\"sha1\":\"10a34637ad661d98ba3344717656fcc76209c2f8\",\"md5\":\"0144712dd81be0c3d9724f5e56ce6685\"}}]}],\"continuationToken\":null}";
 
@@ -82,13 +88,15 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
                                                                   .script(customArtifactDelegateRequest.getScript())
                                                                   .build();
     ScriptProcessExecutor scriptProcessExecutor = mock(ScriptProcessExecutor.class);
-    doReturn(scriptProcessExecutor).when(shellExecutorFactory).getExecutor(any(), any(), any());
+    doReturn(scriptProcessExecutor)
+        .when(shellExecutorFactory)
+        .getExecutorForCustomArtifactScriptExecution(any(), any());
     when(scriptProcessExecutor.executeCommandString(any(), anyList()))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     ShellScriptTaskResponseNG shellScriptTaskResponseNG =
-        customArtifactScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, null);
+        customArtifactScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, logCallback);
     assertThat(shellScriptTaskResponseNG).isNotNull();
-    verify(shellExecutorFactory).getExecutor(any(), any(), any());
+    verify(shellExecutorFactory).getExecutorForCustomArtifactScriptExecution(any(), any());
     verify(scriptProcessExecutor).executeCommandString(any(), anyList());
   }
 
@@ -137,7 +145,7 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
     ArtifactStreamAttributes artifactStreamAttributes =
         ArtifactStreamAttributes.builder().customArtifactStreamScript("echo \"hello\"").build();
     List<BuildDetails> buildDetails = customArtifactScriptExecutionOnDelegateNG.getBuildDetails(
-        file.getAbsolutePath(), customArtifactDelegateRequest);
+        file.getAbsolutePath(), customArtifactDelegateRequest, logCallback);
     assertThat(buildDetails).isNotNull();
     assertThat(buildDetails.size()).isEqualTo(2);
     assertThat(buildDetails.get(0).getNumber()).isEqualTo("21");
@@ -174,7 +182,7 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
     when(shellExecutionService.execute(any(ShellExecutionRequest.class))).thenReturn(shellExecutionResponse);
 
     List<BuildDetails> buildDetails = customArtifactScriptExecutionOnDelegateNG.getBuildDetails(
-        file.getAbsolutePath(), customArtifactDelegateRequest);
+        file.getAbsolutePath(), customArtifactDelegateRequest, logCallback);
     assertThat(buildDetails).isNotNull();
     assertThat(buildDetails.size()).isEqualTo(3);
     assertThat(buildDetails.get(0).getNumber()).isEqualTo("1.0");
@@ -204,7 +212,8 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
                                                                       .version("21")
                                                                       .attributes(attributeMapping)
                                                                       .build();
-    customArtifactScriptExecutionOnDelegateNG.getBuildDetails(file.getAbsolutePath(), customArtifactDelegateRequest);
+    customArtifactScriptExecutionOnDelegateNG.getBuildDetails(
+        file.getAbsolutePath(), customArtifactDelegateRequest, logCallback);
   }
 
   @Test(expected = InvalidArtifactServerException.class)
@@ -225,7 +234,8 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
                                                                       .version("21")
                                                                       .attributes(attributeMapping)
                                                                       .build();
-    customArtifactScriptExecutionOnDelegateNG.getBuildDetails(file.getAbsolutePath(), customArtifactDelegateRequest);
+    customArtifactScriptExecutionOnDelegateNG.getBuildDetails(
+        file.getAbsolutePath(), customArtifactDelegateRequest, logCallback);
   }
 
   @Test(expected = InvalidArtifactServerException.class)
@@ -257,7 +267,7 @@ public class CustomArtifactScriptExecutionOnDelegateNGTest extends CategoryTest 
     when(shellExecutionService.execute(any(ShellExecutionRequest.class))).thenReturn(shellExecutionResponse);
 
     List<BuildDetails> buildDetails = customArtifactScriptExecutionOnDelegateNG.getBuildDetails(
-        file.getAbsolutePath(), customArtifactDelegateRequest);
+        file.getAbsolutePath(), customArtifactDelegateRequest, logCallback);
     assertThat(buildDetails).isNotNull();
     FileUtils.deleteQuietly(file);
   }

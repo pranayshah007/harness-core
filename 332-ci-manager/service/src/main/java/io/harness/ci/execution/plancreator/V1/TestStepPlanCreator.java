@@ -15,6 +15,7 @@ import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.steps.stepinfo.TestStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -62,12 +63,8 @@ public class TestStepPlanCreator extends CIPMSStepPlanCreatorV2<TestStepNode> {
                 .buildTool(testStepInfo.getUses() == null
                         ? ParameterField.ofNull()
                         : ParameterField.createValueField(testStepInfo.getUses().toTIBuildTool()))
-                .shell(testStepInfo.getShell() == null
-                        ? ParameterField.ofNull()
-                        : ParameterField.createValueField(testStepInfo.getShell().toShellType()))
-                .imagePullPolicy(testStepInfo.getPull() == null
-                        ? ParameterField.ofNull()
-                        : ParameterField.createValueField(testStepInfo.getPull().toImagePullPolicy()))
+                .shell(CIPlanCreatorUtils.getShell(testStepInfo.getShell()))
+                .imagePullPolicy(CIPlanCreatorUtils.getImagePullPolicy(testStepInfo.getPull()))
                 .language(testStepInfo.getLanguage())
                 .args(SerializerUtils.getStringFieldFromJsonNodeMap(testStepInfo.getWith(), "args"))
                 .preCommand(SerializerUtils.getStringFieldFromJsonNodeMap(testStepInfo.getWith(), "pre_command"))

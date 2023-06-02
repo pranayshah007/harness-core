@@ -15,13 +15,13 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static software.wings.beans.AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;

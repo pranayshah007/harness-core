@@ -41,19 +41,22 @@ public class CustomArtifactTaskHelper {
     CustomArtifactDelegateRequest attributes = (CustomArtifactDelegateRequest) artifactTaskParameters.getAttributes();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     LogCallback executionLogCallback =
-        new NGDelegateLogCallback(logStreamingTaskClient, "Execute", false, commandUnitsProgress);
+        new NGDelegateLogCallback(logStreamingTaskClient, "", false, commandUnitsProgress);
     ArtifactTaskResponse artifactTaskResponse;
     try {
       switch (artifactTaskParameters.getArtifactTaskType()) {
         case GET_BUILDS:
           saveLogs(executionLogCallback, "Get the Custom Builds for Job");
-          artifactTaskResponse = getSuccessTaskResponse(customArtifactTaskHandler.getBuilds(attributes));
-          saveLogs(executionLogCallback, "Get the Custom Builds for Job ");
+          artifactTaskResponse =
+              getSuccessTaskResponse(customArtifactTaskHandler.getBuilds(attributes, executionLogCallback));
+          saveLogs(executionLogCallback, "Successfully got the Custom Builds for Job ");
           break;
         case GET_LAST_SUCCESSFUL_BUILD:
           saveLogs(executionLogCallback, "Get the Custom Build");
-          artifactTaskResponse = getSuccessTaskResponse(customArtifactTaskHandler.getLastSuccessfulBuild(attributes));
-          saveLogs(executionLogCallback, "Get the Custom Build ");
+          artifactTaskResponse = getSuccessTaskResponse(
+              customArtifactTaskHandler.getLastSuccessfulBuild(attributes, executionLogCallback));
+          saveLogs(executionLogCallback, "Successfully got the Custom Build");
+          executionLogCallback.dispatchLogs();
           break;
         default:
           saveLogs(executionLogCallback,

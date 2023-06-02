@@ -103,6 +103,15 @@ default_java_toolchain(
     target_version = "11",
 )
 
+default_java_toolchain(
+    name = "harness_no_fdLimit_jdk17_toolchain",
+    configuration = dict(),
+    java_runtime = "@bazel_tools//tools/jdk:remotejdk_17",
+    jvm_opts = BASE_JDK9_JVM_OPTS + ["-XX:-MaxFDLimit"],  # Additional JDK options
+    source_version = "17",
+    target_version = "17",
+)
+
 java_plugin(
     name = "lombok_plugin",
     processor_class = "lombok.launch.AnnotationProcessorHider$AnnotationProcessor",
@@ -115,10 +124,16 @@ java_library(
     exported_plugins = [":lombok_plugin"],
     visibility = ["//visibility:public"],
     exports = [
+        ":lombok_maven_only",
         "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:org_projectlombok_lombok",
         "@maven//:org_slf4j_slf4j_api",
     ],
+)
+
+java_library(
+    name = "lombok_maven_only",
+    neverlink = 1,
+    exports = ["@maven//:org_projectlombok_lombok"],
 )
 
 filegroup(
@@ -148,14 +163,14 @@ load("//tools/bazel/sonarqube:defs.bzl", "sonarqube")
 load("//project/flags:sonarqube_targets_seperated.bzl", "get_sonarqube_targets_seperated")
 
 sonarqube(
-    name = "sq_below_400",
+    name = "sq_000_399",
     srcs = [],
     coverage_report = ":coverage_report",
     modules = get_sonarqube_targets_seperated(),
-    project_key = "portal_bazel_below_400",
-    project_name = "Bazel Portal Below 400",
+    project_key = "portal_bazel_000_399",
+    project_name = "Bazel Portal 000-399",
     scm_info = [":git"],
-    sq_properties_filename = "sonar-project-below-400.properties",
+    sq_properties_filename = "sonar-project-000-399.properties",
     tags = ["manual"],
     targets = [],
 )
@@ -174,14 +189,27 @@ sonarqube(
 )
 
 sonarqube(
-    name = "sq_above_400",
+    name = "sq_401_899",
     srcs = [],
     coverage_report = ":coverage_report",
     modules = get_sonarqube_targets_seperated(),
-    project_key = "portal_bazel_above_400",
-    project_name = "Bazel Portal Above 400",
+    project_key = "portal_bazel_401_899",
+    project_name = "Bazel Portal 401-899",
     scm_info = [":git"],
-    sq_properties_filename = "sonar-project-above-400.properties",
+    sq_properties_filename = "sonar-project-401-899.properties",
+    tags = ["manual"],
+    targets = [],
+)
+
+sonarqube(
+    name = "sonar_900_999_indivi",
+    srcs = [],
+    coverage_report = ":coverage_report",
+    modules = get_sonarqube_targets_seperated(),
+    project_key = "portal_bazel_900_999_indivi",
+    project_name = "Bazel Portal 900-999-INDIVI",
+    scm_info = [":git"],
+    sq_properties_filename = "sonar-project-900-999-INDIVI.properties",
     tags = ["manual"],
     targets = [],
 )

@@ -7,7 +7,9 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.core.entities.DataCollectionTask.Type.DEPLOYMENT;
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SERVICE_GUARD;
+import static io.harness.cvng.core.entities.DataCollectionTask.Type.SLI;
 import static io.harness.cvng.core.services.CVNextGenConstants.CVNG_MAX_PARALLEL_THREADS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
@@ -24,19 +26,15 @@ import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.DataCollectionTaskKeys;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.MetricCVConfig;
+import io.harness.cvng.core.entities.SLIDataCollectionTask;
 import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
-import io.harness.cvng.metrics.CVNGMetricsUtils;
-import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
-import io.harness.cvng.verificationjob.entities.VerificationJobInstance.DataCollectionProgressLog;
-import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.metrics.AutoMetricContext;
-import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -62,17 +60,11 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   @Inject private Clock clock;
   @Inject private MetricPackService metricPackService;
   @Inject private OrchestrationService orchestrationService;
-  @Inject private MetricService metricService;
-  @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject
   private Map<DataCollectionTask.Type, DataCollectionTaskManagementService>
       dataCollectionTaskManagementServiceMapBinder;
   @Inject private ExecutionLogService executionLogService;
-
-  // TODO: this is creating reverse dependency. Find a way to get rid of this dependency.
-  // Probabally by moving ProgressLog concept to a separate service and model.
-  @Inject private VerificationJobInstanceService verificationJobInstanceService;
 
   @Override
   public void save(DataCollectionTask dataCollectionTask) {
@@ -91,7 +83,11 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
                 .lessThan(clock.millis() - TimeUnit.MINUTES.toMillis(5))));
     query.or(query.criteria(DataCollectionTaskKeys.type).equal(SERVICE_GUARD),
-        query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(DeploymentDataCollectionTask.MAX_RETRY_COUNT));
+        query.and(query.criteria(DataCollectionTaskKeys.type).equal(SLI),
+            query.criteria(DataCollectionTaskKeys.retryCount).lessThanOrEq(SLIDataCollectionTask.MAX_RETRY_COUNT)),
+        query.and(query.criteria(DataCollectionTaskKeys.type).equal(DEPLOYMENT),
+            query.criteria(DataCollectionTaskKeys.retryCount)
+                .lessThanOrEq(DeploymentDataCollectionTask.MAX_RETRY_COUNT)));
     UpdateOperations<DataCollectionTask> updateOperations =
         hPersistence.createUpdateOperations(DataCollectionTask.class)
             .set(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.RUNNING)
@@ -140,6 +136,17 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   @Override
+  public DataCollectionTask getFirstDataCollectionTaskWithStatusAfterStartTime(
+      String verificationTaskId, DataCollectionExecutionStatus status, Instant startTime) {
+    return hPersistence.createQuery(DataCollectionTask.class)
+        .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
+        .filter(DataCollectionTaskKeys.status, status)
+        .field(DataCollectionTaskKeys.startTime)
+        .greaterThanOrEq(startTime)
+        .get();
+  }
+
+  @Override
   public void updateTaskStatus(DataCollectionTaskResult result) {
     updateTaskStatus(result, true);
   }
@@ -181,7 +188,6 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       return;
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
-    recordMetricsOnUpdateStatus(dataCollectionTask);
     ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
     executionLogger.log(
         dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
@@ -193,43 +199,23 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       executionLogger.log(executionLog.getLogLevel(), executionLog.getLog());
     }
     if (result.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
-      // TODO: make this an atomic operation
+      dataCollectionTaskManagementServiceMapBinder.get(dataCollectionTask.getType())
+          .processDataCollectionSuccess(dataCollectionTask);
       if (dataCollectionTask.shouldCreateNextTask()) {
         dataCollectionTaskManagementServiceMapBinder.get(dataCollectionTask.getType())
             .createNextTask(dataCollectionTask);
       } else {
         enqueueNextTask(dataCollectionTask);
-        if (dataCollectionTask instanceof DeploymentDataCollectionTask) {
-          verificationJobInstanceService.logProgress(DataCollectionProgressLog.builder()
-                                                         .executionStatus(dataCollectionTask.getStatus())
-                                                         .isFinalState(false)
-                                                         .startTime(dataCollectionTask.getStartTime())
-                                                         .endTime(dataCollectionTask.getEndTime())
-                                                         .verificationTaskId(dataCollectionTask.getVerificationTaskId())
-                                                         .log("Data collection task successful")
-                                                         .build());
-        }
       }
       if (dataCollectionTask.shouldQueueAnalysis()) {
-        orchestrationService.queueAnalysis(dataCollectionTask.getVerificationTaskId(),
-            dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime());
+        orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                               .verificationTaskId(dataCollectionTask.getVerificationTaskId())
+                                               .startTime(dataCollectionTask.getStartTime())
+                                               .endTime(dataCollectionTask.getEndTime())
+                                               .build());
       }
     } else {
       retry(dataCollectionTask);
-    }
-  }
-
-  private void recordMetricsOnUpdateStatus(DataCollectionTask dataCollectionTask) {
-    try (AutoMetricContext ignore = metricContextBuilder.getContext(dataCollectionTask, DataCollectionTask.class)) {
-      metricService.incCounter(CVNGMetricsUtils.getDataCollectionTaskStatusMetricName(dataCollectionTask.getStatus()));
-      metricService.recordDuration(
-          CVNGMetricsUtils.DATA_COLLECTION_TASK_TOTAL_TIME, dataCollectionTask.totalTime(clock.instant()));
-
-      if (dataCollectionTask.getLastPickedAt() != null) {
-        metricService.recordDuration(CVNGMetricsUtils.DATA_COLLECTION_TASK_WAIT_TIME, dataCollectionTask.waitTime());
-        metricService.recordDuration(
-            CVNGMetricsUtils.DATA_COLLECTION_TASK_RUNNING_TIME, dataCollectionTask.runningTime(clock.instant()));
-      }
     }
   }
 
@@ -272,17 +258,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   private void markDependentTasksFailed(DataCollectionTask task) {
-    if (task instanceof DeploymentDataCollectionTask) {
-      verificationJobInstanceService.logProgress(
-          DataCollectionProgressLog.builder()
-              .executionStatus(task.getStatus())
-              .isFinalState(false)
-              .startTime(task.getStartTime())
-              .endTime(task.getEndTime())
-              .verificationTaskId(task.getVerificationTaskId())
-              .log("Data collection failed with exception: " + task.getException())
-              .build());
-    }
+    dataCollectionTaskManagementServiceMapBinder.get(task.getType()).processDataCollectionFailure(task);
     String exceptionMsg =
         task.getStatus() == DataCollectionExecutionStatus.EXPIRED ? "Previous task timed out" : "Previous task failed";
     log.info("Marking queued task failed for verificationTaskId {}", task.getVerificationTaskId());
@@ -314,6 +290,8 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
   }
 
   private void retry(DataCollectionTask dataCollectionTask) {
+    log.info("Retrying DataCollection task with id: {} and worker id: {}", dataCollectionTask.getUuid(),
+        dataCollectionTask.getDataCollectionWorkerId());
     if (dataCollectionTask.eligibleForRetry(clock.instant())) {
       UpdateOperations<DataCollectionTask> updateOperations =
           hPersistence.createUpdateOperations(DataCollectionTask.class)
@@ -356,8 +334,24 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
 
   @Override
   public void updatePerpetualTaskStatus(DataCollectionTask dataCollectionTask) {
-    Optional<CVNGPerpetualTaskDTO> cvngPerpetualTaskDTO =
-        monitoringSourcePerpetualTaskService.getPerpetualTaskStatus(dataCollectionTask.getDataCollectionWorkerId());
+    Optional<CVNGPerpetualTaskDTO> cvngPerpetualTaskDTO;
+    try {
+      cvngPerpetualTaskDTO =
+          monitoringSourcePerpetualTaskService.getPerpetualTaskStatus(dataCollectionTask.getDataCollectionWorkerId());
+    } catch (Exception exception) {
+      DataCollectionTaskResult dataCollectionTaskResult =
+          DataCollectionTaskResult.builder()
+              .dataCollectionTaskId(dataCollectionTask.getUuid())
+              .status(DataCollectionExecutionStatus.FAILED)
+              .exception("Exception while getting MontioringSourcePerpetualTask status with workerId:"
+                  + dataCollectionTask.getDataCollectionWorkerId() + ". " + exception.getMessage())
+              .build();
+      updateTaskStatus(dataCollectionTaskResult, false);
+      log.error("Exception while getting MontioringSourcePerpetualTask status with workerId:"
+              + dataCollectionTask.getDataCollectionWorkerId(),
+          exception);
+      return;
+    }
     if (cvngPerpetualTaskDTO.isPresent()) {
       if (cvngPerpetualTaskDTO.get().getCvngPerpetualTaskUnassignedReason() != null) {
         DataCollectionTaskResult dataCollectionTaskResult =

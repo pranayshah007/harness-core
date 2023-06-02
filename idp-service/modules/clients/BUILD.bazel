@@ -1,0 +1,29 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [],
+    visibility = ["//idp-service:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "//930-ng-core-clients:module",
+        "//940-secret-manager-client:module",
+        "//970-ng-commons:module",
+        "//999-annotations:module",
+        "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
+        "//idp-service/src/main/java/io/harness/idp/common:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_google_protobuf_protobuf_java",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_converter_protobuf",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_jsonwebtoken_jjwt",
+    ],
+)

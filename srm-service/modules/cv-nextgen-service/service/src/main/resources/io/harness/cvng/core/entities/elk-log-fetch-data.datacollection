@@ -19,6 +19,7 @@ Var range = {}
 Var rangeLimit = {}
 Var:rangeLimit.put("gt",Env:startTimeMillis)
 Var:rangeLimit.put("lte",Env:endTimeMillis)
+Var:rangeLimit.put("format","epoch_millis")
 Var:range.put(Env:timeStampField,Var:rangeLimit)
 Var:timeRangeQuery.put("range",Var:range)
 

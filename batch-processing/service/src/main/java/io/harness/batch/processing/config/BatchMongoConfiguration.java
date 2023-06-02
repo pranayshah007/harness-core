@@ -16,14 +16,15 @@ import io.harness.persistence.UserProvider;
 
 import software.wings.security.ThreadLocalUserProvider;
 
+import com.mongodb.ReadPreference;
 import dev.morphia.AdvancedDatastore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
+import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 
 @Configuration
 @Slf4j
@@ -37,16 +38,19 @@ public class BatchMongoConfiguration {
 
   @Bean
   @Profile("!test")
-  public MongoDbFactory mongoDbFactory(HPersistence hPersistence, BatchMainConfig config) {
+  public MongoDatabaseFactory mongoDbFactory(HPersistence hPersistence, BatchMainConfig config) {
     registerEventsStore(hPersistence, config);
     AdvancedDatastore eventsDatastore = hPersistence.getDatastore(EVENTS_STORE);
-    return new SimpleMongoClientDbFactory(
+    return new SimpleMongoClientDatabaseFactory(
         hPersistence.getNewMongoClient(EVENTS_STORE), eventsDatastore.getDB().getName());
   }
 
   @Bean
-  public MongoTemplate mongoTemplate(MongoDbFactory mongoDbFactory) {
-    return new MongoTemplate(mongoDbFactory);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
+    MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory);
+    log.info("Setting read preference in mongo template as secondary preferred");
+    mongoTemplate.setReadPreference(ReadPreference.secondaryPreferred());
+    return mongoTemplate;
   }
 
   @Bean

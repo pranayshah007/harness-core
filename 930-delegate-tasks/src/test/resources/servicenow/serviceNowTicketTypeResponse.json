@@ -1,0 +1,175 @@
+{
+  "result": [
+    {
+      "name": "asset_reclamation_request",
+      "label": "Asset Reclamation Request"
+    },
+    {
+      "name": "asset_task",
+      "label": "Asset Task"
+    },
+    {
+      "name": "business_app_request",
+      "label": "Business Application Request"
+    },
+    {
+      "name": "sc_task",
+      "label": "Catalog Task"
+    },
+    {
+      "name": "change_phase",
+      "label": "Change Phase"
+    },
+    {
+      "name": "change_request",
+      "label": "Change Request"
+    },
+    {
+      "name": "change_task",
+      "label": "Change Task"
+    },
+    {
+      "name": "chat_queue_entry",
+      "label": "Chat Queue Entry"
+    },
+    {
+      "name": "cmdb_data_management_task",
+      "label": "CMDB Data Management Task"
+    },
+    {
+      "name": "cmdb_multisource_recomp_task",
+      "label": "CMDB Multisource Recompute Task"
+    },
+    {
+      "name": "u_demo_custom",
+      "label": "Demo Custom"
+    },
+    {
+      "name": "release_task",
+      "label": "Feature Task"
+    },
+    {
+      "name": "cert_follow_on_task",
+      "label": "Follow On Task"
+    },
+    {
+      "name": "sysapproval_group",
+      "label": "Group approval"
+    },
+    {
+      "name": "help_guidance_task",
+      "label": "Guidance Task"
+    },
+    {
+      "name": "gsw_task",
+      "label": "Guided Setup Task"
+    },
+    {
+      "name": "change_request_imac",
+      "label": "IMAC"
+    },
+    {
+      "name": "incident",
+      "label": "Incident"
+    },
+    {
+      "name": "incident_task",
+      "label": "Incident Task"
+    },
+    {
+      "name": "kb_submission",
+      "label": "Kb Submission"
+    },
+    {
+      "name": "kb_feedback_task",
+      "label": "Knowledge Feedback Task"
+    },
+    {
+      "name": "orphan_ci_remediation",
+      "label": "Orphan CI Remediation"
+    },
+    {
+      "name": "vtb_task",
+      "label": "Private Task"
+    },
+    {
+      "name": "problem",
+      "label": "Problem"
+    },
+    {
+      "name": "problem_task",
+      "label": "Problem Task"
+    },
+    {
+      "name": "reclassification_task",
+      "label": "Reclassification Task"
+    },
+    {
+      "name": "recommended_field_remediation",
+      "label": "Recommended Field Remediation"
+    },
+    {
+      "name": "release_phase",
+      "label": "Release Phase"
+    },
+    {
+      "name": "reconcile_duplicate_task",
+      "label": "Remediate Duplicate Task"
+    },
+    {
+      "name": "statemgmt_renew_lease_task",
+      "label": "Renew Lease Task"
+    },
+    {
+      "name": "sys_report_access_request",
+      "label": "Report Access Request"
+    },
+    {
+      "name": "sc_request",
+      "label": "Request"
+    },
+    {
+      "name": "sc_req_item",
+      "label": "Requested Item"
+    },
+    {
+      "name": "required_field_remediation",
+      "label": "Required Field Remediation"
+    },
+    {
+      "name": "scan_task",
+      "label": "Scan Task"
+    },
+    {
+      "name": "service_task",
+      "label": "Service Task"
+    },
+    {
+      "name": "stale_ci_remediation",
+      "label": "Stale CI Remediation"
+    },
+    {
+      "name": "std_change_proposal",
+      "label": "Standard Change Proposal"
+    },
+    {
+      "name": "u_st",
+      "label": "Testing Custom"
+    },
+    {
+      "name": "ticket"
+    },
+    {
+      "name": "alm_transfer_order_line_subtask",
+      "label": "Transfer Order Line Subtask"
+    },
+    {
+      "name": "alm_transfer_order_line_task",
+      "label": "Transfer Order Line Task"
+    },
+    {
+      "name": "upgrade_history_task",
+      "label": "Upgrade History Task"
+    }
+  ]
+}

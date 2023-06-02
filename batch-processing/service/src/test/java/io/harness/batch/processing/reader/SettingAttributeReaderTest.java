@@ -18,22 +18,22 @@ import io.harness.rule.Owner;
 import software.wings.beans.SettingAttribute;
 
 import com.google.inject.Inject;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.batch.core.StepExecution;
 
 public class SettingAttributeReaderTest extends CategoryTest {
   @Inject @InjectMocks private SettingAttributeReader settingAttributeReader;
-  @Mock AtomicBoolean runOnlyOnce;
+  @Mock StepExecution stepExecution;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    runOnlyOnce = new AtomicBoolean(false);
+    settingAttributeReader.beforeStep(stepExecution);
   }
 
   @Test

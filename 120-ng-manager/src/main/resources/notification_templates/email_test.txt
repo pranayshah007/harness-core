@@ -1,2 +1,2 @@
 subject: Deployment Freeze Window ${BLACKOUT_WINDOW_NAME} Activation
-body: A deployment freeze <b><a href="${BLACKOUT_WINDOW_URL}" target="_blank">${BLACKOUT_WINDOW_NAME}</a></b> has been activated on ${START_TIME}. The freeze will end on ${END_TIME}.
+body: A deployment freeze <b><a href="${BLACKOUT_WINDOW_URL}" target="_blank">${BLACKOUT_WINDOW_NAME}</a></b> has been activated on ${START_TIME}. The freeze will end on ${END_TIME}. ${CUSTOMIZED_MESSAGE}

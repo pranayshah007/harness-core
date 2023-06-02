@@ -20,7 +20,6 @@ import static io.harness.SecretManagerDescriptionConstants.VAULT_K8S_AUTH_ROLE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.encryption.SecretRefHelper.getSecretConfigString;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.exception.WingsException.USER;
 
@@ -32,6 +31,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
@@ -123,6 +124,37 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   }
 
   @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return VaultConnectorOutcomeDTO.builder()
+        .authToken(authToken)
+        .basePath(basePath)
+        .vaultUrl(vaultUrl)
+        .accessType(getAccessType())
+        .readOnly(isReadOnly)
+        .renewalIntervalMinutes(renewalIntervalMinutes)
+        .secretEngineManuallyConfigured(secretEngineManuallyConfigured)
+        .secretEngineName(secretEngineName)
+        .appRoleId(appRoleId)
+        .secretId(secretId)
+        .isDefault(isDefault)
+        .secretEngineVersion(secretEngineVersion)
+        .delegateSelectors(delegateSelectors)
+        .namespace(namespace)
+        .sinkPath(sinkPath)
+        .useVaultAgent(useVaultAgent)
+        .useAwsIam(useAwsIam)
+        .awsRegion(awsRegion)
+        .vaultAwsIamRole(vaultAwsIamRole)
+        .xvaultAwsIamServerId(headerAwsIam)
+        .useK8sAuth(useK8sAuth)
+        .vaultK8sAuthRole(vaultK8sAuthRole)
+        .serviceAccountTokenPath(serviceAccountTokenPath)
+        .k8sAuthEndpoint(k8sAuthEndpoint)
+        .renewAppRoleToken(renewAppRoleToken)
+        .build();
+  }
+
+  @Override
   public void validate() {
     try {
       new URL(vaultUrl);
@@ -192,11 +224,6 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
       if (isBlank(getAwsRegion())) {
         throw new InvalidRequestException(
             "You must provide a aws region if you are using Vault with Aws Iam Auth method", INVALID_REQUEST, USER);
-      }
-      if (isBlank(getSecretConfigString(getHeaderAwsIam()))) {
-        throw new InvalidRequestException(
-            "You must provide Iam Header Server ID if you are using Vault with Aws Iam Auth method", INVALID_REQUEST,
-            USER);
       }
       if (isEmpty(getDelegateSelectors())) {
         throw new InvalidRequestException(

@@ -14,12 +14,15 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AsgInstanceSyncHandler;
+import io.harness.service.instancesynchandler.AwsLambdaInstanceSyncHandler;
+import io.harness.service.instancesynchandler.AwsSamInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AwsSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
 import io.harness.service.instancesynchandler.CustomDeploymentInstanceSyncHandler;
 import io.harness.service.instancesynchandler.EcsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.GitOpsInstanceSyncHandler;
+import io.harness.service.instancesynchandler.GoogleFunctionInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
@@ -48,6 +51,9 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   private final SpotInstanceSyncHandler spotInstanceSyncHandler;
   private final TasInstanceSyncHandler tasInstanceSyncHandler;
   private final AsgInstanceSyncHandler asgInstanceSyncHandler;
+  private final GoogleFunctionInstanceSyncHandler googleFunctionInstanceSyncHandler;
+  private final AwsSamInstanceSyncHandler awsSamInstanceSyncHandler;
+  private final AwsLambdaInstanceSyncHandler awsLambdaInstanceSyncHandler;
 
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
@@ -75,6 +81,12 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return tasInstanceSyncHandler;
       case ServiceSpecType.ASG:
         return asgInstanceSyncHandler;
+      case ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS:
+        return googleFunctionInstanceSyncHandler;
+      case ServiceSpecType.AWS_SAM:
+        return awsSamInstanceSyncHandler;
+      case ServiceSpecType.AWS_LAMBDA:
+        return awsLambdaInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
     }

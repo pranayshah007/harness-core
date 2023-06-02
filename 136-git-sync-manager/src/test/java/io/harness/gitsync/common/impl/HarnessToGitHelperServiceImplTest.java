@@ -11,9 +11,11 @@ import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatu
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,13 +41,20 @@ import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GitAccessRequest;
 import io.harness.gitsync.GitMetaData;
+import io.harness.gitsync.GithubAccessRequest;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
+import io.harness.gitsync.UserDetailsRequest;
+import io.harness.gitsync.UserDetailsResponse;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.helper.GitAccessMapper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.service.GitEntityService;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
@@ -62,10 +71,10 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PL)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   @InjectMocks HarnessToGitHelperServiceImpl harnessToGitHelperService;
   @Mock GitEntityService gitEntityService;
@@ -394,6 +403,25 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
 
     assertThat(response.getStatusCode()).isEqualTo(400);
     assertThat(response.getError().getErrorMessage()).isEqualTo(ExceptionUtils.getMessage(getDefaultWingsException()));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetUserDetails() {
+    UserDetailsRequest userDetailsRequest =
+        UserDetailsRequest.newBuilder()
+            .setGitAccessRequest(
+                GitAccessRequest.newBuilder().setGithub(GithubAccessRequest.newBuilder().build()).build())
+            .build();
+    when(scmFacilitatorService.getUserDetails(
+             UserDetailsRequestDTO.builder()
+                 .gitAccessDTO(GitAccessMapper.convertToGitAccessDTO(userDetailsRequest))
+                 .build()))
+        .thenReturn(UserDetailsResponseDTO.builder().userEmail("userEmail").userName("userName").build());
+    UserDetailsResponse userDetails = harnessToGitHelperService.getUserDetails(userDetailsRequest);
+    assertEquals(userDetails.getUserEmail(), "userEmail");
+    assertEquals(userDetails.getUserName(), "userName");
   }
 
   private FileInfo getFileInfoDefault(String commitId, ChangeType changeType) {

@@ -9,7 +9,9 @@ package io.harness.visitor.helpers.variables;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secrets.SecretEntityUtils;
 import io.harness.walktree.visitor.entityreference.EntityReferenceExtractor;
@@ -39,14 +41,25 @@ public class SecretVariableVisitorHelper implements ConfigValidator, EntityRefer
   @Override
   public Set<EntityDetailProtoDTO> addReference(Object object, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<String, Object> contextMap) {
-    SecretNGVariable dockerHubArtifactConfig = (SecretNGVariable) object;
+    SecretNGVariable secretNGVariable = (SecretNGVariable) object;
     Set<EntityDetailProtoDTO> result = new HashSet<>();
-    if (ParameterField.isNull(dockerHubArtifactConfig.getValue())) {
+    if (ParameterField.isNull(secretNGVariable.getValue())) {
       return result;
     }
+
+    // do not add reference if the secret value is empty
+    if (!secretNGVariable.getValue().isExpression()
+        && EmptyPredicate.isEmpty(secretNGVariable.getValue().getValue().getIdentifier())) {
+      return result;
+    }
+
     String fullQualifiedDomainName = VisitorParentPathUtils.getFullQualifiedDomainName(contextMap);
-    result.add(SecretEntityUtils.convertSecretToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
-        projectIdentifier, fullQualifiedDomainName, dockerHubArtifactConfig.getValue()));
-    return result;
+    try {
+      result.add(SecretEntityUtils.convertSecretToEntityDetailProtoDTO(
+          accountIdentifier, orgIdentifier, projectIdentifier, fullQualifiedDomainName, secretNGVariable.getValue()));
+      return result;
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Failed to create reference for secret " + secretNGVariable.getName(), ex);
+    }
   }
 }

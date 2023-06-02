@@ -1,0 +1,92 @@
+pipeline:
+  name: multiServiceEnvPipeline
+  identifier: multiServiceEnvPipeline
+  projectIdentifier: ServiceEnvRedesign
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: dep
+        identifier: dep
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          services:
+            values:
+              - serviceRef: nginx
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      variables:
+                        - name: var1
+                          type: String
+                          value: <+input>
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: <+input>
+                          sources: <+input>
+              - serviceRef: serInput1
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      variables:
+                        - name: var1
+                          type: String
+                          value: <+input>
+                        - name: var2
+                          type: String
+                          value: <+input>.default("xyz123")
+                        - name: var3
+                          type: String
+                          value: <+input>
+                        - name: var4_ff
+                          type: String
+                          value: <+input>.default(DEF_VAL)
+            metadata:
+              parallel: true
+          environments:
+            metadata:
+              parallel: true
+            values:
+              - environmentRef: qa
+                environmentInputs:
+                  identifier: qa
+                  type: Production
+                  variables:
+                    - name: vava
+                      type: String
+                      value: <+input>.default(vavaDefault1)
+                deployToAll: false
+                infrastructureDefinitions:
+                  - identifier: infraInvalid1
+              - environmentRef: uat
+                deployToAll: true
+                infrastructureDefinitions: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

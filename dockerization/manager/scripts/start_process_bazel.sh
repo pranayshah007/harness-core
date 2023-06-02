@@ -37,7 +37,7 @@ if [[ -z "$NEWRELIC_ENV" ]]; then
 fi
 
 if [[ "${ENABLE_G1GC}" == "true" ]]; then
-    export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
+    export GC_PARAMS=" -XX:+UseG1GC -Dfile.encoding=UTF-8"
 else
     if [[ "${ENABLE_SERIALGC}" == "true" ]]; then
         export GC_PARAMS=" -XX:+UseSerialGC -Dfile.encoding=UTF-8"
@@ -50,9 +50,9 @@ export JAVA_OPTS="-Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPat
 
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true" ]]; then
-    mkdir /opt/harness/AppServerAgent-1.8-21.11.2.33305 && unzip AppServerAgent-1.8-21.11.2.33305.zip -d /opt/harness/AppServerAgent-1.8-21.11.2.33305
+    mkdir /opt/harness/AppServerAgent && unzip AppServerAgent.zip -d /opt/harness/AppServerAgent
     node_name="-Dappdynamics.agent.nodeName=$(hostname)"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent-1.8-21.11.2.33305/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
     JAVA_OPTS="$JAVA_OPTS $node_name"
     echo "Using Appdynamics java agent"
 fi

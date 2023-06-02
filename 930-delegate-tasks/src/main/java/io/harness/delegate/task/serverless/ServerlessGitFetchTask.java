@@ -101,8 +101,8 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
                     serverlessGitFetchFileConfig.getIdentifier()),
               White, Bold));
       Map<String, FetchFilesResult> filesFromMultipleRepo = new HashMap<>();
-      FetchFilesResult filesResult = fetchManifestFile(
-          serverlessGitFetchFileConfig, executionLogCallback, serverlessGitFetchRequest.getAccountId());
+      FetchFilesResult filesResult = fetchManifestFile(serverlessGitFetchFileConfig, executionLogCallback,
+          serverlessGitFetchRequest.getAccountId(), serverlessGitFetchRequest.isCloseLogStream());
       filesFromMultipleRepo.put(serverlessGitFetchFileConfig.getIdentifier(), filesResult);
       executionLogCallback.saveExecutionLog(
           color(format("%nFetch Config File completed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
@@ -126,7 +126,7 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   }
 
   private FetchFilesResult fetchManifestFile(ServerlessGitFetchFileConfig serverlessGitFetchFileConfig,
-      LogCallback executionLogCallback, String accountId) throws Exception {
+      LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
     GitStoreDelegateConfig gitStoreDelegateConfig = serverlessGitFetchFileConfig.getGitStoreDelegateConfig();
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo;
@@ -152,10 +152,11 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
         String folderPath = serverlessGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
         if (EmptyPredicate.isNotEmpty(serverlessGitFetchFileConfig.getConfigOverridePath())) {
           filesResult = fetchManifestFileFromRepo(gitStoreDelegateConfig, folderPath,
-              serverlessGitFetchFileConfig.getConfigOverridePath(), accountId, gitConfigDTO, executionLogCallback);
+              serverlessGitFetchFileConfig.getConfigOverridePath(), accountId, gitConfigDTO, executionLogCallback,
+              closeLogStream);
         } else {
           filesResult = fetchManifestFileInPriorityOrder(
-              gitStoreDelegateConfig, folderPath, accountId, gitConfigDTO, executionLogCallback);
+              gitStoreDelegateConfig, folderPath, accountId, gitConfigDTO, executionLogCallback, closeLogStream);
         }
       }
     } catch (Exception ex) {
@@ -174,21 +175,22 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   }
 
   private FetchFilesResult fetchManifestFileInPriorityOrder(GitStoreDelegateConfig gitStoreDelegateConfig,
-      String folderPath, String accountId, GitConfigDTO gitConfigDTO, LogCallback executionLogCallback) {
+      String folderPath, String accountId, GitConfigDTO gitConfigDTO, LogCallback executionLogCallback,
+      boolean closeLogStream) {
     // todo: // optimize in such a way fetching of files from git happens only once
     Optional<FetchFilesResult> serverlessManifestFileResult;
-    serverlessManifestFileResult = fetchServerlessManifestFileFromRepo(
-        gitStoreDelegateConfig, folderPath, "serverless.yaml", accountId, gitConfigDTO, executionLogCallback);
+    serverlessManifestFileResult = fetchServerlessManifestFileFromRepo(gitStoreDelegateConfig, folderPath,
+        "serverless.yaml", accountId, gitConfigDTO, executionLogCallback, closeLogStream);
     if (serverlessManifestFileResult.isPresent()) {
       return serverlessManifestFileResult.get();
     }
-    serverlessManifestFileResult = fetchServerlessManifestFileFromRepo(
-        gitStoreDelegateConfig, folderPath, "serverless.yml", accountId, gitConfigDTO, executionLogCallback);
+    serverlessManifestFileResult = fetchServerlessManifestFileFromRepo(gitStoreDelegateConfig, folderPath,
+        "serverless.yml", accountId, gitConfigDTO, executionLogCallback, closeLogStream);
     if (serverlessManifestFileResult.isPresent()) {
       return serverlessManifestFileResult.get();
     }
-    serverlessManifestFileResult = fetchServerlessManifestFileFromRepo(
-        gitStoreDelegateConfig, folderPath, "serverless.json", accountId, gitConfigDTO, executionLogCallback);
+    serverlessManifestFileResult = fetchServerlessManifestFileFromRepo(gitStoreDelegateConfig, folderPath,
+        "serverless.json", accountId, gitConfigDTO, executionLogCallback, closeLogStream);
     if (serverlessManifestFileResult.isPresent()) {
       return serverlessManifestFileResult.get();
     }
@@ -201,22 +203,22 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   }
 
   private Optional<FetchFilesResult> fetchServerlessManifestFileFromRepo(GitStoreDelegateConfig gitStoreDelegateConfig,
-      String folderPath, String filePath, String accountId, GitConfigDTO gitConfigDTO,
-      LogCallback executionLogCallback) {
+      String folderPath, String filePath, String accountId, GitConfigDTO gitConfigDTO, LogCallback executionLogCallback,
+      boolean closeLogStream) {
     try {
       return Optional.of(fetchManifestFileFromRepo(
-          gitStoreDelegateConfig, folderPath, filePath, accountId, gitConfigDTO, executionLogCallback));
+          gitStoreDelegateConfig, folderPath, filePath, accountId, gitConfigDTO, executionLogCallback, closeLogStream));
     } catch (Exception e) {
       return Optional.empty();
     }
   }
 
   private FetchFilesResult fetchManifestFileFromRepo(GitStoreDelegateConfig gitStoreDelegateConfig, String folderPath,
-      String filePath, String accountId, GitConfigDTO gitConfigDTO, LogCallback executionLogCallback)
-      throws IOException {
+      String filePath, String accountId, GitConfigDTO gitConfigDTO, LogCallback executionLogCallback,
+      boolean closeLogStream) throws IOException {
     filePath = GitFetchTaskHelper.getCompleteFilePath(folderPath, filePath);
     List<String> filePaths = Collections.singletonList(filePath);
-    gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
+    gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
     return gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
   }
 

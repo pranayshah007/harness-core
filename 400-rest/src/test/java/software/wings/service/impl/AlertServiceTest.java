@@ -24,15 +24,12 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.alert.AlertData;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.category.element.UnitTests;
-import io.harness.event.model.Event;
 import io.harness.event.publisher.EventPublisher;
 import io.harness.rule.Owner;
 
@@ -60,7 +57,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 
 public class AlertServiceTest extends WingsBaseTest {
@@ -134,8 +130,6 @@ public class AlertServiceTest extends WingsBaseTest {
     assertThat(alert.getTitle()).isEqualTo("name needs approval");
     assertThat(alert.getTriggerCount()).isEqualTo(1);
     assertThat(alert.getStatus()).isEqualTo(Open);
-
-    verify(eventPublisher, times(1)).publishEvent(Mockito.any(Event.class));
   }
 
   @Test

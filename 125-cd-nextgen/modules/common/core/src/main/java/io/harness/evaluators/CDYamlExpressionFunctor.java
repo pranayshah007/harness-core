@@ -15,6 +15,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.SERVICE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -144,24 +145,21 @@ public class CDYamlExpressionFunctor {
         contextMap.put(arrayElement.getArrayUniqueIdentifier(), arrayElement.getField("value").getNode().asText());
       } else if (EmptyPredicate.isNotEmpty(arrayElement.getIdentifier())) {
         // Nodes having identifier to refer uniquely from the array.
-        fqnList.add(arrayElement.getIdentifier());
-        Map<String, Object> valueFromObject = getValueFromObject(arrayElement, fqnToValueMap, fqnList);
-        fqnToValueMap.put(String.join(".", fqnList), valueFromObject);
-        contextMap.put(arrayElement.getIdentifier(), valueFromObject);
-
-        fqnList.remove(fqnList.size() - 1);
-
+        processArrayElementWithKey(arrayElement.getIdentifier(), arrayElement, fqnList, contextMap, fqnToValueMap);
+      } else if (EmptyPredicate.isNotEmpty(arrayElement.getStringValue(YAMLFieldNameConstants.SERVICE_REF))) {
+        // Nodes having serviceRef to refer uniquely from the array.
+        processArrayElementWithKey(arrayElement.getStringValue(YAMLFieldNameConstants.SERVICE_REF), arrayElement,
+            fqnList, contextMap, fqnToValueMap);
+      } else if (EmptyPredicate.isNotEmpty(arrayElement.getStringValue(YAMLFieldNameConstants.ENVIRONMENT_REF))) {
+        // Nodes having environmentRef to refer uniquely from the array.
+        processArrayElementWithKey(arrayElement.getStringValue(YAMLFieldNameConstants.ENVIRONMENT_REF), arrayElement,
+            fqnList, contextMap, fqnToValueMap);
       } else if (arrayElement.isObject()) {
         for (YamlField field : arrayElement.fields()) {
           // Nodes having identifier to refer uniquely from the array.
           if (EmptyPredicate.isNotEmpty(field.getNode().getIdentifier())) {
-            fqnList.add(field.getNode().getIdentifier());
-
-            Map<String, Object> valueFromObject = getValueFromObject(field.getNode(), fqnToValueMap, fqnList);
-            fqnToValueMap.put(String.join(".", fqnList), valueFromObject);
-            contextMap.put(field.getNode().getIdentifier(), valueFromObject);
-
-            fqnList.remove(fqnList.size() - 1);
+            processArrayElementWithKey(
+                field.getNode().getIdentifier(), field.getNode(), fqnList, contextMap, fqnToValueMap);
           }
           // If the node is like parallel, a dummy node having another list.
           else if (field.getNode().isArray()) {
@@ -171,6 +169,15 @@ public class CDYamlExpressionFunctor {
       }
     }
     return contextMap;
+  }
+
+  private void processArrayElementWithKey(String key, YamlNode arrayElement, List<String> fqnList,
+      Map<String, Object> contextMap, Map<String, Map<String, Object>> fqnToValueMap) {
+    fqnList.add(key);
+    Map<String, Object> valueFromObject = getValueFromObject(arrayElement, fqnToValueMap, fqnList);
+    fqnToValueMap.put(String.join(".", fqnList), valueFromObject);
+    contextMap.put(key, valueFromObject);
+    fqnList.remove(fqnList.size() - 1);
   }
 
   private Map<String, Object> getValueFromObject(

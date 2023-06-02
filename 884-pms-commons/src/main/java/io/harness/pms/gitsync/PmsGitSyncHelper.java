@@ -39,7 +39,7 @@ public class PmsGitSyncHelper {
   }
 
   public ByteString getGitSyncBranchContextBytesThreadLocal(
-      GitSyncableEntity gitSyncableEntity, StoreType storeType, String repoName) {
+      GitSyncableEntity gitSyncableEntity, StoreType storeType, String repoName, String connectorRef) {
     GitSyncBranchContext gitSyncBranchContext = GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
     ScmGitMetaDataContext gitMetaDataContext = GlobalContextManager.get(ScmGitMetaDataContext.NG_GIT_SYNC_CONTEXT);
     String branchNameFromSCMGitMetadata =
@@ -49,6 +49,10 @@ public class PmsGitSyncHelper {
       gitSyncBranchContext.getGitBranchInfo().setFolderPath(gitSyncableEntity.getRootFolder());
       gitSyncBranchContext.getGitBranchInfo().setStoreType(storeType);
       gitSyncBranchContext.getGitBranchInfo().setRepoName(repoName);
+      // ParentEntity info is added for Parent Pipeline in Pipeline Chaining. This will be required to fetch branch of
+      // chained pipeline
+      gitSyncBranchContext.getGitBranchInfo().setParentEntityRepoName(repoName);
+      gitSyncBranchContext.getGitBranchInfo().setParentEntityConnectorRef(connectorRef);
       if (EmptyPredicate.isNotEmpty(branchNameFromSCMGitMetadata)) {
         // if API request does not have a branch, but the pipeline is of type remote, the git sdk figures out the
         // default branch and fills it in the SCM Git Metadata

@@ -14,8 +14,7 @@ import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -30,7 +29,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
-import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.gitsync.beans.StoreType;
@@ -51,6 +49,7 @@ import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
@@ -59,7 +58,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -140,15 +138,13 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Mock PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
   @Mock PrincipalInfoHelper principalInfoHelper;
   @Mock TriggeredByHelper triggeredByHelper;
-  @Inject IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   FilterCreatorMergeService filterCreatorMergeService;
 
   @Before
   public void init() {
     filterCreatorMergeService = spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper,
-        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService,
-        principalInfoHelper, triggeredByHelper));
+        pmsGitSyncHelper, pmsPipelineTemplateHelper, gitSyncSdkService, principalInfoHelper, triggeredByHelper));
     when(
         pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(new ArrayList<>());
@@ -189,12 +185,12 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     doReturn(Collections.singletonList(EntityDetailProtoDTO.newBuilder().build()))
         .when(pmsPipelineTemplateHelper)
         .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
-    FilterCreatorMergeServiceResponse filterCreatorMergeServiceResponse =
-        filterCreatorMergeService.getPipelineInfo(pipelineEntity);
+    FilterCreatorMergeServiceResponse filterCreatorMergeServiceResponse = filterCreatorMergeService.getPipelineInfo(
+        FilterCreationParams.builder().pipelineEntity(pipelineEntity).build());
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(pmsSdkHelper).getServices();
-    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(eq(pipelineEntity), listArgumentCaptor.capture());
+    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), listArgumentCaptor.capture());
     assertThat(listArgumentCaptor.getValue()).isNotNull().isNotEmpty().hasSize(1);
   }
 
@@ -317,11 +313,13 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     doReturn(Collections.singletonList(EntityDetailProtoDTO.newBuilder().build()))
         .when(pmsPipelineTemplateHelper)
         .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
-    Assertions.assertDoesNotThrow(() -> filterCreatorMergeService.getPipelineInfo(pipelineEntity));
+    Assertions.assertDoesNotThrow(()
+                                      -> filterCreatorMergeService.getPipelineInfo(
+                                          FilterCreationParams.builder().pipelineEntity(pipelineEntity).build()));
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(pmsSdkHelper).getServices();
-    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(eq(pipelineEntity), listArgumentCaptor.capture());
+    verify(pipelineSetupUsageHelper).publishSetupUsageEvent(any(), listArgumentCaptor.capture());
     assertThat(listArgumentCaptor.getValue()).isNotNull().isNotEmpty().hasSize(1);
   }
 

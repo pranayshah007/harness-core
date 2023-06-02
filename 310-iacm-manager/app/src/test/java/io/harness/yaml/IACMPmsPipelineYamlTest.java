@@ -18,9 +18,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.iacm.plan.creator.IACMPipelineServiceInfoProvider;
 import io.harness.pms.sdk.PmsSdkInitValidator;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.rule.Owner;
 
+import org.joor.Reflect;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,17 +34,20 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class IACMPmsPipelineYamlTest {
   @InjectMocks private IACMPipelineServiceInfoProvider serviceInfoProvider;
+
+  @InjectMocks PipelineServiceInfoDecoratorImpl serviceInfoDecorator;
   @Mock private InjectorUtils injectorUtils;
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void shouldValidatePlanCreatorFilterAndVariable() {
-    PmsSdkInitValidator.validatePlanCreators(serviceInfoProvider);
+    Reflect.on(serviceInfoDecorator).set("pipelineServiceInfoProvider", serviceInfoProvider);
+    PmsSdkInitValidator.validatePlanCreators(serviceInfoDecorator);
 
     // TO VALIDATE PLAN CREATORS WE DON'T CARE ABOUT InjectorUtils USAGE, BUT WITHOUT
     // THIS VERIFY OPERATION THE TEST FAIL AS NPE IS THROW. WE CAN REMOVE THIS WHEN
     // OTHER TEST SCENARIOS WERE ADDED TO THE TEST CLASS.
-    verify(injectorUtils, times(2)).injectMembers(notNull());
+    verify(injectorUtils, times(5)).injectMembers(notNull());
   }
 }

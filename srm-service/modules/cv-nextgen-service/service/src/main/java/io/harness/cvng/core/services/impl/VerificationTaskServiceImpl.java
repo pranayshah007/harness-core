@@ -33,7 +33,6 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery.QueryChecks;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

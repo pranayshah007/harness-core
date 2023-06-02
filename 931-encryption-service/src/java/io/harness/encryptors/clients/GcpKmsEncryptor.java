@@ -77,6 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class GcpKmsEncryptor implements KmsEncryptor {
+  private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
   private static final int DEFAULT_GCP_KMS_TIMEOUT = 20;
   private final int NUM_OF_RETRIES = 3;
   private final TimeLimiter timeLimiter;
@@ -275,14 +276,27 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig) {
-    Preconditions.checkNotNull(gcpKmsConfig.getCredentials(), "credentials are not provided");
-    Preconditions.checkNotNull(gcpKmsConfig.getRegion(), "region is not present");
-    Preconditions.checkNotNull(gcpKmsConfig.getProjectId(), "projectId is not present");
-    Preconditions.checkNotNull(gcpKmsConfig.getKeyRing(), "keyRing is not present");
-    Preconditions.checkNotNull(gcpKmsConfig.getKeyName(), "keyName is not provided");
-    InputStream credentialsStream =
-        new ByteArrayInputStream(String.copyValueOf(gcpKmsConfig.getCredentials()).getBytes(StandardCharsets.UTF_8));
-    return getClientInternal(credentialsStream);
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
+    if (usingWorkloadIdentity && gcpKmsConfig.isGlobalKms()) {
+      try {
+        log.info("[WI]: Using workload identity for GCP KMS");
+        KeyManagementServiceClient keyManagementServiceClient = KeyManagementServiceClient.create();
+        log.info("[WI]: Created KMS client successfully: {}", keyManagementServiceClient.getSettings());
+        return keyManagementServiceClient;
+      } catch (IOException e) {
+        log.error("[WI]: Failed to create KMS client", e);
+        throw new RuntimeException(e);
+      }
+    } else {
+      Preconditions.checkNotNull(gcpKmsConfig.getCredentials(), "credentials are not provided");
+      Preconditions.checkNotNull(gcpKmsConfig.getRegion(), "region is not present");
+      Preconditions.checkNotNull(gcpKmsConfig.getProjectId(), "projectId is not present");
+      Preconditions.checkNotNull(gcpKmsConfig.getKeyRing(), "keyRing is not present");
+      Preconditions.checkNotNull(gcpKmsConfig.getKeyName(), "keyName is not provided");
+      InputStream credentialsStream =
+          new ByteArrayInputStream(String.copyValueOf(gcpKmsConfig.getCredentials()).getBytes(StandardCharsets.UTF_8));
+      return getClientInternal(credentialsStream);
+    }
   }
 
   @VisibleForTesting

@@ -9,9 +9,11 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
@@ -23,8 +25,8 @@ import java.util.Map;
 
 public class CustomFetchInstancesStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -41,10 +43,11 @@ public class CustomFetchInstancesStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     InstanceFetchState state = (InstanceFetchState) getState(graphNode);
     FetchInstanceScriptStepNode fetchInstanceScriptStepNode = new FetchInstanceScriptStepNode();
-    baseSetup(graphNode, fetchInstanceScriptStepNode);
+    baseSetup(graphNode, fetchInstanceScriptStepNode, context.getIdentifierCaseFormat());
     FetchInstanceScriptStepInfo stepInfo = new FetchInstanceScriptStepInfo();
     stepInfo.setDelegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()));
     fetchInstanceScriptStepNode.setFetchInstanceScriptStepInfo(stepInfo);
@@ -54,5 +57,10 @@ public class CustomFetchInstancesStepMapperImpl extends StepMapper {
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return true;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.CUSTOM_DEPLOYMENT;
   }
 }

@@ -12,6 +12,7 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeEvent;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -80,6 +81,19 @@ public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataH
 
       // TriggerTypeInfo
       PlanExecutionSummaryChangeDataHandler.commonHandlerTriggerInfo(columnValueMapping, dbObject);
+      if ((dbObject.get(PlanExecutionSummaryKeys.executionTriggerInfo)) != null) {
+        DBObject executionTriggerInfoObject = (DBObject) dbObject.get(PlanExecutionSummaryKeys.executionTriggerInfo);
+        if (executionTriggerInfoObject.get("triggeredBy") != null) {
+          DBObject triggeredByObject = (DBObject) executionTriggerInfoObject.get("triggeredBy");
+          if (executionTriggerInfoObject.get("triggerType") != null) {
+            if (TriggerType.MANUAL.toString().equals(executionTriggerInfoObject.get("triggerType").toString())) {
+              columnValueMapping.put("triggered_by_id", triggeredByObject.get("uuid").toString());
+            } else {
+              columnValueMapping.put("triggered_by_id", triggeredByObject.get("identifier").toString());
+            }
+          }
+        }
+      }
 
       // CI-relatedInfo
       if (((BasicDBObject) dbObject.get("moduleInfo")).get("ci") != null) {

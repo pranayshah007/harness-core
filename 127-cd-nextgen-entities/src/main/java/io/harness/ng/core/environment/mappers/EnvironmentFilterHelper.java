@@ -21,7 +21,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
@@ -30,11 +29,16 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -66,6 +70,92 @@ public class EnvironmentFilterHelper {
       criteria.andOperator(searchCriteria);
     }
     return criteria;
+  }
+
+  public Criteria createCriteriaForGetList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> scopedEnvRefs, boolean deleted) {
+    Criteria criteria = new Criteria();
+    if (isNotEmpty(accountId)) {
+      criteria.and(EnvironmentKeys.accountId).is(accountId);
+
+      Criteria scopedEnvsCriteria = null;
+
+      if (isNotEmpty(scopedEnvRefs) && !Iterables.all(scopedEnvRefs, Predicates.isNull())) {
+        scopedEnvsCriteria =
+            getCriteriaToReturnEnvsFromEnvList(accountId, orgIdentifier, projectIdentifier, scopedEnvRefs);
+      } else {
+        criteria.and(EnvironmentKeys.orgIdentifier).is(orgIdentifier);
+        criteria.and(EnvironmentKeys.projectIdentifier).is(projectIdentifier);
+      }
+
+      List<Criteria> criteriaList = new ArrayList<>();
+      if (scopedEnvsCriteria != null) {
+        criteriaList.add(scopedEnvsCriteria);
+      }
+      if (isNotEmpty(criteriaList)) {
+        criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+      }
+
+      criteria.and(EnvironmentKeys.deleted).is(deleted);
+      return criteria;
+    } else {
+      throw new InvalidRequestException("account identifier cannot be null for environment list");
+    }
+  }
+
+  private Criteria getCriteriaToReturnEnvsFromEnvList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> scopedEnvRefs) {
+    Criteria criteria = new Criteria();
+    List<Criteria> orCriteriaList = new ArrayList<>();
+    List<String> projectLevelIdentifiers = new ArrayList<>();
+    List<String> orgLevelIdentifiers = new ArrayList<>();
+    List<String> accountLevelIdentifiers = new ArrayList<>();
+
+    if (isNotEmpty(scopedEnvRefs)) {
+      ServiceFilterHelper.populateIdentifiersOfEachLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+          scopedEnvRefs, projectLevelIdentifiers, orgLevelIdentifiers, accountLevelIdentifiers);
+    }
+
+    Criteria accountCriteria;
+    Criteria orgCriteria;
+    Criteria projectCriteria;
+
+    if (isNotEmpty(accountLevelIdentifiers)) {
+      accountCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                            .is(null)
+                            .and(EnvironmentKeys.projectIdentifier)
+                            .is(null)
+                            .and(EnvironmentKeys.identifier)
+                            .in(accountLevelIdentifiers);
+      orCriteriaList.add(accountCriteria);
+    }
+
+    if (isNotEmpty(orgLevelIdentifiers)) {
+      orgCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                        .is(orgIdentifier)
+                        .and(EnvironmentKeys.projectIdentifier)
+                        .is(null)
+                        .and(EnvironmentKeys.identifier)
+                        .in(orgLevelIdentifiers);
+      orCriteriaList.add(orgCriteria);
+    }
+
+    if (isNotEmpty(projectLevelIdentifiers)) {
+      projectCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(EnvironmentKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(EnvironmentKeys.identifier)
+                            .in(projectLevelIdentifiers);
+      orCriteriaList.add(projectCriteria);
+    }
+
+    if (isNotEmpty(orCriteriaList)) {
+      criteria.orOperator(orCriteriaList);
+      return criteria;
+    }
+
+    return null;
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
@@ -217,27 +307,37 @@ public class EnvironmentFilterHelper {
     return new Criteria().orOperator(criteriaForNames.toArray(new Criteria[0]));
   }
 
+  // Todo: This code handles all four cases where request and entity in DB can contain any of environment Ref or
+  // identifier. Clean up in future after successful migration
   public Criteria createCriteriaForGetServiceOverrides(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    Criteria criteria;
+    Criteria baseCriteria;
+    final String qualifiedEnvironmentRef;
+    final String environmentIdentifier;
     String[] envRefSplit =
         org.apache.commons.lang3.StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
-      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef);
+      baseCriteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+      qualifiedEnvironmentRef =
+          IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, environmentRef);
+      environmentIdentifier = environmentRef;
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
+      baseCriteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
           envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
-      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(envIdentifierRef.getIdentifier());
+      qualifiedEnvironmentRef = environmentRef;
+      environmentIdentifier = envIdentifierRef.getIdentifier();
     }
+    baseCriteria.andOperator(
+        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(environmentIdentifier),
+            Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(qualifiedEnvironmentRef)));
 
     if (isNotBlank(serviceRef)) {
-      criteria.and(NGServiceOverridesEntityKeys.serviceRef).is(serviceRef);
+      baseCriteria.and(NGServiceOverridesEntityKeys.serviceRef).is(serviceRef);
     }
 
-    return criteria;
+    return baseCriteria;
   }
 
   public static Update getUpdateOperations(Environment environment) {
@@ -264,16 +364,31 @@ public class EnvironmentFilterHelper {
     return update;
   }
 
+  // Should not be used for Overrides V2
+  @Deprecated
   public static Update getUpdateOperationsForServiceOverride(NGServiceOverridesEntity serviceOverridesEntity) {
+    String qualifiedEnvironmentRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
+        serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
+        serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef());
+    String identifier = generateServiceOverrideIdentifier(serviceOverridesEntity);
+    ServiceOverridesType type = ServiceOverridesType.ENV_SERVICE_OVERRIDE;
     Update update = new Update();
     update.set(NGServiceOverridesEntityKeys.accountId, serviceOverridesEntity.getAccountId());
     update.set(NGServiceOverridesEntityKeys.orgIdentifier, serviceOverridesEntity.getOrgIdentifier());
     update.set(NGServiceOverridesEntityKeys.projectIdentifier, serviceOverridesEntity.getProjectIdentifier());
-    update.set(NGServiceOverridesEntityKeys.environmentRef, serviceOverridesEntity.getEnvironmentRef());
+    update.set(NGServiceOverridesEntityKeys.environmentRef, qualifiedEnvironmentRef);
     update.set(NGServiceOverridesEntityKeys.serviceRef, serviceOverridesEntity.getServiceRef());
     update.set(NGServiceOverridesEntityKeys.yaml, serviceOverridesEntity.getYaml());
     update.setOnInsert(NGServiceOverridesEntityKeys.createdAt, System.currentTimeMillis());
     update.set(NGServiceOverridesEntityKeys.lastModifiedAt, System.currentTimeMillis());
+    // for service override v2
+    update.set(NGServiceOverridesEntityKeys.identifier, identifier);
+    update.set(NGServiceOverridesEntityKeys.type, type);
     return update;
+  }
+
+  private static String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
+    return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getServiceRef())
+        .replace(".", "_");
   }
 }

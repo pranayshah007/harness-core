@@ -20,7 +20,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupRequestDTO;
@@ -30,6 +29,7 @@ import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.scope.ScopeHelper;
 
 import java.io.IOException;
 import java.io.InputStream;

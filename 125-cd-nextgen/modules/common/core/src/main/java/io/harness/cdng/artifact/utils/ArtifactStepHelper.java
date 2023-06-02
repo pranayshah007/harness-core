@@ -8,10 +8,12 @@
 package io.harness.cdng.artifact.utils;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
@@ -29,9 +31,16 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails.ArtifactsSummary.ArtifactsSummaryBuilder;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -53,14 +62,21 @@ import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelega
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
@@ -71,12 +87,15 @@ import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 
@@ -88,11 +107,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class ArtifactStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
@@ -101,6 +123,46 @@ public class ArtifactStepHelper {
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
+    if (ngFeatureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)
+        && artifactsOutcome != null) {
+      stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+          StageExecutionInfoUpdateDTO.builder()
+              .artifactsSummary(mapArtifactsOutcomeToSummary(artifactsOutcome))
+              .build());
+    }
+  }
+
+  private ServiceExecutionSummaryDetails.ArtifactsSummary mapArtifactsOutcomeToSummary(
+      ArtifactsOutcome artifactsOutcome) {
+    ArtifactsSummaryBuilder artifactsSummaryBuilder = ServiceExecutionSummaryDetails.ArtifactsSummary.builder();
+    if (artifactsOutcome == null) {
+      return artifactsSummaryBuilder.build();
+    }
+
+    if (artifactsOutcome.getPrimary() != null) {
+      artifactsSummaryBuilder.primary(artifactsOutcome.getPrimary().getArtifactSummary());
+      if (artifactsOutcome.getPrimary().getArtifactSummary() != null) {
+        artifactsSummaryBuilder.artifactDisplayName(
+            artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName());
+      }
+    }
+
+    if (isNotEmpty(artifactsOutcome.getSidecars())) {
+      artifactsSummaryBuilder.sidecars(artifactsOutcome.getSidecars()
+                                           .values()
+                                           .stream()
+                                           .filter(Objects::nonNull)
+                                           .map(ArtifactOutcome::getArtifactSummary)
+                                           .collect(Collectors.toList()));
+    }
+
+    return artifactsSummaryBuilder.build();
+  }
 
   public ArtifactSourceDelegateRequest toSourceDelegateRequest(ArtifactConfig artifactConfig, Ambiance ambiance) {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
@@ -332,6 +394,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
             encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof BambooConnectorDTO)) {
+          throw new InvalidConnectorTypeException("Provided Connector "
+                  + bambooArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + bambooArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        BambooConnectorDTO bambooConnectorDTO = (BambooConnectorDTO) connectorDTO.getConnectorConfig();
+        if (bambooConnectorDTO.getAuth() != null && bambooConnectorDTO.getAuth().getCredentials() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, bambooConnectorDTO.getAuth().getCredentials());
+        }
+        return ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(bambooArtifactConfig, bambooConnectorDTO,
+            encryptedDataDetails, bambooArtifactConfig.getConnectorRef().getValue());
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         /*
@@ -406,9 +484,8 @@ public class ArtifactStepHelper {
     return encryptedDataDetails;
   }
 
-  private List<EncryptedDataDetail> getGithubEncryptedDetails(
-      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+  public List<EncryptedDataDetail> getGithubEncryptedDetails(GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails;
 
     if (githubConnectorDTO.getApiAccess() != null) {
       encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
@@ -421,7 +498,7 @@ public class ArtifactStepHelper {
 
   private List<EncryptedDataDetail> getGithubEncryptionDetails(
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<EncryptedDataDetail> encryptedDataDetails;
 
     GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
 
@@ -434,6 +511,32 @@ public class ArtifactStepHelper {
 
     } else {
       throw new InvalidRequestException("Please select the authentication type for API Access as Token");
+    }
+
+    // fetch encryptedDataDetails for decrypting username if provided as a secret
+
+    GithubAuthenticationDTO githubAuthenticationDTO = githubConnectorDTO.getAuthentication();
+    if (githubAuthenticationDTO != null && GitAuthType.HTTP.equals(githubAuthenticationDTO.getAuthType())) {
+      List<EncryptedDataDetail> encryptedDataDetailsForUsername = new ArrayList<>();
+      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+          (GithubHttpCredentialsDTO) githubAuthenticationDTO.getCredentials();
+      if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+        GithubUsernamePasswordDTO githubUsernamePasswordDTO =
+            (GithubUsernamePasswordDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        encryptedDataDetailsForUsername =
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubUsernamePasswordDTO);
+      } else if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        GithubUsernameTokenDTO githubUsernameTokenDTO =
+            (GithubUsernameTokenDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        encryptedDataDetailsForUsername =
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubUsernameTokenDTO);
+      }
+
+      for (EncryptedDataDetail encryptedDataDetail : encryptedDataDetailsForUsername) {
+        if ("usernameRef".equals(encryptedDataDetail.getFieldName())) {
+          encryptedDataDetails.add(encryptedDataDetail);
+        }
+      }
     }
 
     return encryptedDataDetails;
@@ -482,6 +585,8 @@ public class ArtifactStepHelper {
         return TaskType.AZURE_ARTIFACT_TASK_NG;
       case AMI:
         return TaskType.AMI_ARTIFACT_TASK_NG;
+      case BAMBOO:
+        return TaskType.BAMBOO_ARTIFACT_TASK_NG;
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         return TaskType.GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG;
       case GOOGLE_CLOUD_SOURCE_ARTIFACT:
@@ -578,6 +683,14 @@ public class ArtifactStepHelper {
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)
                                                    .collect(Collectors.toList()));
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((BambooConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -654,16 +767,16 @@ public class ArtifactStepHelper {
     return resultantArtifact;
   }
 
-  public String getArtifactProcessedServiceYaml(Ambiance ambiance, String serviceYaml) {
+  public ArtifactsProcessedResponse getArtifactProcessedServiceYaml(Ambiance ambiance, String serviceYaml) {
     try {
-      YamlField yamlField = processArtifactsInYaml(ambiance, serviceYaml);
-      return YamlUtils.writeYamlString(yamlField);
+      return processArtifactsInYaml(ambiance, serviceYaml);
     } catch (IOException ex) {
       throw new InvalidRequestException("Error processing artifact sources in service Yaml", ex);
     }
   }
 
-  public YamlField processArtifactsInYaml(Ambiance ambiance, String serviceEntityYaml) throws IOException {
+  public ArtifactsProcessedResponse processArtifactsInYaml(Ambiance ambiance, String serviceEntityYaml)
+      throws IOException {
     YamlField yamlField = YamlUtils.readTree(serviceEntityYaml);
     YamlField serviceDefField =
         yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
@@ -674,33 +787,26 @@ public class ArtifactStepHelper {
 
     YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
     if (serviceSpecField == null) {
-      throw new InvalidRequestException(String.format(
-          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service"));
+      throw new InvalidRequestException(
+          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service");
     }
 
     YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
     if (artifactsField == null) {
-      return yamlField;
+      return ArtifactsProcessedResponse.builder().serviceYaml(YamlUtils.writeYamlString(yamlField)).build();
     }
 
     YamlField primaryArtifactField = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
     if (primaryArtifactField == null) {
-      return yamlField;
+      return ArtifactsProcessedResponse.builder().serviceYaml(YamlUtils.writeYamlString(yamlField)).build();
     }
 
     YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
-    if (primaryArtifactRef == null) {
-      return yamlField;
-    }
 
     YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
-    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+    String primaryArtifactRefValue = null;
 
-    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray() && primaryArtifactRefValue != null) {
-      if (EmptyPredicate.isEmpty(primaryArtifactRefValue)) {
-        throw new InvalidRequestException("Primary artifact ref cannot be empty");
-      }
-
+    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray()) {
       ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
       List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
 
@@ -708,11 +814,22 @@ public class ArtifactStepHelper {
       // If there is only 1 artifact source, default to that
       if (artifactSources.size() == 1) {
         if (artifactSources.get(0).isObject()) {
+          // primary artifact ref is by default chosen
+          primaryArtifactRefValue = artifactSources.get(0).getIdentifier();
+
           primaryNode = (ObjectNode) artifactSources.get(0).getCurrJsonNode();
           primaryNode.remove(YamlTypes.IDENTIFIER);
         }
       } else {
-        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+        if (primaryArtifactRef == null) {
+          throw new InvalidRequestException("Primary artifact ref cannot be empty when multiple sources are present");
+        }
+        primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+        if (EmptyPredicate.isEmpty(primaryArtifactRefValue)) {
+          throw new InvalidRequestException("Primary artifact ref cannot be empty");
+        }
+
+        primaryArtifactRefValue = resolvePrimaryArtifactRef(ambiance, primaryArtifactRefValue);
         if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
           throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
         }
@@ -733,6 +850,23 @@ public class ArtifactStepHelper {
             String.format("No artifact source exists with the identifier %s inside service", primaryArtifactRefValue));
       }
     }
-    return yamlField;
+    return ArtifactsProcessedResponse.builder()
+        .serviceYaml(YamlUtils.writeYamlString(yamlField))
+        .primaryArtifactRef(primaryArtifactRefValue)
+        .build();
+  }
+
+  private String resolvePrimaryArtifactRef(Ambiance ambiance, String primaryArtifactRefValue) {
+    // handle primaryArtifactRef with input set validators nginx.allowedValues(nginx,http)
+    final ParameterField<String> primaryArtifactRefParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(primaryArtifactRefValue);
+    if (primaryArtifactRefParameterField != null) {
+      if (primaryArtifactRefParameterField.isExpression()) {
+        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+      } else {
+        primaryArtifactRefValue = primaryArtifactRefParameterField.getValue();
+      }
+    }
+    return primaryArtifactRefValue;
   }
 }

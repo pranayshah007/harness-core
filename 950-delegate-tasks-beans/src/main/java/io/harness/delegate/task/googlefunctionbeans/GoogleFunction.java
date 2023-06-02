@@ -24,6 +24,9 @@ public class GoogleFunction {
   String state;
   String environment;
   String url;
+  String source;
+  long updatedTime;
+
   @Nonnull GoogleCloudRunService cloudRunService;
   @Nonnull List<GoogleCloudRunRevision> activeCloudRunRevisions;
 

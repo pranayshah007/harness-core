@@ -8,6 +8,7 @@
 package io.harness.ng;
 
 import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
+import static io.harness.NGCommonEntityConstants.FILE_STORE_FUNCTOR;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;
@@ -21,6 +22,7 @@ import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.NextGenConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
+import static io.harness.pms.expressions.functors.KubernetesReleaseFunctor.KUBERNETES_RELEASE_FUNCTOR_NAME;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static com.google.common.collect.ImmutableMap.of;
@@ -45,19 +47,26 @@ import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
+import io.harness.cdng.pipeline.executions.CdngOrchestrationEventRedisConsumer;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.changestreams.controllers.PlgEventConsumerController;
+import io.harness.changestreams.redisconsumers.ModuleLicensesRedisEventConsumer;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
+import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
+import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -117,6 +126,7 @@ import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
+import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
@@ -135,7 +145,9 @@ import io.harness.ng.migration.SourceCodeManagerMigrationProvider;
 import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
 import io.harness.ng.moduleversioninfo.runnable.ModuleVersionsMaintenanceTask;
-import io.harness.ng.oauth.OAuthTokenRefresher;
+import io.harness.ng.oauth.BitbucketSCMOAuthTokenRefresher;
+import io.harness.ng.oauth.GitlabConnectorOAuthTokenRefresher;
+import io.harness.ng.oauth.GitlabSCMOAuthTokenRefresher;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
 import io.harness.ngsettings.settings.SettingsCreationJob;
@@ -152,10 +164,15 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.expressions.functors.ConfigFileFunctor;
+import io.harness.pms.expressions.functors.DockerConfigJsonFunctor;
+import io.harness.pms.expressions.functors.FileStoreFunctor;
 import io.harness.pms.expressions.functors.ImagePullSecretFunctor;
 import io.harness.pms.expressions.functors.InstanceFunctor;
+import io.harness.pms.expressions.functors.KubernetesReleaseFunctor;
 import io.harness.pms.governance.EnvironmentExpansionHandler;
+import io.harness.pms.governance.EnvironmentGroupExpandedHandler;
 import io.harness.pms.governance.EnvironmentRefExpansionHandler;
+import io.harness.pms.governance.MultiEnvironmentExpansionHandler;
 import io.harness.pms.governance.ServiceRefExpansionHandler;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
 import io.harness.pms.redisConsumer.PipelineExecutionSummaryCDRedisEventConsumer;
@@ -171,7 +188,6 @@ import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsume
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
-import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
@@ -443,8 +459,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
-    registerNotificationTemplates(injector);
+    if (!appConfig.isDisableFreezeNotificationTemplate()) {
+      registerNotificationTemplates(injector);
+    }
     registerPmsSdkEvents(appConfig, injector);
+    registerDebeziumEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
@@ -533,17 +552,28 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     return NGMigrationConfiguration.builder()
         .microservice(Microservice.CORE)
         .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
-          { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
-          { add(ProjectMigrationProvider.class); }
-          { add(UserMembershipMigrationProvider.class); }
           { add(NGBeanMigrationProvider.class); }
+
+          { add(ProjectMigrationProvider.class); }
+
+          { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
+
+          { add(UserMembershipMigrationProvider.class); }
+
           { add(InstanceMigrationProvider.class); }
+
           { add(UserMetadataMigrationProvider.class); }
+
           { add(LicenseManagerMigrationProvider.class); }
+
           { add(SourceCodeManagerMigrationProvider.class); }
+
           { add(GitSyncMigrationProvider.class); }
+
           { add(DelegateMigrationProvider.class); }
+
           { add(UserGroupMigrationProvider.class); }
+
           { add(CDMigrationProvider.class); }
         })
         .build();
@@ -613,10 +643,16 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
     injector.getInstance(GitFullSyncEntityIterator.class)
         .registerIterators(ngIteratorsConfig.getGitFullSyncEntityIteratorConfig().getThreadPoolSize());
-    //  injector.getInstance(NgDeploymentFreezeActivationHandler.class).registerIterators();
-    injector.getInstance(OAuthTokenRefresher.class)
+    injector.getInstance(NgDeploymentFreezeActivationHandler.class).registerIterators(5);
+    injector.getInstance(GitlabConnectorOAuthTokenRefresher.class)
+        .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
+    injector.getInstance(GitlabSCMOAuthTokenRefresher.class)
+        .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
+    injector.getInstance(BitbucketSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
+    injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
+    injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
   }
 
   public void registerJobs(Injector injector) {
@@ -633,6 +669,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NGEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(GitSyncEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(PlgEventConsumerController.class));
   }
 
   private void registerPmsSdkEvents(NextGenConfiguration appConfig, Injector injector) {
@@ -640,7 +677,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(CdngOrchestrationEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
@@ -649,6 +686,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
         appConfig.getDebeziumConsumersConfigs().getPlanExecutionsSummaryStreaming().getThreads());
+  }
+
+  private void registerDebeziumEvents(NextGenConfiguration appConfig, Injector injector) {
+    log.info("Initializing sdk redis abstract consumers for PLG...");
+    PlgEventConsumerController plgEventConsumerController = injector.getInstance(PlgEventConsumerController.class);
+    plgEventConsumerController.register(injector.getInstance(ModuleLicensesRedisEventConsumer.class),
+        appConfig.getDebeziumConsumersConfigs().getModuleLicensesStreaming().getThreads());
   }
 
   private void registerYamlSdk(Injector injector) {
@@ -706,18 +750,26 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
+    aliases.put("OnRollbackModeExecution",
+        "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\")");
     return aliases;
   }
 
   private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
     Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
+    sdkFunctorMap.put(DockerConfigJsonFunctor.DOCKER_CONFIG_JSON, DockerConfigJsonFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     sdkFunctorMap.put(
         TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
+    sdkFunctorMap.put(
+        TerraformCloudPolicyChecksJsonFunctor.TFC_POLICY_CHECKS_JSON, TerraformCloudPolicyChecksJsonFunctor.class);
+    sdkFunctorMap.put(TerraformCloudPlanJsonFunctor.TERRAFORM_CLOUD_PLAN_JSON, TerraformCloudPlanJsonFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
+    sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);
+    sdkFunctorMap.put(KUBERNETES_RELEASE_FUNCTOR_NAME, KubernetesReleaseFunctor.class);
     return sdkFunctorMap;
   }
 
@@ -758,10 +810,34 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                                                   .expansionHandler(EnvironmentExpansionHandler.class)
                                                   .build();
 
+    JsonExpansionInfo multiEnvironmentInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environments")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo multiEnvironmentHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                               .jsonExpansionInfo(multiEnvironmentInfo)
+                                                               .expansionHandler(MultiEnvironmentExpansionHandler.class)
+                                                               .build();
+
+    JsonExpansionInfo environmentGroupInfo =
+        JsonExpansionInfo.newBuilder()
+            .setKey("stage/spec/environmentGroup")
+            .setExpansionType(ExpansionRequestType.LOCAL_FQN)
+            .setStageType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("Deployment").build())
+            .build();
+    JsonExpansionHandlerInfo environmentGroupHandlerInfo = JsonExpansionHandlerInfo.builder()
+                                                               .jsonExpansionInfo(environmentGroupInfo)
+                                                               .expansionHandler(EnvironmentGroupExpandedHandler.class)
+                                                               .build();
+
     jsonExpansionHandlers.add(connRefHandlerInfo);
     jsonExpansionHandlers.add(serviceRefHandlerInfo);
     jsonExpansionHandlers.add(envRefHandlerInfo);
     jsonExpansionHandlers.add(envHandlerInfo);
+    jsonExpansionHandlers.add(multiEnvironmentHandlerInfo);
+    jsonExpansionHandlers.add(environmentGroupHandlerInfo);
     return jsonExpansionHandlers;
   }
 

@@ -24,9 +24,9 @@ import static software.wings.utils.WingsTestConstants.ENV_ID;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -43,6 +43,7 @@ import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeploy
 import io.harness.delegate.task.azure.request.AzureVMSSSwitchRouteTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSSwitchRoutesResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -77,6 +78,7 @@ public class AzureVMSSSwitchRoutesStateTest extends WingsBaseTest {
   @Mock private ActivityService activityService;
   @Mock private LogService logService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks
   private final AzureVMSSSwitchRoutesState switchRoutesState = new AzureVMSSSwitchRoutesState("switch-route-state");
   @InjectMocks

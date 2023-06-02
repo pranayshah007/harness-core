@@ -102,7 +102,7 @@ public class SecretsRBACServiceImpl implements SecretsRBACService {
     UsageRestrictions restrictionsFromUserPermissions = restrictionsAndAppEnvMap.getUsageRestrictions();
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId);
+    Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId, accountId);
 
     for (SecretScopeMetadata secretScopeMetadata : secretsScopeMetadata) {
       if (!usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appId, envId, false,
@@ -131,7 +131,7 @@ public class SecretsRBACServiceImpl implements SecretsRBACService {
     UsageRestrictions restrictionsFromUserPermissions = restrictionsAndAppEnvMap.getUsageRestrictions();
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId);
+    Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId, accountId);
 
     for (SecretScopeMetadata secretScopeMetadata : secretsScopeMetadata) {
       if (usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appId, envId, forUsageInNewApp,

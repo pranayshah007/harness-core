@@ -15,10 +15,10 @@ import static software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetu
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -33,6 +33,7 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -77,6 +78,7 @@ public class AzureWebAppSlotShiftTrafficTest extends WingsBaseTest {
   @Mock protected ActivityService activityService;
   @Mock AzureSweepingOutputServiceHelper azureSweepingOutputServiceHelper;
   @Mock protected StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Spy @InjectMocks private ServiceTemplateHelper serviceTemplateHelper;
   @Spy @InjectMocks AzureWebAppSlotShiftTraffic state = new AzureWebAppSlotShiftTraffic("Slot Traffic shift state");
 

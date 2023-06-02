@@ -19,6 +19,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -48,7 +49,7 @@ import org.jetbrains.annotations.NotNull;
 @Entity(value = "timeSeriesRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public final class TimeSeriesRecord
-    extends VerificationTaskBase implements AccountAccess, PersistentEntity, Comparable<TimeSeriesRecord> {
+    extends VerificationTaskBase implements AccountAccess, PersistentEntity, Comparable<TimeSeriesRecord>, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

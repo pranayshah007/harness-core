@@ -55,8 +55,8 @@ public class SamlFeature extends AbstractPremiumFeature implements ComplianceByR
     ssoService.deleteSamlConfiguration(accountId);
 
     if (!accountService.get(accountId).isOauthEnabled() && targetAccountType.equals(AccountType.COMMUNITY)) {
-      ssoService.uploadOauthConfiguration(accountId, "", EnumSet.allOf(OauthProviderType.class));
-      ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH);
+      ssoService.uploadOauthConfiguration(accountId, "", EnumSet.allOf(OauthProviderType.class), false);
+      ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH, false);
     }
 
     return isUsageCompliantWithRestrictions(accountId, targetAccountType);

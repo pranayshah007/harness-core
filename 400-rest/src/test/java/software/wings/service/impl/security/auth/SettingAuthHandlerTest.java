@@ -24,7 +24,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SSH_AND_WINRM;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;

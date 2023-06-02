@@ -31,6 +31,8 @@ message TaskSetupAbstractions {
 // This map is used to form base logging key for log service
 message TaskLogAbstractions {
   map<string, string> values = 1;
+  string baseLogKey = 2;
+  bool shouldSkipOpenStream = 3;
 }
 
 // Specifies the execution mode of the task

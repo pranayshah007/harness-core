@@ -28,7 +28,9 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformPlanStepParameters")
 public class TerraformPlanStepParameters extends TerraformPlanBaseStepInfo implements SpecParameters {
-  String stepFqn;
+  // Not needed. We are calculating the stepFQN during runtime. Remove this stepFqn field in after few releases. Keeping
+  // for backward compatibility.
+  @Deprecated String stepFqn;
   TerraformPlanExecutionDataParameters configuration;
 
   @Builder(builderMethodName = "infoBuilder")

@@ -1,0 +1,68 @@
+stages:
+  - type: Custom
+    id: stage1
+    name: stage1
+    strategy:
+      type: matrix
+      spec:
+        axis:
+          command:
+            - "echo Hi"
+            - "echo Hi2"
+          a:
+            - "true"
+            - "false"
+        exclude:
+          - command: "echo Hi"
+            a: "true"
+        concurrency: 2
+    spec:
+      steps:
+        - type: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s
+  - type: Custom
+    id: stage2
+    name: stage2
+    spec:
+      steps:
+        - type: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s
+  - type: Custom
+    id: stage1
+    name: stage1
+    strategy:
+      type: for
+      spec:
+        iterations: 3
+        concurrency: 2
+    spec:
+      steps:
+        - type: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s

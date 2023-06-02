@@ -287,7 +287,8 @@ public class EnforcementClientServiceImpl implements EnforcementClientService {
         AvailabilityRestrictionMetadataDTO availabilityRestrictionMetadataDTO =
             (AvailabilityRestrictionMetadataDTO) currentRestriction;
         if (!availabilityRestrictionMetadataDTO.isEnabled()) {
-          throw new FeatureNotSupportedException("Feature is not enabled");
+          throw new FeatureNotSupportedException(String.format(
+              "[%s] Feature is not enabled. Please contact Harness Support", featureRestrictionName.getDisplayName()));
         }
         break;
       case STATIC_LIMIT:

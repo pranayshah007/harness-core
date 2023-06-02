@@ -19,6 +19,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
@@ -33,6 +34,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.CacheResponseMetadataDTO;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
@@ -143,7 +145,8 @@ public class PMSInputSetElementMapper {
       String pipelineIdentifier, String yaml, InputSetEntityType inputSetEntityType) {
     JsonNode inputSetNode;
     try {
-      inputSetNode = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
+      // validating the duplicate fields in yaml fields
+      inputSetNode = YamlUtils.readTree(yaml, true).getNode().getCurrJsonNode();
     } catch (IOException exception) {
       throw new InvalidRequestException("Invalid input set yaml provided");
     }
@@ -226,12 +229,12 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
         .storeType(entity.getStoreType())
         .connectorRef(entity.getConnectorRef())
+        .cacheResponse(getCacheResponse(entity))
         .build();
   }
 
@@ -249,7 +252,6 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build())
         .inputSetErrorWrapper(errorWrapperDTO)
         .isErrorResponse(true)
@@ -279,12 +281,12 @@ public class PMSInputSetElementMapper {
         .isErrorResponse(isError)
         .invalidInputSetReferences(invalidReferences)
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid() || isNotEmpty(invalidReferences)
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
         .storeType(entity.getStoreType())
         .connectorRef(entity.getConnectorRef())
+        .cacheResponse(getCacheResponse(entity))
         .build();
   }
 
@@ -308,7 +310,6 @@ public class PMSInputSetElementMapper {
         .gitDetails(entityGitDetails)
         .createdAt(entity.getCreatedAt())
         .lastUpdatedAt(entity.getLastUpdatedAt())
-        .isOutdated(entity.getIsInvalid())
         .inputSetErrorDetails(inputSetErrorDetails)
         .overlaySetErrorDetails(overlaySetErrorDetails)
         .entityValidityDetails(entity.isEntityInvalid()
@@ -361,5 +362,19 @@ public class PMSInputSetElementMapper {
       default:
         throw new IllegalStateException("version not supported");
     }
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse(InputSetEntity inputSetEntity) {
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+      if (cacheResponse != null) {
+        return CacheResponseMetadataDTO.builder()
+            .cacheState(cacheResponse.getCacheState())
+            .ttlLeft(cacheResponse.getTtlLeft())
+            .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+            .build();
+      }
+    }
+    return null;
   }
 }

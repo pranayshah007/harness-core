@@ -35,7 +35,7 @@ import io.harness.ccm.billing.preaggregated.PreAggregatedTableSchema;
 import software.wings.graphql.schema.type.aggregation.Filter;
 import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import com.healthmarketscience.sqlbuilder.BinaryCondition;
 import com.healthmarketscience.sqlbuilder.ComboCondition;
 import com.healthmarketscience.sqlbuilder.Condition;

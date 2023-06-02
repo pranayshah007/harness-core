@@ -31,7 +31,7 @@ import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnitConstants;
 import software.wings.beans.container.HelmChartSpecification;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest.HelmRollbackCommandRequestBuilder;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;

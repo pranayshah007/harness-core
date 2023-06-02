@@ -17,9 +17,18 @@ inputs:
     desc: docker password
     enums: [secret1, secret2]
     required: true
-repository:
-  connector: connector
-  name: harness-core
+options:
+  repository:
+    connector: connector
+    name: harness-core
+  registry:
+    credentials:
+      - account.docker
+      - <+expression>
+      - name: account.dockerhub
+        match: docker.io
+      - name: <+expression>
+        match: <+expression>
 stages:
   - name: output variable
     type: ci
@@ -36,11 +45,3 @@ stages:
             run: export foo=bar
             outputs:
               - foo
-registry:
-  credentials:
-    - account.docker
-    - <+expression>
-    - name: account.dockerhub
-      match: docker.io
-    - name: <+expression>
-      match: <+expression>

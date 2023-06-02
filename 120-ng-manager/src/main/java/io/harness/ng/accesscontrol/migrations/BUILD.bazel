@@ -26,7 +26,7 @@ java_library(
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
         "@maven//:io_dropwizard_dropwizard_lifecycle",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_springframework_spring_context",
     ],

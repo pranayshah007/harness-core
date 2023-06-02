@@ -83,7 +83,9 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   ParameterField<List<String>> patchesPaths;
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
+  @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> pluginPath;
+  @Wither List<KustomizeManifestCommandFlag> commandFlags;
 
   @Override
   public String getKind() {
@@ -118,6 +120,14 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
     if (kustomizeManifest.getOverlayConfiguration() != null) {
       resultantManifest = resultantManifest.withOverlayConfiguration(kustomizeManifest.getOverlayConfiguration());
     }
+    if (kustomizeManifest.getEnableDeclarativeRollback() != null) {
+      resultantManifest =
+          resultantManifest.withEnableDeclarativeRollback(kustomizeManifest.getEnableDeclarativeRollback());
+    }
+
+    if (kustomizeManifest.getCommandFlags() != null) {
+      resultantManifest = resultantManifest.withCommandFlags(kustomizeManifest.getCommandFlags());
+    }
 
     return resultantManifest;
   }
@@ -126,7 +136,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new KustomizeManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), skipResourceVersioning, pluginPath,
-        patchesPaths);
+        patchesPaths, enableDeclarativeRollback, commandFlags);
   }
 
   @Value
@@ -136,5 +146,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
     ParameterField<Boolean> skipResourceVersioning;
     ParameterField<String> pluginPath;
     ParameterField<List<String>> patchesPaths;
+    ParameterField<Boolean> enableDeclarativeRollback;
+    List<KustomizeManifestCommandFlag> kustomizeManifestCommandFlags;
   }
 }

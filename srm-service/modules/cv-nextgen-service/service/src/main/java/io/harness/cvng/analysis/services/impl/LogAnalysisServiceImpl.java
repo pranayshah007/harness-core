@@ -13,14 +13,15 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.ANALYSIS_RISK_RESULTS
 import static io.harness.cvng.analysis.CVAnalysisConstants.DEPLOYMENT_LOG_ANALYSIS_SAVE_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_RESOURCE;
 import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_SAVE_PATH;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_FEEDBACK_LIST;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_ANALYSIS_URL;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_LOG_ANALYSIS_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TEST_DATA_PATH;
-import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_LOG_HOST_SAMPLING_ENABLE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisDTO;
 import io.harness.cvng.analysis.beans.LogClusterDTO;
@@ -39,19 +40,21 @@ import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.AnalysisResult.AnalysisResultKeys;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisResultKeys;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisTag;
+import io.harness.cvng.analysis.entities.LogFeedbackAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
 import io.harness.cvng.analysis.services.api.LogClusterService;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
-import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HostRecordService;
+import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -67,6 +70,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import java.net.URISyntaxException;
@@ -96,8 +100,15 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private HostRecordService hostRecordService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
+  @Inject private LogFeedbackService logFeedbackService;
 
   @Inject private FeatureFlagService featureFlagService;
+
+  @Override
+  public String scheduleDeploymentLogFeedbackTask(AnalysisInput analysisInput) {
+    LogFeedbackAnalysisLearningEngineTask task = createLogFeedbackAnalysisLearningEngineTask(analysisInput);
+    return learningEngineTaskService.createLearningEngineTask(task);
+  }
 
   @Override
   public String scheduleServiceGuardLogAnalysisTask(AnalysisInput input) {
@@ -132,13 +143,8 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
 
   @Override
   public String scheduleDeploymentLogAnalysisTask(AnalysisInput analysisInput) {
-    VerificationTask verificationTask = verificationTaskService.get(analysisInput.getVerificationTaskId());
     LogAnalysisLearningEngineTask task;
-    if (featureFlagService.isFeatureFlagEnabled(verificationTask.getAccountId(), SRM_LOG_HOST_SAMPLING_ENABLE)) {
-      task = createLogCanaryAnalysisLearningEngineTask_v2(analysisInput);
-    } else {
-      task = createLogCanaryAnalysisLearningEngineTask(analysisInput);
-    }
+    task = createLogCanaryAnalysisLearningEngineTask_v2(analysisInput);
     log.info("Scheduling LogCanaryAnalysisLearningEngineTask {}", task);
     return learningEngineTaskService.createLearningEngineTask(task);
   }
@@ -189,6 +195,56 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
     return task;
   }
 
+  private LogFeedbackAnalysisLearningEngineTask createLogFeedbackAnalysisLearningEngineTask(AnalysisInput input) {
+    String taskId = generateUuid();
+    Set<String> controlHosts = new HashSet<>();
+    Set<String> testHosts = new HashSet<>();
+    if (isNotEmpty(input.getControlHosts())) {
+      controlHosts = input.getControlHosts();
+    }
+    if (isNotEmpty(input.getTestHosts())) {
+      testHosts = input.getTestHosts();
+    }
+    String verificationJobInstanceId =
+        verificationTaskService.getVerificationJobInstanceId(input.getVerificationTaskId());
+    Optional<TimeRange> preDeploymentTimeRange =
+        verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstanceId);
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    LogAnalysisLearningEngineTask task;
+    LogFeedbackAnalysisLearningEngineTask logFeedbackAnalysisLearningEngineTask = null;
+    if (preDeploymentTimeRange.isPresent()) {
+      logFeedbackAnalysisLearningEngineTask =
+          LogFeedbackAnalysisLearningEngineTask.builder().controlHosts(controlHosts).testHosts(testHosts).build();
+      logFeedbackAnalysisLearningEngineTask.setControlDataUrl(
+          getControlDataUrlForDeploymentLog(input, verificationJobInstance, verificationJobInstance.getResolvedJob()));
+      logFeedbackAnalysisLearningEngineTask.setAnalysisType(LearningEngineTaskType.LOG_FEEDBACK);
+      logFeedbackAnalysisLearningEngineTask.setFeedbackUrl(getLogFeedbackForDeploymentLog(input));
+    } else {
+      LogAnalysisLearningEngineTask logAnalysisLearningEngineTask = createLogCanaryAnalysisLearningEngineTask_v2(input);
+      logFeedbackAnalysisLearningEngineTask =
+          LogFeedbackAnalysisLearningEngineTask.builder().controlHosts(controlHosts).testHosts(testHosts).build();
+      logFeedbackAnalysisLearningEngineTask.setControlDataUrl(logAnalysisLearningEngineTask.getControlDataUrl());
+      logFeedbackAnalysisLearningEngineTask.setAnalysisType(LearningEngineTaskType.LOG_FEEDBACK);
+      logFeedbackAnalysisLearningEngineTask.setFeedbackUrl(getLogFeedbackForDeploymentLog(input));
+      logFeedbackAnalysisLearningEngineTask.setTestDataUrl(logAnalysisLearningEngineTask.getTestDataUrl());
+    }
+    logFeedbackAnalysisLearningEngineTask.setAnalysisUrl(
+        getPreviousAnalysisUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
+    logFeedbackAnalysisLearningEngineTask.setTestDataUrl(
+        createDeploymentDataUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
+    logFeedbackAnalysisLearningEngineTask.setTestDataUrl(getTestDataUrlForDeploymentLog(input));
+    logFeedbackAnalysisLearningEngineTask.setAnalysisStartTime(input.getStartTime());
+    logFeedbackAnalysisLearningEngineTask.setVerificationTaskId(input.getVerificationTaskId());
+    logFeedbackAnalysisLearningEngineTask.setFailureUrl(learningEngineTaskService.createFailureUrl(taskId));
+    logFeedbackAnalysisLearningEngineTask.setAnalysisEndTime(input.getEndTime());
+    logFeedbackAnalysisLearningEngineTask.setAnalysisEndEpochMinute(
+        DateTimeUtils.instantToEpochMinute(input.getEndTime()));
+    logFeedbackAnalysisLearningEngineTask.setAnalysisSaveUrl(createDeploymentAnalysisSaveUrl(taskId));
+    logFeedbackAnalysisLearningEngineTask.setUuid(taskId);
+    return logFeedbackAnalysisLearningEngineTask;
+  }
+
   private LogAnalysisLearningEngineTask createLogCanaryAnalysisLearningEngineTask_v2(AnalysisInput input) {
     String taskId = generateUuid();
     Set<String> controlHosts = new HashSet<>();
@@ -234,8 +290,6 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
     }
     task.setPreviousAnalysisUrl(
         getPreviousAnalysisUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
-    task.setTestDataUrl(
-        createDeploymentDataUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
     task.setTestDataUrl(getTestDataUrlForDeploymentLog(input));
     task.setAnalysisStartTime(input.getStartTime());
     task.setVerificationTaskId(input.getVerificationTaskId());
@@ -251,7 +305,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
       AnalysisInput analysisInput, VerificationJobInstance verificationJobInstance, VerificationJob verificationJob) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + TEST_DATA_PATH);
-    uriBuilder.addParameter("verificationTaskId", analysisInput.getVerificationTaskId());
+    uriBuilder.addParameter(CVConstants.VERIFICATION_TASK_ID, analysisInput.getVerificationTaskId());
     if (isNotEmpty(analysisInput.getControlHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", analysisInput.getControlHosts()));
     } else {
@@ -278,23 +332,30 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   private String getTestDataUrlForDeploymentLog(AnalysisInput input) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + TEST_DATA_PATH);
-    uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
+    uriBuilder.addParameter(CVConstants.VERIFICATION_TASK_ID, input.getVerificationTaskId());
     uriBuilder.addParameter(
         LogAnalysisRecordKeys.analysisStartTime, Long.toString(input.getStartTime().toEpochMilli()));
     uriBuilder.addParameter(LogAnalysisRecordKeys.analysisEndTime, Long.toString(input.getEndTime().toEpochMilli()));
 
     if (isNotEmpty(input.getTestHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", input.getTestHosts()));
-    } else {
+    } else if (input.getTestHosts() != null) {
       uriBuilder.addParameter("hosts", "");
     }
+    return getUriString(uriBuilder);
+  }
+
+  private String getLogFeedbackForDeploymentLog(AnalysisInput input) {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(SERVICE_BASE_URL + '/' + LOG_ANALYSIS_RESOURCE + "/" + LOG_FEEDBACK_LIST);
+    uriBuilder.addParameter(CVConstants.VERIFICATION_TASK_ID, input.getVerificationTaskId());
     return getUriString(uriBuilder);
   }
 
   private String getPreviousAnalysisUrl(String verificationTaskId, Instant startTime, Instant endTime) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + PREVIOUS_ANALYSIS_URL);
-    uriBuilder.addParameter("verificationTaskId", verificationTaskId);
+    uriBuilder.addParameter(CVConstants.VERIFICATION_TASK_ID, verificationTaskId);
     uriBuilder.addParameter(LogAnalysisRecordKeys.analysisStartTime, String.valueOf(startTime.toEpochMilli()));
     uriBuilder.addParameter(LogAnalysisRecordKeys.analysisEndTime, String.valueOf(endTime.toEpochMilli()));
     return getUriString(uriBuilder);
@@ -307,7 +368,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   private String createDeploymentDataUrl(String verificationTaskId, Instant startTime, Instant endTime) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + TEST_DATA_PATH);
-    uriBuilder.addParameter("verificationTaskId", verificationTaskId);
+    uriBuilder.addParameter(CVConstants.VERIFICATION_TASK_ID, verificationTaskId);
     uriBuilder.addParameter(LogAnalysisRecordKeys.analysisStartTime, String.valueOf(startTime.toEpochMilli()));
     uriBuilder.addParameter(LogAnalysisRecordKeys.analysisEndTime, String.valueOf(endTime.toEpochMilli()));
     return getUriString(uriBuilder);
@@ -342,7 +403,9 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .project(LogAnalysisClusterKeys.text, true)
         .project(LogAnalysisClusterKeys.frequencyTrend, true)
         .project(LogAnalysisClusterKeys.firstSeenTime, true)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -353,7 +416,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
                                             .field(DeploymentLogAnalysisKeys.startTime)
                                             .lessThan(analysisStartTime)
                                             .order(Sort.descending(DeploymentLogAnalysisKeys.startTime))
-                                            .get();
+                                            .get(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
 
     if (logAnalysis == null) {
       return null;
@@ -441,6 +504,17 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   }
 
   @Override
+  public List<LogFeedback> getLogFeedbackList(String verificationTaskId) {
+    String verificationJobInstanceId = verificationTaskService.getVerificationJobInstanceId(verificationTaskId);
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
+    String serviceIdentifier = verificationJob.getServiceIdentifier();
+    String environmentIdentifier = verificationJob.getEnvIdentifier();
+    return logFeedbackService.list(serviceIdentifier, environmentIdentifier);
+  }
+
+  @Override
   public List<LogAnalysisResult> getTopLogAnalysisResults(
       List<String> verificationTaskIds, Instant startTime, Instant endTime) {
     List<LogAnalysisResult> logAnalysisResults = hPersistence.createQuery(LogAnalysisResult.class, excludeAuthority)
@@ -484,7 +558,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   private String createTestDataUrl(AnalysisInput input) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + TEST_DATA_PATH);
-    uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
+    uriBuilder.addParameter(CVConstants.VERIFICATION_TASK_ID, input.getVerificationTaskId());
     uriBuilder.addParameter(
         LogAnalysisRecordKeys.analysisStartTime, String.valueOf(input.getStartTime().toEpochMilli()));
     uriBuilder.addParameter(LogAnalysisRecordKeys.analysisEndTime, String.valueOf(input.getEndTime().toEpochMilli()));
@@ -510,7 +584,9 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .filter(LogAnalysisClusterKeys.verificationTaskId, verificationTaskId)
         .field(LogAnalysisClusterKeys.label)
         .in(labels)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -524,7 +600,9 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .lessThanOrEq(endTime)
         .field(LogAnalysisResultKeys.logAnalysisResults + "." + AnalysisResultKeys.tag)
         .in(tags)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -535,6 +613,8 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .greaterThanOrEq(startTime)
         .field(LogAnalysisResultKeys.analysisEndTime)
         .lessThanOrEq(endTime)
-        .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
+        .asList(new FindOptions()
+                    .maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS)
+                    .readPreference(ReadPreference.secondaryPreferred()));
   }
 }

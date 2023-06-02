@@ -39,10 +39,10 @@ import com.google.inject.name.Named;
 import java.net.URL;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
@@ -51,33 +51,45 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
   @Inject private AccountClient accountClient;
   @Inject private NextGenService nextGenService;
   @Inject @Named("portalUrl") String portalUrl;
-  @Inject private Clock clock;
+  @Inject protected Clock clock;
 
   public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
-      String serviceIdentifier, T condition, Map<String, String> notificationDataMap) {
+      String serviceIdentifier, String monitoredServiceIdentifier, T condition,
+      Map<String, String> notificationDataMap) {
     Instant currentInstant = clock.instant();
     long startTime = currentInstant.getEpochSecond();
     long startTimeInMillis = startTime * 1000;
     String startDate = new Date(startTime * 1000).toString();
-    Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
+    Long endTime = currentInstant.toEpochMilli();
     String vanityUrl = getVanityUrl(projectParams.getAccountIdentifier());
     String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
+    ServiceResponseDTO serviceResponseDTO = null;
+    OrganizationDTO organizationDTO = null;
+    ProjectDTO projectDTO = null;
 
     AccountDTO accountDTO = CGRestUtils.getResponse(accountClient.getAccountDTO(projectParams.getAccountIdentifier()));
-    OrganizationDTO organizationDTO =
-        nextGenService.getOrganization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
-    ProjectDTO projectDTO = nextGenService.getProject(
-        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
-    ServiceResponseDTO serviceResponseDTO = nextGenService.getService(projectParams.getAccountIdentifier(),
-        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), serviceIdentifier);
-
+    if (projectParams.getOrgIdentifier() != null) {
+      organizationDTO =
+          nextGenService.getOrganization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
+    }
+    if (projectParams.getProjectIdentifier() != null) {
+      projectDTO = nextGenService.getProject(
+          projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
+    }
+    if (serviceIdentifier != null) {
+      serviceResponseDTO = nextGenService.getService(projectParams.getAccountIdentifier(),
+          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), serviceIdentifier);
+    }
+    String serviceName = Objects.isNull(serviceResponseDTO) ? null : serviceResponseDTO.getName();
+    String orgName = Objects.isNull(organizationDTO) ? null : organizationDTO.getName();
+    String projectName = Objects.isNull(projectDTO) ? null : projectDTO.getName();
     return new HashMap<String, String>() {
       {
         put(COLOR, THEME_COLOR);
-        put(SERVICE_NAME, serviceResponseDTO.getName());
+        put(SERVICE_NAME, serviceName);
         put(ACCOUNT_NAME, accountDTO.getName());
-        put(ORG_NAME, organizationDTO.getName());
-        put(PROJECT_NAME, projectDTO.getName());
+        put(ORG_NAME, orgName);
+        put(PROJECT_NAME, projectName);
         put(START_TS_SECS, String.valueOf(startTime));
         put(START_DATE, startDate);
         put(URL, getUrl(baseUrl, projectParams, identifier, condition.getType().getNotificationRuleType(), endTime));

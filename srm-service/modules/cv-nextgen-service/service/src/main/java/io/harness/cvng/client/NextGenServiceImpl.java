@@ -216,6 +216,16 @@ public class NextGenServiceImpl implements NextGenService {
   }
 
   @Override
+  public boolean isProjectDeleted(String accountId, String orgIdentifier, String projectIdentifier) {
+    try {
+      getProject(accountId, orgIdentifier, projectIdentifier);
+    } catch (Exception ex) {
+      return true;
+    }
+    return false;
+  }
+
+  @Override
   public OrganizationDTO getOrganization(String accountIdentifier, String orgIdentifier) {
     try {
       return orgCache.get(EntityKey.builder().accountId(accountIdentifier).orgIdentifier(orgIdentifier).build());
@@ -249,7 +259,7 @@ public class NextGenServiceImpl implements NextGenService {
         projectParams.getProjectIdentifier(), serviceIdentifiers)
         .forEach(serviceResponse
             -> serviceIdNameMap.put(
-                serviceResponse.getService().getIdentifier(), serviceResponse.getService().getName()));
+                serviceResponse.getService().getFullyQualifiedIdentifier(), serviceResponse.getService().getName()));
     return serviceIdNameMap;
   }
 
@@ -259,8 +269,8 @@ public class NextGenServiceImpl implements NextGenService {
     listEnvironment(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
         projectParams.getProjectIdentifier(), environmentIdentifiers)
         .forEach(environmentResponse
-            -> environmentIdNameMap.put(
-                environmentResponse.getEnvironment().getIdentifier(), environmentResponse.getEnvironment().getName()));
+            -> environmentIdNameMap.put(environmentResponse.getEnvironment().getFullyQualifiedIdentifier(),
+                environmentResponse.getEnvironment().getName()));
     return environmentIdNameMap;
   }
 

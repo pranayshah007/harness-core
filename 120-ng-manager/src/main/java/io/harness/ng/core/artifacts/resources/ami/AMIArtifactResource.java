@@ -93,11 +93,11 @@ public class AMIArtifactResource {
 
     // Getting the resolved connectorRef  in case of expressions
     String resolvedAwsConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, awsConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved project  in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =
@@ -142,30 +142,38 @@ public class AMIArtifactResource {
 
       AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactSpecFromService;
 
-      if (StringUtils.isBlank(awsConnectorRef)) {
-        awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
-      }
+      if (amiArtifactConfig != null) {
+        if (StringUtils.isBlank(awsConnectorRef)) {
+          awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
+        }
 
-      if (StringUtils.isBlank(region)) {
-        region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
-      }
+        if (StringUtils.isBlank(region)) {
+          region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
+        }
 
-      if (amiArtifactConfig.getTags() != null && amiArtifactConfig.getTags().isExpression()
-          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
-        amiTags = amiRequestBody.getTags();
-      }
+        if (amiArtifactConfig.getTags() != null) {
+          if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
+            amiTags = amiRequestBody.getTags();
+          } else {
+            amiTags = amiArtifactConfig.getTags().getValue();
+          }
+        }
 
-      if (amiArtifactConfig.getFilters() != null && amiArtifactConfig.getFilters().isExpression()
-          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
-        amiFilters = amiRequestBody.getFilters();
+        if (amiArtifactConfig.getFilters() != null) {
+          if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
+            amiFilters = amiRequestBody.getFilters();
+          } else {
+            amiFilters = amiArtifactConfig.getFilters().getValue();
+          }
+        }
       }
 
       // Getting the resolved connectorRef  in case of expressions
-      awsConnectorRef = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+      awsConnectorRef = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), awsConnectorRef, fqnPath, null, serviceRef);
 
       // Getting the resolved project  in case of expressions
-      region = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+      region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef);
     }
 

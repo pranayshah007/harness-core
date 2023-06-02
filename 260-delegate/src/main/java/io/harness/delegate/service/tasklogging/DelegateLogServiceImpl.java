@@ -40,11 +40,11 @@ import io.harness.rest.RestResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
+import software.wings.beans.dto.CVActivityLog;
 import software.wings.beans.dto.Log;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.LogSanitizer;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.verification.CVActivityLog;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

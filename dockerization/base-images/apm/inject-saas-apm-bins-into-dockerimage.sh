@@ -12,9 +12,9 @@ function download_saas_apm_binaries(){
 	chmod 711 /opt/harness/harness
 	rm /opt/harness/harness-et-agent.tar.gz
 
-	curl ${APPD_AGENT} --output ${APPD_AGENT##*/}; STATUS2=$?
-	echo "INFO: Download Status: ${APPD_AGENT##*/}: $STATUS2"
-	chmod 711 ${APPD_AGENT##*/}
+	curl ${APPD_AGENT} --output AppServerAgent.zip; STATUS2=$?
+	echo "INFO: Download Status: AppServerAgent.zip: $STATUS2"
+	chmod 711 AppServerAgent.zip
 
 	curl ${OT_AGENT} --output ${OT_AGENT##*/}; STATUS3=$?
 	echo "INFO: Download Status: ${OT_AGENT##*/}: $STATUS3"
@@ -28,7 +28,7 @@ function download_saas_apm_binaries(){
 	fi
 }
 
-export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip'
+export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-23.2.0.34668.zip'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
 export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar'
 

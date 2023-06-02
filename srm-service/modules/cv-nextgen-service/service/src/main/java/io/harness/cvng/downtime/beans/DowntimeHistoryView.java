@@ -18,6 +18,11 @@ public class DowntimeHistoryView {
   DowntimeCategory category;
   List<AffectedEntity> affectedEntities;
   DowntimeDuration duration;
-  long startTime;
-  long endTime;
+  @Deprecated long startTime;
+  String startDateTime;
+  @Deprecated long endTime;
+  String endDateTime;
+
+  @Deprecated DowntimeSpecDTO spec;
+  DowntimeSpecDTO downtimeDetails;
 }

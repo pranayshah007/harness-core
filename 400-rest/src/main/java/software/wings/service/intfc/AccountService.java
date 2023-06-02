@@ -13,6 +13,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
+import io.harness.authenticationservice.beans.AuthenticationInfoV2;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -24,6 +25,7 @@ import io.harness.managerclient.HttpsCertRequirement.CertRequirement;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
@@ -33,6 +35,8 @@ import software.wings.beans.Service;
 import software.wings.beans.SubdomainUrl;
 import software.wings.beans.TechStack;
 import software.wings.beans.User;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.security.authentication.AccountSettingsResponse;
 import software.wings.service.impl.analysis.CVEnabledService;
 
@@ -90,6 +94,10 @@ public interface AccountService {
 
   void updateTwoFactorEnforceInfo(String accountId, boolean enabled);
 
+  Integer getSessionTimeoutInMinutes(String accountId);
+
+  void setSessionTimeoutInMinutes(String accountId, @NotNull @Valid SessionTimeoutSettings sessionTimeoutSettings);
+
   String suggestAccountName(@NotNull String accountName);
 
   boolean updateTechStacks(String accountId, Set<TechStack> techStacks);
@@ -119,6 +127,8 @@ public interface AccountService {
   String getAccountPrimaryDelegateVersion(String accountId);
 
   List<Account> listAllAccountsWithoutTheGlobalAccount();
+
+  long countAccountsWithoutTheGlobalAccount();
 
   List<Account> listAllActiveAccounts();
 
@@ -158,6 +168,16 @@ public interface AccountService {
    * but not update the account configurations.
    */
   boolean enableAccount(String accountId);
+
+  /**
+   *  Schedule account level jobs for target account
+   *
+   * @param targetAccountId target account id
+   * @param jobTypes job types
+   * @param jobProperties job properties
+   */
+  void scheduleAccountLevelJobs(
+      String targetAccountId, List<AccountJobType> jobTypes, AccountJobProperties jobProperties);
 
   /**
    * Once the account migration completed. All existing delegates belonging to this account will be redirected to the
@@ -253,6 +273,8 @@ public interface AccountService {
 
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
+  AuthenticationInfoV2 getAuthenticationInfoV2(String accountId);
+
   boolean isAccountActivelyUsed(String accountId);
 
   boolean isImmutableDelegateEnabled(String accountId);
@@ -261,9 +283,16 @@ public interface AccountService {
 
   List<AccountDTO> getAllAccounts();
 
+  PageResponse<AccountDTO> listAccounts(int offset, int pageSize);
+
   Integer getTrustLevel(String accountId);
 
   boolean updateTrustLevel(String accountId, Integer trustLevel);
 
   Boolean updateIsSmpAccount(String customerAccountId, boolean isSmpAccount);
+
+  Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
+
+  Account updateCrossGenerationAccessEnabled(
+      String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
 }

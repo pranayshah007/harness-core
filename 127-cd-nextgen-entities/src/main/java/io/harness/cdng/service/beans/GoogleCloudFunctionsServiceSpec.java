@@ -10,13 +10,15 @@ package io.harness.cdng.service.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
-import io.harness.cdng.visitor.helpers.manifest.GoogleCloudFunctionDefinitionManifestVisitorHelper;
+import io.harness.cdng.visitor.helpers.serviceconfig.GoogleCloudFunctionsServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -30,13 +32,14 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
 @JsonTypeName(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS)
-@SimpleVisitorHelper(helperClass = GoogleCloudFunctionDefinitionManifestVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = GoogleCloudFunctionsServiceSpecVisitorHelper.class)
 @TypeAlias("googleCloudFunctionsServiceSpec")
 @RecasterAlias("io.harness.cdng.service.beans.GoogleCloudFunctionsServiceSpec")
 public class GoogleCloudFunctionsServiceSpec implements ServiceSpec, Visitable {
@@ -48,6 +51,7 @@ public class GoogleCloudFunctionsServiceSpec implements ServiceSpec, Visitable {
   ArtifactListConfig artifacts;
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> environmentType;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

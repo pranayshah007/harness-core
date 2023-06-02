@@ -50,11 +50,10 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -69,6 +68,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.ImageDetails;
@@ -196,6 +196,7 @@ public class KubernetesSetupTest extends WingsBaseTest {
   @InjectMocks private KubernetesSetup kubernetesSetup = new KubernetesSetup("name");
 
   @Mock private MainConfiguration configuration;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private ExecutionContext context;
 
@@ -357,7 +358,7 @@ public class KubernetesSetupTest extends WingsBaseTest {
         .thenReturn(serviceVariableList);
     when(serviceTemplateService.computeServiceVariables(APP_ID, ENV_ID, TEMPLATE_ID, null, MASKED))
         .thenReturn(safeDisplayServiceVariableList);
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     FieldUtils.writeField(kubernetesSetup, "secretManager", secretManager, true);
     when(workflowExecutionService.getExecutionDetails(anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(WorkflowExecution.builder().build());

@@ -76,6 +76,10 @@ if [[ "" != "$QUERY_BATCH_SIZE" ]]; then
   export QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.queryBatchSize=env(QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
+  export BULK_OPERATION_QUERY_BATCH_SIZE; yq -i '.bulkOperationBatchQueryConfig.queryBatchSize=env(BULK_OPERATION_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SYNC_JOB_DISABLED" ]]; then
   export SYNC_JOB_DISABLED; yq -i '.batchQueryConfig.syncJobDisabled=env(SYNC_JOB_DISABLED)' $CONFIG_FILE
 fi
@@ -133,6 +137,10 @@ if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_PORT" ]]; then
+  export SMTP_PORT; yq -i '.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SMTP_USERNAME" ]]; then
   export SMTP_USERNAME; yq -i '.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
 fi
@@ -181,6 +189,10 @@ if [[ "" != "$BUDGET_ALERTS_JOB_CRON" ]]; then
   export BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.budgetAlertsJobCron=env(BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BUDGET_COST_UPDATE_JOB_CRON" ]]; then
+  export BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.budgetCostUpdateJobCron=env(BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
+fi
+
 if [[ "" != "$WEEKLY_REPORT_JOB_CRON" ]]; then
   export WEEKLY_REPORT_JOB_CRON; yq -i '.scheduler-jobs-config.weeklyReportsJobCron=env(WEEKLY_REPORT_JOB_CRON)' $CONFIG_FILE
 fi
@@ -191,6 +203,14 @@ fi
 
 if [[ "" != "$AWS_ACCOUNT_TAGS_COLLECTION_CRON" ]]; then
   export AWS_ACCOUNT_TAGS_COLLECTION_CRON; yq -i '.scheduler-jobs-config.awsAccountTagsCollectionJobCron=env(AWS_ACCOUNT_TAGS_COLLECTION_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCron=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED; yq -i '.recommendationConfig.governanceRecommendationEnabled=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HARNESS_CE_AZURE_CLIENTID" ]]; then
@@ -261,6 +281,10 @@ if [[ "" != "$AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED" ]]; then
   export AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED; yq -i '.awsAccountTagsCollectionJobConfig.enabled=env(AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED)' $CONFIG_FILE
 fi
 
+if [[ "" != "$GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME" ]]; then
+  export GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME; yq -i '.gcpConfig.bigQueryUpdatePubSubTopic.subscriptionName=env(GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME)' $CONFIG_FILE
+fi
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
@@ -280,6 +304,7 @@ replace_key_value awsCurBilling "$AWS_CUR_BILLING"
 
 replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
+replace_key_value gcpConfig.bigQueryUpdatePubSubTopic.enabled "$GCP_BQ_UPDATE_BATCH_ENABLED"
 
 replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"
 replace_key_value deployMode "$DEPLOY_MODE"
@@ -287,3 +312,5 @@ replace_key_value deployMode "$DEPLOY_MODE"
 replace_key_value clickHouseConfig.url "$CLICKHOUSE_URL"
 replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
 replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
+
+replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"

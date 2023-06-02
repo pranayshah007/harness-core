@@ -17,7 +17,7 @@ public class RemainingMinutesTemplateDataGenerator
     extends SLOTemplateDataGenerator<SLOErrorBudgetRemainingMinutesCondition> {
   @Override
   public String getHeaderMessage(Map<String, String> notificationDataMap) {
-    return "error budget remains less than " + notificationDataMap.get(REMAINING_MINUTES) + " minutes for";
+    return "error budget remains less than " + notificationDataMap.get(REMAINING_MINUTES) + " minutes";
   }
 
   @Override

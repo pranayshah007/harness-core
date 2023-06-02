@@ -8,6 +8,7 @@
 package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureKubeconfigFormat;
 
 import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
 import java.util.List;
@@ -23,5 +24,5 @@ public interface AzureKubernetesClient extends AzureResourceClient {
   List<KubernetesCluster> listKubernetesClusters(AzureConfig azureConfig, String subscriptionId);
 
   String getClusterCredentials(AzureConfig azureConfig, String accessToken, String subscriptionId, String resourceGroup,
-      String aksClusterName, boolean shouldGetAdminCredentials);
+      String aksClusterName, boolean shouldGetAdminCredentials, AzureKubeconfigFormat azureKubeconfigFormat);
 }

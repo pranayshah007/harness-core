@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.SkipType;
@@ -19,6 +20,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Singular;
@@ -42,8 +44,11 @@ public class PlanNode {
   @NonFinal @lombok.Setter String executionInputTemplate;
   @Singular List<RefObject> refObjects;
 
+  // todo: deprecate adviserObtainments and slowly move plan creators to fill advisorObtainmentsForExecutionMode
   // Hooks
   @Singular List<AdviserObtainment> adviserObtainments;
+  @Singular(value = "advisorObtainmentForExecutionMode")
+  Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<SdkTimeoutObtainment> timeoutObtainments;
 

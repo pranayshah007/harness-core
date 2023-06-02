@@ -125,6 +125,12 @@ resource "google_pubsub_topic" "ce-gcp-billing-cf-topic" {
   project = "${var.projectId}"
 }
 
+# PubSub topic for events to be consumed by batch-processing service
+resource "google_pubsub_topic" "ccm-bigquery-batch-update-topic" {
+  name = "ccm-bigquery-batch-update"
+  project = "${var.projectId}"
+}
+
 # PubSub topic for GCP Instance Inventory data pipeline. scheduler pushes into this
 resource "google_pubsub_topic" "ce-gcp-instance-inventory-data-topic" {
   name = "ce-gcp-instance-inventory-data-scheduler"
@@ -1045,6 +1051,7 @@ resource "google_cloudfunctions_function" "ce-gcp-billing-bq-function" {
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
     GCPCFTOPIC = "${google_pubsub_topic.ce-gcp-billing-cf-topic.name}"
+    COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -1075,6 +1082,7 @@ resource "google_cloudfunctions_function" "ce-aws-billing-bq-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -1132,6 +1140,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
     GCP_PROJECT = "${var.projectId}"
     AZURESCHEMATOPIC = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
     AZURECOSTCFTOPIC = "${google_pubsub_topic.ce-azure-billing-cost-cf-topic.name}"
+    COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"

@@ -33,7 +33,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.encryption.SecretRefData;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.rule.Owner;
 
 import org.junit.Before;

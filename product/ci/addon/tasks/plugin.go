@@ -8,11 +8,12 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/harness/harness-core/commons/go/lib/filesystem"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/images"
@@ -172,6 +173,8 @@ func (t *pluginTask) execute(ctx context.Context, retryCount int32) (map[string]
 		logPluginErr(t.log, "failed to evaluate JEXL expression for settings", t.id, commands, retryCount, start, err)
 		return nil, nil, err
 	}
+	outputDotEnvFile := filepath.Join(t.tmpFilePath, fmt.Sprintf("%s%s", t.id, outputDotEnvSuffix))
+	envVarsMap["DRONE_OUTPUT"] = outputDotEnvFile
 
 	cmd := t.cmdContextFactory.CmdContextWithSleep(ctx, pluginCmdExitWaitTime, commands[0], commands[1:]...).
 		WithStdout(t.procWriter).WithStderr(t.procWriter).WithEnvVarsMap(envVarsMap)
@@ -187,19 +190,31 @@ func (t *pluginTask) execute(ctx context.Context, retryCount int32) (map[string]
 		logPluginErr(t.addonLogger, "failed to retrieve artifacts from the plugin step", t.id, commands, retryCount, start, artifactErr)
 	}
 
-	_, err = t.fs.Stat(outputFile)
-	stepOutputExists := err == nil
-
 	stepOutput := make(map[string]string)
-	if len(t.envVarOutputs) != 0 && stepOutputExists {
+	_, err = t.fs.Stat(outputDotEnvFile)
+	if err == nil {
 		var err error
-		outputVars, err := fetchOutputVariables(outputFile, t.fs, t.log)
+		outputVars, err := fetchOutputVariablesFromDotEnv(outputDotEnvFile, t.log)
 		if err != nil {
-			logCommandExecErr(t.log, "error encountered while fetching output of the plugin step", t.id, "", retryCount, start, err)
-			return nil, nil, err
+			logCommandExecErr(t.log, "error encountered while fetching output of the plugin step from .env File", t.id, "", retryCount, start, err)
+			// return nil, nil, err
 		}
 
 		stepOutput = outputVars
+	} else {
+		_, err = t.fs.Stat(outputFile)
+		stepOutputExists := err == nil
+
+		if len(t.envVarOutputs) != 0 && stepOutputExists {
+			var err error
+			outputVars, err := fetchOutputVariables(outputFile, t.fs, t.log)
+			if err != nil {
+				logCommandExecErr(t.log, "error encountered while fetching output of the plugin step", t.id, "", retryCount, start, err)
+				return nil, nil, err
+			}
+
+			stepOutput = outputVars
+		}
 	}
 
 	cmdExecutionStatus := "SUCCESS"

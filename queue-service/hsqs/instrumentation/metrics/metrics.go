@@ -16,6 +16,8 @@ type MetricsHandler struct {
 	enqueueFailureCounter *prometheus.CounterVec
 	dequeueCounter        *prometheus.CounterVec
 	dequeueFailureCounter *prometheus.CounterVec
+	ackCounter            *prometheus.CounterVec
+	ackFailureCounter     *prometheus.CounterVec
 }
 
 func InitMetrics() *MetricsHandler {
@@ -48,8 +50,22 @@ func InitMetrics() *MetricsHandler {
 		},
 		[]string{"topic"},
 	)
-	prometheus.MustRegister(enqueueCounter, enqueueFailureCounter, dequeueCounter, dequeueFailureCounter)
-	return &MetricsHandler{enqueueCounter: enqueueCounter, enqueueFailureCounter: enqueueFailureCounter, dequeueCounter: dequeueCounter, dequeueFailureCounter: dequeueFailureCounter}
+	ackCounter := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ack_requests_per_module_success",
+			Help: "The total number of successful ack requests per topic and subtopic.",
+		},
+		[]string{"topic", "subTopic"},
+	)
+	ackFailureCounter := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "ack_requests_per_module_failure",
+			Help: "The total number of failed ack requests per topic and subtopic.",
+		},
+		[]string{"topic", "subTopic"},
+	)
+	prometheus.MustRegister(enqueueCounter, enqueueFailureCounter, dequeueCounter, dequeueFailureCounter, ackCounter, ackFailureCounter)
+	return &MetricsHandler{enqueueCounter: enqueueCounter, enqueueFailureCounter: enqueueFailureCounter, dequeueCounter: dequeueCounter, dequeueFailureCounter: dequeueFailureCounter, ackCounter: ackCounter, ackFailureCounter: ackFailureCounter}
 
 }
 
@@ -64,5 +80,9 @@ func (m *MetricsHandler) CountMetric(ctx context.Context, success bool, operatio
 		m.dequeueCounter.WithLabelValues(labelValues[0]).Inc()
 	} else if operationType == "dequeue" && !success {
 		m.dequeueFailureCounter.WithLabelValues(labelValues[0]).Inc()
+	} else if operationType == "ack" && success {
+		m.ackCounter.WithLabelValues(labelValues[0], labelValues[1]).Inc()
+	} else if operationType == "ack" && !success {
+		m.ackFailureCounter.WithLabelValues(labelValues[0], labelValues[1]).Inc()
 	}
 }

@@ -47,6 +47,7 @@ metadata:
   namespace: ${delegateNamespace}
 spec:
   replicas: ${delegateReplicas}
+  minReadySeconds: 120
   selector:
     matchLabels:
       harness.io/name: ${delegateName}
@@ -92,7 +93,7 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 10
-          failureThreshold: 2
+          failureThreshold: 3
         startupProbe:
           httpGet:
             path: /api/health

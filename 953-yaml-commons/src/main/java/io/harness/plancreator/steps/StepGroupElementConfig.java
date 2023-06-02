@@ -8,8 +8,8 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -36,15 +36,15 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -58,6 +58,9 @@ public class StepGroupElementConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
+  StepGroupInfra stepGroupInfra;
+  ParameterField<List<String>> sharedPaths;
+
   @NotNull
   @EntityIdentifier
   @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
@@ -68,19 +71,26 @@ public class StepGroupElementConfig {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
-  @VariableExpression StepWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
+  @VariableExpression
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  ParameterField<StepWhenCondition> when;
 
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
   @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<ExecutionWrapperConfig> steps;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @VariableExpression(skipVariableExpression = true)
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 }

@@ -14,6 +14,7 @@ import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
@@ -201,10 +202,6 @@ public class NGVaultTaskHelper {
         throw new io.harness.exception.SecretManagementException(
             VAULT_OPERATION_ERROR, "You must provide aws region if you are using Vault with Aws Iam Auth method", USER);
       }
-      if (isBlank(vaultConfig.getXVaultAwsIamServerId())) {
-        throw new io.harness.exception.SecretManagementException(VAULT_OPERATION_ERROR,
-            "You must provide Iam Header Server ID if you are using Vault with Aws Iam Auth method", USER);
-      }
       if (isEmpty(vaultConfig.getDelegateSelectors())) {
         throw new io.harness.exception.SecretManagementException(
             VAULT_OPERATION_ERROR, "You must provide a delegate selector to read token if you are using Aws Iam", USER);
@@ -286,7 +283,9 @@ public class NGVaultTaskHelper {
 
   private String getBase64EncodedRequestHeaders(BaseVaultConfig vaultConfig) throws URISyntaxException {
     final LinkedHashMap<String, String> headers = new LinkedHashMap<>();
-    headers.put(X_VAULT_AWS_IAM_SERVER_ID, vaultConfig.getXVaultAwsIamServerId());
+    if (isNotBlank(vaultConfig.getXVaultAwsIamServerId())) {
+      headers.put(X_VAULT_AWS_IAM_SERVER_ID, vaultConfig.getXVaultAwsIamServerId());
+    }
     headers.put(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED_CHARSET_UTF_8);
 
     final DefaultRequest defaultRequest = new DefaultRequest(STS);

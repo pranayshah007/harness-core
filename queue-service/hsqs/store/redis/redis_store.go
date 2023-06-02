@@ -90,11 +90,6 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 
 	s.Logger.Info().Msgf("Calling enqueue Request for Topic %s and subtopic %s and producer %s", request.Topic, request.SubTopic, request.ProducerName)
 
-	err := ValidateEnqueueRequest(&request)
-	if err != nil {
-		return &store.EnqueueResponse{}, err
-	}
-
 	allSubTopicsKey := utils.GetAllSubTopicsFromTopicKey(request.Topic)
 	subTopicQueueKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
 
@@ -137,10 +132,6 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 
 	s.Logger.Info().Msgf("received Dequeue Request for topic %s by consumer %s with batchsize %d", request.Topic, request.ConsumerName, request.BatchSize)
 
-	err := ValidateDequeueRequest(&request)
-	if err != nil {
-		return nil, err
-	}
 	// Get all subtopics for given topic request
 	subtopics, err := s.AllSubTopicsForGivenTopic(ctx, request.Topic)
 	// if no subtopics for given topic, then return empty result
@@ -151,27 +142,33 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 	// TODO Exclude subtopics which are blacklisted (due to unack)
 
 	// Select a random subtopic to get items from the subtopic
+	if subtopics == nil || len(subtopics) == 0 {
+		s.Logger.Info().Msgf("No subtopics currently registered for topic")
+		return []*store.DequeueResponse{}, nil
+	}
 	index := utils.RandInt(len(subtopics))
 
-	selectedTopic := subtopics[index]
-	s.Logger.Info().Msgf("selected subTopic is %s", selectedTopic)
+	selectedSubTopic := subtopics[index]
+	s.Logger.Info().Msgf("selected subTopic is %s", selectedSubTopic)
 
-	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic), request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName, request.MaxWaitDuration)
+	return s.ReadFromStream(ctx, request, selectedSubTopic)
 }
 
 // ReadFromStream helper method to read from subTopic Streams
-func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize int, groupName string, consumerName string, maxWaitDuration time.Duration) ([]*store.DequeueResponse, error) {
+func (s *Store) ReadFromStream(ctx context.Context, request store.DequeueRequest, subTopic string) ([]*store.DequeueResponse, error) {
 
 	// Claim entries for pending items more than retry interval duration for given topic
 	// else return new Messages
 
-	s.Logger.Info().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, batchSize, groupName, consumerName)
+	streamKey := utils.GetSubTopicStreamQueueKey(request.Topic, subTopic)
+
+	s.Logger.Info().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName)
 
 	pendingRequest := &PendingEntriesRequest{
 		Stream:   streamKey,
-		Group:    groupName,
-		Consumer: consumerName,
-		Count:    batchSize,
+		Group:    utils.GetConsumerGroupKeyForTopic(request.Topic),
+		Consumer: request.ConsumerName,
+		Count:    request.BatchSize,
 	}
 	pendingEntries, err := s.GetPendingEntries(ctx, pendingRequest)
 
@@ -179,20 +176,13 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 		s.Logger.Info().Msgf("Pending Entries Error received for stream %s with error %s", streamKey, err.Error())
 	}
 	if pendingEntries == nil || len(pendingEntries) == 0 {
-		readRequest := &ReadNewMessagesRequest{
-			Stream:          streamKey,
-			Group:           groupName,
-			Consumer:        consumerName,
-			Count:           batchSize,
-			MaxWaitDuration: maxWaitDuration,
-		}
-		return s.ReadNewMessages(ctx, readRequest)
+		return s.ReadNewMessages(ctx, request, subTopic)
 	}
 
 	claimRequest := &ClaimRequest{
 		Stream:   streamKey,
-		Group:    groupName,
-		Consumer: consumerName,
+		Group:    utils.GetConsumerGroupKeyForTopic(request.Topic),
+		Consumer: request.ConsumerName,
 	}
 	claimResponse, err := s.ClaimEntries(ctx, claimRequest, pendingEntries)
 	if err != nil {
@@ -200,14 +190,7 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 	}
 	// If claim entries are errored out or empty result then fetch new messages
 	if claimResponse.Messages == nil || len(claimResponse.Messages) == 0 {
-		readRequest := &ReadNewMessagesRequest{
-			Stream:          streamKey,
-			Group:           groupName,
-			Consumer:        consumerName,
-			Count:           batchSize,
-			MaxWaitDuration: maxWaitDuration,
-		}
-		return s.ReadNewMessages(ctx, readRequest)
+		return s.ReadNewMessages(ctx, request, subTopic)
 	}
 
 	// else return claimed messages
@@ -236,28 +219,21 @@ type PendingEntriesRequest struct {
 	Idle     int
 }
 
-// ReadNewMessagesRequest Request Object for getting new entries from Redis Stream
-type ReadNewMessagesRequest struct {
-	Stream          string
-	Group           string
-	Consumer        string
-	Count           int
-	MaxWaitDuration time.Duration
-}
-
 // ReadNewMessages reads new messages from the stream
-func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) ([]*store.DequeueResponse, error) {
-	if len(r.Stream) == 0 {
+func (s *Store) ReadNewMessages(ctx context.Context, request store.DequeueRequest, subTopic string) ([]*store.DequeueResponse, error) {
+
+	stream := utils.GetSubTopicStreamQueueKey(request.Topic, subTopic)
+	if len(stream) == 0 {
 		return []*store.DequeueResponse{}, nil
 	}
 
-	s.Logger.Info().Msgf("Consumer reading new messages from stream %v", r.Stream)
+	s.Logger.Info().Msgf("Consumer reading new messages from stream %v", stream)
 	xReadGroupArgs := &redis.XReadGroupArgs{
-		Group:    r.Group,
-		Consumer: r.Consumer,
-		Streams:  []string{r.Stream, ">"},
-		Count:    int64(r.Count),
-		Block:    r.MaxWaitDuration * time.Millisecond,
+		Group:    utils.GetConsumerGroupKeyForTopic(request.Topic),
+		Consumer: request.ConsumerName,
+		Streams:  []string{stream, ">"},
+		Count:    int64(request.BatchSize),
+		Block:    request.MaxWaitDuration * time.Millisecond,
 	}
 	result, err := s.Client.XReadGroup(ctx, xReadGroupArgs).Result()
 
@@ -266,11 +242,23 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 	}
 
 	if err != nil {
-		s.Logger.Error().Msgf("Error while fetching new messages from queue %s is %s", r.Stream, err.Error())
+		s.Logger.Error().Msgf("Error while fetching new messages from queue %s is %s", stream, err.Error())
 		return nil, &store.DequeueErrorResponse{ErrorMessage: err.Error()}
 	}
-	messages := MapXStreamToResponse(r.Stream, result)
-	s.Logger.Info().Msgf("Result for new messages from queue %s is %v", r.Stream, len(messages))
+	messages := MapXStreamToResponse(stream, result)
+	s.Logger.Info().Msgf("Result for new messages from queue %s is %v", stream, len(messages))
+	if len(messages) == 0 {
+		val, err := s.Client.XLen(ctx, stream).Result()
+		if err != nil {
+			s.Logger.Error().Msgf("Error while fetching length for stream %s due to %s", stream, err.Error())
+		}
+		if val == int64(0) {
+			_, err := s.Client.SRem(ctx, utils.GetAllSubTopicsFromTopicKey(request.Topic), subTopic).Result()
+			if err != nil {
+				s.Logger.Error().Msgf("Failed Removing empty subTopic %s from Topic %s due to %s", subTopic, request.Topic, err.Error())
+			}
+		}
+	}
 	return messages, nil
 }
 
@@ -377,9 +365,16 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 	s.Logger.Info().Msgf("Acknowleding itemId %s for topic %s for subTopic %s and consumer %s", request.ItemID, request.Topic, request.SubTopic, request.ConsumerName)
 
 	// acknowledging the processed method
-	if _, err := s.Client.XAck(ctx, topicKey, utils.GetConsumerGroupKeyForTopic(request.Topic), ids...).Result(); err != nil {
+	result, err := s.Client.XAck(ctx, topicKey, utils.GetConsumerGroupKeyForTopic(request.Topic), ids...).Result()
+
+	if err != nil {
 		s.Logger.Error().Msgf("Acknowleding itemId %s failed due to %s", request.ItemID, err.Error())
-		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
+		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: "Acknowledging item failed due to incorrect ItemID"}
+	}
+
+	if result == int64(0) {
+		s.Logger.Error().Msgf("Acknowledging item failed due to incorrect stream name")
+		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: "Acknowledging item failed due to incorrect Topic/SubTopic or item does not exist"}
 	}
 
 	//deleting the method from queue
@@ -465,41 +460,6 @@ func (s *Store) GetTopicMetadata(ctx context.Context, topic string) (*store.Regi
 		return nil, err
 	}
 	return &metadata, nil
-}
-
-// ValidateDequeueRequest helper method to Validate Dequeue Request
-func ValidateDequeueRequest(request *store.DequeueRequest) error {
-	if len(request.Topic) == 0 {
-		return fmt.Errorf("DequeueRequest TopicName cannot be empty")
-	}
-	if len(request.ConsumerName) == 0 {
-		return fmt.Errorf("DequeueRequest ConsumerName cannot be empty")
-	}
-	if request.BatchSize <= 0 {
-		return fmt.Errorf("DequeueRequest BatchSize should be greater than 0")
-	}
-	return nil
-}
-
-// ValidateEnqueueRequest helper method to Validate Enqueue Request
-func ValidateEnqueueRequest(request *store.EnqueueRequest) error {
-	if len(request.Topic) == 0 {
-		return fmt.Errorf("EnqueueRequest TopicName cannot be empty")
-	}
-
-	if len(request.SubTopic) == 0 {
-		return fmt.Errorf("EnqueueRequest TopicName cannot be empty")
-	}
-
-	if len(request.ProducerName) == 0 {
-		return fmt.Errorf("EnqueueRequest ProducerName cannot be empty")
-	}
-
-	if len(request.Payload) == 0 {
-		return fmt.Errorf("EnqueueRequest Payload cannot be empty")
-	}
-	return nil
-
 }
 
 // Register method to add a consumer group to stream and add topic Metadata

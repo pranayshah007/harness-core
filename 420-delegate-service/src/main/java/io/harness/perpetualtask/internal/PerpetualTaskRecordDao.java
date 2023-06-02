@@ -64,7 +64,8 @@ public class PerpetualTaskRecordDao {
     }
   }
 
-  public void updateTaskUnassignedReason(String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount) {
+  public void updateTaskUnassignedReasonAndException(
+      String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount, String exception) {
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.uuid, taskId)
                                            .field(PerpetualTaskRecordKeys.state)
@@ -73,6 +74,7 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.unassignedReason, reason)
             .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED)
+            .set(PerpetualTaskRecordKeys.exception, exception)
             .set(PerpetualTaskRecordKeys.assignTryCount,
                 Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))
             .set(PerpetualTaskRecordKeys.assignAfterMs,
@@ -82,8 +84,18 @@ public class PerpetualTaskRecordDao {
     persistence.update(query, updateOperations);
   }
 
+  public void updateTaskUnassignedReason(String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount) {
+    updateTaskUnassignedReasonAndException(taskId, reason, assignTryCount, reason.toString());
+  }
+
   public void updateTaskStateNonAssignableReason(
       String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount, PerpetualTaskState perpetualTaskState) {
+    updateTaskStateNonAssignableReasonAndException(
+        taskId, reason, assignTryCount, perpetualTaskState, reason.toString());
+  }
+
+  public void updateTaskStateNonAssignableReasonAndException(String taskId, PerpetualTaskUnassignedReason reason,
+      int assignTryCount, PerpetualTaskState perpetualTaskState, String exception) {
     Query<PerpetualTaskRecord> query =
         persistence.createQuery(PerpetualTaskRecord.class)
             .filter(PerpetualTaskRecordKeys.uuid, taskId)
@@ -93,6 +105,7 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.unassignedReason, reason)
             .set(PerpetualTaskRecordKeys.state, perpetualTaskState)
+            .set(PerpetualTaskRecordKeys.exception, exception)
             .set(PerpetualTaskRecordKeys.assignTryCount,
                 Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))
             .set(PerpetualTaskRecordKeys.assignAfterMs,

@@ -18,7 +18,7 @@ import io.harness.distribution.constraint.Consumer.State;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -39,8 +39,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ResourceConstraintBackupHandler
-    extends IteratorPumpModeHandler implements Handler<ResourceConstraintInstance> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<ResourceConstraintInstance> {
   private static final String handlerName = "ResourceConstraint-Backup";
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(30);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
 
   @Inject private AccountService accountService;
   @Inject private ResourceConstraintService resourceConstraintService;
@@ -58,13 +60,32 @@ public class ResourceConstraintBackupHandler
                            .fieldName(ResourceConstraintInstanceKeys.nextIteration)
                            .filterExpander(q -> q.field(ResourceConstraintInstanceKeys.state).in(NOT_FINISHED_STATES))
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofSeconds(30))
-                           .acceptableExecutionTime(ofSeconds(30))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ResourceConstraintInstance, MorphiaFilterExpander<ResourceConstraintInstance>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       ResourceConstraintBackupHandler.class,
+                       MongoPersistenceIterator
+                           .<ResourceConstraintInstance, MorphiaFilterExpander<ResourceConstraintInstance>>builder()
+                           .clazz(ResourceConstraintInstance.class)
+                           .fieldName(ResourceConstraintInstanceKeys.nextIteration)
+                           .filterExpander(q -> q.field(ResourceConstraintInstanceKeys.state).in(NOT_FINISHED_STATES))
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

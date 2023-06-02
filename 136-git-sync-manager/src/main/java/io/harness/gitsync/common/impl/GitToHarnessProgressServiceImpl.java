@@ -190,8 +190,6 @@ public class GitToHarnessProgressServiceImpl implements GitToHarnessProgressServ
 
   @Override
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(GitToHarnessProgressKeys.accountIdentifier).is(accountId);
-    gitToHarnessProgressRepository.deleteAll(gitToHarnessProgressRepository.findAllByAccountIdentifier(accountId));
+    gitToHarnessProgressRepository.deleteAllByAccountIdentifier(accountId);
   }
 }

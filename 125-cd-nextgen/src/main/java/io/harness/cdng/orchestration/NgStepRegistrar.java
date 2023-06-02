@@ -27,6 +27,11 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
+import io.harness.cdng.aws.sam.AwsSamBuildStep;
+import io.harness.cdng.aws.sam.AwsSamDeployStep;
+import io.harness.cdng.aws.sam.AwsSamRollbackStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -35,6 +40,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
+import io.harness.cdng.bamboo.BambooBuildStep;
 import io.harness.cdng.chaos.ChaosStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
@@ -59,19 +65,25 @@ import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.gitops.syncstep.SyncStep;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
+import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStep;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
+import io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStep;
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
+import io.harness.cdng.hooks.steps.ServiceHooksStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStep;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepV2;
 import io.harness.cdng.k8s.K8sApplyStep;
+import io.harness.cdng.k8s.K8sBGStageScaleDownStep;
 import io.harness.cdng.k8s.K8sBGSwapServicesStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
 import io.harness.cdng.k8s.K8sCanaryDeleteStep;
@@ -84,6 +96,7 @@ import io.harness.cdng.k8s.K8sScaleStep;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
+import io.harness.cdng.pipeline.steps.CombinedRollbackStep;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
@@ -100,6 +113,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRollbackStep;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
@@ -129,6 +143,7 @@ import io.harness.cdng.tas.TasCommandStep;
 import io.harness.cdng.tas.TasRollbackStep;
 import io.harness.cdng.tas.TasRollingDeployStep;
 import io.harness.cdng.tas.TasRollingRollbackStep;
+import io.harness.cdng.tas.TasRouteMappingStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -150,7 +165,9 @@ public class NgStepRegistrar {
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
+    engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
+    engineSteps.put(CombinedRollbackStep.STEP_TYPE, CombinedRollbackStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
     engineSteps.put(InfrastructureSectionStep.STEP_TYPE, InfrastructureSectionStep.class);
@@ -182,6 +199,7 @@ public class NgStepRegistrar {
     engineSteps.put(K8sBGSwapServicesStep.STEP_TYPE, K8sBGSwapServicesStep.class);
     engineSteps.put(K8sApplyStep.STEP_TYPE, K8sApplyStep.class);
     engineSteps.put(K8sDryRunManifestStep.STEP_TYPE, K8sDryRunManifestStep.class);
+    engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
     engineSteps.put(TerraformApplyStep.STEP_TYPE, TerraformApplyStep.class);
     engineSteps.put(TerraformPlanStep.STEP_TYPE, TerraformPlanStep.class);
     engineSteps.put(TerraformDestroyStep.STEP_TYPE, TerraformDestroyStep.class);
@@ -213,6 +231,7 @@ public class NgStepRegistrar {
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     engineSteps.put(GitopsClustersStep.STEP_TYPE, GitopsClustersStep.class);
     engineSteps.put(JenkinsBuildStep.STEP_TYPE, JenkinsBuildStep.class);
+    engineSteps.put(JenkinsBuildStepV2.STEP_TYPE, JenkinsBuildStepV2.class);
     // ECS
     engineSteps.put(EcsRollingDeployStep.STEP_TYPE, EcsRollingDeployStep.class);
     engineSteps.put(EcsRollingRollbackStep.STEP_TYPE, EcsRollingRollbackStep.class);
@@ -264,13 +283,32 @@ public class NgStepRegistrar {
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
     engineSteps.put(TasRollingDeployStep.STEP_TYPE, TasRollingDeployStep.class);
     engineSteps.put(TasRollingRollbackStep.STEP_TYPE, TasRollingRollbackStep.class);
+    engineSteps.put(TasRouteMappingStep.STEP_TYPE, TasRouteMappingStep.class);
 
     engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
     engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);
     engineSteps.put(GoogleFunctionsTrafficShiftStep.STEP_TYPE, GoogleFunctionsTrafficShiftStep.class);
     engineSteps.put(GoogleFunctionsRollbackStep.STEP_TYPE, GoogleFunctionsRollbackStep.class);
+    engineSteps.put(GoogleFunctionsGenOneDeployStep.STEP_TYPE, GoogleFunctionsGenOneDeployStep.class);
+    engineSteps.put(GoogleFunctionsGenOneRollbackStep.STEP_TYPE, GoogleFunctionsGenOneRollbackStep.class);
     engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
+    engineSteps.put(BambooBuildStep.STEP_TYPE, BambooBuildStep.class);
+    engineSteps.put(TerraformCloudRollbackStep.STEP_TYPE, TerraformCloudRollbackStep.class);
 
+    // AWS Lambda
+    engineSteps.put(AwsLambdaDeployStep.STEP_TYPE, AwsLambdaDeployStep.class);
+    engineSteps.put(AwsLambdaRollbackStep.STEP_TYPE, AwsLambdaRollbackStep.class);
+
+    // AWS SAM
+    engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
+    engineSteps.put(AwsSamBuildStep.STEP_TYPE, AwsSamBuildStep.class);
+    engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
+
+    // Service Hooks
+    engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
+
+    // Blue Green Stage Scale Down
+    engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
     return engineSteps;
   }
 }

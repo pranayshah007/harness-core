@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.AddUsersDTO;
@@ -21,6 +22,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserMembership;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.scim.PatchRequest;
@@ -33,10 +35,12 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
 public interface NgUserService {
   void addUserToCG(String userId, Scope scope);
+  void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource);
 
   Optional<UserInfo> getUserById(String userId);
 
@@ -73,15 +77,21 @@ public interface NgUserService {
 
   List<UserMetadataDTO> getUserMetadata(List<String> userIds);
 
+  CloseableIterator<UserMetadata> streamUserMetadata(List<String> userIds);
+
   void addServiceAccountToScope(
       String serviceAccountId, Scope scope, RoleBinding roleBinding, UserMembershipUpdateSource source);
 
-  List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds);
+  List<String> getUserIdsByEmails(List<String> emailIds);
 
-  Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable);
+  CloseableIterator<UserMembership> streamUserMemberships(Criteria criteria);
 
   void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source);
+
+  void waitForRbacSetup(Scope scope, String userId, String email);
+
+  Optional<UserInfo> getUserByIdAndAccount(String userId, String accountId);
 
   boolean isUserAtScope(String userId, Scope scope);
 
@@ -113,4 +123,6 @@ public interface NgUserService {
   boolean verifyHarnessSupportGroupUser();
 
   UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
+
+  UserMetadata updateUserMetadataInternal(UserMetadataDTO user);
 }

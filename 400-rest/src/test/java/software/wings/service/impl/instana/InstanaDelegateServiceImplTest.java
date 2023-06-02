@@ -11,8 +11,8 @@ import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,9 +23,9 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.InstanaConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.delegatetasks.cv.RequestExecutor;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 import software.wings.service.intfc.security.EncryptionService;
 

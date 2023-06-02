@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.GITOPS)
@@ -176,7 +177,7 @@ public class EnvironmentInfraFilterUtils {
           gitopsClusters.stream()
               .filter(cluster
                   -> FilterTagsUtils.areTagsFilterMatching(TagMapper.convertToList(cluster.getTags()), tagsFilter))
-              .flatMap(cluster -> idToClusterMap.get(cluster.getIdentifier()).stream())
+              .flatMap(cluster -> CollectionUtils.emptyIfNull(idToClusterMap.get(cluster.fetchRef())).stream())
               .collect(Collectors.toList());
     }
     return filteredClusters;

@@ -91,7 +91,7 @@ public class StrategyUtilsV1Test extends PmsSdkCoreTestBase {
     PlanCreationContextBuilder contextBuilder = PlanCreationContext.builder();
     assertThat(StrategyUtilsV1.getSwappedPlanNodeId(
                    contextBuilder.currentField(stageWithStrategy).build(), "originalPlanNodeId"))
-        .isEqualTo(stageWithStrategy.getNode().getField("spec").getNode().getField("strategy").getNode().getUuid());
+        .isEqualTo(stageWithStrategy.getNode().getField("strategy").getNode().getUuid());
     assertThat(StrategyUtilsV1.getSwappedPlanNodeId(
                    contextBuilder.currentField(stageWithoutStrategy).build(), "originalPlanNodeId"))
         .isEqualTo("originalPlanNodeId");

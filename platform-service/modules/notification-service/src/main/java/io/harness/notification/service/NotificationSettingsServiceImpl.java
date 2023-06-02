@@ -27,7 +27,6 @@ import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.entities.NotificationSetting;
-import io.harness.notification.entities.NotificationSetting.NotificationSettingKeys;
 import io.harness.notification.evaluator.SecretExpressionEvaluator;
 import io.harness.notification.remote.SmtpConfigClient;
 import io.harness.notification.remote.SmtpConfigResponse;
@@ -54,7 +53,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -275,8 +273,6 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
 
   @Override
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(NotificationSettingKeys.accountId).is(accountId);
-    notificationSettingRepository.deleteAll(notificationSettingRepository.findAllByAccountId(accountId));
+    notificationSettingRepository.deleteAllByAccountId(accountId);
   }
 }

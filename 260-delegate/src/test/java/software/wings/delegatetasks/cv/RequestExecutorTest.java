@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,10 +25,10 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.delegatetasks.DelegateLogService;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 
 import java.io.IOException;
 import java.time.Duration;

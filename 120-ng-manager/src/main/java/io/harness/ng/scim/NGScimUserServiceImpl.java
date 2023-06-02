@@ -7,9 +7,21 @@
 
 package io.harness.ng.scim;
 
+import static io.harness.NGConstants.CREATED;
+import static io.harness.NGConstants.FAMILY_NAME;
+import static io.harness.NGConstants.FORMATTED_NAME;
+import static io.harness.NGConstants.GIVEN_NAME;
+import static io.harness.NGConstants.LAST_MODIFIED;
+import static io.harness.NGConstants.LOCATION;
+import static io.harness.NGConstants.PRIMARY;
+import static io.harness.NGConstants.RESOURCE_TYPE;
+import static io.harness.NGConstants.VALUE;
+import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import static java.util.Collections.emptyList;
 
@@ -22,12 +34,12 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.api.InviteService;
 import io.harness.ng.core.invites.entities.Invite;
+import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -39,9 +51,12 @@ import io.harness.serializer.JsonUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,20 +72,17 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @OwnedBy(PL)
 public class NGScimUserServiceImpl implements ScimUserService {
-  private static final String GIVEN_NAME = "givenName";
-  private static final String FAMILY_NAME = "familyName";
-  private static final String VALUE = "value";
-  private static final String PRIMARY = "primary";
   private final NgUserService ngUserService;
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
   private final AccountClient accountClient;
 
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
-    log.info("NGSCIM: Creating user call for accountId {} with query {}", accountId, userQuery);
+    log.info("NGSCIM: Creating user call for accountId {} with scim user query {}", accountId, userQuery);
     String primaryEmail = getPrimaryEmail(userQuery);
 
     Optional<UserInfo> userInfoOptional = ngUserService.getUserInfoByEmailFromCG(primaryEmail);
@@ -84,6 +96,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
                                            .locked(user.isLocked())
                                            .disabled(user.isDisabled())
                                            .externallyManaged(user.isExternallyManaged())
+                                           .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
                                            .build())
                                 .orElse(null));
     UserMetadataDTO user;
@@ -99,7 +112,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
       ngUserService.addUserToScope(
           user.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
-      return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid())).build();
+      ngUserService.updateNGUserToCGWithSource(
+          user.getUuid(), Scope.builder().accountIdentifier(accountId).build(), SCIM);
+      return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
     } else {
       String userName = getName(userQuery);
       Invite invite = Invite.builder()
@@ -107,6 +122,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
                           .approved(true)
                           .email(primaryEmail)
                           .name(userName)
+                          .givenName(getGivenNameFromScimUser(userQuery))
+                          .familyName(getFamilyNameFromScimUser(userQuery))
+                          .externalId(getExternalIdFromScimUser(userQuery))
                           .inviteType(InviteType.SCIM_INITIATED_INVITE)
                           .build();
 
@@ -119,7 +137,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         user = userOptional.get();
         userQuery.setId(user.getUuid());
         log.info("NGSCIM: Completed creating user call for accountId {} with query {}", accountId, userQuery);
-        return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid())).build();
+        return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
       } else {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -133,9 +151,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
     return false;
   }
 
-  private ScimUser getUserInternal(String userId) {
+  private ScimUser getUserInternal(String userId, String accountId) {
     Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
-    return userInfo.map(this::buildUserResponse).orElse(null);
+    return userInfo.map(user -> buildUserResponse(user, accountId)).orElse(null);
   }
 
   @Override
@@ -146,7 +164,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       if (userOptional.isPresent()
           && ngUserService.isUserAtScope(
               userOptional.get().getUuid(), Scope.builder().accountIdentifier(accountId).build())) {
-        return userInfo.map(this::buildUserResponse).get();
+        return userInfo.map(user -> buildUserResponse(user, accountId)).get();
       } else {
         throw new InvalidRequestException("User does not exist in NG");
       }
@@ -161,6 +179,14 @@ public class NGScimUserServiceImpl implements ScimUserService {
     ScimListResponse<ScimUser> result = ngUserService.searchScimUsersByEmailQuery(accountId, filter, count, startIndex);
     if (result.getTotalResults() > 0) {
       result = removeUsersNotinNG(result, accountId);
+    }
+    // now add the groups for these users
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)) {
+      for (ScimUser scimUser : result.getResources()) {
+        log.info("NGSCIM: adding user groups data for each of the user {}, in account {} for search user",
+            scimUser.getId(), accountId);
+        scimUser.setGroups(JsonUtils.asTree(getUserGroupNodesForAGivenUser(scimUser.getId(), accountId)));
+      }
     }
     log.info("NGSCIM: completed search. accountId {}, search query {}, resultSize: {}", accountId, filter,
         result.getTotalResults());
@@ -193,6 +219,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
   @Override
   public void deleteUser(String userId, String accountId) {
     log.info("NGSCIM: deleting for accountId {} the user {}", accountId, userId);
+    ngUserService.removeUserFromScope(userId, Scope.builder().accountIdentifier(accountId).build(),
+        UserMembershipUpdateSource.USER, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
     ngUserService.removeUser(userId, accountId);
     log.info("NGSCIM: deleting the user completed for accountId {} the user {}", accountId, userId);
   }
@@ -225,7 +253,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         }
       });
     }
-    return getUserInternal(userId);
+    return getUserInternal(userId, accountId);
   }
 
   @Override
@@ -268,10 +296,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
 
       String updatedEmail = getPrimaryEmail(scimUser);
-
-      if (CGRestUtils.getResponse(
-              accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
-          && !existingUser.getEmail().equals(updatedEmail)) {
+      if (existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
         userMetadata.setEmail(updatedEmail);
         userMetadata.setExternallyManaged(true);
         log.info("NGSCIM: Updating email for user {} ; Updated email: {}", userId, updatedEmail);
@@ -279,6 +304,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       ngUserService.updateUserMetadata(userMetadata);
       log.info("NGSCIM: Updated metadata for user: {}", userId);
+
+      ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
 
       if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
         if (scimUser.getActive() != null && !scimUser.getActive()) {
@@ -295,7 +322,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them
-      return Response.status(Response.Status.OK).entity(getUserInternal(userId)).build();
+      return Response.status(Response.Status.OK).entity(getUserInternal(userId, accountId)).build();
     }
   }
 
@@ -309,7 +336,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         // OKTA doesn't send an explicit delete user request but only makes active true/false.
         // We need to remove the user completely if active=false as we do not have any first
         // class support for a disabled user vs a deleted user
-        ngUserService.removeUser(userId, accountId);
+        deleteUser(userId, accountId);
       } else {
         // This is to keep CG implementation working as it is.
         ngUserService.updateUserDisabled(accountId, userId, disabled);
@@ -343,9 +370,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
     }
 
-    if (CGRestUtils.getResponse(
-            accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       String updatedEmail = patchOperation.getValue(String.class).toLowerCase();
       userMetadataDTO.setEmail(updatedEmail);
@@ -360,6 +385,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
+
+    ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
 
     if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)
         && patchOperation.getValue(ScimUserValuedObject.class) != null) {
@@ -398,20 +425,34 @@ public class NGScimUserServiceImpl implements ScimUserService {
         || !StringUtils.equalsIgnoreCase(user.getEmail(), userQuery.getUserName());
   }
 
-  private ScimUser buildUserResponse(UserInfo user) {
+  private ScimUser buildUserResponse(UserInfo user, String accountId) {
     ScimUser userResource = new ScimUser();
     userResource.setId(user.getUuid());
 
     userResource.setActive(!user.isDisabled());
     userResource.setUserName(user.getEmail());
     userResource.setDisplayName(user.getName());
+    userResource.setExternalId(user.getExternalId());
+
+    boolean isJpmcFfOn = ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS);
 
     // @Todo - Check with Ujjawal on this if we need GIVEN_NAME & FAMILY_NAME
     Map<String, String> nameMap = new HashMap<String, String>() {
       {
-        //        put(GIVEN_NAME, user.getGivenName() != null ? user.getGivenName() : user.getName());
-        //        put(FAMILY_NAME, user.getFamilyName() != null ? user.getFamilyName() : user.getName());
         put("displayName", user.getName());
+        if (isJpmcFfOn) {
+          final String givenNm = user.getGivenName() == null ? user.getName() : user.getGivenName();
+          final String familyNm = user.getFamilyName() == null ? user.getName() : user.getFamilyName();
+
+          put(FAMILY_NAME, familyNm);
+          put(GIVEN_NAME, givenNm);
+
+          if (user.getGivenName() == null && user.getFamilyName() == null) {
+            put(FORMATTED_NAME, user.getName());
+          } else {
+            put(FORMATTED_NAME, givenNm + ", " + familyNm);
+          }
+        }
       }
     };
 
@@ -424,6 +465,24 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
     userResource.setEmails(JsonUtils.asTree(Collections.singletonList(emailMap)));
     userResource.setName(JsonUtils.asTree(nameMap));
+
+    if (isJpmcFfOn) {
+      Map<String, String> metaMap = new HashMap<String, String>() {
+        {
+          put(RESOURCE_TYPE, "User");
+          put(CREATED, simpleDateFormat.format(new Date(user.getCreatedAt())));
+          put(LAST_MODIFIED, simpleDateFormat.format(new Date(user.getLastUpdatedAt())));
+          put(VERSION, "");
+          put(LOCATION, "");
+        }
+      };
+      userResource.setMeta(JsonUtils.asTree(metaMap));
+
+      // get UserGroups of this user
+      log.info("NGSCIM: adding user groups data for the user {}, in account {}", user.getUuid(), accountId);
+      List<JsonNode> groupsNode = getUserGroupNodesForAGivenUser(user.getUuid(), accountId);
+      userResource.setGroups(JsonUtils.asTree(groupsNode));
+    }
     return userResource;
   }
 
@@ -440,5 +499,37 @@ public class NGScimUserServiceImpl implements ScimUserService {
       return user.getName().get(GIVEN_NAME).asText() + " " + user.getName().get(FAMILY_NAME).asText();
     }
     return null;
+  }
+
+  private String getGivenNameFromScimUser(@NotNull ScimUser userQuery) {
+    return userQuery.getName() != null && userQuery.getName().get(GIVEN_NAME) != null
+        ? userQuery.getName().get(GIVEN_NAME).textValue()
+        : userQuery.getDisplayName();
+  }
+
+  private String getFamilyNameFromScimUser(@NotNull ScimUser userQuery) {
+    return userQuery.getName() != null && userQuery.getName().get(GIVEN_NAME) != null
+        ? userQuery.getName().get(FAMILY_NAME).textValue()
+        : userQuery.getDisplayName();
+  }
+
+  private String getExternalIdFromScimUser(@NotNull ScimUser userQuery) {
+    return isEmpty(userQuery.getExternalId()) ? null : userQuery.getExternalId();
+  }
+
+  private List<JsonNode> getUserGroupNodesForAGivenUser(String userId, String accountId) {
+    List<JsonNode> groupsNode = new ArrayList<>();
+    List<UserGroup> userGroups = userGroupService.getUserGroupsForUser(accountId, userId);
+    for (UserGroup userGroup : userGroups) {
+      Map<String, String> userGroupMap = new HashMap<>() {
+        {
+          put("value", userGroup.getIdentifier());
+          put("ref", "");
+          put("display", userGroup.getName());
+        }
+      };
+      groupsNode.add(JsonUtils.asTree(userGroupMap));
+    }
+    return groupsNode;
   }
 }

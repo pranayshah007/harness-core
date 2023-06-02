@@ -40,16 +40,16 @@ public class FailureStrategiesUtils {
       List<FailureStrategyConfig> stageFailureStrategies) {
     // priority merge all declared failure strategies, least significant are added first to map
     EnumMap<NGFailureType, FailureStrategyActionConfig> failureStrategiesMap = new EnumMap<>(NGFailureType.class);
-    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stageFailureStrategies));
-    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepGroupFailureStrategies));
-    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepFailureStrategies));
+    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stageFailureStrategies, false));
+    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepGroupFailureStrategies, true));
+    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepFailureStrategies, false));
 
     // invert map so that action become key
     return convertNGFailureTypeToFailureTypesMultiMap(failureStrategiesMap);
   }
 
   private EnumMap<NGFailureType, FailureStrategyActionConfig> expandFailureStrategiesToMap(
-      List<FailureStrategyConfig> failureStrategyConfigList) {
+      List<FailureStrategyConfig> failureStrategyConfigList, boolean isStepGroup) {
     EnumMap<NGFailureType, FailureStrategyActionConfig> map = new EnumMap<>(NGFailureType.class);
 
     if (isNotEmpty(failureStrategyConfigList)) {
@@ -71,9 +71,9 @@ public class FailureStrategiesUtils {
               throw new InvalidRequestException(
                   "With AllErrors there cannot be other specified errors defined in same list.");
             }
-            if (allErrorsCount > 1) {
+            if (allErrorsCount > 1 && !isStepGroup) {
               throw new InvalidRequestException(
-                  "AllErrors are defined multiple times either in stage, stepGroup or step failure strategies.");
+                  "AllErrors are defined multiple times either in stage or step failure strategies.");
             }
           } else {
             map.put(ngFailureType, failureStrategyConfig.getOnFailure().getAction());
@@ -104,14 +104,26 @@ public class FailureStrategiesUtils {
   }
 
   public void validateRetryFailureAction(RetryFailureActionConfig retryAction) {
+    if (retryAction.getSpecConfig() == null) {
+      throw new InvalidRequestException("Retry Spec cannot be null or empty");
+    }
+
     ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
+    if (retryCount.getValue() == null) {
+      throw new InvalidRequestException("Retry Count cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getRetryIntervals().getValue() == null) {
+      throw new InvalidRequestException("Retry Interval cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getOnRetryFailure() == null) {
+      throw new InvalidRequestException("Retry Action cannot be null or empty");
+    }
     if (retryCount.isExpression()) {
       throw new InvalidRequestException("RetryCount fixed value is not given.");
     }
     if (retryAction.getSpecConfig().getRetryIntervals().isExpression()) {
       throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
     }
-
     FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
 
     if (!validateActionAfterRetryFailure(actionUnderRetry)) {
@@ -128,17 +140,30 @@ public class FailureStrategiesUtils {
   }
 
   public void validateManualInterventionFailureAction(ManualInterventionFailureActionConfig actionConfig) {
+    if (actionConfig.getSpecConfig() == null) {
+      throw new InvalidRequestException("ManualIntervention Spec cannot be null or empty.");
+    }
+    if (actionConfig.getSpecConfig().getOnTimeout() == null) {
+      throw new InvalidRequestException("Action onTimeout of ManualIntervention cannot be null or empty.");
+    }
+    if (actionConfig.getSpecConfig().getTimeout().getValue() == null) {
+      throw new InvalidRequestException(
+          "Timeout period for ManualIntervention cannot be null or empty. Please give values");
+    }
+    if (actionConfig.getSpecConfig().getTimeout().isExpression()) {
+      throw new InvalidRequestException(
+          "Timeout period for ManualIntervention cannot be expression/runtime input. Please give values.");
+    }
+
     FailureStrategyActionConfig actionUnderManualIntervention = actionConfig.getSpecConfig().getOnTimeout().getAction();
     if (actionUnderManualIntervention.getType().equals(NGFailureActionType.MANUAL_INTERVENTION)) {
       throw new InvalidRequestException("Manual Action cannot be applied as PostTimeOut Action");
     }
-    // validating Manual Intervention -> Retry -> Manual Intervention
+
+    // validating Manual Intervention -> Retry
     if (actionUnderManualIntervention.getType().equals(NGFailureActionType.RETRY)) {
-      if (FailureStrategiesUtils.validateManualActionUnderRetryAction(
-              ((RetryFailureActionConfig) actionUnderManualIntervention).getSpecConfig())) {
-        throw new InvalidRequestException(
-            "Manual Action cannot be applied under Retry Action which itself is in Manual Action");
-      }
+      throw new InvalidRequestException(
+          "Retry is not allowed as post timeout action in Manual intervention as it can lead to an infinite loop");
     }
   }
 

@@ -8,12 +8,9 @@
 package io.harness.delegate.app.modules.platform;
 
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
-import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
-import io.harness.delegate.app.modules.common.DelegateManagerGrpcClientModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.app.modules.platform.k8s.K8SRunnerModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.logstreaming.LogStreamingModule;
 import io.harness.metrics.MetricRegistryModule;
 
 import com.codahale.metrics.MetricRegistry;
@@ -39,16 +36,8 @@ public class DelegatePlatformModule extends AbstractModule {
     install(new DelegateTokensModule(configuration));
     install(new DelegateHealthModule());
 
-    install(new DelegatePlatformKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
-
-    install(new DelegateManagerClientModule());
-
-    install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
-        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
-        configuration.isTrustAllCertificates()));
-    install(new DelegateManagerGrpcClientModule(configuration));
-
+    install(new ClientModule());
     install(
         new DelegateExecutorsModule(configuration.isDynamicHandlingOfRequestEnabled())); // Check if some can be removed
     install(new DelegateCommonModule(configuration));

@@ -46,6 +46,7 @@ public class HintException extends WingsException {
   public static final String HINT_DOCKER_HUB_IMAGE_NAME =
       "Check if the Docker image you are looking for is in the Docker registry.";
   public static final String HINT_DOCKER_HUB_ACCESS_DENIED = "Please ensure DockerHub credentials are valid";
+  public static final String HINT_BAMBOO_ACCESS_DENIED = "Please ensure Bamboo credentials are valid";
   public static final String HINT_CUSTOM_ACCESS_DENIED = "Please ensure credentials are valid";
   public static final String HINT_GITHUB_ACCESS_DENIED = "Please ensure Github credentials are valid";
   public static final String HINT_AZURE_ACCESS_DENIED = "Please ensure Azure Artifacts credentials are valid";
@@ -146,6 +147,10 @@ public class HintException extends WingsException {
   public static final String HINT_AZURE_ARTIFACT_DOWNLOAD_FAILED =
       "Please check the artifact data (package name, project, package type, feed, version...) and credentials.";
   public static final String HINT_DECRYPTED_SECRET_VALUE = "Please ensure secret with identifier %s exist.";
+
+  public static final String HINT_INPUT_SET_ACCOUNT_SETTING =
+      "1) Please check if account level setting is expected to be enabled. \n2) Please check if requested input-set is in same repository as the linked pipeline.";
+  public static final String HINT_DOCKER_HUB_INVALID_IMAGE_PATH = "No tag found for given Image Path";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

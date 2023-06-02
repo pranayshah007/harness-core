@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -12,9 +12,11 @@ import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
+import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
@@ -36,5 +38,7 @@ public class LicenseBeanKryoClassesRegistrar implements KryoRegistrar {
     kryo.register(LicenseType.class, 930008);
     kryo.register(LicenseStatus.class, 930009);
     kryo.register(ChaosModuleLicenseDTO.class, 9800002);
+    kryo.register(IACMModuleLicenseDTO.class, 930012);
+    kryo.register(CETModuleLicenseDTO.class, 930013);
   }
 }

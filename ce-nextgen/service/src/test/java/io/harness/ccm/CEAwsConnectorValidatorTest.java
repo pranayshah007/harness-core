@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -311,5 +311,38 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
             "Please allow arn:aws:iam::890436954479:role/harnessCERole to perform 'iam:SimulatePrincipalPolicy' on itself");
     assertThat(result.getErrors()).hasSize(1);
     assertThat(result.getErrors().get(0).getReason()).isEqualTo(MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testValidateClusterOrchestratorSuccess() {
+    ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.CLUSTER_ORCHESTRATOR));
+    ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
+    ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+    assertThat(result.getErrors()).isNullOrEmpty();
+    assertThat(result.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testValidateClusterOrchestratorPermissionMissing() {
+    ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.CLUSTER_ORCHESTRATOR));
+    ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
+    doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
+        .when(awsClient)
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+    ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
+    assertThat(result.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
+
+    assertThat(result.getErrors()).hasSize(1);
+    assertThat(result.getErrors().get(0).getReason()).isEqualTo(REASON);
+    assertThat(result.getErrors().get(0).getMessage()).isEqualTo(MESSAGE_SUGGESTION);
+    assertThat(result.getErrors().get(0).getCode()).isEqualTo(403);
   }
 }

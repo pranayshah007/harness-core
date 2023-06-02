@@ -10,6 +10,7 @@ package io.harness.repositories.user.custom;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.util.stream.Collectors.toList;
 import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicateKeyCode;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -31,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.util.CloseableIterator;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -50,6 +52,13 @@ public class UserMetadataRepositoryCustomImpl implements UserMetadataRepositoryC
   public List<UserMetadata> findAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, UserMetadata.class);
+  }
+
+  @Override
+  public List<String> findAllIds(Criteria criteria) {
+    Query query = new Query(criteria);
+    query.fields().include(UserMetadataKeys.userId);
+    return mongoTemplate.find(query, UserMetadata.class).stream().map(UserMetadata::getUserId).collect(toList());
   }
 
   @Override
@@ -82,5 +91,11 @@ public class UserMetadataRepositoryCustomImpl implements UserMetadataRepositoryC
       }
       throw ex;
     }
+  }
+
+  @Override
+  public CloseableIterator<UserMetadata> stream(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.stream(query, UserMetadata.class);
   }
 }

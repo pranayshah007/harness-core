@@ -10,13 +10,13 @@ package io.harness.engine.pms.advise.publisher;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
-import io.harness.plan.PlanNode;
+import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface NodeAdviseEventPublisher {
-  String publishEvent(NodeExecution nodeExecutionId, PlanNode node, Status fromStatus);
+  String publishEvent(NodeExecution nodeExecutionId, Node node, Status fromStatus);
 
-  String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus);
+  String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, Node planNode, Status fromStatus);
 }

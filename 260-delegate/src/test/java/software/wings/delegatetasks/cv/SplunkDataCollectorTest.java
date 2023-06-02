@@ -11,8 +11,8 @@ import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -27,8 +27,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.beans.SplunkConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.splunk.SplunkDataCollectionInfoV2;
 

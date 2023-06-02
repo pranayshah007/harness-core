@@ -31,6 +31,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.repositories.pipeline.PipelineMetadataV2Repository;
 import io.harness.rule.Owner;
 
@@ -127,7 +128,8 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .identifier(PIPE_IDENTIFIER)
                                 .build();
-    int result = pipelineMetadataService.incrementRunSequence(entity);
+    int result =
+        pipelineMetadataService.incrementRunSequence(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER);
     assertThat(result).isEqualTo(4);
   }
 
@@ -137,7 +139,8 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   public void shouldIncrementRunSequenceValueFromEntityRepository() {
     when(pipelineMetadataRepository.incCounter(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .thenReturn(null);
-    when(persistentLocker.waitToAcquireLock(anyString(), notNull(), notNull())).thenReturn(mock(AcquiredLock.class));
+    when(persistentLocker.waitToAcquireLockOptional(anyString(), notNull(), notNull()))
+        .thenReturn(mock(AcquiredLock.class));
     when(pipelineMetadataRepository.cloneFromPipelineMetadata(
              ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .thenReturn(Optional.empty());
@@ -150,8 +153,9 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
                                 .identifier(PIPE_IDENTIFIER)
                                 .runSequence(2)
                                 .build();
-    int result = pipelineMetadataService.incrementRunSequence(entity);
-    assertThat(result).isEqualTo(3);
+    int result =
+        pipelineMetadataService.incrementRunSequence(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER);
+    assertThat(result).isEqualTo(1);
 
     ArgumentCaptor<PipelineMetadataV2> arg = ArgumentCaptor.forClass(PipelineMetadataV2.class);
     verify(pipelineMetadataRepository).save(arg.capture());
@@ -161,7 +165,7 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
     assertThat(metadata.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
     assertThat(metadata.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(metadata.getIdentifier()).isEqualTo(PIPE_IDENTIFIER);
-    assertThat(metadata.getRunSequence()).isEqualTo(3);
+    assertThat(metadata.getRunSequence()).isEqualTo(1);
   }
 
   @Test
@@ -170,14 +174,17 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   public void shouldUnableToLock() {
     when(pipelineMetadataRepository.incCounter(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .thenReturn(null);
-    when(persistentLocker.waitToAcquireLock(anyString(), notNull(), notNull())).thenReturn(null);
+    when(persistentLocker.waitToAcquireLockOptional(anyString(), notNull(), notNull())).thenReturn(null);
     PipelineEntity entity = PipelineEntity.builder()
                                 .accountId(ACCOUNT_ID)
                                 .orgIdentifier(ORG_IDENTIFIER)
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .identifier(PIPE_IDENTIFIER)
                                 .build();
-    Assertions.assertThatCode(() -> pipelineMetadataService.incrementRunSequence(entity))
+    Assertions
+        .assertThatCode(()
+                            -> pipelineMetadataService.incrementRunSequence(
+                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unable to update build sequence, please retry the execution");
   }
@@ -187,7 +194,7 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldEnforceLockNameWhenIncrementExecutionCounter() {
     when(pipelineMetadataRepository.incCounter("A", "B", "C", "D")).thenReturn(null);
-    when(persistentLocker.waitToAcquireLock(eq("pipelineMetadata/A/B/C/D"), notNull(), notNull()))
+    when(persistentLocker.waitToAcquireLockOptional(eq("pipelineMetadata/A/B/C/D"), notNull(), notNull()))
         .thenReturn(mock(AcquiredLock.class));
     when(pipelineMetadataRepository.cloneFromPipelineMetadata("A", "B", "C", "D")).thenReturn(Optional.empty());
 
@@ -199,13 +206,13 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testDeletePipelineMetadata() {
-    Criteria metadataFindCriteria = Criteria.where(PipelineMetadataV2.PipelineMetadataV2Keys.accountIdentifier)
+    Criteria metadataFindCriteria = Criteria.where(PipelineMetadataV2Keys.accountIdentifier)
                                         .is(ACCOUNT_ID)
-                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.orgIdentifier)
+                                        .and(PipelineMetadataV2Keys.orgIdentifier)
                                         .is(ORG_IDENTIFIER)
-                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.projectIdentifier)
+                                        .and(PipelineMetadataV2Keys.projectIdentifier)
                                         .is(PROJ_IDENTIFIER)
-                                        .and(PipelineMetadataV2.PipelineMetadataV2Keys.identifier)
+                                        .and(PipelineMetadataV2Keys.identifier)
                                         .is(PIPE_IDENTIFIER);
     doReturn(true).when(pipelineMetadataRepository).delete(metadataFindCriteria);
     boolean pipelineMetadataDelete =

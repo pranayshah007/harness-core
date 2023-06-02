@@ -371,17 +371,17 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
 
   @Override
   public void markStateAndNonAssignedReason_OnAssignTryCount(PerpetualTaskRecord perpetualTaskRecord,
-      PerpetualTaskUnassignedReason reason, PerpetualTaskState perpetualTaskState) {
+      PerpetualTaskUnassignedReason reason, PerpetualTaskState perpetualTaskState, String exception) {
     if (perpetualTaskRecord.getAssignTryCount() < MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT) {
       // if count is below max try, then set state as TASK_UNASSIGNED
-      perpetualTaskRecordDao.updateTaskUnassignedReason(
-          perpetualTaskRecord.getUuid(), reason, perpetualTaskRecord.getAssignTryCount());
+      perpetualTaskRecordDao.updateTaskUnassignedReasonAndException(
+          perpetualTaskRecord.getUuid(), reason, perpetualTaskRecord.getAssignTryCount(), exception);
       delegateMetricsService.recordPerpetualTaskMetrics(
           perpetualTaskRecord.getAccountId(), perpetualTaskRecord.getPerpetualTaskType(), PERPETUAL_TASK_UNASSIGNED);
     } else {
       // use state passed as a param here. It can be TASK_NON_ASSIGNABLE OR TASK_INVALID
-      perpetualTaskRecordDao.updateTaskStateNonAssignableReason(
-          perpetualTaskRecord.getUuid(), reason, perpetualTaskRecord.getAssignTryCount(), perpetualTaskState);
+      perpetualTaskRecordDao.updateTaskStateNonAssignableReasonAndException(perpetualTaskRecord.getUuid(), reason,
+          perpetualTaskRecord.getAssignTryCount(), perpetualTaskState, exception);
       delegateMetricsService.recordPerpetualTaskMetrics(
           perpetualTaskRecord.getAccountId(), perpetualTaskRecord.getPerpetualTaskType(), PERPETUAL_TASK_NONASSIGNABLE);
     }

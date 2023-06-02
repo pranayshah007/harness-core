@@ -21,6 +21,7 @@ func TestResolveSecretInString(t *testing.T) {
 	os.Setenv("HARNESS_account_secret", secret1)
 	os.Setenv("HARNESS_org_secret", secret2)
 	os.Setenv("HARNESS_project_secret", secret3)
+	os.Setenv("HARNESS_account_secret____", secret1)
 
 	tests := []struct {
 		name        string
@@ -44,6 +45,12 @@ func TestResolveSecretInString(t *testing.T) {
 			name:        "project secret",
 			expr:        `hello ${ngSecretManager.obtain("secret", 1234)}`,
 			response:    fmt.Sprintf("hello %s", secret3),
+			expectedErr: false,
+		},
+		{
+			name:        "account secret with invalid char",
+			expr:        `hello ${ngSecretManager.obtain("account.secret-//#", 1234)}`,
+			response:    fmt.Sprintf("hello %s", secret1),
 			expectedErr: false,
 		},
 		{
@@ -77,6 +84,7 @@ func TestResolveSecretInString(t *testing.T) {
 	os.Unsetenv("HARNESS_account_secret")
 	os.Unsetenv("HARNESS_org_secret")
 	os.Unsetenv("HARNESS_project_secret")
+	os.Unsetenv("HARNESS_account_secret____")
 }
 
 func TestResolveSecretInList(t *testing.T) {

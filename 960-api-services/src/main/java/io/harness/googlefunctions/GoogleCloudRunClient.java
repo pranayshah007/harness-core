@@ -16,6 +16,7 @@ import com.google.cloud.run.v2.ListRevisionsResponse;
 import com.google.cloud.run.v2.Revision;
 import com.google.cloud.run.v2.Service;
 import com.google.cloud.run.v2.UpdateServiceRequest;
+import com.google.longrunning.Operation;
 
 public interface GoogleCloudRunClient {
   ListRevisionsResponse listRevisions(ListRevisionsRequest listRevisionsRequest, GcpInternalConfig gcpInternalConfig);
@@ -29,4 +30,6 @@ public interface GoogleCloudRunClient {
       DeleteRevisionRequest deleteRevisionRequest, GcpInternalConfig gcpInternalConfig);
 
   Revision getRevision(GetRevisionRequest getRevisionRequest, GcpInternalConfig gcpInternalConfig);
+
+  Operation getOperation(String operationName, GcpInternalConfig gcpInternalConfig);
 }

@@ -23,7 +23,7 @@ import software.wings.graphql.schema.type.aggregation.Filter;
 import software.wings.graphql.schema.type.aggregation.QLTimeOperator;
 
 import com.google.cloud.Timestamp;
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import com.healthmarketscience.sqlbuilder.BinaryCondition;
 import com.healthmarketscience.sqlbuilder.Condition;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;

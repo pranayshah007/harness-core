@@ -12,112 +12,75 @@ import static io.harness.k8s.steadystate.K8sSteadyStateConstants.WATCH_CALL_TIME
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.KubernetesCliCommandType;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8ApiResponseDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
 import io.harness.k8s.steadystate.statusviewer.DeploymentStatusViewer;
+import io.harness.k8s.steadystate.watcher.client.K8sWatchClient;
+import io.harness.k8s.steadystate.watcher.client.K8sWatchClientFactory;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
+import io.harness.supplier.ThrowingSupplier;
 
-import com.google.common.base.Preconditions;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import java.io.IOException;
-import java.io.InterruptedIOException;
+import java.lang.reflect.Type;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
-public class DeploymentApiWatcher implements WorkloadWatcher {
+public class DeploymentApiWatcher extends AbstractWorkloadWatcher {
   @Inject private DeploymentStatusViewer statusViewer;
+  @Inject private K8sWatchClientFactory watchClientFactory;
+  @VisibleForTesting static final Type v1DeploymentType = new TypeToken<Watch.Response<V1Deployment>>() {}.getType();
 
   @Override
-  public boolean watchRolloutStatus(K8sStatusWatchDTO k8SStatusWatchDTO, KubernetesResourceId workload,
+  protected boolean watchRolloutStatusInternal(K8sStatusWatchDTO k8SStatusWatchDTO, KubernetesResourceId workload,
       LogCallback executionLogCallback) throws Exception {
-    return watchDeployment(
-        k8SStatusWatchDTO.getApiClient(), workload, executionLogCallback, k8SStatusWatchDTO.isErrorFrameworkEnabled());
+    K8sWatchClient k8sWatchClient =
+        watchClientFactory.create(k8SStatusWatchDTO.getApiClient(), k8SStatusWatchDTO.getRetry());
+    AppsV1Api appsV1Api = new AppsV1Api(k8SStatusWatchDTO.getApiClient());
+    ThrowingSupplier<Call> callSupplier = ()
+        -> appsV1Api.listNamespacedDeploymentCall(workload.getNamespace(), null, null, null, null, null, null, null,
+            null, WATCH_CALL_TIMEOUT_SECONDS, true, null);
+
+    return k8sWatchClient.<V1Deployment>waitOnCondition(
+        v1DeploymentType, callSupplier, event -> processEvent(event, workload, executionLogCallback));
   }
 
-  private boolean watchDeployment(ApiClient apiClient, KubernetesResourceId deploymentResource,
-      LogCallback executionLogCallback, boolean errorFrameworkEnabled) throws Exception {
-    Preconditions.checkNotNull(apiClient, "K8s API Client cannot be null.");
-    AppsV1Api appsV1Api = new AppsV1Api(apiClient);
-    while (!Thread.currentThread().isInterrupted()) {
-      try (Watch<V1Deployment> watch = createWatchCall(apiClient, appsV1Api, deploymentResource.getNamespace())) {
-        for (Watch.Response<V1Deployment> event : watch) {
-          V1Deployment deployment = event.object;
-          V1ObjectMeta meta = deployment.getMetadata();
-          if (meta != null && !deploymentResource.getName().equals(meta.getName())) {
-            continue;
+  private boolean processEvent(
+      Watch.Response<V1Deployment> event, KubernetesResourceId workload, LogCallback logCallback) throws Exception {
+    V1Deployment deployment = event.object;
+    V1ObjectMeta meta = deployment.getMetadata();
+    if (meta == null || workload.getName().equals(meta.getName())) {
+      switch (event.type) {
+        case "ADDED":
+        case "MODIFIED":
+          K8ApiResponseDTO rolloutStatus = statusViewer.extractRolloutStatus(deployment);
+          logCallback.saveExecutionLog(rolloutStatus.getMessage());
+          if (rolloutStatus.isFailed()) {
+            throw new KubernetesCliTaskRuntimeException(
+                rolloutStatus.getMessage(), KubernetesCliCommandType.STEADY_STATE_CHECK);
           }
-          switch (event.type) {
-            case "ADDED":
-            case "MODIFIED":
-              K8ApiResponseDTO rolloutStatus = statusViewer.extractRolloutStatus(deployment);
-              executionLogCallback.saveExecutionLog(rolloutStatus.getMessage());
-              if (rolloutStatus.isFailed()) {
-                if (errorFrameworkEnabled) {
-                  throw new KubernetesCliTaskRuntimeException(
-                      rolloutStatus.getMessage(), KubernetesCliCommandType.STEADY_STATE_CHECK);
-                }
-                return false;
-              }
-              if (rolloutStatus.isDone()) {
-                return true;
-              }
-              break;
-            case "DELETED":
-              throw new KubernetesCliTaskRuntimeException(
-                  "object has been deleted", KubernetesCliCommandType.STEADY_STATE_CHECK);
-            default:
-              log.warn(String.format("Unexpected k8s event type %s", event.type));
+          if (rolloutStatus.isDone()) {
+            return true;
           }
-        }
-      } catch (IOException e) {
-        IOException ex = ExceptionMessageSanitizer.sanitizeException(e);
-        String errorMessage = "Failed to close Kubernetes watch." + ExceptionUtils.getMessage(ex);
-        log.error(errorMessage, ex);
-        return false;
-      } catch (ApiException e) {
-        ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
-        String errorMessage =
-            String.format("Failed to watch rollout status for workload [%s]. ", deploymentResource.kindNameRef())
-            + ExceptionUtils.getMessage(ex);
-        log.error(errorMessage, ex);
-        executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR);
-        if (errorFrameworkEnabled) {
-          throw e;
-        }
-        return false;
-      } catch (RuntimeException e) {
-        if (e.getCause() instanceof InterruptedIOException) {
-          log.warn("Kubernetes watch was aborted.", e);
-          Thread.currentThread().interrupt();
-          return false;
-        }
-        log.error("Runtime exception during Kubernetes watch.", e);
-        throw e;
+          break;
+        case "DELETED":
+          throw new KubernetesCliTaskRuntimeException(
+              "object has been deleted", KubernetesCliCommandType.STEADY_STATE_CHECK);
+        default:
+          log.warn(String.format("Unexpected k8s event type %s", event.type));
       }
     }
     return false;
-  }
-
-  private Watch<V1Deployment> createWatchCall(ApiClient apiClient, AppsV1Api appsV1Api, String namespace)
-      throws ApiException {
-    Call call = appsV1Api.listNamespacedDeploymentCall(
-        namespace, null, null, null, null, null, null, null, null, WATCH_CALL_TIMEOUT_SECONDS, true, null);
-    return Watch.createWatch(apiClient, call, new TypeToken<Watch.Response<V1Deployment>>() {}.getType());
   }
 }

@@ -18,7 +18,6 @@ import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -38,6 +37,9 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+Note: Seems that there is no change for the v1 yaml update here
+ */
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
 public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<IACMStageNode> {
@@ -45,7 +47,7 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return ImmutableSet.of(IACMStepSpecTypeConstants.IACM_STAGE);
+    return ImmutableSet.of(IACMStepSpecTypeConstants.IACM_STAGE, IACMStepSpecTypeConstants.IACM_STAGE_V1);
   }
 
   @Override
@@ -67,13 +69,6 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
 
     log.info("Successfully created filter for integration stage {}", stageNode.getIdentifier());
     return null;
-  }
-
-  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
-    Runtime runtime = integrationStageConfig.getRuntime();
-    if (runtime != null && (runtime.getType() != Runtime.Type.CLOUD)) {
-      throw new CIStageExecutionException("Runtime only supports field with type Cloud");
-    }
   }
 
   private void validateInfrastructure(IntegrationStageConfig integrationStageConfig) {
@@ -99,8 +94,6 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
 
   private void validateStage(IACMStageNode stageNode) {
     IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
-
-    validateRuntime(integrationStageConfig);
     validateInfrastructure(integrationStageConfig);
     validateExecution(integrationStageConfig);
     validateCache(integrationStageConfig);

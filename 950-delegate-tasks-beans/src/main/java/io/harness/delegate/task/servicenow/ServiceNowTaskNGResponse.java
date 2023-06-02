@@ -17,6 +17,7 @@ import io.harness.servicenow.ServiceNowImportSetResponseNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -41,4 +42,5 @@ public class ServiceNowTaskNGResponse implements DelegateTaskNotifyResponseData 
   List<ServiceNowTemplate> serviceNowTemplateList;
   ServiceNowImportSetResponseNG serviceNowImportSetResponseNG;
   List<ServiceNowStagingTable> serviceNowStagingTableList;
+  List<ServiceNowTicketTypeDTO> serviceNowTicketTypeList;
 }

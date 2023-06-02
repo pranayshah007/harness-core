@@ -15,9 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -33,6 +33,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.apiclient.ApiClientFactoryImpl;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.GetCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.Kind;
@@ -154,7 +155,7 @@ public class KubernetesContainerServiceTest extends CategoryTest {
     final Kubectl client = Kubectl.client("kubectl", "kubeconfig");
     Kubectl mockClient = Mockito.spy(client);
     GetCommand mockGetCommand = Mockito.spy(client.get());
-    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean());
+    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean(), any());
     doReturn(mockGetCommand).when(mockClient).get();
     doReturn(new ProcessResult(1, null))
         .when(mockGetCommand)
@@ -169,7 +170,7 @@ public class KubernetesContainerServiceTest extends CategoryTest {
     final Kubectl client = Kubectl.client("kubectl", "kubeconfig");
     Kubectl mockClient = Mockito.spy(client);
     GetCommand mockGetCommand = Mockito.spy(client.get());
-    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean());
+    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean(), any());
     doReturn(mockGetCommand).when(mockClient).get();
     List<String> executeCommands = new ArrayList<>();
     setupGetCommand(mockGetCommand, executeCommands, Kind.Deployment);
@@ -187,7 +188,7 @@ public class KubernetesContainerServiceTest extends CategoryTest {
     final Kubectl client = Kubectl.client("kubectl", "kubeconfig");
     Kubectl mockClient = Mockito.spy(client);
     GetCommand mockGetCommand = Mockito.spy(client.get());
-    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean());
+    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean(), any());
     doReturn(mockGetCommand).when(mockClient).get();
     List<String> executeCommands = new ArrayList<>();
     setupGetCommand(mockGetCommand, executeCommands, Kind.DaemonSet);
@@ -204,7 +205,7 @@ public class KubernetesContainerServiceTest extends CategoryTest {
     final Kubectl client = Kubectl.client("kubectl", "kubeconfig");
     Kubectl mockClient = Mockito.spy(client);
     GetCommand mockGetCommand = Mockito.spy(client.get());
-    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean());
+    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean(), any());
     doReturn(mockGetCommand).when(mockClient).get();
     List<String> executeCommands = new ArrayList<>();
     setupGetCommand(mockGetCommand, executeCommands, Kind.StatefulSet);
@@ -220,7 +221,7 @@ public class KubernetesContainerServiceTest extends CategoryTest {
     final Kubectl client = Kubectl.client("kubectl", "kubeconfig");
     Kubectl mockClient = Mockito.spy(client);
     GetCommand mockGetCommand = Mockito.spy(client.get());
-    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean());
+    doReturn(mockClient).when(kubernetesContainerService).getKubectlClient(anyBoolean(), any());
     doReturn(mockGetCommand).when(mockClient).get();
     List<String> executeCommands = new ArrayList<>();
     setupGetCommand(mockGetCommand, executeCommands, Kind.ReplicaSet);

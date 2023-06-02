@@ -18,17 +18,17 @@ import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
-import io.harness.pms.merger.helpers.InputSetTagsHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
@@ -41,9 +41,8 @@ import io.harness.pms.plan.execution.StoreTypeMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -59,8 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -71,24 +68,25 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private final PlanService planService;
   private final PlanExecutionService planExecutionService;
   private final NodeTypeLookupService nodeTypeLookupService;
-  private final PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final NotificationHelper notificationHelper;
   private final RecentExecutionsInfoHelper recentExecutionsInfoHelper;
+  private final PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Inject
   public ExecutionSummaryCreateEventHandler(PMSPipelineService pmsPipelineService, PlanService planService,
       PlanExecutionService planExecutionService, NodeTypeLookupService nodeTypeLookupService,
-      PmsExecutionSummaryRepository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper,
-      NotificationHelper notificationHelper, RecentExecutionsInfoHelper recentExecutionsInfoHelper) {
+      PmsGitSyncHelper pmsGitSyncHelper, NotificationHelper notificationHelper,
+      RecentExecutionsInfoHelper recentExecutionsInfoHelper, PmsExecutionSummaryService pmsExecutionSummaryService) {
     this.pmsPipelineService = pmsPipelineService;
     this.planService = planService;
     this.planExecutionService = planExecutionService;
     this.nodeTypeLookupService = nodeTypeLookupService;
-    this.pmsExecutionSummaryRespository = pmsExecutionSummaryRespository;
+
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.notificationHelper = notificationHelper;
     this.recentExecutionsInfoHelper = recentExecutionsInfoHelper;
+    this.pmsExecutionSummaryService = pmsExecutionSummaryService;
   }
 
   @Override
@@ -118,8 +116,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       // updating isLatest and canRetry
       Update update = new Update();
       update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
-      Query query = new Query(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(parentExecutionId));
-      pmsExecutionSummaryRespository.update(query, update);
+      pmsExecutionSummaryService.update(parentExecutionId, update);
     }
 
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
@@ -127,8 +124,20 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     updateExecutionInfoInPipelineEntity(
         accountId, orgId, projectId, pipelineId, pipelineEntity.get().getExecutionSummaryInfo(), planExecutionId);
     Plan plan = planService.fetchPlan(ambiance.getPlanId());
-    Map<String, GraphLayoutNode> layoutNodeMap = plan.getGraphLayoutInfo().getLayoutNodesMap();
+    Map<String, GraphLayoutNode> layoutNodeMap = new HashMap<>(plan.getGraphLayoutInfo().getLayoutNodesMap());
     String startingNodeId = plan.getGraphLayoutInfo().getStartingNodeId();
+
+    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+      startingNodeId = ambiance.getMetadata().getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId();
+      GraphLayoutNode layoutNode = layoutNodeMap.get(startingNodeId);
+      layoutNodeMap.put(startingNodeId,
+          layoutNode.toBuilder()
+              .setEdgeLayoutList(
+                  EdgeLayoutList.newBuilder()
+                      .addAllCurrentNodeChildren(layoutNode.getEdgeLayoutList().getCurrentNodeChildrenList())
+                      .build())
+              .build());
+    }
     Map<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
     Set<String> modules = new LinkedHashSet<>();
     for (Map.Entry<String, GraphLayoutNode> entry : layoutNodeMap.entrySet()) {
@@ -169,8 +178,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionTriggerInfo(metadata.getTriggerInfo())
             .parentStageInfo(ambiance.getMetadata().getPipelineStageInfo())
             .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(metadata.getGitSyncBranchContext()))
-            .tags(getResolvedTags(planExecutionMetadata.getYaml(), ambiance, pipelineEntity.get().getTags(),
-                pipelineEntity.get().getHarnessVersion()))
+            .tags(pipelineEntity.get().getTags())
             .modules(new ArrayList<>(modules))
             .isLatestExecution(true)
             .retryExecutionMetadata(RetryExecutionMetadata.builder()
@@ -184,8 +192,9 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().getExecutionInputConfigured())
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
+            .executionMode(metadata.getExecutionMode())
             .build();
-    pmsExecutionSummaryRespository.save(pipelineExecutionSummaryEntity);
+    pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     notificationHelper.sendNotification(
         orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
   }
@@ -197,17 +206,6 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
           pipelineEntity.getYaml(), stagesExecutionMetadata.getStageIdentifiers());
     }
     return InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml());
-  }
-
-  private List<NGTag> getResolvedTags(String yaml, Ambiance ambiance, List<NGTag> unResolvedTags, String version) {
-    if (version != null && version.equals(PipelineVersion.V0)) {
-      // We don't have tags V1 pipeline version. We will add handling for them once tags are added for V1 pipelines
-      List<NGTag> resolvedTags = InputSetTagsHelper.getTagsFromYaml(yaml, ambiance);
-      if (!resolvedTags.isEmpty()) {
-        return resolvedTags;
-      }
-    }
-    return unResolvedTags;
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,

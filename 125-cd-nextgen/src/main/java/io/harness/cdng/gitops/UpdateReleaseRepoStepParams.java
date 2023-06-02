@@ -23,8 +23,8 @@ public class UpdateReleaseRepoStepParams extends UpdateReleaseRepoBaseStepInfo i
   @SkipAutoEvaluation @Getter Map<String, Object> variables;
   @Builder(builderMethodName = "infoBuilder")
   public UpdateReleaseRepoStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, String>> stringMap, Map<String, Object> variables) {
-    super(stringMap, delegateSelectors);
+      ParameterField<Map<String, String>> stringMap, Map<String, Object> variables, ParameterField<String> prTitle) {
+    super(stringMap, delegateSelectors, prTitle);
     this.variables = variables;
   }
 }

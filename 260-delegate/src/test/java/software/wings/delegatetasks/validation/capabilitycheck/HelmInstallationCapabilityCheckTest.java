@@ -20,7 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.delegate.task.executioncapability.HelmInstallationCapabilityCheck;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.rule.Owner;
 

@@ -76,7 +76,6 @@ import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Arrays;
@@ -704,7 +703,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
     if (matcher.matches()) {
       try {
         OffsetDateTime odt = OffsetDateTime.parse(matcher.group(0), formatter);
-        return String.valueOf(odt.atZoneSameInstant(ZoneOffset.UTC).toEpochSecond() * Duration.ofSeconds(1).toMillis());
+        return String.valueOf(
+            odt.atZoneSameInstant(odt.toZonedDateTime().getZone()).toEpochSecond() * Duration.ofSeconds(1).toMillis());
       } catch (DateTimeException e) {
         throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
       }

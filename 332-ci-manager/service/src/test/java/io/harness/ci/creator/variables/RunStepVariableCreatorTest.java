@@ -86,7 +86,8 @@ public class RunStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.setupdb.spec.execution.steps.f.spec.privileged",
             "pipeline.stages.setupdb.spec.execution.steps.f.spec.runAsUser",
             "pipeline.stages.setupdb.spec.execution.steps.f.spec.reports",
-            "pipeline.stages.setupdb.spec.execution.steps.f.spec.imagePullPolicy");
+            "pipeline.stages.setupdb.spec.execution.steps.f.spec.imagePullPolicy",
+            "pipeline.stages.setupdb.spec.execution.steps.f.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -99,8 +100,7 @@ public class RunStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.setupdb.spec.execution.steps.f.identifier",
             "pipeline.stages.setupdb.spec.execution.steps.f.type",
             "pipeline.stages.setupdb.spec.execution.steps.f.startTs",
-            "pipeline.stages.setupdb.spec.execution.steps.f.endTs",
-            "pipeline.stages.setupdb.spec.execution.steps.f.when");
+            "pipeline.stages.setupdb.spec.execution.steps.f.endTs");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(runStepNode.getRunStepInfo().getUuid()) // step uuid

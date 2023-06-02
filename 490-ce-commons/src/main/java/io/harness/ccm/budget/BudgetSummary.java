@@ -22,6 +22,7 @@ public class BudgetSummary {
   @GraphQLNonNull String name;
   String perspectiveId;
   String perspectiveName;
+  String folderId;
   @GraphQLNonNull Double budgetAmount;
   @GraphQLNonNull Double actualCost;
   @GraphQLNonNull Double forecastCost;

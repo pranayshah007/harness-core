@@ -24,6 +24,7 @@ import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
@@ -100,11 +101,15 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   private String managerTarget;
   private String managerAuthority;
   private CIExecutionServiceConfig ciExecutionServiceConfig;
+  private ServiceHttpClientConfig opaClientConfig;
+  private String policyManagerSecret;
+  private SSCAServiceConfig sscaServiceConfig;
 
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
   @JsonProperty("apiUrl") private String apiUrl;
+  @JsonProperty("isLocal") boolean isLocal;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
 

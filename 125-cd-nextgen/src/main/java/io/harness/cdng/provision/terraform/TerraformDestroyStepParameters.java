@@ -29,12 +29,12 @@ import lombok.NonNull;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformDestroyStepParameters")
 public class TerraformDestroyStepParameters extends TerraformDestroyBaseStepInfo implements SpecParameters {
-  @NonNull TerraformStepConfigurationParameters configuration;
+  @NonNull TerraformStepConfigurationInterface configuration;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformDestroyStepParameters(ParameterField<String> provisionerIdentifier,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      @NonNull TerraformStepConfigurationParameters configuration) {
+      @NonNull TerraformStepConfigurationInterface configuration) {
     super(provisionerIdentifier, delegateSelectors);
     this.configuration = configuration;
   }

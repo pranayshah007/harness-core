@@ -15,12 +15,9 @@ import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
-import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_BUILD_MULTIPLIER;
-import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MACOS_BUILD_MULTIPLIER;
-import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WINDOWS_BUILD_MULTIPLIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -31,6 +28,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.HARNESS;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
@@ -50,6 +48,7 @@ import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -60,13 +59,17 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
@@ -86,10 +89,9 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.jackson.JsonNodeUtils;
@@ -111,6 +113,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.CiIntegrationStageUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -123,6 +126,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.fabric8.utils.Strings;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -159,7 +163,12 @@ public class IntegrationStageUtils {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+      String errorMessage = "Failed to deserialize ExecutionWrapperConfig step node";
+      Throwable throwable = ex.getCause();
+      if (throwable != null && Strings.isNotBlank(throwable.getMessage())) {
+        errorMessage = throwable.getMessage();
+      }
+      throw new CIStageExecutionException(errorMessage, ex);
     }
   }
 
@@ -365,8 +374,8 @@ public class IntegrationStageUtils {
           || prWebhookEvent.getRepository().getHttpURL() == null) {
         return false;
       }
-      if (prWebhookEvent.getRepository().getHttpURL().equals(url)
-          || prWebhookEvent.getRepository().getSshURL().equals(url)) {
+      if (prWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || prWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     } else if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
@@ -376,8 +385,8 @@ public class IntegrationStageUtils {
           || branchWebhookEvent.getRepository().getHttpURL() == null) {
         return false;
       }
-      if (branchWebhookEvent.getRepository().getHttpURL().equals(url)
-          || branchWebhookEvent.getRepository().getSshURL().equals(url)) {
+      if (branchWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || branchWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     }
@@ -391,14 +400,14 @@ public class IntegrationStageUtils {
     BaseNGAccess baseNGAccess = IntegrationStageUtils.getBaseNGAccess(
         ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier());
 
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier, true);
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
   }
 
   private static boolean treatWebhookAsManualExecutionWithContextV2(Ambiance ambiance, String connectorIdentifier,
       ConnectorUtils connectorUtils, ParsedPayload parsedPayload, CodeBase codeBase, long version) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier, true);
     return treatWebhookAsManualExecutionV2(connectorDetails, codeBase, parsedPayload, version);
   }
 
@@ -419,36 +428,7 @@ public class IntegrationStageUtils {
   }
 
   public static String getGitURL(String repoName, GitConnectionType connectionType, String url) {
-    String gitUrl = retrieveGenericGitConnectorURL(repoName, connectionType, url);
-
-    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
-      gitUrl += GIT_URL_SUFFIX;
-    }
-    return gitUrl;
-  }
-
-  public static String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
-    String gitUrl = "";
-    if (connectionType == GitConnectionType.REPO) {
-      gitUrl = url;
-    } else if (connectionType == GitConnectionType.PROJECT || connectionType == GitConnectionType.ACCOUNT) {
-      if (isEmpty(repoName)) {
-        throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
-      }
-      if (connectionType == GitConnectionType.PROJECT) {
-        if (url.contains(AZURE_REPO_BASE_URL)) {
-          gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
-        }
-      } else {
-        gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
-            StringUtils.stripStart(repoName, PATH_SEPARATOR));
-      }
-    } else {
-      throw new InvalidArgumentsException(
-          format("Invalid connection type for git connector: %s", connectionType.toString()), WingsException.USER);
-    }
-
-    return gitUrl;
+    return CiIntegrationStageUtils.getGitURL(repoName, connectionType, url);
   }
 
   public static String getGitURLFromConnector(ConnectorDetails gitConnector, CodeBase ciCodebase) {
@@ -456,30 +436,38 @@ public class IntegrationStageUtils {
       return null;
     }
 
+    String url = "";
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
-      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType =
           gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
-      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      url = CodebaseUtils.getCompleteHarnessUrl(gitConfigDTO.getUrl(), gitConnector.getOrgIdentifier(),
+          gitConnector.getProjectIdentifier(), ciCodebase.getRepoName().getValue());
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
+
+    url = GitClientHelper.convertToHttps(url);
+    return url;
   }
 
   private static ManualExecutionSource handleManualExecution(
@@ -646,13 +634,17 @@ public class IntegrationStageUtils {
     String tag = "";
     String name = image;
 
-    if (image.contains(IMAGE_PATH_SPLIT_REGEX)) {
-      String[] subTokens = image.split(IMAGE_PATH_SPLIT_REGEX);
-      if (subTokens.length > 1) {
-        tag = subTokens[subTokens.length - 1];
-        String[] nameparts = Arrays.copyOf(subTokens, subTokens.length - 1);
-        name = String.join(IMAGE_PATH_SPLIT_REGEX, nameparts);
+    if (isNotEmpty(image)) {
+      if (image.contains(IMAGE_PATH_SPLIT_REGEX)) {
+        String[] subTokens = image.split(IMAGE_PATH_SPLIT_REGEX);
+        if (subTokens.length > 1) {
+          tag = subTokens[subTokens.length - 1];
+          String[] nameparts = Arrays.copyOf(subTokens, subTokens.length - 1);
+          name = String.join(IMAGE_PATH_SPLIT_REGEX, nameparts);
+        }
       }
+    } else {
+      throw new CIStageExecutionException(format("ConnectorRef and Image should not be empty"));
     }
 
     return ImageDetails.builder().name(name).tag(tag).build();
@@ -741,6 +733,24 @@ public class IntegrationStageUtils {
 
     K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
+  }
+
+  public static OSType getBuildType(Infrastructure infra) {
+    if (infra instanceof VmInfraYaml) {
+      VmInfraYaml infrastructure = (VmInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs());
+    } else if (infra instanceof DockerInfraYaml) {
+      DockerInfraYaml infrastructure = (DockerInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else if (infra instanceof K8sDirectInfraYaml) {
+      K8sDirectInfraYaml infrastructure = (K8sDirectInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getOs());
+    } else if (infra instanceof HostedVmInfraYaml) {
+      HostedVmInfraYaml infrastructure = (HostedVmInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else {
+      throw new CIStageExecutionException("unexpected type of infra received");
+    }
   }
 
   public static ArrayList<String> populateConnectorIdentifiers(List<ExecutionWrapperConfig> wrappers) {
@@ -893,6 +903,11 @@ public class IntegrationStageUtils {
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       return CIConstants.STAGE_MAX_TTL_SECS_HOSTED_FREE;
     }
@@ -967,6 +982,7 @@ public class IntegrationStageUtils {
         ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
         String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
         return isNotEmpty(tagString) && !tagString.equals(TAG_EXPRESSION);
+      default:
     }
     return false;
   }

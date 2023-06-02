@@ -10,6 +10,7 @@ package io.harness.ngmigration.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.serializer.CgEntityIdDeserializer;
+import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -28,6 +29,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MigrationInputDTO {
+  private String destinationAuthToken;
+  private String destinationAccountIdentifier;
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
@@ -36,4 +39,5 @@ public class MigrationInputDTO {
   private boolean migrateReferencedEntities;
   @JsonDeserialize(keyUsing = CgEntityIdDeserializer.class) private Map<CgEntityId, BaseProvidedInput> overrides;
   private Map<String, Object> customExpressions;
+  private CaseFormat identifierCaseFormat;
 }

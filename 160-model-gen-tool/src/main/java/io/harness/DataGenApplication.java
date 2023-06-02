@@ -10,6 +10,8 @@ package io.harness;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.stream.AtmosphereBroadcaster.MEMORY;
 
 import static org.mockito.Mockito.mock;
@@ -35,17 +37,20 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.manage.GlobalContextManager;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
+import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.store.Store;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
-import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateTokenService;
@@ -189,6 +194,7 @@ public class DataGenApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(CacheConfig.builder().cacheBackend(NOOP).build());
     modules.add(cacheModule);
+    modules.add(new DelegateServiceCacheModule(configuration.getDelegateServiceRedisConfig(), false));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -274,6 +280,7 @@ public class DataGenApplication extends Application<MainConfiguration> {
     Injector injector = Guice.createInjector(modules);
 
     registerObservers(injector);
+    registerStores(configuration, injector);
 
     environment.lifecycle().addServerLifecycleListener(server -> {
       for (Connector connector : server.getConnectors()) {
@@ -333,5 +340,13 @@ public class DataGenApplication extends Application<MainConfiguration> {
         (DelegateTokenServiceImpl) injector.getInstance(Key.get(DelegateTokenService.class)));
     accountService.getAccountCrudSubject().register(
         (DelegateNgTokenServiceImpl) injector.getInstance(Key.get(DelegateNgTokenService.class)));
+  }
+
+  private void registerStores(MainConfiguration configuration, Injector injector) {
+    final HPersistence persistence = injector.getInstance(HPersistence.class);
+    if (isNotEmpty(configuration.getDmsMongo().getUri())
+        && !configuration.getDmsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
+      persistence.register(Store.builder().name(DMS).build(), configuration.getDmsMongo().getUri());
+    }
   }
 }

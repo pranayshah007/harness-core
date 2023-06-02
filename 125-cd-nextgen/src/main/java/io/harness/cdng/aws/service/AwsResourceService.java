@@ -188,4 +188,14 @@ public interface AwsResourceService {
    */
   List<String> getElasticLoadBalancerListenerRules(IdentifierRef awsConnectorRef, String orgIdentifier,
       String projectIdentifier, String region, String elasticLoadBalancer, String listenerArn);
+
+  /**
+   * Get list of AWS elastic kubernetes service clusters
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @return list of AWS elastic kubernetes service clusters
+   */
+  List<String> getEKSClusterNames(IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier);
 }

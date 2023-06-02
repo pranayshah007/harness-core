@@ -53,6 +53,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -218,7 +220,8 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
       ecsBlueGreenRollbackRequestBuilder.isTargetShiftStarted(false);
       return ecsStepCommonHelper
           .queueEcsTask(stepParameters, ecsBlueGreenRollbackRequestBuilder.build(), ambiance,
-              EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+              EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+              TaskType.ECS_COMMAND_TASK_NG)
           .getTaskRequest();
     }
     OptionalSweepingOutput ecsBlueGreenSwapTargetGroupsStartDataOptional =
@@ -230,7 +233,8 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
       ecsBlueGreenRollbackRequestBuilder.isTargetShiftStarted(false);
       return ecsStepCommonHelper
           .queueEcsTask(stepParameters, ecsBlueGreenRollbackRequestBuilder.build(), ambiance,
-              EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+              EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+              TaskType.ECS_COMMAND_TASK_NG)
           .getTaskRequest();
     }
     EcsBlueGreenSwapTargetGroupsStartOutcome ecsBlueGreenSwapTargetGroupsStartOutcome =
@@ -239,7 +243,8 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
         ecsBlueGreenSwapTargetGroupsStartOutcome.isTrafficShiftStarted());
     return ecsStepCommonHelper
         .queueEcsTask(stepParameters, ecsBlueGreenRollbackRequestBuilder.build(), ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
   }
 

@@ -21,9 +21,11 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @OwnedBy(STO)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlAuth {
@@ -32,6 +34,8 @@ public class STOYamlAuth {
   @NotNull
   @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token")
   protected ParameterField<String> accessToken;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> region;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> version;
 

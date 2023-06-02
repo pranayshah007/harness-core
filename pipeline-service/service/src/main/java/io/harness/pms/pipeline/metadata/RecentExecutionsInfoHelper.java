@@ -23,6 +23,7 @@ import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -57,6 +58,9 @@ public class RecentExecutionsInfoHelper {
   public void onExecutionStart(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PlanExecution planExecution) {
     ExecutionMetadata executionMetadata = planExecution.getMetadata();
+    if (ExecutionModeUtils.isRollbackMode(executionMetadata.getExecutionMode())) {
+      return;
+    }
     RecentExecutionInfo newExecutionInfo = RecentExecutionInfo.builder()
                                                .executionTriggerInfo(executionMetadata.getTriggerInfo())
                                                .planExecutionId(planExecution.getUuid())
@@ -92,10 +96,14 @@ public class RecentExecutionsInfoHelper {
    * @param planExecution -> planExecution has only entity metadata
    */
   public void onExecutionUpdate(Ambiance ambiance, PlanExecution planExecution) {
+    ExecutionMetadata executionMetadata = ambiance.getMetadata();
+    if (ExecutionModeUtils.isRollbackMode(executionMetadata.getExecutionMode())) {
+      return;
+    }
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    String pipelineIdentifier = ambiance.getMetadata().getPipelineIdentifier();
+    String pipelineIdentifier = executionMetadata.getPipelineIdentifier();
     String planExecutionId = planExecution.getUuid();
     Informant0<List<RecentExecutionInfo>> subject = (List<RecentExecutionInfo> recentExecutionInfoList) -> {
       if (recentExecutionInfoList == null) {
@@ -108,6 +116,10 @@ public class RecentExecutionsInfoHelper {
           if (endTsInPlanExecution != null && endTsInPlanExecution != 0L) {
             recentExecutionInfo.setEndTs(endTsInPlanExecution);
           }
+          if (executionMetadata.getPipelineStageInfo().getHasParentPipeline()) {
+            recentExecutionInfo.setParentStageInfo(executionMetadata.getPipelineStageInfo());
+          }
+
           Criteria criteria =
               getCriteriaForPipelineMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
           Update update = getUpdateOperationForRecentExecutionInfo(recentExecutionInfoList);
@@ -123,7 +135,7 @@ public class RecentExecutionsInfoHelper {
       Informant0<List<RecentExecutionInfo>> subject, PlanExecution planExecution) {
     String lockName = getLockName(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
       if (lock == null) {
         log.error(String.format(
             "Unable to acquire lock while updating Pipeline Metadata for Pipeline [%s] in Project [%s], Org [%s], Account [%s]",

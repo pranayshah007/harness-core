@@ -276,19 +276,41 @@ public class StepUtilsTest extends CategoryTest {
         StepResponseNotifyData.builder()
             .nodeUuid("nodeUuid")
             .status(Status.FAILED)
-            .failureInfo(
-                FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setMessage("abcd").build()).build())
+            .failureInfo(FailureInfo.newBuilder()
+                             .setErrorMessage("message1")
+                             .addFailureData(FailureData.newBuilder().setMessage("message1").build())
+                             .build())
+            .nodeExecutionEndTs(100L)
             .build());
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     responseDataMap.put("key2",
         StepResponseNotifyData.builder()
-            .failureInfo(FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().build()).build())
+            .failureInfo(FailureInfo.newBuilder()
+                             .setErrorMessage("message2")
+                             .addFailureData(FailureData.newBuilder().setMessage("message2").build())
+                             .build())
             .status(Status.FAILED)
+            .nodeExecutionEndTs(50L)
             .build());
     stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getFailureInfo().getFailureDataCount(), 2);
     assertEquals(stepResponse.getStatus(), Status.FAILED);
+    // message1 is the latest errorMessage.
+    assertEquals(stepResponse.getFailureInfo().getErrorMessage(), "message1");
+
+    responseDataMap.put("key3",
+        StepResponseNotifyData.builder()
+            .failureInfo(FailureInfo.newBuilder()
+                             .setErrorMessage("message3")
+                             .addFailureData(FailureData.newBuilder().setMessage("message3").build())
+                             .build())
+            .status(Status.FAILED)
+            .nodeExecutionEndTs(150L)
+            .build());
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
+    // message3 is the latest errorMessage.
+    assertEquals(stepResponse.getFailureInfo().getErrorMessage(), "message3");
   }
 
   @Test

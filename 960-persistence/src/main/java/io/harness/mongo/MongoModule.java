@@ -126,8 +126,7 @@ public class MongoModule extends AbstractModule {
         MongoClientOptions.builder(primaryMongoClientOptions)
             .readPreference(mongoConfig.getReadPreference())
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("primary_mongo_client")
-            .description("primary_mongo_client"));
+            .applicationName("primary_mongo_client"));
     return new MongoClient(uri);
   }
 
@@ -172,12 +171,12 @@ public class MongoModule extends AbstractModule {
     MongoClientURI clientUri = new MongoClientURI(uri,
         MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("mongo_client_" + name)
-            .description("mongo_client_" + name));
+            .applicationName("mongo_client_" + name));
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
-    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis(),
+        mongoConfig.getMaxDocumentsToBeFetched()));
 
     return datastore;
   }
@@ -291,8 +290,8 @@ public class MongoModule extends AbstractModule {
 
     AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(
         mongoClient, new MongoClientURI(mongoConfig.getUri()).getDatabase());
-    primaryDatastore.setQueryFactory(
-        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    primaryDatastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(),
+        mongoConfig.getMaxOperationTimeInMillis(), mongoConfig.getMaxDocumentsToBeFetched()));
 
     Store store = null;
     if (Objects.nonNull(mongoConfig.getAliasDBName())) {
@@ -330,13 +329,12 @@ public class MongoModule extends AbstractModule {
         MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig))
             .readPreference(readPreference)
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("analytics_mongo_client")
-            .description("analytics_mongo_client"));
+            .applicationName("analytics_mongo_client"));
 
     MongoClient mongoClient = new MongoClient(uri);
     AdvancedDatastore analyticalDataStore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
-    analyticalDataStore.setQueryFactory(
-        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    analyticalDataStore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(),
+        mongoConfig.getMaxOperationTimeInMillis(), mongoConfig.getMaxDocumentsToBeFetched()));
     return analyticalDataStore;
   }
 
@@ -348,8 +346,7 @@ public class MongoModule extends AbstractModule {
     MongoClientURI uri;
     MongoClientOptions.Builder builder = MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
                                              .addConnectionPoolListener(harnessConnectionPoolListener)
-                                             .applicationName("locks_mongo_client")
-                                             .description("locks_mongo_client");
+                                             .applicationName("locks_mongo_client");
     if (isNotEmpty(mongoConfig.getLocksUri())) {
       uri = new MongoClientURI(mongoConfig.getLocksUri(), builder);
     } else {

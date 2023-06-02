@@ -29,7 +29,7 @@ public class SecretsImportService implements ImportService {
   @Inject private HPersistence hPersistence;
   @Inject DiscoveryService discoveryService;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importDTO) {
+  public DiscoveryResult discover(ImportDTO importDTO) {
     SecretFilter filter = (SecretFilter) importDTO.getFilter();
     String accountId = importDTO.getAccountIdentifier();
     List<String> secretIds = new ArrayList<>();

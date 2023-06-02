@@ -9,8 +9,14 @@ package io.harness.cdng.creator.filters;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.executions.steps.StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.SHELL_SCRIPT_PROVISION;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAGRUNT_APPLY;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,13 +28,13 @@ import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
+import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
@@ -40,6 +46,9 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.ParallelStepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter.CdFilterBuilder;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
@@ -52,18 +61,25 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
+  private static final String STEP_TYPE_FIELD = "type";
+  private static final String STEP_IDENTIFIER_FIELD = "identifier";
+
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureEntityService infraService;
@@ -79,16 +95,26 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, DeploymentStageNode yamlField) {
+  public PipelineFilter getFilter(
+      FilterCreationContext filterCreationContext, DeploymentStageNode deploymentStageNode) {
     CdFilterBuilder filterBuilder = CdFilter.builder();
 
-    final DeploymentStageConfig deploymentStageConfig = yamlField.getDeploymentStageConfig();
+    validateStrategy(deploymentStageNode);
+
+    final DeploymentStageConfig deploymentStageConfig = deploymentStageNode.getDeploymentStageConfig();
 
     validate(filterCreationContext, deploymentStageConfig);
     addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
     addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
     return filterBuilder.build();
+  }
+
+  private void validateStrategy(DeploymentStageNode stageNode) {
+    if (stageNode.getStrategy() != null && MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
+      throw new InvalidYamlRuntimeException(
+          "Looping Strategy and Multi Service/Environment configurations are not supported together in a single stage. Please use any one of these");
+    }
   }
 
   // This validation is added due to limitations of oneof wherein it introduces strict yaml checking breaking old
@@ -134,6 +160,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void validateV2(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (usesServiceFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "cannot save a stage template that propagates service from another stage. Please remove useFromStage and set the serviceRef to fixed value or runtime or an expression and try again");
+    }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(
           "infrastructure should not be present in stage [%s]. Please add environment or environment group instead",
@@ -145,6 +176,21 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           format("deploymentType should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
+
+    if (deploymentStageConfig.getEnvironment() != null) {
+      validateInfraProvisioners(filterCreationContext, deploymentStageConfig.getEnvironment());
+    }
+  }
+
+  private boolean hasNoSiblingStages(YamlField currentField) {
+    // spec -> stage -> null
+    return currentField != null && currentField.getNode().getParentNode() != null
+        && currentField.getNode().getParentNode().getParentNode() == null;
+  }
+
+  private boolean usesServiceFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
+    return deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getUseFromStage() != null
+        && isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
   }
 
   private void addServiceFilters(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
@@ -200,7 +246,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (ParameterField.isNotNull(env.getFilters()) && !env.getFilters().isExpression()
-        && EmptyPredicate.isNotEmpty(env.getFilters().getValue())) {
+        && isNotEmpty(env.getFilters().getValue())) {
       Set<Entity> unsupportedEntities = env.getFilters()
                                             .getValue()
                                             .stream()
@@ -331,8 +377,14 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersFromServiceV2(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       ServiceYamlV2 service, ServiceDefinitionType deploymentType) {
-    if (service.getUseFromStage() != null && service.getUseFromStage().getValue() != null) {
-      if (isEmpty(service.getUseFromStage().getValue().getStage())) {
+    if (service.getServiceRef() != null && isNotBlank(service.getServiceRef().getValue())
+        && service.getUseFromStage() != null) {
+      throw new InvalidRequestException(
+          "Only one of serviceRef and useFromStage fields are allowed in service. Please remove one and try again");
+    }
+
+    if (service.getUseFromStage() != null) {
+      if (isEmpty(service.getUseFromStage().getStage())) {
         throw new InvalidYamlRuntimeException(format(
             "stage identifier should be present in stage [%s] when propagating service from a different stage. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
@@ -464,5 +516,77 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     for (YamlField stepYamlField : stepYamlFields) {
       dependencies.put(stepYamlField.getNode().getUuid(), stepYamlField);
     }
+  }
+
+  private void validateInfraProvisioners(FilterCreationContext filterCreationContext, EnvironmentYamlV2 env) {
+    List<String> filteredProvisionerRefs = getFilteredProvisionerRefs(env);
+
+    List<String> duplicateProvisionerIdentifiers = findDuplicates(filteredProvisionerRefs);
+    if (isNotEmpty(duplicateProvisionerIdentifiers)) {
+      throw new InvalidYamlRuntimeException(
+          format("Environment contains duplicates provisioner identifiers [%s], stage [%s]",
+              String.join(" ,", duplicateProvisionerIdentifiers),
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+  }
+
+  private List<String> getFilteredProvisionerRefs(EnvironmentYamlV2 env) {
+    if (env == null || env.getProvisioner() == null || isEmpty(env.getProvisioner().getSteps())) {
+      return Collections.emptyList();
+    }
+
+    List<String> provisionerRefs = new ArrayList<>();
+    List<ExecutionWrapperConfig> steps = env.getProvisioner().getSteps();
+    try {
+      populateProvisionerRefs(provisionerRefs, steps);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Unable to get stage provisioner refs", e);
+    }
+
+    return provisionerRefs;
+  }
+
+  private void populateProvisionerRefs(
+      List<String> provisionerRefs, List<ExecutionWrapperConfig> executionWrapperConfigs) throws IOException {
+    for (ExecutionWrapperConfig executionWrapperConfig : executionWrapperConfigs) {
+      if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig =
+            YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
+        List<ExecutionWrapperConfig> stepGroupSteps = stepGroupElementConfig.getSteps();
+        populateProvisionerRefs(provisionerRefs, stepGroupSteps);
+      }
+
+      if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig =
+            YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);
+        List<ExecutionWrapperConfig> parallelStepSections = parallelStepElementConfig.getSections();
+        populateProvisionerRefs(provisionerRefs, parallelStepSections);
+      }
+
+      if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
+        addProvisionerStepIdentifier(provisionerRefs, executionWrapperConfig);
+      }
+    }
+  }
+
+  private void addProvisionerStepIdentifier(List<String> provisionerRefs, ExecutionWrapperConfig step) {
+    if (step.getStep().has(STEP_TYPE_FIELD) && step.getStep().has(STEP_IDENTIFIER_FIELD)) {
+      String stepType = step.getStep().get(STEP_TYPE_FIELD).asText();
+      String stepIdentifier = step.getStep().get(STEP_IDENTIFIER_FIELD).asText();
+      if (isProvisionerStepWithOutput(stepType)) {
+        provisionerRefs.add(stepIdentifier);
+      }
+    }
+  }
+
+  private boolean isProvisionerStepWithOutput(String stepType) {
+    return TERRAFORM_APPLY.equals(stepType) || TERRAGRUNT_APPLY.equals(stepType)
+        || AZURE_CREATE_ARM_RESOURCE.equals(stepType) || SHELL_SCRIPT_PROVISION.equals(stepType)
+        || CLOUDFORMATION_CREATE_STACK.equals(stepType);
+  }
+
+  private List<String> findDuplicates(List<String> items) {
+    Set<String> uniqueItems = new HashSet<>();
+    return items.stream().filter(item -> !uniqueItems.add(item)).collect(Collectors.toList());
   }
 }

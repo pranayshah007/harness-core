@@ -186,6 +186,11 @@ if [[ "" != "$REDIS_TIMEOUT" ]]; then
   export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$ALLOWED_ORIGINS" ]]; then
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 
@@ -217,3 +222,5 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 replace_key_value pmsGrpcClientConfig.target $PMS_GRPC_TARGET
 replace_key_value pmsGrpcClientConfig.authority $PMS_GRPC_AUTHORITY
 replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"
+
+replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

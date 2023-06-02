@@ -46,6 +46,10 @@ public class GoogleCloudSourceArtifactDelegateRequest implements ArtifactSourceD
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
   String connectorRef;
+  GoogleCloudSourceFetchType googleCloudSourceFetchType;
+  String branch;
+  String commitId;
+  String tag;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

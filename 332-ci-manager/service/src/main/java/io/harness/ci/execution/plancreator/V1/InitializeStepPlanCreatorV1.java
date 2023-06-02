@@ -22,13 +22,13 @@ import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
-import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
-import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -43,28 +43,27 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
   private final String InitializeDisplayName = "Initialize";
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
 
-  public PlanCreationResponse createPlan(PlanCreationContext ctx, IntegrationStageNodeV1 integrationStageNodeV1,
+  public PlanCreationResponse createPlan(PlanCreationContext ctx, AbstractStageNode abstractStageNode,
       CodeBase codebase, Infrastructure infrastructure, List<ExecutionWrapperConfig> executionWrapperConfigs,
       String childID) {
     // create PluginStepNode
     InitializeStepNode initializeStepNode =
-        getStepNode(ctx, codebase, infrastructure, integrationStageNodeV1, executionWrapperConfigs);
+        getStepNode(ctx, codebase, infrastructure, abstractStageNode, executionWrapperConfigs);
     // create Plan node
     return createInternalStepPlan(ctx, initializeStepNode, childID);
   }
 
   private InitializeStepNode getStepNode(PlanCreationContext ctx, CodeBase codeBase, Infrastructure infrastructure,
-      IntegrationStageNodeV1 integrationStageNodeV1, List<ExecutionWrapperConfig> executionWrapperConfigs) {
-    IntegrationStageConfigImplV1 integrationStageConfigImplV1 = integrationStageNodeV1.getStageConfig();
+      AbstractStageNode abstractStageNode, List<ExecutionWrapperConfig> executionWrapperConfigs) {
     InitializeStepInfo initializeStepInfo =
         InitializeStepInfo.builder()
             .identifier(InitializeStepInfo.STEP_TYPE.getType())
             .name(InitializeStepInfo.STEP_TYPE.getType())
             .infrastructure(infrastructure)
-            .stageIdentifier(integrationStageNodeV1.getIdentifier())
-            .variables(integrationStageNodeV1.getVariables())
+            .stageIdentifier(abstractStageNode.getIdentifier())
+            .variables(abstractStageNode.getVariables())
             .stageElementConfig(IntegrationStageConfigImpl.builder()
-                                    .uuid(integrationStageConfigImplV1.getUuid())
+                                    .uuid(IdentifierGeneratorUtils.getId(abstractStageNode.getName()))
                                     .execution(ExecutionElementConfig.builder().steps(executionWrapperConfigs).build())
                                     .infrastructure(infrastructure)
                                     .cloneCodebase(ParameterField.createValueField(codeBase != null))

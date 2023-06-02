@@ -19,7 +19,6 @@ public enum ResourceType {
   RESOURCE_GROUP(ResourceTypeConstants.RESOURCE_GROUP),
   USER(ResourceTypeConstants.USER),
   ROLE(ResourceTypeConstants.ROLE),
-  ROLE_ASSIGNMENT(ResourceTypeConstants.ROLE_ASSIGNMENT),
   PIPELINE(ResourceTypeConstants.PIPELINE),
   TRIGGER(ResourceTypeConstants.TRIGGER),
   TEMPLATE(ResourceTypeConstants.TEMPLATE),
@@ -28,6 +27,7 @@ public enum ResourceType {
   DELEGATE_GROUPS(ResourceTypeConstants.DELEGATE_GROUPS),
   SERVICE(ResourceTypeConstants.SERVICE),
   ENVIRONMENT(ResourceTypeConstants.ENVIRONMENT),
+  ENVIRONMENT_GROUP(ResourceTypeConstants.ENVIRONMENT_GROUP),
   DELEGATE(ResourceTypeConstants.DELEGATE),
   SERVICE_ACCOUNT(ResourceTypeConstants.SERVICE_ACCOUNT),
   CONNECTOR(ResourceTypeConstants.CONNECTOR),
@@ -61,7 +61,11 @@ public enum ResourceType {
   CLOUD_ASSET_GOVERNANCE_RULE_SET(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET),
   CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT),
   TARGET_GROUP(ResourceTypeConstants.TARGET_GROUP),
-  FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG);
+  FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG),
+  NG_ACCOUNT_DETAILS(ResourceTypeConstants.NG_ACCOUNT_DETAILS),
+  BUDGET_GROUP(ResourceTypeConstants.BUDGET_GROUP),
+  IP_ALLOWLIST_CONFIG(ResourceTypeConstants.IP_ALLOWLIST_CONFIG),
+  NETWORK_MAP(ResourceTypeConstants.NETWORK_MAP);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

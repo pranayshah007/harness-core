@@ -59,10 +59,12 @@ public class GoogleFunctionTrafficShiftCommandTaskHandler extends GoogleFunction
         executionLogCallback.saveExecutionLog(format("Starting traffic shift..%n%n"), LogLevel.INFO);
         Function.Builder functionBuilder = Function.newBuilder();
         googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
-            googleFunctionTrafficShiftRequest.getGoogleFunctionAsString(), functionBuilder, "cloudFunction");
+            googleFunctionTrafficShiftRequest.getGoogleFunctionAsString(), functionBuilder, executionLogCallback,
+            "cloudFunction");
         Service.Builder serviceBuilder = Service.newBuilder();
         googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
-            googleFunctionTrafficShiftRequest.getGoogleCloudRunServiceAsString(), serviceBuilder, "cloudRunService");
+            googleFunctionTrafficShiftRequest.getGoogleCloudRunServiceAsString(), serviceBuilder, executionLogCallback,
+            "cloudRunService");
         String existingRevision = googleFunctionCommandTaskHelper.getCurrentRevision(serviceBuilder.build());
 
         googleFunctionCommandTaskHelper.updateTraffic(serviceBuilder.getName(),
@@ -70,10 +72,11 @@ public class GoogleFunctionTrafficShiftCommandTaskHandler extends GoogleFunction
             googleFunctionTrafficShiftRequest.getTargetRevision(), existingRevision,
             googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
             googleFunctionInfraConfig.getRegion(), executionLogCallback);
-        Function function = googleFunctionCommandTaskHelper
-                                .getFunction(functionBuilder.getName(), googleFunctionInfraConfig.getGcpConnectorDTO(),
-                                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion())
-                                .get();
+        Function function =
+            googleFunctionCommandTaskHelper
+                .getFunction(functionBuilder.getName(), googleFunctionInfraConfig.getGcpConnectorDTO(),
+                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(), executionLogCallback)
+                .get();
         GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(
             function, googleFunctionInfraConfig, executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

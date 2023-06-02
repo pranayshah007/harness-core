@@ -7,7 +7,7 @@
 
 package software.wings.delegatetasks;
 
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 
 import java.util.List;
 

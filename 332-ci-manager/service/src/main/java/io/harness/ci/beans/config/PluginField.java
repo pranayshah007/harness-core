@@ -23,6 +23,8 @@ public enum PluginField {
   CACHE_GCS("cacheGCSTag"),
   CACHE_S3("cacheS3Tag"),
   SECURITY("securityTag"),
+  SSCA_ORCHESTRATION("sscaOrchestrationTag"),
+  SSCA_ENFORCEMENT("sscaEnforcementTag"),
   UNKNOWN("unknown");
 
   public final String label;

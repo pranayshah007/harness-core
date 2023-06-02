@@ -19,7 +19,7 @@ import lombok.experimental.FieldNameConstants;
 @Value
 @FieldNameConstants(innerTypeName = "DelegateMigrationFlagKeys")
 @StoreIn(DbAliases.HARNESS)
-@Entity(value = "delegateMigrationFlag")
+@Entity(value = "delegateMigrationFlag", noClassnameStored = true)
 public class DelegateMigrationFlag implements PersistentEntity {
   @Id private String className;
   private boolean enabled;

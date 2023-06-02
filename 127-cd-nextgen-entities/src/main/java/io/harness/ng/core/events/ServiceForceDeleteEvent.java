@@ -17,9 +17,12 @@ import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.service.entity.ServiceEntity;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -50,7 +53,9 @@ public class ServiceForceDeleteEvent implements Event {
 
   @Override
   public Resource getResource() {
-    return Resource.builder().identifier(service.getIdentifier()).type(SERVICE).build();
+    Map<String, String> labels = new HashMap<>();
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, service.getName());
+    return Resource.builder().identifier(service.getIdentifier()).type(SERVICE).labels(labels).build();
   }
 
   @Override

@@ -27,8 +27,8 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -53,6 +53,7 @@ import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -108,7 +109,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock protected FeatureFlagService featureFlagService;
   @Mock protected ManagerExecutionLogCallback logCallback;
-
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Inject private KryoSerializer kryoSerializer;
 
   @InjectMocks

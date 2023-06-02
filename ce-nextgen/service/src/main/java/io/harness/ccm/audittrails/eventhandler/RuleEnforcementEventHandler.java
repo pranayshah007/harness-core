@@ -24,7 +24,6 @@ import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementUpdateEvent;
 import io.harness.ccm.audittrails.yamlDTOs.RuleEnforcementDTO;
-import io.harness.ccm.views.dto.CreateRuleEnforcementDTO;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.outbox.OutboxEvent;

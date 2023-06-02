@@ -8,8 +8,8 @@
 package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
-import io.harness.beans.execution.QueueServiceClient;
 import io.harness.execution.ExecutionServiceConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.sto.config.STOStepConfig;
 
 import lombok.Builder;
@@ -27,30 +27,38 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   String ciImageTag;
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
+  CICacheIntelligenceS3Config cacheIntelligenceS3Config;
   ExecutionLimits executionLimits;
-  QueueServiceClient queueServiceClient;
+  QueueServiceClientConfig queueServiceClientConfig;
   HostedVmConfig hostedVmConfig;
   STOStepConfig stoStepConfig;
   // Base 64 encoded credentials for gcp
   MiningPatternConfig miningPatternConfig;
   Integer remoteDebugTimeout;
+  CIDockerLayerCachingConfig dockerLayerCachingConfig;
+  CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig;
 
   @Builder
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
       String delegateServiceEndpointVariableValue, Integer defaultMemoryLimit, Integer defaultCPULimit,
       Integer pvcDefaultStorageSize, String addonImage, String liteEngineImage, boolean isLocal, String ciImageTag,
-      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig, ExecutionLimits executionLimits,
-      QueueServiceClient queueServiceClient, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
-      Integer remoteDebugTimeout) {
+      CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig,
+      CICacheIntelligenceS3Config cacheIntelligenceS3Config, ExecutionLimits executionLimits,
+      QueueServiceClientConfig queueServiceClientConfig, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
+      Integer remoteDebugTimeout, CIDockerLayerCachingConfig dockerLayerCachingConfig,
+      CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.ciImageTag = ciImageTag;
     this.stepConfig = stepConfig;
     this.cacheIntelligenceConfig = cacheIntelligenceConfig;
+    this.cacheIntelligenceS3Config = cacheIntelligenceS3Config;
     this.executionLimits = executionLimits;
     this.stoStepConfig = stoStepConfig;
-    this.queueServiceClient = queueServiceClient;
+    this.queueServiceClientConfig = queueServiceClientConfig;
     this.hostedVmConfig = hostedVmConfig;
     this.remoteDebugTimeout = remoteDebugTimeout;
+    this.dockerLayerCachingConfig = dockerLayerCachingConfig;
+    this.dockerLayerCachingGCSConfig = dockerLayerCachingGCSConfig;
   }
 }

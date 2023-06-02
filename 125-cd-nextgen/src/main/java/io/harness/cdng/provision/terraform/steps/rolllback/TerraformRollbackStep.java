@@ -7,11 +7,14 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
+
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -107,7 +110,8 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
       while (configIterator.hasNext()) {
         rollbackConfig = configIterator.next();
 
-        if (rollbackConfig.getPipelineExecutionId().equals(ambiance.getPlanExecutionId())) {
+        if (rollbackConfig.getPipelineExecutionId().equals(
+                AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))) {
           if (currentConfig == null) {
             currentConfig = rollbackConfig;
           }
@@ -155,9 +159,16 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
         builder.tfModuleSourceInheritSSH(rollbackConfig.isUseConnectorCredentials());
       }
       if (rollbackConfig.getFileStoreConfig() != null) {
-        builder.fileStoreConfigFiles(terraformStepHelper.getFileStoreFetchFilesConfig(
-            rollbackConfig.getFileStoreConfig().toFileStorageStoreConfig(), ambiance,
-            TerraformStepHelper.TF_CONFIG_FILES));
+        builder.fileStoreConfigFiles(
+            terraformStepHelper.prepareTerraformConfigFileInfo(rollbackConfig.getFileStoreConfig(), ambiance));
+      }
+
+      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CD_TERRAFORM_CLOUD_CLI_NG)) {
+        builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
+      }
+
+      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_CLI_OPTIONS_NG)) {
+        builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
       }
 
       builder.backendConfig(rollbackConfig.getBackendConfig())
@@ -166,6 +177,13 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
                   ? new HashMap<>()
                   : rollbackConfig.getEnvironmentVariables())
           .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+
+      ParameterField<Boolean> skipTerraformRefreshCommandParameter = stepParametersSpec.getSkipRefreshCommand();
+
+      boolean skipRefreshCommand =
+          ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
+
+      builder.skipTerraformRefresh(skipRefreshCommand);
 
       TerraformTaskNGParameters terraformTaskNGParameters = builder.build();
       TaskData taskData =

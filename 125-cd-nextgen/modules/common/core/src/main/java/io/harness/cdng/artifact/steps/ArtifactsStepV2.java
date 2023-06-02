@@ -7,10 +7,10 @@
 
 package io.harness.cdng.artifact.steps;
 
+import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
@@ -26,11 +26,14 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.cdng.artifact.utils.ArtifactsProcessedResponse;
+import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.validator.EntityIdentifierValidator;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -43,21 +46,16 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
-import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveException;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -81,6 +79,7 @@ import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -98,6 +97,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -108,6 +108,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParameters> {
   private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
+  private static final String ARTIFACT_STEP = "Artifact Step";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
@@ -119,6 +120,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject ServiceEntityService serviceEntityService;
+
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -133,7 +137,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
-    NGServiceConfig ngServiceConfig = null;
+    NGServiceConfig ngServiceConfig;
+    String primaryArtifactRefValue = null;
     try {
       // get service merged with service inputs
       String mergedServiceYaml = cdStepHelper.fetchServiceYamlFromSweepingOutput(ambiance);
@@ -141,15 +146,21 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         return AsyncExecutableResponse.newBuilder().build();
       }
 
+      ArtifactsProcessedResponse artifactsProcessedResponse =
+          artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
+
+      String processedServiceYaml = artifactsProcessedResponse.getServiceYaml();
+
+      primaryArtifactRefValue = artifactsProcessedResponse.getPrimaryArtifactRef();
+
       // process artifact sources in service yaml and select primary
-      String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
 
       // resolve template refs in primary and sidecar artifacts
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-      mergedServiceYaml =
-          resolveArtifactSourceTemplateRefs(accountId, orgIdentifier, projectIdentifier, processedServiceYaml);
+      mergedServiceYaml = serviceEntityService.resolveArtifactSourceTemplateRefs(
+          accountId, orgIdentifier, projectIdentifier, processedServiceYaml);
       ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
     } catch (IOException ex) {
       throw new InvalidRequestException("Failed to read Service yaml into config - ", ex);
@@ -169,21 +180,36 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    if (noArtifactConfigured(artifacts)) {
+      logCallback.saveExecutionLog(
+          "No primary or sidecar artifacts configured in the service. artifact/artifacts expressions will not work",
+          LogLevel.WARN);
+      return AsyncExecutableResponse.newBuilder().build();
+    }
+
     resolveExpressions(ambiance, artifacts);
 
     checkForAccessOrThrow(ambiance, artifacts);
     final Set<String> taskIds = new HashSet<>();
+    List<StepDelegateInfo> stepDelegateInfos = new ArrayList<>();
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     String primaryArtifactTaskId = null;
 
     if (artifacts.getPrimary() != null) {
       ACTION actionForPrimaryArtifact =
           shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
       if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {
+        artifacts.getPrimary().getSpec().validate();
+        checkAndWarnIfDoesNotFollowIdentifierRegex(
+            artifacts.getPrimary().getSpec().getIdentifier(), "Primary", logCallback);
         primaryArtifactTaskId = createDelegateTask(
             ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+        stepDelegateInfos.add(StepDelegateInfo.builder()
+                                  .taskId(primaryArtifactTaskId)
+                                  .taskName("Artifact Task: " + artifacts.getPrimary().getSpec().getIdentifier())
+                                  .build());
         taskIds.add(primaryArtifactTaskId);
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
       } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
@@ -198,41 +224,33 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         ACTION actionForSidecar =
             shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec());
         if (ACTION.CREATE_DELEGATE_TASK.equals(actionForSidecar)) {
+          sidecar.getSidecar().getSpec().validate();
+          checkAndWarnIfDoesNotFollowIdentifierRegex(
+              sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           String taskId = createDelegateTask(
               ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+          stepDelegateInfos.add(StepDelegateInfo.builder()
+                                    .taskId(primaryArtifactTaskId)
+                                    .taskName("Artifact Task: " + sidecar.getSidecar().getSpec().getIdentifier())
+                                    .build());
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
         } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
+          checkAndWarnIfDoesNotFollowIdentifierRegex(
+              sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
         }
       }
     }
     sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
-        new ArtifactsStepV2SweepingOutput(
-            primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
+        new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap,
+            artifactConfigMapForNonDelegateTaskTypes, primaryArtifactRefValue),
         "");
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, ARTIFACT_STEP);
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
-  enum ACTION {
-    CREATE_DELEGATE_TASK,
-    RUN_SYNC,
-    SKIP;
-  }
-
-  private boolean isSpecAndSourceTypePresent(ArtifactListConfig artifacts) {
-    return artifacts.getPrimary().getSpec() != null && artifacts.getPrimary().getSourceType() != null;
-  }
-  void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
-    Set<EntityDetailProtoDTO> entityDetailsProto = artifactListConfig == null
-        ? Set.of()
-        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
-
-    List<EntityDetail> entityDetails =
-        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
-
-    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
-  }
+  enum ACTION { CREATE_DELEGATE_TASK, RUN_SYNC, SKIP }
   public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";
@@ -245,28 +263,11 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                     .originalEntityYaml(yaml)
                     .checkForAccess(true)
                     .getMergedYamlWithTemplateField(false)
-                    .build()));
+                    .build(),
+                false));
         return templateMergeResponseDTO.getMergedPipelineYaml();
-      } catch (InvalidRequestException e) {
-        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
-          throw new NGTemplateResolveException(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
-        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
-          throw new NGTemplateResolveExceptionV2(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
-        } else {
-          throw new NGTemplateException(e.getMessage(), e);
-        }
-      } catch (NGTemplateResolveException e) {
-        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
-      } catch (NGTemplateResolveExceptionV2 e) {
-        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
-      } catch (UnexpectedException e) {
-        log.error("Error connecting to Template Service", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
-      } catch (Exception e) {
-        log.error("Unknown exception in resolving templates", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } catch (Exception ex) {
+        throw new InvalidRequestException(TEMPLATE_RESOLVE_EXCEPTION_MSG, ex);
       } finally {
         log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
             System.currentTimeMillis() - start, projectId, orgId, accountId);
@@ -275,6 +276,16 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     return yaml;
   }
 
+  private void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
+    Set<EntityDetailProtoDTO> entityDetailsProto = artifactListConfig == null
+        ? Set.of()
+        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
+
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
     final List<Object> toResolve = new ArrayList<>();
     if (artifacts.getPrimary() != null) {
@@ -334,6 +345,15 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                 taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0);
           }
 
+          // set primary artifact identifier as primary artifact ref
+          if (featureFlagHelperService.isEnabled(
+                  AmbianceUtils.getAccountId(ambiance), CDS_ARTIFACTS_PRIMARY_IDENTIFIER)) {
+            if (isPrimary && isNotEmpty(artifactsSweepingOutput.getPrimaryArtifactRefValue())
+                && artifactConfig != null) {
+              artifactConfig.setIdentifier(artifactsSweepingOutput.getPrimaryArtifactRefValue());
+            }
+          }
+
           ArtifactOutcome artifactOutcome =
               ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponses, true);
           if (isPrimary) {
@@ -365,6 +385,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     }
 
     final ArtifactsOutcome artifactsOutcome = outcomeBuilder.sidecars(sidecarsOutcome).build();
+
+    artifactStepHelper.saveArtifactExecutionDataToStageInfo(ambiance, artifactsOutcome);
 
     sweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.ARTIFACTS, artifactsOutcome, StepCategory.STAGE.name());
@@ -400,7 +422,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                                       .attributes(artifactSourceDelegateRequest)
                                                       .build();
     logCallback.saveExecutionLog(
-        LogHelper.color("Starting delegate task to fetch details of primary artifact", LogColor.Cyan, LogWeight.Bold));
+        LogHelper.color("Starting delegate task to fetch details of artifact", LogColor.Cyan, LogWeight.Bold));
 
     final List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
 
@@ -415,14 +437,27 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     String taskName = artifactStepHelper.getArtifactStepTaskType(artifactConfig).getDisplayName() + ": "
         + taskParameters.getArtifactTaskType().getDisplayName();
 
+    boolean withLogs = false;
+    String baseLogKey = "";
+    boolean shouldSkipOpenStream = false;
+    if (ArtifactSourceType.CUSTOM_ARTIFACT.equals(artifactConfig.getSourceType())) {
+      withLogs = true;
+      shouldSkipOpenStream = true;
+      baseLogKey = logCallback.getLogBaseKey();
+    }
+
     TaskRequest taskRequest =
         TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
+            TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), withLogs, taskName, delegateSelectors);
 
-    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
-        taskRequest, taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()));
+    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest,
+        taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), baseLogKey,
+        shouldSkipOpenStream);
 
-    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+    String delegateTaskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+    logCallback.saveExecutionLog(
+        LogHelper.color(String.format("Delegate task id: %s", delegateTaskId), LogColor.Cyan, LogWeight.Bold));
+    return delegateTaskId;
   }
 
   private void logArtifactFetchedMessage(
@@ -439,7 +474,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
           LogColor.Cyan, LogWeight.Bold));
     }
     if (taskResponse != null && taskResponse.getArtifactTaskExecutionResponse() != null
-        && EmptyPredicate.isNotEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
+        && isNotEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
       logCallback.saveExecutionLog(LogHelper.color(
           taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
           LogColor.Green, LogWeight.Bold));
@@ -472,7 +507,27 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
   private boolean nonDelegateTaskArtifactsExist(OptionalSweepingOutput outputOptional) {
     return outputOptional != null && outputOptional.isFound()
-        && EmptyPredicate.isNotEmpty(
+        && isNotEmpty(
             ((ArtifactsStepV2SweepingOutput) outputOptional.getOutput()).getArtifactConfigMapForNonDelegateTaskTypes());
+  }
+
+  private void checkAndWarnIfDoesNotFollowIdentifierRegex(String str, String warnMsgPrefix, NGLogCallback logCallback) {
+    if (isNotEmpty(str)) {
+      final Pattern identifierPattern = EntityIdentifierValidator.IDENTIFIER_PATTERN;
+      if (!identifierPattern.matcher(str).matches()) {
+        logCallback.saveExecutionLog(
+            LogHelper.color(
+                String.format(
+                    "%s artifact identifier [%s] is not valid as per Harness Identifier Regex %s. Using this identifier in harness expressions might not work",
+                    warnMsgPrefix, str, identifierPattern.pattern()),
+                LogColor.Yellow, LogWeight.Bold),
+            LogLevel.WARN);
+      }
+    }
+  }
+  private static boolean noArtifactConfigured(ArtifactListConfig artifacts) {
+    final boolean noPrimaryConfigured = artifacts.getPrimary() == null
+        || (artifacts.getPrimary().getSpec() == null && isEmpty(artifacts.getPrimary().getSources()));
+    return noPrimaryConfigured && EmptyPredicate.isEmpty(artifacts.getSidecars());
   }
 }

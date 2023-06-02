@@ -20,6 +20,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
@@ -60,7 +61,7 @@ public class TerraformFetchTargetsTask extends AbstractDelegateRunnableTask {
   @Inject private GitService gitService;
   @Inject private EncryptionService encryptionService;
   @Inject private GitUtilsDelegate gitUtilsDelegate;
-
+  @Inject private TerraformBaseHelper terraformBaseHelper;
   @Inject private S3Utils s3UtilsDelegate;
   @Inject private TerraformConfigInspectService terraformConfigInspectService;
   @Inject private AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
@@ -135,7 +136,8 @@ public class TerraformFetchTargetsTask extends AbstractDelegateRunnableTask {
       }
 
       targets = terraformConfigInspectService.parseFieldsUnderCategory(absoluteModulePath,
-          BLOCK_TYPE.MANAGED_RESOURCES.name().toLowerCase(), parameters.isUseTfConfigInspectLatestVersion());
+          BLOCK_TYPE.MANAGED_RESOURCES.name().toLowerCase(),
+          terraformBaseHelper.getTerraformConfigInspectVersion(parameters));
     } catch (WingsException e) {
       throw e;
     } catch (Exception e) {

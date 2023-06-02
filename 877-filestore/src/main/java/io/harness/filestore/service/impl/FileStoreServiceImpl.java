@@ -37,6 +37,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
 import io.harness.exception.DuplicateFieldException;
@@ -49,6 +50,7 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.mapper.EmbeddedUserDTOMapper;
 import io.harness.filestore.dto.mapper.FileDTOMapper;
 import io.harness.filestore.dto.mapper.FileStoreNodeDTOMapper;
+import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
@@ -75,6 +77,7 @@ import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -227,6 +230,35 @@ public class FileStoreServiceImpl implements FileStoreService {
     fileStructureService.createFolderTreeStructure(
         folderNodeDTO, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), includeContent);
     return Optional.of(folderNodeDTO);
+  }
+
+  @Override
+  public String getFileContentAsString(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String scopedFileIdentifier, long allowedBytesFileSize) {
+    FileReference fileReference =
+        FileReference.of(scopedFileIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    Optional<FileStoreNodeDTO> file = getWithChildrenByPath(fileReference.getAccountIdentifier(),
+        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
+
+    if (file.isEmpty()) {
+      throw new InvalidRequestException(format("File not found in local file store, path [%s], scope: [%s]",
+          fileReference.getPath(), fileReference.getScope()));
+    }
+
+    FileStoreNodeDTO fileStoreNodeDTO = file.get();
+    if (!(fileStoreNodeDTO instanceof FileNodeDTO)) {
+      throw new InvalidRequestException(
+          format("Found folder reference instead of file reference, path [%s], scope: [%s]", fileReference.getPath(),
+              fileReference.getScope()));
+    }
+
+    String content = ((FileNodeDTO) fileStoreNodeDTO).getContent();
+    if (content.getBytes(StandardCharsets.UTF_8).length > allowedBytesFileSize) {
+      throw new InvalidRequestException(format("Too large file, scopedFileIdentifier: %s", scopedFileIdentifier));
+    }
+
+    return content;
   }
 
   @Override

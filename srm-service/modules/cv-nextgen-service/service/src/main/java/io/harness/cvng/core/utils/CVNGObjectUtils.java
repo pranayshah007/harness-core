@@ -10,6 +10,8 @@ package io.harness.cvng.core.utils;
 import java.util.Comparator;
 import javax.annotation.Nullable;
 import lombok.experimental.UtilityClass;
+import org.bson.types.ObjectId;
+
 @UtilityClass
 public class CVNGObjectUtils {
   /**
@@ -28,6 +30,20 @@ public class CVNGObjectUtils {
       } else {
         return t2;
       }
+    }
+  }
+
+  public static Object convertToObjectIdIfRequired(final String uuid) {
+    if (ObjectId.isValid(uuid)) {
+      ObjectId objectIdFromGivenUuid = new ObjectId(uuid);
+      String uuidFromNewObjectId = objectIdFromGivenUuid.toString();
+      if (uuidFromNewObjectId.equals(uuid)) {
+        return objectIdFromGivenUuid;
+      } else {
+        return uuid;
+      }
+    } else {
+      return uuid;
     }
   }
 }

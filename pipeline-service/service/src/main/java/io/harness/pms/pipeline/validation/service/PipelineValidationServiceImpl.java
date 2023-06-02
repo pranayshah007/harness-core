@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,16 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(yamlWithTemplatesResolved);
     return true;
+  }
+
+  @Override
+  public void validateYamlWithUnresolvedTemplates(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineYaml, String harnessVersion) {
+    if (Objects.equals(harnessVersion, PipelineVersion.V0)) {
+      checkIfRootNodeIsPipeline(pipelineYaml);
+    }
+    pmsYamlSchemaService.validateYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml);
+    pmsYamlSchemaService.validateUniqueFqn(pipelineYaml);
   }
 
   @Override

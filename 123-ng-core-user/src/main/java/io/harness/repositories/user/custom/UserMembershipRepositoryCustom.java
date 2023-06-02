@@ -17,11 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
 public interface UserMembershipRepositoryCustom {
-  List<UserMembership> findAll(Criteria criteria);
-
   UserMembership findOne(Criteria criteria);
 
   Page<UserMembership> findAll(Criteria criteria, Pageable pageable);
@@ -31,4 +30,8 @@ public interface UserMembershipRepositoryCustom {
   UserMembership update(String userId, Update update);
 
   long insertAllIgnoringDuplicates(List<UserMembership> userMemberships);
+
+  CloseableIterator<UserMembership> stream(Criteria criteria);
+
+  long count(Criteria criteria);
 }

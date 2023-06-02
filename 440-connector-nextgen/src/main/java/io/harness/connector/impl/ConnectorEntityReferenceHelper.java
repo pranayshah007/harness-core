@@ -53,7 +53,6 @@ public class ConnectorEntityReferenceHelper {
   private static final String STABLE_VERSION = "__STABLE__";
   private static final String ACCOUNT_ID = "accountId";
   Producer eventProducer;
-  IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   SecretRefInputValidationHelper secretRefInputValidationHelper;
 
   private final String TEMPLATE_REFERENCE_CREATE_FAIL_LOG_MSG =
@@ -69,11 +68,9 @@ public class ConnectorEntityReferenceHelper {
 
   @Inject
   public ConnectorEntityReferenceHelper(@Named(EventsFrameworkConstants.SETUP_USAGE) Producer eventProducer,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper,
       SecretRefInputValidationHelper secretRefInputValidationHelper) {
     this.eventProducer = eventProducer;
     this.secretRefInputValidationHelper = secretRefInputValidationHelper;
-    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
   }
 
   public boolean createSetupUsageForSecret(
@@ -249,7 +246,7 @@ public class ConnectorEntityReferenceHelper {
   private EntitySetupUsageCreateV2DTO createSetupUsageDTOForConnector(ConnectorInfoDTO connectorInfoDTO,
       List<EntityDetailWithSetupUsageDetailProtoDTO> secretDetails, String accountIdentifier) {
     IdentifierRefProtoDTO connectorReference =
-        identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, connectorInfoDTO.getOrgIdentifier(),
+        IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, connectorInfoDTO.getOrgIdentifier(),
             connectorInfoDTO.getProjectIdentifier(), connectorInfoDTO.getIdentifier());
     EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
                                                 .setIdentifierRef(connectorReference)
@@ -308,7 +305,7 @@ public class ConnectorEntityReferenceHelper {
         if (secretIdentifierRef == null) {
           continue;
         }
-        IdentifierRefProtoDTO secretReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+        IdentifierRefProtoDTO secretReference = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
             baseNGAccess.getAccountIdentifier(), secretIdentifierRef.getOrgIdentifier(),
             secretIdentifierRef.getProjectIdentifier(), secretIdentifierRef.getIdentifier());
         EntityDetailProtoDTO entityDetailProtoDTO = EntityDetailProtoDTO.newBuilder()
@@ -331,7 +328,7 @@ public class ConnectorEntityReferenceHelper {
 
   public void deleteExistingSetupUsages(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    IdentifierRefProtoDTO connectorReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+    IdentifierRefProtoDTO connectorReference = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
                                                 .setIdentifierRef(connectorReference)

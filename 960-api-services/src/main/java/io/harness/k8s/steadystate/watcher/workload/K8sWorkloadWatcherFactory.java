@@ -31,7 +31,7 @@ public class K8sWorkloadWatcherFactory {
   @Inject private K8sCliWatcher k8sCliWatcher;
 
   public WorkloadWatcher getWorkloadWatcher(String kind, boolean isApiEnabled) {
-    Kind workloadKind = Kind.valueOf(kind);
+    Kind workloadKind = Kind.fromString(kind);
     if (isApiEnabled) {
       EnumMap<Kind, WorkloadWatcher> apiWorkloadWatcherMap = getApiWorkloadWatcherMap();
       return apiWorkloadWatcherMap.get(workloadKind);

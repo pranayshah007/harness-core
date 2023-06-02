@@ -26,11 +26,14 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.repositories.gitops.spring.ClusterRepository;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
+import io.harness.utils.ScopeWiseIds;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -95,8 +98,6 @@ public class ClusterServiceImpl implements ClusterService {
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier,
       String clusterRef, ScopeLevel scopeLevel) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
-    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
     checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
 
     Criteria criteria = getClusterEqualityCriteria(
@@ -186,12 +187,32 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   @Override
-  public Page<Cluster> listAcrossEnv(int page, int size, String accountIdentifier, String orgIdentifier,
+  public List<Cluster> listAcrossEnv(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Collection<String> envRefs) {
-    Criteria criteria =
-        getClusterEqualityCriteriaAcrossEnvs(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
+    List<Cluster> entities = new ArrayList<>();
+    ScopeWiseIds scopeWiseIds =
+        IdentifierRefHelper.getScopeWiseIds(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
+    entities.addAll(getAllClusters(
+        page, size, accountIdentifier, orgIdentifier, projectIdentifier, scopeWiseIds.getProjectScopedIds()));
+    entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, null, scopeWiseIds.getOrgScopedIds()));
+    entities.addAll(getAllClusters(page, size, accountIdentifier, null, null, scopeWiseIds.getAccountScopedIds()));
+
+    return entities;
+  }
+
+  private List<Cluster> getAllClusters(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> envIds) {
     PageRequest pageRequest = PageRequest.of(page, size);
-    return clusterRepository.find(criteria, pageRequest);
+
+    if (isNotEmpty(envIds)) {
+      Criteria criteria =
+          getClusterEqualityCriteriaAcrossEnvs(accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+      Page<Cluster> clustersPageResponse = clusterRepository.find(criteria, pageRequest);
+      if (isNotEmpty(clustersPageResponse.getContent())) {
+        return clustersPageResponse.getContent();
+      }
+    }
+    return new ArrayList<>();
   }
 
   private Criteria getClusterEqualityCriteria(

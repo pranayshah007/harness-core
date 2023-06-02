@@ -10,7 +10,12 @@ package software.wings.resources;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.security.dto.PrincipalType.USER;
+
+import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
+
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,11 +25,15 @@ import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -41,11 +50,19 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.user.remote.UserFilterNG;
 
+import software.wings.beans.Account;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.beans.marketplace.MarketPlaceConstants;
+import software.wings.dl.WingsPersistence;
+import software.wings.security.JWT_CATEGORY;
+import software.wings.security.SecretManager;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
 import software.wings.security.authentication.TwoFactorAuthenticationSettings;
@@ -54,14 +71,17 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
 
+import com.auth0.jwt.interfaces.Claim;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -80,6 +100,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import retrofit2.http.Body;
 
 @Api(value = "/ng/user", hidden = true)
@@ -100,15 +121,20 @@ public class UserResourceNG {
   private final ScimUserService scimUserService;
   private static final String COMMUNITY_ACCOUNT_EXISTS = "A community account already exists";
   private static final String ACCOUNT_ADMINISTRATOR_USER_GROUP = "Account Administrator";
+  private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
+  private static final String MISSING_EMAIL_OR_PASSWORD = "Missing email or password";
+  private static final String EXISTING_INVITE_ALREADY_COMPLETED = "Existing invite is already completed";
 
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private SecretManager secretManager;
+  @Inject private WingsPersistence wingsPersistence;
 
   @POST
   public RestResponse<UserInfo> createNewUserAndSignIn(UserRequestDTO userRequest) {
     User user = convertUserRequesttoUser(userRequest);
     String accountId = user.getDefaultAccountId();
 
-    User createdUser = userService.createNewUserAndSignIn(user, accountId);
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
 
     return new RestResponse<>(convertUserToNgUser(createdUser));
   }
@@ -157,7 +183,7 @@ public class UserResourceNG {
           String.format("%s is an invalid email.Please add a valid email and try again.", request.getEmail()),
           exception);
     }
-    if (!accountService.listAllAccountsWithoutTheGlobalAccount().isEmpty()) {
+    if (accountService.countAccountsWithoutTheGlobalAccount() > 0) {
       throw new InvalidRequestException(COMMUNITY_ACCOUNT_EXISTS);
     }
 
@@ -184,6 +210,51 @@ public class UserResourceNG {
     return new RestResponse<>(userInfo);
   }
 
+  @POST
+  @Path("/signup-invite/marketplace")
+  public RestResponse<UserInfo> createMarketplaceUserAndCompleteSignup(@QueryParam("inviteId") String inviteId,
+      @QueryParam("marketPlaceToken") String marketPlaceToken, @QueryParam("email") String email,
+      @QueryParam("password") String password, @Body SignupDTO dto) {
+    MarketPlace marketPlace;
+    User user = validatedUserFromMarketplaceRequest(email, password, inviteId, dto);
+
+    Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
+    String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
+    if (!userInviteID.equals(inviteId)) {
+      throw new GeneralException(String.format(
+          "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
+    }
+
+    String marketPlaceID = claims.get(MarketPlaceConstants.MARKETPLACE_ID_CLAIM_KEY).asString();
+    marketPlace = wingsPersistence.get(MarketPlace.class, marketPlaceID);
+    if (marketPlace == null) {
+      throw new GeneralException(String.format("No MarketPlace found with marketPlaceID=[{%s}]", marketPlaceID));
+    }
+
+    UserInvite userInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (userInvite == null) {
+      throw new GeneralException(String.format("No UserInvite found with inviteId=[{%s}]", inviteId));
+    }
+    // account passed in args does not yet have an identifier
+    String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
+    Account newAccount = wingsPersistence.get(Account.class, accountId);
+    List<Account> newAccountsList = new ArrayList<>();
+    newAccountsList.add(newAccount);
+    user.setAccounts(newAccountsList);
+    user.setDefaultAccountId(accountId);
+
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
+
+    log.info("Successfully setup account accountId: {}", accountId);
+    log.info("Successfully created user createdUser: {}", createdUser);
+
+    marketPlace.setAccountId(accountId);
+    wingsPersistence.save(marketPlace);
+    log.info("Successfully saved marketplace: {}", createdUser);
+
+    return new RestResponse<>(convertUserToNgUser(createdUser));
+  }
+
   @GET
   @Path("/signup-invite")
   public RestResponse<SignupInviteDTO> getSignupInvite(@QueryParam("email") String email) {
@@ -195,7 +266,13 @@ public class UserResourceNG {
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
-      userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userService.delete(accountId, userId, NG)) {
+        return new RestResponse<>(true);
+      }
+      if (userService.isUserPresent(userId) && userServiceHelper.isUserActiveInNG(userService.get(userId), accountId)) {
+        userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      }
       if (!userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
         log.warn("User {}, is being deleted from CG, since he is not part of any user-groups in CG",
             userService.get(userId).getEmail());
@@ -266,36 +343,46 @@ public class UserResourceNG {
     Integer offset = Integer.valueOf(pageRequest.getOffset());
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false);
+    List<User> userList = userService.listUsers(
+        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, false);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
                                               .withLimit(pageSize.toString())
                                               .withResponse(convertUserToNgUser(userList, requireAdminStatus))
-                                              .withTotal(userService.getTotalUserCount(accountId, true))
+                                              .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                               .build();
-
     return new RestResponse<>(pageResponse);
   }
 
   @GET
   @Path("/{userId}")
-  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
-      @QueryParam("includeSupportAccounts") @DefaultValue("false") Boolean includeSupportAccounts) {
+  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId) {
     try {
-      User user = userService.get(userId, includeSupportAccounts);
+      User user = userService.get(userId);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
     } catch (UnauthorizedException ex) {
       log.warn("User is not found in database {}", userId);
       return new RestResponse<>(Optional.empty());
     }
   }
-
+  @GET
+  @Path("/{userId}/{accountId}")
+  public RestResponse<Optional<UserInfo>> getUserByIdAndAccountId(
+      @PathParam("userId") String userId, @PathParam("accountId") String accountId) {
+    try {
+      User user = userService.get(userId);
+      userServiceHelper.processForSCIMUsers(accountId, Arrays.asList(user), NG);
+      return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
+    } catch (UnauthorizedException ex) {
+      log.warn("User is not found in database {}", userId);
+      return new RestResponse<>(Optional.empty());
+    }
+  }
   @GET
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserByEmailId(@PathParam("emailId") String emailId) {
-    User user = userService.getUserByEmail(emailId, false);
+    User user = userService.getUserByEmail(emailId);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }
 
@@ -312,6 +399,14 @@ public class UserResourceNG {
       @QueryParam("isScimInvite") boolean isScimInvite,
       @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
     userService.completeNGInvite(userInvite, isScimInvite, shouldSendTwoFactorAuthResetEmail);
+    return new RestResponse<>(true);
+  }
+
+  @PUT
+  @Path("invites/user")
+  public RestResponse<Boolean> createUserWithAccountLevelDataForInvite(@Body @NotNull UserInviteDTO userInvite,
+      @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
+    userService.completeNGInviteWithAccountLevelData(userInvite, shouldSendTwoFactorAuthResetEmail);
     return new RestResponse<>(true);
   }
 
@@ -348,7 +443,9 @@ public class UserResourceNG {
     if (!isEmpty(userFilterNG.getEmailIds())) {
       userSet.addAll(userService.getUsersByEmail(userFilterNG.getEmailIds(), accountId));
     }
-    return new RestResponse<>(convertUserToNgUser(new ArrayList<>(userSet), false));
+    ArrayList<User> userList = new ArrayList<>(userSet);
+    userServiceHelper.processForSCIMUsers(accountId, userList, NG);
+    return new RestResponse<>(convertUserToNgUser(userList, false));
   }
 
   @POST
@@ -407,6 +504,14 @@ public class UserResourceNG {
     return new RestResponse<>(true);
   }
 
+  @POST
+  @Path("/user-account-with-source")
+  public RestResponse<Boolean> updateNGUserToCGWithSource(
+      @QueryParam("userId") String userId, @QueryParam("accountId") String accountId, @Body UserSource userSource) {
+    userService.addUserToAccount(userId, accountId, userSource);
+    return new RestResponse<>(true);
+  }
+
   @GET
   @Path("/two-factor-auth/{auth-mechanism}")
   @ApiOperation(value = "Create two factor authorization setting", nickname = "createTwoFactorAuth")
@@ -457,6 +562,15 @@ public class UserResourceNG {
         twoFactorAuthenticationManager.disableTwoFactorAuthentication(userService.getUserByEmail(emailId)))));
   }
 
+  @GET
+  @Path("reset-two-factor-auth/{userId}")
+  @ApiOperation(value = "Resend email for two factor authorization", nickname = "resetTwoFactorAuth")
+  @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
+  public RestResponse<Boolean> reset2fa(
+      @PathParam("userId") @NotEmpty String userId, @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(twoFactorAuthenticationManager.sendTwoFactorAuthenticationResetEmail(userId));
+  }
+
   @PUT
   @Path("/{userId}/verified")
   public RestResponse<Boolean> verifyToken(@PathParam("userId") String userId) {
@@ -493,13 +607,18 @@ public class UserResourceNG {
     return UserInfo.builder()
         .email(user.getEmail())
         .name(user.getName())
+        .familyName(user.getFamilyName())
+        .givenName(user.getGivenName())
         .uuid(user.getUuid())
         .locked(user.isUserLocked())
         .disabled(user.isDisabled())
         .externallyManaged(user.isImported())
         .defaultAccountId(user.getDefaultAccountId())
         .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+        .createdAt(user.getCreatedAt())
+        .lastUpdatedAt(user.getLastUpdatedAt())
         .emailVerified(user.isEmailVerified())
+        .externalId(user.getExternalUserId())
         .accounts(user.getAccounts()
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))
@@ -542,12 +661,58 @@ public class UserResourceNG {
         .build();
   }
 
+  private User validatedUserFromMarketplaceRequest(String email, String password, String inviteId, SignupDTO dto) {
+    UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (existingInvite.isCompleted()) {
+      log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
+      throw new UserRegistrationException(
+          EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
+    }
+    // TODO: Can remove after QA/PR Testing
+    log.info("DTO: {}", dto);
+
+    userService.verifyRegisteredOrAllowed(email);
+
+    User user = convertMarketplaceRequestToUser(email, password, dto);
+    if (user == null) {
+      log.error("Unexpected state: User is null because missing email, {} or password.", email);
+      throw new UserRegistrationException(MISSING_EMAIL_OR_PASSWORD, ErrorCode.INVALID_ARGUMENT, WingsException.USER);
+    }
+    return user;
+  }
+
+  private User convertMarketplaceRequestToUser(String email, String password, SignupDTO dto) {
+    if (email == null || password == null) {
+      return null;
+    }
+
+    try {
+      String passwordHash = hashpw(password, BCrypt.gensalt());
+      List<Account> accountList = new ArrayList<>();
+
+      return User.Builder.anUser()
+          .email(email)
+          .name(dto.getName())
+          .passwordHash(passwordHash)
+          .accountName(dto.getCompanyName())
+          .companyName(dto.getCompanyName())
+          .accounts(accountList)
+          .emailVerified(true)
+          .build();
+    } catch (Exception e) {
+      log.error("Unable to convert Marketplace Request to User. Exception: {}", e);
+      throw new InvalidRequestException("Unable to convert Marketplace Request to User", e);
+    }
+  }
+
   private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {
     if (userInfo == null) {
       return null;
     }
     User user = userService.getUserByEmail(userInfo.getEmail());
     user.setName(userInfo.getName());
+    user.setFamilyName(userInfo.getFamilyName());
+    user.setGivenName(userInfo.getGivenName());
     return user;
   }
 

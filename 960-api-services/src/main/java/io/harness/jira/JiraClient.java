@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.network.Http;
 import io.harness.network.SafeHttpCall;
 import io.harness.validation.Validator;
@@ -36,6 +37,7 @@ import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hibernate.validator.constraints.NotBlank;
 import retrofit2.Call;
@@ -60,6 +62,7 @@ public class JiraClient {
           .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
           .build();
   private static final String REPORTER_FIELD_NAME = "Reporter";
+  private static final String ISSUE_TYPE_FIELD_NAME = "Issue Type";
 
   private final JiraInternalConfig config;
   private final JiraRestClient restClient;
@@ -216,6 +219,7 @@ public class JiraClient {
         if (!fromCG) {
           createMetadataNGFields.removeField(REPORTER_FIELD_NAME);
         }
+        createMetadataNGFields.removeField(ISSUE_TYPE_FIELD_NAME);
         originalMetadataFromNewFieldsMetadata(projectKey, createMetadata, issueTypeNG, createMetadataNGFields);
       }
     } else {
@@ -227,6 +231,7 @@ public class JiraClient {
       if (!ignoreComment) {
         createMetadata.addField(COMMENT_FIELD);
       }
+      createMetadata.removeField(ISSUE_TYPE_FIELD_NAME);
     }
 
     if (fetchStatus) {
@@ -282,7 +287,8 @@ public class JiraClient {
    * Get the issue update metadata information - schema information for the issue with the given key.
    *
    * There is special handling for these fields:
-   * - project, issue type and status are not part of the fields
+   * - project and status are not part of the fields
+   * - issuetype is a part of fields
    * - timetracking: returned as 2 string fields - "Original Estimate", "Remaining Estimate"
    * - Fields treated as OPTION type fields:
    *   - resolution
@@ -337,8 +343,20 @@ public class JiraClient {
    */
   public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
       Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG) {
-    JiraIssueCreateMetadataNG createMetadata =
-        getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled, fromCG);
+    JiraIssueCreateMetadataNG createMetadata;
+
+    try {
+      createMetadata = getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled, fromCG);
+    } catch (Exception ex) {
+      log.warn("Failed to fetch createMetadata while creating the issue", ex);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check if project key and issue type provided are correct",
+          "Failed to fetch create metadata while creating the issue",
+          new JiraClientException(String.format("Failed to fetch create metadata while creating the issue: %s",
+                                      ExceptionUtils.getMessage(ex)),
+              ex));
+    }
+
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
       throw new InvalidRequestException(String.format("Invalid project: %s", projectKey));
@@ -381,7 +399,7 @@ public class JiraClient {
    *   - component
    *   - priority
    *   - version
-   *
+   * - to update issue type: sent as { Issue Type : name of the target issue type } for ex {Issue Type: Story}
    * @param issueKey           the key of the issue to be updated
    * @param transitionToStatus the status to transition to
    * @param transitionName     the transition name to choose in case multiple transitions have same to status
@@ -496,20 +514,23 @@ public class JiraClient {
 
   private JiraRestClient createRestClient() {
     String url = config.getJiraUrl() + "rest/api/2/";
-    OkHttpClient okHttpClient =
-        getOkHttpClientBuilder()
-            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-            .addInterceptor(chain -> {
-              Request newRequest =
-                  chain.request()
-                      .newBuilder()
-                      .addHeader("Authorization", Credentials.basic(config.getUsername(), config.getPassword()))
-                      .build();
-              return chain.proceed(newRequest);
-            })
-            .build();
+    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
+                                    .addInterceptor(chain -> {
+                                      Request newRequest =
+                                          chain.request()
+                                              .newBuilder()
+                                              // if auth token not present , use older deprecated fields
+                                              .addHeader("Authorization",
+                                                  StringUtils.isBlank(config.getAuthToken())
+                                                      ? Credentials.basic(config.getUsername(), config.getPassword())
+                                                      : config.getAuthToken())
+                                              .build();
+                                      return chain.proceed(newRequest);
+                                    })
+                                    .build();
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
                             .baseUrl(url)

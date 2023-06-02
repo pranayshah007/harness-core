@@ -19,7 +19,6 @@ import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
@@ -37,7 +36,7 @@ public class SweepingOutputServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRASHANT, intermittent = true)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void shouldGetInstanceId() {
     persistence.ensureIndexForTesting(SweepingOutputInstance.class);
 

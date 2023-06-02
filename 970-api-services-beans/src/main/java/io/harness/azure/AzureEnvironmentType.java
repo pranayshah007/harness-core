@@ -7,4 +7,15 @@
 
 package io.harness.azure;
 
-public enum AzureEnvironmentType { AZURE, AZURE_US_GOVERNMENT }
+import lombok.Getter;
+
+public enum AzureEnvironmentType {
+  AZURE("AzurePublicCloud"),
+  AZURE_US_GOVERNMENT("AzureUSGovernmentCloud");
+
+  @Getter private String displayName;
+
+  AzureEnvironmentType(String displayName) {
+    this.displayName = displayName;
+  }
+}

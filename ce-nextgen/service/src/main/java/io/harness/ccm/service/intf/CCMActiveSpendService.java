@@ -12,6 +12,4 @@ import io.harness.ccm.remote.beans.CostOverviewDTO;
 public interface CCMActiveSpendService {
   CostOverviewDTO getActiveSpendStats(long startTime, long endTime, String accountIdentifier);
   CostOverviewDTO getForecastedSpendStats(long startTime, long endTime, String accountIdentifier);
-  Long getActiveSpend(long startTime, long endTime, String accountIdentifier);
-  Long getActiveSpendForPreviousPeriod(long startTime, long endTime, String accountIdentifier);
 }

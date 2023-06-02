@@ -40,6 +40,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(PL)
@@ -85,10 +86,15 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
   private List<String> listVaultsInternal(AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO) throws IOException {
     List<Vault> vaultList = new ArrayList<>();
     HttpClient httpClient = AzureUtils.getAzureHttpClient();
-    TokenCredential credentials =
-        KeyVaultAuthenticator.getAuthenticationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
-            String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
-            azureKeyVaultConnectorDTO.getTenantId(), httpClient, azureKeyVaultConnectorDTO.getAzureEnvironmentType());
+    TokenCredential credentials = null;
+    if (BooleanUtils.isTrue(azureKeyVaultConnectorDTO.getUseManagedIdentity())) {
+      credentials = KeyVaultAuthenticator.getManagedIdentityCredentials(
+          azureKeyVaultConnectorDTO.getManagedClientId(), azureKeyVaultConnectorDTO.getAzureManagedIdentityType());
+    } else {
+      credentials = KeyVaultAuthenticator.getAuthenticationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
+          String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
+          azureKeyVaultConnectorDTO.getTenantId(), httpClient, azureKeyVaultConnectorDTO.getAzureEnvironmentType());
+    }
 
     AzureResourceManager azureResourceManager =
         KeyVaultAuthenticator.getAzureResourceManager(credentials, azureKeyVaultConnectorDTO, httpClient);

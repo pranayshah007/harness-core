@@ -87,8 +87,7 @@ public class ChangeTracker {
         MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig))
             .readPreference(readPreference)
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("cg_changestream")
-            .description("cg_changestream"));
+            .applicationName("cg_changestream"));
   }
 
   private void connectToMongoDatabase() {

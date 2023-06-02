@@ -23,8 +23,10 @@ import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expressions.functors.AccountFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
+import io.harness.pms.expressions.functors.InputSetFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
 import io.harness.pms.expressions.functors.PipelineExecutionFunctor;
 import io.harness.pms.expressions.functors.ProjectFunctor;
@@ -32,6 +34,7 @@ import io.harness.pms.expressions.functors.RemoteExpressionFunctor;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -55,9 +58,11 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
   @Inject ExecutionInputService executionInputService;
 
+  @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
+
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
-      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
-    super(variableResolverTracker, ambiance, entityTypes, refObjectSpecific);
+      Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
+    super(variableResolverTracker, ambiance, entityTypes, refObjectSpecific, contextMap);
   }
 
   @Override
@@ -68,10 +73,13 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     addToContext("org", new OrgFunctor(organizationClient, ambiance));
     addToContext("project", new ProjectFunctor(projectClient, ambiance));
 
-    addToContext("pipeline", new PipelineExecutionFunctor(pmsExecutionService, pipelineExpressionHelper, ambiance));
+    addToContext("pipeline",
+        new PipelineExecutionFunctor(
+            pmsExecutionService, pipelineExpressionHelper, planExecutionMetadataService, ambiance));
     addToContext("executionInput", new ExecutionInputExpressionFunctor(executionInputService, ambiance));
 
-    addToContext("strategy", new StrategyFunctor(ambiance));
+    addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache));
+    addToContext("inputSet", new InputSetFunctor(pmsExecutionSummaryService, ambiance));
 
     // Trigger functors
     addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));
@@ -98,5 +106,6 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     // TODO: Replace with step category
     addGroupAlias(YAMLFieldNameConstants.STAGE, StepOutcomeGroup.STAGE.name());
     addGroupAlias(YAMLFieldNameConstants.STEP, StepOutcomeGroup.STEP.name());
+    addGroupAlias(YAMLFieldNameConstants.STEP_GROUP, StepCategory.STEP_GROUP.name());
   }
 }

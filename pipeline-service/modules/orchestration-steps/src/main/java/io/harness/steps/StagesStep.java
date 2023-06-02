@@ -17,5 +17,7 @@ import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StagesStep extends NGSectionStepWithRollbackInfo {
   public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(OrchestrationStepTypes.NG_STAGES_STEP).setStepCategory(StepCategory.STAGES).build();
+  public static final StepType DEPRECATED_STEP_TYPE =
       StepType.newBuilder().setType(OrchestrationStepTypes.NG_STAGES_STEP).setStepCategory(StepCategory.STEP).build();
 }

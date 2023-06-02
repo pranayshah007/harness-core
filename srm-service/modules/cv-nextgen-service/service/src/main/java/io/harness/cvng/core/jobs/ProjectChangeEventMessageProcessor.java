@@ -73,10 +73,23 @@ public class ProjectChangeEventMessageProcessor extends EntityChangeEventMessage
 
   @VisibleForTesting
   void processDeleteAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    ENTITIES_MAP.forEach((entity, handler)
-                             -> injector.getInstance(handler).deleteByProjectIdentifier(entity,
-                                 projectEntityChangeDTO.getAccountIdentifier(),
-                                 projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier()));
+    ENTITIES_MAP.forEach((entity, handler) -> {
+      log.info("Deleting all records of entity {} for accountId {} orgIdentifier {} projectIdentifier {}",
+          entity.getSimpleName(), projectEntityChangeDTO.getAccountIdentifier(),
+          projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+      try {
+        injector.getInstance(handler).deleteByProjectIdentifier(entity, projectEntityChangeDTO.getAccountIdentifier(),
+            projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+        log.info("Deleted all records of entity {} for accountId {} orgIdentifier {} projectIdentifier {}",
+            entity.getSimpleName(), projectEntityChangeDTO.getAccountIdentifier(),
+            projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+      } catch (Exception exception) {
+        log.error(
+            "Error while deleting all records of entity {} for accountId {} orgIdentifier {} projectIdentifier {}",
+            entity.getSimpleName(), projectEntityChangeDTO.getAccountIdentifier(),
+            projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier(), exception);
+      }
+    });
   }
 
   private boolean validateMessage(Message message) {

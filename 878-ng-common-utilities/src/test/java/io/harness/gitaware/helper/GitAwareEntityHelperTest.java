@@ -14,7 +14,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -79,6 +79,17 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   String yamlFilePath = ".harness/test.yaml";
   EntityType entityType;
 
+  private static final String BranchName = "branch";
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final String ENTITY_REPO_URL = "https://github.com/adivishy1/testRepo";
+  private static final String PARENT_ENTITY_REPO = "testRepo";
+
+  private static final String PARENT_ENTITY_REPO2 = "testRepo2";
+  private static final String REPO = "testRepo";
+  private static final String PARENT_ENTITY_CONNECTOR_REF = "account.github_connector";
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -118,7 +129,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, branch, "", yamlFilePath, connectorRef, false, entityType, null, false);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware = gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
     assertThat(gitAware.getData()).isEqualTo(data);
@@ -137,7 +148,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, "", "", yamlFilePath, connectorRef, false, entityType, null, false);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware =
         gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, __default__branchGitParams, null);
@@ -157,7 +168,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, branch, "", yamlFilePath, connectorRef, false, entityType, null, false);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -175,7 +186,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, "", yamlFilePath, connectorRef, false, entityType, null);
+        .getFileByBranch(scope, repoName, "", "", yamlFilePath, connectorRef, false, entityType, null, false);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, __default__branchGitParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -339,6 +350,35 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     assertTrue(remoteEntities.containsKey(uniqueKey2));
     GitAware gitAware2 = remoteEntities.get(uniqueKey2);
     assertEquals(gitAware2.getData(), data2);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetWorkingBranchRemote() {
+    GitEntityInfo branchInfo =
+        GitEntityInfo.builder().branch(BranchName).parentEntityRepoName(PARENT_ENTITY_REPO).build();
+    setupGitContext(branchInfo);
+    //    SAME REPO
+    assertThat(gitAwareEntityHelper.getWorkingBranch(REPO)).isEqualTo(BranchName);
+
+    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoName(PARENT_ENTITY_REPO2).build();
+    setupGitContext(branchInfo);
+    //    DIFF REPO
+    assertThat(gitAwareEntityHelper.getWorkingBranch(REPO)).isEqualTo("");
+
+    branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoName(null).build();
+    setupGitContext(branchInfo);
+    assertThat(gitAwareEntityHelper.getWorkingBranch(REPO)).isEqualTo(BranchName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetWorkingBranchInline() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
+    setupGitContext(branchInfo);
+    assertThat(gitAwareEntityHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
   }
 
   @Data

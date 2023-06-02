@@ -23,8 +23,10 @@ import lombok.experimental.FieldDefaults;
 public class GetFileGitContextRequestParams {
   String repoName;
   String branchName;
+  String commitId;
   String filePath;
   String connectorRef;
   boolean loadFromCache;
   EntityType entityType;
+  boolean getOnlyFileContent;
 }

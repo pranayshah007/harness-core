@@ -8,9 +8,11 @@
 package io.harness.steps.resourcerestraint.service;
 
 import static io.harness.exception.WingsException.USER;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.repositories.ResourceRestraintRepository;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
@@ -19,6 +21,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.dao.DuplicateKeyException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -53,6 +56,12 @@ public class ResourceRestraintServiceImpl implements ResourceRestraintService {
 
   @Override
   public void deleteAllRestraintForGivenAccount(String accountId) {
-    resourceRestraintRepository.deleteByAccountId(accountId);
+    if (EmptyPredicate.isEmpty(accountId)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      resourceRestraintRepository.deleteByAccountId(accountId);
+      return true;
+    });
   }
 }

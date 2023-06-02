@@ -31,6 +31,7 @@ public class AccountDetails {
   private String cluster;
   private boolean createdFromNG;
   private DefaultExperience defaultExperience;
+  private boolean isCrossGenerationAccessEnabled;
   private LicenseInfo licenseInfo;
   private CeLicenseInfo ceLicenseInfo;
   private int activeServiceCount;

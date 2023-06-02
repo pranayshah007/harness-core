@@ -9,13 +9,16 @@ package io.harness.ng.overview.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.CustomSequenceDTO;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
@@ -23,7 +26,7 @@ import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
 import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
-import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
@@ -31,6 +34,9 @@ import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
+import io.harness.ng.overview.dto.OpenTaskDetails;
+import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.SequenceToggleDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
@@ -39,6 +45,7 @@ import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.ng.overview.dto.ServicePipelineWithRevertInfo;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
 
 import java.util.List;
@@ -102,10 +109,11 @@ public interface CDOverviewDashboardService {
   EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
-  InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentList(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String environmentId);
+  InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String environmentId, String envGrpId);
   InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String environmentId, String displayName);
+      String projectIdentifier, String serviceId, String environmentId, String envGrpId, String displayName,
+      boolean filterOnArtifact);
 
   InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
@@ -119,11 +127,17 @@ public interface CDOverviewDashboardService {
   InstanceGroupedByServiceList.InstanceGroupedByService getActiveServiceDeploymentsList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
-  EnvironmentInstanceDetails getEnvironmentInstanceDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+  EnvironmentGroupInstanceDetails getEnvironmentInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO,
+      boolean returnDefaultSequence);
 
   ArtifactInstanceDetails getArtifactInstanceDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+
+  OpenTaskDetails getOpenTasks(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, long startInterval);
+
+  List<String> getPipelineExecutionsWhereRollbackOccurred(List<String> pipelineExecutionIdList);
 
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds, String infraId, String clusterId,
@@ -156,4 +170,25 @@ public interface CDOverviewDashboardService {
       Set<String> serviceIds, Set<String> envIds);
 
   Map<String, ServicePipelineInfo> getPipelineExecutionDetails(List<String> pipelineExecutionIdList);
+
+  Map<String, ServicePipelineWithRevertInfo> getPipelineExecutionDetailsWithRevertInfo(
+      List<String> pipelineExecutionIdList);
+
+  PipelineExecutionCountInfo getPipelineExecutionCountInfo(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, Long startInterval, Long endInterval, String artifactPath,
+      String artifactVersion, String artifact, String status);
+
+  CustomSequenceDTO getCustomSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  CustomSequenceDTO getDefaultSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  ServiceSequence saveCustomSequence(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, CustomSequenceDTO customSequenceDTO);
+
+  ServiceSequence useCustomSequence(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, boolean useCustomSequence);
+  SequenceToggleDTO useCustomSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 }

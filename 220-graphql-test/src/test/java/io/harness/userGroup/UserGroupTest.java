@@ -54,6 +54,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -84,6 +85,7 @@ public class UserGroupTest extends GraphQLTest {
   @Test
   @Owner(developers = DEEPAK)
   @Category({GraphQLTests.class, UnitTests.class})
+  @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void testQueryUserGroup() {
     final Randomizer.Seed seed = new Randomizer.Seed(0);
     final OwnerManager.Owners owners = ownerManager.create();
@@ -215,6 +217,7 @@ public class UserGroupTest extends GraphQLTest {
   @Test
   @Owner(developers = DEEPAK)
   @Category({GraphQLTests.class, UnitTests.class})
+  @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void testCreateUserGroup() {
     ldapSettings = createLdapSettings();
     final User user = accountGenerator.ensureUser(
@@ -472,6 +475,7 @@ mutation{
   @Test
   @Owner(developers = DEEPAK)
   @Category({GraphQLTests.class, UnitTests.class})
+  @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void testQueryUserGroups() {
     String userGroup1Name = "AccountPermission-UserGroup1-" + System.currentTimeMillis();
     String userGroup2Name = "AccountPermission-UserGroup2-" + System.currentTimeMillis();

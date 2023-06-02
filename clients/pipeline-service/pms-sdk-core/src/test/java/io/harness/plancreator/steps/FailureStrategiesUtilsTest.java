@@ -8,6 +8,8 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.ANKIT_TIWARI;
+import static io.harness.yaml.core.failurestrategy.NGFailureType.ALL_ERRORS;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.AUTHENTICATION_ERROR;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.AUTHORIZATION_ERROR;
 
@@ -15,6 +17,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.yaml.ParameterField;
@@ -29,6 +32,7 @@ import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -185,5 +189,60 @@ public class FailureStrategiesUtilsTest extends PmsSdkCoreTestBase {
     Collection<FailureType> failureTypesIgnore =
         actionConfigCollectionMap.get(IgnoreFailureActionConfig.builder().build());
     assertThat(failureTypesIgnore).containsOnly(FailureType.AUTHENTICATION_FAILURE);
+  }
+
+  @Test
+  @Owner(developers = ANKIT_TIWARI)
+  @Category(UnitTests.class)
+  public void shouldThrowErrorForMultipleAllErrorsForStepFailures() {
+    Map<FailureStrategyActionConfig, Collection<FailureType>> actionConfigCollectionMap;
+
+    List<FailureStrategyConfig> stepFailureStrategies = new ArrayList<>();
+    stepFailureStrategies.add(FailureStrategyConfig.builder()
+                                  .onFailure(OnFailureConfig.builder()
+                                                 .errors(Collections.singletonList(ALL_ERRORS))
+                                                 .action(IgnoreFailureActionConfig.builder().build())
+                                                 .build())
+                                  .build());
+
+    stepFailureStrategies.add(FailureStrategyConfig.builder()
+                                  .onFailure(OnFailureConfig.builder()
+                                                 .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                                                 .action(AbortFailureActionConfig.builder().build())
+                                                 .build())
+                                  .build());
+
+    try {
+      FailureStrategiesUtils.priorityMergeFailureStrategies(stepFailureStrategies, null, null);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo("AllErrors are defined multiple times either in stage or step failure strategies.");
+    }
+  }
+
+  @Test
+  @Owner(developers = ANKIT_TIWARI)
+  @Category(UnitTests.class)
+  public void shouldNotThrowErrorForMultipleAllErrorsForStepGroupFailures() {
+    Map<FailureStrategyActionConfig, Collection<FailureType>> actionConfigCollectionMap;
+
+    List<FailureStrategyConfig> stepGroupFailureStrategies = new ArrayList<>();
+    stepGroupFailureStrategies.add(FailureStrategyConfig.builder()
+                                       .onFailure(OnFailureConfig.builder()
+                                                      .errors(Collections.singletonList(ALL_ERRORS))
+                                                      .action(IgnoreFailureActionConfig.builder().build())
+                                                      .build())
+                                       .build());
+
+    stepGroupFailureStrategies.add(FailureStrategyConfig.builder()
+                                       .onFailure(OnFailureConfig.builder()
+                                                      .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                                                      .action(AbortFailureActionConfig.builder().build())
+                                                      .build())
+                                       .build());
+
+    Map<FailureStrategyActionConfig, Collection<FailureType>> failureStrategyActionConfigCollectionMap =
+        FailureStrategiesUtils.priorityMergeFailureStrategies(null, stepGroupFailureStrategies, null);
+    assertThat(failureStrategyActionConfigCollectionMap).isNotEmpty();
   }
 }

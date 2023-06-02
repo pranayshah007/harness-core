@@ -83,9 +83,10 @@ public class KubernetesExceptionHints {
       "Please check values.yaml file(s) for any missing/null fields inside manifests or any unresolved expressions referencing harness variables.";
 
   public final String API_CLIENT_CREATE_FAILED = "Check kubernetes connector for invalid values";
-  public final String API_CLIENT_CA_CERT_INVALID_FORMAT = "Check if given CA certificate is a valid X.509 certificate";
+  public final String API_CLIENT_CA_CERT_INVALID =
+      "Check if given %s field is a valid X.509 certificate and is from a trusted or verified source.";
   public final String API_CLIENT_CA_CERT_INCOMPLETE =
-      "Check if given CA certificate is in encoded in base64 and all data, header and footer are in place";
+      "Check if given %s field is properly encoded in base64 and all data, header and footer are in place";
   public final String MANIFEST_RENDER_ERROR_GO_TEMPLATE =
       "Please check if the given manifests are valid and can be rendered by Go template. To know more about Go templating, refer: \nhttps://community.harness.io/t/harness-local-go-templating/460 \nhttps://docs.harness.io/article/mwy6zgz8gu-use-go-templating-in-kubernetes-manifests#notes";
   public final String MANIFEST_RENDER_ERROR_HELM =
@@ -100,5 +101,11 @@ public class KubernetesExceptionHints {
   public final String BASE_64_ENCODED_CHECK =
       "If you have certs/secrets which are referenced in templates or values.yaml file(s), ensure that these secrets are base64 encoded";
   public final String INVALID_TEMPLATE_PATH = "Please check if the given openshift template file are valid";
+  public final String INVALID_OPENSHIFT_FILES =
+      "Please check if the given openshift template and param files are valid";
   public final String TOO_LARGE_MANIFEST_YAML = "The dry run manifest yaml file might be too large to process.";
+  public final String AVAILABLE_FILES_IN_MANIFEST_DIRECTORY_FORMAT = "Available files in manifest directory:\n%s";
+  public final String MAYBE_DID_YOU_MEAN_FILE_FORMAT = "Maybe did you mean: %s";
+  public final String NO_FILES_FOUND_IN_MANIFEST_DIRECTORY =
+      "Check manifest folder/file path in manifest configuration";
 }

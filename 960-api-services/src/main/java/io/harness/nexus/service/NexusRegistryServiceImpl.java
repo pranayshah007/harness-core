@@ -10,19 +10,25 @@ package io.harness.nexus.service;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.beans.ArtifactMetaInfo;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.expression.RegexFunctor;
 import io.harness.nexus.NexusClientImpl;
+import io.harness.nexus.NexusHelper;
 import io.harness.nexus.NexusRequest;
 
 import software.wings.utils.RepositoryFormat;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -34,22 +40,22 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class NexusRegistryServiceImpl implements NexusRegistryService {
-  private static final int MAX_NUMBER_OF_BUILDS = 250;
   @Inject NexusClientImpl nexusClient;
+
+  private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
 
   @Override
   public List<BuildDetailsInternal> getBuilds(NexusRequest nexusConfig, String repositoryName, String port,
-      String artifactName, String repositoryFormat, int maxNumberOfBuilds, String groupId, String artifactId,
-      String extension, String classifier, String packageName, String group) {
+      String artifactName, String repositoryFormat, String groupId, String artifactId, String extension,
+      String classifier, String packageName, String group, int maxBuilds) {
     List<BuildDetailsInternal> buildDetails;
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       buildDetails =
-          nexusClient.getArtifactsVersions(nexusConfig, repositoryName, port, artifactName, repositoryFormat);
-      buildDetails.sort(new BuildDetailsInternalComparatorAscending());
+          nexusClient.getDockerArtifactVersions(nexusConfig, repositoryName, port, artifactName, repositoryFormat);
       return buildDetails;
     } else if (RepositoryFormat.maven.name().equalsIgnoreCase(repositoryFormat)) {
-      buildDetails =
-          nexusClient.getArtifactsVersions(nexusConfig, repositoryName, groupId, artifactId, extension, classifier);
+      buildDetails = nexusClient.getArtifactsVersions(
+          nexusConfig, repositoryName, groupId, artifactId, extension, classifier, maxBuilds);
       return buildDetails;
     } else if (RepositoryFormat.npm.name().equalsIgnoreCase(repositoryFormat)
         || RepositoryFormat.nuget.name().equalsIgnoreCase(repositoryFormat)) {
@@ -71,7 +77,6 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       List<BuildDetailsInternal> buildDetails;
       buildDetails = nexusClient.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
-      buildDetails.sort(new BuildDetailsInternalComparatorAscending());
       return buildDetails;
     }
     throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
@@ -83,7 +88,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tagRegex, String groupId, String artifactId,
-      String extension, String classifier, String packageName, String group) {
+      String extension, String classifier, String packageName, String group, int maxBuilds) {
     try {
       Pattern.compile(tagRegex);
     } catch (PatternSyntaxException e) {
@@ -94,7 +99,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     }
 
     List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
-        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName, group);
+        groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream()
                  .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                  .sorted(new BuildDetailsInternalComparatorDescending())
@@ -109,19 +114,70 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
           new NexusRegistryException(
               String.format("Could not find an artifact tag that matches tagRegex '%s'", tagRegex)));
     }
+    if (RepositoryFormat.docker.name().equals(repositoryFormat)) {
+      return verifyBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, builds.get(0).getNumber(),
+          groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
+    }
     return builds.get(0);
   }
 
   @Override
   public BuildDetailsInternal verifyBuildNumber(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
-      String classifier, String packageName, String group) {
+      String classifier, String packageName, String group, int maxBuilds) {
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
-      return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+      ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+      try {
+        ArtifactMetaInfo artifactMetaInfoSchemaVersion1 =
+            nexusClient.getArtifactMetaInfo(nexusConfig, repository, artifactName, tag, true);
+        if (artifactMetaInfoSchemaVersion1 != null) {
+          artifactMetaInfo.setSha(artifactMetaInfoSchemaVersion1.getSha());
+          artifactMetaInfo.setLabels(artifactMetaInfoSchemaVersion1.getLabels());
+        }
+      } catch (Exception e) {
+        log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+      }
+      try {
+        ArtifactMetaInfo artifactMetaInfoSchemaVersion2 =
+            nexusClient.getArtifactMetaInfo(nexusConfig, repository, artifactName, tag, false);
+        if (artifactMetaInfoSchemaVersion2 != null) {
+          artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+        }
+      } catch (Exception e) {
+        log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+      }
+
+      if (EmptyPredicate.isEmpty(artifactMetaInfo.getSha()) && EmptyPredicate.isEmpty(artifactMetaInfo.getShaV2())) {
+        return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+      }
+      String repoName = ArtifactUtilities.getNexusRepositoryNameNG(
+          nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl(), artifactName);
+      String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
+      Map<String, String> metadata = new HashMap<>();
+      metadata.put(ArtifactMetadataKeys.IMAGE, getImage(repoName, tag));
+      metadata.put(ArtifactMetadataKeys.TAG, tag);
+      metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
+      String baseUrl = NexusHelper.getBaseUrl(nexusConfig);
+      String buildUrl = String.format("%srepository/%s/v2/%s/manifests/%s", baseUrl, repository, artifactName, tag);
+      String artifactPath = String.format("v2/%s/manifests/%s", artifactName, tag);
+      return BuildDetailsInternal.builder()
+          .number(tag)
+          .metadata(metadata)
+          .artifactMetaInfo(artifactMetaInfo)
+          .artifactPath(artifactPath)
+          .buildUrl(buildUrl)
+          .build();
     } else {
       return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag, groupId, artifactId,
-          extension, classifier, packageName, group);
+          extension, classifier, packageName, group, maxBuilds);
     }
+  }
+
+  private String getImage(String repoName, String tag) {
+    if (GARUtils.isSHA(tag)) {
+      return String.format("%s@%s", repoName, tag);
+    }
+    return String.format("%s:%s", repoName, tag);
   }
 
   @Override
@@ -136,9 +192,9 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
 
   private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
-      String classifier, String packageName, String group) {
+      String classifier, String packageName, String group, int maxBuilds) {
     List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
-        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName, group);
+        groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
     if (builds.size() == 1) {

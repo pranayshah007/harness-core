@@ -70,9 +70,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,12 +85,14 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, SecurityStageNode stageNode) {
     log.info("Received plan creation request for security stage {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -110,6 +115,8 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
 
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode);
+
+    addStrategyFieldDependencyIfPresent(ctx, stageNode, planCreationResponseMap, metadataMap);
 
     putNewExecutionYAMLInResponseMap(executionField, planCreationResponseMap, modifiedExecutionPlan, parentNode);
 
@@ -156,7 +163,7 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
     stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
     StageElementParametersBuilder stageParameters =
-        CIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
+        ciStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
@@ -168,7 +175,7 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
         .stepParameters(stageParameters.build())
         .stepType(getStepType(stageNode))
         .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+        .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())

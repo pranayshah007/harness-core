@@ -7,6 +7,7 @@
 
 package io.harness.licensing;
 
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.rule.OwnerRule.BOOPESH;
 
@@ -19,7 +20,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -38,7 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 
-@OwnedBy(HarnessTeam.PLG)
+@OwnedBy(GTM)
 public class ModuleLicenseEventListenerTest extends CategoryTest {
   private LicenseService licenseService;
 

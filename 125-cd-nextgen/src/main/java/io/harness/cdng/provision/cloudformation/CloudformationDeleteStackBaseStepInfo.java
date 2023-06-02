@@ -7,7 +7,7 @@
 
 package io.harness.cdng.provision.cloudformation;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cloudformationDeleteStackBaseStepInfo")
 @RecasterAlias("io.harness.cdng.provision.cloudformation.CloudformationDeleteStackBaseStepInfo")
 public class CloudformationDeleteStackBaseStepInfo {
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

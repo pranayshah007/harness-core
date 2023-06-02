@@ -18,6 +18,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
@@ -65,6 +66,12 @@ public class ExecutionSweepingOutputInstance implements PersistentEntity, UuidAc
                  .field(ExecutionSweepingOutputKeys.name)
                  .build())
         .add(CompoundMongoIndex.builder().name("producedByRuntime_Idx").field("producedBy.runtimeId").build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("planExecutionId_fully_qualified_name_createdAt_Idx")
+                 .field(ExecutionSweepingOutputKeys.planExecutionId)
+                 .field(ExecutionSweepingOutputKeys.fullyQualifiedName)
+                 .descRangeField(ExecutionSweepingOutputKeys.createdAt)
+                 .build())
         .build();
   }
   @Wither @Id @dev.morphia.annotations.Id String uuid;
@@ -82,6 +89,8 @@ public class ExecutionSweepingOutputInstance implements PersistentEntity, UuidAc
   @Wither @Version Long version;
 
   String groupName;
+
+  String fullyQualifiedName;
 
   public String getOutputValueJson() {
     if (!EmptyPredicate.isEmpty(valueOutput)) {

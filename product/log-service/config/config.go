@@ -11,7 +11,7 @@ import (
 
 // Config provides the system configuration.
 type Config struct {
-	Debug bool `envconfig:"LOG_SERVICE_DEBUG"`
+	Debug bool `envconfig:"LOG_SERVICE_DEBUG_MODE"`
 	Trace bool `envconfig:"LOG_SERVICE_TRACE"`
 
 	Auth struct {
@@ -61,6 +61,12 @@ type Config struct {
 		Enabled     bool   `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_ENABLED"`
 		GcpProject  string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_PROJECT"`
 		GcpJsonPath string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_JSON_PATH"`
+	}
+
+	GenAI struct {
+		Endpoint          string `envconfig:"LOG_SERVICE_GENAI_ENDPOINT"`
+		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET" secret:"true"`
+		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
 	}
 }
 

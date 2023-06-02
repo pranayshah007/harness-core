@@ -23,6 +23,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -117,11 +118,19 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
       StepResponse.StepOutcome stepOutcome =
           instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
 
-      stepResponse =
-          stepResponseBuilder.status(Status.SUCCEEDED)
-              .stepOutcome(StepResponse.StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).build())
-              .stepOutcome(stepOutcome)
+      AsgRollingRollbackResult asgRollingRollbackResult = asgRollingRollbackResponse.getAsgRollingRollbackResult();
+      AsgRollingRollbackOutcome asgRollingRollbackOutcome =
+          AsgRollingRollbackOutcome.builder()
+              .autoScalingGroupContainer(asgRollingRollbackResult.getAutoScalingGroupContainer())
               .build();
+
+      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
+                         .stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(OutcomeExpressionConstants.OUTPUT)
+                                          .outcome(asgRollingRollbackOutcome)
+                                          .build())
+                         .stepOutcome(stepOutcome)
+                         .build();
     }
     return stepResponse;
   }

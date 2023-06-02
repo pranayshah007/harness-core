@@ -22,9 +22,9 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -104,14 +104,14 @@ public class ArtifactServiceImplTest extends WingsBaseTest {
   public void shouldFetchAMIBuilds() {
     artifactStream.setRegion("TestRegion");
 
-    assertThat(artifactService.prepareArtifactWithMetadataQuery(artifactStream)).isNotNull();
+    assertThat(artifactService.prepareArtifactWithMetadataQuery(artifactStream, false)).isNotNull();
   }
 
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void shouldFetchNonAMIBuilds() {
-    assertThat(artifactService.prepareArtifactWithMetadataQuery(jenkinsArtifactStream)).isNotNull();
+    assertThat(artifactService.prepareArtifactWithMetadataQuery(jenkinsArtifactStream, false)).isNotNull();
   }
 
   @Test

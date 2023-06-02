@@ -10,8 +10,10 @@ package io.harness.pms.redisConsumer;
 import lombok.Builder;
 import lombok.Data;
 
+// TODO: PLG-2014 This class is to be moved to generic changestreams package for re-use
 @Data
 @Builder
 public class DebeziumConsumersConfig {
   DebeziumConsumerConfig planExecutionsSummaryStreaming;
+  DebeziumConsumerConfig moduleLicensesStreaming;
 }

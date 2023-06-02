@@ -32,7 +32,8 @@ public interface Adviser {
   default List<FailureType> getAllFailureTypes(AdvisingEvent advisingEvent) {
     FailureInfo failureInfo = advisingEvent.getFailureInfo();
     if (failureInfo == null) {
-      return Collections.emptyList();
+      // Returning UNKNOWN_FAILURE if failure-info not present.
+      return Collections.singletonList(FailureType.UNKNOWN_FAILURE);
     }
     Set<FailureType> failureTypesList = new HashSet<>(failureInfo.getFailureTypesList());
     List<FailureData> failureDataList = failureInfo.getFailureDataList();
@@ -40,6 +41,10 @@ public interface Adviser {
       if (failureData != null && EmptyPredicate.isNotEmpty(failureData.getFailureTypesList())) {
         failureTypesList.addAll(failureData.getFailureTypesList());
       }
+    }
+    if (EmptyPredicate.isEmpty(failureTypesList)) {
+      // Returning UNKNOWN_FAILURE if any failure-type not sent by the step.
+      return Collections.singletonList(FailureType.UNKNOWN_FAILURE);
     }
     return new ArrayList<>(failureTypesList);
   }

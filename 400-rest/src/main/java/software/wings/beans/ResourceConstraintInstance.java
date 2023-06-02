@@ -85,6 +85,7 @@ public class ResourceConstraintInstance implements PersistentRegularIterable, Uu
                  .field(ResourceConstraintInstanceKeys.releaseEntityId)
                  .field(ResourceConstraintInstanceKeys.state)
                  .build())
+
         .build();
   }
   public static final List<String> NOT_FINISHED_STATES =

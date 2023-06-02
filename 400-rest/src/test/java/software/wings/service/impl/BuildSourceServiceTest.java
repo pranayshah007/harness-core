@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.MILOS;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static software.wings.beans.template.artifactsource.CustomRepositoryMapping.AttributeMapping.builder;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -31,17 +32,18 @@ import static software.wings.utils.WingsTestConstants.TRIGGER_NAME;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
@@ -69,6 +71,7 @@ import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.artifact.BambooArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
+import software.wings.beans.artifact.GcsArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.beans.command.GcbTaskParams;
@@ -87,8 +90,10 @@ import software.wings.helpers.ext.gcs.GcsService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.nexus.NexusService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AmazonS3BuildService;
+import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.AzureArtifactsBuildService;
@@ -126,6 +131,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
   public static final String DELEGATE_SELECTOR = "delegateSelector";
   private final SettingsService settingsService = Mockito.mock(SettingsServiceImpl.class);
   @Mock private ArtifactStreamService artifactStreamService;
+  @Mock private ArtifactService artifactService;
   @Mock private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Mock BambooBuildService bambooBuildService;
   @Mock GcsBuildService gcsBuildService;
@@ -1412,5 +1418,122 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     when(nexusService.existsVersion(any(), anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(false);
     assertThat(buildSourceService.validateArtifactSource(APP_ID, SETTING_ID, nexusArtifactStream)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPath() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/*")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(15);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPathWithSpecificPath() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/a0.zip")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(1);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPathWithSpecificTypeFile() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/*.zip")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    artifactList.addAll(setupList(5, List.of("d"), "artifactory", ".tar"));
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(15);
+    assertThat(artifactList.size()).isEqualTo(20);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPathWithoutSpecific() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/noart.zip")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListArtifactsByArtifactStreamAndFilterPathStartsWith() {
+    ArtifactStream artifactStream =
+        GcsArtifactStream.builder().accountId(ACCOUNT_ID).artifactPaths(List.of("artifactory/*/*.zip")).build();
+    artifactStream.setCollectionEnabled(true);
+
+    Artifact gcsArt = Artifact.Builder.anArtifact().build();
+    List<Artifact> artifactList = setupList(5, List.of("a", "b", "c"), "artifactory", ".zip");
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
+    when(artifactService.listArtifactsByArtifactStreamId(ACCOUNT_ID, ARTIFACT_STREAM_ID)).thenReturn(List.of(gcsArt));
+    List<Artifact> artifacts =
+        buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifactList, artifactStream);
+    assertThat(artifacts).hasSize(15);
+  }
+
+  private List<Artifact> setupList(int n, List<String> names, String folder, String type) {
+    List<Artifact> artifactList = new ArrayList<>();
+    for (String name : names) {
+      for (int i = 0; i < n; ++i) {
+        String artFileName = name + i + type;
+        String artPathName = folder + "/" + artFileName;
+        ArtifactMetadata artifactMetadata = new ArtifactMetadata();
+        artifactMetadata.put("bucketName", "artifacts");
+        artifactMetadata.put("artifactFileName", artFileName);
+        artifactMetadata.put("artifactPath", artPathName);
+        artifactMetadata.put("buildNo", artPathName);
+        artifactMetadata.put("artifactFileSize", null);
+        artifactMetadata.put("key", artPathName);
+        artifactMetadata.put("url", "https://storage.cloud.google.com/artifacts/" + artPathName);
+
+        Artifact artifact = Artifact.Builder.anArtifact()
+                                .withAppId(APP_ID)
+                                .withAccountId(ACCOUNT_ID)
+                                .withArtifactStreamId(ARTIFACT_STREAM_ID)
+                                .withMetadata(artifactMetadata)
+                                .withArtifactStreamType(ArtifactStreamType.GCS.name())
+                                .build();
+
+        artifactList.add(artifact);
+      }
+    }
+    return artifactList;
   }
 }

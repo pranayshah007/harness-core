@@ -19,9 +19,11 @@ import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
@@ -30,15 +32,19 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.infra.beans.AsgInfraMapping;
+import io.harness.cdng.infra.beans.AwsLambdaInfrastructureMapping;
+import io.harness.cdng.infra.beans.AwsSamInfraMapping;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.EcsInfraMapping;
 import io.harness.cdng.infra.beans.ElastigroupInfraMapping;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
+import io.harness.cdng.infra.beans.K8sRancherInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
@@ -57,6 +63,7 @@ import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import java.util.Set;
@@ -84,8 +91,13 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(SshWinRmAzureInfraMapping.class);
     set.add(TanzuApplicationServiceInfraMapping.class);
     set.add(GoogleFunctionsInfraMapping.class);
+    set.add(AwsSamInfraMapping.class);
     set.add(ModuleVersionInfo.class);
     set.add(ScopeAware.class);
+    set.add(AwsLambdaInfrastructureMapping.class);
+    set.add(K8sAwsInfraMapping.class);
+    set.add(K8sRancherInfraMapping.class);
+    set.add(ServiceSequence.class);
   }
 
   @Override
@@ -119,5 +131,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     h.put("ngpipeline.artifact.bean.AzureArtifactsOutcome", AzureArtifactsOutcome.class);
     h.put("cdng.artifact.bean.yaml.AMIArtifactConfig", AMIArtifactConfig.class);
     h.put("ngpipeline.artifact.bean.AMIArtifactOutcome", AMIArtifactOutcome.class);
+    h.put("cdng.artifact.bean.yaml.BambooArtifactConfig", BambooArtifactConfig.class);
+    h.put("ngpipeline.artifact.bean.BambooArtifactOutcome", BambooArtifactOutcome.class);
   }
 }

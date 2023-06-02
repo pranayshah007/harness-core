@@ -23,6 +23,7 @@ import io.harness.ng.core.entities.ApiKey;
 import io.harness.ng.core.entities.ApiKey.ApiKeyKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +89,8 @@ public class ApiKeyCustomRepositoryImpl implements ApiKeyCustomRepository {
   }
 
   @Override
-  public List<ApiKey> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findAllAndRemove(query, ApiKey.class);
+    return mongoTemplate.remove(query, ApiKey.class);
   }
 }

@@ -11,6 +11,7 @@ import static io.harness.events.FreezeEntityCreateEvent.DEPLOYMENT_FREEZE_CREATE
 import static io.harness.events.FreezeEntityDeleteEvent.DEPLOYMENT_FREEZE_DELETED;
 import static io.harness.events.FreezeEntityUpdateEvent.DEPLOYMENT_FREEZE_UPDATED;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -120,6 +121,53 @@ public class FreezeOutboxEventHandlerTest extends CategoryTest {
     assertEquals(Action.CREATE, auditEntry.getAction());
     assertNull(auditEntry.getOldYaml());
     assertEquals(newYaml, auditEntry.getNewYaml());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCreateGlobalFreeze() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    String newYaml = getYamlString(FreezeConfig.builder()
+                                       .freezeInfoConfig(FreezeInfoConfig.builder()
+                                                             .identifier(identifier)
+                                                             .orgIdentifier(orgIdentifier)
+                                                             .projectIdentifier(projectIdentifier)
+                                                             .build())
+                                       .build());
+    FreezeConfigEntity freezeConfig = FreezeConfigEntity.builder()
+                                          .type(FreezeType.GLOBAL)
+                                          .accountId(accountIdentifier)
+                                          .identifier(identifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .yaml(newYaml)
+                                          .build();
+    FreezeEntityCreateEvent freezeEntityCreateEvent =
+        FreezeEntityCreateEvent.builder().createdFreeze(freezeConfig).accountIdentifier(accountIdentifier).build();
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(freezeEntityCreateEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType(DEPLOYMENT_FREEZE_CREATED)
+                                  .resourceScope(freezeEntityCreateEvent.getResourceScope())
+                                  .resource(freezeEntityCreateEvent.getResource())
+                                  .globalContext(globalContext)
+                                  .eventData(eventData)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .build();
+    when(auditClientService.publishAudit(any(), any())).thenReturn(true);
+    freezeOutboxEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(0)).publishAudit(any(), any());
   }
 
   @Test

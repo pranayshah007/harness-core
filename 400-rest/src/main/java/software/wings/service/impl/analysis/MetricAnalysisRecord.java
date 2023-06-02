@@ -12,8 +12,8 @@ import static io.harness.data.encoding.EncodingUtils.deCompressString;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.common.VerificationConstants.ML_RECORDS_TTL_MONTHS;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;

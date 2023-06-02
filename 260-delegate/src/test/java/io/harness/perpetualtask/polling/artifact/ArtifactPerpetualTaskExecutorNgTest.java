@@ -8,8 +8,8 @@
 package io.harness.perpetualtask.polling.artifact;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -62,7 +62,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -95,7 +95,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testSuccessfulArtifactCollection() throws IOException {
-    assertThat(runOnce(0, 10000, false, false).getResponseCode()).isEqualTo(200);
+    assertThat(runOnce(0, 10, false, false).getResponseCode()).isEqualTo(200);
 
     verify(artifactRepositoryService).collectBuilds(any(ArtifactTaskParameters.class));
 
@@ -105,7 +105,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse response = (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
-    validateRunOnceOutput(response, 10001, true, 10001, 0);
+    validateRunOnceOutput(response, 11, true, 11, 0);
   }
 
   @Test
@@ -116,16 +116,16 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     Buffer bufferedSink = new Buffer();
 
     // initially repo has 0-10000 versions.
-    assertThat(runOnce(0, 10000, false, false).getResponseCode()).isEqualTo(200);
+    assertThat(runOnce(0, 10, false, false).getResponseCode()).isEqualTo(200);
 
     verify(delegateAgentManagerClient, times(1)).publishPollingResult(anyString(), anyString(), captor.capture());
     captor.getValue().writeTo(bufferedSink);
     PollingDelegateResponse pollingDelegateResponse1 =
         (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
-    validateRunOnceOutput(pollingDelegateResponse1, 10001, true, 10001, 0);
+    validateRunOnceOutput(pollingDelegateResponse1, 11, true, 11, 0);
 
     // now repo has 2-10005 versions.
-    assertThat(runOnce(2, 10005, false, false).getResponseCode()).isEqualTo(200);
+    assertThat(runOnce(2, 15, false, false).getResponseCode()).isEqualTo(200);
 
     verify(delegateAgentManagerClient, times(2)).publishPollingResult(anyString(), anyString(), captor.capture());
     verify(artifactRepositoryService, times(2)).collectBuilds(any(ArtifactTaskParameters.class));
@@ -134,14 +134,14 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     PollingDelegateResponse pollingDelegateResponse2 =
         (PollingDelegateResponse) kryoSerializer.asObject(bufferedSink.readByteArray());
 
-    validateRunOnceOutput(pollingDelegateResponse2, 10004, false, 5, 2);
+    validateRunOnceOutput(pollingDelegateResponse2, 14, false, 5, 2);
   }
 
   @Test
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testExceptionInArtifactCollection() throws IOException {
-    assertThat(runOnce(0, 10000, true, false).getResponseCode()).isEqualTo(200);
+    assertThat(runOnce(0, 10, true, false).getResponseCode()).isEqualTo(200);
     verify(artifactRepositoryService, times(1)).collectBuilds(any(ArtifactTaskParameters.class));
 
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
@@ -159,14 +159,14 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testExceptionInPublishToManager() throws IOException {
-    assertThat(runOnce(0, 10000, false, true).getResponseCode()).isEqualTo(200);
+    assertThat(runOnce(0, 10, false, true).getResponseCode()).isEqualTo(200);
 
     verify(artifactRepositoryService).collectBuilds(any(ArtifactTaskParameters.class));
     verify(delegateAgentManagerClient).publishPollingResult(anyString(), anyString(), any(RequestBody.class));
     ArtifactsCollectionCache artifactsCollectionCache =
         artifactPerpetualTaskExecutorNg.getCache().getIfPresent(polling_doc_id);
     assertThat(artifactsCollectionCache).isNotNull();
-    assertThat(artifactsCollectionCache.getUnpublishedArtifactKeys().size()).isEqualTo(10001);
+    assertThat(artifactsCollectionCache.getUnpublishedArtifactKeys().size()).isEqualTo(11);
     assertThat(artifactsCollectionCache.getToBeDeletedArtifactKeys()).isEmpty();
     assertThat(artifactsCollectionCache.needsToPublish()).isTrue();
     assertThat(artifactsCollectionCache.getPublishedArtifactKeys()).isEmpty();

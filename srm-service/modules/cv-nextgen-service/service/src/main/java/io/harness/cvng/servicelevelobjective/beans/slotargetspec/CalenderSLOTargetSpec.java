@@ -87,4 +87,9 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
   public SLOTargetType getType() {
     return SLOTargetType.CALENDER;
   }
+
+  @Override
+  public boolean isErrorBudgetResetEnabled() {
+    return true;
+  }
 }

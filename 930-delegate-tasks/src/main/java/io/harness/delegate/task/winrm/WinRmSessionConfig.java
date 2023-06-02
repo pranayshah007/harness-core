@@ -13,9 +13,9 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.encryption.Encrypted;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.WinRmCommandParameter;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

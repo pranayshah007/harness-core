@@ -28,4 +28,5 @@ enum InterruptType {
   CUSTOM_FAILURE = 18;
   EXPIRE_ALL = 19;
   PROCEED_WITH_DEFAULT = 20;
+  USER_MARKED_FAIL_ALL = 21;
 }

@@ -204,4 +204,7 @@ public interface UsageRestrictionsService {
   UsageRestrictions getMaximumAllowedUsageRestrictionsForUser(String accountId, UsageRestrictions usageRestrictions);
 
   UsageRestrictions getCommonRestrictions(UsageRestrictions usageRestrictions1, UsageRestrictions usageRestrictions2);
+
+  Map<String, Set<String>> getAppSvcMapFromUserPermissions(
+      String accountId, UserPermissionInfo userPermissionInfo, Action action);
 }

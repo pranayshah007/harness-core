@@ -10,8 +10,9 @@ package io.harness.ngmigration.service.step.arm;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -35,9 +36,10 @@ public class AzureRollbackARMResourceStepMapperImpl extends BaseAzureARMProvisio
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AzureARMRollbackStepNode azureARMRollbackStepNode = new AzureARMRollbackStepNode();
-    baseSetup(graphNode, azureARMRollbackStepNode);
+    baseSetup(graphNode, azureARMRollbackStepNode, context.getIdentifierCaseFormat());
 
     AzureARMRollbackStepInfo azureARMRollbackStepInfo = new AzureARMRollbackStepInfo();
     azureARMRollbackStepInfo.setProvisionerIdentifier(getProvisionerIdentifier());
@@ -51,7 +53,7 @@ public class AzureRollbackARMResourceStepMapperImpl extends BaseAzureARMProvisio
   }
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 }

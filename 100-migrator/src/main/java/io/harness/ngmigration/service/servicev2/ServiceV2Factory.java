@@ -9,9 +9,15 @@ package io.harness.ngmigration.service.servicev2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
+import software.wings.utils.ArtifactType;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceV2Factory {
@@ -22,34 +28,103 @@ public class ServiceV2Factory {
   private static final ServiceV2Mapper ecsServiceV2Mapper = new EcsServiceV2Mapper();
   private static final ServiceV2Mapper azureWebappServiceV2Mapper = new AzureWebappServiceV2Mapper();
   private static final ServiceV2Mapper elastigroupServiceV2Mapper = new ElastigroupServiceV2Mapper();
+  private static final ServiceV2Mapper pcfServiceV2Mapper = new PcfServiceV2Mapper();
   private static final ServiceV2Mapper customDeploymentServiceV2Mapper = new CustomDeploymentServiceV2Mapper();
+  private static final ServiceV2Mapper awsLambdaServiceV2Mapper = new AwsLambdaServiceV2Mapper();
   private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
-  public static ServiceV2Mapper getService2Mapper(Service service) {
-    if (DeploymentType.KUBERNETES.equals(service.getDeploymentType())) {
+  public static ServiceV2Mapper getService2Mapper(Service service, boolean ecsTask) {
+    DeploymentType deploymentType = service.getDeploymentType();
+    ArtifactType artifactType = service.getArtifactType();
+    return getServiceV2Mapper(deploymentType, artifactType, ecsTask);
+  }
+
+  @NotNull
+  public static ServiceV2Mapper getServiceV2Mapper(
+      DeploymentType deploymentType, ArtifactType artifactType, boolean ecsTask) {
+    if (DeploymentType.KUBERNETES.equals(deploymentType)) {
       return k8sServiceV2Mapper;
     }
-    if (DeploymentType.HELM.equals(service.getDeploymentType())) {
+    if (DeploymentType.HELM.equals(deploymentType)) {
       return nativeHelmServiceV2Mapper;
     }
-    if (DeploymentType.SSH.equals(service.getDeploymentType())) {
+    if (DeploymentType.SSH.equals(deploymentType)) {
       return sshServiceV2Mapper;
     }
-    if (DeploymentType.WINRM.equals(service.getDeploymentType())) {
+    if (DeploymentType.WINRM.equals(deploymentType)) {
       return winrmServiceV2Mapper;
     }
-    if (DeploymentType.ECS.equals(service.getDeploymentType())) {
+    if (DeploymentType.ECS.equals(deploymentType)) {
       return ecsServiceV2Mapper;
     }
-    if (DeploymentType.AZURE_WEBAPP.equals(service.getDeploymentType())) {
+    if (DeploymentType.AZURE_WEBAPP.equals(deploymentType)) {
       return azureWebappServiceV2Mapper;
     }
-    if (DeploymentType.AMI.equals(service.getDeploymentType())) {
+    if (DeploymentType.AMI.equals(deploymentType)) {
       return elastigroupServiceV2Mapper;
     }
-    if (DeploymentType.CUSTOM.equals(service.getDeploymentType())) {
+    if (DeploymentType.PCF.equals(deploymentType)) {
+      return pcfServiceV2Mapper;
+    }
+    if (DeploymentType.CUSTOM.equals(deploymentType)) {
       return customDeploymentServiceV2Mapper;
     }
+    if (DeploymentType.AWS_LAMBDA.equals(deploymentType)) {
+      return awsLambdaServiceV2Mapper;
+    }
+    if (null == deploymentType && null != artifactType) {
+      switch (artifactType) {
+        case AMI:
+          return elastigroupServiceV2Mapper;
+        case IIS:
+        case IIS_APP:
+        case IIS_VirtualDirectory:
+          return winrmServiceV2Mapper;
+        case JAR:
+        case WAR:
+        case RPM:
+        case ZIP:
+        case TAR:
+        case OTHER:
+        case NUGET:
+          return sshServiceV2Mapper;
+        case PCF:
+          return pcfServiceV2Mapper;
+        case DOCKER:
+          if (ecsTask) {
+            return ecsServiceV2Mapper;
+          } else {
+            return k8sServiceV2Mapper;
+          }
+        case AZURE_WEBAPP:
+          return azureWebappServiceV2Mapper;
+        case AWS_LAMBDA:
+          return awsLambdaServiceV2Mapper;
+        case AWS_CODEDEPLOY:
+        case AZURE_MACHINE_IMAGE:
+          return unsupportedServiceV2Mapper;
+        default:
+          return unsupportedServiceV2Mapper;
+      }
+    }
     return unsupportedServiceV2Mapper;
+  }
+
+  public static ServiceDefinitionType mapDeploymentTypeToServiceDefType(DeploymentType deploymentType) {
+    Map<DeploymentType, ServiceDefinitionType> map = new HashMap<>();
+    map.put(DeploymentType.SSH, ServiceDefinitionType.SSH);
+    map.put(DeploymentType.ECS, ServiceDefinitionType.ECS);
+    map.put(DeploymentType.SPOTINST, ServiceDefinitionType.ELASTIGROUP);
+    map.put(DeploymentType.KUBERNETES, ServiceDefinitionType.KUBERNETES);
+    map.put(DeploymentType.HELM, ServiceDefinitionType.NATIVE_HELM);
+    map.put(DeploymentType.AWS_LAMBDA, ServiceDefinitionType.AWS_LAMBDA);
+    map.put(DeploymentType.AMI, ServiceDefinitionType.ASG);
+    map.put(DeploymentType.WINRM, ServiceDefinitionType.WINRM);
+    map.put(DeploymentType.PCF, ServiceDefinitionType.TAS);
+    map.put(DeploymentType.AZURE_WEBAPP, ServiceDefinitionType.AZURE_WEBAPP);
+    map.put(DeploymentType.CUSTOM, ServiceDefinitionType.CUSTOM_DEPLOYMENT);
+    //    map.put(DeploymentType.AZURE_VMSS, ServiceDefinitionType.);
+    //    map.put(AWS_CODEDEPLOY, ServiceDefinitionType.);
+    return map.get(deploymentType);
   }
 }

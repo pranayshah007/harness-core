@@ -7,7 +7,7 @@
 
 package software.wings.service.impl.stackdriver;
 
-import software.wings.service.impl.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 
 import com.google.api.services.monitoring.v3.Monitoring;
 import java.util.List;

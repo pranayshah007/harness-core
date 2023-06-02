@@ -10,11 +10,12 @@ package io.harness.ci.enforcement;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.ExecutionQueueLimit;
-import io.harness.cf.openapi.StringUtil;
+import io.harness.beans.execution.license.CILicenseService;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.QueueExecutionUtils;
-import io.harness.ci.license.CILicenseService;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.repositories.ExecutionQueueLimitRepository;
 
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class CIBuildEnforcerImpl implements CIBuildEnforcer {
   @Inject CILicenseService ciLicenseService;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private QueueExecutionUtils queueExecutionUtils;
   @Inject private ExecutionLimits executionLimits;
   @Inject private ExecutionQueueLimitRepository executionQueueLimitRepository;
@@ -46,7 +48,7 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
       ExecutionQueueLimit executionQueueLimit = overriddenConfig.get();
       if (StringUtils.isNotEmpty(executionQueueLimit.getTotalExecLimit())) {
         macLimit = Integer.parseInt(executionQueueLimit.getMacExecLimit());
-        totalLimit = Integer.parseInt((executionQueueLimit.getTotalExecLimit()));
+        totalLimit = Integer.parseInt(executionQueueLimit.getTotalExecLimit());
       }
       log.info("overridden limits for account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountId,
           totalLimit, macLimit, currExecutionCount, macExecutionsCount);
@@ -54,6 +56,10 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
     if (licensesWithSummaryDTO != null) {
       ExecutionLimitSpec executionLimitSpec = null;
       switch (licensesWithSummaryDTO.getEdition()) {

@@ -14,9 +14,12 @@ import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupTags;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.beans.SupportedDelegateVersion;
+import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.rest.RestResponse;
 
@@ -38,6 +41,8 @@ public interface DelegateNgManagerCgManagerClient {
   String DELEGATE_SETUP_NG_API = "delegate-setup/internal";
   String DELEGATE_DOWNLOAD_API = "delegate-download";
 
+  String DELEGATE_VERSION_OVERRIDE_API = "version-override/internal";
+
   //------------------------ Delegate Token -------------------------------------
 
   @POST(DELEGATE_TOKEN_NG_API)
@@ -45,7 +50,7 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Query("tokenName") @NotNull String tokenName);
+      @Query("tokenName") @NotNull String tokenName, @Query("revokeAfter") Long revokeAfter);
 
   @PUT(DELEGATE_TOKEN_NG_API)
   Call<RestResponse<DelegateTokenDetails>> revokeToken(
@@ -124,6 +129,13 @@ public interface DelegateNgManagerCgManagerClient {
 
   //------------------------ NG Delegate Setup Apis -----------------------------------
 
+  @POST(DELEGATE_SETUP_NG_API + "/list")
+  Call<RestResponse<List<DelegateListResponse>>> getDelegates(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body DelegateFilterPropertiesDTO delegateFilterPropertiesDTO);
+
   @POST(DELEGATE_SETUP_NG_API + "/delegate-helm-values-yaml")
   Call<RestResponse<String>> generateHelmValuesFile(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
@@ -159,4 +171,15 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Body @NotNull DelegateDownloadRequest delegateDownloadRequest);
+
+  //------------------------ Version Override API -----------------------------------
+  @PUT(DELEGATE_VERSION_OVERRIDE_API + "/delegate-tag")
+  Call<RestResponse<String>> overrideDelegateImage(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query("delegateTag") @NotNull String delegateTag, @Query("validTillNextRelease") Boolean validTillNextRelease,
+      @Query("validForDays") int validForDays);
+
+  @GET("version/supportedDelegate")
+  Call<RestResponse<SupportedDelegateVersion>> getPublishedDelegateVersion(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier);
 }

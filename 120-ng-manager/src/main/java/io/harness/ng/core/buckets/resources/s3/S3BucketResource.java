@@ -72,9 +72,9 @@ public class S3BucketResource {
   public ResponseDTO<Map<String, String>> getBuckets(@QueryParam("region") String region,
       @QueryParam("connectorRef") String awsConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       S3StoreConfig storeConfig = (S3StoreConfig) bucketsResourceUtils.locateStoreConfigInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -117,11 +117,11 @@ public class S3BucketResource {
     }
 
     // Getting the resolved region in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, null, serviceRef);
 
     // Getting the resolved region in case of expressions
-    String resolvedConnectorIdentifier = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier,
+    String resolvedConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, runtimeInputYaml, awsConnectorIdentifier, fqnPath, null, serviceRef);
 
     IdentifierRef connectorRef =
@@ -166,8 +166,8 @@ public class S3BucketResource {
   public ResponseDTO<List<BucketResponseDTO>> getBucketsV2WithServiceV2(@QueryParam("region") String region,
       @QueryParam("connectorRef") String awsConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
@@ -189,12 +189,12 @@ public class S3BucketResource {
     }
 
     // Getting the resolved region in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved awsConnectorIdentifier in case of expressions
     String resolvedAwsConnectorIdentifier =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Common logic in case of ServiceV1 and ServiceV2
@@ -276,16 +276,16 @@ public class S3BucketResource {
     }
 
     // Getting the resolved region in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved awsConnectorIdentifier in case of expressions
     String resolvedAwsConnectorIdentifier =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, awsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved bucketName in case of expressions
-    String resolvedBucketName = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedBucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Common logic in case of ServiceV1 and ServiceV2

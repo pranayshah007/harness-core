@@ -212,7 +212,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -282,7 +282,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -468,6 +468,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -579,6 +605,32 @@
                   "additionalProperties": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -927,7 +979,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1140,7 +1192,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1402,7 +1454,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1474,7 +1526,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1526,7 +1578,9 @@
                     "Gradle",
                     "Dotnet",
                     "Nunitconsole",
-                    "SBT"
+                    "SBT",
+                    "Pytest",
+                    "Unittest"
                   ]
                 },
                 {
@@ -1586,7 +1640,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1599,7 +1653,8 @@
                     "Java",
                     "Kotlin",
                     "Scala",
-                    "Csharp"
+                    "Csharp",
+                    "Python"
                   ]
                 },
                 {
@@ -1640,6 +1695,22 @@
               "oneOf": [
                 {
                   "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pythonVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "3",
+                    "2"
+                  ]
                 },
                 {
                   "type": "string",
@@ -1698,7 +1769,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1707,6 +1778,9 @@
               "type": "string"
             },
             "testGlobs": {
+              "type": "string"
+            },
+            "testRoot": {
               "type": "string"
             },
             "testSplitStrategy": {
@@ -1937,7 +2011,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]

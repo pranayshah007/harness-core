@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,8 +28,10 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
@@ -107,6 +110,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -123,6 +127,7 @@ import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
@@ -170,8 +175,10 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
   private AutoCloseable mocks;
 
@@ -208,7 +215,15 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTaskV2(any(), any());
 
+    doNothing()
+        .when(infrastructureStepHelper)
+        .saveInfraExecutionDataToStageInfo(any(Ambiance.class), any(StepResponse.class));
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
+
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
+    doCallRealMethod()
+        .when(cdStepHelper)
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
   }
 
   @After
@@ -389,7 +404,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                 .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
                                 .build(),
                             null))
-        .withMessageContaining("The value provided prod does not match any of the allowed values [dev,qa]");
+        .withMessageContaining(
+            "The values provided for infrastructureDefinition.spec.credentialsRef: [\\'prod\\'] do not match any of the allowed values [\\'dev\\', \\'qa\\']");
   }
 
   @Test
@@ -411,7 +427,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .build())
         .when(cdStepHelper)
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("awsconnector")
                         .hostConnectionType("PrivateIP")
@@ -431,12 +447,15 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<StepDetailsDelegateInfo> stepDetailsDelegateInfoCaptor =
+        ArgumentCaptor.forClass(StepDetailsDelegateInfo.class);
     verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(captor.capture(), eq(Duration.ZERO));
-
+    verify(sdkGraphVisualizationDataService)
+        .publishStepDetailInformation(eq(ambiance), stepDetailsDelegateInfoCaptor.capture(), eq("Infrastructure Step"));
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo("NG_AWS_TASK");
-
+    assertThat(stepDetailsDelegateInfoCaptor.getValue().getStepDelegateInfos().size()).isEqualTo(1);
     verifyTaskRequest(delegateTaskRequest);
   }
 
@@ -456,7 +475,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
 
     mockInfra(azureInfra);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("azureconnector")
                         .subscriptionId("dev-subscription")
@@ -542,8 +561,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     // verify some more method calls
     verify(stageExecutionHelper, times(1))
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
+        .saveStageExecutionInfo(any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
     verify(stageExecutionHelper, times(1))
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
@@ -610,8 +628,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     // verify some more method calls
     verify(stageExecutionHelper, times(1))
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
+        .saveStageExecutionInfo(any(Ambiance.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
     verify(stageExecutionHelper, times(1))
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
@@ -793,7 +810,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(token.getValue().getScope()).isEqualTo(Scope.ACCOUNT);
     // verify some more method calls
     verify(stageExecutionHelper, times(1))
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+        .saveStageExecutionInfo(
             any(Ambiance.class), any(ExecutionInfoKey.class), eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
     verify(stageExecutionHelper, times(1))
         .addRollbackArtifactToStageOutcomeIfPresent(any(Ambiance.class), any(StepResponseBuilder.class),

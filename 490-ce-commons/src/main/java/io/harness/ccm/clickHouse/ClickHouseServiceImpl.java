@@ -49,6 +49,7 @@ public class ClickHouseServiceImpl implements ClickHouseService {
     log.info(query);
     String url = clickHouseConfig.getUrl();
     Properties properties = new Properties();
+    properties.put("socket_timeout", 600000); // 600 sec
     ClickHouseDataSource dataSource = new ClickHouseDataSource(url, properties);
     try (Connection connection =
              dataSource.getConnection(clickHouseConfig.getUsername(), clickHouseConfig.getPassword());

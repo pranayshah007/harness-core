@@ -11,11 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 
 import software.wings.stencils.DefaultValue;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
@@ -29,12 +32,14 @@ import lombok.EqualsAndHashCode;
 public class WinRmCredentialsSpec extends SecretSpec {
   @DefaultValue("5986") int port;
   WinRmAuth auth;
+  @Builder.Default List<WinRmCommandParameter> parameters = Collections.emptyList();
 
   @Override
   public SecretSpecDTO toDTO() {
     return WinRmCredentialsSpecDTO.builder()
         .port(getPort())
         .auth(Optional.ofNullable(auth).map(WinRmAuth::toDTO).orElse(null))
+        .parameters(parameters)
         .build();
   }
 }

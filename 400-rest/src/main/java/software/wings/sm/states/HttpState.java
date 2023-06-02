@@ -9,6 +9,8 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SOCKET_HTTP_STATE_TIMEOUT;
+import static io.harness.beans.FeatureName.SPG_HTTP_STEP_CERTIFICATE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
@@ -30,6 +32,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
+import io.harness.beans.HttpCertificate;
 import io.harness.beans.KeyValuePair;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
@@ -39,12 +42,14 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.http.HttpTaskParameters;
+import io.harness.delegate.task.http.HttpTaskParameters.HttpTaskParametersBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.reflection.ExpressionReflectionUtils;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
@@ -94,11 +99,13 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlException.Parsing;
 import org.apache.commons.jexl3.JexlException.Property;
@@ -131,6 +138,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
 
   @Getter @Setter private String sweepingOutputName;
   @Getter @Setter private SweepingOutputInstance.Scope sweepingOutputScope;
+  @Getter @Setter private String certificate;
+  @Getter @Setter private String certificateKey;
 
   @SchemaIgnore private int socketTimeoutMillis = 30000;
 
@@ -399,8 +408,22 @@ public class HttpState extends State implements SweepingOutputStateMixin {
     boolean useHeaderForCapabilityCheck =
         featureFlagService.isEnabled(FeatureName.HTTP_HEADERS_CAPABILITY_CHECK, context.getAccountId());
 
-    HttpTaskParameters httpTaskParameters = HttpTaskParameters.builder()
-                                                .method(finalMethod)
+    final HttpTaskParametersBuilder builder = HttpTaskParameters.builder();
+    final List<EncryptedDataDetail> encryptionDetails = new ArrayList<>();
+
+    if (featureFlagService.isEnabled(SPG_HTTP_STEP_CERTIFICATE, context.getAccountId())) {
+      createCertificate(context).ifPresent(cert -> {
+        builder.certificate(cert);
+        final List<EncryptedDataDetail> certDetails =
+            secretManager.getEncryptionDetails(cert, context.getAppId(), context.getWorkflowExecutionId());
+        if (CollectionUtils.isEmpty(certDetails)) {
+          throw new InvalidRequestException("Encrypted fields certificate and/or certificateKey are invalid", USER);
+        }
+        encryptionDetails.addAll(certDetails);
+      });
+    }
+
+    HttpTaskParameters httpTaskParameters = builder.method(finalMethod)
                                                 .body(finalBody)
                                                 .url(finalUrl)
                                                 .headers(finalHeaders)
@@ -408,6 +431,7 @@ public class HttpState extends State implements SweepingOutputStateMixin {
                                                 .useProxy(useProxy)
                                                 .isCertValidationRequired(isCertValidationRequired)
                                                 .useHeaderForCapabilityCheck(useHeaderForCapabilityCheck)
+                                                .encryptedDataDetails(encryptionDetails)
                                                 .build();
 
     HttpStateExecutionDataBuilder executionDataBuilder =
@@ -473,6 +497,21 @@ public class HttpState extends State implements SweepingOutputStateMixin {
         .stateExecutionData(executionDataBuilder.build())
         .delegateTaskId(delegateTaskId)
         .build();
+  }
+
+  private Optional<HttpCertificate> createCertificate(ExecutionContext context) {
+    if (isEmpty(certificate) && isEmpty(certificateKey)) {
+      return Optional.empty();
+    }
+    if (isEmpty(certificate) && isNotEmpty(certificateKey)) {
+      throw new InvalidRequestException(
+          "Only certificateKey is provided, we need both certificate and certificateKey or only certificate", USER);
+    }
+    return Optional.of(HttpCertificate.builder()
+                           .accountId(context.getAccountId())
+                           .encryptedCert(isEmpty(certificate) ? null : certificate)
+                           .encryptedCertKey(isEmpty(certificateKey) ? null : certificateKey)
+                           .build());
   }
 
   private String obtainEnvId(WorkflowStandardParams workflowStandardParams) {

@@ -7,7 +7,7 @@
 
 package io.harness.ccm.audittrails.yamlDTOs;
 
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

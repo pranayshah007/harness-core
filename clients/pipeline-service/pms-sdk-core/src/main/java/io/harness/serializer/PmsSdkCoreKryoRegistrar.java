@@ -10,7 +10,9 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
@@ -20,6 +22,7 @@ import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.fail.OnFailAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviserParameters;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.retry.RetryAdviserParameters;
@@ -58,6 +61,7 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(ManualInterventionAdviserParameters.class, 3107);
     kryo.register(OnMarkSuccessAdviserParameters.class, 3108);
     kryo.register(OnAbortAdviserParameters.class, 3109);
+    kryo.register(OnMarkFailureAdviserParameters.class, 3110);
 
     // New classes here
     kryo.register(PlanNode.class, 88201);
@@ -80,5 +84,7 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(ProceedWithDefaultAdviserParameters.class, 878018);
     kryo.register(AsyncTimeoutResponseData.class, 878019);
     kryo.register(AsyncProgressData.class, 878020);
+    kryo.register(OnFailPipelineRollbackParameters.class, 878021);
+    kryo.register(NextStageAdviserParameters.class, 878022);
   }
 }

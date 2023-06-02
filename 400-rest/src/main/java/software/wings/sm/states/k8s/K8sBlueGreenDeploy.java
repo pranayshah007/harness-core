@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -22,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.task.k8s.K8sTaskType;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.K8sPod;
@@ -136,6 +138,9 @@ public class K8sBlueGreenDeploy extends AbstractK8sState {
     ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
     storePreviousHelmDeploymentInfo(context, appManifestMap.get(K8sValuesLocation.Service));
 
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
     K8sBlueGreenDeployTaskParametersBuilder builder = K8sBlueGreenDeployTaskParameters.builder();
 
     builder.exportManifests(exportManifests);
@@ -155,6 +160,7 @@ public class K8sBlueGreenDeploy extends AbstractK8sState {
             .commandName(K8S_BLUE_GREEN_DEPLOY_COMMAND_NAME)
             .k8sTaskType(K8sTaskType.BLUE_GREEN_DEPLOY)
             .timeoutIntervalInMin(stateTimeoutInMinutes)
+            .timeoutSupported(isTimeoutFailureSupported)
             .k8sDelegateManifestConfig(
                 createDelegateManifestConfig(context, appManifestMap.get(K8sValuesLocation.Service)))
             .valuesYamlList(fetchRenderedValuesFiles(appManifestMap, context))
@@ -191,6 +197,15 @@ public class K8sBlueGreenDeploy extends AbstractK8sState {
     stateExecutionData.setErrorMsg(executionResponse.getErrorMessage());
 
     if (ExecutionStatus.FAILED == executionStatus) {
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .failureTypes(FailureType.TIMEOUT)
+            .stateExecutionData(stateExecutionData)
+            .errorMessage("Timed out while waiting for k8s task to complete")
+            .build();
+      }
+
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)
           .stateExecutionData(context.getStateExecutionData())

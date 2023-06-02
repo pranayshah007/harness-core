@@ -9,6 +9,7 @@ package io.harness.waiter;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -69,26 +70,28 @@ public class NotifyResponseCleanupSpringPersistenceHelper {
   private void sendAndHandleNotifyResponses(Set<String> keys) {
     List<String> deleteResponses = new ArrayList<>();
     for (String key : keys) {
-      boolean needHandling = false;
-      try (CloseableIterator<WaitInstance> iterator = persistenceWrapper.fetchWaitInstancesFromSecondary(key)) {
-        if (!iterator.hasNext()) {
-          deleteResponses.add(key);
-        } else {
-          while (iterator.hasNext()) {
-            WaitInstance waitInstance = iterator.next();
-            if (isEmpty(waitInstance.getWaitingOnCorrelationIds())) {
-              if (waitInstance.getCallbackProcessingAt() < System.currentTimeMillis()) {
-                waitNotifyEngine.sendNotification(waitInstance);
+      try (NotifyResponseLogContext ignore = new NotifyResponseLogContext(key, OVERRIDE_ERROR)) {
+        boolean needHandling = false;
+        try (CloseableIterator<WaitInstance> iterator = persistenceWrapper.fetchWaitInstancesFromSecondary(key)) {
+          if (!iterator.hasNext()) {
+            deleteResponses.add(key);
+          } else {
+            while (iterator.hasNext()) {
+              WaitInstance waitInstance = iterator.next();
+              if (isEmpty(waitInstance.getWaitingOnCorrelationIds())) {
+                if (waitInstance.getCallbackProcessingAt() < System.currentTimeMillis()) {
+                  waitNotifyEngine.sendNotification(waitInstance);
+                }
+              } else if (waitInstance.getWaitingOnCorrelationIds().contains(key)) {
+                needHandling = true;
               }
-            } else if (waitInstance.getWaitingOnCorrelationIds().contains(key)) {
-              needHandling = true;
             }
           }
         }
-      }
 
-      if (needHandling) {
-        waitNotifyEngine.handleNotifyResponse(key);
+        if (needHandling) {
+          waitNotifyEngine.handleNotifyResponse(key);
+        }
       }
     }
     deleteObsoleteResponses(deleteResponses);

@@ -15,12 +15,15 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
@@ -32,6 +35,9 @@ import io.harness.pms.sdk.core.PipelineSdkRedisEventsConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.repositories.planExecutionJson.ExpandedJsonLockConfig;
+import io.harness.secret.ConfigSecret;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
@@ -106,9 +112,12 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
+  @JsonProperty("ciServiceClientConfig") private ServiceHttpClientConfig ciServiceClientConfig;
+  @JsonProperty("containerStepConfigureWithCi") private boolean containerStepConfigureWithCi;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("templateServiceSecret") private String templateServiceSecret;
+  @JsonProperty("ciServiceSecret") private String ciServiceSecret;
   @JsonProperty("jwtAuthSecret") private String jwtAuthSecret;
   @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
   @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
@@ -153,8 +162,14 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "grpcNegotiationType") NegotiationType grpcNegotiationType;
   // If flag is enabled, only one thread does Notify response cleanup.
   @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
-  @JsonProperty("queueServiceClientConfig") private ServiceHttpClientConfig queueServiceClientConfig;
-  @JsonProperty("queueServiceSecret") private String queueServiceSecret;
+  @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
+  @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("triggerAuthenticationPoolConfig") private ThreadPoolConfig triggerAuthenticationPoolConfig;
+  @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
+  @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
+  private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
 
   private String managerServiceSecret;
   private String managerTarget;
@@ -166,10 +181,14 @@ public class PipelineServiceConfiguration extends Configuration {
   private String policyManagerSecret;
   private ServiceHttpClientConfig opaClientConfig;
 
+  private SSCAServiceConfig sscaServiceConfig;
+
   private PipelineServiceIteratorsConfig iteratorsConfig;
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
   private DelegatePollingConfig delegatePollingConfig;
+  private ThreadPoolConfig
+      pipelineAsyncValidationPoolConfig; // to be used for defining thread config for async validations of Pipelines
 
   public PipelineServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

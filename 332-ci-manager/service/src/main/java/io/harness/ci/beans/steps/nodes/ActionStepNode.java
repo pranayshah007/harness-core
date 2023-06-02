@@ -17,12 +17,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.ActionStepInfo;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -59,5 +64,20 @@ public class ActionStepNode extends CIAbstractStepNode {
     StepType(String name) {
       this.name = name;
     }
+  }
+
+  @Builder
+  public ActionStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, ActionStepInfo actionStepInfo,
+      ActionStepNode.StepType type, ParameterField<Timeout> timeout) {
+    this.setFailureStrategies(failureStrategies);
+    this.actionStepInfo = actionStepInfo;
+    this.type = type;
+    this.setFailureStrategies(failureStrategies);
+    this.setTimeout(timeout);
+    this.setUuid(uuid);
+    this.setIdentifier(identifier);
+    this.setName(name);
+    this.setDescription(getDescription());
   }
 }

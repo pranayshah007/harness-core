@@ -66,6 +66,7 @@ public class K8InitializeServiceUtilsHelper {
                                 .image(createValueField(SERVICE_IMAGE))
                                 .connectorRef(createValueField(SERVICE_CONNECTOR_REF))
                                 .privileged(createValueField(null))
+                                .imagePullPolicy(createValueField(null))
                                 .resources(ContainerResource.builder()
                                                .limits(ContainerResource.Limits.builder()
                                                            .cpu(createValueField(SERVICE_LIMIT_CPU_STRING))

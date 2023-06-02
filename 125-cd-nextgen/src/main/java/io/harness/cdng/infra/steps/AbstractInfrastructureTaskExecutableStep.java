@@ -32,6 +32,8 @@ import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -40,8 +42,10 @@ import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -170,7 +174,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   protected TaskRequestData obtainTaskInternal(Ambiance ambiance, Infrastructure infrastructure,
-      NGLogCallback logCallback, Boolean addRcStep, boolean skipInstances) {
+      NGLogCallback logCallback, Boolean addRcStep, boolean skipInstances, Map<String, String> tags) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance, logCallback);
@@ -185,8 +189,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+        infrastructureOutcomeProvider.getOutcome(ambiance, infrastructure, environmentOutcome, serviceOutcome,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), tags);
 
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
@@ -362,8 +366,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
     String infrastructureKind = infrastructureOutcome.getKind();
-    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.saveStageExecutionInfo(ambiance, executionInfoKey, infrastructureKind);
     stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
         ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
@@ -668,6 +671,37 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           ConnectorType.AWS.name()));
     }
 
+    if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_SAM.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_LAMBDA.equals(infrastructure.getKind())
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.AWS.name()));
+    }
+
+    if (InfrastructureKind.KUBERNETES_AWS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
@@ -784,6 +818,36 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             (TanzuApplicationServiceInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             tasInfrastructure.getConnectorRef(), tasInfrastructure.getOrganization(), tasInfrastructure.getSpace());
+        break;
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
+        break;
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
+        break;
+      case InfrastructureKind.KUBERNETES_AWS:
+        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(k8sAwsInfrastructure.getConnectorRef(),
+            k8sAwsInfrastructure.getNamespace(), k8sAwsInfrastructure.getCluster());
+
+        if (k8sAwsInfrastructure.getNamespace() != null && isNotEmpty(k8sAwsInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(
+              logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
+        }
+        break;
+      case InfrastructureKind.KUBERNETES_RANCHER:
+        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(rancherInfrastructure.getConnectorRef(),
+            rancherInfrastructure.getNamespace(), rancherInfrastructure.getCluster());
+        if (ParameterField.isNotNull(rancherInfrastructure.getNamespace())
+            && isNotEmpty(rancherInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(
+              logCallback, color(format(k8sNamespaceLogLine, rancherInfrastructure.getNamespace().getValue()), Yellow));
+        }
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

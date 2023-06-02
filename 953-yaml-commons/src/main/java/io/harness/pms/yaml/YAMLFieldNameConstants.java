@@ -29,6 +29,7 @@ public class YAMLFieldNameConstants {
   public final String STAGES = "stages";
   public final String STRATEGY = "strategy";
   public final String CLONE = "clone";
+  public final String CLONE_CODEBASE = "cloneCodebase";
   public final String DISABLED = "disabled";
   public final String WHEN = "when";
 
@@ -39,6 +40,7 @@ public class YAMLFieldNameConstants {
   public final String FAILURE_STRATEGIES = "failureStrategies";
   public final String NAME = "name";
   public final String IDENTIFIER = "identifier";
+  public final String ID = "id";
   public final String DESCRIPTION = "description";
   public final String TAGS = "tags";
   public final String VARIABLES = "variables";
@@ -56,12 +58,15 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
+  public final String CREDENTIALS_REF = "credentialsRef";
   public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
   public final String SECRET = "secret";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
+  public final String USE_PIPELINE_ROLLBACK_STRATEGY = "usePipelineRollbackStrategy";
+  public final String PIPELINE_ROLLBACK_FAILURE_INFO = "pipelineRollbackFailureInfo";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
   public final String COMMAND = "Command";
 
@@ -96,12 +101,19 @@ public class YAMLFieldNameConstants {
   public final String GROUP = "group";
   public static final String OUTPUTS = "outputs";
 
+  public final String OPTIONS = "options";
   public final String REPOSITORY = "repository";
   public final String DEFAULT = "default";
-  public final String REFERENCE = "reference";
   public final String REGISTRY = "registry";
 
   public final String VALUES_PATHS = "valuesPaths";
   public final String PARAMS_PATHS = "paramsPaths";
   public final String PATCHES_PATHS = "patchesPaths";
+
+  public final String SERVICE_CONFIG = "serviceConfig";
+  // todo(abhinav): make this step group once battle tested
+  public final String STEP_GROUP_V2 = "stepGroup";
+  public final String STEP_GROUP_CHILD_NODE_ID = "stepsChildNodeId";
+
+  public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
 }

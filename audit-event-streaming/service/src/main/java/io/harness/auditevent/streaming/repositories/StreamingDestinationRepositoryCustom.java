@@ -14,5 +14,5 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface StreamingDestinationRepositoryCustom {
   List<StreamingDestination> findAll(Criteria criteria);
-  public List<String> findDistinctAccounts(Criteria criteria);
+  List<String> findDistinctAccounts(Criteria criteria);
 }

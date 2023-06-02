@@ -56,6 +56,7 @@ public class K8sDryRunManifestStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_Dry_Run.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Dry_Run.name",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Dry_Run.description",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Dry_Run.spec.delegateSelectors");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Dry_Run.spec.delegateSelectors",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Dry_Run.when");
   }
 }

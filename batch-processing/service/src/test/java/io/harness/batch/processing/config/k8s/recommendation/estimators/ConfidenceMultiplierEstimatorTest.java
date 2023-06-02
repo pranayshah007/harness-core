@@ -7,12 +7,12 @@
 
 package io.harness.batch.processing.config.k8s.recommendation.estimators;
 
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.MAX_RESOURCE_AMOUNT;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.coresFromCpuAmount;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.cpu;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.cpuAmountFromCores;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.memoryAmountFromBytes;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.MAX_RESOURCE_AMOUNT;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.coresFromCpuAmount;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.cpu;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.cpuAmountFromCores;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.makeResourceMap;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.memoryAmountFromBytes;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;

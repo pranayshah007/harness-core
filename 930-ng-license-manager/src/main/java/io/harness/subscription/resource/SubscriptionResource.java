@@ -24,13 +24,14 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.RecommendationRequest;
+import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 
@@ -47,6 +48,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -89,6 +91,25 @@ public class SubscriptionResource {
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
 
+  @POST
+  @Path("/recommendation-rc")
+  @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation-rc")
+  @Operation(operationId = "retrieveRecommendation-rc", summary = "Retrieves subscription recommendation",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns product prices")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  public ResponseDTO<Map<UsageKey, Long>>
+  retrieveRecommendedUsageRc(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true, description = "License type and, usages mapped to their identifiers") @NotNull
+      @Valid RecommendationRequest recommendationRequest) {
+    return ResponseDTO.newResponse(subscriptionService.getRecommendationRc(accountIdentifier, recommendationRequest));
+  }
+
   @GET
   @Path("/recommendation")
   @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation")
@@ -129,8 +150,8 @@ public class SubscriptionResource {
   }
 
   @POST
-  @ApiOperation(value = "Creates a feature flag subscription", nickname = "createFfSubscription")
-  @Operation(operationId = "createFfSubscription", summary = "Creates a feature flag subscription",
+  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
+  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -138,31 +159,13 @@ public class SubscriptionResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<SubscriptionDetailDTO>
-  createFfSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true, description = "This is the details of the Subscription Request.") @NotNull
-      @Valid FfSubscriptionDTO subscriptionDTO) {
-    return ResponseDTO.newResponse(subscriptionService.createFfSubscription(accountIdentifier, subscriptionDTO));
+      @Valid SubscriptionRequest subscriptionRequest) {
+    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionRequest));
   }
-
-  //  @POST
-  //  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
-  //  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
-  //      responses =
-  //      {
-  //        @io.swagger.v3.oas.annotations.responses.
-  //        ApiResponse(responseCode = "default", description = "Returns subscription details")
-  //      })
-  //  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
-  //  public ResponseDTO<SubscriptionDetailDTO>
-  //  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-  //                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-  //      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-  //          required = true, description = "This is the details of the Subscription Request.") @NotNull
-  //      @Valid SubscriptionDTO subscriptionDTO) {
-  //    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionDTO));
-  //  }
 
   @PUT
   @Path("/{subscriptionId}")
@@ -200,8 +203,10 @@ public class SubscriptionResource {
   cancelSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(required = true, description = "Subscription Identifier for the Entity") @NotNull @PathParam(
-          SUBSCRIPTION_ID) String subscriptionId) {
-    subscriptionService.cancelSubscription(accountIdentifier, subscriptionId);
+          SUBSCRIPTION_ID) String subscriptionId,
+      @Parameter(required = true, description = "Module Type") @NotNull @QueryParam(
+          "moduleType") ModuleType moduleType) {
+    subscriptionService.cancelSubscription(accountIdentifier, subscriptionId, moduleType);
     return ResponseDTO.newResponse();
   }
 
@@ -234,10 +239,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<List<SubscriptionDetailDTO>>
   listSubscriptions(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Module type for the Entity") @QueryParam(
-          "moduleType") ModuleType moduleType) {
-    return ResponseDTO.newResponse(subscriptionService.listSubscriptions(accountIdentifier, moduleType));
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.listSubscriptions(accountIdentifier));
   }
 
   @POST
@@ -390,7 +393,7 @@ public class SubscriptionResource {
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(INVOICE_ID) String invoiceId) {
-    subscriptionService.payInvoice(invoiceId);
+    subscriptionService.payInvoice(invoiceId, accountIdentifier);
     return new RestResponse();
   }
 }

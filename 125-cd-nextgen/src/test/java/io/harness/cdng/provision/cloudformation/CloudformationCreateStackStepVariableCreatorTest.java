@@ -66,7 +66,8 @@ public class CloudformationCreateStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStackId.spec.configuration.templateFile.spec.templateUrl",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStackId.spec.configuration.stackName",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStackId.spec.configuration.skipOnStackStatuses",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStackId.spec.configuration.connectorRef");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStackId.spec.configuration.connectorRef",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStackId.when");
   }
 
   @Test
@@ -95,7 +96,8 @@ public class CloudformationCreateStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.paths",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.commitId",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.folderPath",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.repoName");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.repoName",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.when");
   }
 
   @Test
@@ -121,7 +123,8 @@ public class CloudformationCreateStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.connectorRef",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.connectorRef",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.region",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.urls");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.urls",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.when");
   }
 
   @Test
@@ -152,7 +155,8 @@ public class CloudformationCreateStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.connectorRef",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.connectorRef",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.region",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.urls");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.urls",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.when");
   }
 
   @Test
@@ -178,6 +182,7 @@ public class CloudformationCreateStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.connectorRef",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.connectorRef",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.region",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.urls");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.spec.configuration.parameters.parametersid1.store.spec.urls",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.createStack.when");
   }
 }

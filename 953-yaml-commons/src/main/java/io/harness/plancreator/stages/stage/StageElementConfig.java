@@ -8,8 +8,8 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -79,11 +79,14 @@ public class StageElementConfig {
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  @VariableExpression StageWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STAGE_WHEN_CLASSPATH)
+  @VariableExpression
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  ParameterField<StageWhenCondition> when;
 
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
@@ -92,10 +95,13 @@ public class StageElementConfig {
   ParameterField<Boolean> skipInstances;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @VariableExpression List<NGVariable> variables;
   @VariableExpression Map<String, String> tags;
@@ -109,7 +115,7 @@ public class StageElementConfig {
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
       ParameterField<List<FailureStrategyConfig>> failureStrategies, List<NGVariable> variables, String type,
-      StageInfoConfig stageType, ParameterField<String> skipCondition, StageWhenCondition when,
+      StageInfoConfig stageType, ParameterField<String> skipCondition, ParameterField<StageWhenCondition> when,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.uuid = uuid;
     this.identifier = identifier;

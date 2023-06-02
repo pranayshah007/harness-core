@@ -17,7 +17,7 @@ import java.util.Map;
 public class BurnRateTemplateDataGenerator extends SLOTemplateDataGenerator<SLOErrorBudgetBurnRateCondition> {
   @Override
   public String getHeaderMessage(Map<String, String> notificationDataMap) {
-    return "current burn rate is " + notificationDataMap.get(BURN_RATE) + "% for";
+    return "current burn rate is " + notificationDataMap.get(BURN_RATE) + "%";
   }
 
   @Override

@@ -18,7 +18,6 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.rule.Owner;
 
-import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;

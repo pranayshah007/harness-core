@@ -18,12 +18,10 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCommandUnit;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.shell.CommandExecutionData;
@@ -31,6 +29,7 @@ import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
 import io.harness.shell.SshSessionManager;
+import io.harness.shell.ssh.SshClientManager;
 
 import com.google.common.base.Joiner;
 import com.google.inject.Inject;
@@ -78,13 +77,11 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
     try {
       return getTaskResponse(parameters, commandUnitsProgress, ScriptType.BASH);
     } catch (Exception e) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in processing command task", sanitizedException);
-      throw new TaskNGDataException(
-          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+      throw SshWinRmExceptionHandler.handle(e, log, commandUnitsProgress, true);
     } finally {
       if (!parameters.executeOnDelegate && isNotEmpty(parameters.getHost())) {
         SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
+        SshClientManager.evictCacheAndDisconnect(parameters.getExecutionId(), parameters.getHost());
       }
     }
   }
@@ -95,10 +92,7 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
     try {
       return getTaskResponse(parameters, commandUnitsProgress, ScriptType.POWERSHELL);
     } catch (Exception e) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in processing command task", sanitizedException);
-      throw new TaskNGDataException(
-          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+      throw SshWinRmExceptionHandler.handle(e, log, commandUnitsProgress, false);
     }
   }
 

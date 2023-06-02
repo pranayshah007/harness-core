@@ -36,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -68,11 +69,10 @@ public abstract class DelegateHeartbeatService<T extends Object> {
     if (isNotEmpty(existingDelegate.getDelegateConnectionId())) {
       UUID currentUUID = convertFromBase64(params.getDelegateConnectionId());
       UUID existingUUID = convertFromBase64(existingDelegate.getDelegateConnectionId());
-      if (existingUUID.timestamp() > currentUUID.timestamp()) {
+      if (existingUUID.timestamp() < currentUUID.timestamp()) {
         if (DelegateType.SHELL_SCRIPT.equals(existingDelegate.getDelegateType())) {
           shellScriptDelegateLocationCheck(existingDelegate, params);
         }
-      } else {
         delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
         log.debug("Delegate restarted");
       }
@@ -89,7 +89,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
     logLastHeartbeatSkew(existingDelegate.getUuid(), params.getLastHeartBeat());
     delegateHeartbeatDao.updateDelegateWithHeartbeatAndConnectionInfo(existingDelegate.getAccountId(),
         existingDelegate.getUuid(), clock.millis(),
-        Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()), params);
+        Date.from(OffsetDateTime.now().plus(existingDelegate.ttlMillis(), ChronoUnit.MILLIS).toInstant()), params);
     delegateTaskService.touchExecutingTasks(existingDelegate.getAccountId(), existingDelegate.getUuid(),
         existingDelegate.getCurrentlyExecutingDelegateTasks());
     // FIXME: have a different way of updating TTL since one group can have multiple delegates and all of them will be

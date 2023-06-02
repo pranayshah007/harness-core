@@ -29,6 +29,8 @@ public class GitBaseRequest {
   private GitRepositoryType repoType;
   private Boolean disableUserGitConfig;
 
+  private boolean unsureOrNonExistentBranch;
+
   public boolean useBranch() {
     return isNotEmpty(branch);
   }

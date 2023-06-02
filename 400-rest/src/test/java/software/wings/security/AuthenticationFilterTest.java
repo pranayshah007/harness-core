@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -47,6 +47,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
@@ -99,6 +100,8 @@ public class AuthenticationFilterTest extends CategoryTest {
   @Mock ExternalApiRateLimitingService rateLimitingService = mock(ExternalApiRateLimitingService.class);
   @Mock SecretManager secretManager = mock(SecretManager.class);
 
+  @Mock DelegateAuthService delegateAuthService = mock(DelegateAuthService.class);
+
   @InjectMocks AuthenticationFilter authenticationFilter;
 
   ContainerRequestContext context = mock(ContainerRequestContext.class);
@@ -108,7 +111,7 @@ public class AuthenticationFilterTest extends CategoryTest {
   @Before
   public void setUp() {
     authenticationFilter = new AuthenticationFilter(userService, authService, auditService, auditHelper, apiKeyService,
-        thirdPartyApiKeyService, rateLimitingService, secretManager);
+        thirdPartyApiKeyService, rateLimitingService, secretManager, delegateAuthService);
     authenticationFilter = spy(authenticationFilter);
     when(context.getSecurityContext()).thenReturn(securityContext);
     when(securityContext.isSecure()).thenReturn(true);
@@ -191,8 +194,9 @@ public class AuthenticationFilterTest extends CategoryTest {
     authenticationFilter.filter(context);
     assertThat(context.getSecurityContext().isSecure()).isTrue();
 
-    verify(authService, times(1)).validateDelegateToken(any(), any(), any(), any(), any(), eq(true));
-    verify(authService, times(1)).validateDelegateToken(eq(ACCOUNT_ID), any(), any(), any(), eq(FQDN), eq(true));
+    verify(delegateAuthService, times(1)).validateDelegateToken(any(), any(), any(), any(), any(), eq(true));
+    verify(delegateAuthService, times(1))
+        .validateDelegateToken(eq(ACCOUNT_ID), any(), any(), any(), eq(FQDN), eq(true));
   }
 
   @Test
@@ -510,7 +514,7 @@ public class AuthenticationFilterTest extends CategoryTest {
   private Method getMockResourceMethod() {
     Class mockClass = UserResourceNG.class;
     try {
-      return mockClass.getMethod("getUser", String.class, Boolean.class);
+      return mockClass.getMethod("getUser", String.class);
     } catch (NoSuchMethodException e) {
       return null;
     }

@@ -49,10 +49,12 @@ public class K8sApiClient implements K8sClient {
       return true;
     }
 
-    ApiClient apiClient =
-        k8sClientHelper.createKubernetesApiClient(steadyStateDTO.getRequest().getK8sInfraDelegateConfig());
-    Set<String> namespaces = k8sClientHelper.getNamespacesToMonitor(workloads, steadyStateDTO.getNamespace());
     LogCallback executionLogCallback = steadyStateDTO.getExecutionLogCallback();
+    ApiClient apiClient =
+        k8sClientHelper.createKubernetesApiClient(steadyStateDTO.getRequest().getK8sInfraDelegateConfig(),
+            steadyStateDTO.getK8sDelegateTaskParams().getWorkingDirectory(), executionLogCallback,
+            steadyStateDTO.getKubernetesConfig());
+    Set<String> namespaces = k8sClientHelper.getNamespacesToMonitor(workloads, steadyStateDTO.getNamespace());
 
     log.info("Executing API based steady state check for workloads.");
     K8sEventWatchDTO eventWatchDTO = k8sClientHelper.createEventWatchDTO(steadyStateDTO, apiClient);

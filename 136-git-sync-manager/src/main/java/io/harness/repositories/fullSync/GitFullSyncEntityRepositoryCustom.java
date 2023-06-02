@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.core.beans.GitFullSyncEntityInfo;
 
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -29,5 +30,5 @@ public interface GitFullSyncEntityRepositoryCustom {
 
   List<GitFullSyncEntityInfo> findAll(Criteria criteria);
 
-  List<GitFullSyncEntityInfo> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
 }

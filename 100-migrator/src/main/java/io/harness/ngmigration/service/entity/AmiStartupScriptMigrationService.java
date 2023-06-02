@@ -20,9 +20,11 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.FileYamlDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
@@ -85,21 +87,25 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    return migrateFile(auth, ngClient, inputDTO, yamlFile);
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    return migrateFile(ngClient, inputDTO, yamlFile);
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    UserDataSpecification userDataSpecification = (UserDataSpecification) entities.get(entityId).getEntity();
-    NGYamlFile yamlFile = getYamlFile(userDataSpecification, inputDTO, entities);
-    return yamlFile != null ? Collections.singletonList(yamlFile) : Collections.emptyList();
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    UserDataSpecification userDataSpecification =
+        (UserDataSpecification) migrationContext.getEntities().get(entityId).getEntity();
+    NGYamlFile yamlFile = getYamlFile(migrationContext, userDataSpecification);
+    if (yamlFile == null) {
+      return null;
+    }
+    return YamlGenerationDetails.builder().yamlFileList(Collections.singletonList(yamlFile)).build();
   }
 
-  private NGYamlFile getYamlFile(
-      UserDataSpecification userDataSpecification, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+  private NGYamlFile getYamlFile(MigrationContext migrationContext, UserDataSpecification userDataSpecification) {
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     if (StringUtils.isBlank(userDataSpecification.getData())) {
       return null;
     }
@@ -119,7 +125,8 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.CONFIG.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "StartupScriptSpec");
+    String identifier =
+        MigratorUtility.generateManifestIdentifier(prefix + "StartupScriptSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".sh";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.AMI_STARTUP_SCRIPT)
@@ -129,10 +136,14 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
                   .fileUsage(fileUsage)
                   .name(name)
                   .content(new String(content))
+                  .rootIdentifier("Root")
+                  .depth(Integer.MAX_VALUE)
+                  .filePath("")
                   .orgIdentifier(orgIdentifier)
                   .projectIdentifier(projectIdentifier)
                   .build())
         .ngEntityDetail(NgEntityDetail.builder()
+                            .entityType(NGMigrationEntityType.FILE_STORE)
                             .identifier(identifier)
                             .orgIdentifier(orgIdentifier)
                             .projectIdentifier(projectIdentifier)
@@ -142,7 +153,8 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 
@@ -152,7 +164,8 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
   }
 
   public List<StartupScriptConfiguration> getStartupScriptConfiguration(
-      Set<CgEntityId> serviceSpecIds, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+      MigrationContext migrationContext, Set<CgEntityId> serviceSpecIds) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     if (isEmpty(serviceSpecIds)) {
       return new ArrayList<>();
     }
@@ -161,7 +174,7 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
       CgEntityNode configNode = entities.get(configEntityId);
       if (configNode != null) {
         UserDataSpecification specification = (UserDataSpecification) configNode.getEntity();
-        NGYamlFile file = getYamlFile(specification, inputDTO, entities);
+        NGYamlFile file = getYamlFile(migrationContext, specification);
         if (file != null) {
           scriptConfigurations.add(getConfigFileWrapper(file));
         }

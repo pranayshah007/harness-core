@@ -62,6 +62,8 @@ public class KubernetesExceptionExplanation {
   public final String K8S_CHARACTER_ERROR = "The following resource(s) are breaching the naming constraints:\n%s";
   public final String FAILED_COMMAND_WITH_EXITCODE_AND_OUTPUT =
       "Command executed: [%s] %nExit Code: [%s] %nOutput: [%s] %nkubectl binary path: [%s]";
+  public final String FAILED_COMMAND_RESOURCES_NOT_APPLIED = "Resources not applied: [%s]";
+  public final String FAILED_COMMAND_KUBECTL_VERSION = "kubernetes version: [%s]";
   public final String FAILED_COMMAND_WITH_EXITCODE =
       "Command executed: [%s] %nExit Code: [%s] %nkubectl binary path: [%s]";
   public final String VALIDATION_FAILED_UNKNOWN_FIELD = "The manifest contains the following unknown fields: \n%s";
@@ -72,8 +74,8 @@ public class KubernetesExceptionExplanation {
       "The provided values.yaml file(s) may contain a field with missing/null value or refer an expression which is not being resolved.";
 
   public final String API_CLIENT_CREATE_FAILED = "Failed to create Kubernetes API client with given credentials";
-  public final String API_CLIENT_CA_CERT_INVALID_FORMAT = "Failed to parse CA certificate";
-  public final String API_CLIENT_CA_CERT_INCOMPLETE = "Invalid or corrupted CA certificate";
+  public final String API_CLIENT_CA_CERT_INVALID = "Failed to parse %s field";
+  public final String API_CLIENT_CA_CERT_INCOMPLETE = "Invalid or corrupted %s field";
   public final String MANIFEST_RENDER_ERROR_GO_TEMPLATE = "Failed to render manifests. %n%s";
   public final String MANIFEST_RENDER_ERROR_HELM =
       "Failed to render manifests with error: %n%s %n%nCommand Executed: %n%s";
@@ -87,4 +89,7 @@ public class KubernetesExceptionExplanation {
   public final String EXPECTED_BLOCK_END = "Expected a 'block end' but found: scalar";
   public final String INVALID_TEMPLATE_PATH = "The openshift template file path is empty";
   public final String MANIFEST_SIZE_LIMIT = "The max limit of manifest file size is 5MB.";
+  public final String OPENSHIFT_RENDER_ERROR = "Failed to render template with error: %n%s %n%nCommand Executed: %n%s";
+  public final String FILE_PATH_NOT_PART_OF_MANIFEST_FORMAT = "File path: %s is not part of manifest directory";
+  public final String NO_FILES_EXISTS_IN_MANIFEST_DIRECTORY = "No files found in manifest directory";
 }

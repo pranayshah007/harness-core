@@ -46,6 +46,12 @@ public class CgInstanceSyncTaskDetailsService {
   public boolean delete(String taskDetailsId) {
     return mongoPersistence.delete(InstanceSyncTaskDetails.class, taskDetailsId);
   }
+  public boolean deleteByInfraMappingId(String accountId, String infraMappingId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.infraMappingId, infraMappingId);
+    return mongoPersistence.delete(query);
+  }
 
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {
     return mongoPersistence.get(InstanceSyncTaskDetails.class, taskDetailsId);
@@ -94,14 +100,18 @@ public class CgInstanceSyncTaskDetailsService {
       String taskDetailsId, Set<CgReleaseIdentifiers> releasesToUpdate, Set<CgReleaseIdentifiers> releasesToDelete) {
     InstanceSyncTaskDetails taskDetails = getForId(taskDetailsId);
     taskDetails.setLastSuccessfulRun(System.currentTimeMillis());
+    Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
     if (!releasesToUpdate.isEmpty() || !releasesToDelete.isEmpty()) {
-      Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
       if (isNotEmpty(taskDetails.getReleaseIdentifiers())) {
         allReleases.addAll(taskDetails.getReleaseIdentifiers());
       }
       allReleases.removeAll(releasesToDelete);
       taskDetails.setReleaseIdentifiers(allReleases);
     }
-    save(taskDetails);
+    if (allReleases.isEmpty()) {
+      delete(taskDetailsId);
+    } else {
+      save(taskDetails);
+    }
   }
 }

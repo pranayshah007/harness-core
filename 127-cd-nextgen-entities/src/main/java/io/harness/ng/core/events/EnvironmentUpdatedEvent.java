@@ -21,10 +21,12 @@ import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -53,7 +55,7 @@ public class EnvironmentUpdatedEvent implements Event {
   private Environment newEnvironment;
   private Environment oldEnvironment;
 
-  public enum Status { CREATED, UPDATED, UPSERTED, DELETED }
+  public enum Status { CREATED, UPDATED, UPSERTED, DELETED, FORCE_DELETED }
 
   public enum ResourceType { SERVICE_OVERRIDE, INFRASTRUCTURE, ENVIRONMENT }
 
@@ -118,6 +120,7 @@ public class EnvironmentUpdatedEvent implements Event {
     Map<String, String> labels = new HashMap<>();
     labels.put(STATUS, status.name());
     labels.put(RESOURCE_TYPE, resourceType.name());
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, resourceName());
     if (resourceType.equals(ResourceType.SERVICE_OVERRIDE)) {
       labels.put(SERVICE_OVERRIDE_NAME, resourceName());
     } else if (resourceType.equals(ResourceType.INFRASTRUCTURE)) {
@@ -131,7 +134,7 @@ public class EnvironmentUpdatedEvent implements Event {
       case SERVICE_OVERRIDE:
         NGServiceOverridesEntity ngServiceOverridesEntity =
             newServiceOverridesEntity == null ? oldServiceOverridesEntity : newServiceOverridesEntity;
-        return ngServiceOverridesEntity.getEnvironmentRef();
+        return IdentifierRefHelper.getIdentifier(ngServiceOverridesEntity.getEnvironmentRef());
       case INFRASTRUCTURE:
         InfrastructureEntity infrastructure =
             newInfrastructureEntity == null ? oldInfrastructureEntity : newInfrastructureEntity;

@@ -21,6 +21,6 @@ public class CIStepVariableCreator extends GenericStepVariableCreator {
     return Sets.newHashSet("SaveCacheS3", "BuildAndPushGCR", "BuildAndPushACR", "BuildAndPushECR",
         "BuildAndPushDockerRegistry", "Plugin", "Security", "RestoreCacheGCS", "RestoreCacheS3", "SaveCacheGCS",
         "S3Upload", "GCSUpload", "ArtifactoryUpload", "GitClone", "Action", "Bitrise", "script", "plugin", "test",
-        "background");
+        "background", "bitrise", "action");
   }
 }

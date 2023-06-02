@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -24,8 +25,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 public interface RoleAssignmentDao {
   RoleAssignment create(@Valid RoleAssignment roleAssignment);
 
-  PageResponse<RoleAssignment> list(
-      @NotNull PageRequest pageRequest, @Valid @NotNull RoleAssignmentFilter roleAssignmentFilter);
+  PageResponse<RoleAssignment> list(@NotNull PageRequest pageRequest,
+      @Valid @NotNull RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal);
 
   Optional<RoleAssignment> get(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 
@@ -34,4 +35,6 @@ public interface RoleAssignmentDao {
   Optional<RoleAssignment> delete(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 
   long deleteMulti(@Valid @NotNull RoleAssignmentFilter roleAssignmentFilter);
+
+  long deleteMulti(String scopeIdentifier, List<String> identifiers);
 }

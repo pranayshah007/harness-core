@@ -92,7 +92,8 @@ public class JiraUpdateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.transitionTo.status",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.delegateSelectors",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.connectorRef",
-            "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.issueKey");
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.issueKey",
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -105,7 +106,6 @@ public class JiraUpdateStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.jira_update.identifier",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.type",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.jira_update.endTs",
-            "pipeline.stages.stage1.spec.execution.steps.jira_update.when");
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.endTs");
   }
 }

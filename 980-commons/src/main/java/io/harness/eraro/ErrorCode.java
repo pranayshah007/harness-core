@@ -12,7 +12,6 @@ import static io.harness.eraro.Status.CONFLICT;
 import static io.harness.eraro.Status.EXPECTATION_FAILED;
 import static io.harness.eraro.Status.FORBIDDEN;
 import static io.harness.eraro.Status.GATEWAY_TIMEOUT;
-import static io.harness.eraro.Status.INTERNAL_SERVER_ERROR;
 import static io.harness.eraro.Status.MOVED_PERMANENTLY;
 import static io.harness.eraro.Status.NOT_FOUND;
 import static io.harness.eraro.Status.SERVICE_UNAVAILABLE;
@@ -24,6 +23,7 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.google.common.base.Splitter;
 
 /**
@@ -31,7 +31,7 @@ import com.google.common.base.Splitter;
  */
 @OwnedBy(HarnessTeam.DX)
 public enum ErrorCode {
-  DEFAULT_ERROR_CODE,
+  @JsonEnumDefaultValue DEFAULT_ERROR_CODE,
 
   INVALID_ARGUMENT,
 
@@ -131,7 +131,7 @@ public enum ErrorCode {
 
   UNEXPECTED,
 
-  UNKNOWN_ERROR(INTERNAL_SERVER_ERROR),
+  UNKNOWN_ERROR(Status.INTERNAL_SERVER_ERROR),
 
   UNKNOWN_EXECUTOR_TYPE_ERROR,
 
@@ -574,6 +574,7 @@ public enum ErrorCode {
   UNRESOLVED_EXPRESSIONS_ERROR,
   KRYO_HANDLER_NOT_FOUND_ERROR,
   DELEGATE_ERROR_HANDLER_EXCEPTION,
+  DELEGATE_SERVICE_DRIVER_EXCEPTION,
   DELEGATE_INSTALLATION_COMMAND_NOT_SUPPORTED_EXCEPTION,
   UNEXPECTED_TYPE_ERROR,
   EXCEPTION_HANDLER_NOT_FOUND,
@@ -601,6 +602,7 @@ public enum ErrorCode {
   BUCKET_SERVER_ERROR,
   GIT_SYNC_ERROR,
   TEMPLATE_EXCEPTION,
+  TEMPLATE_ALREADY_EXISTS_EXCEPTION,
   ENTITY_REFERENCE_EXCEPTION,
   ACTIVE_SERVICE_INSTANCES_PRESENT_EXCEPTION,
   INVALID_INPUT_SET,
@@ -624,7 +626,7 @@ public enum ErrorCode {
   AWS_TAG_ERROR,
   AWS_ASG_ERROR,
   AWS_LOAD_BALANCER_ERROR,
-  SCM_INTERNAL_SERVER_ERROR_V2(INTERNAL_SERVER_ERROR),
+  SCM_INTERNAL_SERVER_ERROR_V2(Status.INTERNAL_SERVER_ERROR),
 
   SCM_UNAUTHORIZED_ERROR_V2,
   TOO_MANY_REQUESTS,
@@ -662,7 +664,22 @@ public enum ErrorCode {
   TERRAGRUNT_EXECUTION_ERROR,
   ADFS_ERROR,
   TERRAFORM_CLOUD_ERROR,
-  CLUSTER_CREDENTIALS_NOT_FOUND;
+  CLUSTER_CREDENTIALS_NOT_FOUND,
+  SCM_API_ERROR,
+  INTERNAL_SERVER_ERROR(Status.INTERNAL_SERVER_ERROR),
+
+  SCM_FORBIDDEN,
+  AWS_EKS_ERROR,
+  OPA_POLICY_EVALUATION_ERROR,
+
+  USER_MARKED_FAILURE,
+  SSH_RETRY("Ssh retryable error"),
+  HTTP_CLIENT_ERROR_RESPONSE,
+  HTTP_INTERNAL_SERVER_ERROR,
+  HTTP_BAD_GATEWAY,
+  HTTP_SERVICE_UNAVAILABLE,
+  HTTP_GATEWAY_TIMEOUT,
+  HTTP_SERVER_ERROR_RESPONSE;
 
   private Status status = BAD_REQUEST;
   private String description;

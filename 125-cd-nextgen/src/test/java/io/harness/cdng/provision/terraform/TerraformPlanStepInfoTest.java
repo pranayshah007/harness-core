@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,8 +47,6 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateParams() {
     TerraformPlanStepInfo terraformPlanStepInfo = new TerraformPlanStepInfo();
-    Assertions.assertThatThrownBy(terraformPlanStepInfo::validateSpecParams)
-        .hasMessageContaining("Terraform Plan configuration is NULL");
 
     TerraformPlanExecutionData terraformPlanExecutionData = TerraformPlanExecutionData.builder().build();
     terraformPlanStepInfo.setTerraformPlanExecutionData(terraformPlanExecutionData);
@@ -164,6 +163,56 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
     assertThat(terraformPlanStepParameters.configuration.varFiles.get("var-file-1").identifier).isEqualTo("var-file-1");
     assertThat(terraformPlanStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
         .isEqualTo("sel1");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetSpecParametersAndTFCloudCli() {
+    TerraformPlanStepInfo terraformPlanStepInfo = new TerraformPlanStepInfo();
+    TerraformCloudCliPlanExecutionData terraformPlanExecutionData =
+        TerraformCloudCliPlanExecutionData.builder().build();
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+    configFilesWrapper.setStore(StoreConfigWrapper.builder()
+                                    .spec(GithubStore.builder()
+                                              .branch(ParameterField.createValueField("master"))
+                                              .gitFetchType(FetchType.BRANCH)
+                                              .connectorRef(ParameterField.createValueField("terraform"))
+                                              .folderPath(ParameterField.createValueField("Config/"))
+                                              .build())
+                                    .type(StoreConfigType.GITHUB)
+                                    .build());
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
+    remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder()
+                                            .spec(GitLabStore.builder()
+                                                      .branch(ParameterField.createValueField("master"))
+                                                      .gitFetchType(FetchType.BRANCH)
+                                                      .connectorRef(ParameterField.createValueField("terraform"))
+                                                      .folderPath(ParameterField.createValueField("VarFiles/"))
+                                                      .build())
+                                            .type(StoreConfigType.GITLAB)
+                                            .build());
+    terraformPlanExecutionData.setTerraformConfigFilesWrapper(configFilesWrapper);
+    TerraformVarFileWrapper terraformVarFileWrapper = new TerraformVarFileWrapper();
+    terraformVarFileWrapper.setVarFile(
+        TerraformVarFile.builder().identifier("var-file-1").type("Remote").spec(remoteTerraformVarFileSpec).build());
+    List<TerraformVarFileWrapper> varFiles = new LinkedList<>();
+    varFiles.add(terraformVarFileWrapper);
+    terraformPlanExecutionData.setTerraformVarFiles(varFiles);
+    terraformPlanExecutionData.setCommand(TerraformPlanCommand.APPLY);
+    terraformPlanStepInfo.setTerraformCloudCliPlanExecutionData(terraformPlanExecutionData);
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
+    terraformPlanStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+    SpecParameters specParameters = terraformPlanStepInfo.getSpecParameters();
+    TerraformPlanStepParameters terraformPlanStepParameters = (TerraformPlanStepParameters) specParameters;
+    assertThat(specParameters).isNotNull();
+    assertThat(terraformPlanStepParameters.configuration.command).isEqualTo(TerraformPlanCommand.APPLY);
+    assertThat(terraformPlanStepParameters.configuration.configFiles.store.getType()).isEqualTo(StoreConfigType.GITHUB);
+    assertThat(terraformPlanStepParameters.configuration.varFiles.get("var-file-1").type).isEqualTo("Remote");
+    assertThat(terraformPlanStepParameters.configuration.varFiles.get("var-file-1").identifier).isEqualTo("var-file-1");
+    assertThat(terraformPlanStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
+        .isEqualTo("sel1");
+    assertThat(terraformPlanStepParameters.getConfiguration().getIsTerraformCloudCli().getValue()).isTrue();
   }
 
   @Test

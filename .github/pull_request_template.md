@@ -10,37 +10,58 @@
   <summary>Build triggers</summary>
 
 - Feature build: `trigger feature-build`
+- 
+  Specific builds
+  - `trigger manager`
+  - `trigger dms`
+  - `trigger ng_manager`
+  - `trigger cvng `
+  - `trigger cmdlib`
+  - `trigger template_svc`
+  - `trigger events_fmwrk_monitor`
+  - `trigger event_server`
+  - `trigger change_data_capture`
+  -  Trigger multiple builds together: For eg: `trigger dms, manager`
 - Immutable delegate `trigger publish-delegate`
 </details>
 
+## [Latest PR Check Triggers](https://github.com/harness/harness-core/blob/develop/.github/pull_request_template.md)
+
 <details>
   <summary>PR Check triggers</summary>
-
-You can run multiple PR check triggers by comma separating them in a single comment. e.g. `trigger ti0, ti1`
+You can run multiple PR check triggers by comma separating them in a single comment. e.g. `trigger ut0, ut1`
 
 - Compile: `trigger compile`
 - CodeformatCheckstyle: `trigger checkstylecodeformat`
-    - CodeFormat: `trigger codeformat`
-    - Checkstyle: `trigger checkstyle`
+  - CodeFormat: `trigger codeformat`
+  - Checkstyle: `trigger checkstyle`
 - MessageMetadata: `trigger messagecheck`
 - File-Permission-Check: `trigger checkpermission`
 - Recency: `trigger recency`
 - BuildNumberMetadata: `trigger buildnum`
+- Trigger CommonChecks: `trigger commonchecks`
 - PMD: `trigger pmd`
 - Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`
-- TI-bootstrap: `trigger ti0`
-- TI-bootstrap1: `trigger ti1`
-- TI-bootstrap2: `trigger ti2`
-- TI-bootstrap3: `trigger ti3`
-- TI-bootstrap4: `trigger ti4`
-- FunctionalTest1: `trigger ft1`
-- FunctionalTest2: `trigger ft2`
+- UnitTests-ALL: `trigger uts`
+- UnitTests-0: `trigger ut0`
+- UnitTests-1: `trigger ut1`
+- UnitTests-2: `trigger ut2`
+- UnitTests-3: `trigger ut3`
+- UnitTests-4: `trigger ut4`
+- UnitTests-5: `trigger ut5`
+- UnitTests-6: `trigger ut6`
+- UnitTests-7: `trigger ut7`
+- UnitTests-8: `trigger ut8`
+- UnitTests-9: `trigger ut9`
 - CodeBaseHash: `trigger codebasehash`
 - CodeFormatCheckstyle: `trigger checkstylecodeformat`
 - SonarScan: `trigger ss`
 - GitLeaks: `trigger gitleaks`
 - Trigger all Checks: `trigger smartchecks`
+- Go Build: `trigger gobuild`
+- Validate_Reviews: `trigger review`
+- Module Dependency Check: `trigger mdc`
 </details>
 
 ## PR check failures and solutions
@@ -48,3 +69,4 @@ https://harness.atlassian.net/wiki/spaces/BT/pages/21106884744/PR+Checks+-+Failu
 
 
 ## [Contributor license agreement](https://github.com/harness/harness-core/blob/develop/CONTRIBUTOR_LICENSE_AGREEMENT.md)
+

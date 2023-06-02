@@ -43,10 +43,10 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.aggregation.Group;
 import dev.morphia.query.Query;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -287,21 +287,25 @@ public class GitChangeSetRunnable implements Runnable {
 
   @NotNull
   private Set<ChangeSetGroupingKey> getChangesetGroupingKeys(Query<YamlChangeSet> query) {
-    final Iterator<ChangeSetGroupingKey> groupingKeyIterator =
+    final Set<ChangeSetGroupingKey> keys = new HashSet<>();
+    AggregationPipeline aggregationPipeline =
         wingsPersistence.getDatastore(YamlChangeSet.class)
             .createAggregation(YamlChangeSet.class)
             .match(query)
             .group(Group.id(grouping(YamlChangeSetKeys.accountId), grouping(YamlChangeSetKeys.queueKey)),
                 grouping(YamlChangeSetKeys.accountId, first(YamlChangeSetKeys.accountId)),
                 grouping(YamlChangeSetKeys.queueKey, first(YamlChangeSetKeys.queueKey)),
-                grouping("count", accumulator("$sum", 1)))
-            .aggregate(ChangeSetGroupingKey.class,
-                AggregationOptions.builder()
-                    .maxTime(wingsPersistence.getMaxTimeMs(YamlChangeSet.class), TimeUnit.MILLISECONDS)
-                    .build());
-
-    final Set<ChangeSetGroupingKey> keys = new HashSet<>();
-    groupingKeyIterator.forEachRemaining(keys::add);
+                grouping("count", accumulator("$sum", 1)));
+    int limit = wingsPersistence.getMaxDocumentLimit(YamlChangeSet.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
+        .aggregate(ChangeSetGroupingKey.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(YamlChangeSet.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(keys::add);
     return keys;
   }
 

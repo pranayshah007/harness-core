@@ -19,9 +19,9 @@ import java.util.Map;
 public interface DelegateNgTokenService extends OwnedByAccount {
   String getDefaultTokenName(DelegateEntityOwner owner);
 
-  DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name);
+  DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name, Long revokeAfter);
 
-  DelegateTokenDetails revokeDelegateToken(String accountId, DelegateEntityOwner owner, String tokenName);
+  DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName);
 
   List<DelegateTokenDetails> getDelegateTokens(String accountId, DelegateEntityOwner owner, DelegateTokenStatus status);
 

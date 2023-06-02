@@ -13,8 +13,8 @@ import static software.wings.common.VerificationConstants.AZURE_BASE_URL;
 import static software.wings.common.VerificationConstants.AZURE_TOKEN_URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,8 +27,8 @@ import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.cv.RequestExecutor;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.intfc.security.EncryptionService;
 
 import java.util.ArrayList;

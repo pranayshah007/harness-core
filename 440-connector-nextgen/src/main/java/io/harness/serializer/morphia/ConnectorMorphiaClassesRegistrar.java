@@ -20,6 +20,9 @@ import io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeComm
 import io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeCommitSecretKeyAccessKey;
 import io.harness.connector.entities.embedded.awsconnector.AwsAccessKeyCredential;
 import io.harness.connector.entities.embedded.awsconnector.AwsConfig;
+import io.harness.connector.entities.embedded.awsconnector.AwsEqualJitterBackoffStrategy;
+import io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy;
+import io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy;
 import io.harness.connector.entities.embedded.awsconnector.AwsIamCredential;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredential;
@@ -39,6 +42,7 @@ import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAu
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken;
+import io.harness.connector.entities.embedded.bamboo.BambooConnector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketConnector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketSshAuthentication;
@@ -87,6 +91,8 @@ import io.harness.connector.entities.embedded.helm.OciHelmConnector;
 import io.harness.connector.entities.embedded.helm.OciHelmUsernamePasswordAuthentication;
 import io.harness.connector.entities.embedded.jenkins.JenkinsConnector;
 import io.harness.connector.entities.embedded.jira.JiraConnector;
+import io.harness.connector.entities.embedded.jira.JiraPATAuthentication;
+import io.harness.connector.entities.embedded.jira.JiraUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sClientKeyCert;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sOpenIdConnect;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sServiceAccount;
@@ -101,9 +107,11 @@ import io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswo
 import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
+import io.harness.connector.entities.embedded.rancherconnector.RancherConfig;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
+import io.harness.connector.entities.embedded.signalfxconnector.SignalFXConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
@@ -165,7 +173,10 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(ELKConnector.class);
     set.add(GcpSecretManagerConnector.class);
     set.add(AzureArtifactsConnector.class);
+    set.add(BambooConnector.class);
     set.add(TerraformCloudConfig.class);
+    set.add(SignalFXConnector.class);
+    set.add(RancherConfig.class);
   }
 
   @Override
@@ -238,5 +249,14 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
         ServiceNowUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.servicenow.ServiceNowADFSAuthentication", ServiceNowADFSAuthentication.class);
+    h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
+        JiraUserNamePasswordAuthentication.class);
+    h.put("connector.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);
+    h.put("io.harness.connector.entities.embedded.awsconnecto.AwsEqualJitterBackoffStrategy",
+        AwsEqualJitterBackoffStrategy.class);
+    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy",
+        AwsFixedDelayBackoffStrategy.class);
+    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy",
+        AwsFullJitterBackoffStrategy.class);
   }
 }

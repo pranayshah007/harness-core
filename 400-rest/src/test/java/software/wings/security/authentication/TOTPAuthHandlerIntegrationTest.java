@@ -13,8 +13,7 @@ import static io.harness.rule.OwnerRule.BOGDAN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -111,7 +110,7 @@ public class TOTPAuthHandlerIntegrationTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldReturnUserIfChallengeSuccessful() {
     // given
-    when(mockChecker.check(anyObject())).thenReturn(true);
+    when(mockChecker.check(any())).thenReturn(true);
 
     // when
     User returnedUser = handler.authenticate(USER, CREDS);
@@ -125,7 +124,7 @@ public class TOTPAuthHandlerIntegrationTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowIfChallengeUnsuccessful() {
     // given
-    when(mockChecker.check(anyObject())).thenReturn(false);
+    when(mockChecker.check(any())).thenReturn(false);
 
     // then
     assertThatThrownBy(() -> handler.authenticate(USER, CREDS))
@@ -138,7 +137,7 @@ public class TOTPAuthHandlerIntegrationTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowIfUserBreachesLimit() {
     // given
-    when(mockChecker.check(anyObject())).thenReturn(false);
+    when(mockChecker.check(any())).thenReturn(false);
 
     // when
     for (int i = 0; i < RATE_LIMIT.getCount(); i++) {
@@ -160,7 +159,7 @@ public class TOTPAuthHandlerIntegrationTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendEmailToUserIfLimitBreached() {
     // given
-    when(mockChecker.check(anyObject())).thenReturn(false);
+    when(mockChecker.check(any())).thenReturn(false);
 
     // when
     for (int i = 0; i < RATE_LIMIT.getCount(); i++) {
@@ -190,7 +189,7 @@ public class TOTPAuthHandlerIntegrationTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendEmailToSecOps() {
     // given
-    when(mockChecker.check(anyObject())).thenReturn(false);
+    when(mockChecker.check(any())).thenReturn(false);
 
     // when
     for (int i = 0; i < attemptsUntilSecops - 1; i++) {

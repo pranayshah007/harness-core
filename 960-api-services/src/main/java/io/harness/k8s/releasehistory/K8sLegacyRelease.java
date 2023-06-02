@@ -37,6 +37,8 @@ public class K8sLegacyRelease implements IK8sRelease {
   @Builder.Default private List<KubernetesResource> customWorkloads = new ArrayList<>();
   @Builder.Default private List<KubernetesResource> resourcesWithSpec = new ArrayList<>();
 
+  private String bgEnvironment;
+
   @Override
   public Integer getReleaseNumber() {
     return number;
@@ -55,6 +57,11 @@ public class K8sLegacyRelease implements IK8sRelease {
   @Override
   public List<KubernetesResourceId> getResourceIds() {
     return resources;
+  }
+
+  @Override
+  public String getReleaseColor() {
+    return "";
   }
 
   @Override

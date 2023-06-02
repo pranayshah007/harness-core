@@ -22,9 +22,9 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
-import io.harness.dtos.deploymentinfo.SshWinrmDeploymentInfoDTO;
 import io.harness.encryption.Scope;
 import io.harness.entities.ArtifactDetails;
+import io.harness.entities.RollbackStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -32,6 +32,7 @@ import io.harness.models.DeploymentEvent;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -46,10 +47,12 @@ import io.harness.service.instancesync.InstanceSyncService;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
 import io.harness.util.logging.InstanceSyncLogContext;
+import io.harness.utils.ExecutionModeUtils;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
@@ -75,7 +78,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
          AutoLogContext ignore2 = InstanceSyncLogContext.builder()
                                       .instanceSyncFlow(InstanceSyncFlow.NEW_DEPLOYMENT.name())
                                       .build(OVERRIDE_ERROR)) {
-      if (!StatusUtils.isFinalStatus(event.getStatus())) {
+      if (!StatusUtils.isFinalStatus(event.getStatus())
+          || Objects.equals(AmbianceUtils.obtainNodeType(ambiance), "IDENTITY_PLAN_NODE")) {
         return;
       }
 
@@ -89,8 +93,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
       InfrastructureMappingDTO infrastructureMappingDTO =
           createInfrastructureMappingIfNotExists(ambiance, serviceStepOutcome, infrastructureOutcome);
-      DeploymentSummaryDTO deploymentSummaryDTO = createDeploymentSummary(
-          ambiance, serviceStepOutcome, infrastructureOutcome, infrastructureMappingDTO, serverInstanceInfoList);
+      DeploymentSummaryDTO deploymentSummaryDTO = createDeploymentSummary(ambiance, serviceStepOutcome,
+          infrastructureOutcome, infrastructureMappingDTO, serverInstanceInfoList, event.getStatus());
 
       instanceSyncService.processInstanceSyncForNewDeployment(
           new DeploymentEvent(deploymentSummaryDTO, null, infrastructureOutcome));
@@ -152,12 +156,17 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, InfrastructureMappingDTO infrastructureMappingDTO,
-      List<ServerInstanceInfo> serverInstanceInfoList) {
+      List<ServerInstanceInfo> serverInstanceInfoList, Status status) {
     AbstractInstanceSyncHandler abstractInstanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         serviceOutcome.getType(), infrastructureOutcome.getKind());
     DeploymentInfoDTO deploymentInfoDTO =
         abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
-
+    Level stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance).get();
+    RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
+    if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+      // TODO: Please check for which all step statuses, we shall consider that the rollback was completed successfully.
+      rollbackStatus = status == Status.SUCCEEDED ? RollbackStatus.SUCCESS : RollbackStatus.FAILURE;
+    }
     DeploymentSummaryDTO deploymentSummaryDTO =
         DeploymentSummaryDTO.builder()
             .accountIdentifier(getAccountIdentifier(ambiance))
@@ -177,6 +186,10 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .envGroupRef(infrastructureOutcome.getEnvironment() != null
                     ? infrastructureOutcome.getEnvironment().getEnvGroupRef()
                     : null)
+            .stageStatus(status)
+            .stageNodeExecutionId(stageLevel.getRuntimeId())
+            .stageSetupId(stageLevel.getSetupId())
+            .rollbackStatus(rollbackStatus)
             .build();
     setArtifactDetails(ambiance, deploymentSummaryDTO, deploymentInfoDTO);
     deploymentSummaryDTO = deploymentSummaryService.save(deploymentSummaryDTO);
@@ -190,20 +203,14 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
   private void setArtifactDetails(
       Ambiance ambiance, DeploymentSummaryDTO deploymentSummaryDTO, DeploymentInfoDTO deploymentInfoDTO) {
     if (isRollbackDeploymentEvent(ambiance)) {
-      Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional;
-      if (deploymentInfoDTO instanceof SshWinrmDeploymentInfoDTO) {
-        deploymentSummaryDTOOptional = deploymentSummaryService.getLatestByInstanceKeyAndPipelineExecutionIdNot(
-            deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping(),
-            deploymentSummaryDTO.getPipelineExecutionId());
-      } else {
-        /**
-         * Fetch the 2nd deployment summary in DB for the given deployment info
-         * The 1st one will be the deployment summary for which changes have to be reverted, its prev one will
-         * be the last stable one
-         */
-        deploymentSummaryDTOOptional = deploymentSummaryService.getNthDeploymentSummaryFromNow(
-            2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
-      }
+      /**
+       * Fetch the 2nd deployment summary in DB for the given deployment info
+       * The 1st one will be the deployment summary for which changes have to be reverted, its prev one will
+       * be the last stable one
+       */
+      Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional =
+          deploymentSummaryService.getNthDeploymentSummaryFromNow(
+              2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
 
       if (deploymentSummaryDTOOptional.isPresent()) {
         deploymentSummaryDTO.setArtifactDetails(deploymentSummaryDTOOptional.get().getArtifactDetails());

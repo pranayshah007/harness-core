@@ -7,12 +7,16 @@
 
 package io.harness.pms.sdk.core.plan.creation.mappers;
 
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
+import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.SkipType;
@@ -24,6 +28,8 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -78,5 +84,18 @@ public class PlanNodeProtoMapperTest extends PmsSdkCoreTestBase {
     response.setExpressionMode(expressionMode);
     response.setExecutionInputTemplate("executionInputTemplate");
     assertEquals(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNodeBuilder.build()), response.build());
+
+    // adding rollback mode advisors
+    PlanNode withRBAdvisor = planNodeBuilder
+                                 .advisorObtainmentForExecutionMode(POST_EXECUTION_ROLLBACK,
+                                     Collections.singletonList(AdviserObtainment.getDefaultInstance()))
+                                 .advisorObtainmentForExecutionMode(PIPELINE_ROLLBACK,
+                                     Collections.singletonList(AdviserObtainment.getDefaultInstance()))
+                                 .build();
+    Map<String, AdvisorObtainmentList> adviserObtainmentsMap =
+        planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(withRBAdvisor)
+            .getAdviserObtainmentsForExecutionModeMap();
+    assertThat(adviserObtainmentsMap).hasSize(2);
+    assertThat(adviserObtainmentsMap).containsKeys(POST_EXECUTION_ROLLBACK.name(), PIPELINE_ROLLBACK.name());
   }
 }

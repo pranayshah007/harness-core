@@ -14,14 +14,14 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
 
 import static software.wings.beans.Environment.Builder.anEnvironment;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static java.util.Collections.singletonList;
 import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;

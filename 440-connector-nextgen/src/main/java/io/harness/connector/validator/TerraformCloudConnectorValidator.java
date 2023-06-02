@@ -7,8 +7,6 @@
 
 package io.harness.connector.validator;
 
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.VALIDATE;
-
 import static software.wings.beans.TaskType.TERRAFORM_CLOUD_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,8 +16,8 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudValidationTaskParams;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformCloudConnectorValidator extends AbstractCloudProviderConnectorValidator {
@@ -29,8 +27,7 @@ public class TerraformCloudConnectorValidator extends AbstractCloudProviderConne
     TerraformCloudConnectorDTO connectorDTO = (TerraformCloudConnectorDTO) connectorConfig;
     TerraformCloudCredentialSpecDTO terraformCloudCredentialSpecDTO = connectorDTO.getCredential().getSpec();
 
-    return TerraformCloudTaskParams.builder()
-        .terraformCloudTaskType(VALIDATE)
+    return TerraformCloudValidationTaskParams.builder()
         .terraformCloudConnectorDTO(connectorDTO)
         .encryptionDetails(super.getEncryptionDetail(
             terraformCloudCredentialSpecDTO, accountIdentifier, orgIdentifier, projectIdentifier))

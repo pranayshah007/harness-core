@@ -9,8 +9,8 @@ package software.wings.delegatetasks.cv;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.VERIFICATION_HOST_PLACEHOLDER;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -20,12 +20,12 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.apm.Method;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.helpers.ext.apm.APMRestClient;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.apm.APMMetricInfo;
 import software.wings.service.impl.apm.APMResponseParser;
 import software.wings.service.impl.apm.CustomAPMDataCollectionInfo;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.collect.BiMap;

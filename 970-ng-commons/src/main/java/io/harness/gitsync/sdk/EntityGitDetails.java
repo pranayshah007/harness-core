@@ -34,4 +34,6 @@ public class EntityGitDetails {
   @Schema(description = "Latest Commit ID") String commitId;
   @Schema(description = "File Url of the entity") String fileUrl;
   @Schema(description = "Repo url of the entity") String repoUrl;
+  @Schema(description = "Connector Reference of parent entity") String parentEntityConnectorRef;
+  @Schema(description = "Repo name of parent entity") String parentEntityRepoName;
 }

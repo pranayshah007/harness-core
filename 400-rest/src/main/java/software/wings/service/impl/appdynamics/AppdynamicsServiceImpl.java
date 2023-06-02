@@ -13,8 +13,8 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.NO_STATE_EXECUTION_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.NO_STATE_EXECUTION_ID;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,8 +28,8 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.apm.MLServiceUtils;
 import software.wings.service.impl.newrelic.NewRelicApplication;

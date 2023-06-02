@@ -32,8 +32,11 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.common.NGExpressionUtils;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.exception.InvalidRequestException;
@@ -51,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
@@ -225,6 +229,11 @@ public class ArtifactUtils {
             googleArtifactRegistryConfig.getPkg().getValue(), version,
             googleArtifactRegistryConfig.getConnectorRef().getValue(),
             googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
+            bambooArtifactConfig.getPlanKey().getValue(), bambooArtifactConfig.getArtifactPaths().getValue(),
+            bambooArtifactConfig.getBuild().getValue(), bambooArtifactConfig.getConnectorRef().getValue());
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
             (GoogleCloudStorageArtifactConfig) artifactConfig;
@@ -236,10 +245,23 @@ public class ArtifactUtils {
       case GOOGLE_CLOUD_SOURCE_ARTIFACT:
         GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
             (GoogleCloudSourceArtifactConfig) artifactConfig;
-        return String.format("\ntype: %s \nconnectorRef: %s \nproject: %s \nrepository: %s \nsourceDirectory: %s",
+        String branchFormat = "";
+        String branchValue = "";
+        if (ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getBranch()) != null) {
+          branchFormat = "\nbranch: %s";
+          branchValue = googleCloudSourceArtifactConfig.getBranch().getValue();
+        } else if (ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getCommitId()) != null) {
+          branchFormat = "\ncommitId: %s";
+          branchValue = googleCloudSourceArtifactConfig.getCommitId().getValue();
+        } else if (ParameterFieldHelper.getParameterFieldValue(googleCloudSourceArtifactConfig.getTag()) != null) {
+          branchFormat = "\ntag: %s";
+          branchValue = googleCloudSourceArtifactConfig.getTag().getValue();
+        }
+        return String.format("\ntype: %s \nconnectorRef: %s \nproject: %s \nrepository: %s " + branchFormat + " "
+                + "\nsourceDirectory: %s",
             artifactConfig.getSourceType(), googleCloudSourceArtifactConfig.getConnectorRef().getValue(),
             googleCloudSourceArtifactConfig.getProject().getValue(),
-            googleCloudSourceArtifactConfig.getRepository().getValue(),
+            googleCloudSourceArtifactConfig.getRepository().getValue(), branchValue,
             googleCloudSourceArtifactConfig.getSourceDirectory().getValue());
 
       default:
@@ -259,5 +281,41 @@ public class ArtifactUtils {
       abstractions.put(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier());
     }
     return abstractions;
+  }
+
+  public void validateIfAnyValueAssigned(Pair<String, String>... value) {
+    int size = value.length;
+    for (int i = 0; i < size; i++) {
+      if (!checkIfNullOrRuntime(value[i].getValue())) {
+        return;
+      }
+    }
+    throw new InvalidRequestException(constructErrorMessage(value));
+  }
+
+  public void validateIfAllValuesAssigned(Pair<String, String>... value) {
+    int size = value.length;
+    for (int i = 0; i < size; i++) {
+      if (checkIfNullOrRuntime(value[i].getValue())) {
+        throw new InvalidRequestException(constructErrorMessage(value[i]));
+      }
+    }
+  }
+
+  private boolean checkIfNullOrRuntime(String value) {
+    if (EmptyPredicate.isEmpty(value) || NGExpressionUtils.matchesInputSetPattern(value)) {
+      return true;
+    }
+    return false;
+  }
+
+  private String constructErrorMessage(Pair<String, String>... value) {
+    int size = value.length;
+    StringBuilder stringBuilder = new StringBuilder(String.format("value for %s", value[0].getKey()));
+    for (int i = 1; i < size; i++) {
+      stringBuilder.append(String.format(", %s", value[i].getKey()));
+    }
+    stringBuilder.append(" is empty or not provided");
+    return stringBuilder.toString();
   }
 }

@@ -9,6 +9,7 @@ package io.harness.engine.executions.plan;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,8 +20,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.repositories.PlanExecutionMetadataRepository;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Optional;
 import org.junit.Test;
@@ -32,7 +33,7 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Test
-  @RealMongo
+
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void findByPlanExecutionId() {
@@ -47,7 +48,7 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void save() {
@@ -58,5 +59,20 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
 
     Optional<PlanExecutionMetadata> saved = planExecutionMetadataRepository.findById(planExecutionMetadata.getUuid());
     assertThat(saved.isPresent()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeleteMetadataForGivenPlanExecutionIds() {
+    String planExecutionId = generateUuid();
+    PlanExecutionMetadata planExecutionMetadata =
+        PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build();
+    planExecutionMetadataRepository.save(planExecutionMetadata);
+
+    planExecutionMetadataService.deleteMetadataForGivenPlanExecutionIds(Sets.newHashSet(planExecutionId));
+    Optional<PlanExecutionMetadata> optionalPlanExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+    assertThat(optionalPlanExecutionMetadata).isEmpty();
   }
 }

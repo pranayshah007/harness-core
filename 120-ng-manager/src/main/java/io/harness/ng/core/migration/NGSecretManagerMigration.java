@@ -160,7 +160,7 @@ public class NGSecretManagerMigration {
     }
   }
 
-  private void populateHarnessManagedDefaultKms(List<String> accounts, ConnectorDTO globalConnectorDTO) {
+  public void populateHarnessManagedDefaultKms(List<String> accounts, ConnectorDTO globalConnectorDTO) {
     for (String accountIdentifier : accounts) {
       // Process Accounts
       handleHarnessManagedSM(accountIdentifier, null, null, true, globalConnectorDTO);
@@ -259,6 +259,27 @@ public class NGSecretManagerMigration {
     return connectorDTO;
   }
 
+  public ConnectorDTO createGlobalGcpKmsSM(
+      String accountIdentifier, String orgIdentifier, String projIdentifier, boolean isAccountDefault) {
+    SecretManagerConfigDTO globalSecretManagerConfigDTO =
+        getGlobalGcpKmsSMFromCG(accountIdentifier, orgIdentifier, projIdentifier);
+    Scope secretScope = getSecretScope(orgIdentifier, projIdentifier);
+    if (EncryptionType.LOCAL != globalSecretManagerConfigDTO.getEncryptionType()) {
+      LocalConfigDTO localConnector = createLocalConnector(accountIdentifier, this.UUID);
+      connectorService.create(getConnectorRequestDTO(null, localConnector, secretScope, accountIdentifier,
+                                  projIdentifier, orgIdentifier, false, false),
+          accountIdentifier, ChangeType.NONE);
+    }
+    ConnectorDTO connectorDTO = getConnectorRequestDTO(null, globalSecretManagerConfigDTO, secretScope,
+        accountIdentifier, projIdentifier, orgIdentifier, isAccountDefault, false);
+    if (isAccountDefault) {
+      connectorDTO.getConnectorInfo().setName(
+          getDefaultHarnessSecretManagerName(globalSecretManagerConfigDTO.getEncryptionType()));
+    }
+    connectorService.create(connectorDTO, accountIdentifier, ChangeType.NONE);
+    return connectorDTO;
+  }
+
   private LocalConfigDTO createLocalConnector(String accountIdentifier, String uuid) {
     return LocalConfigDTO.builder()
         .accountIdentifier(accountIdentifier)
@@ -351,6 +372,20 @@ public class NGSecretManagerMigration {
     return globalSecretManager;
   }
 
+  private SecretManagerConfigDTO getGlobalGcpKmsSMFromCG(
+      String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    if (null == this.cgGlobal) {
+      this.cgGlobal = ngSecretManagerService.getGlobalSecretManagerFromCG(accountIdentifier);
+    }
+    SecretManagerConfigDTO globalSecretManager = this.cgGlobal;
+    globalSecretManager.setIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER);
+    globalSecretManager.setName(getDefaultHarnessSecretManagerName(globalSecretManager.getEncryptionType()));
+    globalSecretManager.setProjectIdentifier(projIdentifier);
+    globalSecretManager.setOrgIdentifier(orgIdentifier);
+    globalSecretManager.setDefault(true);
+    return globalSecretManager;
+  }
+
   private ConnectorInfoDTO getConnectorFromDB(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     List<Connector> connectors = runQuery(getHarnessManagedKms(accountIdentifier, orgIdentifier, projIdentifier));
     if (isNotEmpty(connectors)) {
@@ -359,7 +394,7 @@ public class NGSecretManagerMigration {
     return null;
   }
 
-  private List<String> fetchAllAccounts() {
+  public List<String> fetchAllAccounts() {
     Criteria criteria = new Criteria();
     criteria.and(ConnectorKeys.categories).in(ConnectorCategory.SECRET_MANAGER);
     criteria.and(ConnectorKeys.accountIdentifier).ne(GLOBAL_ACCOUNT_ID);

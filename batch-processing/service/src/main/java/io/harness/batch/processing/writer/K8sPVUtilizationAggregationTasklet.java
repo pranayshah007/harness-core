@@ -17,12 +17,14 @@ import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationDa
 import io.harness.batch.processing.billing.timeseries.service.impl.K8sUtilizationGranularDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.CEClusterDao;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.beans.FeatureName;
 import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
 import io.harness.ff.FeatureFlagService;
 
@@ -52,6 +54,7 @@ public class K8sPVUtilizationAggregationTasklet implements Tasklet {
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private ClusterRecordService eventsClusterRecordService;
+  @Autowired private CEClusterDao ceClusterDao;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -126,10 +129,13 @@ public class K8sPVUtilizationAggregationTasklet implements Tasklet {
     Set<String> clusterIds = new HashSet<>();
     List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
         eventsClusterRecordService.getByAccountId(accountId);
+    List<CECluster> ceClusterList = ceClusterDao.getCECluster(accountId);
     clusterIds.addAll(clusterRecords.stream().map(ClusterRecord::getUuid).collect(Collectors.toSet()));
     clusterIds.addAll(eventsClusterRecords.stream()
                           .map(io.harness.ccm.commons.entities.ClusterRecord::getUuid)
                           .collect(Collectors.toSet()));
+    ceClusterList.stream().map(CECluster::getUuid).forEach(clusterIds::add);
+
     log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
     return clusterIds;
   }

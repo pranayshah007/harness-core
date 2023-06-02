@@ -10,21 +10,26 @@ package io.harness.engine.pms.execution.strategy.identity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
-import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
+import io.harness.engine.pms.advise.handlers.MarkAsFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
 import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
+import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
+import io.harness.eraro.ResponseMessage;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
@@ -41,6 +46,7 @@ import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.EngineExceptionUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.springdata.TransactionHelper;
@@ -49,6 +55,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +75,10 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
+  @Inject private NodeAdviseHelper nodeAdviseHelper;
+  @Inject private PlanService planService;
+  @Inject private ExceptionManager exceptionManager;
+  @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
   @Override
@@ -133,15 +144,12 @@ public class IdentityNodeExecutionStrategy
 
       // Pipeline Stage is a stage-leaf node. Need to set executable response which contains Child ExecutionId. This
       // will be required to show child graph in retried stage.
-      if (originalNodeExecution.getNode().getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_STAGE)) {
-        return nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), originalNodeExecution.getStatus(),
-            update
-            -> update.set(NodeExecutionKeys.executableResponses, originalNodeExecution.getExecutableResponses()),
-            EnumSet.noneOf(Status.class));
-      }
 
-      return nodeExecutionService.updateStatusWithOps(
-          nodeExecution.getUuid(), originalNodeExecution.getStatus(), null, EnumSet.noneOf(Status.class));
+      // Adding executable response as this will help in fetching logs for retried stages
+      return nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), originalNodeExecution.getStatus(),
+          update
+          -> update.set(NodeExecutionKeys.executableResponses, originalNodeExecution.getExecutableResponses()),
+          EnumSet.noneOf(Status.class));
     });
     processAdviserResponse(ambiance, nodeExecution.getAdviserResponse());
   }
@@ -155,7 +163,10 @@ public class IdentityNodeExecutionStrategy
         return;
       }
       log.info("Starting to handle Adviser Response of type: {}", adviserResponse.getType());
-      NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+      // Get all fields of NodeExecution as advisors may use any fields of NodeExecution.
+      // As identity nodes can potentially have actual advisors on them, we'll need to update the advisor response
+      NodeExecution nodeExecution = nodeExecutionService.update(
+          nodeExecutionId, ops -> ops.set(NodeExecutionKeys.adviserResponse, adviserResponse));
       AdviserResponseHandler adviserResponseHandler = adviseHandlerFactory.obtainHandler(adviserResponse.getType());
       if (!isFailureStrategyAdvisor(adviserResponseHandler)) {
         adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
@@ -169,16 +180,15 @@ public class IdentityNodeExecutionStrategy
     return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
         || adviserResponseHandler instanceof MarkSuccessAdviseHandler
         || adviserResponseHandler instanceof RetryAdviserResponseHandler
-        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
+        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler
+        || adviserResponseHandler instanceof MarkAsFailureAdviseHandler;
   }
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
-        ops
-        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
-        NodeProjectionUtils.fieldsForExecutionStrategy);
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
       Level level = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()
@@ -188,6 +198,7 @@ public class IdentityNodeExecutionStrategy
                                                 .status(nodeExecution.getStatus())
                                                 .nodeExecutionId(level.getRuntimeId())
                                                 .adviserResponse(nodeExecution.getAdviserResponse())
+                                                .nodeExecutionEndTs(nodeExecution.getEndTs())
                                                 .build();
       waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
     } else {
@@ -197,7 +208,19 @@ public class IdentityNodeExecutionStrategy
   }
 
   @Override
-  public void handleError(Ambiance ambiance, Exception exception) {}
+  public void handleError(Ambiance ambiance, Exception exception) {
+    try {
+      StepResponseProto.Builder builder = StepResponseProto.newBuilder().setStatus(Status.FAILED);
+      List<ResponseMessage> responseMessages = exceptionManager.buildResponseFromException(exception);
+      if (isNotEmpty(responseMessages)) {
+        builder.setFailureInfo(EngineExceptionUtils.transformResponseMessagesToFailureInfo(responseMessages));
+      }
+      endNodeExecutionHelper.endNodeExecutionWithNoAdvisers(ambiance, builder.build());
+    } catch (Exception ex) {
+      // Smile if you see irony in this
+      log.error("This is very BAD!!!. Exception Occurred while handling Exception. Erroring out Execution", ex);
+    }
+  }
 
   @Override
   public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
@@ -219,7 +242,12 @@ public class IdentityNodeExecutionStrategy
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       NodeExecution newNodeExecution = nodeExecutionService.updateStatusWithOps(
           nodeExecutionId, stepResponse.getStatus(), null, EnumSet.noneOf(Status.class));
-      processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());
+      IdentityPlanNode idPlanNode = planService.fetchNode(ambiance.getPlanId(), newNodeExecution.getNodeId());
+      if (idPlanNode.getUseAdviserObtainments()) {
+        nodeAdviseHelper.queueAdvisingEvent(newNodeExecution, idPlanNode, newNodeExecution.getStatus());
+      } else {
+        processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());
+      }
     } catch (Exception ex) {
       log.error("Exception Occurred in handleStepResponse NodeExecutionId : {}, PlanExecutionId: {}", nodeExecutionId,
           ambiance.getPlanExecutionId(), ex);

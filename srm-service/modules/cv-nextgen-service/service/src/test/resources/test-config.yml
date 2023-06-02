@@ -41,6 +41,11 @@ logging:
       target: STDOUT
       stackdriverLogEnabled: false
 
+segmentConfiguration:
+  enabled: true #segmentConfigEnable
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false
 
 distributedLockImplementation: NOOP
 
@@ -63,6 +68,14 @@ ngManagerClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+ticketServiceRestClientConfig:
+  baseUrl: http://localhost:4444/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+webhookConfig:
+  webhookBaseUrl: http://localhost:6457/cv/api/
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: true
@@ -116,6 +129,31 @@ eventsFramework:
     useScriptCache: true
     userName: ""
     password: ""
+
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+  timeout: 6000
+  subscriptionsPerConnection: 5
+
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+  
 pmsSdkGrpcServerConfig:
   connectors:
     - port: 12401

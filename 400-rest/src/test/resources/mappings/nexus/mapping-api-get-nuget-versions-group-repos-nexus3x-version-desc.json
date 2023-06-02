@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/nexus/service/rest/v1/search?sort=version&direction=desc&repository=nuget-hosted-group-repo&name=NuGet.Sample.Package"
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName" : "/nexus/body-get-nuget-versions-group-repos-nexus3x.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

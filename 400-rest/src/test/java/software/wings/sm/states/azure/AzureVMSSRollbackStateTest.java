@@ -13,11 +13,11 @@ import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -34,6 +34,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.response.AzureVMSSDeployTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -82,6 +83,7 @@ public class AzureVMSSRollbackStateTest extends WingsBaseTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Spy @InjectMocks AzureVMSSRollbackState rollbackState = new AzureVMSSRollbackState("Azure VMSS Rollback State");
 

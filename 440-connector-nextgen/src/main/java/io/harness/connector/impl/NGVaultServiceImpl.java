@@ -13,6 +13,7 @@ import static io.harness.beans.FeatureName.DO_NOT_RENEW_APPROLE_TOKEN;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.INTERNAL_SERVER_ERROR;
 import static io.harness.eraro.ErrorCode.INVALID_AZURE_VAULT_CONFIGURATION;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
@@ -25,6 +26,7 @@ import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
 import static io.harness.security.encryption.AccessType.TOKEN;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -68,6 +70,7 @@ import io.harness.encryptors.DelegateTaskUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.SecretManagementException;
@@ -112,6 +115,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.impl.security.NGEncryptorService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
@@ -195,15 +199,16 @@ public class NGVaultServiceImpl implements NGVaultService {
           secretEngineSummaries.add(secretEngineSummary);
         }
       }
+    } catch (DelegateServiceDriverException ex) {
+      if (ex.getMessage() != null) {
+        throw ex;
+      } else {
+        throw new WingsException(
+            "Listing secret engines failed. Please check if active delegates are available in the account", ex);
+      }
     } catch (WingsException wingsException) {
       log.error("Listing secret engines failed for account Id {}", baseVaultConfig.getAccountId());
       throw wingsException;
-    } catch (DelegateServiceDriverException ex) {
-      if (ex.getCause() != null) {
-        throw new WingsException(ex.getCause().getMessage(), ex);
-      } else {
-        throw new WingsException(ex);
-      }
     } catch (Exception e) {
       log.error("Listing vault engines failed for account Id {}", baseVaultConfig.getAccountId(), e);
       throw new InvalidRequestException("Failed to list Vault engines", INVALID_CREDENTIAL, USER);
@@ -624,9 +629,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     Optional<String> xVaultAwsIamServerId =
         Optional.ofNullable(specDTO)
             .filter(x -> x.getAccessType() == AccessType.AWS_IAM)
-            .map(x
-                -> String.valueOf(
-                    ((VaultAwsIamRoleCredentialDTO) (x.getSpec())).getXVaultAwsIamServerId().getDecryptedValue()))
+            .map(x -> getDecryptedValueOfXheader((VaultAwsIamRoleCredentialDTO) (x.getSpec())))
             .filter(x -> !x.isEmpty());
     xVaultAwsIamServerId.ifPresent(x -> { vaultConfig.setXVaultAwsIamServerId(x); });
   }
@@ -685,18 +688,15 @@ public class NGVaultServiceImpl implements NGVaultService {
         .ifPresent(secretKey -> azureVaultConfig.setSecretKey(String.valueOf(secretKey.getDecryptedValue())));
     Optional.ofNullable(specDTO.getAzureEnvironmentType()).ifPresent(azureVaultConfig::setAzureEnvironmentType);
     Optional.ofNullable(specDTO.getDelegateSelectors()).ifPresent(azureVaultConfig::setDelegateSelectors);
+    Optional.ofNullable(specDTO.getUseManagedIdentity()).ifPresent(azureVaultConfig::setUseManagedIdentity);
+    Optional.ofNullable(specDTO.getManagedClientId()).ifPresent(azureVaultConfig::setManagedClientId);
+    Optional.ofNullable(specDTO.getAzureManagedIdentityType()).ifPresent(azureVaultConfig::setAzureManagedIdentityType);
     List<String> vaultNames;
     try {
       vaultNames = listVaultsInternal(accountIdentifier, azureVaultConfig);
     } catch (WingsException wingsException) {
       log.error("Listing vaults failed for account Id {}", accountIdentifier);
       throw wingsException; // for error handling framework
-    } catch (DelegateServiceDriverException ex) {
-      if (ex.getCause() != null) {
-        throw new WingsException(ex.getCause().getMessage(), ex);
-      } else {
-        throw new WingsException(ex);
-      }
     } catch (Exception e) {
       log.error("Listing vaults failed for account Id {}", accountIdentifier, e);
       throw new AzureServiceException("Failed to list vaults.", INVALID_AZURE_VAULT_CONFIGURATION, USER);
@@ -713,10 +713,15 @@ public class NGVaultServiceImpl implements NGVaultService {
         AzureKeyVaultConnectorDTO.builder()
             .tenantId(azureVaultConfig.getTenantId())
             .clientId(azureVaultConfig.getClientId())
-            .secretKey(SecretRefData.builder().decryptedValue(azureVaultConfig.getSecretKey().toCharArray()).build())
+            .secretKey(azureVaultConfig.getSecretKey() != null
+                    ? SecretRefData.builder().decryptedValue(azureVaultConfig.getSecretKey().toCharArray()).build()
+                    : null)
             .subscription(azureVaultConfig.getSubscription())
             .delegateSelectors(azureVaultConfig.getDelegateSelectors())
             .azureEnvironmentType(azureVaultConfig.getAzureEnvironmentType())
+            .useManagedIdentity(azureVaultConfig.getUseManagedIdentity())
+            .azureManagedIdentityType(azureVaultConfig.getAzureManagedIdentityType())
+            .managedClientId(azureVaultConfig.getManagedClientId())
             .build();
     int failedAttempts = 0;
     while (true) {
@@ -732,13 +737,28 @@ public class NGVaultServiceImpl implements NGVaultService {
                 .accountId(accountId)
                 .taskSetupAbstractions(ngManagerEncryptorHelper.buildAbstractions(azureVaultConfig))
                 .build();
-        DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
+        DelegateResponseData delegateResponseData;
+        try {
+          delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
+        } catch (DelegateServiceDriverException ex) {
+          if (ex.getMessage() != null) {
+            throw new WingsException(ex.getMessage(), ex);
+          } else {
+            throw new WingsException(String.format(
+                "Listing secret engines failed. Please check if active delegates are available in the account"));
+          }
+        }
         DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
         if (!(delegateResponseData instanceof NGAzureKeyVaultFetchEngineResponse)) {
           throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, UNKNOWN_RESPONSE, USER);
         }
         return ((NGAzureKeyVaultFetchEngineResponse) delegateResponseData).getSecretEngines();
       } catch (WingsException e) {
+        if (e.getCause() instanceof GeneralException && "Null Pointer Exception".equals(e.getCause().getMessage())
+            && azureVaultConfig.getUseManagedIdentity() && azureVaultConfig.getSecretKey() == null) {
+          throw new WingsException(INTERNAL_SERVER_ERROR,
+              "Listing secret engines failed. Please check if delegate version is 791xx or later.");
+        }
         failedAttempts++;
         log.warn("Azure Key Vault Decryption failed for list secret engines. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
@@ -806,15 +826,19 @@ public class NGVaultServiceImpl implements NGVaultService {
         secretRefData = ((VaultAppRoleCredentialDTO) spec.getSpec()).getSecretId();
         secretRefDataList.add(secretRefData);
       } else if (AWS_IAM == spec.getAccessType()) {
-        secretRefData = ((VaultAwsIamRoleCredentialDTO) spec.getSpec()).getXVaultAwsIamServerId();
-        secretRefDataList.add(secretRefData);
+        VaultAwsIamRoleCredentialDTO vaultCredentialDTO = (VaultAwsIamRoleCredentialDTO) spec.getSpec();
+        if (null != checkIfXHeaderExistOfReturnNull(vaultCredentialDTO)) {
+          secretRefDataList.add(checkIfXHeaderExistOfReturnNull(vaultCredentialDTO));
+        }
       } else {
         // n case of VAULT_AGENT we don't have any secretref
         return null;
       }
     } else { // Azure Key Vault
       secretRefData = ((AzureKeyVaultMetadataRequestSpecDTO) requestDTO.getSpec()).getSecretKey();
-      secretRefDataList.add(secretRefData);
+      if (secretRefData != null) {
+        secretRefDataList.add(secretRefData);
+      }
     }
     return secretRefDataList;
   }
@@ -909,7 +933,8 @@ public class NGVaultServiceImpl implements NGVaultService {
     return delegateResponseData;
   }
 
-  private void decryptSecretRefData(
+  @VisibleForTesting
+  protected void decryptSecretRefData(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretRefData secretRefData) {
     // Get Scope of secretRefData as per RequestDTO's details
     Scope scope = secretRefData.getScope();
@@ -926,8 +951,14 @@ public class NGVaultServiceImpl implements NGVaultService {
     }
 
     // Get KMS Config for secret Manager of encrypted data's secret manager
-    EncryptionConfig encryptionConfig = getDecryptedEncryptionConfig(
-        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier());
+    EncryptionConfig encryptionConfig;
+    if (encryptedData.getEncryptionType() == LOCAL) {
+      encryptionConfig =
+          SecretManagerConfigMapper.fromDTO(ngConnectorSecretManagerService.getLocalConfigDTO(accountIdentifier));
+    } else {
+      encryptionConfig = getDecryptedEncryptionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier());
+    }
 
     // Decrypt the encypted data with above KMS Config
     char[] decryptedValue = ngEncryptorService.fetchSecretValue(
@@ -981,5 +1012,19 @@ public class NGVaultServiceImpl implements NGVaultService {
         ngConnectorSecretManagerService.getPerpetualTaskId(vaultConnector.getAccountIdentifier(),
             vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
     ngConnectorSecretManagerService.resetHeartBeatTask(vaultConnector.getAccountIdentifier(), heartBeatPerpetualTaskId);
+  }
+
+  private String getDecryptedValueOfXheader(VaultAwsIamRoleCredentialDTO specDTO) {
+    if (null != specDTO.getXVaultAwsIamServerId()) {
+      return String.valueOf(specDTO.getXVaultAwsIamServerId().getDecryptedValue());
+    }
+    return null;
+  }
+
+  private SecretRefData checkIfXHeaderExistOfReturnNull(VaultAwsIamRoleCredentialDTO specDTO) {
+    if (null != specDTO.getXVaultAwsIamServerId()) {
+      return specDTO.getXVaultAwsIamServerId();
+    }
+    return null;
   }
 }

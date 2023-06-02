@@ -77,7 +77,18 @@ public abstract class DataCollectionTask
                  .name("verificationTaskIdQueryIdx")
                  .unique(false)
                  .field(DataCollectionTaskKeys.verificationTaskId)
+                 .field(DataCollectionTaskKeys.status)
                  .descSortField(DataCollectionTaskKeys.startTime)
+                 .build())
+        // TODO: Update the index to not use lastUpdatedAt once getNextTask logic is improved.
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_dataCollectionWorkerId_status_lastUpdatedAt_validAfter_idx")
+                 .unique(false)
+                 .field(DataCollectionTaskKeys.accountId)
+                 .field(DataCollectionTaskKeys.dataCollectionWorkerId)
+                 .field(DataCollectionTaskKeys.status)
+                 .field(VerificationTaskBaseKeys.lastUpdatedAt)
+                 .field(DataCollectionTaskKeys.validAfter)
                  .build())
         .build();
   }
@@ -135,6 +146,10 @@ public abstract class DataCollectionTask
   }
 
   public abstract boolean shouldCreateNextTask();
+
+  public boolean shouldHandlerCreateNextTask(Instant currentTime) {
+    return false;
+  }
 
   public abstract boolean eligibleForRetry(Instant currentTime);
 

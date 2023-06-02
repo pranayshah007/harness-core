@@ -70,6 +70,9 @@ public class BudgetGroupDao {
     if (budgetGroup.getBudgetGroupMonthlyBreakdown() != null) {
       updateOperations.set(BudgetGroupKeys.budgetGroupMonthlyBreakdown, budgetGroup.getBudgetGroupMonthlyBreakdown());
     }
+    if (budgetGroup.getBudgetGroupHistory() != null) {
+      updateOperations.set(BudgetGroupKeys.budgetGroupHistory, budgetGroup.getBudgetGroupHistory());
+    }
 
     hPersistence.update(query, updateOperations);
   }
@@ -131,6 +134,10 @@ public class BudgetGroupDao {
                                    .field(BudgetGroupKeys.accountId)
                                    .equal(accountId);
     return query.get();
+  }
+
+  public List<BudgetGroup> list(String accountId) {
+    return list(accountId, Integer.MAX_VALUE - 1, 0);
   }
 
   public List<BudgetGroup> list(String accountId, Integer count, Integer startIndex) {

@@ -15,8 +15,8 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.managerclient.VerificationServiceClient;
 import io.harness.rest.RestResponse;
 
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.MetricDataStoreService;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;

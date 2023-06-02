@@ -11,12 +11,14 @@ import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidRequestException;
@@ -27,6 +29,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +40,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformPlanJsonFunctorTest extends CategoryTest {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
+  @Mock TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
 
   @InjectMocks private TerraformPlanJsonFunctor terraformPlanJsonFunctor;
 
@@ -63,6 +67,10 @@ public class TerraformPlanJsonFunctorTest extends CategoryTest {
     doReturn(optionalSweepingOutput)
         .when(sweepingOutputService)
         .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject("outputName"));
+
+    doReturn(Collections.emptyList())
+        .when(terraformPlanExectionDetailsService)
+        .listAllPipelineTFPlanExecutionDetails(any());
 
     assertThatThrownBy(() -> terraformPlanJsonFunctor.get(ambiance, "outputName"))
         .isInstanceOf(InvalidRequestException.class);

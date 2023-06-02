@@ -11,9 +11,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.InstanaConfig;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateTaskType;
 import software.wings.delegatetasks.cv.DataCollectionException;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.instana.InstanaAnalyzeMetricRequest;
 import software.wings.service.impl.instana.InstanaAnalyzeMetrics;
 import software.wings.service.impl.instana.InstanaInfraMetricRequest;

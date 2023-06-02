@@ -22,6 +22,7 @@ public class SetupVmRequest {
   @JsonProperty("id") String id;
   @JsonProperty("correlation_id") String correlationID;
   @JsonProperty("pool_id") String poolID;
+  @JsonProperty("fallback_pool_ids") List<String> fallbackPoolIDs;
   @JsonProperty("log_key") String logKey;
   @JsonProperty("tags") Map<String, String> tags;
   @JsonProperty("setup_request") Config config;

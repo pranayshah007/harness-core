@@ -9,7 +9,6 @@ package io.harness.serializer.morphia;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.cluster.entities.AzureKubernetesCluster;
 import io.harness.ccm.cluster.entities.ClusterRecord;
@@ -362,6 +361,7 @@ import software.wings.search.framework.SearchDistributedLock;
 import software.wings.search.framework.SearchEntityIndexState;
 import software.wings.search.framework.SearchSourceEntitySyncState;
 import software.wings.service.impl.ExecutionEvent;
+import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.CVFeedbackRecord;
@@ -397,6 +397,7 @@ import software.wings.service.impl.newrelic.LearningEngineExperimentalAnalysisTa
 import software.wings.service.impl.newrelic.MLExperiments;
 import software.wings.service.impl.newrelic.NewRelicMarkerExecutionData;
 import software.wings.service.impl.newrelic.NewRelicMetricAnalysisRecord;
+import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.impl.splunk.SplunkAnalysisCluster;
 import software.wings.service.impl.trigger.TriggerCallback;
 import software.wings.service.impl.trigger.TriggerServiceImpl.TriggerIdempotentResult;
@@ -586,6 +587,7 @@ import software.wings.sm.states.spotinst.SpotinstTrafficShiftAlbSetupState;
 import software.wings.sm.states.spotinst.SpotinstTrafficShiftAlbSwapRoutesExecutionData;
 import software.wings.sm.states.spotinst.SpotinstTrafficShiftAlbSwitchRoutesState;
 import software.wings.timescale.framework.TimeScaleEntityIndexState;
+import software.wings.verification.CVActivityLog;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
@@ -867,7 +869,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DeletedEntity.class);
     set.add(ARMInfrastructureProvisioner.class);
     set.add(AccessRequest.class);
-    set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
     set.add(InstanceSyncTaskDetails.class);
@@ -878,9 +879,12 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(BaseFile.class);
     set.add(AppContainer.class);
     set.add(LongerDataRetentionState.class);
+    set.add(ThirdPartyApiCallLog.class);
+    set.add(CVActivityLog.class);
     set.add(Log.class);
     set.add(InstanceSyncPTInfoBackup.class);
     set.add(HelmChart.class);
+    set.add(NewRelicMetricDataRecord.class);
   }
 
   @Override

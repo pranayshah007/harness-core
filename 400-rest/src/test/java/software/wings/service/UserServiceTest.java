@@ -15,14 +15,19 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -75,13 +80,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anySetOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
@@ -96,6 +102,7 @@ import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
@@ -105,16 +112,20 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.event.model.EventType;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -218,6 +229,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -279,6 +291,8 @@ public class UserServiceTest extends WingsBaseTest {
   @Mock private TOTPAuthHandler totpAuthHandler;
   @Mock private SSOSettingService ssoSettingService;
 
+  @Mock private FeatureFlagService featureFlagService;
+
   @Spy @InjectMocks private SignupServiceImpl signupService;
 
   /**
@@ -298,7 +312,7 @@ public class UserServiceTest extends WingsBaseTest {
   @Inject WingsPersistence realWingsPersistence;
   @Mock PortalConfig portalConfig;
 
-  @Mock UserServiceHelper userServiceHelper;
+  @Inject @InjectMocks UserServiceHelper userServiceHelper;
 
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
@@ -309,10 +323,9 @@ public class UserServiceTest extends WingsBaseTest {
    */
   @Before
   public void setupMocks() {
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, ACCOUNT_ID)).thenReturn(true);
     when(configuration.getSupportEmail()).thenReturn(SUPPORT_EMAIL);
-    doNothing()
-        .when(userServiceLimitChecker)
-        .limitCheck(Mockito.anyString(), anyListOf(User.class), anySetOf(String.class));
+    doNothing().when(userServiceLimitChecker).limitCheck(Mockito.anyString(), anyList(), anySet());
 
     when(wingsPersistence.createQuery(User.class)).thenReturn(query);
     when(query.filter(any(), any())).thenReturn(query);
@@ -613,6 +626,16 @@ public class UserServiceTest extends WingsBaseTest {
     marketPlace.setProductCode(ffProductCode);
     user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
+
+    // AWS marketplace signUp for CI
+    String ciProductCode = "CI";
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceProductCode("").build());
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceFfProductCode(ciProductCode).build());
+    marketPlace.setProductCode(ciProductCode);
+    user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
+    assertThat(user).isEqualTo(savedUser);
   }
 
   /**
@@ -647,14 +670,12 @@ public class UserServiceTest extends WingsBaseTest {
     when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
         .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(ACCOUNT_ID)).thenReturn(PORTAL_URL + "/");
-
     userService.register(userBuilder.build());
 
     verify(wingsPersistence).saveAndGet(eq(User.class), userArgumentCaptor.capture());
     assertThat(BCrypt.checkpw(new String(PASSWORD), userArgumentCaptor.getValue().getPasswordHash())).isTrue();
     assertThat(userArgumentCaptor.getValue().isEmailVerified()).isFalse();
     assertThat(userArgumentCaptor.getValue().getCompanyName()).isEqualTo(COMPANY_NAME);
-
     verify(emailDataNotificationService).send(emailDataArgumentCaptor.capture());
     assertThat(emailDataArgumentCaptor.getValue().getTo().get(0)).isEqualTo(USER_EMAIL);
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo(SIGNUP_EMAIL_TEMPLATE_NAME);
@@ -940,22 +961,64 @@ public class UserServiceTest extends WingsBaseTest {
    * Should delete user flow V2.
    */
   @Test
-  @Owner(developers = ANUBHAW)
+  @Owner(developers = {BOOPESH, SHASHANK})
   @Category(UnitTests.class)
-  public void shouldDeleteUserV2() {
-    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+  public void shouldDeleteUserV2WithAccountLevelDataFFOff() {
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .build();
+    User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
-    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
-    when(userGroupService.list(ACCOUNT_ID,
-             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
-        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
-    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);
     verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
   }
 
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void shouldDeleteUserV2WithAccountLevelDataFFOn() {
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .build();
+    User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
+    when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence).findAndDelete(any(), any());
+    verify(cache).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+
+    user.getUserAccountLevelDataMap().remove(ACCOUNT_ID);
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, NG, UserSource.MANUAL);
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence, times(1)).findAndDelete(any(), any());
+    verify(cache, times(2)).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
+  }
   /**
    * Should fetch user.
    */
@@ -1486,6 +1549,38 @@ public class UserServiceTest extends WingsBaseTest {
   }
 
   /**
+   * Should update password and clear lockout info
+   *
+   */
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldUpdatePasswordAndClearLockoutInfo() throws UnsupportedEncodingException {
+    when(query.get()).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    Algorithm algorithm = Algorithm.HMAC256("SECRET");
+    String token = JWT.create()
+                       .withIssuer("Harness Inc")
+                       .withIssuedAt(new Date())
+                       .withExpiresAt(new Date(System.currentTimeMillis() + 4 * 60 * 60 * 1000)) // 4 hrs
+                       .withClaim("email", USER_EMAIL)
+                       .sign(algorithm);
+
+    userService.updatePassword(token, USER_PASSWORD);
+    when(loginSettingsService.verifyPasswordStrength(Mockito.any(Account.class), Mockito.any(char[].class)))
+        .thenReturn(true);
+
+    verify(query, times(1)).filter("email", USER_EMAIL);
+    verify(emailDataNotificationService).send(any());
+    verify(authService).invalidateAllTokensForUser(USER_ID);
+    verify(wingsPersistence).update(eq(userBuilder.uuid(USER_ID).build()), any(UpdateOperations.class));
+    verify(updateOperations).set(eq("passwordHash"), anyString());
+    verify(updateOperations).set(eq("passwordExpired"), anyBoolean());
+    verify(updateOperations).set(eq("passwordChangedAt"), anyLong());
+    verify(loginSettingsService, times(1)).updateUserLockoutInfo(any(), any(), anyInt());
+  }
+
+  /**
    * Should add Account.
    *
    * @throws UnsupportedEncodingException the unsupported encoding exception
@@ -1506,6 +1601,16 @@ public class UserServiceTest extends WingsBaseTest {
     verify(accountService).exists(eq(ACCOUNT_NAME));
   }
 
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateNameThrowsInvalidArgumentsException() {
+    final String blankName = "  ";
+    assertThatThrownBy(() -> userService.validateName(blankName)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
+        .isInstanceOf(InvalidRequestException.class);
+  }
   @Test
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
@@ -1664,16 +1769,17 @@ public class UserServiceTest extends WingsBaseTest {
     Account account = getAccount(PAID);
     account.setUuid("accountId");
 
-    User user = anUser()
-                    .name(userName)
-                    .appId(generateUuid())
-                    .defaultAccountId(account.getUuid())
-                    .token(token)
-                    .accounts(Arrays.asList(account))
-                    .email("emailId")
-                    .emailVerified(true)
-                    .uuid("userId")
-                    .build();
+    User user =
+        anUser()
+            .name("Evil<img src=https://poc.shellcode.se/spongebob-ninja.jpg><h1>Hacker</h1><svg/onload=alert()>")
+            .appId(generateUuid())
+            .defaultAccountId(account.getUuid())
+            .token(token)
+            .accounts(Arrays.asList(account))
+            .email("emailId")
+            .emailVerified(true)
+            .uuid("userId")
+            .build();
 
     userService.sendAccountLockedNotificationMail(user, 2);
     verify(emailDataNotificationService, times(1)).send(any(EmailData.class));

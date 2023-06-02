@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -21,13 +21,16 @@ import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.beans.errortracking.EventType;
 import io.harness.cvng.beans.errortracking.InvocationSummary;
 import io.harness.cvng.beans.errortracking.Scorecard;
+import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 import io.harness.cvng.notification.beans.ErrorTrackingEventType;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,6 +86,7 @@ public class ErrorTrackingServiceImplTest extends CvNextGenTestBase {
                               .newEventDefinition(NEVER_SEEN_BEFORE)
                               .criticalExceptions(Collections.singletonList("testCriticalException"))
                               .criticalHitCount(0)
+                              .resurfacedHitCount(0)
                               .uniqueHitCount(0)
                               .newHitCount(0)
                               .hitCount(0)
@@ -98,7 +102,7 @@ public class ErrorTrackingServiceImplTest extends CvNextGenTestBase {
 
     when(callMock.clone()).thenReturn(callMock);
     when(errorTrackingClientMock.getNotificationData(
-             eq(ORG), eq(ACCOUNT), eq(PROJECT), eq(SERVICE), eq(ENVIRONMENT), anyList(), anyString()))
+             eq(ORG), eq(ACCOUNT), eq(PROJECT), eq(SERVICE), eq(ENVIRONMENT), anyList(), anyList(), anyString()))
         .thenReturn(callMock);
     when(callMock.execute()).thenReturn(Response.success(notificationData));
   }
@@ -107,8 +111,9 @@ public class ErrorTrackingServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void notificationDataClientTest() {
+    final List<ErrorTrackingEventStatus> errorTrackingEventStatus = Arrays.asList(ErrorTrackingEventStatus.values());
     final ErrorTrackingNotificationData responseNotificationData =
-        errorTrackingService.getNotificationData(ORG, ACCOUNT, PROJECT, SERVICE, ENVIRONMENT,
+        errorTrackingService.getNotificationData(ORG, ACCOUNT, PROJECT, SERVICE, ENVIRONMENT, errorTrackingEventStatus,
             Collections.singletonList(ErrorTrackingEventType.EXCEPTION), "testNotificationId");
     assertThat(responseNotificationData).isNotNull();
     assertThat(responseNotificationData).isEqualTo(notificationData);

@@ -17,16 +17,19 @@ import static io.harness.text.resolver.ExpressionResolver.nullStringValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
+import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionMode;
@@ -43,6 +46,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -74,10 +78,13 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   private static final String SECTION_SETUP_ID = generateUuid();
   @Mock private PlanExecutionService planExecutionService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock NodeExecutionsCache nodeExecutionsCache;
 
   @Before
   public void setup() {
     when(planExecutionService.getPlanExecutionMetadata(anyString())).thenReturn(null);
+    when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
   }
 
   @Test
@@ -244,8 +251,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
             .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).putMatrixValues("a", "1").build())
             .build());
 
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache))
+                                             .build());
 
     validateSingleExpression(evaluator, "strategy.matrix.a", "1", false);
     validateSingleExpression(evaluator, "strategy.iteration", 0, false);
@@ -263,8 +272,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
                                                               .build())
                                           .build());
 
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache))
+                                             .build());
 
     validateSingleExpression(evaluator, "strategy.repeat.partition", Arrays.asList("host1", "host2", "host3"), false);
     validateSingleExpression(evaluator, "strategy.repeat.item", "value", false);
@@ -480,6 +491,8 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     SampleEngineExpressionEvaluator evaluator = new SampleEngineExpressionEvaluator();
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("inputSetValidatorFactory", inputSetValidatorFactory);
+    on(evaluator).set("pmsFeatureFlagService", pmsFeatureFlagService);
+
     if (EmptyPredicate.isEmpty(contextMap)) {
       return evaluator;
     }
@@ -492,7 +505,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
 
   public static class SampleEngineExpressionEvaluator extends AmbianceExpressionEvaluator {
     public SampleEngineExpressionEvaluator() {
-      super(null, Ambiance.newBuilder().build(), null, false);
+      super(null, Ambiance.newBuilder().build(), null, false, null);
     }
 
     @Override

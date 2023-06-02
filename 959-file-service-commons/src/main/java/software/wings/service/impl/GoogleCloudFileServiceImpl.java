@@ -75,6 +75,8 @@ public class GoogleCloudFileServiceImpl implements FileService {
   private static final String GOOGLE_APPLICATION_CREDENTIALS_PATH = "GOOGLE_APPLICATION_CREDENTIALS";
   public static final String FILE_SERVICE_CLUSTER_NAME = "FILE_SERVICE_CLUSTER_NAME";
 
+  private static final String ENV_VARIABLE_WORKLOAD_IDENTITY = "USE_WORKLOAD_IDENTITY";
+
   private GcsHarnessFileMetadataDao gcsHarnessFileMetadataDao;
   private String clusterName;
   private volatile Storage storage;
@@ -306,7 +308,8 @@ public class GoogleCloudFileServiceImpl implements FileService {
 
   void initialize() {
     String googleCredentialsPath = System.getenv(GOOGLE_APPLICATION_CREDENTIALS_PATH);
-    if (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists()) {
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
+    if (!usingWorkloadIdentity && (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists())) {
       throw new WingsException("Invalid credentials found at " + googleCredentialsPath);
     }
 

@@ -7,6 +7,8 @@
 
 package io.harness.plancreator.steps;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP_CHILD_NODE_ID;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.execution.StepsExecutionConfig;
@@ -18,17 +20,27 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStepParameters;
 import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 
+import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGStageStepsPlanCreator extends GenericStepsNodePlanCreator {
+  @Inject KryoSerializer kryoSerializer;
+
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StepsExecutionConfig config, List<String> childrenNodeIds) {
-    StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).build();
+    String childNodeId = childrenNodeIds.get(0);
+    if (ctx.getDependency() != null && ctx.getDependency().getMetadataMap().containsKey(STEP_GROUP_CHILD_NODE_ID)) {
+      ByteString childNodeIdData = ctx.getDependency().getMetadataMap().get(STEP_GROUP_CHILD_NODE_ID);
+      childNodeId = (String) kryoSerializer.asInflatedObject(childNodeIdData.toByteArray());
+    }
+    StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childNodeId).build();
     return PlanNode.builder()
         .uuid(ctx.getCurrentField().getNode().getUuid())
         .identifier(YAMLFieldNameConstants.STEPS)

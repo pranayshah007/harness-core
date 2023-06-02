@@ -3,22 +3,26 @@ x-stoplight:
   id: bfet7n314xd4i
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1'
+  version: '1.0'
   description: This is the Open Api Spec 3 for the Platform Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Account Resource Groups
     description: This contains APIs for Account-scoped Resource Groups.
+    x-displayName: Account Resource Groups [Beta]
   - name: Organization Resource Groups
     description: This contains APIs for Organization-scoped Resource Groups.
+    x-displayName: Organization Resource Groups [Beta]
   - name: Project Resource Groups
     description: This contains APIs for Project-scoped Resource Groups.
+    x-displayName: Project Resource Groups [Beta]
   - name: Filter Resource Groups
     description: This contains the filter endpoint for Resource Groups.
+    x-displayName: Filter Resource Groups [Beta]
 paths:
   /v1/resource-groups:
     parameters: []
@@ -324,15 +328,15 @@ components:
         identifier:
           type: string
           description: Resource Group Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Resource Group Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         color:
           type: string
           description: Color associated with the Resource Group.
@@ -415,14 +419,14 @@ components:
         identifier:
           type: string
           minLength: 1
-          maxLength: 64
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          maxLength: 128
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Resource Group identifier
         name:
           type: string
           minLength: 1
-          maxLength: 64
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          maxLength: 128
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Resource Group name
         color:
           type: string
@@ -475,21 +479,21 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Project identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
       required:
         - filter
     ResourceFilter:
@@ -515,9 +519,9 @@ components:
           description: Identifiers for the Resource Type.
           items:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
             minLength: 1
-            maxLength: 64
+            maxLength: 128
         attribute_name:
           type: string
           description: Attribute name on the basis of which filtering will be done.
@@ -545,9 +549,9 @@ components:
         resource_identifier:
           type: string
           description: Filter by Resource identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
       required:
         - resource_type
     ResourceGroupFilterRequestBody:
@@ -572,21 +576,21 @@ components:
         account:
           type: string
           description: Filter by Account identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Filter by Organization identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Filter by Project identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         search_term:
           type: string
           description: Filter Resource Group matching by identifier/name.
@@ -596,9 +600,9 @@ components:
           uniqueItems: true
           items:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
             minLength: 1
-            maxLength: 64
+            maxLength: 128
         resource_selector_filter:
           type: array
           description: Filter based on whether it has a particular Resource.

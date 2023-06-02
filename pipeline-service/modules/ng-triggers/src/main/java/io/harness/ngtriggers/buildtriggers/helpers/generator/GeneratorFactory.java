@@ -17,6 +17,7 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMI;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTORY_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AZURE_ARTIFACTS;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.BAMBOO;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.CUSTOM_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
@@ -62,6 +63,7 @@ public class GeneratorFactory {
   private final AzureArtifactsPollingItemGenerator azureArtifactsPollingItemGenerator;
   private final AMIPollingItemGenerator amiPollingItemGenerator;
   private final GoogleCloudStoragePollingItemGenerator googleCloudStoragePollingItemGenerator;
+  private final BambooPollingItemGenerator bambooPollingItemGenerator;
 
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
@@ -108,6 +110,8 @@ public class GeneratorFactory {
       return amiPollingItemGenerator;
     } else if (GOOGLE_CLOUD_STORAGE.getValue().equals(buildType)) {
       return googleCloudStoragePollingItemGenerator;
+    } else if (BAMBOO.getValue().equals(buildType)) {
+      return bambooPollingItemGenerator;
     }
     return null;
   }

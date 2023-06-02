@@ -19,6 +19,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -26,6 +27,7 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -82,9 +84,10 @@ public class InfraRollbackPMSPlanCreator {
       return PlanCreationResponse.builder().build();
     }
 
+    String infraRollbackNodeUuid = provisionerParentField.getNode().getUuid() + INFRA_ROLLBACK_NODE_ID_SUFFIX;
     PlanNode infraRollbackNode =
         PlanNode.builder()
-            .uuid(provisionerParentField.getNode().getUuid() + INFRA_ROLLBACK_NODE_ID_SUFFIX)
+            .uuid(infraRollbackNodeUuid)
             .name(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_NAME)
             .identifier(NGCommonUtilPlanCreationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)
             .stepType(RollbackOptionalChildChainStep.STEP_TYPE)
@@ -98,7 +101,9 @@ public class InfraRollbackPMSPlanCreator {
 
     return PlanCreationResponse.builder()
         .node(infraRollbackNode.getUuid(), infraRollbackNode)
-        .dependencies(DependenciesUtils.toDependenciesProto(dependencies))
+        .dependencies(
+            DependenciesUtils.toDependenciesProtoWithRollbackMode(dependencies, RollbackModeBehaviour.PRESERVE))
+        .preservedNodesInRollbackMode(Collections.singletonList(infraRollbackNodeUuid))
         .build();
   }
 

@@ -29,6 +29,7 @@ import io.harness.ccm.audittrails.events.RuleSetCreateEvent;
 import io.harness.ccm.audittrails.events.RuleSetDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleSetUpdateEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.resources.governance.GovernanceRuleEnforcementResource;
 import io.harness.ccm.remote.resources.governance.GovernanceRuleResource;
 import io.harness.ccm.remote.resources.governance.GovernanceRuleSetResource;
@@ -77,7 +78,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private GovernanceRuleService governanceRuleService = mock(GovernanceRuleService.class);
   private RuleSetService ruleSetService = mock(RuleSetService.class);
   private RuleEnforcementService ruleEnforcementService = mock(RuleEnforcementService.class);
-  //  private CCMRbacHelper rbacHelper  mock(CCMRbacHelper.class)
+  private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
   private ConnectorResourceClient connectorResourceClient = mock(ConnectorResourceClient.class);
   private RuleExecutionService rulesExecutionService = mock(RuleExecutionService.class);
   private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
@@ -95,6 +96,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private static final String NAME = "Name";
   private static final String NAMESET = "NameSet";
   private static final String REGION = "REGION";
+  private static final Boolean REC = false;
   private static final String POLICY =
       "policies:\n  - name: test\n    resource: elb\n    filters:\n      - Instances: []\n    actions:\n      - type: tag\n        tag: tag\n        value: tagged\n";
   private static final Boolean OOTB = false;
@@ -136,11 +138,12 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                .rulesYaml(POLICY)
                .isOOTB(OOTB)
                .cloudProvider(CLOUD)
+               .forRecommendation(REC)
                .build();
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, false)).thenReturn(rule);
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     listOfRule.add(rule);
-    RuleList ruleList = RuleList.builder().rule(listOfRule).build();
+    RuleList ruleList = RuleList.builder().rules(listOfRule).build();
     when(governanceRuleService.list(governancePolicyFilter)).thenReturn(ruleList);
     governanceConfig = GovernanceConfig.builder()
                            .policyPerAccountLimit(LIMITpolicyPerAccountLimit)
@@ -153,7 +156,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     when(configuration.getGovernanceConfig()).thenReturn(governanceConfig);
     rulesManagement = new GovernanceRuleResource(governanceRuleService, ruleEnforcementService, ruleSetService,
         connectorResourceClient, rulesExecutionService, telemetryReporter, transactionTemplate, outboxService,
-        yamlSchemaProvider, yamlSchemaValidator, configuration);
+        yamlSchemaProvider, yamlSchemaValidator, configuration, rbacHelper);
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, true)).thenReturn(rule);
 
     ruleSet = RuleSet.builder()
@@ -165,8 +168,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                   .cloudProvider(CLOUD)
                   .build();
     when(ruleSetService.fetchById(ACCOUNT_ID, UUIDSET, false)).thenReturn(ruleSet);
-    ruleSetManagement = new GovernanceRuleSetResource(
-        ruleSetService, governanceRuleService, telemetryReporter, outboxService, transactionTemplate, configuration);
+    ruleSetManagement = new GovernanceRuleSetResource(ruleSetService, governanceRuleService, telemetryReporter,
+        outboxService, transactionTemplate, configuration, rbacHelper);
     when(ruleSetService.fetchById(ACCOUNT_ID, UUIDSET, true)).thenReturn(ruleSet);
 
     ruleEnforcement = RuleEnforcement.builder()
@@ -174,14 +177,14 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                           .accountId(ACCOUNT_ID)
                           .name(NAME)
                           .ruleIds(Collections.singletonList(UUID))
-                          .ruleSetIDs(Collections.singletonList(UUID))
+                          .ruleSetIDs(Collections.singletonList(UUIDSET))
                           .cloudProvider(CLOUD)
                           .executionSchedule(CRON)
                           .targetRegions(Collections.singletonList(REGION))
                           .targetAccounts(Collections.singletonList(ACCOUNT_ID))
                           .build();
-    ruleEnforcementManagement = new GovernanceRuleEnforcementResource(
-        ruleEnforcementService, telemetryReporter, transactionTemplate, outboxService, configuration);
+    ruleEnforcementManagement = new GovernanceRuleEnforcementResource(ruleEnforcementService, telemetryReporter,
+        transactionTemplate, outboxService, configuration, rbacHelper, ruleSetService, governanceRuleService);
     when(ruleEnforcementService.listId(ACCOUNT_ID, UUIDENF, false)).thenReturn(ruleEnforcement);
   }
 
@@ -209,6 +212,9 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleSetManagement.create(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetCreateEventArgumentCaptor.capture());
@@ -225,6 +231,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleEnforcementManagement.create(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());
@@ -258,7 +266,9 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    ruleSetManagement.updateRule(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
+    ruleSetManagement.updateRuleSet(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetUpdateEventArgumentCaptor.capture());
     RuleSetUpdateEvent rulesSetUpdateEvent = rulesSetUpdateEventArgumentCaptor.getValue();
@@ -274,6 +284,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(UUID));
     ruleEnforcementManagement.update(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());

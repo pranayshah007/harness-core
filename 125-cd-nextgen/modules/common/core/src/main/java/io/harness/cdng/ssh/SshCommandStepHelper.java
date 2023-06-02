@@ -12,6 +12,7 @@ import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
 import static io.harness.cdng.ssh.CommandUnitSpecType.COPY;
 import static io.harness.cdng.ssh.CommandUnitSpecType.DOWNLOAD_ARTIFACT;
 import static io.harness.cdng.ssh.CommandUnitSpecType.SCRIPT;
+import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getHost;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getWorkingDirectory;
@@ -34,7 +35,9 @@ import io.harness.beans.FileReference;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -43,6 +46,7 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
+import io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -79,6 +83,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -191,6 +196,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       return createRollbackSshTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     } else {
+      prepareSshWinRmRollbackData(ambiance);
       return createSshTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     }
   }
@@ -207,33 +213,50 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       return createRollbackWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     } else {
+      prepareSshWinRmRollbackData(ambiance);
       return createWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     }
   }
 
-  private Map<String, String> getMergedEnvVariablesMap(
+  Map<String, String> getMergedEnvVariablesMap(
       Ambiance ambiance, CommandStepParameters commandStepParameters, InfrastructureOutcome infrastructure) {
-    LinkedHashMap<String, Object> evaluatedStageVariables =
+    Map<String, Object> evaluatedStageVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+stage.variables>", LinkedHashMap.class);
+    evaluatedStageVariables = evaluateVariables(ambiance, evaluatedStageVariables);
+
+    Map<String, Object> evaluatedPipelineVariables =
+        cdExpressionResolver.evaluateExpression(ambiance, "<+pipeline.variables>", LinkedHashMap.class);
+    evaluatedPipelineVariables = evaluateVariables(ambiance, evaluatedPipelineVariables);
 
     Map<String, String> finalEnvVariables = new HashMap<>();
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
+    finalEnvVariables = mergeEnvironmentVariables(evaluatedPipelineVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(getServiceVariables(ambiance), finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(infrastructure.getEnvironment().getVariables(), finalEnvVariables);
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
   }
 
-  private HashMap<String, Object> getServiceVariables(Ambiance ambiance) {
-    HashMap<String, Object> serviceVariablesMap = new HashMap<>();
+  private Map<String, Object> getServiceVariables(Ambiance ambiance) {
     VariablesSweepingOutput serviceVariablesOutput = ServiceOutcomeHelper.getVariablesSweepingOutput(
         ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES);
+    return evaluateVariables(ambiance, serviceVariablesOutput);
+  }
 
-    serviceVariablesOutput.entrySet().stream().forEach(entry -> {
+  Map<String, Object> evaluateVariables(Ambiance ambiance, Map<String, Object> variables) {
+    if (isEmpty(variables)) {
+      return Collections.emptyMap();
+    }
+
+    HashMap<String, Object> result = new HashMap<>();
+
+    variables.entrySet().stream().forEach(entry -> {
       String value = null;
       if (entry.getValue() instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) entry.getValue();
         if (parameterFieldValue.getValue() != null) {
           value = parameterFieldValue.getValue().toString();
+        } else if (parameterFieldValue.getExpressionValue() != null) {
+          value = parameterFieldValue.getExpressionValue();
         }
       } else if (entry.getValue() instanceof String) {
         value = (String) entry.getValue();
@@ -241,13 +264,14 @@ public class SshCommandStepHelper extends CDStepHelper {
 
       if (value != null) {
         if (EngineExpressionEvaluator.hasExpressions(value)) {
-          serviceVariablesMap.putAll(evaluateExpression(ambiance, entry, value));
+          result.putAll(evaluateExpression(ambiance, entry, value));
         } else {
-          serviceVariablesMap.put(entry.getKey(), value);
+          result.put(entry.getKey(), value);
         }
       }
     });
-    return serviceVariablesMap;
+
+    return result;
   }
 
   private HashMap<String, Object> evaluateExpression(Ambiance ambiance, Map.Entry<String, Object> entry, String value) {
@@ -307,7 +331,8 @@ public class SshCommandStepHelper extends CDStepHelper {
       SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput) {
     // Rollback Logic
     // Get the rollback data from the latest successful deployment, getting it from DB.
-    SshWinRmRollbackData sshWinRmRollbackData = getSshWinRmRollbackData(ambiance, mergedEnvVariables);
+    SshWinRmRollbackData sshWinRmRollbackData =
+        getSshWinRmRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     return SshCommandTaskParameters.builder()
         .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -355,7 +380,8 @@ public class SshCommandStepHelper extends CDStepHelper {
       WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput) {
     // Rollback Logic
     // Get the rollback data from the latest successful deployment, getting it from DB.
-    SshWinRmRollbackData sshWinRmRollbackData = getSshWinRmRollbackData(ambiance, mergedEnvVariables);
+    SshWinRmRollbackData sshWinRmRollbackData =
+        getSshWinRmRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     return WinrmTaskParameters.builder()
@@ -378,18 +404,44 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private SshWinRmRollbackData getSshWinRmRollbackData(Ambiance ambiance, Map<String, String> mergedEnvVariables) {
+  SshWinRmRollbackData getSshWinRmRollbackData(
+      Ambiance ambiance, Map<String, String> mergedEnvVariables, CommandStepParameters commandStepParameters) {
     String stageExecutionId = ambiance.getStageExecutionId();
     log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
     Optional<SshWinRmRollbackData> rollbackData =
-        commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables);
+        commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     if (!rollbackData.isPresent()) {
       log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
+
+      // delete current phantom stageExecutionInfo in case of pipeline rollback
+      commandStepRollbackHelper.deleteIfExistsCurrentStageExecutionInfo(ambiance);
+
       throw new SkipRollbackException("Not found previous successful rollback data, hence skipping rollback");
     }
 
     log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
     return rollbackData.get();
+  }
+
+  void prepareSshWinRmRollbackData(Ambiance ambiance) {
+    ExecutionInfoKey executionInfoKey = commandStepRollbackHelper.getExecutionInfoKey(ambiance);
+    Optional<StageExecutionInfo> stageExecutionInfo =
+        commandStepRollbackHelper.getLatestSuccessfulStageExecutionInfo(ambiance, executionInfoKey);
+
+    if (stageExecutionInfo.isPresent() && stageExecutionInfo.get().getExecutionDetails() != null) {
+      log.info("Found rollback executionDetails, stageExecutionId: {}, stageExecutionInfoId: {}",
+          ambiance.getStageExecutionId(), stageExecutionInfo.get().getUuid());
+
+      SshWinRmPrepareRollbackDataOutcome sshWinRmPrepareRollbackDataOutcome =
+          SshWinRmPrepareRollbackDataOutcome.builder()
+              .executionInfoKey(executionInfoKey)
+              .stageExecutionInfoId(stageExecutionInfo.get().getUuid())
+              .build();
+
+      executionSweepingOutputService.consume(ambiance,
+          OutcomeExpressionConstants.SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME, sshWinRmPrepareRollbackDataOutcome,
+          StepOutcomeGroup.STEP.name());
+    }
   }
 
   @Nullable
@@ -401,9 +453,12 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   @Nullable
   private FileDelegateConfig getFileDelegateConfig(@NotNull Ambiance ambiance) {
+    boolean shouldRenderConfigFiles =
+        cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_CONFIG_FILE_EXPRESSION);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
     return configFilesOutcomeOptional
-        .map(configFilesOutcome -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
+        .map(configFilesOutcome
+            -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, shouldRenderConfigFiles))
         .orElse(null);
   }
 
@@ -529,9 +584,13 @@ public class SshCommandStepHelper extends CDStepHelper {
     } else if (HARNESS.equals(shellScriptSourceWrapper.getType())) {
       HarnessFileStoreSource spec =
           (HarnessFileStoreSource) cdExpressionResolver.updateExpressions(ambiance, shellScriptSourceWrapper.getSpec());
+      String scopedFilePath = spec.getFile().getValue();
       String script = sshWinRmConfigFileHelper.fetchFileContent(
-          FileReference.of(spec.getFile().getValue(), AmbianceUtils.getAccountId(ambiance),
+          FileReference.of(scopedFilePath, AmbianceUtils.getAccountId(ambiance),
               AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+      if (isEmpty(script)) {
+        throw new InvalidRequestException(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
+      }
       return cdExpressionResolver.renderExpression(ambiance, script);
     } else {
       throw new InvalidRequestException("Unsupported source type: " + shellScriptSourceWrapper.getType());

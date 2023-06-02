@@ -73,8 +73,8 @@ public class GcpResource {
   @ApiOperation(value = "Get list of projects from gcp", nickname = "getProjects")
   public ResponseDTO<GcpProjectResponseDTO> getProjects(@QueryParam("connectorRef") String gcpConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
@@ -92,7 +92,7 @@ public class GcpResource {
         resolvedGcpConnectorRef = (String) googleCloudStorageArtifactConfig.getConnectorRef().fetchFinalValue();
       }
       // Getting the resolved connectorRef in case of expressions
-      resolvedGcpConnectorRef = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+      resolvedGcpConnectorRef = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, runtimeInputYaml, resolvedGcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
     } else if (isNotEmpty(envId) && isNotEmpty(infraDefinitionId)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig =

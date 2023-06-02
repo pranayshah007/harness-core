@@ -23,9 +23,14 @@ import lombok.Data;
 public class MarketPlaceConfig {
   @ConfigSecret private String awsAccessKey;
   @ConfigSecret private String awsSecretKey;
-  @ConfigSecret private String awsMarketPlaceProductCode;
-  @ConfigSecret private String awsMarketPlaceCeProductCode;
+  @ConfigSecret private String awsMarketPlaceProductCode; // will deprecate
+  @ConfigSecret private String awsMarketPlaceCeProductCode; // will deprecate
   @ConfigSecret private String awsMarketPlaceFfProductCode;
+  @ConfigSecret private String awsMarketPlaceCiProductCode;
+  @ConfigSecret private String awsMarketPlaceSrmProductCode;
+  @ConfigSecret private String awsMarketPlaceStoProductCode;
+  @ConfigSecret private String awsMarketPlaceCdProductCode;
+  @ConfigSecret private String awsMarketPlaceCcmProductCode;
   @ConfigSecret private String azureMarketplaceAccessKey;
   @ConfigSecret private String azureMarketplaceSecretKey;
 }

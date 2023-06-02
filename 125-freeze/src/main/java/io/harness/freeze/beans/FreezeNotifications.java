@@ -12,14 +12,18 @@ import io.harness.pms.yaml.ParameterField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class FreezeNotifications {
   String name;
   boolean enabled;
 
   List<FreezeEvent> events;
+
+  String customizedMessage;
 
   @ApiModelProperty(dataType = "io.harness.freeze.beans.FreezeNotificationChannelWrapper")
   @JsonProperty("notificationMethod")

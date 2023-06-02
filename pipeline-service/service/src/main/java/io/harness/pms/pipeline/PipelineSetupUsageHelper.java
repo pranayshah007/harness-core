@@ -32,6 +32,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityGitMetadata;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
@@ -43,6 +44,8 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
+import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
@@ -67,7 +70,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
-  @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
   @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
   private static final int PAGE = 0;
@@ -108,7 +110,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
 
   public void deleteExistingSetupUsages(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    IdentifierRefProtoDTO pipelineReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+    IdentifierRefProtoDTO pipelineReference = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     EntityDetailProtoDTO pipelineDetails = EntityDetailProtoDTO.newBuilder()
                                                .setIdentifierRef(pipelineReference)
@@ -132,20 +134,15 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
     }
   }
 
-  public void publishSetupUsageEvent(PipelineEntity pipelineEntity, List<EntityDetailProtoDTO> referredEntities) {
+  public void publishSetupUsageEvent(
+      FilterCreationParams filterCreationParams, List<EntityDetailProtoDTO> referredEntities) {
+    PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
+    FilterCreationGitMetadata gitMetadata = filterCreationParams.getFilterCreationGitMetadata();
     if (EmptyPredicate.isEmpty(referredEntities)) {
       deleteSetupUsagesForGivenPipeline(pipelineEntity);
       return;
     }
-    EntityDetailProtoDTO pipelineDetails =
-        EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
-                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
-                pipelineEntity.getIdentifier()))
-            .setType(EntityTypeProtoEnum.PIPELINES)
-            .setName(pipelineEntity.getName())
-            .build();
-
+    EntityDetailProtoDTO pipelineDetails = populateEntityDetailProtoDTO(pipelineEntity, gitMetadata);
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
     for (EntityDetailProtoDTO entityDetailProtoDTO : referredEntities) {
       List<EntityDetailProtoDTO> entityDetailProtoDTOS =
@@ -200,6 +197,27 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
         }
       }
     }
+  }
+
+  private EntityDetailProtoDTO populateEntityDetailProtoDTO(
+      PipelineEntity pipelineEntity, FilterCreationGitMetadata gitMetadata) {
+    EntityDetailProtoDTO pipelineDetails =
+        EntityDetailProtoDTO.newBuilder()
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
+                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+                pipelineEntity.getIdentifier()))
+            .setType(PIPELINES)
+            .setName(pipelineEntity.getName())
+            .build();
+    if (gitMetadata != null) {
+      pipelineDetails = EntityDetailProtoDTO.newBuilder(pipelineDetails)
+                            .setEntityGitMetadata(EntityGitMetadata.newBuilder()
+                                                      .setRepo(gitMetadata.getRepo())
+                                                      .setBranch(gitMetadata.getBranch())
+                                                      .build())
+                            .build();
+    }
+    return pipelineDetails;
   }
 
   private List<EntityDetailWithSetupUsageDetailProtoDTO> convertToReferredEntityWithSetupUsageDetail(
@@ -257,7 +275,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   private void deleteSetupUsagesForGivenPipeline(PipelineEntity pipelineEntity) {
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
                 pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
                 pipelineEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.PIPELINES)

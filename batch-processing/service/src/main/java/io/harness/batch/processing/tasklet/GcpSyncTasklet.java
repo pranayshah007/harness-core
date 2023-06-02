@@ -9,8 +9,6 @@ package io.harness.batch.processing.tasklet;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
-
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
@@ -36,7 +34,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.paging.Page;
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.auth.Credentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.bigquery.BigQuery;
@@ -46,6 +47,7 @@ import com.google.cloud.bigquery.DatasetId;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.pubsub.v1.Publisher;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
@@ -58,6 +60,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +73,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 @Singleton
 public class GcpSyncTasklet implements Tasklet {
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
   public static final String SERVICE_ACCOUNT = "serviceAccount";
   public static final String SOURCE_DATA_SET_ID = "sourceDataSetId";
   public static final String SOURCE_GCP_PROJECT_ID = "sourceGcpProjectId";
@@ -80,6 +86,8 @@ public class GcpSyncTasklet implements Tasklet {
   public static final String TABLE_NAME = "sourceGcpTableName";
   public static final String TRIGGER_HISTORICAL_COST_UPDATE_IN_PREFERRED_CURRENCY =
       "triggerHistoricalCostUpdateInPreferredCurrency";
+  public static final String DEPLOY_MODE = "deployMode";
+  public static final String USE_WORKLOAD_IDENTITY = "useWorkloadIdentity";
   @Autowired private BatchMainConfig mainConfig;
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired protected CloudToHarnessMappingService cloudToHarnessMappingService;
@@ -95,6 +103,7 @@ public class GcpSyncTasklet implements Tasklet {
     private String accountId;
     private String projectId;
     private String datasetId;
+    private String tableId;
   }
 
   @Override
@@ -112,6 +121,16 @@ public class GcpSyncTasklet implements Tasklet {
       firstSync = true;
     }
     BillingDataPipelineConfig billingDataPipelineConfig = mainConfig.getBillingDataPipelineConfig();
+
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials;
+    if (!usingWorkloadIdentity) {
+      log.info("WI: In execute. using older way");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: In execute. using Google ADC");
+      sourceCredentials = GoogleCredentials.getApplicationDefault();
+    }
 
     if (billingDataPipelineConfig.isGcpSyncEnabled()) {
       List<ConnectorResponseDTO> nextGenGCPConnectorResponses = getNextGenGCPConnectorResponses(accountId);
@@ -134,9 +153,9 @@ public class GcpSyncTasklet implements Tasklet {
           log.error("Exception processing NG GCP Connector: {}", connectorInfo.getIdentifier(), e);
         }
       }
-      ServiceAccountCredentials sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
       publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
-          billingDataPipelineConfig.getGcpSyncPubSubTopic(), "", "", "", "", accountId, "", "", "True");
+          billingDataPipelineConfig.getGcpSyncPubSubTopic(), "", "", "", "", accountId, "", "", "True",
+          usingWorkloadIdentity);
 
       List<GcpBillingAccount> gcpBillingAccounts =
           cloudToHarnessMappingService.listGcpBillingAccountUpdatedInDuration(accountId);
@@ -162,12 +181,25 @@ public class GcpSyncTasklet implements Tasklet {
 
   private void processGCPConnector(BillingDataPipelineConfig billingDataPipelineConfig, String serviceAccountEmail,
       String datasetId, String projectId, String tableName, String accountId, String connectorId, Long endTime,
-      boolean firstSync) {
-    ServiceAccountCredentials sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+      boolean firstSync) throws IOException {
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials;
+    if (!usingWorkloadIdentity) {
+      log.info("WI: processGCPConnector older way");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: processGCPConnector using Google ADC");
+      sourceCredentials = GoogleCredentials.getApplicationDefault();
+    }
     Credentials credentials = getImpersonatedCredentials(sourceCredentials, serviceAccountEmail);
-    BigQuery bigQuery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    BigQuery bigQuery = BigQueryOptions.newBuilder()
+                            .setCredentials(credentials)
+                            .setHeaderProvider(getHeaderProvider())
+                            .build()
+                            .getService();
     DatasetId datasetIdFullyQualified = DatasetId.of(projectId, datasetId);
     Dataset dataset = bigQuery.getDataset(datasetIdFullyQualified);
+    log.info("dataset.getLocation(): {}", dataset.getLocation());
     if (isEmpty(tableName)) {
       // Older way to get the tableName
       Page<Table> tableList = dataset.list(BigQuery.TableListOption.pageSize(1000));
@@ -179,12 +211,13 @@ public class GcpSyncTasklet implements Tasklet {
           lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : table.getCreationTime();
           log.info("Sync condition {} {}", lastModifiedTime, endTime);
           if (lastModifiedTime > endTime || firstSync) {
-            CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
+            CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId, table.getTableId().getTable());
             gcpSyncInfo.get(cacheKey,
                 key
                 -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
                     billingDataPipelineConfig.getGcpSyncPubSubTopic(), dataset.getLocation(), serviceAccountEmail,
-                    datasetId, projectId, accountId, connectorId, table.getTableId().getTable(), "False"));
+                    datasetId, projectId, accountId, connectorId, table.getTableId().getTable(), "False",
+                    usingWorkloadIdentity));
             return;
           }
         }
@@ -197,14 +230,21 @@ public class GcpSyncTasklet implements Tasklet {
       lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : tableGranularData.getCreationTime();
       log.info("Sync condition {} {}", lastModifiedTime, endTime);
       if (lastModifiedTime > endTime || firstSync) {
-        CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
+        CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId, tableName);
         gcpSyncInfo.get(cacheKey,
             key
             -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
                 billingDataPipelineConfig.getGcpSyncPubSubTopic(), dataset.getLocation(), serviceAccountEmail,
-                datasetId, projectId, accountId, connectorId, tableGranularData.getTableId().getTable(), "False"));
+                datasetId, projectId, accountId, connectorId, tableGranularData.getTableId().getTable(), "False",
+                usingWorkloadIdentity));
       }
     }
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 
   public List<ConnectorResponseDTO> getNextGenGCPConnectorResponses(String accountId) {
@@ -217,7 +257,7 @@ public class GcpSyncTasklet implements Tasklet {
   // read the credential path from env variables
   public static ServiceAccountCredentials getCredentials(String googleCredentialPathSystemEnv) {
     String googleCredentialsPath = System.getenv(googleCredentialPathSystemEnv);
-    checkFalse(isEmpty(googleCredentialsPath), "Missing environment variable for GCP credentials.");
+    Preconditions.checkArgument(!isEmpty(googleCredentialsPath), "Missing environment variable for GCP credentials.");
     File credentialsFile = new File(googleCredentialsPath);
     ServiceAccountCredentials credentials = null;
     try (FileInputStream serviceAccountStream = new FileInputStream(credentialsFile)) {
@@ -231,7 +271,7 @@ public class GcpSyncTasklet implements Tasklet {
   }
 
   public static Credentials getImpersonatedCredentials(
-      ServiceAccountCredentials sourceCredentials, String impersonatedServiceAccount) {
+      GoogleCredentials sourceCredentials, String impersonatedServiceAccount) {
     if (impersonatedServiceAccount == null) {
       return sourceCredentials;
     } else {
@@ -240,12 +280,14 @@ public class GcpSyncTasklet implements Tasklet {
     }
   }
 
-  public static boolean publishMessage(ServiceAccountCredentials sourceCredentials, String harnessProjectId,
-      String topicId, String location, String serviceAccountEmail, String datasetId, String projectId, String accountId,
-      String connectorId, String tableName, String isHistoricalCostUpdateTriggerRequired) {
+  public boolean publishMessage(GoogleCredentials sourceCredentials, String harnessProjectId, String topicId,
+      String location, String serviceAccountEmail, String datasetId, String projectId, String accountId,
+      String connectorId, String tableName, String isHistoricalCostUpdateTriggerRequired,
+      boolean usingWorkloadIdentity) {
     TopicName topicName = TopicName.of(harnessProjectId, topicId);
     Publisher publisher = null;
 
+    log.info("isDeploymentOnPrem: " + mainConfig.getDeployMode());
     try {
       // Create a publisher instance with default settings bound to the topic
       publisher = Publisher.newBuilder(topicName)
@@ -261,6 +303,8 @@ public class GcpSyncTasklet implements Tasklet {
               .put(CONNECTOR_ID, connectorId)
               .put(TABLE_NAME, tableName)
               .put(TRIGGER_HISTORICAL_COST_UPDATE_IN_PREFERRED_CURRENCY, isHistoricalCostUpdateTriggerRequired)
+              .put(DEPLOY_MODE, mainConfig.getDeployMode().name())
+              .put(USE_WORKLOAD_IDENTITY, usingWorkloadIdentity ? "True" : "False")
               .build();
       ObjectMapper objectMapper = new ObjectMapper();
       String message = objectMapper.writeValueAsString(customAttributes);

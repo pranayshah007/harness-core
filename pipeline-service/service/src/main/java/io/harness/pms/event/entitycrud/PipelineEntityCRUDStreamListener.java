@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELI
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -23,6 +24,7 @@ import io.harness.eventsframework.EntityChangeLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -46,6 +48,9 @@ import org.springframework.data.util.CloseableIterator;
 @Slf4j
 @Singleton
 public class PipelineEntityCRUDStreamListener implements MessageListener {
+  // Max batch size of planExecutionIds to delete related metadata, so that delete records are in limited range
+  private static final int MAX_DELETION_BATCH_PROCESSING = 50;
+
   private final NGTriggerService ngTriggerService;
   private final PipelineMetadataService pipelineMetadataService;
   private final PmsExecutionSummaryService pmsExecutionSummaryService;
@@ -57,6 +62,9 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final GraphGenerationService graphGenerationService;
   private final NodeExecutionService nodeExecutionService;
   private final NGTriggerEventsService ngTriggerEventsService;
+  private final PlanExecutionService planExecutionService;
+
+  private final PlanExpansionService planExpansionService;
 
   @Inject
   public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
@@ -64,7 +72,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       BarrierService barrierService, PreflightService preflightService,
       PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
       InterruptService interruptService, GraphGenerationService graphGenerationService,
-      NodeExecutionService nodeExecutionService, NGTriggerEventsService ngTriggerEventsService) {
+      NodeExecutionService nodeExecutionService, NGTriggerEventsService ngTriggerEventsService,
+      PlanExecutionService planExecutionService, PlanExpansionService planExpansionService) {
     this.ngTriggerService = ngTriggerService;
     this.pipelineMetadataService = pipelineMetadataService;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
@@ -75,7 +84,9 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     this.interruptService = interruptService;
     this.graphGenerationService = graphGenerationService;
     this.nodeExecutionService = nodeExecutionService;
+    this.planExecutionService = planExecutionService;
     this.ngTriggerEventsService = ngTriggerEventsService;
+    this.planExpansionService = planExpansionService;
   }
 
   @Override
@@ -154,8 +165,6 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   // Delete all execution related details using all planExecution for given pipelineIdentifier.
   private void deletePipelineExecutionsDetails(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    // Max batch size of planExecutionIds to delete related metadata, so that delete records are in limited range
-    int MAX_DELETION_BATCH_PROCESSING = 50;
     Set<String> toBeDeletedPlanExecutions = new HashSet<>();
 
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
@@ -168,7 +177,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
         // We don't want to delete all executions for a pipeline together as total delete could be very high
         if (toBeDeletedPlanExecutions.size() >= MAX_DELETION_BATCH_PROCESSING) {
           deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions);
-          toBeDeletedPlanExecutions = new HashSet<>();
+          toBeDeletedPlanExecutions.clear();
         }
       }
     }
@@ -194,6 +203,9 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     for (String planExecutionToDelete : planExecutionsToDelete) {
       nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionToDelete);
     }
+    // Delete all planExecutions and its metadata
+    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionsToDelete);
+    planExpansionService.deleteAllExpansions(planExecutionsToDelete);
   }
 
   private boolean checkIfAnyRequiredFieldIsNotEmpty(EntityChangeDTO entityChangeDTO) {

@@ -172,6 +172,11 @@ public class GitClientHelper {
         ownerName = StringUtils.removeEnd(ownerName, ".git");
         return StringUtils.removeStart(ownerName, "/");
       } else {
+        Matcher noOwnerMatcher = GIT_URL_NO_OWNER.matcher(url);
+        if (isAccountLevelConnector && noOwnerMatcher.find()) {
+          return null;
+        }
+
         throw new GitClientException(format("Invalid git repo url  %s", url), SRE);
       }
 
@@ -219,18 +224,26 @@ public class GitClientHelper {
     }
   }
 
+  public static String getHarnessApiURL(String url) {
+    String domain = GitClientHelper.getGitSCM(url);
+    return getHttpProtocolPrefix(url) + domain;
+  }
+
   private static boolean isUrlHTTP(String url) {
     return url.startsWith("http") && !url.startsWith("https");
   }
 
-  private static String getHttpProtocolPrefix(String url) {
+  public static String getHttpProtocolPrefix(String url) {
     if (isUrlHTTP(url)) {
       return "http://";
     }
     return "https://";
   }
 
-  public static String getGitlabApiURL(String url) {
+  public static String getGitlabApiURL(String url, String apiUrl) {
+    if (!StringUtils.isBlank(apiUrl)) {
+      return StringUtils.stripEnd(apiUrl, "/") + "/";
+    }
     if (GitClientHelper.isGitlabSAAS(url)) {
       return "https://gitlab.com/";
     } else {
@@ -612,6 +625,14 @@ public class GitClientHelper {
         BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
   }
 
+  public static String getCompleteHTTPUrlForGitLab(String anyRepoUrl) {
+    String scmGroup = getGitSCM(anyRepoUrl);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepo = getGitRepo(anyRepoUrl);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
+
   public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String anyRepoUrl) {
     final String AZURE_REPO_URL = "https://dev.azure.com";
     String gitOwner = getGitOwner(anyRepoUrl, true);
@@ -646,5 +667,8 @@ public class GitClientHelper {
           + StringUtils.substringAfter(sshURL, AZURE_OLD_REPO_PREFIX + ":v3");
     }
     return sshURL;
+  }
+  public static String convertToHttps(String url) {
+    return url.replace("http://", "https://");
   }
 }

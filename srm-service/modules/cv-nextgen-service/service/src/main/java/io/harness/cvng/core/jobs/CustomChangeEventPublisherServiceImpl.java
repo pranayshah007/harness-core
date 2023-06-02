@@ -16,6 +16,7 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.cv.CustomChangeEventDTO;
 import io.harness.eventsframework.schemas.cv.CustomChangeEventDetails;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -23,7 +24,14 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
   @Inject @Named(CUSTOM_CHANGE_EVENT) private Producer eventProducer;
 
   @Override
-  public void registerCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
+  public void publishCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
+      String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
+    eventProducer.send(getCustomChangeEventMessage(
+        projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload));
+  }
+
+  @VisibleForTesting
+  public Message getCustomChangeEventMessage(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
     CustomChangeEventDetails.Builder customChangeEventDetailsBuilder =
         CustomChangeEventDetails.newBuilder()
@@ -37,6 +45,9 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
     if (customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity() != null) {
       customChangeEventDetailsBuilder.setExternalLinkToEntity(
           customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity());
+    }
+    if (customChangeWebhookPayload.getEventDetail().getChannelUrl() != null) {
+      customChangeEventDetailsBuilder.setChannelUrl(customChangeWebhookPayload.getEventDetail().getChannelUrl());
     }
 
     CustomChangeEventDTO.Builder customChangeEventDTOBuilder =
@@ -55,7 +66,6 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
       customChangeEventDTOBuilder.setEventIdentifier(customChangeWebhookPayload.getEventIdentifier());
     }
 
-    Message message = Message.newBuilder().setData(customChangeEventDTOBuilder.build().toByteString()).build();
-    eventProducer.send(message);
+    return Message.newBuilder().setData(customChangeEventDTOBuilder.build().toByteString()).build();
   }
 }

@@ -7,7 +7,7 @@
 
 package io.harness.cdng.ecs;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +22,7 @@ import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ecsRunTaskBaseStepInfo")
 @FieldNameConstants(innerTypeName = "EcsRunTaskBaseStepInfoKeys")
 public class EcsRunTaskBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
@@ -55,6 +56,7 @@ public class EcsRunTaskBaseStepInfo {
   @JsonProperty("runTaskRequestDefinition")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
   @SkipAutoEvaluation
+  @NotNull
   ParameterField<StoreConfigWrapper> runTaskRequestDefinition;
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})

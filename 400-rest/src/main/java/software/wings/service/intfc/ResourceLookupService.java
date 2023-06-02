@@ -58,7 +58,7 @@ public interface ResourceLookupService {
       String accountId, String filter, String limit, String offset);
 
   <T> PageResponse<T> listWithTagFilters(
-      PageRequest<T> request, String filter, EntityType entityType, boolean withTags);
+      PageRequest<T> request, String filter, EntityType entityType, boolean withTags, boolean hitSecondary);
 
   Map<String, ResourceLookup> getResourceLookupMapWithResourceIds(String accountId, Set<String> resourceIds);
 }

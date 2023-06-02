@@ -12,7 +12,9 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -26,6 +28,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,7 +50,8 @@ import lombok.experimental.FieldNameConstants;
 @Entity(value = "sloHealthIndicators", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class SLOHealthIndicator implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
+public class SLOHealthIndicator
+    implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -74,6 +78,26 @@ public class SLOHealthIndicator implements PersistentEntity, UuidAware, UpdatedA
   double errorBudgetBurnRate;
   ErrorBudgetRisk errorBudgetRisk;
   Instant lastComputedAt;
+  @FdIndex private long timescaleIteration;
+
+  Boolean failedState;
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (SLOHealthIndicatorKeys.timescaleIteration.equals(fieldName)) {
+      return this.timescaleIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (SLOHealthIndicatorKeys.timescaleIteration.equals(fieldName)) {
+      this.timescaleIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
 
   public static class SLOHealthIndicatorBuilder {
     public SLOHealthIndicator build() {
@@ -82,5 +106,9 @@ public class SLOHealthIndicator implements PersistentEntity, UuidAware, UpdatedA
       sloHealthIndicator.setLastComputedAt(Instant.now());
       return sloHealthIndicator;
     }
+  }
+
+  public Boolean getFailedState() {
+    return Objects.requireNonNullElse(failedState, false);
   }
 }

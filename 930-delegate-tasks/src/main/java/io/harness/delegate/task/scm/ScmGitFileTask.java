@@ -100,6 +100,7 @@ public class ScmGitFileTask extends AbstractDelegateRunnableTask {
                     .filepath(gitFilePathDetails.getFilePath())
                     .branch(gitFilePathDetails.getBranch())
                     .commitId(gitFilePathDetails.getRef())
+                    .getOnlyFileContent(gitFilePathDetails.isGetOnlyFileContent())
                     .build(),
                 SCMGrpc.newBlockingStub(c)));
         return GitFileTaskResponseData.builder()

@@ -10,8 +10,9 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepInfo;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -26,8 +27,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -44,10 +45,11 @@ public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     KubernetesSwapServiceSelectors state = (KubernetesSwapServiceSelectors) getState(graphNode);
     K8sBGSwapServicesStepNode k8sBGSwapServicesStepNode = new K8sBGSwapServicesStepNode();
-    baseSetup(graphNode, k8sBGSwapServicesStepNode);
+    baseSetup(graphNode, k8sBGSwapServicesStepNode, context.getIdentifierCaseFormat());
     K8sBGSwapServicesStepInfo stepInfo = new K8sBGSwapServicesStepInfo();
 
     stepInfo.setBlueGreenSwapServicesStepFqn(state.getService2());

@@ -8,7 +8,6 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_ENVIDS;
@@ -60,6 +59,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -241,9 +241,7 @@ public class ExecutionQueryHelper {
       }
     });
 
-    if (featureFlagService.isEnabled(SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL, accountId)) {
-      optimizeQuery(query, entityMap);
-    }
+    optimizeQuery(query, entityMap);
   }
 
   private void optimizeQuery(Query<WorkflowExecution> query, Map<Class, QLIdFilter> entityMap) {
@@ -346,6 +344,10 @@ public class ExecutionQueryHelper {
   }
 
   public BasicDBObject getIndexHint(List<QLExecutionFilter> filters) {
+    Optional<QLExecutionFilter> executionIdFilter = filters.stream().filter(f -> f.getExecution() != null).findFirst();
+    if (executionIdFilter.isPresent()) {
+      return null;
+    }
     final List<MongoIndex> wfIndexes = WorkflowExecution.mongoIndexes();
     for (QLBaseExecutionFilter filter : filters) {
       if (filter.getEnvironment() != null) {

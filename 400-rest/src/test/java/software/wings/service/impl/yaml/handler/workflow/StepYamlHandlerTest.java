@@ -23,7 +23,7 @@ import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;

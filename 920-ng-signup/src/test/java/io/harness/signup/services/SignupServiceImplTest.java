@@ -17,8 +17,8 @@ import static io.harness.rule.OwnerRule.ZHUO;
 import static io.harness.signup.services.impl.SignupServiceImpl.FAILED_EVENT_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;

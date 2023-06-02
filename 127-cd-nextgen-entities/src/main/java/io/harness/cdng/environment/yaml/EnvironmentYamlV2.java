@@ -10,6 +10,7 @@ package io.harness.cdng.environment.yaml;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +22,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -52,6 +55,7 @@ public class EnvironmentYamlV2 implements Visitable {
   private String uuid;
 
   @NotNull
+  @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> environmentRef;
 
@@ -67,7 +71,7 @@ public class EnvironmentYamlV2 implements Visitable {
   ParameterField<List<FilterYaml>> filters;
 
   @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<List<InfraStructureDefinitionYaml>> infrastructureDefinitions;
 
   @ApiModelProperty(dataType = "io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml")
@@ -78,11 +82,11 @@ public class EnvironmentYamlV2 implements Visitable {
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> environmentInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> serviceOverrideInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.CLUSTER_YAML_NODE_LIST_CLASSPATH)

@@ -22,6 +22,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.steps.StepSpecTypeConstants;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
@@ -70,26 +71,6 @@ public class ExecutionSummaryUpdateUtils {
     }
 
     return updated;
-  }
-
-  public boolean addPipelineUpdateCriteria(Update update, NodeExecution nodeExecution) {
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
-      update.set(PlanExecutionSummaryKeys.internalStatus, nodeExecution.getStatus());
-      update.set(PlanExecutionSummaryKeys.status, status);
-      if (nodeExecution.getEndTs() != null) {
-        update.set(PlanExecutionSummaryKeys.endTs, nodeExecution.getEndTs());
-      }
-      if (status == ExecutionStatus.FAILED) {
-        update.set(PlanExecutionSummaryKeys.executionErrorInfo,
-            ExecutionErrorInfo.builder().message(nodeExecution.getFailureInfo().getErrorMessage()).build());
-        update.set(PlanExecutionSummaryKeys.failureInfo,
-            FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
-      }
-      return true;
-    }
-
-    return false;
   }
 
   private boolean updateStageNode(Update update, NodeExecution nodeExecution, ExecutionStatus status, Level level) {
@@ -143,5 +124,11 @@ public class ExecutionSummaryUpdateUtils {
     update.set(
         String.format(LayoutNodeGraphConstants.BASE_KEY + "." + GraphLayoutNodeDTOKeys.isRollbackStageNode, stageUuid),
         isRollbackStageNode);
+  }
+
+  public void updateNextIdOfStageBeforePipelineRollback(
+      Update update, String pipelineRollbackStagePlanNodeId, String previousStagePlanNodeId) {
+    update.set(String.format(LayoutNodeGraphConstants.NEXT_IDS, previousStagePlanNodeId),
+        Collections.singletonList(pipelineRollbackStagePlanNodeId));
   }
 }

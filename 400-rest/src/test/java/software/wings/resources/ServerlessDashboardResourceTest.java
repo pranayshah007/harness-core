@@ -10,13 +10,13 @@ package software.wings.resources;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anySetOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -49,8 +49,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -77,12 +77,12 @@ public class ServerlessDashboardResourceTest extends CategoryTest {
   public void test_getAppInstanceSummaryStats() {
     doReturn(mock(InstanceSummaryStats.class))
         .when(serverlessDashboardService)
-        .getAppInstanceSummaryStats(anyString(), anyListOf(String.class), anyListOf(String.class), anyLong());
+        .getAppInstanceSummaryStats(anyString(), anyList(), anyList(), anyLong());
 
     serverlessDashboardResource.getAppInstanceSummaryStats(ACCOUNTID, Collections.singletonList(APPID_1),
         Arrays.asList(EntityType.SERVICE.name(), SettingCategory.CLOUD_PROVIDER.name()), 0l);
     verify(serverlessDashboardService, times(1))
-        .getAppInstanceSummaryStats(Matchers.eq(ACCOUNTID), eq(Collections.singletonList(APPID_1)),
+        .getAppInstanceSummaryStats(ArgumentMatchers.eq(ACCOUNTID), eq(Collections.singletonList(APPID_1)),
             eq(Arrays.asList(EntityType.SERVICE.name(), SettingCategory.CLOUD_PROVIDER.name())), eq(0l));
   }
 
@@ -92,7 +92,7 @@ public class ServerlessDashboardResourceTest extends CategoryTest {
   public void test_getAppInstanceCountStats() {
     doReturn(mock(PageResponse.class))
         .when(serverlessDashboardService)
-        .getAppInstanceSummaryStatsByService(anyString(), anyListOf(String.class), anyLong(), anyInt(), anyInt());
+        .getAppInstanceSummaryStatsByService(anyString(), anyList(), anyLong(), anyInt(), anyInt());
 
     serverlessDashboardResource.getAppInstanceCountStats(ACCOUNTID, Collections.singletonList(APPID_1), 0l, 0, 10);
     verify(serverlessDashboardService, times(1))
@@ -132,7 +132,7 @@ public class ServerlessDashboardResourceTest extends CategoryTest {
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void test_getManualSyncJobStatus() {
-    doReturn(Collections.emptyList()).when(instanceHelper).getManualSyncJobsStatus(anyString(), anySetOf(String.class));
+    doReturn(Collections.emptyList()).when(instanceHelper).getManualSyncJobsStatus(anyString(), anySet());
     serverlessDashboardResource.getManualSyncJobStatus(ACCOUNTID, ImmutableSet.of("jobid"));
     verify(instanceHelper, times(1)).getManualSyncJobsStatus(ACCOUNTID, ImmutableSet.of("jobid"));
   }

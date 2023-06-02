@@ -13,7 +13,7 @@ extend type Query {
   #fetch a user by id
   user(id: String!): User @dataFetcher(name: user)
   #fetch a list of users
-  users(limit: Int!, offset: Int): UserConnection @dataFetcher(name: userConnection)
+  users(limit: Int!, offset: Int, filters: [UserFilter]): UserConnection @dataFetcher(name: userConnection)
   #fetch a user by name
   userByName(name: String!): User @dataFetcher(name: user)
   #fetch a user by email
@@ -55,6 +55,10 @@ type DeleteUserPayload {
   clientMutationId: String
 }
 
+input UserFilter {
+  includeDisabled: Boolean!
+}
+
 extend type User {
   id: String
   name: String
@@ -67,6 +71,7 @@ extend type User {
   externalUserId: String
   userGroups(limit: Int!, offset: Int): UserGroupConnection
     @dataFetcher(name: userGroupConnection, contextFieldArgsMap: "{ \"User\": \"id\"}")
+  isDisabled: Boolean
 }
 
 type UserConnection {

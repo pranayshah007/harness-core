@@ -8,6 +8,7 @@
 package io.harness.ccm;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.audit.ResourceTypeConstants.BUDGET_GROUP;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET;
@@ -36,6 +37,7 @@ import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ccm.audittrails.eventhandler.BudgetEventHandler;
+import io.harness.ccm.audittrails.eventhandler.BudgetGroupEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CENextGenOutboxEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CostCategoryEventHandler;
 import io.harness.ccm.audittrails.eventhandler.PerspectiveEventHandler;
@@ -65,8 +67,18 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.graphql.core.msp.impl.ManagedAccountDataServiceImpl;
+import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
+import io.harness.ccm.msp.service.impl.ManagedAccountServiceImpl;
+import io.harness.ccm.msp.service.impl.MarginDetailsBqServiceImpl;
+import io.harness.ccm.msp.service.impl.MarginDetailsServiceImpl;
+import io.harness.ccm.msp.service.impl.MspValidationServiceImpl;
+import io.harness.ccm.msp.service.intf.ManagedAccountService;
+import io.harness.ccm.msp.service.intf.MarginDetailsBqService;
+import io.harness.ccm.msp.service.intf.MarginDetailsService;
+import io.harness.ccm.msp.service.intf.MspValidationService;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
@@ -82,6 +94,7 @@ import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.CCMActiveSpendServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
 import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
+import io.harness.ccm.service.impl.CCMOverviewServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
 import io.harness.ccm.service.impl.GCPEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.LicenseUsageInterfaceImpl;
@@ -93,6 +106,7 @@ import io.harness.ccm.service.intf.AzureEntityChangeEventService;
 import io.harness.ccm.service.intf.CCMActiveSpendService;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.service.intf.CCMNotificationService;
+import io.harness.ccm.service.intf.CCMOverviewService;
 import io.harness.ccm.service.intf.CEYamlService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
@@ -103,20 +117,27 @@ import io.harness.ccm.serviceAccount.GcpServiceAccountService;
 import io.harness.ccm.serviceAccount.GcpServiceAccountServiceImpl;
 import io.harness.ccm.utils.AccountIdentifierLogInterceptor;
 import io.harness.ccm.utils.LogAccountIdentifier;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingValidationServiceImpl;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidationService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
@@ -297,6 +318,13 @@ public class CENextGenModule extends AbstractModule {
       boolean isClickHouseEnabled() {
         return configuration.isClickHouseEnabled();
       }
+
+      @Provides
+      @Singleton
+      @Named("governanceConfig")
+      io.harness.remote.GovernanceConfig governanceConfig() {
+        return configuration.getGovernanceConfig();
+      }
     });
 
     // Bind Services
@@ -306,6 +334,8 @@ public class CENextGenModule extends AbstractModule {
     bind(AwsEntityChangeEventService.class).to(AwsEntityChangeEventServiceImpl.class);
     bind(AzureEntityChangeEventService.class).to(AzureEntityChangeEventServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
+    bind(BusinessMappingValidationService.class).to(BusinessMappingValidationServiceImpl.class);
     bind(LicenseUsageInterface.class).to(LicenseUsageInterfaceImpl.class).in(Singleton.class);
 
     install(new CENextGenPersistenceModule());
@@ -395,11 +425,19 @@ public class CENextGenModule extends AbstractModule {
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+    bind(CCMOverviewService.class).to(CCMOverviewServiceImpl.class);
+    bind(ManagedAccountService.class).to(ManagedAccountServiceImpl.class);
+    bind(MarginDetailsService.class).to(MarginDetailsServiceImpl.class);
+    bind(ManagedAccountDataService.class).to(ManagedAccountDataServiceImpl.class);
+    bind(MarginDetailsBqService.class).to(MarginDetailsBqServiceImpl.class);
+    bind(MspValidationService.class).to(MspValidationServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
+      bind(DataResponseService.class).to(ClickHouseDataResponseServiceImpl.class);
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
+      bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
     }
 
     try {
@@ -444,6 +482,7 @@ public class CENextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_SET).to(RuleSetEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT)
         .to(RuleEnforcementEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(BUDGET_GROUP).to(BudgetGroupEventHandler.class);
   }
 
   private void registerDelegateTaskService() {

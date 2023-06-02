@@ -43,6 +43,7 @@ import lombok.experimental.SuperBuilder;
           @JsonSubTypes.Type(value = CVLicenseSummaryDTO.class, name = "CV"),
           @JsonSubTypes.Type(value = CFLicenseSummaryDTO.class, name = "CF"),
           @JsonSubTypes.Type(value = STOLicenseSummaryDTO.class, name = "STO"),
+          @JsonSubTypes.Type(value = IACMLicenseSummaryDTO.class, name = "IACM"),
     })
 @Schema(
     name = "LicensesWithSummary", description = "This contains details of the License With Summary defined in Harness")

@@ -27,7 +27,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.Scope;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -59,6 +58,10 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.TemplateApplyRequestDTO;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -66,8 +69,11 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
@@ -77,7 +83,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -117,16 +122,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Singleton
 @Slf4j
 public class ServiceEntityServiceImpl implements ServiceEntityService {
+  private static final String ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG = "accountId must be present";
   private final ServiceRepository serviceRepository;
   private final EntitySetupUsageService entitySetupUsageService;
   private final Producer eventProducer;
   private static final Integer QUERY_PAGE_SIZE = 10000;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
+  @Inject private TemplateResourceClient templateResourceClient;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -164,12 +171,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity service = serviceRepository.save(serviceEntity);
-            outboxService.save(ServiceCreateEvent.builder()
-                                   .accountIdentifier(serviceEntity.getAccountId())
-                                   .orgIdentifier(serviceEntity.getOrgIdentifier())
-                                   .projectIdentifier(serviceEntity.getProjectIdentifier())
-                                   .service(serviceEntity)
-                                   .build());
+            outboxService.save(getServiceCreateEvent(serviceEntity));
             return service;
           }));
       entitySetupUsageHelper.createSetupUsages(createdService, referredEntities);
@@ -182,6 +184,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
           USER_SRE, ex);
     }
+  }
+
+  private static ServiceCreateEvent getServiceCreateEvent(ServiceEntity serviceEntity) {
+    return ServiceCreateEvent.builder()
+        .accountIdentifier(serviceEntity.getAccountId())
+        .orgIdentifier(serviceEntity.getOrgIdentifier())
+        .projectIdentifier(serviceEntity.getProjectIdentifier())
+        .service(serviceEntity)
+        .build();
   }
 
   private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(ServiceEntity serviceEntity) {
@@ -198,7 +209,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
 
     return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
   }
@@ -231,14 +242,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
 
-      if (oldService != null && oldService.getType() != null && requestService.getType() != null
+      if (oldService.getType() != null && requestService.getType() != null
           && !oldService.getType().equals(requestService.getType())) {
-        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+        throw new InvalidRequestException("Service Deployment Type is not allowed to change.");
       }
 
-      if (oldService != null && oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
+      if (oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
-        throw new InvalidRequestException(String.format("GitOps Enabled is not allowed to change."));
+        throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
 
       ServiceEntityValidator serviceEntityValidator =
@@ -287,19 +298,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
             requestService.getIdentifier(), false);
 
-    if (serviceEntityOptional.isPresent()) {
-      ServiceEntity oldService = serviceEntityOptional.get();
-
-      if (oldService != null && oldService.getType() != null && requestService.getType() != null
+    serviceEntityOptional.ifPresent(oldService -> {
+      if (oldService.getType() != null && requestService.getType() != null
           && !oldService.getType().equals(requestService.getType())) {
-        throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+        throw new InvalidRequestException("Service Deployment Type is not allowed to change.");
       }
 
-      if (oldService != null && oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
+      if (oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
-        throw new InvalidRequestException(String.format("GitOps Enabled is not allowed to change."));
+        throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
-    }
+    });
 
     ServiceEntityValidator serviceEntityValidator =
         serviceEntityValidatorFactory.getServiceEntityValidator(requestService);
@@ -339,13 +348,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public List<ServiceEntity> listRunTimePermission(Criteria criteria) {
-    return serviceRepository.findAllRunTimePermission(criteria);
+    int NO_LIMIT = 50000;
+    return serviceRepository.findAll(criteria, Pageable.ofSize(NO_LIMIT)).toList();
   }
 
   @Override
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef,
       Long version, boolean forceDelete) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
 
     ServiceEntity serviceEntity = ServiceEntity.builder()
@@ -407,9 +417,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
       eventProducer.send(
           Message.newBuilder()
-              .putAllMetadata(
-                  ImmutableMap.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
-                      EventsFrameworkMetadataConstants.SERVICE_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .putAllMetadata(Map.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                  EventsFrameworkMetadataConstants.SERVICE_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
               .setData(serviceChangeEvent.build().toByteString())
               .build());
     } catch (EventsFrameworkDownException e) {
@@ -453,7 +462,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   private Criteria getServiceEqualityCriteria(ServiceEntity requestService, boolean deleted) {
-    checkArgument(isNotEmpty(requestService.getAccountId()), "accountId must be present");
+    checkArgument(isNotEmpty(requestService.getAccountId()), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     String[] serviceRefSplit = StringUtils.split(requestService.getIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
@@ -504,6 +513,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
             serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier(),
             EventsFrameworkMetadataConstants.CREATE_ACTION);
+        outboxService.save(getServiceCreateEvent(serviceEntity));
         entitySetupUsageHelper.createSetupUsages(serviceEntity, referredEntityList.get(i));
         i++;
       }
@@ -553,18 +563,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     List<String> orgLevelIdentifiers = new ArrayList<>();
     List<String> accountLevelIdentifiers = new ArrayList<>();
 
-    for (String serviceIdentifier : serviceRefs) {
-      IdentifierRef identifierRef =
-          IdentifierRefHelper.getIdentifierRef(serviceIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
-
-      if (Scope.PROJECT.equals(identifierRef.getScope())) {
-        projectLevelIdentifiers.add(identifierRef.getIdentifier());
-      } else if (Scope.ORG.equals(identifierRef.getScope())) {
-        orgLevelIdentifiers.add(identifierRef.getIdentifier());
-      } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
-        accountLevelIdentifiers.add(identifierRef.getIdentifier());
-      }
-    }
+    ServiceFilterHelper.populateIdentifiersOfEachLevel(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs,
+        projectLevelIdentifiers, orgLevelIdentifiers, accountLevelIdentifiers);
 
     if (isNotEmpty(projectLevelIdentifiers)) {
       Criteria projectCriteria = Criteria.where(ServiceEntityKeys.accountId)
@@ -607,7 +607,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
-        && serviceValue.get(YamlTypes.SERVICE_REF) != null;
+        && (serviceValue.get(YamlTypes.SERVICE_REF) != null
+            || serviceValue.get(YamlTypes.SERVICE_USE_FROM_STAGE) != null);
   }
 
   @Override
@@ -650,7 +651,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         return null;
       }
       String serviceDefinition = serviceDefinitionNode.toString();
-      String serviceDefinitionInputs = RuntimeInputFormHelper.createTemplateFromYaml(serviceDefinition);
+      String serviceDefinitionInputs =
+          RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(serviceDefinition);
+
       if (isEmpty(serviceDefinitionInputs)) {
         return serviceDefinitionInputs;
       }
@@ -715,7 +718,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public ServiceInputsMergedResponseDto mergeServiceInputs(
       String accountId, String orgId, String projectId, String serviceRef, String oldServiceInputsYaml) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
     Optional<ServiceEntity> serviceEntity = get(accountId, orgId, projectId, serviceRef, false);
     if (serviceEntity.isEmpty()) {
@@ -801,11 +804,40 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     if (EmptyPredicate.isEmpty(filteredArtifactSourcesNode)) {
-      throw new InvalidRequestException(
-          String.format("Primary artifact ref value %s provided does not exist in sources in service %s",
-              primaryArtifactRefValue, serviceIdentifier));
+      if (artifactSources.size() == 1) {
+        filteredArtifactSourcesNode.add(artifactSources.get(0).getCurrJsonNode());
+      } else {
+        throw new InvalidRequestException(
+            String.format("Primary artifact ref value %s provided does not exist in sources in service %s",
+                primaryArtifactRefValue, serviceIdentifier));
+      }
     }
     primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
+  }
+
+  public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
+    if (TemplateRefHelper.hasTemplateRef(yaml)) {
+      String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";
+      long start = System.currentTimeMillis();
+      try {
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+                null, null, null, null, null, null, null, null, null,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(true)
+                    .getMergedYamlWithTemplateField(false)
+                    .build(),
+                false));
+        return templateMergeResponseDTO.getMergedPipelineYaml();
+      } catch (Exception ex) {
+        throw new InvalidRequestException(TEMPLATE_RESOLVE_EXCEPTION_MSG, ex);
+      } finally {
+        log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
+            System.currentTimeMillis() - start, projectId, orgId, accountId);
+      }
+    }
+    return yaml;
   }
 
   private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
@@ -832,7 +864,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
 
@@ -841,7 +873,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
 
     return forceDeleteInternal(accountId, orgIdentifier, null);
@@ -993,15 +1025,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     serviceEntities.forEach(this::modifyServiceRequest);
   }
 
-  boolean processQuietly(BooleanSupplier b) {
+  void processQuietly(BooleanSupplier b) {
     try {
       b.getAsBoolean();
       // supplier processed
-      return true;
     } catch (Exception ex) {
       log.error("failed to process entity deletion", ex);
       // ignore this
-      return false;
     }
   }
 
@@ -1009,5 +1039,26 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
     return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+  }
+
+  @Override
+  public ValidateTemplateInputsResponseDTO validateTemplateInputs(
+      String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache) {
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
+    checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
+
+    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);
+
+    if (optionalService.isPresent()) {
+      String yaml = optionalService.get().fetchNonEmptyYaml();
+
+      if (TemplateRefHelper.hasTemplateRef(yaml)) {
+        return NGRestUtils.getResponse(
+            templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId, projectId, null, null, null,
+                null, null, null, null, null, loadFromCache, RefreshRequestDTO.builder().yaml(yaml).build()));
+      }
+    }
+
+    return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
   }
 }

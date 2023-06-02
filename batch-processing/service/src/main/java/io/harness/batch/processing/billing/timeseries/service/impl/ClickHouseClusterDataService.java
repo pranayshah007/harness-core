@@ -7,10 +7,13 @@
 
 package io.harness.batch.processing.billing.timeseries.service.impl;
 
+import static io.harness.batch.processing.tasklet.util.ClickHouseConstants.GET_CLUSTER_DATA_ENTRIES;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.avro.ClusterBillingData;
 import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.batch.processing.entities.ClusterDataDetails;
 import io.harness.batch.processing.tasklet.util.ClickHouseConstants;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.JobConstants;
@@ -22,10 +25,13 @@ import com.google.inject.Singleton;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -37,13 +43,13 @@ import org.springframework.stereotype.Service;
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
 public class ClickHouseClusterDataService {
-  public static final String AGGREGATED_KEYWORD = "Aggregated";
-  public static final String CLUSTER = "CLUSTER";
-  public static final String KEY = "key";
-  public static final String VALUE = "value";
+  private static final String AGGREGATED_KEYWORD = "Aggregated";
+  private static final String CLUSTER = "CLUSTER";
+  private static final String KEY = "key";
+  private static final String VALUE = "value";
   @Autowired private ClickHouseService clickHouseService;
-  @Autowired ClickHouseConfig clickHouseConfig;
-  @Autowired BatchMainConfig batchMainConfig;
+  @Autowired private ClickHouseConfig clickHouseConfig;
+  @Autowired private BatchMainConfig batchMainConfig;
 
   public void createClickHouseDataBaseIfNotExist() throws Exception {
     clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), ClickHouseConstants.createCCMDBQuery);
@@ -137,15 +143,11 @@ public class ClickHouseClusterDataService {
   }
 
   private static String getClusterDataCreationQuery(String clusterDataTableName) {
-    String clusterDataAggregatedCreateQuery =
-        String.format(ClickHouseConstants.CLUSTER_DATA_TABLE_CREATION_QUERY, clusterDataTableName);
-    return clusterDataAggregatedCreateQuery;
+    return String.format(ClickHouseConstants.CLUSTER_DATA_TABLE_CREATION_QUERY, clusterDataTableName);
   }
 
   private static String getClusterDataAggregatedCreationQuery(String clusterDataTableName) {
-    String clusterDataCreateQuery =
-        String.format(ClickHouseConstants.CLUSTER_DATA_AGGREGATED_TABLE_CREATION_QUERY, clusterDataTableName);
-    return clusterDataCreateQuery;
+    return String.format(ClickHouseConstants.CLUSTER_DATA_AGGREGATED_TABLE_CREATION_QUERY, clusterDataTableName);
   }
 
   private static void getBatchedPreparedStatement(PreparedStatement prepareStatement, ClusterBillingData billingData)
@@ -234,5 +236,22 @@ public class ClickHouseClusterDataService {
     Map<String, String> labelMap = jsonLabels.stream().collect(
         Collectors.toMap(label -> label.get(KEY).getAsString(), label -> label.get(VALUE).getAsString(), (a, b) -> b));
     return labelMap;
+  }
+
+  public ClusterDataDetails getClusterDataEntriesDetails(String accountId, long startTime) throws SQLException {
+    String query = String.format(GET_CLUSTER_DATA_ENTRIES, accountId, startTime);
+
+    Connection connection = clickHouseService.getConnection(batchMainConfig.getClickHouseConfig(), new Properties());
+    try (Statement statement = connection.createStatement()) {
+      try (ResultSet resultSet = statement.executeQuery(query)) {
+        while (resultSet.next()) {
+          return ClusterDataDetails.builder()
+              .entriesCount(resultSet.getInt("ENTRIESCOUNT"))
+              .billingAmountSum(resultSet.getDouble("BILLINGAMOUNTSUM"))
+              .build();
+        }
+      }
+    }
+    return null;
   }
 }

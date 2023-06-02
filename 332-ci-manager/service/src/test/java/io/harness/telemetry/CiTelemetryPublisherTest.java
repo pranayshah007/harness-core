@@ -14,7 +14,6 @@ import static io.harness.telemetry.Destination.ALL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -23,17 +22,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.licensing.entities.modules.ModuleLicense;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.rule.Owner;
 
-import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,7 +44,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   CiTelemetryPublisher telemetryPublisher;
   CIOverviewDashboardService ciOverviewDashboardService = mock(CIOverviewDashboardService.class);
   TelemetryReporter telemetryReporter = mock(TelemetryReporter.class);
-  AccountClient accountClient = mock(AccountClient.class);
+  AccountUtils accountUtils = mock(AccountUtils.class);
   CITelemetryStatusRepository ciTelemetryStatusRepository = mock(CITelemetryStatusRepository.class);
   ModuleLicenseRepository moduleLicenseRepository = mock(ModuleLicenseRepository.class);
 
@@ -56,7 +53,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     telemetryPublisher = spy(CiTelemetryPublisher.class);
     telemetryPublisher.ciOverviewDashboardService = ciOverviewDashboardService;
     telemetryPublisher.telemetryReporter = telemetryReporter;
-    telemetryPublisher.accountClient = accountClient;
+    telemetryPublisher.accountUtils = accountUtils;
     telemetryPublisher.ciTelemetryStatusRepository = ciTelemetryStatusRepository;
     telemetryPublisher.moduleLicenseRepository = moduleLicenseRepository;
   }
@@ -66,27 +63,29 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRecordTelemetry() {
     long activeCommitters = 20L;
+    long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     ModuleLicense moduleLicense = null;
     List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    accountDTOList.add(accountDTO1);
-    accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountList = new ArrayList<>();
+    accountList.add("acc1");
+    accountList.add("acc2");
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
     firstAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+    firstAccountExpectedMap.put("ci_credits_used", creditUsage);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
     secondAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+    secondAccountExpectedMap.put("ci_credits_used", creditUsage);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();
@@ -103,26 +102,28 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRecordTelemetryNoActiveCI() {
     long activeCommitters = 0L;
+    long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     List<ModuleLicense> moduleLicenses = Collections.emptyList();
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    accountDTOList.add(accountDTO1);
-    accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountList = new ArrayList<>();
+    accountList.add("acc1");
+    accountList.add("acc2");
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
     firstAccountExpectedMap.put("ci_license_developers_used", null);
+    firstAccountExpectedMap.put("ci_credits_used", null);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
     secondAccountExpectedMap.put("ci_license_developers_used", null);
+    secondAccountExpectedMap.put("ci_credits_used", null);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();
@@ -139,26 +140,28 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRecordTelemetryNoActiveCIButHaveExecHistory() {
     long activeCommitters = 20L;
+    long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     List<ModuleLicense> moduleLicenses = Collections.emptyList();
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    accountDTOList.add(accountDTO1);
-    accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountList = new ArrayList<>();
+    accountList.add("acc1");
+    accountList.add("acc2");
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
-    firstAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+    firstAccountExpectedMap.put("ci_license_developers_used", null);
+    firstAccountExpectedMap.put("ci_credits_used", null);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
-    secondAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+    secondAccountExpectedMap.put("ci_license_developers_used", null);
+    secondAccountExpectedMap.put("ci_credits_used", null);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();
@@ -175,19 +178,19 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRecordSkipTelemetry() {
     long activeCommitters = 20L;
+    long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
     doReturn(false).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     ModuleLicense moduleLicense = null;
     List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    accountDTOList.add(accountDTO1);
-    accountDTOList.add(accountDTO2);
-    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    List<String> accountList = new ArrayList<>();
+    accountList.add("acc1");
+    accountList.add("acc2");
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
 
     telemetryPublisher.recordTelemetry();
-    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), anyObject(), anyMap(), anyObject());
+    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), any(), anyMap(), any());
   }
 }

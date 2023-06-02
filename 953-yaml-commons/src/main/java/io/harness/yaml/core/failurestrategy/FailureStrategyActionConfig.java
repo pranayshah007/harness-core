@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
@@ -38,7 +39,8 @@ import javax.validation.constraints.NotNull;
       @Type(value = StepGroupFailureActionConfig.class, name = NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK),
       @Type(value = PipelineRollbackFailureActionConfig.class, name = NGFailureActionTypeConstants.PIPELINE_ROLLBACK),
       @Type(value = ProceedWithDefaultValuesFailureActionConfig.class,
-          name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES)
+          name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES),
+      @Type(value = MarkAsFailFailureActionConfig.class, name = NGFailureActionTypeConstants.MARK_AS_FAILURE),
 })
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface FailureStrategyActionConfig {

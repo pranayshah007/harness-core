@@ -136,6 +136,7 @@ public class CreatePRStep extends CdTaskExecutable<NGGitOpsResponse> {
    Delegate side: (NgGitOpsCommandTask.java)
    */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
+    log.info("Creating GitOps PR from given inputs.");
     try {
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment

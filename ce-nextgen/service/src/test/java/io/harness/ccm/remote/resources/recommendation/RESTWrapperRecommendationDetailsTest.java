@@ -7,9 +7,11 @@
 
 package io.harness.ccm.remote.resources.recommendation;
 
+import static io.harness.rule.OwnerRule.ANMOL;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -17,6 +19,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.graphql.dto.recommendation.AzureVmRecommendationDTO;
+import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
@@ -38,7 +42,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
@@ -180,6 +184,105 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
     assertThat(startTimeCaptor.getValue().toString()).isEqualTo("2022-01-03T00:00Z");
     assertThat(endTimeCaptor.getValue().toString()).isEqualTo("2022-01-10T00:00Z");
 
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testEC2RecommendationDetail() {
+    RecommendationDetailsDTO recommendationDetailsDTO = EC2RecommendationDTO.builder().id(RECOMMENDATION_ID).build();
+    when(detailsQuery.recommendationDetails(
+             eq(RECOMMENDATION_ID), eq(ResourceType.EC2_INSTANCE), eq(null), eq(null), eq(null), envCaptor.capture()))
+        .thenReturn(recommendationDetailsDTO);
+
+    EC2RecommendationDTO ec2RecommendationDTO =
+        restWrapperRecommendationDetails.ec2RecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID).getData();
+
+    assertThat(ec2RecommendationDTO).isInstanceOf(EC2RecommendationDTO.class);
+    assertThat(ec2RecommendationDTO).isEqualTo(recommendationDetailsDTO);
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testEC2RecommendationDetail_RecommendationDetailsReturnNull() {
+    when(detailsQuery.recommendationDetails(
+             eq(RECOMMENDATION_ID), eq(ResourceType.EC2_INSTANCE), eq(null), eq(null), eq(null), envCaptor.capture()))
+        .thenReturn(null);
+
+    EC2RecommendationDTO ec2RecommendationDTO =
+        restWrapperRecommendationDetails.ec2RecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID).getData();
+
+    assertThat(ec2RecommendationDTO).isNull();
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testEC2RecommendationDetail_RecommendationDetailsReturnNoItems() {
+    RecommendationDetailsDTO recommendationDetailsDTO = EC2RecommendationDTO.builder().build();
+    when(detailsQuery.recommendationDetails(
+             eq(RECOMMENDATION_ID), eq(ResourceType.EC2_INSTANCE), eq(null), eq(null), eq(null), envCaptor.capture()))
+        .thenReturn(recommendationDetailsDTO);
+
+    EC2RecommendationDTO ec2RecommendationDTO =
+        restWrapperRecommendationDetails.ec2RecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID).getData();
+
+    assertThat(ec2RecommendationDTO).isInstanceOf(EC2RecommendationDTO.class);
+    assertThat(ec2RecommendationDTO).isEqualTo(recommendationDetailsDTO);
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testAzureVmRecommendationDetail() {
+    RecommendationDetailsDTO recommendationDetailsDTO =
+        AzureVmRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
+    when(detailsQuery.recommendationDetails(
+             eq(RECOMMENDATION_ID), eq(ResourceType.AZURE_INSTANCE), eq(null), eq(null), eq(null), envCaptor.capture()))
+        .thenReturn(recommendationDetailsDTO);
+
+    AzureVmRecommendationDTO azureVmRecommendationDTO =
+        restWrapperRecommendationDetails.azureVmRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID).getData();
+
+    assertThat(azureVmRecommendationDTO).isInstanceOf(AzureVmRecommendationDTO.class);
+    assertThat(azureVmRecommendationDTO).isEqualTo(recommendationDetailsDTO);
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testAzureVmRecommendationDetail_RecommendationDetailsReturnNull() {
+    when(detailsQuery.recommendationDetails(
+             eq(RECOMMENDATION_ID), eq(ResourceType.AZURE_INSTANCE), eq(null), eq(null), eq(null), envCaptor.capture()))
+        .thenReturn(null);
+
+    AzureVmRecommendationDTO azureVmRecommendationDTO =
+        restWrapperRecommendationDetails.azureVmRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID).getData();
+
+    assertThat(azureVmRecommendationDTO).isNull();
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testAzureVmRecommendationDetail_RecommendationDetailsReturnNoItems() {
+    RecommendationDetailsDTO recommendationDetailsDTO = AzureVmRecommendationDTO.builder().build();
+    when(detailsQuery.recommendationDetails(
+             eq(RECOMMENDATION_ID), eq(ResourceType.AZURE_INSTANCE), eq(null), eq(null), eq(null), envCaptor.capture()))
+        .thenReturn(recommendationDetailsDTO);
+
+    AzureVmRecommendationDTO azureVmRecommendationDTO =
+        restWrapperRecommendationDetails.azureVmRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID).getData();
+
+    assertThat(azureVmRecommendationDTO).isInstanceOf(AzureVmRecommendationDTO.class);
+    assertThat(azureVmRecommendationDTO).isEqualTo(recommendationDetailsDTO);
     verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any(), any());
   }
 }

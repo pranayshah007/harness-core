@@ -28,5 +28,4 @@ public class AsgManifestHandlerChainState {
   private Map<String, List<String>> asgManifestsDataForRollback = new HashMap<>();
   private String newAsgName;
   private String executionStrategy;
-  private List<String> targetGroupArnList;
 }

@@ -24,7 +24,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandTemplateFactory;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 
 import com.google.inject.Inject;

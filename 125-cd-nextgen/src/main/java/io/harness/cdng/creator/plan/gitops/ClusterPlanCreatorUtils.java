@@ -116,7 +116,7 @@ public class ClusterPlanCreatorUtils {
 
     ClusterStepParametersBuilder clusterStepParametersBuilder =
         ClusterStepParameters.builder()
-            .envGroupRef(config.getIdentifier())
+            .envGroupRef(config.getEnvironmentGroupRef().getValue())
             .envGroupName(config.getName())
             .deployToAllEnvs(false)
             .environmentGroupYaml(config.getEnvironmentGroupYaml());

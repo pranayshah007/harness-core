@@ -82,6 +82,7 @@ enum DataFetcherEnum {
   service
   serviceConnection
   serviceStats
+  updateServiceMetadata
   sunburstChartStats
   tagsInUseConnection
   tags

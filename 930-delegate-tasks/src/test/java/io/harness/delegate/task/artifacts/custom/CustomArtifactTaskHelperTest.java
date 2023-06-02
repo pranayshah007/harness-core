@@ -10,6 +10,8 @@ package io.harness.delegate.task.artifacts.custom;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,7 +55,7 @@ public class CustomArtifactTaskHelperTest extends CategoryTest {
                                                         .artifactTaskType(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD)
                                                         .build();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
-    when(customArtifactTaskHandler.getLastSuccessfulBuild(customArtifactDelegateRequest))
+    when(customArtifactTaskHandler.getLastSuccessfulBuild(eq(customArtifactDelegateRequest), any()))
         .thenReturn(artifactTaskExecutionResponse);
 
     ArtifactTaskResponse artifactTaskResponse =
@@ -61,7 +63,7 @@ public class CustomArtifactTaskHelperTest extends CategoryTest {
     assertThat(artifactTaskResponse).isNotNull();
     assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
 
-    verify(customArtifactTaskHandler).getLastSuccessfulBuild(customArtifactDelegateRequest);
+    verify(customArtifactTaskHandler).getLastSuccessfulBuild(eq(customArtifactDelegateRequest), any());
   }
 
   @Test
@@ -79,14 +81,15 @@ public class CustomArtifactTaskHelperTest extends CategoryTest {
                                                         .artifactTaskType(ArtifactTaskType.GET_BUILDS)
                                                         .build();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
-    when(customArtifactTaskHandler.getBuilds(customArtifactDelegateRequest)).thenReturn(artifactTaskExecutionResponse);
+    when(customArtifactTaskHandler.getBuilds(eq(customArtifactDelegateRequest), any()))
+        .thenReturn(artifactTaskExecutionResponse);
 
     ArtifactTaskResponse artifactTaskResponse =
         customArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
     assertThat(artifactTaskResponse).isNotNull();
     assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
 
-    verify(customArtifactTaskHandler).getBuilds(customArtifactDelegateRequest);
+    verify(customArtifactTaskHandler).getBuilds(eq(customArtifactDelegateRequest), any());
   }
 
   @Test

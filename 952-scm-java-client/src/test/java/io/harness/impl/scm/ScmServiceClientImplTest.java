@@ -13,15 +13,20 @@ import static io.harness.constants.Constants.SCM_INTERNAL_SERVER_ERROR_CODE;
 import static io.harness.constants.Constants.SCM_INTERNAL_SERVER_ERROR_MESSAGE;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
@@ -44,19 +49,28 @@ import io.harness.beans.request.GitFileRequest;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
-import io.harness.beans.response.ScmGitMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.constants.Constants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -64,9 +78,12 @@ import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookRequest;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetAuthenticatedUserRequest;
+import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
@@ -100,6 +117,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @InjectMocks ScmServiceClientImpl scmServiceClient;
   @Mock ScmGitProviderHelper scmGitProviderHelper;
   @Mock ScmGitProviderMapper scmGitProviderMapper;
+  @Mock SCMGitAccessToProviderMapper scmGitAccessToProviderMapper;
   @Mock SCMGrpc.SCMBlockingStub scmBlockingStub;
   @Mock Provider gitProvider;
   @Mock ScmConnector scmConnector;
@@ -247,8 +265,47 @@ public class ScmServiceClientImplTest extends CategoryTest {
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmBlockingStub.createFile(any()))
         .thenReturn(CreateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError("error").build());
     CreateFileResponse createFileResponse =
         scmServiceClient.createFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(createFileResponse).isNotNull();
+    assertThat(createFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
+    assertThat(createFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCommitIdIsFetchedWhenCreateFile() {
+    String newCommitId = "NEW_COMMIT_ID";
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.createFile(any()))
+        .thenReturn(CreateFileResponse.newBuilder().setStatus(201).setCommitId("").build());
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder().build();
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(newCommitId).build());
+    CreateFileResponse createFileResponse =
+        scmServiceClient.createFile(gitlabConnectorDTO, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(createFileResponse).isNotNull();
+    assertEquals(newCommitId, createFileResponse.getCommitId());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCommitIdIsNotFetchedWhenCreateFile() {
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.createFile(any()))
+        .thenReturn(CreateFileResponse.newBuilder().setStatus(201).setCommitId("").build());
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder().build();
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError("error").build());
+    CreateFileResponse createFileResponse =
+        scmServiceClient.createFile(gitlabConnectorDTO, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(createFileResponse).isNotNull();
     assertThat(createFileResponse).isNotNull();
     assertThat(createFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
     assertThat(createFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
@@ -258,15 +315,34 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.MOHIT_GARG)
   @Category(UnitTests.class)
   public void testEmptyCommitIdWhenUpdateFile() {
+    String errorMessage = "CommitID Not found";
     when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmBlockingStub.updateFile(any()))
         .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError(errorMessage).build());
     UpdateFileResponse updateFileResponse =
         scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(updateFileResponse).isNotNull();
-    assertThat(updateFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
-    assertThat(updateFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
+    assertThat(updateFileResponse.getStatus() == Constants.SCM_BAD_RESPONSE_ERROR_CODE).isTrue();
+    assertThat(updateFileResponse.getError().equals(errorMessage)).isTrue();
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testEmptyCommitIdButFetchedFromGetLatestCommitIDWhenUpdateFile() {
+    String newCommitId = "NEW_COMMIT_ID";
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(Provider.newBuilder().build());
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmBlockingStub.updateFile(any()))
+        .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(newCommitId).build());
+    UpdateFileResponse updateFileResponse =
+        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
+    assertThat(updateFileResponse).isNotNull();
+    assertEquals(newCommitId, updateFileResponse.getCommitId());
   }
 
   @Test
@@ -428,8 +504,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetBatchFile() {
-    doReturn(getGitFileResponse(fileContent, commitId, objectId, filepath, branch,
-                 ScmGitMetadata.builder().repoName(repoName).scmConnector(scmConnector).build()))
+    doReturn(getGitFileResponse(fileContent, commitId, objectId, filepath, branch))
         .when(scmServiceClient)
         .getFile(any(), any(), eq(scmBlockingStub));
     String requestIdentifier = "request-1";
@@ -452,7 +527,95 @@ public class ScmServiceClientImplTest extends CategoryTest {
     assertThat(gitFileResponse.getContent()).isEqualTo(fileContent);
     assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
     assertThat(gitFileResponse.getObjectId()).isEqualTo(objectId);
-    assertThat(gitFileResponse.getScmGitMetadata()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetUserDetails() {
+    char[] tokenValue = randomAlphabetic(5).toCharArray();
+    UserDetailsRequestDTO userDetailsRequestDTO =
+        UserDetailsRequestDTO.builder()
+            .gitAccessDTO(GithubAccessTokenDTO.builder()
+                              .tokenRef(SecretRefData.builder()
+                                            .scope(io.harness.encryption.Scope.ACCOUNT)
+                                            .identifier("tokenRef")
+                                            .decryptedValue(tokenValue)
+                                            .build())
+                              .tokenScope(Scope.builder().accountIdentifier("accountId").build())
+                              .build())
+            .build();
+    Provider provider = Provider.newBuilder()
+                            .setGithub(GithubProvider.newBuilder().setAccessToken(String.valueOf(tokenValue)).build())
+                            .build();
+    when(scmGitAccessToProviderMapper.mapToSCMGitProvider(userDetailsRequestDTO.getGitAccessDTO()))
+        .thenReturn(provider);
+    when(scmBlockingStub.getAuthenticatedUser(GetAuthenticatedUserRequest.newBuilder().setProvider(provider).build()))
+        .thenReturn(GetAuthenticatedUserResponse.newBuilder().setUserLogin("user1").setEmail("email1").build());
+    UserDetailsResponseDTO userDetailsResponseDTO =
+        scmServiceClient.getUserDetails(userDetailsRequestDTO, scmBlockingStub);
+    assertEquals(userDetailsResponseDTO.getUserEmail(), "email1");
+    assertEquals(userDetailsResponseDTO.getUserName(), "user1");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetSlugGitlab() {
+    ScmGitProviderHelper helper = new ScmGitProviderHelper();
+    GitlabConnectorDTO gitlabConnectorDTO =
+        GitlabConnectorDTO.builder()
+            .url("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/subgroup/repo1.git")
+            .authentication(GitlabAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .apiAccess(GitlabApiAccessDTO.builder()
+                           .spec(GitlabTokenSpecDTO.builder().apiUrl("http://34.170.133.206/gitlab/").build())
+                           .build())
+            .build();
+    String slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/subgroup/repo1");
+
+    gitlabConnectorDTO.setUrl("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/repo1.git");
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/repo1");
+
+    gitlabConnectorDTO.setUrl("git@34.170.133.206:gitlab-instance-9ca8a1ea/subgroup/repo1.git");
+    gitlabConnectorDTO.setAuthentication(GitlabAuthenticationDTO.builder().authType(GitAuthType.SSH).build());
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/subgroup/repo1");
+
+    gitlabConnectorDTO.setUrl("git@34.170.133.206:gitlab-instance-9ca8a1ea/repo1.git");
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/repo1");
+
+    gitlabConnectorDTO.setApiAccess(
+        GitlabApiAccessDTO.builder().spec(GitlabTokenSpecDTO.builder().apiUrl("").build()).build());
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab-instance-9ca8a1ea/repo1");
+
+    gitlabConnectorDTO.setUrl("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/repo1.git");
+    slug = helper.getSlug(gitlabConnectorDTO);
+    assertEquals(slug, "gitlab/gitlab-instance-9ca8a1ea/repo1");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testgetHarnessSlug() {
+    ScmGitProviderHelper helper = new ScmGitProviderHelper();
+    HarnessConnectorDTO harnessConnectorDTO =
+        HarnessConnectorDTO.builder()
+            .url(
+                "http://git.app.harness.io/kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo")
+            .build();
+    assertThat(helper.getSlug(harnessConnectorDTO))
+        .isEqualTo("kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo/+");
+    harnessConnectorDTO =
+        HarnessConnectorDTO.builder()
+            .url(
+                "http://git.app.harness.io/kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo.git")
+            .build();
+    assertThat(helper.getSlug(harnessConnectorDTO))
+        .isEqualTo("kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo/+");
   }
 
   private GitFileDetails getGitFileDetailsDefault() {
@@ -525,14 +688,13 @@ public class ScmServiceClientImplTest extends CategoryTest {
   }
 
   private GitFileResponse getGitFileResponse(
-      String content, String commitId, String objectId, String filepath, String branch, ScmGitMetadata scmGitMetadata) {
+      String content, String commitId, String objectId, String filepath, String branch) {
     return GitFileResponse.builder()
         .commitId(commitId)
         .content(content)
         .objectId(objectId)
         .filepath(filepath)
         .branch(branch)
-        .scmGitMetadata(scmGitMetadata)
         .build();
   }
 }

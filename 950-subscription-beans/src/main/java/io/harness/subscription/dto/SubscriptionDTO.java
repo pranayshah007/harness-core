@@ -10,7 +10,8 @@ package io.harness.subscription.dto;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.subscription.params.ItemParams;
+import io.harness.subscription.enums.PaymentFrequency;
+import io.harness.subscription.params.StripeItemRequest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
@@ -18,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.jvnet.hk2.annotations.Optional;
 
 @OwnedBy(HarnessTeam.GTM)
 @Data
@@ -25,8 +27,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SubscriptionDTO {
-  private String customerId;
+  private CustomerDTO customer;
   private ModuleType moduleType;
   private String paymentMethodId;
-  private List<ItemParams> items;
+  @Optional private PaymentFrequency paymentFrequency;
+  private List<StripeItemRequest> items;
 }

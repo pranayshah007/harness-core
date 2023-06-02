@@ -31,6 +31,10 @@ import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.aws.model.AwsAmiPreDeploymentData.DEFAULT_DESIRED_COUNT;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME;
+import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -52,9 +56,10 @@ import static java.util.Collections.singletonMap;
 import static jersey.repackaged.com.google.common.collect.Maps.newHashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -69,6 +74,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -84,6 +90,7 @@ import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.beans.Activity;
+import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -165,6 +172,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
   @Mock private AwsAmiServiceStateHelper awsAmiServiceStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService mockFeatureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsAmiServiceDeployState state = new AwsAmiServiceDeployState("stateName");
@@ -272,6 +280,16 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
     doReturn(cloudProvider).when(mockSettingsService).get(any());
     doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
+    doReturn("10").when(mockContext).renderExpression(eq(BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_BACKOFF_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_ERROR_RETRY_ACCOUNT_VARIABLE));
+    AmazonClientSDKDefaultBackoffStrategy sdkDefaultBackoffStrategy = AmazonClientSDKDefaultBackoffStrategy.builder()
+                                                                          .baseDelayInMs(10)
+                                                                          .throttledBaseDelayInMs(10)
+                                                                          .maxBackoffInMs(10)
+                                                                          .maxErrorRetry(10)
+                                                                          .build();
     doReturn(ImmutableMap.of(asg1, 1, asg3, 0))
         .when(mockAwsAsgHelperServiceManager)
         .getDesiredCapacitiesOfAsgs(any(), anyList(), any(), anyList(), any());
@@ -286,6 +304,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     assertThat(delegateTask.getData().getParameters()[0] instanceof AwsAmiServiceDeployRequest).isTrue();
     AwsAmiServiceDeployRequest params = (AwsAmiServiceDeployRequest) delegateTask.getData().getParameters()[0];
     assertThat(params).isNotNull();
+    assertThat(params.getAwsConfig().getAmazonClientSDKDefaultBackoffStrategy()).isEqualTo(sdkDefaultBackoffStrategy);
     assertThat(params.getNewAutoScalingGroupName()).isEqualTo(asg3);
     assertThat(params.getNewAsgFinalDesiredCount()).isEqualTo(2);
     List<AwsAmiResizeData> asgDesiredCounts = params.getAsgDesiredCounts();
@@ -312,6 +331,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     params = (AwsAmiServiceDeployRequest) delegateTask.getData().getParameters()[0];
     assertThat(params.getInfraMappingTargetGroupArns().size()).isEqualTo(2);
     assertThat(params.getInfraMappingTargetGroupArns()).containsAll(stageTgs);
+    assertThat(params.getAwsConfig().getAmazonClientSDKDefaultBackoffStrategy()).isEqualTo(sdkDefaultBackoffStrategy);
 
     assertThat(params.getInfraMappingClassisLbs().size()).isEqualTo(2);
     assertThat(params.getInfraMappingClassisLbs()).containsAll(stageLbs);

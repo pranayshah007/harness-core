@@ -100,9 +100,6 @@ public interface AuthService {
   void authorize(String accountId, List<String> appIds, String entityId, User user,
       List<PermissionAttribute> permissionAttributes);
 
-  void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext);
-
   void invalidateAllTokensForUser(String userId);
 
   void invalidateToken(String utoken);

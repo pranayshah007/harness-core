@@ -8,6 +8,7 @@
 package io.harness.springdata;
 
 import static java.time.Duration.ofSeconds;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,21 +31,23 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.DocumentCallbackHandler;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperationContext;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.LimitOperation;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.mapreduce.MapReduceOptions;
 import org.springframework.data.mongodb.core.mapreduce.MapReduceResults;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.lang.Nullable;
 
@@ -53,7 +56,8 @@ import org.springframework.lang.Nullable;
 @OwnedBy(HarnessTeam.PL)
 public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   private static final int RETRIES = 3;
-  private final int maxOperationInMillis;
+  private final int maxOperationTimeInMillis;
+  private final int maxDocumentsToBeFetched;
 
   public static final FindAndModifyOptions upsertReturnNewOptions =
       new FindAndModifyOptions().upsert(true).returnNew(true);
@@ -63,18 +67,20 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       "query [{}] for collection [{}] exceeded max time limit of [{}] ms with error {}.";
 
   private final TraceMode traceMode;
+  private static final String MAX_TIME = "maxTimeMS";
 
   @Getter private final Subject<NgTracer> tracerSubject = new Subject<>();
 
-  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
+  public HMongoTemplate(MongoDatabaseFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
     super(mongoDbFactory, mongoConverter);
     this.traceMode = mongoConfig.getTraceMode();
-    this.maxOperationInMillis = mongoConfig.getMaxOperationTimeInMillis();
+    this.maxOperationTimeInMillis = mongoConfig.getMaxOperationTimeInMillis();
+    this.maxDocumentsToBeFetched = mongoConfig.getMaxDocumentsToBeFetched();
   }
 
   @Nullable
   @Override
-  public <T> T findAndModify(Query query, Update update, Class<T> entityClass) {
+  public <T> T findAndModify(Query query, UpdateDefinition update, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(
         () -> findAndModify(query, update, new FindAndModifyOptions(), entityClass, getCollectionName(entityClass)));
@@ -82,18 +88,18 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Nullable
   @Override
-  public <T> T findAndModify(Query query, Update update, FindAndModifyOptions options, Class<T> entityClass) {
+  public <T> T findAndModify(Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(() -> findAndModify(query, update, options, entityClass, getCollectionName(entityClass)));
   }
 
   @Override
   public <T> T findAndModify(
-      Query query, Update update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
+      Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
       }
       return super.findAndModify(query, update, options, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
@@ -125,7 +131,10 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
+      }
+      if (query.getLimit() == 0) {
+        query.limit(maxDocumentsToBeFetched);
       }
       list = super.find(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
@@ -152,7 +161,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
       }
       return super.findOne(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
@@ -170,7 +179,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
       }
       list = super.findDistinct(query, field, collectionName, entityClass, resultClass);
     } catch (UncategorizedMongoDbException ex) {
@@ -193,7 +202,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityType);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
       }
       return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
     } catch (UncategorizedMongoDbException ex) {
@@ -209,7 +218,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
       }
       return super.findAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
@@ -226,7 +235,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
       }
       list = super.findAllAndRemove(query, entityClass, collectionName);
     } catch (UncategorizedMongoDbException ex) {
@@ -249,7 +258,13 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityClass);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
+      }
+      if (mapReduceOptions == null) {
+        mapReduceOptions = new MapReduceOptions();
+      }
+      if (query.getLimit() == 0) {
+        query.limit(maxDocumentsToBeFetched);
       }
       return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
     } catch (UncategorizedMongoDbException ex) {
@@ -263,12 +278,12 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   @Override
   protected long doCount(String collectionName, Document filter, CountOptions options) {
     try {
-      options.maxTime(maxOperationInMillis, TimeUnit.MILLISECONDS);
+      options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
       return super.doCount(collectionName, filter, options);
     } catch (UncategorizedMongoDbException ex) {
       if (isMongoExecutionTimeoutException(ex)) {
         log.error("count operation for collection [{}] exceeded max time limit of [{}] ms with error {}.",
-            collectionName, maxOperationInMillis, ex);
+            collectionName, maxOperationTimeInMillis, ex);
         throw(MongoExecutionTimeoutException) ex.getCause();
       }
       throw ex;
@@ -280,7 +295,10 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
     try {
       traceQuery(query, entityType);
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
+      }
+      if (query.getLimit() == 0) {
+        query.limit(maxDocumentsToBeFetched);
       }
       return super.stream(query, entityType, collectionName);
     } catch (UncategorizedMongoDbException ex) {
@@ -295,7 +313,10 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public void executeQuery(Query query, String collectionName, DocumentCallbackHandler dch) {
     try {
       if (query.getMeta().getMaxTimeMsec() == null) {
-        query.maxTime(Duration.ofMillis(maxOperationInMillis));
+        query.maxTime(Duration.ofMillis(maxOperationTimeInMillis));
+      }
+      if (query.getLimit() == 0) {
+        query.limit(maxDocumentsToBeFetched);
       }
       super.executeQuery(query, collectionName, dch);
     } catch (UncategorizedMongoDbException ex) {
@@ -309,9 +330,8 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   @Override
   protected <O> AggregationResults<O> aggregate(Aggregation aggregation, String collectionName, Class<O> outputType,
       @Nullable AggregationOperationContext context) {
-    AggregationOptions aggregationOptions = aggregation.getOptions();
-    // Todo: once spring got updated, set maxTimeMS in aggregation options
-    final AggregationResults<O> results = super.aggregate(aggregation, collectionName, outputType, context);
+    final AggregationResults<O> results =
+        super.aggregate(applyLimitsAndMaxTimeToAggregation(aggregation), collectionName, outputType, context);
     if (checkIfListIsLarge(results.getMappedResults())) {
       log.warn("Aggregate query {} returns {} items for collection {}. Consider using an Iterator to avoid causing OOM",
           aggregation, results.getMappedResults().size(), collectionName, new Exception());
@@ -322,9 +342,19 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   @Override
   protected <O> CloseableIterator<O> aggregateStream(Aggregation aggregation, String collectionName,
       Class<O> outputType, @Nullable AggregationOperationContext context) {
-    AggregationOptions aggregationOptions = aggregation.getOptions();
-    // Todo: once spring got updated, set maxTimeMS in aggregation options
-    return super.aggregateStream(aggregation, collectionName, outputType, context);
+    return super.aggregateStream(applyLimitsAndMaxTimeToAggregation(aggregation), collectionName, outputType, context);
+  }
+
+  private Aggregation applyLimitsAndMaxTimeToAggregation(Aggregation aggregation) {
+    Document document = aggregation.getOptions().toDocument();
+    document.append(MAX_TIME, (long) maxOperationTimeInMillis);
+    List<AggregationOperation> aggregationOperations = new ArrayList<>(aggregation.getPipeline().getOperations());
+    boolean isLimitOperationApplied = aggregationOperations.stream().anyMatch(
+        aggregationOperation -> LimitOperation.class.equals(aggregationOperation.getClass()));
+    if (!isLimitOperationApplied) {
+      aggregationOperations.add(Aggregation.limit(maxDocumentsToBeFetched));
+    }
+    return newAggregation(aggregationOperations).withOptions(AggregationOptions.fromDocument(document));
   }
 
   private <T> void traceQuery(Query query, Class<T> entityClass) {
@@ -339,7 +369,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   private void logAndThrowMongoExecutionTimeoutException(Query query, String collectionName, Exception ex)
       throws MongoExecutionTimeoutException {
-    log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, collectionName, maxOperationInMillis, ex);
+    log.error(ERROR_MSG_QUERY_EXCEEDED_TIME_LIMIT, query, collectionName, maxOperationTimeInMillis, ex);
     throw(MongoExecutionTimeoutException) ex.getCause();
   }
 

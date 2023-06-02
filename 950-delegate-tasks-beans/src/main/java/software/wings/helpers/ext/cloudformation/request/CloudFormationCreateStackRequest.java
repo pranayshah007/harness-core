@@ -57,9 +57,9 @@ public class CloudFormationCreateStackRequest extends CloudFormationCommandReque
       String customStackName, GitFileConfig gitFileConfig, GitConfig gitConfig,
       List<StackStatus> stackStatusesToMarkAsSuccess, List<EncryptedDataDetail> encryptedDataDetails,
       Map<String, EncryptedDataDetail> encryptedVariables, List<String> capabilities, String tags,
-      boolean skipWaitForResources, boolean deploy) {
+      boolean skipWaitForResources, boolean deploy, boolean timeoutSupported) {
     super(commandType, accountId, appId, activityId, commandName, awsConfig, timeoutInMs, region, cloudFormationRoleArn,
-        skipWaitForResources);
+        skipWaitForResources, timeoutSupported);
     this.createType = createType;
     this.data = data;
     this.stackNameSuffix = stackNameSuffix;

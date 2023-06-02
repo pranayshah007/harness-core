@@ -11,16 +11,11 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.MigrationContext;
 
 import software.wings.beans.Service;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class UnsupportedServiceV2Mapper implements ServiceV2Mapper {
   @Override
@@ -29,8 +24,7 @@ public class UnsupportedServiceV2Mapper implements ServiceV2Mapper {
   }
 
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
+  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     return null;

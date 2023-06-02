@@ -54,7 +54,6 @@ public class GcbBuildDetails {
   private String logUrl;
   private Map<String, String> substitutions;
   private List<String> tags;
-  private List<String> secrets;
   private Map<String, TimeSpan> timing;
 
   /**

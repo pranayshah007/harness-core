@@ -38,5 +38,5 @@ public interface GitSyncErrorRepositoryCustom {
 
   UpdateResult upsert(Criteria criteria, Update update);
 
-  List<GitSyncError> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
 }

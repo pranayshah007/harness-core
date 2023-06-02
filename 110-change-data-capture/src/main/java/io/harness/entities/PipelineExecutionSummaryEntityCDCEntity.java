@@ -10,10 +10,14 @@ package io.harness.entities;
 import io.harness.ChangeHandler;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.changehandlers.ApprovalStageExecutionDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCIStageChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
 import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandler;
+import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandlerAllStages;
+import io.harness.changehandlers.RuntimeInputsInfoCDChangeDataHandler;
+import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import com.google.inject.Inject;
@@ -25,13 +29,19 @@ public class PipelineExecutionSummaryEntityCDCEntity implements CDCEntity<Pipeli
   @Inject private PlanExecutionSummaryChangeDataHandler planExecutionSummaryChangeDataHandler;
   @Inject private PlanExecutionSummaryCdChangeDataHandler planExecutionSummaryCdChangeDataHandler;
   @Inject private PlanExecutionSummaryCIStageChangeDataHandler planExecutionSummaryCIStageChangeDataHandler;
+  @Inject private PlanExecutionSummaryChangeDataHandlerAllStages planExecutionSummaryChangeDataHandlerAllStages;
+  @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
+  @Inject private RuntimeInputsInfoCDChangeDataHandler runtimeInputsInfoCDChangeDataHandler;
+  @Inject private ApprovalStageExecutionDataHandler approvalStageExecutionDataHandler;
   @Inject
   private PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew
       planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
 
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
-    if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
+    if (handlerClass.contentEquals("PipelineExecutionSummaryEntityAllStages")) {
+      return planExecutionSummaryChangeDataHandlerAllStages;
+    } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntity")) {
       return planExecutionSummaryChangeDataHandler;
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCD")) {
       return planExecutionSummaryCdChangeDataHandler;
@@ -39,6 +49,12 @@ public class PipelineExecutionSummaryEntityCDCEntity implements CDCEntity<Pipeli
       return planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCIStage")) {
       return planExecutionSummaryCIStageChangeDataHandler;
+    } else if (handlerClass.contentEquals("TagsInfoNGCD")) {
+      return tagsInfoNGCDChangeDataHandler;
+    } else if (handlerClass.contentEquals("RuntimeInputsInfo")) {
+      return runtimeInputsInfoCDChangeDataHandler;
+    } else if (handlerClass.contentEquals("ApprovalStage")) {
+      return approvalStageExecutionDataHandler;
     }
     return null;
   }

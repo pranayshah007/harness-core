@@ -12,8 +12,8 @@ import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalMatchers.or;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -23,7 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.chartmuseum.ChartmuseumClient;
 import io.harness.chartmuseum.ChartmuseumClientFactory;
 import io.harness.delegate.chartmuseum.CgChartmuseumClientFactory;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.AwsConfig;

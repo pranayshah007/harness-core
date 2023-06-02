@@ -192,3 +192,9 @@ indexes:
   - name: cvConfigId
   - name: numVotes
     direction: desc
+
+- kind: delegateSelectionLogRecords
+  properties:
+    - name: accountId
+    - name: taskId
+      direction: desc

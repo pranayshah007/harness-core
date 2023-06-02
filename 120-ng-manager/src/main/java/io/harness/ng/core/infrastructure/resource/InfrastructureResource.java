@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.infrastructure.resource;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.resources.EnvironmentResourceV2.ENVIRONMENT_PARAM_MESSAGE;
@@ -34,12 +35,12 @@ import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.EnvironmentValidationHelper;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -57,6 +58,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -73,7 +76,9 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashMap;
 import java.util.List;
@@ -135,7 +140,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
           @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
               schema = @Schema(implementation = ErrorDTO.class))
     })
-@OwnedBy(HarnessTeam.PIPELINE)
+@OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InfrastructureResource {
   public static final String INFRASTRUCTURE_YAML_METADATA_INPUT_PARAM_MESSAGE =
@@ -180,7 +185,6 @@ public class InfrastructureResource {
         infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
 
     if (infraEntity.isPresent()) {
-      // todo: why do we need this?
       if (isEmpty(infraEntity.get().getYaml())) {
         InfrastructureConfig infrastructureConfig =
             InfrastructureEntityConfigMapper.toInfrastructureConfig(infraEntity.get());
@@ -202,23 +206,27 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Infrastructure to be created")
-      @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be created", content = {
+        @Content(
+            examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
+                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
+      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
-    validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
-
-    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-        infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
-    environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-        infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef());
-    // access for updating Environment
-    checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-        infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
-        ENVIRONMENT_UPDATE_PERMISSION, "create");
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    validateInfrastructureYaml(infrastructureEntity);
+    validateDeploymentTypeSpecificInfrastructureYaml(infrastructureEntity);
+    validateProjectLevelInfraScope(infrastructureEntity, accountId);
+
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(), accountId);
+    environmentValidationHelper.checkThatEnvExists(accountId, infrastructureEntity.getOrgIdentifier(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier());
+    // access for updating Environment
+    checkForAccessOrThrow(accountId, infrastructureEntity.getOrgIdentifier(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier(),
+        ENVIRONMENT_UPDATE_PERMISSION, "create");
+
     InfrastructureEntity createdInfrastructure = infrastructureEntityService.create(infrastructureEntity);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(createdInfrastructure));
   }
@@ -237,29 +245,24 @@ public class InfrastructureResource {
       @Valid List<InfrastructureRequestDTO> infrastructureRequestDTOS) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTOS);
     boolean isInfraScoped = checkFeatureFlagForEnvOrgAccountLevel(accountId);
-    infrastructureRequestDTOS.forEach(infrastructureRequestDTO -> {
+    infrastructureRequestDTOS.forEach(dto -> infrastructureYamlSchemaHelper.validateSchema(accountId, dto.getYaml()));
+    List<InfrastructureEntity> entities = infrastructureRequestDTOS.stream()
+                                              .map(dto -> InfrastructureMapper.toInfrastructureEntity(accountId, dto))
+                                              .collect(Collectors.toList());
+    entities.forEach(entity -> {
       if (isInfraScoped) {
-        validateProjectLevelInfraScope(infrastructureRequestDTO);
+        validateProjectLevelInfraScope(entity);
       } else {
-        mustBeAtProjectLevel(infrastructureRequestDTO);
+        mustBeAtProjectLevel(entity);
       }
       orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-          infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
-      environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-          infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef());
+          entity.getOrgIdentifier(), entity.getProjectIdentifier(), accountId);
+      environmentValidationHelper.checkThatEnvExists(
+          accountId, entity.getOrgIdentifier(), entity.getProjectIdentifier(), entity.getEnvIdentifier());
     });
 
-    checkForAccessBatch(accountId, infrastructureRequestDTOS, ENVIRONMENT_UPDATE_PERMISSION);
-    infrastructureRequestDTOS.forEach(infrastructureRequestDTO
-        -> infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml()));
-    List<InfrastructureEntity> infrastructureEntities =
-        infrastructureRequestDTOS.stream()
-            .map(infrastructureRequestDTO
-                -> InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO))
-            .collect(Collectors.toList());
-
-    Page<InfrastructureEntity> createdInfrastructures =
-        infrastructureEntityService.bulkCreate(accountId, infrastructureEntities);
+    checkForAccessBatch(accountId, entities, ENVIRONMENT_UPDATE_PERMISSION);
+    Page<InfrastructureEntity> createdInfrastructures = infrastructureEntityService.bulkCreate(accountId, entities);
     return ResponseDTO.newResponse(
         getNGPageResponse(createdInfrastructures.map(InfrastructureMapper::toResponseWrapper)));
   }
@@ -283,14 +286,16 @@ public class InfrastructureResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE, required = true) @QueryParam(
-          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier) {
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_UPDATE_PERMISSION, "delete");
 
     return ResponseDTO.newResponse(infrastructureEntityService.delete(
-        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier));
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, forceDelete));
   }
 
   @PUT
@@ -301,25 +306,28 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Infrastructure to be updated")
-      @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be updated", content = {
+        @Content(
+            examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure update payload",
+                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
+      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
-    validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
+    validateProjectLevelInfraScope(infrastructureEntity, accountId);
 
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-        infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
-    environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-        infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef());
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(), accountId);
+    environmentValidationHelper.checkThatEnvExists(accountId, infrastructureEntity.getOrgIdentifier(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier());
 
-    checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-        infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
+    checkForAccessOrThrow(accountId, infrastructureEntity.getOrgIdentifier(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier(),
         ENVIRONMENT_UPDATE_PERMISSION, "update");
-    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
-    InfrastructureEntity requestInfrastructure =
-        InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    validateInfrastructureYaml(requestInfrastructure);
-    InfrastructureEntity updatedInfra = infrastructureEntityService.update(requestInfrastructure);
-    return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(updatedInfra));
+    validateDeploymentTypeSpecificInfrastructureYaml(infrastructureEntity);
+    return ResponseDTO.newResponse(
+        InfrastructureMapper.toResponseWrapper(infrastructureEntityService.update(infrastructureEntity)));
   }
 
   @PUT
@@ -332,25 +340,28 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Infrastructure to be updated")
-      @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be upsert", content = {
+        @Content(
+            examples = @ExampleObject(name = "Upsert", summary = "Sample Infrastructure upsert payload",
+                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
+      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
-    validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
+    validateProjectLevelInfraScope(infrastructureEntity, accountId);
 
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-        infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
-    environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-        infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef());
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(), accountId);
+    environmentValidationHelper.checkThatEnvExists(accountId, infrastructureEntity.getOrgIdentifier(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier());
 
-    checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-        infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
+    checkForAccessOrThrow(accountId, infrastructureEntity.getOrgIdentifier(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier(),
         ENVIRONMENT_UPDATE_PERMISSION, "upsert");
-    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
-    InfrastructureEntity requestInfra =
-        InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    validateInfrastructureYaml(requestInfra);
-    InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(upsertInfra));
+    validateDeploymentTypeSpecificInfrastructureYaml(infrastructureEntity);
+    return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(
+        infrastructureEntityService.upsert(infrastructureEntity, UpsertOptions.DEFAULT)));
   }
 
   @GET
@@ -464,22 +475,20 @@ public class InfrastructureResource {
   }
 
   private void checkForAccessBatch(
-      String accountId, List<InfrastructureRequestDTO> infrastructureRequestDTOList, String permission) {
+      String accountId, List<InfrastructureEntity> infrastructureRequestDTOList, String permission) {
     Map<String, Boolean> accessMap = new HashMap<>();
-    for (InfrastructureRequestDTO infrastructureRequestDTO : infrastructureRequestDTOList) {
+    for (InfrastructureEntity entity : infrastructureRequestDTOList) {
       StringJoiner joiner = new StringJoiner("|");
-      joiner.add(infrastructureRequestDTO.getOrgIdentifier())
-          .add(infrastructureRequestDTO.getProjectIdentifier())
-          .add(infrastructureRequestDTO.getEnvironmentRef());
+      joiner.add(entity.getOrgIdentifier()).add(entity.getProjectIdentifier()).add(entity.getEnvIdentifier());
       String key = joiner.toString();
 
       accessMap.computeIfAbsent(key,
           k
-          -> accessControlClient.hasAccess(ResourceScope.of(accountId, infrastructureRequestDTO.getOrgIdentifier(),
-                                               infrastructureRequestDTO.getProjectIdentifier()),
-              Resource.of(NGResourceType.ENVIRONMENT, infrastructureRequestDTO.getEnvironmentRef()), permission));
+          -> accessControlClient.hasAccess(
+              ResourceScope.of(accountId, entity.getOrgIdentifier(), entity.getProjectIdentifier()),
+              Resource.of(NGResourceType.ENVIRONMENT, entity.getEnvIdentifier()), permission));
 
-      if (!accessMap.get(key)) {
+      if (Boolean.FALSE.equals(accessMap.get(key))) {
         throw new NGAccessDeniedException(
             format("Missing permissions %s on %s", permission, key), WingsException.USER, null);
       }
@@ -529,14 +538,13 @@ public class InfrastructureResource {
         accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, oldInfrastructureInputsYaml));
   }
 
-  private void validateInfrastructureYaml(InfrastructureEntity infrastructureEntity) {
+  private void validateDeploymentTypeSpecificInfrastructureYaml(InfrastructureEntity infrastructureEntity) {
     ServiceDefinitionType deploymentType = infrastructureEntity.getDeploymentType();
     if (deploymentType == ServiceDefinitionType.CUSTOM_DEPLOYMENT
-        && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
-      if (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity)) {
-        throw new InvalidRequestException(
-            "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
-      }
+        && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT
+        && (customDeploymentInfrastructureHelper.isNotValidInfrastructureYaml(infrastructureEntity))) {
+      throw new InvalidRequestException(
+          "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
     }
 
     if (deploymentType == ServiceDefinitionType.SSH || deploymentType == ServiceDefinitionType.WINRM) {
@@ -544,17 +552,17 @@ public class InfrastructureResource {
     }
   }
 
-  private void validateProjectLevelInfraScope(InfrastructureRequestDTO requestDTO, String accountId) {
+  private void validateProjectLevelInfraScope(InfrastructureEntity entity, String accountId) {
     try {
       if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
-        if (isNotEmpty(requestDTO.getProjectIdentifier())) {
-          Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+        if (isNotEmpty(entity.getProjectIdentifier())) {
+          Preconditions.checkArgument(isNotEmpty(entity.getOrgIdentifier()),
               "org identifier must be specified when project identifier is specified. Infra can be created at Project/Org/Account scope");
         }
       } else {
-        Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+        Preconditions.checkArgument(isNotEmpty(entity.getOrgIdentifier()),
             "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");
-        Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+        Preconditions.checkArgument(isNotEmpty(entity.getProjectIdentifier()),
             "project identifier must be specified. Infrastructure Definitions can only be created at Project scope");
       }
     } catch (Exception ex) {
@@ -562,10 +570,10 @@ public class InfrastructureResource {
     }
   }
 
-  private void validateProjectLevelInfraScope(InfrastructureRequestDTO requestDTO) {
+  private void validateProjectLevelInfraScope(InfrastructureEntity entity) {
     try {
-      if (isNotEmpty(requestDTO.getProjectIdentifier())) {
-        Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+      if (isNotEmpty(entity.getProjectIdentifier())) {
+        Preconditions.checkArgument(isNotEmpty(entity.getOrgIdentifier()),
             "org identifier must be specified when project identifier is specified. Infra can be created at Project/Org/Account scope");
       }
     } catch (Exception ex) {
@@ -573,7 +581,7 @@ public class InfrastructureResource {
     }
   }
 
-  private void mustBeAtProjectLevel(InfrastructureRequestDTO requestDTO) {
+  private void mustBeAtProjectLevel(InfrastructureEntity requestDTO) {
     try {
       Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
           "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");

@@ -8,7 +8,7 @@
 package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -23,6 +23,7 @@ import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -69,7 +70,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, accountId)) {
-      command = SerializerUtils.getK8sDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout())
+      command = SerializerUtils.getK8sDebugCommand(
+                    accountId, ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo.getShell())
           + System.lineSeparator()
           + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     } else {
@@ -81,8 +83,10 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     runStepBuilder.setCommand(gitSafeCMD + command);
 
     runStepBuilder.setContainerPort(port);
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
+    envvars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envvars);
     if (!isEmpty(envvars)) {
       runStepBuilder.putAllEnvironment(envvars);
     }

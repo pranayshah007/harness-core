@@ -10,6 +10,7 @@ package io.harness.debezium;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +19,15 @@ import lombok.extern.slf4j.Slf4j;
 public class DebeziumServiceImpl implements DebeziumService {
   @Override
   public DebeziumEngine<ChangeEvent<String, String>> getEngine(Properties props,
-      MongoCollectionChangeConsumer changeConsumer, String collection, DebeziumController debeziumController) {
+      MongoCollectionChangeConsumer changeConsumer, String collection, DebeziumController debeziumController,
+      List<Integer> listOfErrorCodesForOffsetReset) {
     return DebeziumEngine.create(Json.class)
         .using(props)
         .using(DebeziumUtils.getConnectorCallback(collection))
         .using(DebeziumUtils.getCompletionCallback(
             props.get(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME).toString(),
-            props.get(DebeziumConfiguration.OFFSET_STORAGE_KEY).toString(), debeziumController, collection))
+            props.get(DebeziumConfiguration.OFFSET_STORAGE_KEY).toString(), debeziumController, collection,
+            listOfErrorCodesForOffsetReset))
         .notifying(changeConsumer)
         .build();
   }

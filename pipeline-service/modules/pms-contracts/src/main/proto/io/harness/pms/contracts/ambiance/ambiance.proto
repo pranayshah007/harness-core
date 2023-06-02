@@ -22,4 +22,5 @@ message Ambiance {
   int64 startTs = 7;
 
   string stageExecutionId = 8;
+  string originalStageExecutionIdForRollbackMode = 9;
 }

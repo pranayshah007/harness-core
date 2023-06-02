@@ -87,7 +87,8 @@ public class S3SaveCacheStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.name",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.spec.key",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.spec.bucket",
-            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.spec.sourcePaths");
+            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.spec.sourcePaths",
+            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -99,7 +100,6 @@ public class S3SaveCacheStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.type",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.identifier",
-            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.when",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.startTs",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.endTs");
 

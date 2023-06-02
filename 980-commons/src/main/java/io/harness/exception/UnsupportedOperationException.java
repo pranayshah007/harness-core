@@ -6,7 +6,6 @@
  */
 
 package io.harness.exception;
-
 import static io.harness.eraro.ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION;
 
 import io.harness.eraro.Level;

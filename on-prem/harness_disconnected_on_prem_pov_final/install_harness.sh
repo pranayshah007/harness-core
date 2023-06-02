@@ -480,7 +480,7 @@ function setupClientUtils() {
       cp images/kubectl/${platform}/$kubectlversion/kubectl ${STORAGE_DIR_LOCATION}/harness-download/kubernetes-release/release/$kubectlversion/bin/${platform}/amd64/
     done
 
-    for gotemplateversion in v0.2 v0.3 v0.4; do
+    for gotemplateversion in v0.4.2; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/snapshot-go-template/release/$gotemplateversion/bin/${platform}/amd64/
       cp images/go-template/${platform}/$gotemplateversion/go-template ${STORAGE_DIR_LOCATION}/harness-download/snapshot-go-template/release/$gotemplateversion/bin/${platform}/amd64/
     done
@@ -500,7 +500,7 @@ function setupClientUtils() {
       cp images/chartmuseum/${platform}/$chartmuseumversion/chartmuseum ${STORAGE_DIR_LOCATION}/harness-download/harness-chartmuseum/release/$chartmuseumversion/bin/${platform}/amd64/
     done
 
-    for tfConfigInspectVersion in v1.0 v1.1; do
+    for tfConfigInspectVersion in v1.0 v1.1 v1.2; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/harness-terraform-config-inspect/"$tfConfigInspectVersion"/${platform}/amd64/
       cp images/tf-config-inspect/${platform}/"$tfConfigInspectVersion"/terraform-config-inspect ${STORAGE_DIR_LOCATION}/harness-download/harness-terraform-config-inspect/"$tfConfigInspectVersion"/${platform}/amd64/
     done
@@ -510,7 +510,7 @@ function setupClientUtils() {
       cp images/oc/${platform}/$ocversion/oc ${STORAGE_DIR_LOCATION}/harness-download/harness-oc/release/$ocversion/bin/${platform}/amd64/
     done
 
-    for scmVersion in 1658d03e; do
+    for scmVersion in 91e2a39c; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/harness-scm/release/$scmVersion/bin/${platform}/amd64/
       cp images/scm/${platform}/$scmVersion/scm ${STORAGE_DIR_LOCATION}/harness-download/harness-scm/release/$scmVersion/bin/${platform}/amd64/
     done

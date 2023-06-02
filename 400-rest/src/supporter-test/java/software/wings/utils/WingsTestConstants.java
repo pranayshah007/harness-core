@@ -191,11 +191,17 @@ public interface WingsTestConstants {
 
   String USER_NAME = "USER_NAME";
 
-  char[] USER_NAME_DECRYPTED = "USER_NAME".toCharArray();
+  String USER_NAME_2 = "USER_NAME_2";
+
+  String USER1_NAME = "USER_NAME1";
+
+  char[] USER_NAME_DECRYPTED = USER_NAME.toCharArray();
 
   String DOMAIN = "DOMAIN";
 
   String USER_EMAIL = "user@wings.software";
+
+  String USER1_EMAIL = "user1@wings.software";
 
   String TEMPORARY_EMAIL = "user@mailinator.com";
 
@@ -228,6 +234,8 @@ public interface WingsTestConstants {
   String LOG_ID = "LOG_ID";
 
   String USER_ID = "USER_ID";
+
+  String USER_ID_2 = "USER_ID_2";
 
   String USER1_ID = "USER1_ID";
 

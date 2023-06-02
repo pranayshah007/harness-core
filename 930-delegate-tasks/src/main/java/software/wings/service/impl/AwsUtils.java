@@ -11,13 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
+
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.exception.AwsEKSException;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -27,6 +32,7 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.AwsInstanceFilter;
 import software.wings.common.InfrastructureConstants;
 import software.wings.expression.ManagerExpressionEvaluator;
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
@@ -34,8 +40,11 @@ import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.ec2.model.Region;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
+import com.amazonaws.services.eks.AmazonEKSClient;
+import com.amazonaws.services.eks.AmazonEKSClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.google.common.collect.ArrayListMultimap;
@@ -45,8 +54,10 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@Slf4j
 @Singleton
 @OwnedBy(CDP)
 public class AwsUtils {
@@ -129,5 +140,28 @@ public class AwsUtils {
     AmazonECSClientBuilder builder = AmazonECSClientBuilder.standard().withRegion(region);
     awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
     return (AmazonECSClient) builder.build();
+  }
+
+  public AmazonEKSClient getAmazonEKSClient(Regions region, AwsInternalConfig awsConfig) {
+    AmazonEKSClientBuilder builder = AmazonEKSClientBuilder.standard().withRegion(region);
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonEKSClient) builder.build();
+  }
+
+  public List<String> listAwsRegionsForGivenAccount(AwsInternalConfig awsInternalConfig) {
+    try (
+        CloseableAmazonWebServiceClient<AmazonEC2Client> closeableAmazonEc2Client = new CloseableAmazonWebServiceClient(
+            getAmazonEc2Client(Regions.fromName(AWS_DEFAULT_REGION), awsInternalConfig))) {
+      return closeableAmazonEc2Client.getClient()
+          .describeRegions()
+          .getRegions()
+          .stream()
+          .map(Region::getRegionName)
+          .collect(toList());
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception in getting list of regions for given AWS account", sanitizedException);
+      throw new AwsEKSException(ExceptionUtils.getMessage(sanitizedException), sanitizedException);
+    }
   }
 }

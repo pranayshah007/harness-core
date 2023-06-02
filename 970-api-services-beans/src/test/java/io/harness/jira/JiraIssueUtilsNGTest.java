@@ -64,10 +64,10 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG(node);
     JiraIssueTypeNG issueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Story");
     assertThat(issueType).isNotNull();
-    assertThat(issueType.getFields().size()).isEqualTo(22);
+    assertThat(issueType.getFields().size()).isEqualTo(23);
 
     issueType.removeField(JiraConstantsNG.STATUS_NAME);
-    assertThat(issueType.getFields().size()).isEqualTo(21);
+    assertThat(issueType.getFields().size()).isEqualTo(22);
 
     Map<String, Object> currFieldsTmp = new HashMap<>();
     assertThatThrownBy(()
@@ -86,6 +86,12 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
                            -> JiraIssueUtilsNG.updateFieldValues(currFieldsTmp, issueType.getFields(),
                                ImmutableMap.of("customtime", "ds"), true, JiraDeploymentType.CLOUD))
         .isNotNull();
+    JiraIssueUtilsNG.updateFieldValues(
+        currFieldsTmp, issueType.getFields(), ImmutableMap.of("Issue Type", "Bug"), false, JiraDeploymentType.CLOUD);
+    assertThat(((HashMap) currFieldsTmp.get(JiraConstantsNG.ISSUE_TYPE_KEY)).get("name")).isEqualTo("Bug");
+
+    issueType.removeField("Issue Type");
+    assertThat(issueType.getFields().size()).isEqualTo(21);
 
     Map<String, String> fields = new HashMap<>();
     fields.put("Summary", "summary");
@@ -142,10 +148,10 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getRemainingEstimate()).isEqualTo("2d");
 
     JiraIssueTypeNG subTaskIssueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Sub-task");
-    assertThat(subTaskIssueType.getFields().size()).isEqualTo(23);
+    assertThat(subTaskIssueType.getFields().size()).isEqualTo(24);
 
     subTaskIssueType.removeField(JiraConstantsNG.STATUS_NAME);
-    assertThat(subTaskIssueType.getFields().size()).isEqualTo(22);
+    assertThat(subTaskIssueType.getFields().size()).isEqualTo(23);
 
     Map<String, Object> currFieldsTmp1 = new HashMap<>();
     JiraIssueUtilsNG.updateFieldValues(currFieldsTmp1, subTaskIssueType.getFields(),
@@ -293,9 +299,12 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG(node);
     JiraIssueTypeNG issueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Story");
     assertThat(issueType).isNotNull();
-    assertThat(issueType.getFields().size()).isEqualTo(22);
+    assertThat(issueType.getFields().size()).isEqualTo(23);
 
     issueType.removeField(JiraConstantsNG.STATUS_NAME);
+    assertThat(issueType.getFields().size()).isEqualTo(22);
+
+    issueType.removeField("Issue Type");
     assertThat(issueType.getFields().size()).isEqualTo(21);
 
     Map<String, String> fields = new HashMap<>();

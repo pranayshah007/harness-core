@@ -15,4 +15,7 @@ import lombok.Data;
 public class InputDefaults {
   private boolean skipMigration;
   private Scope scope;
+  // Note: This only makes sense if the entity is workflow
+  // Note: Also we will create workflow as template first then reuse that stage template as pipeline
+  private Boolean workflowAsPipeline;
 }

@@ -140,6 +140,6 @@ public class AzureArtifactsDelegateRequest implements ArtifactSourceDelegateRequ
 
   @Override
   public ArtifactSourceType getSourceType() {
-    return null;
+    return ArtifactSourceType.AZURE_ARTIFACTS;
   }
 }

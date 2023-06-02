@@ -12,6 +12,7 @@ import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_NAME;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifierForAdmins;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getManagedAdminRole;
 
@@ -196,7 +197,11 @@ public class NGAccountSetupService {
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     if (!hasAdmin(accountScope)) {
-      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
+        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      } else {
+        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
+      }
       assignAdminRoleToUsers(accountScope, cgAdmins);
       if (shouldAssignAdmins && !hasAdmin(accountScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
@@ -238,7 +243,11 @@ public class NGAccountSetupService {
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     if (!hasAdmin(accountScope)) {
-      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
+        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      } else {
+        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
+      }
       assignAdminRoleToUsers(accountScope, cgAdmins);
       if (shouldAssignAdmins && !hasAdmin(accountScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
@@ -300,6 +309,7 @@ public class NGAccountSetupService {
               .projectIdentifier(scope.getProjectIdentifier())
               .build(),
           emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
+      ngUserService.updateNGUserToCGWithSource(userId, scope, MANUAL);
     } catch (DuplicateKeyException | DuplicateFieldException duplicateException) {
       // ignore
     }

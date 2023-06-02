@@ -20,6 +20,7 @@ import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -51,6 +52,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -217,6 +220,8 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
             .doNotDownsizeOldService(
                 ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue() != null
                 && ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue())
+            .downsizeOldServiceDelayInSecs(ParameterFieldHelper.getIntegerParameterFieldValue(
+                ecsBlueGreenSwapTargetGroupsStepParameters.getDownsizeOldServiceDelayInSecs()))
             .build();
 
     EcsBlueGreenSwapTargetGroupsStartOutcome ecsBlueGreenSwapTargetGroupsStartOutcome =
@@ -228,7 +233,8 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
 
     return ecsStepCommonHelper
         .queueEcsTask(stepParameters, ecsBlueGreenSwapTargetGroupsRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
   }
 

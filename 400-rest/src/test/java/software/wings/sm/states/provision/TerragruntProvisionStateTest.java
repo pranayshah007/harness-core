@@ -32,14 +32,13 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
@@ -69,6 +68,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.provision.TfVarScriptRepositorySource;
@@ -153,6 +153,7 @@ public class TerragruntProvisionStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private ManagerExecutionLogCallback managerExecutionLogCallback;
   @Mock private TerragruntStateHelper terragruntStateHelper;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks private TerragruntProvisionState state = new TerragruntApplyState("tg");
   @InjectMocks private TerragruntProvisionState destroyProvisionState = new TerragruntDestroyState("tg");
 
@@ -176,12 +177,10 @@ public class TerragruntProvisionStateTest extends WingsBaseTest {
         toMap(NameValuePair::getName, entry -> EncryptedDataDetail.builder().fieldName(entry.getName()).build()));
     Answer<String> doReturnSameValue = invocation -> invocation.getArgument(0, String.class);
 
-    doAnswer(doExtractTextVariables)
-        .when(infrastructureProvisionerService)
-        .extractUnresolvedTextVariables(anyListOf(NameValuePair.class));
+    doAnswer(doExtractTextVariables).when(infrastructureProvisionerService).extractUnresolvedTextVariables(anyList());
     doAnswer(doExtractEncryptedVariables)
         .when(infrastructureProvisionerService)
-        .extractEncryptedTextVariables(anyListOf(NameValuePair.class), anyString(), any());
+        .extractEncryptedTextVariables(anyList(), anyString(), any());
     doAnswer(doReturnSameValue).when(executionContext).renderExpression(anyString());
     doAnswer(doReturnSameValue).when(executionContext).renderExpression(anyString(), any(StateExecutionContext.class));
 

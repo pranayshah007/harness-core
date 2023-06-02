@@ -57,9 +57,8 @@ public class SupportPreferenceDaoImpl implements SupportPreferenceDao {
 
   @Override
   public Optional<SupportPreference> deleteIfPresent(String accountIdentifier) {
-    return repository.deleteByAccountIdentifier(accountIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(dbo -> Optional.of(fromDBO(dbo)));
+    Optional<SupportPreferenceDBO> optionalSupportPreferenceDBO =
+        repository.deleteByAccountIdentifier(accountIdentifier);
+    return optionalSupportPreferenceDBO.map(SupportPreferenceDBOMapper::fromDBO);
   }
 }

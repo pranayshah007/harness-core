@@ -45,6 +45,10 @@ public class VMPricingServiceImpl implements VMPricingService {
 
   @Override
   public ProductDetails getComputeVMPricingInfo(String instanceType, String region, CloudProvider cloudProvider) {
+    if (ImmutableSet.of(CloudProvider.ON_PREM, CloudProvider.IBM, CloudProvider.UNKNOWN).contains(cloudProvider)) {
+      return null;
+    }
+
     String supportedRegion = region;
     if (cloudProvider == CloudProvider.AZURE) {
       supportedRegion = VMPricingService.getSimilarRegionIfNotSupportedByBanzai(region);

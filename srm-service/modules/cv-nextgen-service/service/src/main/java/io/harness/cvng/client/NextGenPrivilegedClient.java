@@ -52,12 +52,12 @@ public interface NextGenPrivilegedClient {
       @Query("accountIdentifier") String accountId, @Query("orgIdentifier") String orgIdentifier,
       @Query("projectIdentifier") String projectIdentifier);
 
-  @GET("servicesV2")
+  @GET("servicesV2/list/scoped")
   Call<ResponseDTO<PageResponse<ServiceResponse>>> listService(@Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier,
       @Query("serviceIdentifiers") List<String> serviceIdentifiers);
 
-  @GET("environmentsV2")
+  @GET("environmentsV2/list/scoped")
   Call<ResponseDTO<PageResponse<EnvironmentResponse>>> listEnvironment(@Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier,
       @Query("envIdentifiers") List<String> environmentIdentifier);

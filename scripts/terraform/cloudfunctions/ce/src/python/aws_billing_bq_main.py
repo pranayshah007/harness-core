@@ -13,11 +13,12 @@ import requests
 
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, update_connector_data_sync_status, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import storage
 from google.cloud import functions_v2
+from google.cloud import pubsub_v1
 
 """
 {
@@ -46,6 +47,8 @@ from google.cloud import functions_v2
 PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
 client = bigquery.Client(PROJECTID)
 storage_client = storage.Client(PROJECTID)
+publisher = pubsub_v1.PublisherClient()
+COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 
 
 def main(event, context):
@@ -104,6 +107,18 @@ def main(event, context):
     ingest_data_to_costagg(jsonData)
     if jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") and jsonData["ccmPreferredCurrency"]:
         trigger_historical_cost_update_in_preferred_currency(jsonData)
+
+    send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+        "eventType": "COST_CATEGORY_UPDATE",
+        "message": {
+            "accountId": jsonData["accountId"],
+            "startDate": "%s-%s-01" % (jsonData["reportYear"], jsonData["reportMonth"]),
+            "endDate": "%s-%s-%s" % (jsonData["reportYear"], jsonData["reportMonth"], monthrange(int(jsonData["reportYear"]), int(jsonData["reportMonth"]))[1]),
+            "cloudProvider": "AWS",
+            "cloudProviderAccountIds": jsonData["usageaccountidlist"]
+        }
+    })
+
     print_("Completed")
 
 
@@ -805,9 +820,11 @@ def get_unique_accountids(jsonData):
             print_("allow listed accounts are: %s" % account_allowlist[jsonData['accountId']])
             usageaccountid = list(set(usageaccountid) & set(account_allowlist[jsonData['accountId']]))
         jsonData["usageaccountid"] = ", ".join(f"'{w}'" for w in usageaccountid)
+        jsonData["usageaccountidlist"] = usageaccountid
     except Exception as e:
         print_("Failed to retrieve distinct aws usageaccountid", "WARN")
         jsonData["usageaccountid"] = ""
+        jsonData["usageaccountidlist"] = []
         raise e
     print_("usageaccountid we will use %s" % usageaccountid)
 
@@ -880,12 +897,16 @@ def ingest_data_to_unified(jsonData):
 
     insert_columns = """product, startTime, fxRateSrcToDest, ccmPreferredCurrency, 
                     awsBlendedRate, awsBlendedCost,awsUnblendedRate, 
+                    awsEffectiveCost, awsAmortisedCost, 
+                    awsNetAmortisedCost, awsLineItemType,
                     awsUnblendedCost, cost, awsServicecode, region, 
                     awsAvailabilityzone, awsUsageaccountid, 
                     cloudProvider, awsBillingEntity, labels"""
 
     select_columns = """productname AS product, TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, fxRateSrcToDest, ccmPreferredCurrency, 
                     blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate, 
+                    effectivecost as awsEffectiveCost, amortisedCost as awsAmortisedCost, 
+                    netAmortisedCost as awsNetAmortisedCost, lineitemtype as awsLineItemType,
                     unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region, 
                     availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid, 
                     "AWS" AS cloudProvider, billingentity as awsBillingEntity, tags AS labels"""
@@ -959,7 +980,8 @@ def alter_unified_table(jsonData):
     print_("Altering unifiedTable Table")
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     query = "ALTER TABLE `%s.unifiedTable` \
-        ADD COLUMN IF NOT EXISTS awsBillingEntity STRING;" % ds
+        ADD COLUMN IF NOT EXISTS awsBillingEntity STRING, \
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
 
     try:
         print_(query)

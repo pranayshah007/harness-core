@@ -100,11 +100,12 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @BeanParam GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
-    return ResponseDTO.newResponse(
-        pipelineRefreshService.refreshTemplateInputsInPipeline(accountId, orgId, projectId, pipelineIdentifier));
+    return ResponseDTO.newResponse(pipelineRefreshService.refreshTemplateInputsInPipeline(
+        accountId, orgId, projectId, pipelineIdentifier, loadFromCache));
   }
 
   @GET
@@ -137,8 +138,10 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(pipelineRefreshService.getYamlDiff(accountId, orgId, projectId, pipelineIdentifier));
+    return ResponseDTO.newResponse(
+        pipelineRefreshService.getYamlDiff(accountId, orgId, projectId, pipelineIdentifier, loadFromCache));
   }
 
   @POST
@@ -153,10 +156,11 @@ public class PipelineRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @BeanParam GitEntityUpdateInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
-        accountId, orgId, projectId, pipelineIdentifier, gitEntityBasicInfo));
+        accountId, orgId, projectId, pipelineIdentifier, gitEntityBasicInfo, loadFromCache));
   }
 }

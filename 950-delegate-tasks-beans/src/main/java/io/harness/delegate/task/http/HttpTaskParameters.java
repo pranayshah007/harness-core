@@ -10,6 +10,7 @@ package io.harness.delegate.task.http;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.beans.HttpCertificate;
 import io.harness.beans.KeyValuePair;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -17,6 +18,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +37,8 @@ public class HttpTaskParameters implements TaskParameters, ExecutionCapabilityDe
   boolean useProxy;
   boolean isCertValidationRequired;
   boolean useHeaderForCapabilityCheck;
+  HttpCertificate certificate;
+  List<EncryptedDataDetail> encryptedDataDetails;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -196,32 +196,16 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 	}
 }
 
-// HandlePing returns an http.HandlerFunc that pings
-// the live stream.
-func HandlePing(s stream.Stream) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		if err := s.Ping(ctx); err != nil {
-			if err != nil {
-				WriteInternalError(w, err)
-				logger.FromRequest(r).
-					WithError(err).
-					Errorln("api: cannot ping the stream")
-				return
-			}
-		}
-
-		io.WriteString(w, "OK")
-	}
-}
-
 // HandleTail returns an http.HandlerFunc that tails
 // the live stream.
 func HandleTail(s stream.Stream) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		logger.FromRequest(r).WithField("key", r.FormValue(key)).
+			Infoln("api: Starting to tail stream")
 
 		h := w.Header()
 		h.Set("Content-Type", "text/event-stream")

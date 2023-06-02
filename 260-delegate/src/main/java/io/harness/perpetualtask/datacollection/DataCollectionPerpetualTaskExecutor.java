@@ -25,7 +25,6 @@ import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult.ExecutionLog;
 import io.harness.cvng.beans.LogDataCollectionInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
-import io.harness.cvng.utils.CVNGParallelExecutor;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.LogDataRecord;
 import io.harness.datacollection.entity.RuntimeParameters;
@@ -46,6 +45,7 @@ import io.harness.verificationclient.CVNextGenServiceClient;
 
 import software.wings.delegatetasks.DelegateLogService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Instant;
@@ -56,8 +56,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -65,6 +66,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecutor {
+  @VisibleForTesting protected Integer dataCollectionTimeoutInMilliSeconds = 180000;
   @Inject private CVNextGenServiceClient cvNextGenServiceClient;
   @Inject private SecretDecryptionService secretDecryptionService;
 
@@ -77,7 +79,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Inject private DataCollectionDSLService dataCollectionDSLService;
   @Inject private CVNGRequestExecutor cvngRequestExecutor;
   @Inject @Named("verificationDataCollectorExecutor") protected ExecutorService dataCollectionService;
-  @Inject private CVNGParallelExecutor cvngParallelExecutor;
+  @Inject @Named("cvngParallelExecutor") protected ExecutorService parallelExecutor;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -121,12 +123,26 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
           break;
         } else {
           log.info("Next tasks to process: {}", dataCollectionTasks);
-          List<Callable<Void>> callables = new ArrayList<>();
-          dataCollectionTasks.forEach(dataCollectionTaskDTO -> callables.add(() -> {
-            run(taskParams, dataCollectionInfo.getConnectorConfigDTO(), dataCollectionTaskDTO);
-            return null;
-          }));
-          cvngParallelExecutor.executeParallel(callables);
+          List<CompletableFuture> completableFutures =
+              dataCollectionTasks.stream()
+                  .map(dct
+                      -> CompletableFuture
+                             .runAsync(()
+                                           -> run(taskParams, dataCollectionInfo.getConnectorConfigDTO(), dct),
+                                 parallelExecutor)
+                             .orTimeout(dataCollectionTimeoutInMilliSeconds, TimeUnit.MILLISECONDS)
+                             .exceptionally(exception -> {
+                               updateStatusWithException(taskParams, dct, exception);
+                               return null;
+                             }))
+                  .collect(Collectors.toList());
+          // execute and wait for all CFs to complete parallely
+          CompletableFuture.allOf(completableFutures.toArray(n -> new CompletableFuture[n]))
+              .exceptionally(ex -> {
+                log.error("Exception in parallel execution:", ex);
+                return null;
+              })
+              .join();
         }
       }
     }
@@ -142,7 +158,8 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   }
 
   @SuppressWarnings("PMD")
-  private void run(DataCollectionPerpetualTaskParams taskParams, ConnectorConfigDTO connectorConfigDTO,
+  @VisibleForTesting
+  protected void run(DataCollectionPerpetualTaskParams taskParams, ConnectorConfigDTO connectorConfigDTO,
       DataCollectionTaskDTO dataCollectionTask) {
     try (DataCollectionLogContext closableLogContext = new DataCollectionLogContext(dataCollectionTask)) {
       DataCollectionInfo dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
@@ -243,7 +260,8 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
     return new ArrayList<>(logDataRecords.subList(length - LOG_RECORD_THRESHOLD, length));
   }
 
-  private void updateStatusWithException(
+  @VisibleForTesting
+  protected void updateStatusWithException(
       DataCollectionPerpetualTaskParams taskParams, DataCollectionTaskDTO dataCollectionTask, Throwable e) {
     DataCollectionTaskResult result = DataCollectionTaskResult.builder()
                                           .dataCollectionTaskId(dataCollectionTask.getUuid())

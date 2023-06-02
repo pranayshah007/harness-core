@@ -18,6 +18,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
@@ -31,12 +32,14 @@ import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAu
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -114,13 +117,24 @@ public class AcrRequestResponseMapper {
 
   public AcrArtifactDelegateResponse toAcrResponse(
       BuildDetailsInternal buildDetailsInternal, AcrArtifactDelegateRequest request) {
+    ArtifactMetaInfo artifactMetaInfo = buildDetailsInternal.getArtifactMetaInfo();
+    ArtifactBuildDetailsNG artifactBuildDetailsNG;
+    Map<String, String> label = null;
+    if (artifactMetaInfo != null) {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(
+          buildDetailsInternal, artifactMetaInfo.getSha(), artifactMetaInfo.getShaV2());
+      label = artifactMetaInfo.getLabels();
+    } else {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
+    }
     return AcrArtifactDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .buildDetails(artifactBuildDetailsNG)
         .subscription(request.getSubscription())
         .registry(request.getRegistry())
         .repository(request.getRepository())
         .tag(buildDetailsInternal.getNumber())
         .sourceType(ArtifactSourceType.ACR)
+        .label(label)
         .build();
   }
 }

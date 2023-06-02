@@ -13,12 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.pubsub.v1.TopicName;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import lombok.experimental.UtilityClass;
@@ -29,10 +30,19 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CE)
 public class EntityChangeEventServiceHelper {
   public void publishMessage(ArrayList<ImmutableMap<String, String>> entityChangeEvents, String harnessGcpProjectId,
-      String inventoryPubSubTopic, ServiceAccountCredentials sourceGcpCredentials) {
+      String inventoryPubSubTopic, GoogleCredentials sourceGcpCredentials) {
     if (entityChangeEvents.isEmpty()) {
       log.info("Visibility is not enabled. Not sending event");
       return;
+    }
+
+    if (sourceGcpCredentials == null) {
+      log.info("WI: Using workload identity");
+      try {
+        sourceGcpCredentials = GoogleCredentials.getApplicationDefault();
+      } catch (IOException e) {
+        log.error("Exception in using Google ADC", e);
+      }
     }
     TopicName topicName = TopicName.of(harnessGcpProjectId, inventoryPubSubTopic);
     Publisher publisher = null;

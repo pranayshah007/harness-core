@@ -15,7 +15,7 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -59,16 +59,16 @@ public class DockerRequestResponseMapper {
   }
 
   public DockerArtifactDelegateResponse toDockerResponse(BuildDetailsInternal buildDetailsInternal,
-      DockerArtifactDelegateRequest request, Map<String, String> label, ArtifactMetaInfo artifactMetaInfo) {
+      DockerArtifactDelegateRequest request, ArtifactMetaInfo artifactMetaInfo) {
     String sha = null;
     String shaV2 = null;
-    if (artifactMetaInfo != null && artifactMetaInfo.getLabels() != null) {
-      label.putAll(artifactMetaInfo.getLabels());
-    }
-    if (artifactMetaInfo != null && artifactMetaInfo.getSha() != null) {
+    Map<String, String> label = null;
+
+    if (artifactMetaInfo != null) {
+      if (artifactMetaInfo.getLabels() != null) {
+        label = artifactMetaInfo.getLabels();
+      }
       sha = artifactMetaInfo.getSha();
-    }
-    if (artifactMetaInfo != null && artifactMetaInfo.getShaV2() != null) {
       shaV2 = artifactMetaInfo.getShaV2();
     }
 

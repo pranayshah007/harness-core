@@ -29,7 +29,7 @@ import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Collections.singletonList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -78,6 +78,9 @@ import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountPreferences;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
@@ -85,8 +88,6 @@ import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -98,6 +99,7 @@ import com.google.protobuf.TextFormat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -130,7 +132,6 @@ public class DelegateAgentResourceTest extends CategoryTest {
 
   private static final AccountService accountService = mock(AccountService.class);
   private static final WingsPersistence wingsPersistence = mock(WingsPersistence.class);
-  private static final DelegateRequestRateLimiter delegateRequestRateLimiter = mock(DelegateRequestRateLimiter.class);
   private static final SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
   private static final InstanceHelper instanceSyncResponseHandler = mock(InstanceHelper.class);
   private static final ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
@@ -162,12 +163,11 @@ public class DelegateAgentResourceTest extends CategoryTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(
-              new DelegateAgentResource(delegateService, accountService, wingsPersistence, delegateRequestRateLimiter,
-                  subdomainUrlHelper, artifactCollectionResponseHandler, instanceSyncResponseHandler,
-                  manifestCollectionResponseHandler, connectorHearbeatPublisher, kryoSerializer,
-                  configurationController, featureFlagService, delegateTaskServiceClassic, pollResourceClient,
-                  instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
+          .instance(new DelegateAgentResource(delegateService, accountService, wingsPersistence, subdomainUrlHelper,
+              artifactCollectionResponseHandler, instanceSyncResponseHandler, manifestCollectionResponseHandler,
+              connectorHearbeatPublisher, kryoSerializer, configurationController, featureFlagService,
+              delegateTaskServiceClassic, pollResourceClient, instanceSyncResponsePublisher,
+              delegatePollingHeartbeatService, delegateCapacityManagementService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -484,15 +484,15 @@ public class DelegateAgentResourceTest extends CategoryTest {
                           .accountId(ACCOUNT_ID)
                           .stateExecutionId(STATE_EXECUTION_ID)
                           .requestTimeStamp(i)
-                          .request(Lists.newArrayList(ThirdPartyApiCallLog.ThirdPartyApiCallField.builder()
+                          .request(Lists.newArrayList(ThirdPartyApiCallField.builder()
                                                           .name(generateUuid())
                                                           .value(generateUuid())
-                                                          .type(ThirdPartyApiCallLog.FieldType.TEXT)
+                                                          .type(FieldType.TEXT)
                                                           .build()))
-                          .response(Lists.newArrayList(ThirdPartyApiCallLog.ThirdPartyApiCallField.builder()
+                          .response(Lists.newArrayList(ThirdPartyApiCallField.builder()
                                                            .name(generateUuid())
                                                            .value(generateUuid())
-                                                           .type(ThirdPartyApiCallLog.FieldType.TEXT)
+                                                           .type(FieldType.TEXT)
                                                            .build()))
                           .delegateId(DELEGATE_ID)
                           .delegateTaskId(generateUuid())
@@ -507,7 +507,11 @@ public class DelegateAgentResourceTest extends CategoryTest {
         .request()
         .post(entity(apiCallLogs, MediaType.APPLICATION_JSON), new GenericType<RestResponse<String>>() {});
 
-    verify(wingsPersistence, atLeastOnce()).save(apiCallLogs);
+    verify(wingsPersistence, atLeastOnce())
+        .save(apiCallLogs.stream()
+                  .map(thirdPartyApiCallLog
+                      -> software.wings.service.impl.ThirdPartyApiCallLog.fromDto(thirdPartyApiCallLog))
+                  .collect(Collectors.toList()));
   }
 
   @Test

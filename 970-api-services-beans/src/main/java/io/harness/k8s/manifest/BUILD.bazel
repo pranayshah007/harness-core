@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/utils:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//970-api-services-beans/src/main/java/io/harness/yaml:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",

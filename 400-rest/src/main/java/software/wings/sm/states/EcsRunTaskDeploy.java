@@ -261,9 +261,11 @@ public class EcsRunTaskDeploy extends State {
             .serviceSteadyStateTimeout(serviceSteadyStateTimeout)
             .build();
 
-    if (gitFetchFilesAsyncTask.getData().getParameters()[0] instanceof GitFetchFilesTaskParams) {
-      GitFetchFilesTaskParams gitFetchFilesTaskParams =
-          (GitFetchFilesTaskParams) gitFetchFilesAsyncTask.getData().getParameters()[0];
+    Object taskParameter = gitFetchFilesAsyncTask.getData() != null
+        ? gitFetchFilesAsyncTask.getData().getParameters()[0]
+        : gitFetchFilesAsyncTask.getTaskDataV2().getParameters()[0];
+    if (taskParameter instanceof GitFetchFilesTaskParams) {
+      GitFetchFilesTaskParams gitFetchFilesTaskParams = (GitFetchFilesTaskParams) taskParameter;
       GitFileConfig gitFileConfigFromGitFetchTask =
           gitFetchFilesTaskParams.getGitFetchFilesConfigMap().get(K8sValuesLocation.Service.name()).getGitFileConfig();
       ecsRunTaskStateExecutionData.setGitFileConfig(gitFileConfigFromGitFetchTask);

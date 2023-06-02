@@ -10,6 +10,7 @@ package io.harness.ngtriggers.utils;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_HARNESS_TRIGGER_ID;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.CONTAINS;
+import static io.harness.ngtriggers.conditionchecker.ConditionOperator.DOES_NOT_CONTAIN;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.ENDS_WITH;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.EQUALS;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.IN;
@@ -20,6 +21,7 @@ import static io.harness.ngtriggers.conditionchecker.ConditionOperator.STARTS_WI
 import static io.harness.ngtriggers.utils.WebhookTriggerFilterUtils.checkIfActionMatches;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -190,12 +192,43 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
     webhookPayloadDataBuilder.webhookEvent(prWebhookEventBuilder.baseAttributes(baseAttributesBuilder.build()).build())
         .build();
     assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isTrue();
+
+    githubPRActions.clear();
+    assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isTrue();
+
+    githubPRActions.add(GithubPRAction.EDIT);
+    assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isFalse();
+
+    baseAttributesBuilder.action("update");
+    webhookPayloadDataBuilder.webhookEvent(prWebhookEventBuilder.baseAttributes(baseAttributesBuilder.build()).build())
+        .build();
+    assertThat(checkIfActionMatches(webhookPayloadDataBuilder.build(), webhookTriggerSpec)).isTrue();
   }
 
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void evaluateFilterConditionsTest() {
+    WebhookTriggerSpecV2 webhookTriggerSpec = getGitLabTriggerSpec();
+
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder()
+            .originalEvent(TriggerWebhookEvent.builder().payload(payload).build())
+            .webhookEvent(PRWebhookEvent.builder()
+                              .baseAttributes(WebhookBaseAttributes.builder().source("stage").target("master").build())
+                              .build())
+            .build();
+
+    assertThat(WebhookTriggerFilterUtils.checkIfEventTypeMatches(Type.PR, webhookTriggerSpec)).isTrue();
+    assertThat(checkIfActionMatches(webhookPayloadData, webhookTriggerSpec)).isTrue();
+    assertThat(WebhookTriggerFilterUtils.checkIfPayloadConditionsMatch(webhookPayloadData, webhookTriggerSpec))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void evaluateFilterConditionsDoesNotContainTest() {
     WebhookTriggerSpecV2 webhookTriggerSpec = getGitLabTriggerSpec();
 
     WebhookPayloadData webhookPayloadData =
@@ -266,6 +299,11 @@ public class WebhookTriggerFilterUtilTest extends CategoryTest {
                       TriggerEventDataCondition.builder()
                           .key("<+trigger.payload.user.avatar_url>")
                           .operator(CONTAINS)
+                          .value("secure.gravatar.com")
+                          .build(),
+                      TriggerEventDataCondition.builder()
+                          .key("<+trigger.payload.user.email>")
+                          .operator(DOES_NOT_CONTAIN)
                           .value("secure.gravatar.com")
                           .build()))
                   .build())

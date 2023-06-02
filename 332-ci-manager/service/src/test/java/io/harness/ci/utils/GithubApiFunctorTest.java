@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.CI)
 @RunWith(MockitoJUnitRunner.class)
@@ -107,9 +107,10 @@ public class GithubApiFunctorTest extends CategoryTest {
                                             .ngAccess(ngAccess)
                                             .build();
 
-    when(connectorUtils.getConnectorDetails(ngAccess, "codeBaseConnectorRef")).thenThrow(new RuntimeException());
+    when(connectorUtils.getConnectorDetails(ngAccess, "codeBaseConnectorRef", true)).thenThrow(new RuntimeException());
 
-    when(connectorUtils.getConnectorDetails(ngAccess, "account.anotherConnector")).thenThrow(new RuntimeException());
+    when(connectorUtils.getConnectorDetails(ngAccess, "account.anotherConnector", true))
+        .thenThrow(new RuntimeException());
     assertThatThrownBy(githubApiFunctor::token).isInstanceOf(FunctorException.class);
     assertThatThrownBy(() -> githubApiFunctor.token("account.anotherConnector")).isInstanceOf(FunctorException.class);
   }

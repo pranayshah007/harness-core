@@ -33,4 +33,5 @@ public class StepResponseNotifyData implements ResponseData {
   String description;
   AdviserResponse adviserResponse;
   String nodeExecutionId;
+  Long nodeExecutionEndTs;
 }

@@ -31,4 +31,9 @@ public class NoopEngineExpressionServiceImpl implements EngineExpressionService 
   public Object evaluateExpression(Ambiance ambiance, String expression) {
     return null;
   }
+
+  @Override
+  public Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
+    return null;
+  }
 }

@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.chartmuseum.ChartmuseumClient;
 import io.harness.chartmuseum.ChartmuseumClientFactory;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GcpConfig;

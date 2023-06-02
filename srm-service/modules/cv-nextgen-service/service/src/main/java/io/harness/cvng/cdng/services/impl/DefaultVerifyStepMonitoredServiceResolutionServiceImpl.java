@@ -67,11 +67,11 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
 
     ResponseDTO<CDStageMetaDataDTO> responseDTO =
         cdStageMetaDataService.getServiceAndEnvironmentRef(stageLevelYamlNode);
-    if (Objects.isNull(responseDTO)) {
+    if (isCDStageMetaDataAbsent(responseDTO) || isServiceEnvRefListSizeUnsupported(responseDTO.getData())) {
       return result;
     }
-    String serviceIdentifier = responseDTO.getData().getServiceRef();
-    String envIdentifier = responseDTO.getData().getEnvironmentRef();
+    String serviceIdentifier = responseDTO.getData().getServiceEnvRefList().get(0).getServiceRef();
+    String envIdentifier = responseDTO.getData().getServiceEnvRefList().get(0).getEnvironmentRef();
 
     ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
                                                             .accountIdentifier(projectParams.getAccountIdentifier())
@@ -92,6 +92,15 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
       CVNGStepUtils.addReferredEntities(monitoredServiceDTO, result, filterCreationContext, projectParams);
     }
     return result;
+  }
+
+  private static boolean isCDStageMetaDataAbsent(ResponseDTO<CDStageMetaDataDTO> responseDTO) {
+    return Objects.isNull(responseDTO) || Objects.isNull(responseDTO.getData());
+  }
+
+  private static boolean isServiceEnvRefListSizeUnsupported(CDStageMetaDataDTO cdStageMetaDataDTO) {
+    return CollectionUtils.isEmpty(cdStageMetaDataDTO.getServiceEnvRefList())
+        || cdStageMetaDataDTO.getServiceEnvRefList().size() > 1;
   }
 
   private List<CVConfig> getCVConfigs(

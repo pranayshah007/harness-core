@@ -48,6 +48,7 @@ import io.harness.exception.WingsException;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
@@ -86,12 +87,12 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     K8sScaleRequest k8sScaleRequest = (K8sScaleRequest) k8sDeployRequest;
+    LogCallback logCallback =
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        k8sScaleRequest.getK8sInfraDelegateConfig(), k8SDelegateTaskParams.getWorkingDirectory(), logCallback);
 
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sScaleRequest.getK8sInfraDelegateConfig());
-
-    init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(),
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
+    init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(), logCallback);
 
     if (resourceIdToScale == null) {
       return getSuccessResponse(K8sScaleResponse.builder().build());
@@ -105,8 +106,11 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     beforePodList = k8sTaskHelperBase.getPodDetails(kubernetesConfig, resourceIdToScale.getNamespace(),
         k8sScaleRequest.getReleaseName(), steadyStateTimeoutInMillis);
 
-    k8sTaskHelperBase.scale(
+    boolean success = k8sTaskHelperBase.scale(
         client, k8SDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, true);
+    if (success) {
+      scaleLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
+    }
 
     if (!k8sScaleRequest.isSkipSteadyStateCheck()) {
       K8sSteadyStateDTO k8sSteadyStateDTO =
@@ -119,6 +123,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
               .namespace(resourceIdToScale.getNamespace())
               .denoteOverallSuccess(true)
               .isErrorFrameworkEnabled(true)
+              .kubernetesConfig(kubernetesConfig)
               .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sScaleRequest.isUseK8sApiForSteadyStateCheck());
@@ -159,7 +164,8 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog(
         color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
 
-    client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
     if (StringUtils.isEmpty(request.getWorkload())) {
       executionLogCallback.saveExecutionLog("\nNo Workload found to scale.");
@@ -185,7 +191,8 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     executionLogCallback.saveExecutionLog("\nQuerying current replicas");
-    Integer currentReplicas = k8sTaskHelperBase.getCurrentReplicas(client, resourceIdToScale, k8sDelegateTaskParams);
+    Integer currentReplicas =
+        k8sTaskHelperBase.getCurrentReplicas(client, resourceIdToScale, k8sDelegateTaskParams, executionLogCallback);
     executionLogCallback.saveExecutionLog("Current replica count is " + currentReplicas);
 
     if (request.getInstanceUnitType() == null) {

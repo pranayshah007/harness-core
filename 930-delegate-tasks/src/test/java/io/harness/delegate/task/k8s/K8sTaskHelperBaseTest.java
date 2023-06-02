@@ -51,6 +51,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SATYAM;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.UTSAV;
@@ -72,14 +73,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -94,6 +95,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
+import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.connector.ConnectivityStatus;
@@ -129,7 +131,6 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.k8s.K8sTestHelper;
-import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
@@ -137,6 +138,8 @@ import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
 import io.harness.delegate.task.k8s.client.K8sCliClient;
+import io.harness.delegate.task.k8s.k8sbase.K8sReleaseHandlerFactory;
+import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
@@ -152,7 +155,6 @@ import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.filesystem.FileIo;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
-import io.harness.helpers.k8s.releasehistory.K8sReleaseHandlerFactory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
@@ -166,6 +168,8 @@ import io.harness.k8s.kubectl.DescribeCommand;
 import io.harness.k8s.kubectl.GetCommand;
 import io.harness.k8s.kubectl.GetJobCommand;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
+import io.harness.k8s.kubectl.OcClient;
 import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -177,6 +181,7 @@ import io.harness.k8s.model.IstioDestinationWeight;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -627,13 +632,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
     MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
     PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
-    spyK8sTaskHelperBase.dryRunManifests(client,
+    Kubectl ocClient = OcClient.client("oc", "config-path");
+    ocClient.setVersion(Version.parse("4.2"));
+    MockedStatic<KubectlFactory> mockFactory = mockStatic(KubectlFactory.class);
+    PowerMockito.when(KubectlFactory.getOpenShiftClient("oc", "config-path", ".")).thenReturn(ocClient);
+    spyK8sTaskHelperBase.dryRunManifests(ocClient,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback, false);
     mock.close();
+    mockFactory.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
         .isEqualTo("oc --kubeconfig=config-path apply --filename=manifests-dry-run.yaml --dry-run");
@@ -648,7 +658,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             .processResult(new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes())))
             .build();
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
-
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
     final String workingDirectory = ".";
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
                                                       .workingDirectory(workingDirectory)
@@ -656,11 +667,11 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .kubectlPath("kubectl")
                                                       .kubeconfigPath("config-path")
                                                       .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", ".");
 
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.dryRunManifests(
-                               client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true, false))
+                               client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
@@ -668,6 +679,91 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
           assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
           return true;
         });
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunManifestIsErrorFrameworkEnabledWithResources() throws Exception {
+    ProcessResponse response =
+        ProcessResponse.builder()
+            .processResult(new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes())))
+            .build();
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", ".");
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+    final String workingDirectory = ".";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory(workingDirectory)
+                                                      .ocPath("oc")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("config-path")
+                                                      .build();
+
+    assertThatThrownBy(
+        ()
+            -> spyK8sTaskHelperBase.dryRunManifests(client,
+                Collections.singletonList(
+                    KubernetesResource.builder()
+                        .spec("Sample resouece")
+                        .resourceId(new KubernetesResourceId().builder().kind("Deployment").name("test-svc").build())
+                        .build()),
+                k8sDelegateTaskParams, executionLogCallback, true))
+        .matches(throwable -> {
+          KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
+          assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
+              .contains("Something went wrong");
+          assertThat(taskException.getResourcesNotApplied().contains("deployment/test-svc"));
+          assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
+          return true;
+        });
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunManifestIsErrorFrameworkEnabledWithEmptyOutput() throws Exception {
+    ProcessResponse response = ProcessResponse.builder().processResult(new ProcessResult(1, null)).build();
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", ".");
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+    final String workingDirectory = ".";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory(workingDirectory)
+                                                      .ocPath("oc")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("config-path")
+                                                      .build();
+
+    assertThatThrownBy(
+        ()
+            -> spyK8sTaskHelperBase.dryRunManifests(client,
+                Collections.singletonList(
+                    KubernetesResource.builder()
+                        .spec("Sample resouece")
+                        .resourceId(new KubernetesResourceId().builder().kind("Deployment").name("test-svc").build())
+                        .build()),
+                k8sDelegateTaskParams, executionLogCallback, true))
+        .matches(throwable -> {
+          KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
+          assertThat(taskException.getResourcesNotApplied().contains("deployment/test-svc"));
+          assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
+          assertThat(taskException.getKubectlVersion()).contains("");
+          return true;
+        });
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunForOpenshiftResourcesKubernetesVersion() {
+    final String workingDirectory = ".";
+    Kubectl client = KubectlFactory.getOpenShiftClient("kubectl", "config-path", workingDirectory);
+
+    String result2 = client.getVersion().toString();
+    assertThat(result2).isEqualTo("4.2.16");
   }
 
   @Test
@@ -685,8 +781,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .ocPath("oc")
                                                       .kubeconfigPath("config-path")
                                                       .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
-
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", workingDirectory);
+    client.setVersion(Version.parse("1.21"));
     spyK8sTaskHelperBase.applyManifests(client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true, null);
 
     ArgumentCaptor<ApplyCommand> captor = ArgumentCaptor.forClass(ApplyCommand.class);
@@ -698,13 +794,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(AbstractExecutable.class));
     MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
     PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
-    spyK8sTaskHelperBase.applyManifests(client,
+    Kubectl ocClient = OcClient.client("oc", "config-path");
+    ocClient.setVersion(Version.parse("4.7"));
+    MockedStatic<KubectlFactory> mockFactory = mockStatic(KubectlFactory.class);
+    PowerMockito.when(KubectlFactory.getOpenShiftClient("oc", "config-path", ".")).thenReturn(ocClient);
+    spyK8sTaskHelperBase.applyManifests(ocClient,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback, true, null);
     mock.close();
+    mockFactory.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
         .isEqualTo("oc --kubeconfig=config-path apply --filename=manifests.yaml --record");
@@ -994,6 +1095,41 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidateExistingResourceIdsFailure() throws Exception {
+    Kubectl kubectl = Kubectl.client("kubectl", "config-path");
+    ProcessResponse response =
+        ProcessResponse.builder().processResult(new ProcessResult(1, new ProcessOutput("failure".getBytes()))).build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    final boolean success = spyK8sTaskHelperBase.checkIfResourceExists(kubectl, K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isFalse();
+    ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
+    assertThat(captor.getValue().command())
+        .isEqualTo("kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidateExistingResourceIdsSuccess() throws Exception {
+    Kubectl kubectl = Kubectl.client("kubectl", "config-path");
+    ProcessResponse response = ProcessResponse.builder().processResult(new ProcessResult(0, null)).build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    final boolean success = spyK8sTaskHelperBase.checkIfResourceExists(kubectl, K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isTrue();
+    ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
+    assertThat(captor.getValue().command())
+        .isEqualTo("kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default");
+  }
+
+  @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void cleanUp() throws Exception {
@@ -1056,14 +1192,23 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   public void getCurrentReplicas() throws Exception {
     doReturn(K8sTestHelper.buildProcessResult(0, "3"))
         .doReturn(K8sTestHelper.buildProcessResult(1))
+        .doReturn(K8sTestHelper.buildProcessResult(0, ""))
         .when(spyK8sTaskHelperBase)
         .runK8sExecutableSilent(any(), any());
-    assertThat(spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
-                   K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build()))
+
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
         .isEqualTo(3);
 
-    assertThat(spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
-                   K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build()))
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
+        .isNull();
+
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
         .isNull();
   }
 
@@ -1753,7 +1898,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable resource =
         mock(ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable.class);
     doReturn(resource).when(mockClient).load(any());
-    doReturn(asList(service1)).when(resource).get();
+    doReturn(asList(service1)).when(resource).items();
     VirtualService result = k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
         resources, KubernetesConfig.builder().build(), executionLogCallback);
     List<HTTPRouteDestination> routes = result.getSpec().getHttp().get(0).getRoute();
@@ -2461,8 +2606,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.track, "canary");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithTrack(config, "default", "release", "canary", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2479,8 +2623,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ImmutableMap.of(HarnessLabels.releaseName, "release", HarnessLabels.color, "blue");
     doReturn(emptyList())
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     spyK8sTaskHelperBase.getPodDetailsWithColor(config, "default", "release", "blue", DEFAULT_STEADY_STATE_TIMEOUT);
 
     verify(spyK8sTaskHelperBase, times(1))
@@ -2497,8 +2640,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     Map<String, String> expectedLabels = ImmutableMap.of(HELM_RELEASE_LABEL, "release");
     doReturn(existingPods)
         .when(spyK8sTaskHelperBase)
-        .getPodDetailsWithLabels(
-            any(KubernetesConfig.class), anyString(), anyString(), anyMapOf(String.class, String.class), anyLong());
+        .getPodDetailsWithLabels(any(KubernetesConfig.class), anyString(), anyString(), anyMap(), anyLong());
     List<ContainerInfo> result =
         spyK8sTaskHelperBase.getContainerInfos(config, "release", "default", DEFAULT_STEADY_STATE_TIMEOUT);
 
@@ -2754,7 +2896,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("").when(spyHelperBase).writeValuesToFile(any(), any());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelm("helm", "./chart", new ArrayList<>(),
-        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "");
+        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
 
     verify(spyHelperBase, times(1)).executeShellCommand(eq("./chart"), anyString(), any(), anyLong());
     assertThat(manifestFiles.size()).isEqualTo(1);
@@ -2939,7 +3081,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V3, 9000L);
     verify(helmTaskHelperBase, times(1))
-        .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
+        .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L);
   }
 
@@ -3015,7 +3157,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isTrue();
     verify(helmTaskHelperBase, times(1)).initHelm("manifest", HelmVersion.V2, 9000L);
     verify(helmTaskHelperBase, times(1))
-        .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
+        .printHelmChartInfoWithVersionInExecutionLogs("manifest", manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesUsingChartMuseum(manifestDelegateConfig, "manifest", 9000L);
   }
 
@@ -3027,7 +3169,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .helmVersion(HelmVersion.V3)
                                         .storeDelegateConfig(GitStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest");
   }
@@ -3041,7 +3183,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                         .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                         .helmCommandFlag(TEST_HELM_COMMAND)
                                         .chartName("chart-name")
-                                        .subChartName("")
+                                        .subChartPath("")
                                         .build(),
         "manifest", "manifest/chart-name");
 
@@ -3050,7 +3192,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                            .storeDelegateConfig(HttpHelmStoreDelegateConfig.builder().build())
                                            .helmCommandFlag(HELM_DEPENDENCY_UPDATE)
                                            .chartName("chart-name")
-                                           .subChartName("first-child")
+                                           .subChartPath("charts/first-child")
                                            .build(),
         "manifest", "manifest/chart-name/charts/first-child");
   }
@@ -3065,7 +3207,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3073,7 +3215,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "");
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
   }
 
   private void testRenderTemplateWithHelmSubChart(ManifestDelegateConfig manifestDelegateConfig,
@@ -3086,7 +3228,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
@@ -3094,7 +3236,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "first-child");
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
   }
 
   @Test
@@ -3146,14 +3288,14 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     List<FileData> renderedFiles = new ArrayList<>();
     doReturn(renderedFiles)
         .when(kustomizeTaskHelper)
-        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback);
+        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
         valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
-        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback);
+        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
   }
 
   @Test
@@ -3174,7 +3316,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(kustomizeTaskHelper)
         .buildForApply(
-            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback);
+            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback, null);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplateForGivenFiles(delegateTaskParams, manifestDelegateConfig,
         "manifest", fileList, valuesList, "release", "namespace", executionLogCallback, 10, false);
@@ -3182,7 +3324,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
         .buildForApply(
-            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback);
+            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback, null);
   }
 
   @Test
@@ -3667,10 +3809,12 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAddingRevisionNumberWithException() {
     KubernetesResource resource = mock(KubernetesResource.class);
-    when(resource.transformName(any(UnaryOperator.class))).thenThrow(new KubernetesYamlException(DEFAULT));
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(Collections.singletonList(resource));
+    when(resource.transformName(any(UnaryOperator.class), any())).thenThrow(new KubernetesYamlException(DEFAULT));
     when(resource.getResourceId()).thenReturn(KubernetesResourceId.builder().kind(Secret.name()).build());
     when(resource.getMetadataAnnotationValue(anyString())).thenReturn(DEFAULT);
-    assertThatThrownBy(() -> k8sTaskHelperBase.addRevisionNumber(Collections.singletonList(resource), 1))
+    assertThatThrownBy(() -> k8sTaskHelperBase.addRevisionNumber(context, 1))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)

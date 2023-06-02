@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.nexus.NexusClientImpl;
@@ -52,6 +53,13 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
   private static final String NEXUS_USERNAME = "username";
   private static final String NEXUS_PASSWORD = "password";
   private static final int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+  private static final String SHA = "sha256:12345";
+  private static final String SHA_V2 = "sha256:78934";
+  private static final Map<String, String> LABEL = Map.of("k1", "v1");
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO_1 =
+      ArtifactMetaInfo.builder().sha(SHA).labels(LABEL).build();
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO_2 =
+      ArtifactMetaInfo.builder().sha(SHA_V2).labels(LABEL).build();
 
   private static Map<String, List<BuildDetailsInternal>> buildDetailsData;
 
@@ -65,19 +73,19 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
     String repo = "test1";
     String repoUrl = "nexus.harness.io:8001";
     String imageName = "superApp";
-    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "1.0"));
-    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.0"));
     bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "3.0"));
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.0"));
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "1.0"));
     buildDetailsData.put("bdi1", bdiList);
 
     bdiList = new ArrayList<>();
     repo = "test2";
     repoUrl = "nexus.harness.io:8002";
     imageName = "super/duper/app";
-    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.4.1"));
-    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.4.2"));
-    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.5"));
     bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.5.3"));
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.5"));
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.4.2"));
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "2.4.1"));
     buildDetailsData.put("bdi2", bdiList);
 
     bdiList = new ArrayList<>();
@@ -89,6 +97,12 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
     bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "latest"));
     bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "basic"));
     buildDetailsData.put("bdi3", bdiList);
+  }
+
+  private void assertArtifactMetaInfo(BuildDetailsInternal buildDetailsInternal) {
+    assertThat(buildDetailsInternal.getArtifactMetaInfo().getSha()).isEqualTo(SHA);
+    assertThat(buildDetailsInternal.getArtifactMetaInfo().getShaV2()).isEqualTo(SHA_V2);
+    assertThat(buildDetailsInternal.getArtifactMetaInfo().getLabels()).isEqualTo(LABEL);
   }
 
   @Test
@@ -104,10 +118,10 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name());
+        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name());
 
     List<BuildDetailsInternal> response = nexusRegistryService.getBuilds(nexusConfig, "test1", null, "superApp",
-        RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE, null, null, null, null, null, null);
+        RepositoryFormat.docker.name(), null, null, null, null, null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(3);
     for (BuildDetailsInternal bdi : response) {
@@ -128,10 +142,10 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test1", null, "superApp", "test");
+        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", "test");
     try {
       nexusRegistryService.getBuilds(
-          nexusConfig, "test1", null, "superApp", "test", MAX_NO_OF_TAGS_PER_IMAGE, null, null, null, null, null, null);
+          nexusConfig, "test1", null, "superApp", "test", null, null, null, null, null, null, Integer.MAX_VALUE);
     } catch (HintException ex) {
       assertThat(ex.getMessage()).isEqualTo("Please check your artifact YAML configuration.");
     }
@@ -149,9 +163,9 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test1", "groupId", "superApp", "war", "");
+        .getArtifactsVersions(nexusConfig, "test1", "groupId", "superApp", "war", "", Integer.MAX_VALUE);
     List<BuildDetailsInternal> response = nexusRegistryService.getBuilds(nexusConfig, "test1", null, "superApp",
-        RepositoryFormat.maven.name(), MAX_NO_OF_TAGS_PER_IMAGE, "groupId", "superApp", "war", "", null, null);
+        RepositoryFormat.maven.name(), "groupId", "superApp", "war", "", null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(3);
     for (BuildDetailsInternal bdi : response) {
@@ -175,7 +189,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
         .when(nexusClient)
         .getArtifactsVersions(nexusConfig, "npm", "test1", "packageName");
     List<BuildDetailsInternal> response = nexusRegistryService.getBuilds(nexusConfig, "test1", null, "superApp",
-        RepositoryFormat.npm.name(), MAX_NO_OF_TAGS_PER_IMAGE, "groupId", "superApp", "war", "", "packageName", null);
+        RepositoryFormat.npm.name(), "groupId", "superApp", "war", "", "packageName", null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(3);
     for (BuildDetailsInternal bdi : response) {
@@ -198,7 +212,7 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
         .when(nexusClient)
         .getArtifactsVersions(nexusConfig, "nuget", "test1", "packageName");
     List<BuildDetailsInternal> response = nexusRegistryService.getBuilds(nexusConfig, "test1", null, "superApp",
-        RepositoryFormat.nuget.name(), MAX_NO_OF_TAGS_PER_IMAGE, "groupId", "superApp", "war", "", "packageName", null);
+        RepositoryFormat.nuget.name(), "groupId", "superApp", "war", "", "packageName", null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(3);
     for (BuildDetailsInternal bdi : response) {
@@ -218,9 +232,8 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .artifactRepositoryUrl("nexus.harness.io:8001")
                                    .build();
     doReturn(buildDetailsData.get("bdi1")).when(nexusClient).getPackageNames(nexusConfig, "raw", "group");
-    List<BuildDetailsInternal> response =
-        nexusRegistryService.getBuilds(nexusConfig, "raw", null, "superApp", RepositoryFormat.raw.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE, "groupId", "superApp", "war", "", "packageName", "group");
+    List<BuildDetailsInternal> response = nexusRegistryService.getBuilds(nexusConfig, "raw", null, "superApp",
+        RepositoryFormat.raw.name(), "groupId", "superApp", "war", "", "packageName", "group", Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(3);
     for (BuildDetailsInternal bdi : response) {
@@ -241,12 +254,18 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name());
-    BuildDetailsInternal response = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test1", null,
-        "superApp", RepositoryFormat.docker.name(), "[\\d]{1}.0", null, null, null, null, null, null);
+        .getDockerArtifactVersions(nexusConfig, "test1", null, "superApp", RepositoryFormat.docker.name());
+    doReturn(ARTIFACT_META_INFO_1).when(nexusClient).getArtifactMetaInfo(nexusConfig, "test1", "superApp", "3.0", true);
+    doReturn(ARTIFACT_META_INFO_2)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test1", "superApp", "3.0", false);
+    BuildDetailsInternal response =
+        nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test1", null, "superApp",
+            RepositoryFormat.docker.name(), "[\\d]{1}.0", null, null, null, null, null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("3.0");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE)).isEqualTo("nexus.harness.io:8001/superApp:3.0");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -261,14 +280,21 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi2"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test2", null, "super/duper/app", RepositoryFormat.docker.name());
-    BuildDetailsInternal response =
-        nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null, "super/duper/app",
-            RepositoryFormat.docker.name(), "[\\d]{1}.[\\d]{1}.[\\d]{1}", null, null, null, null, null, null);
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "super/duper/app", RepositoryFormat.docker.name());
+    doReturn(ARTIFACT_META_INFO_1)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "super/duper/app", "2.5.3", true);
+    doReturn(ARTIFACT_META_INFO_2)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "super/duper/app", "2.5.3", false);
+    BuildDetailsInternal response = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null,
+        "super/duper/app", RepositoryFormat.docker.name(), "[\\d]{1}.[\\d]{1}.[\\d]{1}", null, null, null, null, null,
+        null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("2.5.3");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("nexus.harness.io:8002/super/duper/app:2.5.3");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -284,13 +310,21 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
-    BuildDetailsInternal response = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null,
-        "extra/megaapp", RepositoryFormat.docker.name(), "\\\\*", null, null, null, null, null, null);
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
+    doReturn(ARTIFACT_META_INFO_1)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "latest", true);
+    doReturn(ARTIFACT_META_INFO_2)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "latest", false);
+    BuildDetailsInternal response =
+        nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null, "extra/megaapp",
+            RepositoryFormat.docker.name(), "\\\\*", null, null, null, null, null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("latest");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("nexus.harness.io:8002/extra/megaapp:latest");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -305,10 +339,11 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
     try {
-      BuildDetailsInternal response = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null,
-          "extra/megaapp", RepositoryFormat.docker.name(), "/**/TEST", null, null, null, null, null, null);
+      BuildDetailsInternal response =
+          nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null, "extra/megaapp",
+              RepositoryFormat.docker.name(), "/**/TEST", null, null, null, null, null, null, Integer.MAX_VALUE);
     } catch (HintException e) {
       assertThat(e.getMessage()).isEqualTo("Please check tagRegex field in Nexus artifact configuration.");
     }
@@ -326,11 +361,11 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
                                    .build();
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
-    assertThatThrownBy(
-        ()
-            -> nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null, "extra/megaapp",
-                RepositoryFormat.docker.name(), "noArtifactFound", null, null, null, null, null, null))
+        .getDockerArtifactVersions(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name());
+    assertThatThrownBy(()
+                           -> nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, "test2", null,
+                               "extra/megaapp", RepositoryFormat.docker.name(), "noArtifactFound", null, null, null,
+                               null, null, null, Integer.MAX_VALUE))
         .isInstanceOf(HintException.class);
   }
 
@@ -347,12 +382,19 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
         .getBuildDetails(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name(), "b23");
+    doReturn(ARTIFACT_META_INFO_1)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "b23", true);
+    doReturn(ARTIFACT_META_INFO_2)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "b23", false);
     BuildDetailsInternal response = nexusRegistryService.verifyBuildNumber(nexusConfig, "test2", null, "extra/megaapp",
-        RepositoryFormat.docker.name(), "b23", null, null, null, null, null, null);
+        RepositoryFormat.docker.name(), "b23", null, null, null, null, null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("b23");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("nexus.harness.io:8002/extra/megaapp:b23");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -368,12 +410,19 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
     doReturn(buildDetailsData.get("bdi3"))
         .when(nexusClient)
         .getBuildDetails(nexusConfig, "test2", null, "extra/megaapp", RepositoryFormat.docker.name(), "b23");
+    doReturn(ARTIFACT_META_INFO_1)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "b23", true);
+    doReturn(ARTIFACT_META_INFO_2)
+        .when(nexusClient)
+        .getArtifactMetaInfo(nexusConfig, "test2", "extra/megaapp", "b23", false);
     BuildDetailsInternal response = nexusRegistryService.verifyBuildNumber(nexusConfig, "test2", null, "extra/megaapp",
-        RepositoryFormat.docker.name(), "b23", null, null, null, null, null, null);
+        RepositoryFormat.docker.name(), "b23", null, null, null, null, null, null, Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("b23");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
         .isEqualTo("nexus.harness.io:8002/extra/megaapp:b23");
+    assertArtifactMetaInfo(response);
   }
 
   @Test
@@ -390,10 +439,10 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
         BuildDetailsInternal.builder().number("extra/megaapp").buildUrl("http://localhost:8080").build();
     doReturn(Collections.singletonList(buildDetailsInternal))
         .when(nexusClient)
-        .getArtifactsVersions(nexusConfig, "test2", "group", "extra/megaapp", null, null);
+        .getArtifactsVersions(nexusConfig, "test2", "group", "extra/megaapp", null, null, Integer.MAX_VALUE);
     try {
       BuildDetailsInternal response = nexusRegistryService.verifyBuildNumber(nexusConfig, "test2", null,
-          "extra/megaapp", RepositoryFormat.maven.name(), "b23", null, null, null, null, null, null);
+          "extra/megaapp", RepositoryFormat.maven.name(), "b23", null, null, null, null, null, null, Integer.MAX_VALUE);
     } catch (HintException exception) {
       assertThat(exception.getMessage()).isEqualTo("Please check your Nexus repository for artifacts with same tag.");
     }

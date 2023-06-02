@@ -55,10 +55,10 @@ public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements
       Boolean skipVersioningForAllK8sObjects, Set<String> delegateSelectors, boolean isPruningEnabled,
       boolean exportManifests, boolean inheritManifests, List<KubernetesResource> kubernetesResources,
       boolean useLatestChartMuseumVersion, boolean useLatestKustomizeVersion, boolean useNewKubectlVersion,
-      boolean skipAddingSelectorToDeployment, boolean useDeclarativeRollback) {
+      boolean skipAddingSelectorToDeployment, boolean useDeclarativeRollback, boolean timeoutSupported) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
-        useLatestKustomizeVersion, useNewKubectlVersion);
+        useLatestKustomizeVersion, useNewKubectlVersion, timeoutSupported);
     this.k8sDelegateManifestConfig = k8sDelegateManifestConfig;
     this.valuesYamlList = valuesYamlList;
     this.isInCanaryWorkflow = isInCanaryWorkflow;

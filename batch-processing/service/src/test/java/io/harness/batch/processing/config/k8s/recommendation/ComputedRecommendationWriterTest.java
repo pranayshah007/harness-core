@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -115,13 +115,13 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
                 ContainerRecommendation.builder()
                     .current(ResourceRequirement.builder().request("cpu", "20m").request("memory", "100Mi").build())
                     .percentileBased(ImmutableMap.of(
-                        "p90", ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build()))
+                        "p95", ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build()))
                     .build(),
                 "ctr2",
                 ContainerRecommendation.builder()
                     .current(ResourceRequirement.builder().request("cpu", "0.25").request("memory", "100Mi").build())
                     .percentileBased(ImmutableMap.of(
-                        "p90", ResourceRequirement.builder().request("cpu", "0.5").request("memory", "100Mi").build()))
+                        "p95", ResourceRequirement.builder().request("cpu", "0.5").request("memory", "100Mi").build()))
                     .build()),
             "cpu"))
         // cpu change is 20m+0.25->30m+0.5 => 270m->530m => 96.3%
@@ -138,14 +138,14 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
                 ContainerRecommendation.builder()
                     .current(ResourceRequirement.builder().request("cpu", "20m").request("memory", "100Mi").build())
                     .percentileBased(ImmutableMap.of(
-                        "p90", ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build()))
+                        "p95", ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build()))
                     .build(),
                 "ctr2",
                 ContainerRecommendation.builder()
                     .current(ResourceRequirement.builder().request("memory", "100Mi").build())
                     // don't use this recommendation in change percent, as there's no current cpu here.
                     .percentileBased(ImmutableMap.of(
-                        "p90", ResourceRequirement.builder().request("cpu", "0.5").request("memory", "100Mi").build()))
+                        "p95", ResourceRequirement.builder().request("cpu", "0.5").request("memory", "100Mi").build()))
                     .build()),
             "cpu"))
         // cpu change is 20m->30m => 50%
@@ -182,7 +182,7 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
         ContainerRecommendation.builder()
             .current(ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build())
             .percentileBased(ImmutableMap.of(
-                "p90", ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build()))
+                "p95", ResourceRequirement.builder().request("cpu", "30m").request("memory", "10Mi").build()))
             .build());
     assertThat(ComputedRecommendationWriter.resourceChangePercent(containerRecommendations, "cpu")).isZero();
     assertThat(ComputedRecommendationWriter.resourceChangePercent(containerRecommendations, "memory")).isZero();
@@ -196,13 +196,13 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
         ContainerRecommendation.builder()
             .current(ResourceRequirement.builder().request("cpu", "20m").request("memory", "100Mi").build())
             .percentileBased(ImmutableMap.of(
-                "p90", ResourceRequirement.builder().request("cpu", "10m").request("memory", "10Mi").build()))
+                "p95", ResourceRequirement.builder().request("cpu", "10m").request("memory", "10Mi").build()))
             .build(),
         "ctr2",
         ContainerRecommendation.builder()
             .current(ResourceRequirement.builder().request("cpu", "0.75").request("memory", "100Mi").build())
             .percentileBased(ImmutableMap.of(
-                "p90", ResourceRequirement.builder().request("cpu", "0.5").request("memory", "75Mi").build()))
+                "p95", ResourceRequirement.builder().request("cpu", "0.5").request("memory", "75Mi").build()))
             .build());
 
     // cpu change: ((10m+0.5)-(20m+0.75))/(20m+0.75) = (510m-770m)/770m = -0.338
@@ -395,7 +395,7 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
                        .limit("nvidia.com/gpu", "2")
                        .build());
 
-    assertThat(recommendation.getEstimatedSavings()).isEqualByComparingTo(BigDecimal.valueOf(189.52));
+    assertThat(recommendation.getEstimatedSavings()).isEqualByComparingTo(BigDecimal.valueOf(188.90));
     assertThat(recommendation.isLastDayCostAvailable()).isTrue();
 
     verify(recommendationCrudService).upsertWorkloadRecommendation(stringCaptor.capture(), any(), any(), any());
@@ -576,7 +576,11 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
     Cost lastDayCost = Cost.builder().cpu(BigDecimal.valueOf(100)).memory(BigDecimal.valueOf(100)).build();
     computedRecommendationWriter.setContainerLevelCost(containerRecommendationMap, lastDayCost);
 
-    assertThat(containerRecommendationMap.get("c1").getLastDayCost()).isNull();
+    final Offset<BigDecimal> costOffset = offset(BigDecimal.valueOf(0.09D));
+    assertThat(containerRecommendationMap.get("c1").getLastDayCost().getCpu())
+        .isCloseTo(BigDecimal.valueOf(100), costOffset);
+    assertThat(containerRecommendationMap.get("c1").getLastDayCost().getMemory())
+        .isCloseTo(BigDecimal.valueOf(100), costOffset);
   }
 
   @Test

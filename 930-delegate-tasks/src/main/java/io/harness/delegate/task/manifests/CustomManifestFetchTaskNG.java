@@ -43,6 +43,8 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.ShellExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -53,6 +55,7 @@ import software.wings.exception.ShellScriptException;
 
 import com.google.inject.Inject;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -128,6 +131,12 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         cleanup(defaultSourceWorkingDirectory);
         log.error("Failed to process custom manifest", e);
         logCallback.saveExecutionLog("Custom source script execution task failed. " + getMessage(e), ERROR, FAILURE);
+        if (e instanceof ShellExecutionException) {
+          throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
+              NestedExceptionUtils.hintWithExplanationException(
+                  "Please check your shell script, failed to execute. Try running the script via shell-script step or directly on delegate",
+                  "Custom shell script execution failed.", e));
+        }
         throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
       }
 
@@ -138,6 +147,12 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         log.error("Failed to get files from manifest directory", e);
         logCallback.saveExecutionLog(
             "Failed to get manifest files from custom source. " + getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
+        if (e instanceof FileNotFoundException) {
+          throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
+              NestedExceptionUtils.hintWithExplanationException(
+                  "Please check if the entered manifest file/folder location is correct",
+                  "No such file found, see logs below for list of fetched files", e));
+        }
         throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
       } catch (Exception e) {
         cleanup(defaultSourceWorkingDirectory);

@@ -178,6 +178,18 @@ public class K8sRecommendationDAO {
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<RecommendationTelemetryStats> fetchAppliedRecommendationsTelemetry(@NonNull String accountId) {
+    return dslContext
+        .select(DSL.count().as("count"), sum(CE_RECOMMENDATIONS.MONTHLYCOST).as("totalMonthlyCost"),
+            sum(CE_RECOMMENDATIONS.MONTHLYSAVING).as("totalMonthlySaving"), CE_RECOMMENDATIONS.RESOURCETYPE.as("type"))
+        .from(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId))
+        .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.APPLIED.toString()))
+        .groupBy(CE_RECOMMENDATIONS.RESOURCETYPE)
+        .fetchInto(RecommendationTelemetryStats.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public List<NodePoolId> getUniqueNodePools(@NonNull String accountId) {
     // TODO(UTSAV): We want to fetch only node pools which has at least one node running in jobStartTime and jobEndTime
     // window. will enforce this once the recommendation algo is stable.

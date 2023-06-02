@@ -10,11 +10,11 @@ package io.harness.jobs;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_PREVIOUS;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

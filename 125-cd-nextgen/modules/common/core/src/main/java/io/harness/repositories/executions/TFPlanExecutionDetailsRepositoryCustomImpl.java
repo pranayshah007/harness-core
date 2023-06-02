@@ -43,7 +43,7 @@ public class TFPlanExecutionDetailsRepositoryCustomImpl implements TFPlanExecuti
                               .is(tfPlanExecutionDetailsKey.getScope().getProjectIdentifier())
                               .and(TFPlanExecutionDetailsKeys.pipelineExecutionId)
                               .is(tfPlanExecutionDetailsKey.getPipelineExecutionId());
-      mongoTemplate.findAllAndRemove(new Query(criteria), TerraformPlanExecutionDetails.class);
+      mongoTemplate.remove(new Query(criteria), TerraformPlanExecutionDetails.class);
       return true;
     } catch (Exception e) {
       log.error(
@@ -69,6 +69,7 @@ public class TFPlanExecutionDetailsRepositoryCustomImpl implements TFPlanExecuti
     query.addCriteria(criteria);
     return mongoTemplate.find(query, TerraformPlanExecutionDetails.class);
   }
+
   public Criteria createScopeCriteria(Scope scope) {
     Criteria criteria = new Criteria();
     criteria.and(StageExecutionInfoKeys.accountIdentifier).is(scope.getAccountIdentifier());

@@ -7,12 +7,15 @@
 
 package io.harness.ngmigration.connector;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.NewRelicConfig;
@@ -33,6 +36,11 @@ public class NewrelicConnectorImpl implements BaseConnector {
   }
 
   @Override
+  public SupportStatus getSupportStatus() {
+    return SupportStatus.MANUAL_EFFORT;
+  }
+
+  @Override
   public ConnectorType getConnectorType(SettingAttribute settingAttribute) {
     return ConnectorType.NEW_RELIC;
   }
@@ -43,7 +51,7 @@ public class NewrelicConnectorImpl implements BaseConnector {
     NewRelicConfig newRelicConfig = (NewRelicConfig) settingAttribute.getValue();
     String newrelicAccountId = StringUtils.isNotBlank(newRelicConfig.getNewRelicAccountId())
         ? newRelicConfig.getNewRelicAccountId()
-        : "__FIX_ME__";
+        : PLEASE_FIX_ME;
     return NewRelicConnectorDTO.builder()
         .url(newRelicConfig.getNewRelicUrl())
         .apiKeyRef(MigratorUtility.getSecretRef(migratedEntities, newRelicConfig.getEncryptedApiKey()))

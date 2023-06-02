@@ -40,6 +40,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
+import io.harness.ssca.client.SSCAServiceUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +65,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock private SecretUtils secretUtils;
   @Mock private CodebaseUtils codebaseUtils;
   @Mock private K8InitializeTaskUtils k8InitializeTaskUtils;
+  @Mock private SSCAServiceUtils sscaServiceUtils;
 
   private Ambiance ambiance;
   private static final String accountId = "test";
@@ -106,12 +108,13 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(codebaseUtils.getGitEnvVariables(any(), any(), eq(false))).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getCommonStepEnvVariables(any(), any(), any(), any(), any(), any()))
         .thenReturn(new HashMap<>());
+    when(k8InitializeTaskUtils.getCacheEnvironmentVariable()).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getWorkDir()).thenReturn("/harness");
     when(k8InitializeTaskUtils.getCtrSecurityContext(any())).thenReturn(ContainerSecurityContext.builder().build());
     when(internalContainerParamsProvider.getSetupAddonContainerParams(any(), any(), any(), any(), any(), any()))
         .thenReturn(getAddonContainer());
     when(internalContainerParamsProvider.getLiteEngineContainerParams(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(getLiteEngineContainer());
     when(k8InitializeStepUtils.getStageRequest(any(), any())).thenReturn(Pair.of(1024, 1024));
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());

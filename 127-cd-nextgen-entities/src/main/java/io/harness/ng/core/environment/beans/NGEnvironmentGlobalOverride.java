@@ -13,10 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.environment.NGEnvironmentGlobalOverrideVisitorHelper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,6 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("ngEnvironmentGlobalOverride")
 @RecasterAlias("io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride")
+@SimpleVisitorHelper(helperClass = NGEnvironmentGlobalOverrideVisitorHelper.class)
 @OwnedBy(HarnessTeam.CDP)
 public class NGEnvironmentGlobalOverride implements Visitable {
   List<ManifestConfigWrapper> manifests;

@@ -25,6 +25,7 @@ import io.harness.gitsync.common.dtos.GitSyncRepoFilesDTO.GitSyncConfigFilesDTOK
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -127,8 +128,8 @@ public class GitFileLocationRepositoryCustomImpl implements GitFileLocationRepos
   }
 
   @Override
-  public List<GitFileLocation> deleteAll(Query query) {
-    return mongoTemplate.findAllAndRemove(query, GitFileLocation.class);
+  public DeleteResult deleteAll(Query query) {
+    return mongoTemplate.remove(query, GitFileLocation.class);
   }
 
   @Override

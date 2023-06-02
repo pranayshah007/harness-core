@@ -11,15 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.observers.NodeStatusUpdateHandler;
 import io.harness.engine.observers.NodeUpdateInfo;
+import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.EntityNotFoundException;
@@ -32,9 +36,11 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.repositories.PlanExecutionRepository;
+import io.harness.springdata.PersistenceModule;
 import io.harness.waiter.StringNotifyResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -52,6 +58,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -71,6 +78,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
+  @Getter private final Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject = new Subject<>();
 
   @Override
   public PlanExecution save(PlanExecution planExecution) {
@@ -139,6 +147,18 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
         .orElseThrow(() -> new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId));
   }
 
+  @Override
+  public PlanExecution getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude) {
+    Query query = new Query(Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    PlanExecution planExecution = mongoTemplate.findOne(query, PlanExecution.class);
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution;
+  }
   @Override
   public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
     PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
@@ -253,7 +273,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public CloseableIterator<PlanExecution> fetchPlanExecutionsByStatus(Set<Status> statuses, Set<String> fieldNames) {
+  public CloseableIterator<PlanExecution> fetchPlanExecutionsByStatusFromAnalytics(
+      Set<Status> statuses, Set<String> fieldNames) {
     // Uses status_idx index
     Query query = query(where(PlanExecutionKeys.status).in(statuses));
     for (String fieldName : fieldNames) {
@@ -299,5 +320,64 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
                             .is(Status.QUEUED);
     return mongoTemplate.findOne(
         new Query(criteria).with(Sort.by(Sort.Direction.ASC, PlanExecutionKeys.createdAt)), PlanExecution.class);
+  }
+
+  @Override
+  public void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds) {
+    // Uses idx index
+    Query query = query(where(PlanExecutionKeys.uuid).in(planExecutionIds));
+    for (String fieldName : PlanExecutionProjectionConstants.fieldsForPlanExecutionDelete) {
+      query.fields().include(fieldName);
+    }
+    List<PlanExecution> batchPlanExecutions = new LinkedList<>();
+    try (CloseableIterator<PlanExecution> iterator = planExecutionRepository.fetchPlanExecutionsFromAnalytics(query)) {
+      while (iterator.hasNext()) {
+        PlanExecution next = iterator.next();
+        batchPlanExecutions.add(next);
+        if (batchPlanExecutions.size() >= PersistenceModule.MAX_BATCH_SIZE) {
+          deletePlanExecutionMetadataInternal(batchPlanExecutions);
+          batchPlanExecutions.clear();
+        }
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(batchPlanExecutions)) {
+      // at end if any execution metadata is left, delete those as well
+      deletePlanExecutionMetadataInternal(batchPlanExecutions);
+    }
+    deletePlanExecutionsInternal(planExecutionIds);
+  }
+
+  /*
+  This functions calculates the status of the based on status of all node execution status excluding current node. If
+  the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
+  matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it should
+  be marked to Running
+   */
+  @Override
+  public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
+    Status updateStatusTo = RUNNING;
+    Status planStatus = calculateStatusExcluding(planNodeId, nodeExecutionId);
+    if (!StatusUtils.isFinalStatus(planStatus)) {
+      updateStatusTo = planStatus;
+    }
+    log.info("Marking PlanExecution %s status to %s", planNodeId, updateStatusTo);
+    updateStatus(planNodeId, updateStatusTo);
+  }
+
+  private void deletePlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions) {
+    // Delete planExecutionMetadata example - PlanExecutionMetadata, PipelineExecutionSummaryEntity
+    planExecutionDeleteObserverSubject.fireInform(
+        PlanExecutionDeleteObserver::onPlanExecutionsDelete, batchPlanExecutions);
+  }
+
+  private void deletePlanExecutionsInternal(Set<String> planExecutionIds) {
+    if (EmptyPredicate.isEmpty(planExecutionIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      planExecutionRepository.deleteAllByUuidIn(planExecutionIds);
+      return true;
+    });
   }
 }

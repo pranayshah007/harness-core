@@ -34,4 +34,5 @@ public class GoogleFunctionRollbackRequest
   @NonFinal @Expression(ALLOW_SECRETS) String googleCloudRunServiceAsString;
   @NonFinal @Expression(ALLOW_SECRETS) String googleFunctionAsString;
   boolean isFirstDeployment;
+  @NonFinal @Expression(ALLOW_SECRETS) String googleFunctionDeployManifestContent;
 }

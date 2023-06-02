@@ -70,9 +70,10 @@ public class OciHelmValidationHandler implements ConnectorValidationHandler {
         }
       } else if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
         String workingDirectory = helmTaskHelperBase.createNewDirectoryAtPath(Paths.get(WORKING_DIR_BASE).toString());
-        helmTaskHelperBase.loginOciRegistry(ociUrl, helmTaskHelperBase.getOciHelmUsername(ociHelmConnectorDTO),
+        helmTaskHelperBase.loginOciRegistry(helmTaskHelperBase.getParsedUrlForUserNamePwd(ociUrl),
+            helmTaskHelperBase.getOciHelmUsername(ociHelmConnectorDTO),
             helmTaskHelperBase.getOciHelmPassword(ociHelmConnectorDTO), HelmVersion.V380, DEFAULT_TIMEOUT_IN_MILLIS,
-            workingDirectory);
+            workingDirectory, "");
         helmTaskHelperBase.cleanup(workingDirectory);
       } else {
         throw new InvalidRequestException(

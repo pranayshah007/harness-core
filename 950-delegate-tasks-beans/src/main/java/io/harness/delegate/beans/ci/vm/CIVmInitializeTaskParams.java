@@ -68,6 +68,8 @@ public class CIVmInitializeTaskParams
   //@Getter private InfraInfo infraInfo;
   @Getter private CIInitializeTaskParams.Type infraInfo;
 
+  private List<String> fallbackPoolIDs;
+
   @Override
   public Type getType() {
     return type;

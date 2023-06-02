@@ -10,6 +10,7 @@ package io.harness.ci.beans.entities;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
+import io.harness.ci.config.VmContainerlessStepConfig;
 import io.harness.ci.config.VmImageConfig;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -53,6 +54,9 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String artifactoryUploadTag;
   @NotBlank String cacheGCSTag;
   @NotBlank String cacheS3Tag;
+  @NotBlank String sscaOrchestrationTag;
+  @NotBlank String sscaEnforcementTag;
   VmImageConfig vmImageConfig;
+  VmContainerlessStepConfig vmContainerlessStepConfig;
   @SchemaIgnore private long createdAt;
 }

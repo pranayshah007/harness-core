@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
@@ -26,12 +27,26 @@ public class PlanData extends Data {
   @Builder
   @lombok.Data
   public static class Attributes {
-    private String status;
+    private Status status;
     @JsonProperty("has-changes") private String hasChanges;
     @JsonProperty("log-read-url") private String logReadUrl;
     @JsonProperty("resource-additions") private int resourceAdditions;
     @JsonProperty("resource-changes") private int resourceChanges;
     @JsonProperty("resource-destructions") private int resourceDestructions;
     private Map<String, Boolean> permissions;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public enum Status {
+      @JsonProperty("pending") PENDING,
+      @JsonProperty("managed_queued") MANAGED_QUEUED,
+      @JsonProperty("agent_queued") AGENT_QUEUED,
+      @JsonProperty("queued") QUEUED,
+      @JsonProperty("running") RUNNING,
+      @JsonProperty("errored") ERRORED,
+      @JsonProperty("canceled") CANCELED,
+      @JsonProperty("finished") FINISHED,
+      @JsonProperty("unreachable") UNREACHABLE,
+      @JsonEnumDefaultValue UNKNOWN
+    }
   }
 }

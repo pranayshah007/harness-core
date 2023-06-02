@@ -1,0 +1,8 @@
+name: Advise event time in Queue
+identifier: advise_event_time_queue
+metricGroup: event_time_queue_group
+metrics:
+  - metricName: advise_event_queue_time
+    metricDefinition: Time for advise event was in the queue.
+    type: LastValue
+    unit: count

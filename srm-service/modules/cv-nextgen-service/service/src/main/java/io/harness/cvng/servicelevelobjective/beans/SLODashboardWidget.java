@@ -35,6 +35,7 @@ public class SLODashboardWidget {
   List<MonitoredServiceDetail> monitoredServiceDetails;
   Map<String, String> tags;
   ServiceLevelIndicatorType type;
+  SLIEvaluationType evaluationType;
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull BurnRate burnRate;
   @NotNull int timeRemainingDays;
@@ -43,8 +44,8 @@ public class SLODashboardWidget {
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
   }
-  @NotNull int errorBudgetRemaining;
-  @NotNull int totalErrorBudget;
+  @NotNull long errorBudgetRemaining;
+  @NotNull long totalErrorBudget;
   @NotNull SLOTargetType sloTargetType;
   @NotNull int currentPeriodLengthDays;
   @NotNull long currentPeriodStartTime;
@@ -52,8 +53,11 @@ public class SLODashboardWidget {
   @NotNull double sloTargetPercentage;
   @NotNull List<Point> errorBudgetBurndown;
   @NotNull List<Point> sloPerformanceTrend;
+  @NotNull boolean isTotalErrorBudgetApplicable;
   @NotNull boolean isRecalculatingSLI;
   @NotNull boolean isCalculatingSLI;
+
+  SLOError sloError;
   @Value
   @Builder
   public static class BurnRate {
@@ -72,13 +76,15 @@ public class SLODashboardWidget {
   @Builder
   public static class SLOGraphData {
     double errorBudgetRemainingPercentage;
-    int errorBudgetRemaining;
+    long errorBudgetRemaining;
     List<Point> errorBudgetBurndown;
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
-    @JsonIgnore int errorBudgetBurned;
+    @JsonIgnore long errorBudgetBurned;
     @JsonIgnore double sliStatusPercentage;
+    @JsonIgnore SLIEvaluationType evaluationType;
+    @JsonIgnore long totalErrorBudgetFromGraph;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }
@@ -94,6 +100,18 @@ public class SLODashboardWidget {
         return (errorBudgetSpentPercentage()) / days;
       }
     }
+    public static SLOGraphDataBuilder getSloGraphDataBuilder(double errorBudgetRemainingPercentage,
+        long errorBudgetRemaining, List<Point> errorBudgetBurndown, List<Point> sloPerformanceTrend,
+        boolean isRecalculatingSLI, boolean isCalculatingSLI, long totalErrorBudgetFromGraph) {
+      return SLODashboardWidget.SLOGraphData.builder()
+          .errorBudgetBurndown(errorBudgetBurndown)
+          .errorBudgetRemaining(errorBudgetRemaining)
+          .sloPerformanceTrend(sloPerformanceTrend)
+          .isRecalculatingSLI(isRecalculatingSLI)
+          .isCalculatingSLI(isCalculatingSLI)
+          .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+          .totalErrorBudgetFromGraph(totalErrorBudgetFromGraph);
+    }
   }
 
   public static SLODashboardWidgetBuilder withGraphData(SLOGraphData sloGraphData) {
@@ -103,6 +121,7 @@ public class SLODashboardWidget {
         .errorBudgetRemaining(sloGraphData.getErrorBudgetRemaining())
         .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
         .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
-        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
+        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend())
+        .totalErrorBudget(sloGraphData.totalErrorBudgetFromGraph);
   }
 }

@@ -23,8 +23,6 @@ import org.springframework.data.mongodb.core.query.Update;
 public interface SettingRepositoryCustom {
   Setting upsert(Setting setting);
   List<Setting> findAll(Criteria criteria);
-  DeleteResult delete(Criteria criteria);
-  List<Setting> deleteAll(Criteria criteria);
-
+  DeleteResult deleteAll(Criteria criteria);
   UpdateResult updateMultiple(Query query, Update update);
 }

@@ -43,6 +43,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -50,6 +51,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.network.SafeHttpCall;
@@ -320,6 +322,27 @@ public class ConnectorUtils {
       return mapToGitConnectionType(gitConfigDTO.getConnectionType());
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported.");
+    }
+  }
+
+  public static GitConnectionType getConnectionType(ScmConnector scmConnector) {
+    if (scmConnector.getConnectorType() == GITHUB) {
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) scmConnector;
+      return gitConfigDTO.getConnectionType();
+    } else if (scmConnector.getConnectorType() == BITBUCKET) {
+      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) scmConnector;
+      return gitConfigDTO.getConnectionType();
+    } else if (scmConnector.getConnectorType() == GIT) {
+      GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
+      return gitConfigDTO.getGitConnectionType();
+    } else if (scmConnector.getConnectorType() == GITLAB) {
+      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) scmConnector;
+      return gitConfigDTO.getConnectionType();
+    } else if (scmConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) scmConnector;
+      return mapToGitConnectionType(gitConfigDTO.getConnectionType());
+    } else {
+      throw new InvalidRequestException("scmType " + scmConnector.getConnectorType() + "is not supported.");
     }
   }
 }

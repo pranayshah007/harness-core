@@ -47,6 +47,10 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.GITOPS)
 public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
+  public static final String ACC_ID = "ACC_ID";
+  public static final String ORG_ID = "ORG_ID";
+  public static final String PROJ_ID = "PROJ_ID";
+
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
@@ -136,12 +140,15 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
     Set<io.harness.gitops.models.Cluster> listOfClusters = getClusterListForAnyTagMatch();
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
-    List<Cluster> clsToCluster =
-        Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
+    List<Cluster> clsToCluster = Arrays.asList(getCluster("cl1"), getCluster("cl2"));
 
     Set<Cluster> filteredClusters =
         EnvironmentInfraFilterUtils.applyFilteringOnClusters(Arrays.asList(filterYaml), clsToCluster, listOfClusters);
     assertThat(filteredClusters.size()).isEqualTo(listOfClusters.size());
+  }
+
+  private Cluster getCluster(String clusterRef) {
+    return Cluster.builder().accountId(ACC_ID).clusterRef(clusterRef).build();
   }
 
   @Test
@@ -151,8 +158,7 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
     Set<io.harness.gitops.models.Cluster> listOfClusters = getClusterListForAllTagMatch();
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
 
-    List<io.harness.cdng.gitops.entity.Cluster> clsToCluster =
-        Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
+    List<io.harness.cdng.gitops.entity.Cluster> clsToCluster = Arrays.asList(getCluster("cl1"), getCluster("cl2"));
 
     Set<Cluster> filteredClusters =
         EnvironmentInfraFilterUtils.applyFilteringOnClusters(Arrays.asList(filterYaml), clsToCluster, listOfClusters);
@@ -165,8 +171,7 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   public void testApplyFiltersOnClustersNoFilterExists() {
     Set<io.harness.gitops.models.Cluster> listOfClusters = getClusterListForAllTagMatch();
 
-    List<io.harness.cdng.gitops.entity.Cluster> clsToCluster =
-        Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
+    List<io.harness.cdng.gitops.entity.Cluster> clsToCluster = Arrays.asList(getCluster("cl1"), getCluster("cl2"));
 
     Set<Cluster> filteredClusters =
         EnvironmentInfraFilterUtils.applyFilteringOnClusters(emptyList(), clsToCluster, listOfClusters);
@@ -237,8 +242,7 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessAllFilterYamlForClusters() {
-    List<io.harness.cdng.gitops.entity.Cluster> listOfClusters =
-        Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
+    List<io.harness.cdng.gitops.entity.Cluster> listOfClusters = Arrays.asList(getCluster("cl1"), getCluster("cl2"));
     final FilterYaml filterYaml = getAllFilterYaml();
 
     List<Cluster> filteredCls = EnvironmentInfraFilterUtils.processFilterYamlForGitOpsClusters(
@@ -250,8 +254,7 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessTagsFilterYamlForClustersForMatchAll() {
-    List<io.harness.cdng.gitops.entity.Cluster> listOfClusters =
-        Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
+    List<io.harness.cdng.gitops.entity.Cluster> listOfClusters = Arrays.asList(getCluster("cl1"), getCluster("cl2"));
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
 
     List<Cluster> filteredCls = EnvironmentInfraFilterUtils.processFilterYamlForGitOpsClusters(
@@ -263,8 +266,7 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessTagsFilterYamlForClustersForMatchAny() {
-    List<io.harness.cdng.gitops.entity.Cluster> listOfClusters =
-        Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
+    List<io.harness.cdng.gitops.entity.Cluster> listOfClusters = Arrays.asList(getCluster("cl1"), getCluster("cl2"));
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
     List<Cluster> filteredCls = EnvironmentInfraFilterUtils.processFilterYamlForGitOpsClusters(
@@ -383,25 +385,32 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   private static Set<io.harness.gitops.models.Cluster> getClusterListForAnyTagMatch() {
     io.harness.gitops.models.Cluster cl1 = new io.harness.gitops.models.Cluster();
     cl1.setTags(Map.of("env", "dev"));
-    cl1.setIdentifier("cl1");
+    updateCluster(cl1, "cl1");
 
     io.harness.gitops.models.Cluster cl2 = new io.harness.gitops.models.Cluster();
     cl2.setTags(Map.of("env", "dev", "env1", "dev1"));
-    cl2.setIdentifier("cl2");
+    updateCluster(cl2, "cl2");
 
     final Set<io.harness.gitops.models.Cluster> listOfClusters = new HashSet<>(Arrays.asList(cl1, cl2));
     return listOfClusters;
+  }
+
+  private static void updateCluster(io.harness.gitops.models.Cluster cl1, String id) {
+    cl1.setIdentifier(id);
+    cl1.setAccountIdentifier(ACC_ID);
+    cl1.setOrgIdentifier(ORG_ID);
+    cl1.setProjectIdentifier(PROJ_ID);
   }
 
   @NotNull
   private static Set<io.harness.gitops.models.Cluster> getClusterListForAllTagMatch() {
     io.harness.gitops.models.Cluster cl1 = new io.harness.gitops.models.Cluster();
     cl1.setTags(Map.of("env", "dev"));
-    cl1.setIdentifier("cl1");
+    updateCluster(cl1, "cl1");
 
     io.harness.gitops.models.Cluster cl2 = new io.harness.gitops.models.Cluster();
     cl2.setTags(Map.of("env1", "dev1"));
-    cl2.setIdentifier("cl2");
+    updateCluster(cl2, "cl2");
 
     final Set<io.harness.gitops.models.Cluster> listOfClusters = new HashSet<>(Arrays.asList(cl1, cl2));
     return listOfClusters;

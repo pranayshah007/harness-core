@@ -20,6 +20,7 @@ import java.util.Map;
 import javax.ws.rs.DefaultValue;
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(PIPELINE)
@@ -40,4 +41,10 @@ public interface EnvironmentResourceClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query("envIdentifiers") List<String> envIdentifiers);
+
+  @GET(ENVIRONMENT_API + "/{environmentIdentifier}")
+  Call<ResponseDTO<EnvironmentResponse>> getEnvironment(@Path("environmentIdentifier") String environmentIdentifier,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
 }

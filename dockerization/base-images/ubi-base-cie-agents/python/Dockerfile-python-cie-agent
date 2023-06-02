@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/ubi/ubi-python:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-python:8.7
 
 USER root
 

@@ -66,10 +66,10 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
@@ -92,6 +92,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -345,6 +346,7 @@ public class CommandStateTest extends WingsBaseTest {
   @Mock private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Mock private ServiceTemplateHelper serviceTemplateHelper;
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 

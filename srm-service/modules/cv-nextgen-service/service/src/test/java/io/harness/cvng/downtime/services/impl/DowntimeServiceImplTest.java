@@ -7,7 +7,10 @@
 
 package io.harness.cvng.downtime.services.impl;
 
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
+import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -25,6 +29,7 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.AffectedEntity;
+import io.harness.cvng.downtime.beans.AllEntitiesRule;
 import io.harness.cvng.downtime.beans.DowntimeCategory;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.DowntimeDashboardFilter;
@@ -32,12 +37,17 @@ import io.harness.cvng.downtime.beans.DowntimeDuration;
 import io.harness.cvng.downtime.beans.DowntimeDurationType;
 import io.harness.cvng.downtime.beans.DowntimeHistoryView;
 import io.harness.cvng.downtime.beans.DowntimeListView;
+import io.harness.cvng.downtime.beans.DowntimeRecurrenceType;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
 import io.harness.cvng.downtime.beans.DowntimeSpec;
 import io.harness.cvng.downtime.beans.DowntimeStatus;
 import io.harness.cvng.downtime.beans.DowntimeStatusDetails;
 import io.harness.cvng.downtime.beans.DowntimeType;
+import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
@@ -45,11 +55,12 @@ import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
+import io.harness.cvng.downtime.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
-import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -57,8 +68,10 @@ import java.text.ParseException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -74,7 +87,6 @@ import org.mockito.MockitoAnnotations;
 public class DowntimeServiceImplTest extends CvNextGenTestBase {
   private BuilderFactory builderFactory;
 
-  @Inject HPersistence hPersistence;
   @Inject private DowntimeService downtimeService;
 
   @Inject private MonitoredServiceService monitoredServiceService;
@@ -103,6 +115,8 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(downtimeService, "clock", clock, true);
     FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     FieldUtils.writeField(
         downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesServiceMock, true);
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
@@ -112,12 +126,58 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     recurringDowntimeDTO = builderFactory.getRecurringDowntimeDTO();
     oneTimeDurationBasedDowntimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
     oneTimeEndTimeBasedDowntimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
+    testUserProvider.setActiveUser(EmbeddedUser.builder().name("user1").email("user1@harness.io").build());
   }
 
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testCreateRecurringDowntimeSuccess() {
+    DowntimeResponse response = downtimeService.create(projectParams, recurringDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, recurringDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testCreateMonthlyRecurringDowntimeSuccess_WithTimezone() {
+    RecurringDowntimeSpec recurringDowntimeSpec = (RecurringDowntimeSpec) recurringDowntimeDTO.getSpec().getSpec();
+    recurringDowntimeSpec.setTimezone("America/Los_Angeles");
+    ZoneId zoneId = ZoneId.of("America/Los_Angeles");
+    recurringDowntimeSpec.getDowntimeRecurrence().setRecurrenceType(DowntimeRecurrenceType.MONTH);
+    DowntimeResponse response = downtimeService.create(projectParams, recurringDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, recurringDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(12);
+    LocalDateTime dateTime = LocalDateTime.now(clock);
+    for (int i = 0; i < entityUnavailabilityStatusesDTOS.size(); i++) {
+      assertThat(LocalDateTime.ofEpochSecond(
+                     entityUnavailabilityStatusesDTOS.get(i).getStartTime(), 0, zoneId.getRules().getOffset(dateTime)))
+          .isEqualTo(dateTime);
+      dateTime = dateTime.plusMonths(recurringDowntimeSpec.getDowntimeRecurrence().getRecurrenceValue());
+    }
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateAllMonitoredServicesDowntimeSuccess() {
+    recurringDowntimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
     DowntimeResponse response = downtimeService.create(projectParams, recurringDowntimeDTO);
     assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
     List<Pair<Long, Long>> futureInstances =
@@ -171,6 +231,125 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testCreateRecurringDowntimeForStartTimeBeforeNowSuccess_WithStartTime() {
+    recurringDowntimeDTO.getSpec().getSpec().setStartTime(
+        clock.instant().minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    DowntimeResponse response = downtimeService.create(projectParams, recurringDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, recurringDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testCreateRecurringDowntimeForStartTimeBeforeNowSuccess() {
+    recurringDowntimeDTO.getSpec().getSpec().setStartDateTime(dtf.format(LocalDateTime.now(clock).minusMinutes(10)));
+    DowntimeResponse response = downtimeService.create(projectParams, recurringDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, recurringDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateOneTimeDurationBasedDowntimeForStartTimeBeforeNowSuccess_WithStartTime() {
+    oneTimeDurationBasedDowntimeDTO.getSpec().getSpec().setStartTime(
+        clock.instant().minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    DowntimeResponse response = downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(oneTimeDurationBasedDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(oneTimeDurationBasedDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(oneTimeDurationBasedDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, oneTimeDurationBasedDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, oneTimeDurationBasedDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testCreateOneTimeDurationBasedDowntimeForStartTimeBeforeNowSuccess() {
+    oneTimeDurationBasedDowntimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(LocalDateTime.now(clock).minusMinutes(10)));
+    DowntimeResponse response = downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(oneTimeDurationBasedDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(oneTimeDurationBasedDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(oneTimeDurationBasedDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, oneTimeDurationBasedDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, oneTimeDurationBasedDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateOneTimeEndTimeBasedDowntimeForStartTimeBeforeNowSuccess_WithStartTime() {
+    oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().setStartTime(
+        clock.instant().minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    DowntimeResponse response = downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(oneTimeEndTimeBasedDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(oneTimeEndTimeBasedDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, oneTimeEndTimeBasedDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, oneTimeEndTimeBasedDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testCreateOneTimeEndTimeBasedDowntimeForStartTimeBeforeNowSuccess() {
+    oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(LocalDateTime.now(clock).minusMinutes(10)));
+    DowntimeResponse response = downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(oneTimeEndTimeBasedDowntimeDTO);
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(oneTimeEndTimeBasedDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, oneTimeEndTimeBasedDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, oneTimeEndTimeBasedDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testCreateDowntimeFailureForDuplicateEntity() {
     DowntimeResponse response = downtimeService.create(projectParams, recurringDowntimeDTO);
     assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
@@ -185,10 +364,10 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testCreateDowntimeFailureForInvalidEndTime() {
+  public void testCreateRecurringDowntimeFailureForInvalidEndDateTime() {
     DowntimeSpec recurringDowntimeDTOSpec = recurringDowntimeDTO.getSpec().getSpec();
-    long endTime = recurringDowntimeDTOSpec.getStartTime() + Duration.ofDays(3 * 365 + 1).toSeconds();
-    ((RecurringDowntimeSpec) recurringDowntimeDTOSpec).setRecurrenceEndTime(endTime);
+    String endDateTime = dtf.format(LocalDateTime.now(clock).plusDays(3 * 365 + 1));
+    ((RecurringDowntimeSpec) recurringDowntimeDTOSpec).setRecurrenceEndDateTime(endDateTime);
     recurringDowntimeDTO.getSpec().setSpec(recurringDowntimeDTOSpec);
     assertThatThrownBy(() -> downtimeService.create(projectParams, recurringDowntimeDTO))
         .isInstanceOf(InvalidArgumentsException.class)
@@ -198,9 +377,38 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testCreateOnetimeEndtimeDowntimeFailureForInvalidEndTime() {
+    DowntimeSpec onetimeSpec = oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec();
+    String endDateTime = dtf.format(LocalDateTime.now(clock).plusDays(3 * 365 + 1));
+    ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) onetimeSpec).getSpec())
+        .setEndDateTime(endDateTime);
+    oneTimeEndTimeBasedDowntimeDTO.getSpec().setSpec(onetimeSpec);
+    assertThatThrownBy(() -> downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("EndTime can't be more than 3 years from now.");
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateOnetimeDurationsDowntimeFailureForInvalidEndTime() {
+    DowntimeSpec onetimeSpec = oneTimeDurationBasedDowntimeDTO.getSpec().getSpec();
+    ((OnetimeDowntimeSpec.OnetimeDurationBasedSpec) ((OnetimeDowntimeSpec) onetimeSpec).getSpec())
+        .setDowntimeDuration(
+            DowntimeDuration.builder().durationType(DowntimeDurationType.DAYS).durationValue(3 * 365 + 1).build());
+    oneTimeDurationBasedDowntimeDTO.getSpec().setSpec(onetimeSpec);
+    assertThatThrownBy(() -> downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("EndTime can't be more than 3 years from now.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testCreateDowntimeFailureForInvalidMonitoredService() {
-    recurringDowntimeDTO.setEntityRefs(
-        Collections.singletonList(EntityDetails.builder().entityRef("identifier").build()));
+    recurringDowntimeDTO.setEntitiesRule(EntityIdentifiersRule.builder()
+                                             .entityIdentifiers(Collections.singletonList(
+                                                 EntityDetails.builder().enabled(true).entityRef("identifier").build()))
+                                             .build());
     assertThatThrownBy(() -> downtimeService.create(projectParams, recurringDowntimeDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
@@ -212,6 +420,36 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testCreateDowntimeFailureForNoMonitoredService() {
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder().entityIdentifiers(Collections.emptyList()).build());
+    assertThatThrownBy(() -> downtimeService.create(projectParams, recurringDowntimeDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("No Monitored services added");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateDowntimeFailureForDuplicateMonitoredService() {
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(List.of(EntityDetails.builder()
+                                           .entityRef(builderFactory.getContext().getMonitoredServiceIdentifier())
+                                           .enabled(true)
+                                           .build(),
+                EntityDetails.builder()
+                    .entityRef(builderFactory.getContext().getMonitoredServiceIdentifier())
+                    .enabled(true)
+                    .build()))
+            .build());
+    assertThatThrownBy(() -> downtimeService.create(projectParams, recurringDowntimeDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Duplicate Monitored services added");
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testDeleteSuccess() {
     downtimeService.create(projectParams, recurringDowntimeDTO);
     boolean response = downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier());
@@ -220,6 +458,98 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
         .deleteFutureDowntimeInstances(projectParams, recurringDowntimeDTO.getIdentifier());
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteOnetimeSuccess() {
+    downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
+    boolean response = downtimeService.delete(projectParams, oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
+    assertThat(response).isEqualTo(true);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .deleteFutureDowntimeInstances(projectParams, oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteSuccessForOnlyFutureInstances() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllInstances(
+            projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    LocalDateTime dateTime =
+        LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).minusDays(1);
+    clock = Clock.fixed(dateTime.atZone(ZoneId.of(recurringDowntimeDTO.getSpec().getSpec().getTimezone())).toInstant(),
+        ZoneId.of("UTC"));
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    boolean response = downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier());
+    assertThat(response).isEqualTo(true);
+    entityUnavailabilityStatusesDTOS = entityUnavailabilityStatusesService.getAllInstances(
+        projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteFailureForActiveInstances() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllInstances(
+            projectParams, EntityType.MAINTENANCE_WINDOW, oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    assertThat(entityUnavailabilityStatusesDTOS.get(0).getStartTime())
+        .isEqualTo(DateTimeUtils.getEpochValueFromDateString(
+            oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getStartDateTime(),
+            oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getTimezone()));
+    assertThat(entityUnavailabilityStatusesDTOS.get(0).getEndTime())
+        .isEqualTo(DateTimeUtils.getEpochValueFromDateString(
+            ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) oneTimeEndTimeBasedDowntimeDTO
+                                                                .getSpec()
+                                                                .getSpec())
+                    .getSpec())
+                .getEndDateTime(),
+            "UTC"));
+    LocalDateTime dateTime =
+        LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).plusMinutes(10);
+    clock = Clock.fixed(dateTime.atZone(ZoneId.of(recurringDowntimeDTO.getSpec().getSpec().getTimezone())).toInstant(),
+        ZoneId.of("UTC"));
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    assertThatThrownBy(() -> downtimeService.delete(projectParams, oneTimeEndTimeBasedDowntimeDTO.getIdentifier()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
+            oneTimeEndTimeBasedDowntimeDTO.getIdentifier(), projectParams.getAccountIdentifier(),
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDeleteFailureForActiveRecurringInstances() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllInstances(
+            projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    clock = Clock.fixed(
+        Instant.ofEpochSecond(entityUnavailabilityStatusesDTOS.get(1).getStartTime()).plus(10, ChronoUnit.MINUTES),
+        ZoneId.of("UTC"));
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    assertThatThrownBy(() -> downtimeService.delete(projectParams, recurringDowntimeDTO.getIdentifier()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can't be deleted, as it has a a past/current instance of downtime, where deleting it can impact SLO adversely.",
+            recurringDowntimeDTO.getIdentifier(), projectParams.getAccountIdentifier(),
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
+  }
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
@@ -254,8 +584,11 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     recurringDowntimeDTO.setCategory(DowntimeCategory.DEPLOYMENT);
     recurringDowntimeDTO.setSpec(oneTimeDurationBasedDowntimeDTO.getSpec());
     recurringDowntimeDTO.setTags(new HashMap<>());
-    recurringDowntimeDTO.setEntityRefs(
-        Collections.singletonList(EntityDetails.builder().entityRef("service1_env1").build()));
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(
+                Collections.singletonList(EntityDetails.builder().enabled(true).entityRef("service1_env1").build()))
+            .build());
     DowntimeResponse response =
         downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO);
     futureInstances = downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
@@ -270,6 +603,264 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateFailureForInvalidEndTimeDowntimeFailure() {
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    ((RecurringDowntimeSpec) recurringDowntimeDTO.getSpec().getSpec())
+        .setRecurrenceEndDateTime(dtf.format(LocalDateTime.now(clock).plusDays(3 * 365 + 1)));
+    assertThatThrownBy(
+        () -> downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("EndTime can't be more than 3 years from now.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateFailureForNoMonitoredServiceDowntimeFailure() {
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder().entityIdentifiers(Collections.emptyList()).build());
+    assertThatThrownBy(
+        () -> downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("No Monitored services added"));
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateEntitiesRuleInDowntimeHistoryWithActiveInstanceReturnsPreviousSuccess()
+      throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .serviceRef("service1")
+                                                  .environmentRef("env1")
+                                                  .identifier("service1_env1")
+                                                  .build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    EntitiesRule prevRule = AllEntitiesRule.builder().build();
+    recurringDowntimeDTO.setEntitiesRule(prevRule);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllInstances(
+            projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    clock = Clock.fixed(
+        Instant.ofEpochSecond(entityUnavailabilityStatusesDTOS.get(1).getStartTime()).plus(10, ChronoUnit.MINUTES),
+        ZoneId.of("UTC"));
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
+
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(
+                Collections.singletonList(EntityDetails.builder().enabled(true).entityRef("service1_env1").build()))
+            .build());
+    DowntimeResponse response =
+        downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    PageResponse<DowntimeHistoryView> downtimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeHistoryViewPageResponse.getPageItemCount()).isEqualTo(2);
+    assertThat(downtimeHistoryViewPageResponse.getContent().size()).isEqualTo(2);
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getName()).isEqualTo(recurringDowntimeDTO.getName());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getIdentifier())
+        .isEqualTo(recurringDowntimeDTO.getIdentifier());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getCategory())
+        .isEqualTo(recurringDowntimeDTO.getCategory());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getStartDateTime())
+        .isEqualTo(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getEndDateTime())
+        .isEqualTo(dtf.format(
+            LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).plusMinutes(30)));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getDowntimeDetails())
+        .isEqualTo(recurringDowntimeDTO.getSpec());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getAffectedEntities().get(0))
+        .isEqualTo(prevRule.getAffectedEntity().get());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getDuration())
+        .isEqualTo(DowntimeDuration.builder().durationValue(30).durationType(DowntimeDurationType.MINUTES).build());
+
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getStartDateTime())
+        .isEqualTo(DateTimeUtils.getDateStringFromEpoch(entityUnavailabilityStatusesDTOS.get(1).getStartTime(), "UTC"));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getEndDateTime())
+        .isEqualTo(dtf.format(LocalDateTime.now(clock)));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().get(0))
+        .isEqualTo(prevRule.getAffectedEntity().get());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testDisabledDowntimeHistoryWithActiveInstanceReturnsPreviousSuccess() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .serviceRef("service1")
+                                                  .environmentRef("env1")
+                                                  .identifier("service1_env1")
+                                                  .build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    EntitiesRule prevRule = AllEntitiesRule.builder().build();
+    recurringDowntimeDTO.setEntitiesRule(prevRule);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllInstances(
+            projectParams, EntityType.MAINTENANCE_WINDOW, recurringDowntimeDTO.getIdentifier());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(53);
+    clock = Clock.fixed(
+        Instant.ofEpochSecond(entityUnavailabilityStatusesDTOS.get(1).getStartTime()).plus(10, ChronoUnit.MINUTES),
+        ZoneId.of("UTC"));
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
+
+    DowntimeResponse response =
+        downtimeService.enableOrDisable(projectParams, recurringDowntimeDTO.getIdentifier(), false);
+    recurringDowntimeDTO.setEnabled(false);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    PageResponse<DowntimeHistoryView> downtimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeHistoryViewPageResponse.getPageItemCount()).isEqualTo(2);
+    assertThat(downtimeHistoryViewPageResponse.getContent().size()).isEqualTo(2);
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getName()).isEqualTo(recurringDowntimeDTO.getName());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getIdentifier())
+        .isEqualTo(recurringDowntimeDTO.getIdentifier());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getCategory())
+        .isEqualTo(recurringDowntimeDTO.getCategory());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getStartDateTime())
+        .isEqualTo(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getEndDateTime())
+        .isEqualTo(dtf.format(
+            LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).plusMinutes(30)));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getDowntimeDetails())
+        .isEqualTo(recurringDowntimeDTO.getSpec());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getAffectedEntities().get(0))
+        .isEqualTo(prevRule.getAffectedEntity().get());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getDuration())
+        .isEqualTo(DowntimeDuration.builder().durationValue(30).durationType(DowntimeDurationType.MINUTES).build());
+
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getStartDateTime())
+        .isEqualTo(DateTimeUtils.getDateStringFromEpoch(entityUnavailabilityStatusesDTOS.get(1).getStartTime(), "UTC"));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getEndDateTime())
+        .isEqualTo(dtf.format(LocalDateTime.now(clock)));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().get(0))
+        .isEqualTo(prevRule.getAffectedEntity().get());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getDuration())
+        .isEqualTo(DowntimeDuration.builder().durationValue(10).durationType(DowntimeDurationType.MINUTES).build());
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateEntitiesRuleInDowntimeHistoryReturnsPreviousSuccess() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .serviceRef("service1")
+                                                  .environmentRef("env1")
+                                                  .identifier("service1_env1")
+                                                  .build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    EntitiesRule prevRule = AllEntitiesRule.builder().build();
+    recurringDowntimeDTO.setEntitiesRule(prevRule);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    LocalDateTime dateTime =
+        LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).plusDays(7);
+    clock = Clock.fixed(dateTime.atZone(ZoneId.of(recurringDowntimeDTO.getSpec().getSpec().getTimezone())).toInstant(),
+        ZoneId.of("UTC"));
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
+    FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
+
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(
+                Collections.singletonList(EntityDetails.builder().enabled(true).entityRef("service1_env1").build()))
+            .build());
+    DowntimeResponse response =
+        downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO);
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+    PageResponse<DowntimeHistoryView> downtimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeHistoryViewPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(downtimeHistoryViewPageResponse.getContent().size()).isEqualTo(1);
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getName()).isEqualTo(recurringDowntimeDTO.getName());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getIdentifier())
+        .isEqualTo(recurringDowntimeDTO.getIdentifier());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getCategory())
+        .isEqualTo(recurringDowntimeDTO.getCategory());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getStartDateTime())
+        .isEqualTo(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getEndDateTime())
+        .isEqualTo(dtf.format(
+            LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).plusMinutes(30)));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getDowntimeDetails())
+        .isEqualTo(recurringDowntimeDTO.getSpec());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().get(0))
+        .isEqualTo(prevRule.getAffectedEntity().get());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getDuration())
+        .isEqualTo(DowntimeDuration.builder().durationValue(30).durationType(DowntimeDurationType.MINUTES).build());
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateDowntimeWithALLEntitiesSuccess() {
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .serviceRef("service1")
+                                                  .environmentRef("env1")
+                                                  .identifier("service1_env1")
+                                                  .build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    recurringDowntimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
+    List<Pair<Long, Long>> futureInstances =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    recurringDowntimeDTO.setName("New Downtime");
+    recurringDowntimeDTO.setDescription("New description");
+    recurringDowntimeDTO.setCategory(DowntimeCategory.DEPLOYMENT);
+    recurringDowntimeDTO.setSpec(oneTimeDurationBasedDowntimeDTO.getSpec());
+    recurringDowntimeDTO.setTags(new HashMap<>());
+    recurringDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(
+                Collections.singletonList(EntityDetails.builder().enabled(true).entityRef("service1_env1").build()))
+            .build());
+    DowntimeResponse response =
+        downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO);
+    futureInstances = downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+                          .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+            projectParams, recurringDowntimeDTO, futureInstances);
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    verify(entityUnavailabilityStatusesServiceMock)
+        .getEntityUnavaialabilityStatusesDTOs(projectParams, recurringDowntimeDTO, futureInstances);
+    verify(entityUnavailabilityStatusesServiceMock).update(any(), any(), any());
+    assertThat(response.getDowntimeDTO()).isEqualTo(recurringDowntimeDTO);
+  }
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
@@ -344,11 +935,11 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testUpdateDowntimeFailureForInvalidEndTime() {
+  public void testUpdateDowntimeFailureForInvalidEndDateTime() {
     downtimeService.create(projectParams, recurringDowntimeDTO);
     DowntimeSpec recurringDowntimeDTOSpec = recurringDowntimeDTO.getSpec().getSpec();
-    long endTime = recurringDowntimeDTOSpec.getStartTime() + Duration.ofDays(3 * 365 + 1).toSeconds();
-    ((RecurringDowntimeSpec) recurringDowntimeDTOSpec).setRecurrenceEndTime(endTime);
+    String endDateTime = dtf.format(LocalDateTime.now(clock).plusDays(3 * 365 + 1));
+    ((RecurringDowntimeSpec) recurringDowntimeDTOSpec).setRecurrenceEndDateTime(endDateTime);
     recurringDowntimeDTO.getSpec().setSpec(recurringDowntimeDTOSpec);
     assertThatThrownBy(
         () -> downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO))
@@ -361,8 +952,10 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpdateDowntimeFailureForInvalidMonitoredService() {
     downtimeService.create(projectParams, recurringDowntimeDTO);
-    recurringDowntimeDTO.setEntityRefs(
-        Collections.singletonList(EntityDetails.builder().entityRef("identifier").build()));
+    recurringDowntimeDTO.setEntitiesRule(EntityIdentifiersRule.builder()
+                                             .entityIdentifiers(Collections.singletonList(
+                                                 EntityDetails.builder().enabled(true).entityRef("identifier").build()))
+                                             .build());
     assertThatThrownBy(
         () -> downtimeService.update(projectParams, recurringDowntimeDTO.getIdentifier(), recurringDowntimeDTO))
         .isInstanceOf(InvalidRequestException.class)
@@ -370,6 +963,86 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
             String.format("Monitored Service identifier for account %s, org %s, and project %s are not present.",
                 projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
                 projectParams.getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testListView() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    oneTimeEndTimeBasedDowntimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
+    oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().setStartTime(
+        clock.instant().plus(5, ChronoUnit.MINUTES).getEpochSecond());
+    oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(LocalDateTime.now(clock).plusMinutes(5)));
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
+    downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
+
+    List<Pair<Long, Long>> futureInstancesOfRecurringDTO =
+        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
+            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
+    LocalDateTime dateTime = LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf);
+    clock = Clock.fixed(dateTime.atZone(ZoneId.of(recurringDowntimeDTO.getSpec().getSpec().getTimezone())).toInstant(),
+        ZoneId.of("UTC"));
+    PageResponse<DowntimeListView> downtimeListViewPageResponse = downtimeService.list(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeListViewPageResponse.getPageItemCount()).isEqualTo(3);
+    assertThat(downtimeListViewPageResponse.getContent().size()).isEqualTo(3);
+
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getName())
+        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getName());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getLastModified().getLastModifiedBy())
+        .isEqualTo(testUserProvider.activeUser().getEmail());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getIdentifier())
+        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getCategory())
+        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getCategory());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getSpec())
+        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getSpec());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getDescription())
+        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getDescription());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getDuration())
+        .isEqualTo(DowntimeDuration.builder().durationType(DowntimeDurationType.MINUTES).durationValue(25).build());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).isEnabled())
+        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.isEnabled());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getDowntimeStatusDetails())
+        .isEqualTo(
+            DowntimeStatusDetails.builder()
+                .status(DowntimeStatus.SCHEDULED)
+                .startTime(DateTimeUtils.getEpochValueFromDateString(
+                    oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getStartDateTime(),
+                    oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getTimezone()))
+                .endTime(DateTimeUtils.getEpochValueFromDateString(
+                    ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) oneTimeEndTimeBasedDowntimeDTO
+                                                                        .getSpec()
+                                                                        .getSpec())
+                            .getSpec())
+                        .getEndDateTime(),
+                    "UTC"))
+                .endDateTime(
+                    ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) oneTimeEndTimeBasedDowntimeDTO
+                                                                        .getSpec()
+                                                                        .getSpec())
+                            .getSpec())
+                        .getEndDateTime())
+                .build());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getPastOrActiveInstancesCount()).isEqualTo(0);
+
+    assertThat(downtimeListViewPageResponse.getContent().get(2).getName()).isEqualTo(recurringDowntimeDTO.getName());
+    assertThat(downtimeListViewPageResponse.getContent().get(2).getDowntimeStatusDetails())
+        .isEqualTo(DowntimeStatusDetails.builder()
+                       .status(DowntimeStatus.ACTIVE)
+                       .startTime(futureInstancesOfRecurringDTO.get(0).getLeft())
+                       .endTime(futureInstancesOfRecurringDTO.get(0).getRight())
+                       .endDateTime(
+                           DateTimeUtils.getDateStringFromEpoch(futureInstancesOfRecurringDTO.get(0).getRight(), "UTC"))
+                       .build());
+
+    assertThat(downtimeListViewPageResponse.getContent().get(1).getName())
+        .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+    assertThat(downtimeListViewPageResponse.getContent().get(1).getPastOrActiveInstancesCount()).isEqualTo(1);
   }
 
   @Test
@@ -398,63 +1071,43 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = VARSHA_LALWANI)
+  @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testListView() throws IllegalAccessException {
+  public void testListView_AfterDeletingMS() throws IllegalAccessException {
     FieldUtils.writeField(
         downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
-    oneTimeDurationBasedDowntimeDTO.setEnabled(false);
-    downtimeService.create(projectParams, recurringDowntimeDTO);
-    downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
-    downtimeService.create(projectParams, oneTimeEndTimeBasedDowntimeDTO);
+    String msIdentifier = "msIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO1.setIdentifier(msIdentifier);
+    monitoredServiceDTO1.setServiceRef("demo");
+    monitoredServiceDTO1.setEnvironmentRef("testing");
+    monitoredServiceDTO1.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
 
-    List<Pair<Long, Long>> futureInstancesOfRecurringDTO =
-        downtimeTransformerMap.get(recurringDowntimeDTO.getSpec().getType())
-            .getStartAndEndTimesForFutureInstances(recurringDowntimeDTO.getSpec().getSpec());
-    clock = Clock.fixed(
-        Instant.ofEpochSecond(oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getStartTime()), ZoneId.of("UTC"));
+    oneTimeDurationBasedDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Arrays.asList(EntityDetails.builder()
+                                                 .enabled(true)
+                                                 .entityRef(builderFactory.getContext().getMonitoredServiceIdentifier())
+                                                 .build(),
+                EntityDetails.builder().enabled(true).entityRef(msIdentifier).build()))
+            .build());
+    downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
     PageResponse<DowntimeListView> downtimeListViewPageResponse = downtimeService.list(
         projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
-    assertThat(downtimeListViewPageResponse.getPageItemCount()).isEqualTo(3);
-    assertThat(downtimeListViewPageResponse.getContent().size()).isEqualTo(3);
-
+    assertThat(downtimeListViewPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(downtimeListViewPageResponse.getContent().size()).isEqualTo(1);
     assertThat(downtimeListViewPageResponse.getContent().get(0).getName())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getName());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).getIdentifier())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).getCategory())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getCategory());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).getSpec())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getSpec());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).getDescription())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getDescription());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).getDuration())
-        .isEqualTo(DowntimeDuration.builder().durationType(DowntimeDurationType.MINUTES).durationValue(30).build());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).isEnabled())
-        .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.isEnabled());
-    assertThat(downtimeListViewPageResponse.getContent().get(0).getDowntimeStatusDetails())
-        .isEqualTo(
-            DowntimeStatusDetails.builder()
-                .status(DowntimeStatus.ACTIVE)
-                .startTime(oneTimeEndTimeBasedDowntimeDTO.getSpec().getSpec().getStartTime())
-                .endTime(((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec)
-                                                                             oneTimeEndTimeBasedDowntimeDTO.getSpec()
-                                                                                 .getSpec())
-                              .getSpec())
-                             .getEndTime())
-                .build());
-
-    assertThat(downtimeListViewPageResponse.getContent().get(2).getName()).isEqualTo(recurringDowntimeDTO.getName());
-    assertThat(downtimeListViewPageResponse.getContent().get(2).getDowntimeStatusDetails())
-        .isEqualTo(DowntimeStatusDetails.builder()
-                       .status(DowntimeStatus.ACTIVE)
-                       .startTime(futureInstancesOfRecurringDTO.get(0).getLeft())
-                       .endTime(futureInstancesOfRecurringDTO.get(0).getRight())
-                       .build());
-
-    assertThat(downtimeListViewPageResponse.getContent().get(1).getName())
         .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
-    assertThat(downtimeListViewPageResponse.getContent().get(1).getDowntimeStatusDetails()).isEqualTo(null);
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(2);
+    assertThat(
+        downtimeListViewPageResponse.getContent().get(0).getAffectedEntities().get(1).getMonitoredServiceIdentifier())
+        .isEqualTo(msIdentifier);
+
+    monitoredServiceService.delete(builderFactory.getProjectParams(), msIdentifier);
+    PageResponse<DowntimeListView> updatedDowntimeListViewPageResponse = downtimeService.list(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(updatedDowntimeListViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(1);
   }
 
   @Test
@@ -469,9 +1122,64 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testGetAssociatedMonitoredServices() {
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    List<MonitoredServiceDetail> response =
+        downtimeService.getAssociatedMonitoredServices(projectParams, recurringDowntimeDTO.getIdentifier());
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(0).getServiceName()).isEqualTo("Mocked service name");
+    assertThat(response.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMonitoredServicesAssociatedUnavailabilityInstances() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) oneTimeDurationBasedDowntimeDTO.getSpec().getSpec();
+    onetimeDowntimeSpec.setStartDateTime(dtf.format(LocalDateTime.now(clock).plusMinutes(10)));
+    oneTimeDurationBasedDowntimeDTO.getSpec().setSpec(onetimeDowntimeSpec);
+    downtimeService.create(builderFactory.getProjectParams(), oneTimeDurationBasedDowntimeDTO);
+
+    RecurringDowntimeSpec recurringDowntimeSpec = (RecurringDowntimeSpec) recurringDowntimeDTO.getSpec().getSpec();
+    recurringDowntimeSpec.setStartDateTime(dtf.format(LocalDateTime.now(clock).plusMinutes(5)));
+    recurringDowntimeDTO.getSpec().setSpec(recurringDowntimeSpec);
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+
+    Map<String, EntityUnavailabilityStatusesDTO> response =
+        downtimeService.getMonitoredServicesAssociatedUnavailabilityInstanceMap(
+            projectParams, Collections.singleton(monitoredServiceIdentifier));
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(monitoredServiceIdentifier).getStatus())
+        .isEqualTo(EntityUnavailabilityStatus.MAINTENANCE_WINDOW);
+    // will get the unavailability instance with next nearest start time
+    assertThat(response.get(monitoredServiceIdentifier).getStartTime())
+        .isEqualTo(clock.instant().plus(Duration.ofMinutes(5)).getEpochSecond());
+    assertThat(response.get(monitoredServiceIdentifier).getEndTime())
+        .isEqualTo(clock.instant().plus(Duration.ofMinutes(35)).getEpochSecond());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetAssociatedMonitoredServicesForAllMSDowntime() {
+    recurringDowntimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
+    downtimeService.create(projectParams, recurringDowntimeDTO);
+    List<MonitoredServiceDetail> response =
+        downtimeService.getAssociatedMonitoredServices(projectParams, recurringDowntimeDTO.getIdentifier());
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(0).getServiceName()).isEqualTo("Mocked service name");
+    assertThat(response.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testListHistory() throws IllegalAccessException {
     FieldUtils.writeField(
         downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    recurringDowntimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
     downtimeService.create(projectParams, recurringDowntimeDTO);
     downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
 
@@ -487,15 +1195,15 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(recurringDowntimeDTO.getIdentifier());
     assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getCategory())
         .isEqualTo(recurringDowntimeDTO.getCategory());
-    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getStartTime())
-        .isEqualTo(recurringDowntimeDTO.getSpec().getSpec().getStartTime());
-    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getEndTime())
-        .isEqualTo(recurringDowntimeDTO.getSpec().getSpec().getStartTime() + Duration.ofMinutes(30).toSeconds());
-    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities())
-        .isEqualTo(Collections.singletonList(AffectedEntity.builder()
-                                                 .serviceRef(builderFactory.getContext().getServiceIdentifier())
-                                                 .envRef(builderFactory.getContext().getEnvIdentifier())
-                                                 .build()));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getStartDateTime())
+        .isEqualTo(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getEndDateTime())
+        .isEqualTo(dtf.format(
+            LocalDateTime.parse(recurringDowntimeDTO.getSpec().getSpec().getStartDateTime(), dtf).plusMinutes(30)));
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getDowntimeDetails())
+        .isEqualTo(recurringDowntimeDTO.getSpec());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().get(0))
+        .isEqualTo(recurringDowntimeDTO.getEntitiesRule().getAffectedEntity().get());
     assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getDuration())
         .isEqualTo(DowntimeDuration.builder().durationValue(30).durationType(DowntimeDurationType.MINUTES).build());
 
@@ -503,6 +1211,13 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
     assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getIdentifier())
         .isEqualTo(oneTimeDurationBasedDowntimeDTO.getIdentifier());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getAffectedEntities())
+        .isEqualTo(Collections.singletonList(
+            AffectedEntity.builder()
+                .serviceName("Mocked service name")
+                .envName("Mocked env name")
+                .monitoredServiceIdentifier(builderFactory.getContext().getMonitoredServiceIdentifier())
+                .build()));
   }
 
   @Test
@@ -535,6 +1250,54 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getName()).isEqualTo(recurringDowntimeDTO.getName());
     assertThat(downtimeHistoryViewPageResponse.getContent().get(1).getName())
         .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListHistory_AfterDeletingMS() throws IllegalAccessException {
+    FieldUtils.writeField(
+        downtimeService, "entityUnavailabilityStatusesService", entityUnavailabilityStatusesService, true);
+    String msIdentifier = "msIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO1.setIdentifier(msIdentifier);
+    monitoredServiceDTO1.setServiceRef("demo");
+    monitoredServiceDTO1.setEnvironmentRef("testing");
+    monitoredServiceDTO1.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+
+    oneTimeDurationBasedDowntimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Arrays.asList(EntityDetails.builder()
+                                                 .enabled(true)
+                                                 .entityRef(builderFactory.getContext().getMonitoredServiceIdentifier())
+                                                 .build(),
+                EntityDetails.builder().enabled(true).entityRef(msIdentifier).build()))
+            .build());
+    downtimeService.create(projectParams, oneTimeDurationBasedDowntimeDTO);
+
+    clock = Clock.fixed(clock.instant().plus(7, ChronoUnit.DAYS), clock.getZone());
+    FieldUtils.writeField(downtimeService, "clock", clock, true);
+    FieldUtils.writeField(entityUnavailabilityStatusesService, "clock", clock, true);
+
+    PageResponse<DowntimeHistoryView> downtimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(downtimeHistoryViewPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(downtimeHistoryViewPageResponse.getContent().size()).isEqualTo(1);
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getName())
+        .isEqualTo(oneTimeDurationBasedDowntimeDTO.getName());
+    assertThat(downtimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(2);
+    assertThat(downtimeHistoryViewPageResponse.getContent()
+                   .get(0)
+                   .getAffectedEntities()
+                   .get(1)
+                   .getMonitoredServiceIdentifier())
+        .isEqualTo(msIdentifier);
+
+    monitoredServiceService.delete(builderFactory.getProjectParams(), msIdentifier);
+    PageResponse<DowntimeHistoryView> updatedDowntimeHistoryViewPageResponse = downtimeService.history(
+        projectParams, PageParams.builder().page(0).size(20).build(), new DowntimeDashboardFilter());
+    assertThat(updatedDowntimeHistoryViewPageResponse.getContent().get(0).getAffectedEntities().size()).isEqualTo(1);
   }
 
   @Test

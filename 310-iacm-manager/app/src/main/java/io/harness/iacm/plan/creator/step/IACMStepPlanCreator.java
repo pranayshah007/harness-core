@@ -20,4 +20,9 @@ public class IACMStepPlanCreator extends GenericStepPMSPlanCreator {
   public Set<String> getSupportedStepTypes() {
     return IACMCreatorUtils.getSupportedSteps();
   }
+  // Uncomment for v1
+  //  @Override
+  //  public Set<String> getSupportedStepTypes() {
+  //    return IACMCreatorUtils.getSupportedStepsV2();
+  //  }
 }

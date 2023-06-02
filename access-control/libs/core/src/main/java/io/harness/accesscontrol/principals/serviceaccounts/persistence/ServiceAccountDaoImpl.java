@@ -59,9 +59,8 @@ public class ServiceAccountDaoImpl implements ServiceAccountDao {
 
   @Override
   public Optional<ServiceAccount> delete(String identifier, String scopeIdentifier) {
-    return serviceAccountRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(u -> Optional.of(fromDBO(u)));
+    Optional<ServiceAccountDBO> optionalServiceAccountDBO =
+        serviceAccountRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
+    return optionalServiceAccountDBO.map(ServiceAccountDBOMapper::fromDBO);
   }
 }

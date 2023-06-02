@@ -21,10 +21,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.engine.execution.ExecutionInputService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
+import io.harness.steps.wait.WaitStepService;
 import io.harness.timeout.TimeoutEngine;
 import io.harness.waiter.persistence.SpringPersistenceWrapper;
 
@@ -45,6 +49,10 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
   @Mock private SpringPersistenceWrapper springPersistenceWrapper;
   @Mock private TimeoutEngine timeoutEngine;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
+  @Mock private PlanService planService;
+  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock private WaitStepService waitStepService;
+  @Mock private ExecutionInputService executionInputService;
   @Mock private ApprovalInstanceService approvalInstanceService;
   @InjectMocks NodeExecutionMetadataDeleteObserver nodeExecutionMetadataDeleteObserver;
   @Before
@@ -61,6 +69,10 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
     verify(springPersistenceWrapper, times(0)).deleteWaitInstancesAndMetadata(any());
     verify(timeoutEngine, times(0)).deleteTimeouts(any());
     verify(resourceRestraintInstanceService, times(0)).deleteInstancesForGivenReleaseType(any(), any());
+    verify(planService, times(0)).deleteNodesForGivenIds(any());
+    verify(pmsGraphStepDetailsService, times(0)).deleteNodeExecutionInfoForGivenIds(any());
+    verify(waitStepService, times(0)).deleteWaitStepInstancesForGivenNodeExecutionIds(any());
+    verify(executionInputService, times(0)).deleteExecutionInputInstanceForGivenNodeExecutionIds(any());
 
     List<NodeExecution> nodeExecutionList = new LinkedList<>();
     nodeExecutionList.add(NodeExecution.builder().uuid(UUIDGenerator.generateUuid()).build());
@@ -71,6 +83,10 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
     verify(springPersistenceWrapper, times(1)).deleteWaitInstancesAndMetadata(any());
     verify(timeoutEngine, times(1)).deleteTimeouts(any());
     verify(resourceRestraintInstanceService, times(1)).deleteInstancesForGivenReleaseType(any(), any());
+    verify(planService, times(1)).deleteNodesForGivenIds(any());
+    verify(pmsGraphStepDetailsService, times(1)).deleteNodeExecutionInfoForGivenIds(any());
+    verify(waitStepService, times(1)).deleteWaitStepInstancesForGivenNodeExecutionIds(any());
+    verify(executionInputService, times(1)).deleteExecutionInputInstanceForGivenNodeExecutionIds(any());
     verify(approvalInstanceService, times(1)).deleteByNodeExecutionIds(any());
   }
 

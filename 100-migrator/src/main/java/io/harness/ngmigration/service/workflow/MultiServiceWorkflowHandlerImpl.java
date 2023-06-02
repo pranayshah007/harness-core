@@ -8,37 +8,25 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.plancreator.stages.StageElementWrapperConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
-import software.wings.beans.GraphNode;
-import software.wings.beans.MultiServiceOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
-import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
-  @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
-
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
-    return TemplateEntityType.PIPELINE_TEMPLATE;
-  }
-
-  @Override
-  public List<GraphNode> getSteps(Workflow workflow) {
-    MultiServiceOrchestrationWorkflow orchestrationWorkflow =
-        (MultiServiceOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
-        orchestrationWorkflow.getPostDeploymentSteps());
+    return shouldCreateStageTemplate(workflow) ? TemplateEntityType.STAGE_TEMPLATE
+                                               : TemplateEntityType.PIPELINE_TEMPLATE;
   }
 
   PhaseStep getPreDeploymentPhase(Workflow workflow) {
@@ -54,8 +42,18 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return buildMultiStagePipelineTemplate(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
+  public List<StageElementWrapperConfig> asStages(MigrationContext migrationContext, Workflow workflow) {
+    WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    wfContext.setWorkflowVarsAsPipeline(true);
+    List<AbstractStageNode> stages = getStagesForMultiServiceWorkflow(migrationContext, wfContext);
+    return stages.stream()
+        .map(stage -> StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stage)).build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow) {
+    return buildMultiStagePipelineTemplate(
+        migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }
 }

@@ -16,6 +16,7 @@ import io.harness.springdata.HMongoTemplate;
 import com.google.inject.Injector;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -26,10 +27,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.DbRefResolver;
+import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @Configuration
@@ -62,15 +68,25 @@ public class AuditEventStreamingPersistenceConfig extends AbstractMongoClientCon
 
   @Override
   protected String getDatabaseName() {
-    return "ng-audits";
+    return new MongoClientURI(mongoConfig.getUri()).getDatabase();
   }
 
   @Bean(name = "primary")
   @Primary
-  public MongoTemplate mongoTemplate() throws Exception {
-    MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
-    mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, mongoConfig);
+  }
+
+  @Bean
+  public MappingMongoConverter mappingMongoConverter(MongoDatabaseFactory databaseFactory,
+      MongoCustomConversions customConversions, MongoMappingContext mappingContext) {
+    DbRefResolver dbRefResolver = new DefaultDbRefResolver(databaseFactory);
+    MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
+    converter.setCustomConversions(customConversions);
+    converter.setCodecRegistryProvider(databaseFactory);
+    converter.setMapKeyDotReplacement(DOT_REPLACEMENT);
+
+    return converter;
   }
 
   @Override

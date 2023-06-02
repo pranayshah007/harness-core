@@ -12,20 +12,15 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
-
-	"github.com/cenkalti/backoff"
-
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
-	logger "github.com/harness/harness-core/commons/go/lib/logs"
+	"github.com/cenkalti/backoff"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
-	"go.uber.org/zap"
 )
 
 var _ Client = (*HTTPClient)(nil)
@@ -46,11 +41,19 @@ var defaultClient = &http.Client{
 }
 
 // NewHTTPClient returns a new HTTPClient.
-func NewHTTPClient(endpoint, accountID, token string, skipverify bool, additionalCertsDir string) *HTTPClient {
+func NewHTTPClient(endpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha, commitLink string, skipverify bool, additionalCertsDir string) *HTTPClient {
 	client := &HTTPClient{
 		Endpoint:   endpoint,
-		AccountID:  accountID,
 		Token:      token,
+		AccountID:  accountID,
+		OrgID:      orgID,
+		ProjectID:  projectID,
+		PipelineID: pipelineID,
+		BuildID:    buildID,
+		StageID:    stageID,
+		Repo:       repo,
+		Sha:        sha,
+		CommitLink: commitLink,
 		SkipVerify: skipverify,
 	}
 	if skipverify {
@@ -131,77 +134,84 @@ type HTTPClient struct {
 	Endpoint   string // Example: http://localhost:port
 	Token      string
 	AccountID  string
+	OrgID      string
+	ProjectID  string
+	PipelineID string
+	BuildID    string
+	StageID    string
+	Repo       string
+	Sha        string
+	CommitLink string
 	SkipVerify bool
 }
 
 // Write writes test results to the TI server
-func (c *HTTPClient) Write(ctx context.Context, org, project, pipeline, build, stage, step, report, repo, sha, commitLink string, tests []*types.TestCase) error {
-	path := fmt.Sprintf(dbEndpoint, c.AccountID, org, project, pipeline, build, stage, step, report, repo, sha, commitLink)
-	ctx = context.WithValue(ctx, "reqId", sha)
-	_, err := c.do(ctx, c.Endpoint+path, "POST", &tests, nil)
+func (c *HTTPClient) Write(ctx context.Context, stepID, report string, tests []*types.TestCase) error {
+	if err := c.validateWriteArgs(stepID, report); err != nil {
+		return err
+	}
+	path := fmt.Sprintf(dbEndpoint, c.AccountID, c.OrgID, c.ProjectID, c.PipelineID, c.BuildID, c.StageID, stepID, report, c.Repo, c.Sha, c.CommitLink)
+	_, err := c.do(ctx, c.Endpoint+path, "POST", c.Sha, &tests, nil) //nolint:bodyclose
 	return err
 }
 
+// DownloadLink returns a list of links where the relevant agent artifacts can be downloaded
 func (c *HTTPClient) DownloadLink(ctx context.Context, language, os, arch, framework, version, env string) ([]types.DownloadLink, error) {
-	path := fmt.Sprintf(agentEndpoint, c.AccountID, language, os, arch, framework, version, env)
 	var resp []types.DownloadLink
-	ctx = context.WithValue(ctx, "reqId", "")
-	_, err := c.do(ctx, c.Endpoint+path, "GET", nil, &resp)
+	if err := c.validateDownloadLinkArgs(language); err != nil {
+		return resp, err
+	}
+	path := fmt.Sprintf(agentEndpoint, c.AccountID, language, os, arch, framework, version, env)
+	_, err := c.do(ctx, c.Endpoint+path, "GET", "", nil, &resp) //nolint:bodyclose
 	return resp, err
 }
 
 // SelectTests returns a list of tests which should be run intelligently
-func (c *HTTPClient) SelectTests(ctx context.Context, org, project, pipeline, build, stage, step, repo, sha, source, target, body string) (types.SelectTestsResp, error) {
-	path := fmt.Sprintf(testEndpoint, c.AccountID, org, project, pipeline, build, stage, step, repo, sha, source, target)
+func (c *HTTPClient) SelectTests(ctx context.Context, stepID, source, target string, in *types.SelectTestsReq) (types.SelectTestsResp, error) {
 	var resp types.SelectTestsResp
-	var e types.SelectTestsReq
-	err := json.Unmarshal([]byte(body), &e)
-	if err != nil {
-		return types.SelectTestsResp{}, err
+	if err := c.validateSelectTestsArgs(stepID, source, target); err != nil {
+		return resp, err
 	}
-	ctx = context.WithValue(ctx, "reqId", sha)
-	_, err = c.do(ctx, c.Endpoint+path, "POST", &e, &resp)
+	path := fmt.Sprintf(testEndpoint, c.AccountID, c.OrgID, c.ProjectID, c.PipelineID, c.BuildID, c.StageID, stepID, c.Repo, c.Sha, source, target)
+	_, err := c.do(ctx, c.Endpoint+path, "POST", c.Sha, in, &resp) //nolint:bodyclose
 	return resp, err
 }
 
 // UploadCg uploads avro encoded callgraph to server
-func (c *HTTPClient) UploadCg(ctx context.Context, org, project, pipeline, build, stage, step, repo, sha, source, target string, timeMs int64, cg []byte) error {
-	path := fmt.Sprintf(cgEndpoint, c.AccountID, org, project, pipeline, build, stage, step, repo, sha, source, target, timeMs)
-	ctx = context.WithValue(ctx, "reqId", sha)
+func (c *HTTPClient) UploadCg(ctx context.Context, stepID, source, target string, timeMs int64, cg []byte) error {
+	if err := c.validateUploadCgArgs(stepID, source, target); err != nil {
+		return err
+	}
+	path := fmt.Sprintf(cgEndpoint, c.AccountID, c.OrgID, c.ProjectID, c.PipelineID, c.BuildID, c.StageID, stepID, c.Repo, c.Sha, source, target, timeMs)
 	backoff := createBackoff(45 * 60 * time.Second)
-	_, err := c.retry(ctx, c.Endpoint+path, "POST", &cg, nil, false, backoff)
+	_, err := c.retry(ctx, c.Endpoint+path, "POST", c.Sha, &cg, nil, false, backoff)
 	return err
 }
 
 // GetTestTimes gets test timing data
-func (c *HTTPClient) GetTestTimes(ctx context.Context, org, project, pipeline, reqBody string) (types.GetTestTimesResp, error) {
-	ctx = context.WithValue(ctx, "reqId", "")
-	path := fmt.Sprintf(getTestsTimesEndpoint, c.AccountID, org, project, pipeline)
-
-	var req types.GetTestTimesReq
-	err := json.Unmarshal([]byte(reqBody), &req)
-	if err != nil {
-		return types.GetTestTimesResp{}, err
-	}
-
+func (c *HTTPClient) GetTestTimes(ctx context.Context, in *types.GetTestTimesReq) (types.GetTestTimesResp, error) {
 	var resp types.GetTestTimesResp
-	_, err = c.do(ctx, c.Endpoint+path, "POST", &req, &resp)
+	if err := c.validateGetTestTimesArgs(); err != nil {
+		return resp, err
+	}
+	path := fmt.Sprintf(getTestsTimesEndpoint, c.AccountID, c.OrgID, c.ProjectID, c.PipelineID)
+	_, err := c.do(ctx, c.Endpoint+path, "POST", "", in, &resp) //nolint:bodyclose
 	return resp, err
 }
 
-func (c *HTTPClient) retry(ctx context.Context, method, path string, in, out interface{}, isOpen bool, b backoff.BackOff) (*http.Response, error) {
+func (c *HTTPClient) retry(ctx context.Context, method, path, sha string, in, out interface{}, isOpen bool, b backoff.BackOff) (*http.Response, error) {
 	for {
 		var res *http.Response
 		var err error
 		if !isOpen {
-			res, err = c.do(ctx, method, path, in, out)
+			res, err = c.do(ctx, method, path, sha, in, out)
 		} else {
 			res, err = c.open(ctx, method, path, in.(io.Reader))
 		}
 
 		// do not retry on Canceled or DeadlineExceeded
 		if err := ctx.Err(); err != nil {
-			logger.FromContext(ctx).Errorw("http: context canceled", "path", path, zap.Error(err))
+			// Context cancelled
 			return res, err
 		}
 
@@ -213,7 +223,7 @@ func (c *HTTPClient) retry(ctx context.Context, method, path string, in, out int
 			// 5xx's are typically not permanent errors and may
 			// relate to outages on the server side.
 			if res.StatusCode >= 500 {
-				logger.FromContext(ctx).Errorw("http: ti-server error: reconnect and retry", "path", path, zap.Error(err))
+				// TI server error: Reconnect and retry
 				if duration == backoff.Stop {
 					return nil, err
 				}
@@ -221,7 +231,7 @@ func (c *HTTPClient) retry(ctx context.Context, method, path string, in, out int
 				continue
 			}
 		} else if err != nil {
-			logger.FromContext(ctx).Errorw("http: request error. Retrying ...", "path", path, zap.Error(err))
+			// Request error: Retry
 			if duration == backoff.Stop {
 				return nil, err
 			}
@@ -234,12 +244,14 @@ func (c *HTTPClient) retry(ctx context.Context, method, path string, in, out int
 
 // do is a helper function that posts a signed http request with
 // the input encoded and response decoded from json.
-func (c *HTTPClient) do(ctx context.Context, path, method string, in, out interface{}) (*http.Response, error) {
+func (c *HTTPClient) do(ctx context.Context, path, method, sha string, in, out interface{}) (*http.Response, error) { //nolint:unparam
 	var r io.Reader
 
 	if in != nil {
 		buf := new(bytes.Buffer)
-		json.NewEncoder(buf).Encode(in)
+		if err := json.NewEncoder(buf).Encode(in); err != nil {
+			return nil, err
+		}
 		r = buf
 	}
 
@@ -252,8 +264,7 @@ func (c *HTTPClient) do(ctx context.Context, path, method string, in, out interf
 	// the agent and server for authorization.
 	req.Header.Add("X-Harness-Token", c.Token)
 	// adding sha as request-id for logging context
-	sha := ctx.Value("reqId").(string)
-	if len(sha) != 0 {
+	if sha != "" {
 		req.Header.Add("X-Request-ID", sha)
 	}
 	res, err := c.client().Do(req)
@@ -261,7 +272,8 @@ func (c *HTTPClient) do(ctx context.Context, path, method string, in, out interf
 		defer func() {
 			// drain the response body so we can reuse
 			// this connection.
-			io.Copy(ioutil.Discard, io.LimitReader(res.Body, 4096))
+			if _, cerr := io.Copy(io.Discard, io.LimitReader(res.Body, 4096)); cerr != nil {
+			}
 			res.Body.Close()
 		}()
 	}
@@ -272,27 +284,25 @@ func (c *HTTPClient) do(ctx context.Context, path, method string, in, out interf
 	// if the response body return no content we exit
 	// immediately. We do not read or unmarshal the response
 	// and we do not return an error.
-	if res.StatusCode == 204 {
+	if res.StatusCode == http.StatusNoContent {
 		return res, nil
 	}
 
 	// else read the response body into a byte slice.
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return res, err
 	}
 
-	if res.StatusCode > 299 {
+	if res.StatusCode >= http.StatusMultipleChoices {
 		// if the response body includes an error message
 		// we should return the error string.
 		if len(body) != 0 {
 			out := new(Error)
-			if err := json.Unmarshal(body, out); err != nil {
-				return res, out
+			if err := json.Unmarshal(body, out); err == nil {
+				return res, &Error{Code: res.StatusCode, Message: out.Message}
 			}
-			return res, errors.New(
-				string(body),
-			)
+			return res, &Error{Code: res.StatusCode, Message: string(body)}
 		}
 		// if the response body is empty we should return
 		// the default status code text.
@@ -306,6 +316,15 @@ func (c *HTTPClient) do(ctx context.Context, path, method string, in, out interf
 	return res, json.Unmarshal(body, out)
 }
 
+// client is a helper function that returns the default client
+// if a custom client is not defined.
+func (c *HTTPClient) client() *http.Client {
+	if c.Client == nil {
+		return defaultClient
+	}
+	return c.Client
+}
+
 // helper function to open an http request
 func (c *HTTPClient) open(ctx context.Context, path, method string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, method, path, body)
@@ -316,15 +335,6 @@ func (c *HTTPClient) open(ctx context.Context, path, method string, body io.Read
 	return c.client().Do(req)
 }
 
-// client is a helper function that returns the default client
-// if a custom client is not defined.
-func (c *HTTPClient) client() *http.Client {
-	if c.Client == nil {
-		return defaultClient
-	}
-	return c.Client
-}
-
 func createInfiniteBackoff() *backoff.ExponentialBackOff {
 	return createBackoff(0)
 }
@@ -333,4 +343,119 @@ func createBackoff(maxElapsedTime time.Duration) *backoff.ExponentialBackOff {
 	exp := backoff.NewExponentialBackOff()
 	exp.MaxElapsedTime = maxElapsedTime
 	return exp
+}
+
+func (c *HTTPClient) validateTiArgs() error {
+	if c.Endpoint == "" {
+		return fmt.Errorf("ti endpoint is not set")
+	}
+	if c.Token == "" {
+		return fmt.Errorf("ti token is not set")
+	}
+	return nil
+}
+
+func (c *HTTPClient) validateBasicArgs() error {
+	if c.AccountID == "" {
+		return fmt.Errorf("accountID is not set")
+	}
+	if c.OrgID == "" {
+		return fmt.Errorf("orgID is not set")
+	}
+	if c.ProjectID == "" {
+		return fmt.Errorf("projectID is not set")
+	}
+	if c.PipelineID == "" {
+		return fmt.Errorf("pipelineID is not set")
+	}
+	return nil
+}
+
+func (c *HTTPClient) validateWriteArgs(stepID, report string) error {
+	if err := c.validateTiArgs(); err != nil {
+		return err
+	}
+	if err := c.validateBasicArgs(); err != nil {
+		return err
+	}
+	if c.BuildID == "" {
+		return fmt.Errorf("buildID is not set")
+	}
+	if c.StageID == "" {
+		return fmt.Errorf("stageID is not set")
+	}
+	if stepID == "" {
+		return fmt.Errorf("stepID is not set")
+	}
+	if report == "" {
+		return fmt.Errorf("report is not set")
+	}
+	return nil
+}
+
+func (c *HTTPClient) validateDownloadLinkArgs(language string) error {
+	if err := c.validateTiArgs(); err != nil {
+		return err
+	}
+	if language == "" {
+		return fmt.Errorf("language is not set")
+	}
+	return nil
+}
+
+func (c *HTTPClient) validateSelectTestsArgs(stepID, source, target string) error {
+	if err := c.validateTiArgs(); err != nil {
+		return err
+	}
+	if err := c.validateBasicArgs(); err != nil {
+		return err
+	}
+	if c.BuildID == "" {
+		return fmt.Errorf("buildID is not set")
+	}
+	if c.StageID == "" {
+		return fmt.Errorf("stageID is not set")
+	}
+	if stepID == "" {
+		return fmt.Errorf("stepID is not set")
+	}
+	if source == "" {
+		return fmt.Errorf("source branch is not set")
+	}
+	if target == "" {
+		return fmt.Errorf("target branch is not set")
+	}
+	return nil
+}
+
+func (c *HTTPClient) validateUploadCgArgs(stepID, source, target string) error {
+	if err := c.validateTiArgs(); err != nil {
+		return err
+	}
+	if err := c.validateBasicArgs(); err != nil {
+		return err
+	}
+	if c.BuildID == "" {
+		return fmt.Errorf("buildID is not set")
+	}
+	if c.StageID == "" {
+		return fmt.Errorf("stageID is not set")
+	}
+	if stepID == "" {
+		return fmt.Errorf("stepID is not set")
+	}
+	if source == "" {
+		return fmt.Errorf("source branch is not set")
+	}
+	if target == "" {
+		return fmt.Errorf("target branch is not set")
+	}
+	return nil
+}
+
+func (c *HTTPClient) validateGetTestTimesArgs() error {
+	if err := c.validateTiArgs(); err != nil {
+		return err
+	}
+	return c.validateBasicArgs()
 }

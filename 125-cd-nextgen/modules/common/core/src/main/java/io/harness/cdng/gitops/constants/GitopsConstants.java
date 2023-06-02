@@ -9,5 +9,6 @@ package io.harness.cdng.gitops.constants;
 
 public interface GitopsConstants {
   String GITOPS_SWEEPING_OUTPUT = "gitops";
+  String GITOPS_SYNC_SWEEPING_OUTPUT = "gitopsSync";
   String GITOPS_ENV_OUTCOME = "gitopsEnvOutcome";
 }

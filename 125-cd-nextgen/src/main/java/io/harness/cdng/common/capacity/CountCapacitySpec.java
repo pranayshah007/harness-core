@@ -13,7 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
@@ -21,7 +21,6 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.math.BigDecimal;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -53,14 +52,6 @@ public class CountCapacitySpec implements CapacitySpec {
 
   @Override
   public Integer getInstances() {
-    if (ParameterField.isNull(this.count)) {
-      return null;
-    }
-    try {
-      return new BigDecimal(count.getValue()).intValueExact();
-    } catch (Exception exception) {
-      throw new InvalidRequestException(
-          String.format("Count value: [%s] is not an integer", count.getValue()), exception);
-    }
+    return ParameterFieldHelper.getIntegerParameterFieldValue(count);
   }
 }

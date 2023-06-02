@@ -12,6 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/service:module",
         "//960-api-services/src/main/java/io/harness/artifacts/githubpackages/beans:module",
         "//980-commons/src/main/java/io/harness/network:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",

@@ -1,0 +1,20 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: redis-replicaset-chart
+  labels:
+    app: prometheus-redis-exporter
+    name: redis-exporter-prometheus-redis-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 30s
+    port: redis-exporter
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: prometheus-redis-exporter
+{{- end }}

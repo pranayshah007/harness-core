@@ -18,19 +18,29 @@ import io.harness.ccm.billing.GcpServiceAccountServiceImpl;
 
 import software.wings.beans.ValidationResult;
 
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.auth.Credentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.Dataset;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Singleton;
+import java.io.IOException;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 @OwnedBy(CE)
 public class BigQueryServiceImpl implements BigQueryService, io.harness.ccm.bigQuery.BigQueryService {
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
+
   @Override
   public BigQuery get() {
     return get(null, null);
@@ -38,15 +48,32 @@ public class BigQueryServiceImpl implements BigQueryService, io.harness.ccm.bigQ
 
   @Override
   public BigQuery get(String projectId, String impersonatedServiceAccount) {
-    ServiceAccountCredentials sourceCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials = null;
+    if (!usingWorkloadIdentity) {
+      sourceCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: Using Google ADC");
+      try {
+        sourceCredentials = GoogleCredentials.getApplicationDefault();
+      } catch (IOException e) {
+        log.error("Exception in using Google ADC", e);
+      }
+    }
     Credentials credentials = getImpersonatedCredentials(sourceCredentials, impersonatedServiceAccount);
-
-    BigQueryOptions.Builder bigQueryOptionsBuilder = BigQueryOptions.newBuilder().setCredentials(credentials);
-
+    BigQueryOptions.Builder bigQueryOptionsBuilder =
+        BigQueryOptions.newBuilder().setCredentials(credentials).setHeaderProvider(getHeaderProvider());
+    log.info("BQ initialised via older method");
     if (projectId != null) {
       bigQueryOptionsBuilder.setProjectId(projectId);
     }
     return bigQueryOptionsBuilder.build().getService();
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 
   @Override

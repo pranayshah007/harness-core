@@ -95,6 +95,7 @@ public class JsonUtils {
 
     mapper = new ObjectMapper();
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     mapper.setSerializationInclusion(Include.NON_NULL);
     mapper.setSubtypeResolver(new JsonSubtypeResolver(mapper.getSubtypeResolver()));
     mapper.registerModule(new Jdk8Module());
@@ -479,12 +480,17 @@ public class JsonUtils {
     return mapper.convertValue(fromValue, toValueType);
   }
 
+  public static <T> T convertValue(Object fromValue, TypeReference<T> toValueType) {
+    return mapper.convertValue(fromValue, toValueType);
+  }
+
   public static String prettifyJsonString(String jsonString) {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     JsonParser jsonParser = new JsonParser();
     JsonElement jsonElement = jsonParser.parse(jsonString);
     return gson.toJson(jsonElement);
   }
+
   @JsonDeserialize
   public static <T> T asObjectWithExceptionHandlingType(String jsonString, Class<T> classToConvert)
       throws JsonProcessingException {

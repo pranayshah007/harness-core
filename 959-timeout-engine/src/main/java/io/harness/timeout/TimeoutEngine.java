@@ -34,14 +34,13 @@ import io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -92,18 +91,12 @@ public class TimeoutEngine extends IteratorLoopModeHandler implements Handler<Ti
   }
 
   public void deleteTimeouts(List<String> timeoutInstanceIds) {
-    if (EmptyPredicate.isNotEmpty(timeoutInstanceIds)) {
-      Set<String> batchTimeInstanceIds = new HashSet<>();
-      for (String timeoutInstanceId : timeoutInstanceIds) {
-        batchTimeInstanceIds.add(timeoutInstanceId);
-        if (batchTimeInstanceIds.size() >= MAX_BATCH_SIZE) {
-          timeoutInstanceRepository.deleteByUuidIn(batchTimeInstanceIds);
-          batchTimeInstanceIds.clear();
-        }
-      }
-      if (EmptyPredicate.isNotEmpty(batchTimeInstanceIds)) {
-        timeoutInstanceRepository.deleteByUuidIn(batchTimeInstanceIds);
-      }
+    if (EmptyPredicate.isEmpty(timeoutInstanceIds)) {
+      return;
+    }
+    List<List<String>> partition = Lists.partition(timeoutInstanceIds, MAX_BATCH_SIZE);
+    for (List<String> batchTimeInstanceIds : partition) {
+      timeoutInstanceRepository.deleteByUuidIn(batchTimeInstanceIds);
     }
   }
 

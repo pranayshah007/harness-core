@@ -22,9 +22,9 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;

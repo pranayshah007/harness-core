@@ -29,4 +29,5 @@ public class TemplateApplyRequestDTO {
   @NotNull String originalEntityYaml;
   boolean checkForAccess;
   boolean getMergedYamlWithTemplateField;
+  boolean getOnlyFileContent;
 }

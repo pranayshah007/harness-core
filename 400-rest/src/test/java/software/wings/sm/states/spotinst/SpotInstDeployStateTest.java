@@ -27,9 +27,9 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -46,6 +46,7 @@ import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstDeployTaskResponse;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.spotinst.model.ElastiGroup;
@@ -99,6 +100,7 @@ public class SpotInstDeployStateTest extends WingsBaseTest {
   @Spy private AwsStateHelper mockAwsStateHelper;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks SpotInstDeployState state = new SpotInstDeployState("stateName");

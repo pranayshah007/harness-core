@@ -54,11 +54,10 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -80,6 +79,7 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
@@ -170,6 +170,7 @@ public class PcfDeployStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   private PcfStateTestHelper pcfStateTestHelper = new PcfStateTestHelper();
   public static final String ORG = "ORG";
   public static final String SPACE = "SPACE";
@@ -231,7 +232,7 @@ public class PcfDeployStateTest extends WingsBaseTest {
    */
   @Before
   public void setup() throws IllegalAccessException {
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     when(workflowExecutionService.isMultiService(any(), any())).thenReturn(false);
     PcfStateHelper pcfStateHelper = new PcfStateHelper();
     on(pcfStateHelper).set("sweepingOutputService", sweepingOutputService);

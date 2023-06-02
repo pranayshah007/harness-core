@@ -55,6 +55,7 @@ public class HelmRollbackStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.Deployment.spec.execution.steps.helmRollback.description",
             "pipeline.stages.Deployment.spec.execution.steps.helmRollback.spec.delegateSelectors",
             "pipeline.stages.Deployment.spec.execution.steps.helmRollback.timeout",
-            "pipeline.stages.Deployment.spec.execution.steps.helmRollback.name");
+            "pipeline.stages.Deployment.spec.execution.steps.helmRollback.name",
+            "pipeline.stages.Deployment.spec.execution.steps.helmRollback.when");
   }
 }

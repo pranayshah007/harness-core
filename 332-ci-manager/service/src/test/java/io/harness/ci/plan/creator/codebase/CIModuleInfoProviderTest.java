@@ -13,11 +13,13 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
@@ -35,7 +37,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
@@ -147,7 +148,8 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().build());
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ciExecutionPlanTestHelper.getGitConnector());
+    when(connectorUtils.getConnectorDetails(any(), any(), eq(true)))
+        .thenReturn(ciExecutionPlanTestHelper.getGitConnector());
     CIPipelineModuleInfo ciPipelineModuleInfo =
         (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
 

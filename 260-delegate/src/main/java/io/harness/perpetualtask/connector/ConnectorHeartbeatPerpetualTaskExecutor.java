@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.NoOpConnectorValidationParams;
+import io.harness.errorhandling.NGErrorHelper;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.dto.ErrorDetail;
@@ -37,6 +38,7 @@ import io.harness.serializer.KryoSerializer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +56,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
   Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
   private KryoSerializer kryoSerializer;
   private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject private NGErrorHelper ngErrorHelper;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -82,7 +85,19 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
         log.info("The connector validation handler is not registered for the connector.");
         return getPerpetualTaskResponse(null);
       }
-      connectorValidationResult = connectorValidationHandler.validate(connectorValidationParams, accountId);
+      try {
+        connectorValidationResult = connectorValidationHandler.validate(connectorValidationParams, accountId);
+      } catch (Exception e) {
+        String errorMessage = e.getMessage();
+        connectorValidationResult =
+            ConnectorValidationResult.builder()
+                .status(ConnectivityStatus.FAILURE)
+                .errors(Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage)))
+                .errorSummary(ngErrorHelper.getErrorSummary(errorMessage))
+                .testedAt(System.currentTimeMillis())
+                .build();
+      }
+
       connectorValidationResult.setTestedAt(System.currentTimeMillis());
     } else {
       log.info("Connector Heartbeat failed due to invalid yaml");

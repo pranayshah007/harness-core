@@ -45,7 +45,7 @@ public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
   @Override
   public String describe() {
     String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
-        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        ? "\nTo pull image use: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
 
     String metadataKeys = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)

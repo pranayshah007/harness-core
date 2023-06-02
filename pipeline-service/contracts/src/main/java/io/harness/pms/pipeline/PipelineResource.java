@@ -22,7 +22,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.beans.ExecutionNode;
 import io.harness.gitaware.helper.GitImportInfoDTO;
-import io.harness.gitaware.helper.MoveConfigRequestDTO;
+import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
+import io.harness.gitsync.GitMetadataUpdateRequestInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -35,7 +36,6 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -399,11 +399,12 @@ public interface PipelineResource {
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(description = " ", hidden = true) @QueryParam(
-          PipelineResourceConstants.GET_METADATA_ONLY_PARAM_KEY) Boolean getMetadataOnly);
+          PipelineResourceConstants.GET_METADATA_ONLY_PARAM_KEY) Boolean getMetadataOnly,
+      @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("/import/{pipelineIdentifier}")
-  @Hidden
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
   @Operation(operationId = "importPipeline", summary = "Get Pipeline YAML from Git Repository",
       responses =
@@ -585,7 +586,8 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @GET
   @Path("/list-repos")
@@ -627,7 +629,7 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
-      @BeanParam MoveConfigRequestDTO moveConfigRequestDTO);
+      @BeanParam PipelineMoveConfigRequestDTO pipelineMoveConfigRequestDTO);
 
   @POST
   @Path("/{pipelineIdentifier}/validate")
@@ -652,9 +654,10 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
-  @POST
+  @GET
   @Path("validate/{uuid}")
   @Hidden
   @ApiOperation(value = "Get Pipeline validation event data", nickname = "getPipelineValidateResult")
@@ -667,7 +670,7 @@ public interface PipelineResource {
         ApiResponse(responseCode = "default", description = "Return uuid of the started event")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  ResponseDTO<PipelineValidationResponseBody>
+  ResponseDTO<PipelineValidationResponseDTO>
   getPipelineValidateResult(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -677,4 +680,28 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.UUID) String uuid);
+
+  @PUT
+  @Path("/{pipelineIdentifier}/update-git-metadata")
+  @ApiOperation(value = "Update git-metadata in remote pipeline Entity", nickname = "updatePipelineGitDetails")
+  @Operation(operationId = "updatePipelineGitDetails",
+      description = "Update git-metadata in remote pipeline and returns the identifier of updated pipeline",
+      summary = "Update git-metadata in remote pipeline Entity",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns identifier of updated pipeline")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  ResponseDTO<PMSGitUpdateResponseDTO>
+  updateGitMetadataForPipeline(
+      @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
+          NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
+      @BeanParam GitMetadataUpdateRequestInfoDTO gitMetadataUpdateRequestInfo);
 }

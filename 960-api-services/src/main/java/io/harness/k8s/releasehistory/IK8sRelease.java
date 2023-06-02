@@ -28,6 +28,9 @@ public interface IK8sRelease {
   Status getReleaseStatus();
   List<KubernetesResource> getResourcesWithSpecs();
   List<KubernetesResourceId> getResourceIds();
+  String getReleaseColor();
   IK8sRelease setReleaseData(@NotNull List<KubernetesResource> resources, boolean isPruningEnabled);
   IK8sRelease updateReleaseStatus(@NotNull Status status);
+  String getBgEnvironment();
+  void setBgEnvironment(@NotNull String bgEnvironment);
 }

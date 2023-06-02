@@ -12,13 +12,14 @@ import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENT
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.NG_ENABLE_LDAP_CHECK;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
+import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS;
 import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_INHERITED_GROUPS;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
@@ -73,6 +74,7 @@ import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.LastAdminCheckFilter;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -115,6 +117,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -274,18 +277,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public List<String> getUserIds(List<String> emails) {
-    return ngUserService.getUserMetadataByEmails(emails)
-        .stream()
-        .map(userMetadataDTO -> userMetadataDTO.getUuid())
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<String> getUserEmails(List<String> uuids) {
-    return ngUserService.getUserMetadata(uuids)
-        .stream()
-        .map(userMetadataDTO -> userMetadataDTO.getEmail())
-        .collect(Collectors.toList());
+    return ngUserService.getUserIdsByEmails(emails);
   }
 
   @Override
@@ -311,7 +303,17 @@ public class UserGroupServiceImpl implements UserGroupService {
     return userGroupRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
   }
 
-  private List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
+  @Override
+  public List<UserGroup> getUserGroupsForUser(String accountIdentifier, String userId) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(UserGroupKeys.externallyManaged).is(true);
+    criteria.and(UserGroupKeys.users).in(userId);
+    return userGroupRepository.findAll(criteria);
+  }
+
+  @Override
+  public List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
     if (isEmpty(userGroups)) {
       return Collections.emptyList();
     }
@@ -401,15 +403,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (isNotEmpty(userGroupFilterDTO.getUserIdentifierFilter())) {
       criteria.and(UserGroupKeys.users).in(userGroupFilterDTO.getUserIdentifierFilter());
     }
-    List<UserGroup> userGroups = userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
-    if (accessControlClient.hasAccess(
-            ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
-                userGroupFilterDTO.getProjectIdentifier()),
-            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
-      return userGroups;
-    } else {
-      return getPermittedUserGroups(userGroups);
-    }
+    return userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
   }
 
   public PageResponse<UserMetadataDTO> listUsersInUserGroup(
@@ -429,15 +423,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public List<UserMetadataDTO> getUsersInUserGroup(Scope scope, String userGroupIdentifier) {
+  public CloseableIterator<UserMetadata> getUsersInUserGroup(Scope scope, String userGroupIdentifier) {
     Optional<UserGroup> userGroupOptional =
         get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     if (!userGroupOptional.isPresent()) {
-      return new ArrayList<>();
+      return null;
     }
     Set<String> userGroupMemberIds = new HashSet<>(userGroupOptional.get().getUsers());
 
-    return ngUserService.getUserMetadata(new ArrayList<>(userGroupMemberIds));
+    return ngUserService.streamUserMetadata(new ArrayList<>(userGroupMemberIds));
   }
 
   @Override
@@ -461,7 +455,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       Criteria criteria =
           createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
-      List<UserGroup> deleteUserGroups = userGroupRepository.deleteAll(criteria);
+
+      List<UserGroup> deleteUserGroups = userGroupRepository.findAllAndDelete(criteria);
       if (isNotEmpty(deleteUserGroups)) {
         deleteUserGroups.forEach(userGroup
             -> outboxService.save(new UserGroupDeleteEvent(userGroup.getAccountIdentifier(), toDTO(userGroup))));
@@ -656,12 +651,26 @@ public class UserGroupServiceImpl implements UserGroupService {
     return criteria;
   }
 
+  private Criteria createChildScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(UserGroupKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(UserGroupKeys.projectIdentifier).is(projectIdentifier);
+    }
+    return criteria;
+  }
+
   @VisibleForTesting
   protected Criteria createUserGroupFilterCriteria(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, UserGroupFilterType filterType) {
     Criteria criteria;
     if (filterType == INCLUDE_INHERITED_GROUPS) {
       criteria = createScopeCriteriaIncludingInheritedUserGroups(accountIdentifier, orgIdentifier, projectIdentifier);
+    } else if (filterType == INCLUDE_CHILD_SCOPE_GROUPS) {
+      criteria = createChildScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     } else {
       criteria = createScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     }
@@ -826,14 +835,6 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup linkToSsoGroup(@NotBlank @AccountIdentifier String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotBlank String userGroupIdentifier, @NotNull SSOType ssoType, @NotBlank String ssoId,
       @NotBlank String ssoGroupId, @NotBlank String ssoGroupName) {
-    boolean ngLdapEnabled = false;
-    if (SSOType.LDAP == ssoType) {
-      ngLdapEnabled = ngFeatureFlagHelperService.isEnabled(accountIdentifier, NG_ENABLE_LDAP_CHECK);
-      if (!ngLdapEnabled) {
-        throw new InvalidRequestException("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
-      }
-    }
-
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 
@@ -845,7 +846,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       throw new InvalidRequestException("SSO Provider already linked to the group. Try unlinking first.");
     }
 
-    SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
+    SSOConfig ssoConfig = ngFeatureFlagHelperService.isEnabled(accountIdentifier, PL_ENABLE_MULTIPLE_IDP_SUPPORT)
+        ? getResponse(managerClient.getAccountAccessManagementSettingsV2(accountIdentifier))
+        : getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
 
     List<SSOSettings> ssoSettingsList = ssoConfig.getSsoSettings();
     SSOSettings ssoSettings = null;

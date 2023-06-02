@@ -29,6 +29,8 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.stream.StreamUtils;
@@ -285,7 +287,7 @@ public class BambooServiceImpl implements BambooService {
   public List<BuildDetails> getBuilds(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       String planKey, List<String> artifactPaths, int maxNumberOfBuilds) {
     try {
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20), () -> {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60), () -> {
         List<BuildDetails> buildDetailsList = new ArrayList<>();
         Call<JsonNode> request =
             getBambooClient(bambooConfig, encryptionDetails)
@@ -392,6 +394,51 @@ public class BambooServiceImpl implements BambooService {
           "Failed to trigger bamboo plan [" + planKey + "]. Reason:" + ExceptionUtils.getRootCauseMessage(e), USER);
     }
     log.info("Bamboo plan execution success for Plan Key {} with parameters {}", planKey, parameters);
+    return buildResultKey;
+  }
+
+  @Override
+  public String triggerPlan(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails, String planKey,
+      Map<String, String> parameters, LogCallback executionLogCallback) {
+    log.info("Trigger bamboo plan for Plan Key {} with parameters {}", planKey, parameters);
+    executionLogCallback.saveExecutionLog(
+        String.format("Trigger bamboo plan for Plan Key %s with parameters %s", planKey, parameters), LogLevel.INFO);
+    Response<JsonNode> response = null;
+    String buildResultKey = null;
+    try {
+      if (parameters == null) {
+        parameters = new HashMap<>();
+      }
+      // Replace all the parameters with
+      Call<JsonNode> request =
+          getBambooClient(bambooConfig, encryptionDetails)
+              .triggerPlan(getBasicAuthCredentials(bambooConfig, encryptionDetails), planKey, parameters);
+      response = getHttpRequestExecutionResponse(request);
+      if (response.body() != null) {
+        if (response.body().findValue("buildResultKey") != null) {
+          buildResultKey = response.body().findValue("buildResultKey").asText();
+        }
+      }
+      if (buildResultKey == null) {
+        executionLogCallback.saveExecutionLog(
+            "Failed to trigger bamboo plan [" + planKey + "]. Reason: buildResultKey does not exist in response",
+            LogLevel.INFO);
+        throw new InvalidArtifactServerException(
+            "Failed to trigger bamboo plan [" + planKey + "]. Reason: buildResultKey does not exist in response", USER);
+      }
+    } catch (Exception e) {
+      if (response != null && !response.isSuccessful()) {
+        IOUtils.closeQuietly(response.errorBody());
+      }
+      log.error("Failed to trigger bamboo plan [" + planKey + "]", e);
+      executionLogCallback.saveExecutionLog("Failed to trigger bamboo plan [" + planKey + "]", LogLevel.INFO);
+      throw new InvalidArtifactServerException(
+          "Failed to trigger bamboo plan [" + planKey + "]. Reason:" + ExceptionUtils.getRootCauseMessage(e), USER);
+    }
+    log.info("Bamboo plan execution success for Plan Key {} with parameters {}", planKey, parameters);
+    executionLogCallback.saveExecutionLog(
+        String.format("Bamboo plan execution success for Plan Key %s with parameters %s", planKey, parameters),
+        LogLevel.INFO);
     return buildResultKey;
   }
 
@@ -550,6 +597,29 @@ public class BambooServiceImpl implements BambooService {
       }
     }
     return null;
+  }
+
+  @Override
+  public Pair<String, InputStream> downloadArtifacts(BambooConfig bambooConfig,
+      List<EncryptedDataDetail> encryptionDetails, List<String> artifactPaths, String planKey, String buildNumber) {
+    List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
+    // for backward compatibility, get all artifact paths
+    if (isNotEmpty(artifactPaths)) {
+      for (String artifactPathRegex : artifactPaths) {
+        artifactFileMetadata.addAll(
+            getArtifactFileMetadata(bambooConfig, encryptionDetails, planKey, buildNumber, artifactPathRegex));
+      }
+    }
+
+    Pair<String, InputStream> inputStreamPair = null;
+    // use artifact file metadata from artifact stream attributes and download
+    if (isNotEmpty(artifactFileMetadata)) {
+      for (ArtifactFileMetadata fileMetadata : artifactFileMetadata) {
+        String link = fileMetadata.getUrl();
+        inputStreamPair = downloadArtifact(bambooConfig, encryptionDetails, fileMetadata.getFileName(), link);
+      }
+    }
+    return inputStreamPair;
   }
 
   private void downloadAnArtifact(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,

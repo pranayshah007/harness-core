@@ -1,0 +1,7 @@
+{
+  "error": {
+    "message": "User Not Authorized",
+    "detail": "User is unauthorized to access table: sys_db_object"
+  },
+  "status": "failure"
+}

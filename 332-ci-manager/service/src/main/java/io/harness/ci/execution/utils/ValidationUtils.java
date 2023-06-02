@@ -14,13 +14,18 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.nodes.BackgroundStepNode;
+import io.harness.beans.steps.nodes.RunStepNode;
+import io.harness.beans.steps.nodes.RunTestStepNode;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.integrationstage.K8InitializeTaskUtils;
@@ -29,6 +34,7 @@ import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -42,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ValidationUtils {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
   @Inject K8InitializeTaskUtils k8InitializeTaskUtils;
+  @Inject CIFeatureFlagService ciFeatureFlagService;
 
   private static String serviceRegex = "^[a-zA-Z][a-zA-Z0-9_]*$";
   public final String TEMPLATE = "template";
@@ -78,6 +85,42 @@ public class ValidationUtils {
     }
   }
 
+  public void validateHostedStage(ExecutionElementConfig executionElementConfig, OSType os, String accountId) {
+    List<ExecutionWrapperConfig> steps = executionElementConfig.getSteps();
+    if (steps == null) {
+      return;
+    }
+
+    for (ExecutionWrapperConfig executionWrapper : steps) {
+      validateHostedStageUtil(executionWrapper, os, accountId);
+    }
+  }
+
+  public void validateHostedStageUtil(ExecutionWrapperConfig executionWrapper, OSType os, String accountId) {
+    if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+      if (executionWrapper.getStep().has(TEMPLATE)) {
+        return;
+      }
+      CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
+      validateHostedStepUtil(stepNode, os, accountId);
+    } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+      ParallelStepElementConfig parallelStepElementConfig =
+          IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+      if (isNotEmpty(parallelStepElementConfig.getSections())) {
+        for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
+          validateHostedStageUtil(executionWrapperInParallel, os, accountId);
+        }
+      }
+    } else {
+      StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig executionWrapperInStepGroup : stepGroupElementConfig.getSteps()) {
+          validateHostedStageUtil(executionWrapperInStepGroup, os, accountId);
+        }
+      }
+    }
+  }
+
   public void validateStageUtil(ExecutionWrapperConfig executionWrapper, Infrastructure infrastructure) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
       if (executionWrapper.getStep().has(TEMPLATE)) {
@@ -110,6 +153,44 @@ public class ValidationUtils {
     }
 
     validateActionStep(stepElement, infrastructure.getType());
+  }
+
+  private void validateHostedStepUtil(CIAbstractStepNode stepElement, OSType os, String accountId) {
+    Boolean OOTBEnabled =
+        ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId);
+    if (os == OSType.MacOS) {
+      String stepType = stepElement.getType();
+      ParameterField<String> connector = new ParameterField<>();
+      ParameterField<String> image = new ParameterField<>();
+      switch (stepType) {
+        case "Run":
+          connector = ((RunStepNode) stepElement).getRunStepInfo().getConnectorRef();
+          image = ((RunStepNode) stepElement).getRunStepInfo().getImage();
+          break;
+        case "RunTests":
+          connector = ((RunTestStepNode) stepElement).getRunTestsStepInfo().getConnectorRef();
+          image = ((RunTestStepNode) stepElement).getRunTestsStepInfo().getImage();
+          break;
+        case "Background":
+          connector = ((BackgroundStepNode) stepElement).getBackgroundStepInfo().getConnectorRef();
+          image = ((BackgroundStepNode) stepElement).getBackgroundStepInfo().getImage();
+          break;
+        case "Bitrise":
+        case "Action":
+          return;
+        default:
+          if (!OOTBEnabled) {
+            throw new CIStageExecutionException(
+                format("%s step is not applicable for builds on %s cloud infrastructure", stepType, os));
+          }
+      }
+
+      if (ParameterField.isNotNull(connector) || ParameterField.isNotNull(image)) {
+        throw new CIStageExecutionException(format(
+            "MacOS Cloud infra doesn't support container based steps. Please remove connector and image field from step %s",
+            stepElement.getIdentifier()));
+      }
+    }
   }
 
   private void validateWindowsK8Step(CIAbstractStepNode stepElement) {

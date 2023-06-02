@@ -13,11 +13,9 @@ import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -26,6 +24,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
@@ -54,6 +53,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -80,7 +80,6 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitProviderHelper scmGitProviderHelper;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -162,9 +161,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
 
     Map<String, Object> apiParamOptions = null;
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_API_PARAMS_MERGE_PR)) {
-      apiParamOptions = gitOpsSpecParams.getVariables();
-    }
+    apiParamOptions = gitOpsSpecParams.getVariables();
 
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
@@ -223,6 +220,10 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
                 .build();
         break;
+      case BITBUCKET:
+        gitApiTaskParams = getTaskParamsForBitbucket((BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO(),
+            connectorDetails, prNumber, sha, ref, gitOpsSpecParams.getDeleteSourceBranch(), stepParameters);
+        break;
       default:
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);
     }
@@ -262,5 +263,22 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return null;
+  }
+
+  private GitApiTaskParams getTaskParamsForBitbucket(BitbucketConnectorDTO bitbucketConnectorDTO,
+      ConnectorDetails connectorDetails, int prNumber, String sha, String ref,
+      ParameterField<Boolean> deleteSourceBranch, StepElementParameters stepParameters) {
+    return GitApiTaskParams.builder()
+        .gitRepoType(GitRepoType.BITBUCKET)
+        .requestType(GitApiRequestType.MERGE_PR)
+        .connectorDetails(connectorDetails)
+        .prNumber(String.valueOf(prNumber))
+        .sha(sha)
+        .ref(ref)
+        .owner(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg())
+        .repo(bitbucketConnectorDTO.getGitRepositoryDetails().getName())
+        .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(
+            deleteSourceBranch, MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+        .build();
   }
 }

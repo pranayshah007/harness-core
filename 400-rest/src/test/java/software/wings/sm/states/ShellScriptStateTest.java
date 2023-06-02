@@ -43,9 +43,9 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -65,6 +65,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -148,6 +149,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private SSHVaultService sshVaultService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @InjectMocks private ShellScriptState shellScriptState = new ShellScriptState("ShellScript");
 

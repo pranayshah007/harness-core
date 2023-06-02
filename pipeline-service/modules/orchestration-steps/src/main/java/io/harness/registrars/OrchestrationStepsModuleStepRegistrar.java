@@ -8,14 +8,18 @@
 package io.harness.registrars;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
+import io.harness.plancreator.steps.pluginstep.InitContainerV2Step;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
+import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.execution.CdSscaOrchestrationStep;
 import io.harness.steps.StagesStep;
 import io.harness.steps.approval.stage.ApprovalStageStep;
 import io.harness.steps.approval.step.custom.CustomApprovalStep;
@@ -27,6 +31,8 @@ import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.container.ContainerStep;
+import io.harness.steps.container.InitContainerStep;
+import io.harness.steps.container.execution.RunContainerStep;
 import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
@@ -72,6 +78,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ServiceNowUpdateStep.STEP_TYPE, ServiceNowUpdateStep.class);
     engineSteps.put(ServiceNowImportSetStep.STEP_TYPE, ServiceNowImportSetStep.class);
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
+    engineSteps.put(StagesStep.DEPRECATED_STEP_TYPE, StagesStep.class);
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     // Feature Flag
@@ -88,6 +95,10 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(WaitStep.STEP_TYPE, WaitStep.class);
     engineSteps.put(GroupStepV1.STEP_TYPE, GroupStepV1.class);
     engineSteps.put(ContainerStep.STEP_TYPE, ContainerStep.class);
+    engineSteps.put(InitContainerStep.STEP_TYPE, InitContainerStep.class);
+    engineSteps.put(RunContainerStep.STEP_TYPE, RunContainerStep.class);
+    engineSteps.put(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_TYPE, CdSscaOrchestrationStep.class);
+    engineSteps.put(INIT_CONTAINER_V2_STEP_TYPE, InitContainerV2Step.class);
 
     return engineSteps;
   }

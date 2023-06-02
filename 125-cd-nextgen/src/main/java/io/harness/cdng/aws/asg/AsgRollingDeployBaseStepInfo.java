@@ -8,7 +8,7 @@
 package io.harness.cdng.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -33,28 +33,28 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("AsgRollingDeployBaseStepInfo")
 public class AsgRollingDeployBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipMatching")
   ParameterField<Boolean> skipMatching;
 
   @NotNull
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("useAlreadyRunningInstances")
   ParameterField<Boolean> useAlreadyRunningInstances;
 
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @JsonProperty("instanceWarmup")
   @Min(0)
   ParameterField<Integer> instanceWarmup;
 
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @JsonProperty("minimumHealthyPercentage")
   @Min(0)

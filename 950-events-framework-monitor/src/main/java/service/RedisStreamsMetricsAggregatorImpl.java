@@ -27,7 +27,6 @@ import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamGroup;
 import org.redisson.api.StreamMessageId;
 import org.redisson.client.RedisClient;
-import org.redisson.client.RedisConnection;
 import org.redisson.client.codec.StringCodec;
 
 @OwnedBy(HarnessTeam.PL)
@@ -96,8 +95,6 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
   @Override
   public AggregateRedisStreamMetricsDTO getStreamStats() {
     Iterator<String> keysIterator = redisClient.getKeys().getKeysByPattern("*:streams:*", 1000).iterator();
-    RedisConnection lowLevelConnection = lowLevelClient.connect();
-
     try {
       List<RedisStreamMetricsDTO> redisStreamMetricsDTOList = new ArrayList<>();
       while (keysIterator.hasNext()) {
@@ -138,7 +135,6 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
       return AggregateRedisStreamMetricsDTO.builder().redisStreamMetricsDTOList(redisStreamMetricsDTOList).build();
     } catch (Exception e) {
       log.error("Failed in getting stream stats", e);
-      lowLevelConnection.closeAsync();
       return AggregateRedisStreamMetricsDTO.builder().redisStreamMetricsDTOList(Collections.emptyList()).build();
     }
   }

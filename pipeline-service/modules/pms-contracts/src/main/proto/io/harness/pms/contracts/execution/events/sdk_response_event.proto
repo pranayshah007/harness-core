@@ -15,6 +15,8 @@ import "io/harness/pms/contracts/service/node_execution_event.proto";
 import "io/harness/pms/contracts/execution/failure/failure_info.proto";
 import "io/harness/pms/contracts/advisers/advise.proto";
 import "io/harness/pms/contracts/ambiance/ambiance.proto";
+import "io/harness/pms/contracts/resume/node_resume_event.proto";
+
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -56,6 +58,7 @@ message HandleStepResponseRequest {
 message ResumeNodeExecutionRequest {
   map<string, bytes> response = 2;
   bool asyncError = 3;
+  map<string, io.harness.pms.contracts.resume.ResponseDataProto> responseData = 4;
 }
 
 message EventErrorRequest {

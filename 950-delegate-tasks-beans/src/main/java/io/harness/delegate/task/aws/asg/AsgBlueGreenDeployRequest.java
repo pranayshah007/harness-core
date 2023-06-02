@@ -36,4 +36,5 @@ public class AsgBlueGreenDeployRequest implements AsgCommandRequest, NestedAnnot
   String asgName;
   String amiImageId;
   boolean firstDeployment;
+  boolean useAlreadyRunningInstances;
 }

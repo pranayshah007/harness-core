@@ -9,6 +9,7 @@ package io.harness.plancreator.steps;
 
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,7 +19,10 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.net.URL;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -139,11 +143,9 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
         + "         - __uuid: a0\n"
         + "           stage:\n"
         + "             type: Pipeline\n"
-        + "           __uuid: a1\n"
         + "         - __uuid: a3\n"
         + "           stage:\n"
-        + "             type: Deployment\n"
-        + "             __uuid: a4\n";
+        + "             type: Deployment\n";
 
     pipelineYamlField = YamlUtils.readTree(parallelStageYaml);
     pipelineStageNode = pipelineYamlField.getNode()
@@ -167,8 +169,7 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
         + "         - __uuid: a0\n"
         + "           stage:\n"
         + "             type: Pipeline\n"
-        + "           __uuid: a1\n"
-        + "         - __uuid: a3\n"
+        + "         - __uuid: a1\n"
         + "           stage:\n"
         + "             type: Deployment\n"
         + "             __uuid: a4\n"
@@ -194,5 +195,134 @@ public class GenericPlanCreatorUtilsTest extends CategoryTest {
                             .getField("stage");
     nextSiblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(pipelineStageNode);
     assertThat(nextSiblingField).isNull();
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testCheckIfStepIsInParallelSection() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    URL testFile = classLoader.getResource("pipeline-with-stepGroup-inside-stepGroup.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    YamlField stepField = pipelineYamlField.getNode()
+                              .getField("stages")
+                              .getNode()
+                              .asArray()
+                              .get(0)
+                              .getField("stage")
+                              .getNode()
+                              .getField("spec")
+                              .getNode()
+                              .getField("execution")
+                              .getNode()
+                              .getField("steps")
+                              .getNode()
+                              .asArray()
+                              .get(0)
+                              .getField("stepGroup")
+                              .getNode()
+                              .getField("steps")
+                              .getNode()
+                              .asArray()
+                              .get(0)
+                              .getField("stepGroup")
+                              .getNode()
+                              .getField("steps")
+                              .getNode()
+                              .asArray()
+                              .get(0)
+                              .getField("step");
+
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(stepField)).isFalse();
+
+    testFile = classLoader.getResource("pipeline-with-stepGroup-inside-stepGroup-parallel.yaml");
+    assertThat(testFile).isNotNull();
+    pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    stepField = pipelineYamlField.getNode()
+                    .getField("stages")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("stage")
+                    .getNode()
+                    .getField("spec")
+                    .getNode()
+                    .getField("execution")
+                    .getNode()
+                    .getField("steps")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("stepGroup")
+                    .getNode()
+                    .getField("steps")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("parallel")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("stepGroup")
+                    .getNode()
+                    .getField("steps")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("step");
+
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(stepField)).isFalse();
+
+    testFile = classLoader.getResource("pipeline-with-step-parallel.yaml");
+    assertThat(testFile).isNotNull();
+    pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    stepField = pipelineYamlField.getNode()
+                    .getField("stages")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("stage")
+                    .getNode()
+                    .getField("spec")
+                    .getNode()
+                    .getField("execution")
+                    .getNode()
+                    .getField("steps")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("stepGroup")
+                    .getNode()
+                    .getField("steps")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("parallel")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("stepGroup")
+                    .getNode()
+                    .getField("steps")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("parallel")
+                    .getNode()
+                    .asArray()
+                    .get(0)
+                    .getField("step");
+
+    assertThat(GenericPlanCreatorUtils.checkIfStepIsInParallelSection(stepField)).isTrue();
   }
 }

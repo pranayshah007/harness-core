@@ -24,9 +24,9 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -38,6 +38,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.spotinst.model.ElastiGroup;
@@ -76,6 +77,8 @@ public class SpotinstTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest 
     on(state).set("spotinstStateHelper", mockSpotinstStateHelper);
     StateExecutionService stateExecutionService = mock(StateExecutionService.class);
     on(state).set("stateExecutionService", stateExecutionService);
+    DelegateTaskMigrationHelper mockDelegateTaskMigrationHelper = mock(DelegateTaskMigrationHelper.class);
+    on(state).set("delegateTaskMigrationHelper", mockDelegateTaskMigrationHelper);
     SpotinstTrafficShiftDataBag dataBag =
         SpotinstTrafficShiftDataBag.builder()
             .app(anApplication().uuid(APP_ID).build())

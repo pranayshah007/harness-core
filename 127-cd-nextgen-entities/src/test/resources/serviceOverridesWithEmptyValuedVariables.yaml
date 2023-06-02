@@ -1,0 +1,16 @@
+serviceOverrides:
+  orgIdentifier: orgIdentifier
+  projectIdentifier: projectIdentifier
+  environmentRef: envIdentifier
+  serviceRef: serviceIdentifier
+  variables:
+    - name: var1
+      value:
+      type: String
+    - name: var2
+      value:
+      type: Number
+    - name: var3
+      value:
+      type: Secret
+

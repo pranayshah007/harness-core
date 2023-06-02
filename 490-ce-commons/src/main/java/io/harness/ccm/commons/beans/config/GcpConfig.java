@@ -17,4 +17,5 @@ public class GcpConfig {
   private String gcpAwsConnectorCrudPubSubTopic;
   private String gcpGcpConnectorCrudPubSubTopic;
   private String gcpAzureConnectorCrudPubSubTopic;
+  private BigQueryUpdatePubSubTopic bigQueryUpdatePubSubTopic;
 }

@@ -46,6 +46,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$LIST_OF_ERROR_CODES_FOR_OFFSET_RESET" ]]; then
+  IFS=',' read -ra LIST <<< "$LIST_OF_ERROR_CODES_FOR_OFFSET_RESET"
+  INDEX=0
+  for ERROR_CODE in "${LIST[@]}"; do
+    export ERROR_CODE; export INDEX; yq -i '.listOfErrorCodesForOffsetReset.[env(INDEX)]=env(ERROR_CODE)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then

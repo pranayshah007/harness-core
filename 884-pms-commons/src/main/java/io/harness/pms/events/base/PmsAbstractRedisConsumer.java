@@ -33,7 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener>
     extends RedisTraceConsumer implements PmsRedisConsumer {
-  private static final int WAIT_TIME_IN_SECONDS = 10;
+  private static final int WAIT_TIME_IN_SECONDS = 1;
+  private static final int THREAD_SLEEP_TIME_IN_MILLIS = 200;
   private static final int SLEEP_SECONDS = 10;
   private static final String CACHE_KEY = "%s_%s";
   private final Consumer redisConsumer;
@@ -86,6 +87,8 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   protected void readEventsFrameworkMessages() throws InterruptedException {
     try {
       pollAndProcessMessages();
+      // Adding thread sleep to allow queue clients to not overload connections and over submit events.
+      TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
     } catch (EventsFrameworkDownException e) {
       log.error("Events framework is down for " + this.getClass().getSimpleName() + " consumer. Retrying again...", e);
       TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);

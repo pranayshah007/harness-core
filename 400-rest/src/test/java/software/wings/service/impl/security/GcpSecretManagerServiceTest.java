@@ -15,8 +15,8 @@ import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +35,7 @@ import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.alerts.AlertStatus;
+import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.AccountType;
 import software.wings.beans.GcpKmsConfig;
@@ -68,6 +69,7 @@ public class GcpSecretManagerServiceTest extends WingsBaseTest {
   @Inject @InjectMocks AlertService alertService;
   @Inject @InjectMocks GcpSecretsManagerService gcpSecretsManagerService;
   @Inject private HPersistence persistence;
+  @Mock private MainConfiguration configuration;
 
   private Account account;
 
@@ -108,6 +110,50 @@ public class GcpSecretManagerServiceTest extends WingsBaseTest {
 
     verify(accountService, times(1)).get(account.getUuid());
     verify(kmsEncryptor, times(1)).encryptSecret(eq(account.getUuid()), any(), eq(gcpKmsConfig));
+  }
+
+  @Test
+  @Owner(developers = UTKARSH)
+  @Category(UnitTests.class)
+  public void testSaveGcpKmsConfig_globalKms() {
+    setup();
+    char[] credentials = "{\"credentials\":\"abc\"}".toCharArray();
+
+    GcpKmsConfig gcpKmsConfig =
+        new GcpKmsConfig("name", "projectId", "region", "keyRing", "keyName", credentials, null);
+    gcpKmsConfig.setEncryptionType(EncryptionType.GCP_KMS);
+    gcpKmsConfig.setAccountId(GLOBAL_ACCOUNT_ID);
+    gcpKmsConfig.setDefault(true);
+
+    when(accountService.get(any())).thenReturn(account);
+    when(kmsEncryptor.encryptSecret(eq(account.getUuid()), any(), eq(gcpKmsConfig))).thenReturn(null);
+    when(configuration.isUseGlobalKMSAsBaseAlgo()).thenReturn(false);
+    String result = gcpSecretsManagerService.saveGcpKmsConfig(GLOBAL_ACCOUNT_ID, gcpKmsConfig, false);
+    assertThat(result).isNotNull();
+    // the following means we are calling encryptLocal instead useBaseAlgo when encrypting the kms creds.
+    verify(configuration, times(0)).isUseGlobalKMSAsBaseAlgo();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH)
+  @Category(UnitTests.class)
+  public void testSaveGcpKmsConfig_nonGlobalKms() {
+    setup();
+    char[] credentials = "{\"credentials\":\"abc\"}".toCharArray();
+
+    GcpKmsConfig gcpKmsConfig =
+        new GcpKmsConfig("name", "projectId", "region", "keyRing", "keyName", credentials, null);
+    gcpKmsConfig.setEncryptionType(EncryptionType.GCP_KMS);
+    gcpKmsConfig.setAccountId(account.getUuid());
+    gcpKmsConfig.setDefault(true);
+
+    when(accountService.get(account.getUuid())).thenReturn(account);
+    when(kmsEncryptor.encryptSecret(eq(account.getUuid()), any(), eq(gcpKmsConfig))).thenReturn(null);
+    when(configuration.isUseGlobalKMSAsBaseAlgo()).thenReturn(false);
+    String result = gcpSecretsManagerService.saveGcpKmsConfig(account.getUuid(), gcpKmsConfig, false);
+    assertThat(result).isNotNull();
+    // the following means we are calling useBaseAlgo when encrypting the kms creds.
+    verify(configuration, times(1)).isUseGlobalKMSAsBaseAlgo();
   }
 
   @Test

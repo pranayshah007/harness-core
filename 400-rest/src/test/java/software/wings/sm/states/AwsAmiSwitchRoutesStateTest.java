@@ -28,7 +28,7 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -78,6 +79,7 @@ public class AwsAmiSwitchRoutesStateTest extends WingsBaseTest {
   @Mock protected transient AwsAmiServiceStateHelper awsAmiServiceHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService mockFeatureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private AwsAmiSwitchRoutesState state = new AwsAmiSwitchRoutesState("stateName");
 

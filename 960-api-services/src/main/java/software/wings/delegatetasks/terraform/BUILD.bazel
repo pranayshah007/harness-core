@@ -10,7 +10,9 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = [],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/delegate/clienttools:module",
+    ],
 )
 
 run_analysis_per_module()

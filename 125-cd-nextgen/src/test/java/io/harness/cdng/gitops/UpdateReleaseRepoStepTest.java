@@ -10,6 +10,7 @@ package io.harness.cdng.gitops;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.MEENA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -122,11 +123,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables2.get("config2")).isEqualTo("CLUSTER_NAME2");
     assertThat(fileVariables2.get("config3")).isEqualTo("ENV_NAME2");
     verify(engineExpressionService)
-        .renderExpression(
-            ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        .renderExpression(ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
     verify(engineExpressionService)
-        .renderExpression(
-            ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        .renderExpression(ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
   }
 
   @Test
@@ -140,6 +139,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
+    variables.put("configNum", ParameterField.builder().value("3.0").build());
+    variables.put("configFloat", ParameterField.builder().value("3.14").build());
+    variables.put("configNumFail", ParameterField.builder().value("3a.0").build());
     variables.put("config2", ParameterField.builder().expression(true).expressionValue("<+cluster.name>").build());
     variables.put("config3", ParameterField.builder().expression(true).expressionValue("<+env.name>").build());
     variables.put(
@@ -187,6 +189,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     Map<String, String> fileVariables = map.get("FILE_PATH/ENV_GROUP/ENV_NAME/CLUSTER_NAME");
     assertThat(fileVariables).isNotNull();
     assertThat(fileVariables.get("config1")).isEqualTo("VALUE1");
+    assertThat(fileVariables.get("configNum")).isEqualTo("3");
+    assertThat(fileVariables.get("configFloat")).isEqualTo("3.14");
+    assertThat(fileVariables.get("configNumFail")).isEqualTo("3a.0");
     assertThat(fileVariables.get("config2")).isEqualTo("CLUSTER_NAME");
     assertThat(fileVariables.get("config3")).isEqualTo("ENV_NAME");
     assertThat(fileVariables.get("config5")).isEqualTo("ENV_GROUP");
@@ -197,11 +202,9 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables2.get("config3")).isEqualTo("ENV_NAME2");
     assertThat(fileVariables2.get("config5")).isEqualTo("ENV_GROUP");
     verify(engineExpressionService)
-        .renderExpression(
-            ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        .renderExpression(ambiance, "ENV_NAME/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
     verify(engineExpressionService)
-        .renderExpression(
-            ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        .renderExpression(ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
   }
 
   @Test
@@ -216,6 +219,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     Map<String, Object> variables = new HashMap<>();
     variables.put("config1", ParameterField.builder().value("VALUE1").build());
     variables.put("config2", "VALUE2");
+    variables.put("secret", "${ngSecretManager.obtain(\\\"serviceSecret\\\", 166585618)}");
     GithubStore githubStore = GithubStore.builder()
                                   .paths(ParameterField.<List<String>>builder()
                                              .value(List.of("FILE_PATH/<+envgroup.name>/<+env.name>/<+cluster.name>"))
@@ -249,5 +253,62 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     assertThat(fileVariables).isNotNull();
     assertThat(fileVariables.get("config1")).isEqualTo("VALUE1");
     assertThat(fileVariables.get("config2")).isEqualTo("VALUE2");
+    assertThat(fileVariables.containsKey("secret")).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = MEENA)
+  @Category(UnitTests.class)
+  public void testBuildFilePathsToVariablesMapForEmptyVar() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
+    doAnswer(invocation -> invocation.getArgument(1, String.class))
+        .when(engineExpressionService)
+        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+    Map<String, Object> variables = new HashMap<>();
+    variables.put("config1", ParameterField.builder().value("null").build());
+    variables.put("config2", ParameterField.builder().value("").build());
+    GithubStore githubStore = GithubStore.builder()
+                                  .paths(ParameterField.<List<String>>builder()
+                                             .value(List.of("FILE_PATH/<+envgroup.name>/<+env.name>/<+cluster.name>"))
+                                             .build())
+                                  .build();
+    ManifestOutcome manifestOutcome = K8sManifestOutcome.builder().store(githubStore).build();
+
+    GitopsClustersOutcome.ClusterData cluster1 = GitopsClustersOutcome.ClusterData.builder()
+                                                     .envId("IDENTIFIER")
+                                                     .envName("ENV_NAME")
+                                                     .envGroupId("ENVGROUP_ID")
+                                                     .envGroupName("ENV_GROUP")
+                                                     .clusterName("CLUSTER_NAME")
+                                                     .clusterId("CLUSTER_ID")
+                                                     .scope("SCOPE")
+                                                     .variables(variables)
+                                                     .build();
+
+    List<GitopsClustersOutcome.ClusterData> clusterDataList = List.of(cluster1);
+
+    GitopsClustersOutcome gitopsClustersOutcome = new GitopsClustersOutcome(clusterDataList);
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().output(gitopsClustersOutcome).found(true).build();
+    doReturn(optionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT)));
+
+    Map<String, Object> variables2 = new HashMap<>();
+    variables2.put("config3", ParameterField.builder().value("null").build());
+    variables2.put("config4", ParameterField.builder().value("").build());
+
+    Map<String, Map<String, String>> map = step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, variables2);
+    Map<String, String> fileVariables = map.get("FILE_PATH/ENV_GROUP/ENV_NAME/CLUSTER_NAME");
+    assertThat(fileVariables).isNotNull();
+
+    // validating cluster variables
+    assertThat(fileVariables.get("config1")).isEqualTo(null);
+    assertThat(fileVariables.get("config2")).isEqualTo(null);
+
+    // validating variables from spec parameters
+    assertThat(fileVariables.get("config3")).isEqualTo(null);
+    assertThat(fileVariables.get("config4")).isEqualTo(null);
   }
 }

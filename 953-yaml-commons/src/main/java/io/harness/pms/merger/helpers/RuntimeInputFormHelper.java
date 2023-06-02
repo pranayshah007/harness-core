@@ -9,17 +9,21 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -45,6 +49,12 @@ public class RuntimeInputFormHelper {
     return runtimeInputFormYamlConfig.getYaml();
   }
 
+  // only to be used for get runtime input form API, everywhere else the above method is to be used
+  public String createRuntimeInputFormWithDefaultValues(String yaml) {
+    YamlConfig runtimeInputFormYamlConfig = createRuntimeInputFormWithDefaultValuesYamlConfig(yaml);
+    return runtimeInputFormYamlConfig.getYaml();
+  }
+
   public String removeRuntimeInputsFromYaml(String pipelineYaml, String runtimeInputsYaml, boolean keepInput) {
     YamlConfig runtimeInputFormYamlConfig =
         createRuntimeInputFormYamlConfig(new YamlConfig(pipelineYaml), new YamlConfig(runtimeInputsYaml), keepInput);
@@ -53,10 +63,16 @@ public class RuntimeInputFormHelper {
 
   private YamlConfig createRuntimeInputFormYamlConfig(String yaml, boolean keepInput) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
-    return createRuntimeInputFormYamlConfig(yamlConfig, keepInput);
+    return createRuntimeInputFormYamlConfig(yamlConfig, keepInput, false);
   }
 
-  public YamlConfig createRuntimeInputFormYamlConfig(YamlConfig yamlConfig, boolean keepInput) {
+  private YamlConfig createRuntimeInputFormWithDefaultValuesYamlConfig(String yaml) {
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    return createRuntimeInputFormYamlConfig(yamlConfig, true, true);
+  }
+
+  public YamlConfig createRuntimeInputFormYamlConfig(
+      YamlConfig yamlConfig, boolean keepInput, boolean keepDefaultValues) {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
@@ -71,7 +87,55 @@ public class RuntimeInputFormHelper {
       }
     });
 
+    /* we only want to keep "default" keys if they have a sibling as runtime input
+    For example, over here, the default of v1 should be kept, while v2 should not be kept at all
+    - name: v1
+      type: String
+      default: v1Val
+      value: <+input>
+    - name: v2
+      type: String
+      default: v2Val
+      value: fixedValue
+      This code block goes over all the runtime input fields (all of them are in templateMap). For every runtime input
+    key, it checks if it has a sibling with key "default" in the full pipeline map. If it is there, then the default key
+    is added to the template. In the above example, the "default" key for v2 is not even looped over
+     */
+    if (keepDefaultValues && EmptyPredicate.isNotEmpty(templateMap)) {
+      Map<FQN, Object> defaultKeys = new LinkedHashMap<>();
+      templateMap.keySet().forEach(key -> {
+        FQN parent = key.getParent();
+        FQN defaultSibling = FQN.duplicateAndAddNode(
+            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
+        if (fullMap.containsKey(defaultSibling)) {
+          defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
+        }
+      });
+      templateMap.putAll(defaultKeys);
+    }
+
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
+  }
+  public Map<FQN, Object> getRuntimeInputFormYamlConfig(YamlConfig pipelineTemplate, YamlConfig inputSet) {
+    Map<FQN, Object> fullMap = pipelineTemplate.getFqnToValueMap();
+    Map<FQN, Object> templateMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
+      if (NGExpressionUtils.matchesExecutionInputPattern(value)
+          || NGExpressionUtils.matchesInputSetPattern(value) && !key.isType()) {
+        templateMap.put(key, fullMap.get(key));
+      }
+    });
+    Map<FQN, Object> inputValueMap = inputSet.getFqnToValueMap();
+    Map<FQN, Object> inputKeyValueMap = new LinkedHashMap<>();
+    inputValueMap.keySet().forEach(key -> {
+      if (templateMap.containsKey(key)) {
+        String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(inputValueMap.get(key).toString());
+        inputKeyValueMap.put(key, value);
+      }
+    });
+
+    return inputKeyValueMap;
   }
 
   public YamlConfig createRuntimeInputFormYamlConfig(YamlConfig pipeline, YamlConfig inputsConfig, boolean keepInput) {
@@ -137,7 +201,8 @@ public class RuntimeInputFormHelper {
                               : FQN.builder().fqnList(fqnList).build();
   }
 
-  public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
+  public String createExecutionInputFormAndUpdateYamlField(YamlField yamlField) {
+    JsonNode jsonNode = yamlField.getNode().getParentNode().getCurrJsonNode();
     YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
@@ -152,12 +217,22 @@ public class RuntimeInputFormHelper {
         templateMap.put(key, fullMap.get(key));
       }
     });
-    // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    if (EmptyPredicate.isNotEmpty(templateMap)) {
+      updateJsonNodeInYamlNodeForExecutionInput(yamlField.getNode(), jsonNode, fullMap, yamlField.getName());
+      return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    }
+    return null;
   }
 
-  public String createExecutionInputFormAndUpdateYamlFieldForStage(JsonNode jsonNode) {
+  private void updateJsonNodeInYamlNodeForExecutionInput(
+      YamlNode yamlNode, JsonNode jsonNode, Map<FQN, Object> fullMap, String fieldName) {
+    JsonNode copyJsonNode = jsonNode.deepCopy();
+    JsonNodeUtils.merge(copyJsonNode, (new YamlConfig(fullMap, copyJsonNode, false, true)).getYamlMap());
+    yamlNode.setCurrJsonNode(copyJsonNode.get(fieldName), fieldName);
+  }
+
+  public String createExecutionInputFormAndUpdateYamlFieldForStage(YamlField yamlField) {
+    JsonNode jsonNode = yamlField.getNode().getParentNode().getCurrJsonNode();
     YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
 
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
@@ -178,7 +253,12 @@ public class RuntimeInputFormHelper {
     });
 
     // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    // TODO: we are updating the json node, due to race condition ConcurrentModificationException is possible here. To
+    // minimize the race condition, adding NotEmpty condition on templateMap. Find permanent way to solve this issue
+    if (isNotEmpty(templateMap)) {
+      updateJsonNodeInYamlNodeForExecutionInput(yamlField.getNode(), jsonNode, fullMap, yamlField.getName());
+      return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    }
+    return null;
   }
 }

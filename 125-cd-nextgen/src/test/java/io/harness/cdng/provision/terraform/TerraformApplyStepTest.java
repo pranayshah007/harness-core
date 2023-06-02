@@ -9,9 +9,11 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,7 +25,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -56,7 +60,9 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,6 +91,7 @@ public class TerraformApplyStepTest extends CategoryTest {
   @InjectMocks private TerraformApplyStep terraformApplyStep;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
 
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
@@ -95,6 +102,11 @@ public class TerraformApplyStepTest extends CategoryTest {
   }
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+
+  @Before
+  public void setUpMocks() {
+    doNothing().when(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
+  }
 
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
@@ -202,6 +214,13 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformStepDataGenerator.generateApplyStepPlan(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
+    applyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
+    applyStepParameters.getConfiguration().setCliOptions(
+        List.of(TerraformCliOptionFlag.builder()
+                    .commandType(TerraformCommandFlagType.APPLY)
+                    .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                    .build()));
+
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
                                     .gitConnectionType(GitConnectionType.ACCOUNT)
@@ -221,6 +240,12 @@ public class TerraformApplyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -234,7 +259,84 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacWithGithubWhenTFCloudCli() {
+    Ambiance ambiance = getAmbiance();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("VarFiles/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+
+    TerraformApplyStepParameters applyStepParameters =
+        TerraformStepDataGenerator.generateApplyStepPlan(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
+    applyStepParameters.getConfiguration().getSpec().getIsTerraformCloudCli().setValue(true);
+    applyStepParameters.getConfiguration().setCliOptions(
+        List.of(TerraformCliOptionFlag.builder()
+                    .commandType(TerraformCommandFlagType.APPLY)
+                    .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                    .build()));
+
+    GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
+                                    .gitAuthType(GitAuthType.HTTP)
+                                    .gitConnectionType(GitConnectionType.ACCOUNT)
+                                    .delegateSelectors(Collections.singleton("delegateName"))
+                                    .url("https://github.com/wings-software")
+                                    .branchName("master")
+                                    .build();
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().branch("master").connectorName("terraform").gitConfigDTO(gitConfigDTO).build();
+    GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder()
+                                                  .identifier("terraform")
+                                                  .gitStoreDelegateConfig(gitStoreDelegateConfig)
+                                                  .succeedIfFileNotFound(false)
+                                                  .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(applyStepParameters).build();
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
+    doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    TaskRequest taskRequest = terraformApplyStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
+    assertThat(taskRequest).isNotNull();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    TerraformTaskNGParameters taskParameters =
+        (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
+    assertThat(taskParameters.getEncryptionConfig()).isNull();
+    assertThat(taskParameters.getWorkspace()).isNull();
+    assertThat(taskParameters.isTerraformCloudCli()).isTrue();
+    assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+  }
+
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
@@ -315,6 +417,10 @@ public class TerraformApplyStepTest extends CategoryTest {
             .provisionerIdentifier(ParameterField.createValueField("Id"))
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INHERIT_FROM_PLAN)
+                               .commandFlags(List.of(TerraformCliOptionFlag.builder()
+                                                         .commandType(TerraformCommandFlagType.APPLY)
+                                                         .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                         .build()))
                                .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
@@ -336,6 +442,12 @@ public class TerraformApplyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terraformStepHelper)
+        .getTerraformCliFlags(any());
 
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
@@ -360,6 +472,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
+    assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

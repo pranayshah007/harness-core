@@ -1,0 +1,36 @@
+identifier: circleci
+name: CircleCI
+description: Automate your development process with CI hosted in the cloud or on a private server.
+createdBy: Spotify
+category: CI/CD
+source: https://github.com/backstage/backstage/tree/master/plugins/circleci
+iconUrl: https://upload.wikimedia.org/wikipedia/commons/8/82/Circleci-icon-logo.svg
+imageUrl: ''
+config: |-
+  proxy:
+    '/circleci/api':
+      target: https://circleci.com/api/v1.1
+      pathRewrite:
+        'api/proxy/circleci/api/?': '/'
+      headers:
+        Circle-Token: ${CIRCLECI_AUTH_TOKEN}
+environmentVariables:
+  - CIRCLECI_AUTH_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityCircleCIContent
+      addByDefault: true
+      defaultRoute: /ci-cd
+      layoutSchemaSpecs:
+        name: EntityCircleCIContent
+        title: CI/CD
+        contents:
+          - component: EntitySwitch
+            specs:
+              cases:
+                - if: isCircleCIAvailable
+                  content:
+                    component: EntityCircleCIContent

@@ -39,7 +39,6 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
-import com.amazonaws.services.autoscaling.model.*;
 import com.amazonaws.services.autoscaling.model.AttachLoadBalancerTargetGroupsRequest;
 import com.amazonaws.services.autoscaling.model.AttachLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -49,6 +48,7 @@ import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
 import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
 import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
+import com.amazonaws.services.autoscaling.model.DeleteScheduledActionRequest;
 import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
@@ -61,6 +61,8 @@ import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
 import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
 import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
+import com.amazonaws.services.autoscaling.model.DescribeScheduledActionsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeScheduledActionsResult;
 import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
 import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
@@ -76,8 +78,10 @@ import com.amazonaws.services.autoscaling.model.LoadBalancerTargetGroupState;
 import com.amazonaws.services.autoscaling.model.PutLifecycleHookRequest;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
+import com.amazonaws.services.autoscaling.model.PutScheduledUpdateGroupActionRequest;
 import com.amazonaws.services.autoscaling.model.RefreshPreferences;
 import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.amazonaws.services.autoscaling.model.ScheduledUpdateGroupAction;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
 import com.amazonaws.services.autoscaling.model.Tag;
@@ -100,7 +104,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -240,14 +243,16 @@ public class AsgSdkManager {
 
   public void updateASG(
       String asgName, String launchTemplateVersion, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
-    LaunchTemplateSpecification launchTemplateSpecification =
-        new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
-
     UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
         createAsgRequestToUpdateAsgRequestMapper(createAutoScalingGroupRequest);
 
     updateAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
-    updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+
+    if (isNotEmpty(launchTemplateVersion)) {
+      LaunchTemplateSpecification launchTemplateSpecification =
+          new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
+      updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+    }
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
     updateTags(asgName, createAutoScalingGroupRequest);
@@ -414,6 +419,7 @@ public class AsgSdkManager {
   }
 
   public List<LifecycleHookSpecification> getLifeCycleHookSpecificationList(String asgName) {
+    info("Getting LifecycleHooks for Asg %s", asgName);
     DescribeLifecycleHooksRequest describeLifecycleHooksRequest = new DescribeLifecycleHooksRequest();
     describeLifecycleHooksRequest.setAutoScalingGroupName(asgName);
 
@@ -439,6 +445,7 @@ public class AsgSdkManager {
   }
 
   public AutoScalingGroup getASG(String asgName) {
+    info("Getting Asg %s", asgName);
     DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest =
         new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgName);
 
@@ -516,10 +523,17 @@ public class AsgSdkManager {
 
     DescribeInstanceRefreshesResult describeInstanceRefreshesResult =
         asgCall(asgClient -> asgClient.describeInstanceRefreshes(describeInstanceRefreshesRequest));
-    List<InstanceRefresh> instanceRefreshList = describeInstanceRefreshesResult.getInstanceRefreshes();
 
-    Set<String> statuses = instanceRefreshList.stream().map(InstanceRefresh::getStatus).collect(Collectors.toSet());
-    return statuses.size() == 1 && statuses.contains(INSTANCE_REFRESH_STATUS_SUCCESSFUL);
+    // always one instanceRefresh
+    InstanceRefresh instanceRefresh = describeInstanceRefreshesResult.getInstanceRefreshes().get(0);
+    if (instanceRefresh.getPercentageComplete() != null) {
+      info("Percentage completed: %d", instanceRefresh.getPercentageComplete());
+    }
+    if (instanceRefresh.getStatusReason() != null) {
+      info(instanceRefresh.getStatusReason());
+    }
+
+    return instanceRefresh.getStatus().equals(INSTANCE_REFRESH_STATUS_SUCCESSFUL);
   }
 
   public void waitInstanceRefreshSteadyState(String asgName, String instanceRefreshId, String operationName) {
@@ -575,6 +589,7 @@ public class AsgSdkManager {
   }
 
   public List<ScalingPolicy> listAllScalingPoliciesOfAsg(String asgName) {
+    info("Getting ScalingPolicies for Asg %s", asgName);
     List<ScalingPolicy> scalingPolicies = newArrayList();
     String nextToken = null;
     do {
@@ -620,6 +635,7 @@ public class AsgSdkManager {
   }
 
   public List<ScheduledUpdateGroupAction> listAllScheduledActionsOfAsg(String asgName) {
+    info("Getting ScheduledUpdateGroupActions for Asg %s", asgName);
     List<ScheduledUpdateGroupAction> actions = newArrayList();
     String nextToken = null;
     do {
@@ -796,7 +812,9 @@ public class AsgSdkManager {
           .filter(rule -> rule.ruleArn().equalsIgnoreCase(listenerRuleArn))
           .map(Rule::actions)
           .flatMap(Collection::stream)
-          .map(Action::targetGroupArn)
+          .map(action -> action.forwardConfig().targetGroups())
+          .flatMap(Collection::stream)
+          .map(TargetGroupTuple::targetGroupArn)
           .collect(Collectors.toList());
     }
     throw new InvalidRequestException(
@@ -809,7 +827,7 @@ public class AsgSdkManager {
       return true;
     }
 
-    Set<String> instanceIdsRegistered = new HashSet<>();
+    boolean allTargetsRegistered = true;
 
     for (String targetGroupARN : targetGroupARNList) {
       DescribeTargetHealthRequest describeTargetHealthRequest =
@@ -819,19 +837,32 @@ public class AsgSdkManager {
           elbV2Client.describeTargetHealth(awsInternalConfig, describeTargetHealthRequest, region);
 
       List<TargetHealthDescription> healthDescriptions = response.targetHealthDescriptions();
-      if (isNotEmpty(healthDescriptions)) {
-        instanceIdsRegistered.addAll(
-            healthDescriptions.stream()
-                .filter(description -> description.targetHealth().stateAsString().equalsIgnoreCase("Healthy"))
-                .map(description -> description.target().id())
-                .filter(targetIds::contains)
-                .collect(toSet()));
-      }
+      Set<String> healthyTargetIdsRegistered = getHealthyTargetIdsRegistered(healthDescriptions, targetIds, true);
+      Set<String> unhealthyTargetIdsRegistered = getHealthyTargetIdsRegistered(healthDescriptions, targetIds, false);
+      int totalNrOfTargetIds = healthyTargetIdsRegistered.size() + unhealthyTargetIdsRegistered.size();
+
+      info("For targetGroup %s registered and in healthy state are [%d] out of [%d] targets", targetGroupARN,
+          healthyTargetIdsRegistered.size(), totalNrOfTargetIds);
+
+      allTargetsRegistered = allTargetsRegistered && !healthyTargetIdsRegistered.isEmpty()
+          && healthyTargetIdsRegistered.size() == totalNrOfTargetIds;
     }
 
-    info("[%d] out of [%d] targets registered and in healthy state", instanceIdsRegistered.size(), targetIds.size());
-    return instanceIdsRegistered.containsAll(targetIds);
+    return allTargetsRegistered;
   }
+
+  private Set<String> getHealthyTargetIdsRegistered(
+      List<TargetHealthDescription> healthDescriptions, List<String> targetIds, boolean isHealthy) {
+    Predicate<TargetHealthDescription> healthyPredicate =
+        decr -> decr.targetHealth().stateAsString().equalsIgnoreCase("Healthy");
+
+    return healthDescriptions.stream()
+        .filter(isHealthy ? healthyPredicate : Predicate.not(healthyPredicate))
+        .map(description -> description.target().id())
+        .filter(targetIds::contains)
+        .collect(toSet());
+  }
+
   public String describeBGTags(String asgName) {
     Filter filter1 = new Filter().withName("auto-scaling-group").withValues(asgName);
     Filter filter2 = new Filter().withName("key").withValues(BG_VERSION);
@@ -856,22 +887,28 @@ public class AsgSdkManager {
   public void info(String msg, boolean isBold, Object... params) {
     String formatted = format(msg, params);
     log.info(formatted);
-    if (isBold) {
-      logCallback.saveExecutionLog(color(formatted, White, Bold), INFO);
-    } else {
-      logCallback.saveExecutionLog(formatted);
+    if (logCallback != null) {
+      if (isBold) {
+        logCallback.saveExecutionLog(color(formatted, White, Bold), INFO);
+      } else {
+        logCallback.saveExecutionLog(formatted);
+      }
     }
   }
 
   public void warn(String msg, Object... params) {
     String formatted = format(msg, params);
     log.warn(formatted);
-    logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
+    }
   }
 
   public void error(String msg, String... params) {
     String formatted = format(msg, params);
-    logCallback.saveExecutionLog(formatted, ERROR);
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(formatted, ERROR);
+    }
     log.error(formatted);
   }
 }

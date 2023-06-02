@@ -17,6 +17,7 @@ import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -34,16 +35,19 @@ public class StepDetailsUpdateEventHandler {
   public OrchestrationGraph handleEvent(String planExecutionId, String nodeExecutionId,
       OrchestrationGraph orchestrationGraph, Update summaryEntityUpdate) {
     try {
-      Map<String, PmsStepDetails> stepDetails =
-          pmsGraphStepDetailsService.getStepDetails(planExecutionId, nodeExecutionId);
-      orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepDetails(stepDetails);
-      Level currentLevel = AmbianceUtils.obtainCurrentLevel(
-          orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getAmbiance());
-      if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)) {
-        String stageUuid = currentLevel.getSetupId();
-        summaryEntityUpdate.set(
-            PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".stepDetails",
-            stepDetails);
+      if (orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId) != null) {
+        Map<String, PmsStepDetails> stepDetails =
+            pmsGraphStepDetailsService.getStepDetails(planExecutionId, nodeExecutionId);
+        orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepDetails(stepDetails);
+        Level currentLevel = AmbianceUtils.obtainCurrentLevel(
+            orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getAmbiance());
+        if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)
+            || Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STRATEGY)) {
+          String stageUuid = currentLevel.getSetupId();
+          summaryEntityUpdate.set(
+              PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".stepDetails",
+              stepDetails);
+        }
       }
     } catch (Exception e) {
       log.error(String.format(
@@ -58,7 +62,8 @@ public class StepDetailsUpdateEventHandler {
       String planExecutionId, String nodeExecutionId, OrchestrationGraph orchestrationGraph) {
     try {
       if (orchestrationGraph.getAdjacencyList().getGraphVertexMap().containsKey(nodeExecutionId)) {
-        PmsStepParameters stepDetails = pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId);
+        PmsStepParameters stepDetails = PmsStepParameters.parse(RecastOrchestrationUtils.pruneRecasterAdditions(
+            pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId)));
         orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepParameters(stepDetails);
       } else {
         log.error("[GRAPH_ERROR]: Given nodeExecution Id was not found before running Step inputs update event");

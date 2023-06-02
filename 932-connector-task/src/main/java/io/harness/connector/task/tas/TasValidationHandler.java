@@ -22,6 +22,7 @@ import io.harness.delegate.beans.connector.tasconnector.TasValidationParams;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.ConnectorValidationException;
+import io.harness.git.ExceptionSanitizer;
 import io.harness.network.Http;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.model.CfRequestConfig;
@@ -82,7 +83,7 @@ public class TasValidationHandler implements ConnectorValidationHandler {
       String errorMessage = "Testing connection to Tas has Failed: ";
       throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Tas connector",
           "Please check you Tas connector configuration.",
-          new ConnectorValidationException(errorMessage + e.getMessage()));
+          new ConnectorValidationException(errorMessage + ExceptionSanitizer.sanitizeTheMessage(e.getMessage())));
     }
   }
 }

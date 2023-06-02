@@ -13,9 +13,9 @@ proto_library(
     srcs = [
         "artifact.proto",
         "execution.proto",
-        "logproxy.proto",
+        "log_service_proxy.proto",
         "publish_artifact.proto",
-        "tiproxy.proto",
+        "ti_service_proxy.proto",
     ],
     visibility = ["//visibility:public"],
 )

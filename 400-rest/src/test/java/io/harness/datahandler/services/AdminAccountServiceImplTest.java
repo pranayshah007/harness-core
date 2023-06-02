@@ -8,8 +8,11 @@
 package io.harness.datahandler.services;
 
 import static io.harness.rule.OwnerRule.HANTANG;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
-import static org.mockito.Matchers.eq;
+import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
+
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -39,5 +42,13 @@ public class AdminAccountServiceImplTest extends CategoryTest {
   public void shouldEnableOrDisableCeK8sEventCollection() {
     adminAccountService.enableOrDisableCeK8sEventCollection(accountId, true);
     verify(accountService).updateCeAutoCollectK8sEvents(eq(accountId), eq(true));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void deleteAccountShouldMarkTheAccountStatusDeleted() {
+    adminAccountService.delete(accountId);
+    verify(accountService).updateAccountStatus(eq(accountId), eq(MARKED_FOR_DELETION));
   }
 }

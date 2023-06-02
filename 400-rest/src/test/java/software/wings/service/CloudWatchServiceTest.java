@@ -23,8 +23,8 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -36,12 +36,12 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.AwsInfrastructureProvider;
 import software.wings.service.impl.CloudWatchServiceImpl;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.cloudwatch.AwsNameSpace;
 import software.wings.service.impl.cloudwatch.CloudWatchMetric;
 import software.wings.service.impl.cloudwatch.CloudWatchSetupTestNodeData;

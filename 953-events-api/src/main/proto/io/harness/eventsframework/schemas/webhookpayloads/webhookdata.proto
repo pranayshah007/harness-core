@@ -4,12 +4,22 @@
 // https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
 
 syntax = "proto3";
-import "product/ci/scm/proto/scm.proto";
+import "product/ci/scm/proto/scm_service.proto";
 
 package io.harness.eventsframework.webhookpayloads.webhookdata;
 
 option java_multiple_files = true;
 option go_package = "953_events_api";
+
+message TriggerExecutionDTO {
+  string accountId = 1;
+  string orgIdentifier = 2;
+  string projectIdentifier = 3;
+  string targetIdentifier = 4;
+  string triggerIdentifier = 5;
+  bool authenticated = 6;
+  WebhookDTO webhookDto = 7;
+}
 
 message WebhookDTO {
   string jsonPayload = 1;
@@ -48,6 +58,7 @@ enum SourceRepoType {
   BITBUCKET = 2;
   AWS_CODECOMMIT = 3;
   AZURE = 4;
+  HARNESS = 5;
 }
 
 message GitDetails {

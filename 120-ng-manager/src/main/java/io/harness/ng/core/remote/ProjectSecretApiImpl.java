@@ -21,6 +21,7 @@ import static java.util.Objects.nonNull;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.api.impl.SecretPermissionValidator;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -30,6 +31,7 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.ProjectSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
@@ -37,17 +39,24 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class ProjectSecretApiImpl implements ProjectSecretApi {
   private final SecretCrudService ngSecretService;
   private final SecretPermissionValidator secretPermissionValidator;
   private final SecretApiUtils secretApiUtils;
+  private final NGEncryptedDataService ngEncryptedDataService;
+  private static final String validationErrorMessage =
+      "Validation has failed, Secret reference not found. Please check the reference path or make sure the delegate has secret manager access";
+  private static final String validationSuccessMessage = "Validation is Successful, Secret can be referenced";
 
   @Override
   public Response createProjectScopedSecret(
@@ -97,8 +106,8 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
 
   @Override
   public Response getProjectScopedSecrets(String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit, String account) {
-    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit);
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
+    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit, sort, order);
   }
 
   @Override
@@ -124,6 +133,29 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
     return Response.ok()
         .entity(ngSecretService.updateFile(account, org, project, secret, secretDto, fileInputStream))
         .build();
+  }
+
+  @Override
+  public Response validateProjectSecretRef(
+      String org, String project, @Valid SecretRequest body, String harnessAccount) {
+    boolean isValid;
+    SecretDTOV2 secretDto = secretApiUtils.toSecretDto(body.getSecret());
+    try {
+      isValid = ngEncryptedDataService.validateSecretRef(harnessAccount, org, project, secretDto);
+    } catch (Exception e) {
+      log.error("Secret path reference failed for secret: {}, account: {}, org:{}, project:{}", secretDto.getName(),
+          harnessAccount, secretDto.getOrgIdentifier(), secretDto.getProjectIdentifier());
+      throw e;
+    }
+    if (isValid) {
+      return Response.ok()
+          .entity(new SecretValidationResponse().message(validationSuccessMessage).success(true))
+          .build();
+    } else {
+      return Response.ok()
+          .entity(new SecretValidationResponse().message(validationErrorMessage).success(false))
+          .build();
+    }
   }
 
   private Response updateSecret(
@@ -170,10 +202,10 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
   }
 
   private Response getSecrets(String account, String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit) {
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String sort, String order) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-    Page<SecretResponseWrapper> secretPage = ngSecretService.list(
-        account, org, project, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(account, org, project, secret, secretTypes, recursive,
+        searchTerm, null, false, ApiUtils.getPageRequest(page, limit, sort, order));
     List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =

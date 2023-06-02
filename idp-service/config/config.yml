@@ -11,12 +11,14 @@ mongo:
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
 
-# change the ports
 server:
   applicationConnectors:
     - type: http
-      port: 12001
+      port: 12003
       maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: http
+      port: 12004
   requestLog:
     appenders: []
   maxThreads: 1024
@@ -41,6 +43,21 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+  userName: ""
+  password: ""
+
 logging:
   level: INFO
   loggers:
@@ -52,11 +69,73 @@ logging:
       threshold: TRACE
       target: STDOUT
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
-#    - type: gke-console
-#      threshold: TRACE
-#      target: STDOUT
-#      stackdriverLogEnabled: true
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
+
+distributedLockImplementation: MONGO
 
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
+
+ngManagerServiceHttpClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+managerClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+backstageHttpClientConfig:
+  baseUrl: https://localhost:7007
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+managerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+backstageServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
+jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
+
+managerTarget: localhost:9880
+managerAuthority: localhost
+
+onboardingModuleConfig:
+  descriptionForEntitySelected: A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below
+  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your GitHub repository as shown below
+  useGitServiceGrpcForSingleEntityPush: true
+  tmpPathForCatalogInfoYamlStore: /tmp/idp-catalog-onboarding
+  catalogInfoLocationDefaultPath: /.harness-idp-entities
+  harnessCiCdAnnotations:
+    projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
+
+gitManagerGrpcClientConfig:
+  target: localhost:13001
+  authority: localhost
+
+accessControlClient:
+  enableAccessControl: false
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+backstageSaToken: ""
+backstageSaCaCrt: ""
+backstageMasterUrl: ""
+backstagePodLabel: ""
+
+provisionModuleConfig:
+  triggerPipelineUrl: ""
+
+env: ""
+prEnvDefaultBackstageNamespace: ""
+
+backstageAppBaseUrl: https://localhost:3000
+backstagePostgresHost: ""

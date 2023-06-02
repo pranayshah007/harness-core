@@ -22,10 +22,10 @@ import static org.mockito.Mockito.when;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
-import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.app.MainConfiguration;
 import software.wings.service.impl.infra.InfraDownloadService;
@@ -39,7 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Answers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DelegateVersionServiceTest {
@@ -80,12 +80,22 @@ public class DelegateVersionServiceTest {
 
   @Test
   @Category(UnitTests.class)
-  public void whenDelegateImageTagAccountOverrideThenUseIt() {
+  public void whenDelegateImageTagAccountOverrideAndImmutableThenUseIt() {
+    final VersionOverride override =
+        VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
+
+    mockDelegateOverrides(override, false, false, true);
+    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, true);
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void whenDelegateImageTagAccountOverrideAndNotImmutableThenDontUseIt() {
     final VersionOverride override =
         VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_IMAGE_TAG).version(HARNESS_OVERRIDE_TAG).build();
 
     mockDelegateOverrides(override, false, false, false);
-    assertOverrides(HARNESS_OVERRIDE_TAG, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
+    assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
   }
 
   @Test

@@ -14,7 +14,6 @@ import static org.atmosphere.annotation.AnnotationUtil.logger;
 
 import io.harness.mongo.IndexCreator;
 import io.harness.mongo.IndexCreator.IndexCreatorBuilder;
-import io.harness.mongo.IndexManagerInspectException;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Preconditions;
@@ -62,10 +61,6 @@ public class SortCompoundMongoIndex implements MongoIndex {
 
     if (isNotEmpty(getSortFields())) {
       for (String field : getSortFields()) {
-        if (field.equals(id)) {
-          throw new IndexManagerInspectException("There is no point of having collection key in a composite index."
-              + "\nIf in the query there is a unique value it will always fetch exactly one item");
-        }
         if (field.charAt(0) != '-') {
           keys.append(field, IndexType.ASC.toIndexValue());
         } else {
@@ -76,10 +71,6 @@ public class SortCompoundMongoIndex implements MongoIndex {
 
     if (isNotEmpty(getRangeFields())) {
       for (String field : getRangeFields()) {
-        if (field.equals(id)) {
-          throw new IndexManagerInspectException("There is no point of having collection key in a composite index."
-              + "\nIf in the query there is a unique value it will always fetch exactly one item");
-        }
         if (field.charAt(0) != '-') {
           keys.append(field, IndexType.ASC.toIndexValue());
         } else {

@@ -22,8 +22,8 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,6 +34,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -67,6 +68,8 @@ public class AwsLambdaVerificationTest extends WingsBaseTest {
   @Mock private SecretManager secretManager;
   @Mock private DelegateService delegateService;
   @Mock private StateExecutionService stateExecutionService;
+
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsLambdaVerification awsLambdaVerification;

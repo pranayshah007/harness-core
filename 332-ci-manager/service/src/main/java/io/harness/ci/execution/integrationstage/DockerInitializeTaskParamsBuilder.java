@@ -26,6 +26,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 
 @Singleton
 public class DockerInitializeTaskParamsBuilder {
@@ -35,7 +36,8 @@ public class DockerInitializeTaskParamsBuilder {
 
   public CIVmInitializeTaskParams getDockerInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
-    return vmInitializeTaskParamsBuilder.getVmInitializeParams(initializeStepInfo, ambiance, "");
+    return vmInitializeTaskParamsBuilder.getVmInitializeParams(
+        initializeStepInfo, ambiance, "", Collections.emptyList());
   }
 
   public String getHostedPoolId(ParameterField<Platform> platform) {

@@ -37,7 +37,7 @@ public class PermissionIdentifierValidator implements ConstraintValidator<Permis
     }
     if (value.length() > MAX_ALLOWED_LENGTH) {
       context.disableDefaultConstraintViolation();
-      context.buildConstraintViolationWithTemplate("cannot be more than 64 characters long.").addConstraintViolation();
+      context.buildConstraintViolationWithTemplate("cannot be more than 128 characters long.").addConstraintViolation();
       return false;
     }
     if (!Sets.newHashSet(Lists.charactersOf(ALLOWED_CHARS_STRING)).containsAll(Lists.charactersOf(value))) {

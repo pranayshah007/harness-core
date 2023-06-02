@@ -8,9 +8,15 @@
 package io.harness.ci.validation;
 
 import io.harness.account.AccountClient;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.ExecutionLimits;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.account.AccountTrustLevel;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.user.remote.UserClient;
@@ -26,17 +32,66 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   @Inject private UserClient userClient;
   @Inject private AccountClient accountClient;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private CILicenseService ciLicenseService;
+  @Inject private ExecutionLimits executionLimits;
+
+  private static long APPLY_DAY = 1678368362000L; // 09.3.23 Day to apply the policy. In milliseconds
 
   @Inject
   public CIAccountValidationServiceImpl() {}
 
-  @Override
-  public boolean isAccountValidForExecution(String accountId) {
-    Integer trustLevel = AccountTrustLevel.UNINITIALIZED;
+  Integer getTrustLevel(String accountId) {
+    int trustLevel = AccountTrustLevel.BASIC_USER;
+
     try {
       trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
 
-      if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
+      if (AccountTrustLevel.UNINITIALIZED == trustLevel) {
+        trustLevel = initializeAccountTrustLevel(accountId);
+        Boolean result = CGRestUtils.getResponse(accountClient.updateAccountTrustLevel(accountId, trustLevel));
+        if (result == false) {
+          log.warn("Error updating account trust level");
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error in setting account trust level. Proceeding as regular. {}", e);
+      trustLevel = AccountTrustLevel.BASIC_USER;
+    }
+
+    return trustLevel;
+  }
+
+  @Override
+  public boolean isAccountValidForExecution(String accountId) {
+    Integer trustLevel = AccountTrustLevel.BASIC_USER;
+    try {
+      LicensesWithSummaryDTO ciLicense = ciLicenseService.getLicenseSummary(accountId);
+      if (ciLicense == null) {
+        throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+      }
+
+      if (ciLicense != null) {
+        if (ciLicense.getEdition() == Edition.ENTERPRISE || ciLicense.getEdition() == Edition.TEAM
+            || ciLicense.getLicenseType() == LicenseType.PAID) {
+          return true;
+        }
+      }
+
+      AccountDTO accountDto = CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
+
+      if (accountDto.getCreatedAt() < APPLY_DAY) {
+        return true;
+      }
+
+      Set<String> whiteListed = ciMiningPatternJob.getWhiteListed();
+
+      if (whiteListed.contains(accountId)) {
+        return true;
+      }
+
+      trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
+
+      if (AccountTrustLevel.UNINITIALIZED == trustLevel) {
         trustLevel = initializeAccountTrustLevel(accountId);
         Boolean result = CGRestUtils.getResponse(accountClient.updateAccountTrustLevel(accountId, trustLevel));
         if (result == false) {
@@ -44,22 +99,55 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
         }
       }
     } catch (Exception e) {
-      log.info("Error retrieving account trust level. Proceeding as regular. {}", e);
+      log.info("Error in setting account trust level. Proceeding as regular. {}", e);
       trustLevel = AccountTrustLevel.BASIC_USER;
     }
 
     if (trustLevel < AccountTrustLevel.BASIC_USER) {
-      throw new CIStageExecutionException("Account is not trusted for CI builds. Please reach support@harness.io");
+      throw new CIStageExecutionException(
+          "Your domain is not trusted for CI hosted builds. Please reach support@harness.io");
     }
 
     return true;
+  }
+
+  @Override
+  public long getMaxBuildPerDay(String accountId) {
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() != Edition.FREE) {
+      throw new IllegalArgumentException("Got Max builds per day check for non free license");
+    }
+
+    int trustLevel = 0;
+
+    AccountDTO accountDto = CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
+    Set<String> whiteListed = ciMiningPatternJob.getWhiteListed();
+
+    if (accountDto.getCreatedAt() < APPLY_DAY || whiteListed.contains(accountId)
+        || ciExecutionServiceConfig.isLocal()) {
+      trustLevel = AccountTrustLevel.BASIC_USER;
+    } else {
+      trustLevel = getTrustLevel(accountId);
+    }
+
+    switch (trustLevel) {
+      case AccountTrustLevel.BASIC_USER:
+        return executionLimits.getFreeBasicUser().getDailyMaxBuildsCount();
+      default:
+        return executionLimits.getFreeNewUser().getDailyMaxBuildsCount();
+    }
   }
 
   private Integer initializeAccountTrustLevel(String accountId) {
     if (ciExecutionServiceConfig.isLocal()) {
       return AccountTrustLevel.BASIC_USER;
     }
-    Set<String> domains = ciMiningPatternJob.getValidDomains();
+    Set<String> validDomains = ciMiningPatternJob.getValidDomains();
+    Set<String> whiteListed = ciMiningPatternJob.getWhiteListed();
 
     List<UserInfo> users = CGRestUtils.getResponse(userClient.listUsersEmails(accountId));
 
@@ -68,7 +156,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
     for (String email : usersEmail) {
       String domain = email.split("@")[1];
 
-      if (domains.contains(domain)) {
+      if (validDomains.contains(domain) || whiteListed.contains(domain)) {
         return AccountTrustLevel.BASIC_USER;
       }
     }

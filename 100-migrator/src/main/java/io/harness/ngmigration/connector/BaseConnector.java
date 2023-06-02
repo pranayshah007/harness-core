@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.secretmanagerclient.SecretType;
 
 import software.wings.beans.SettingAttribute;
@@ -30,6 +31,10 @@ import java.util.Set;
 public interface BaseConnector {
   default boolean isConnectorSupported(SettingAttribute settingAttribute) {
     return true;
+  }
+
+  default SupportStatus getSupportStatus() {
+    return SupportStatus.SUPPORTED;
   }
 
   default List<String> getConnectorIds(SettingAttribute settingAttribute) {

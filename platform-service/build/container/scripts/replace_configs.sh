@@ -63,7 +63,7 @@ fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   yq -i 'del(.allowedOrigins)' $CONFIG_FILE
-  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
@@ -226,6 +226,18 @@ fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.resourceGroupServiceConfig.redis.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ZENDESK_BASE_URL" ]]; then
+  export ZENDESK_BASE_URL; yq -i '.zendeskApiConfig.baseUrl=env(ZENDESK_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ZENDESK_TOKEN" ]]; then
+  export ZENDESK_TOKEN; yq -i '.zendeskApiConfig.token=env(ZENDESK_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$COVEO_TOKEN" ]]; then
+  export COVEO_TOKEN; yq -i '.zendeskApiConfig.coveoToken=env(COVEO_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then

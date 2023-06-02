@@ -26,6 +26,8 @@ import io.harness.perpetualtask.instancesync.AsgInstanceSyncPerpetualTaskParamsN
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
+import io.harness.perpetualtask.instancesync.AwsSamInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
@@ -36,7 +38,9 @@ import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskP
 import io.harness.perpetualtask.instancesync.CustomDeploymentInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesync.CustomDeploymentNGInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.EcsInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
@@ -142,6 +146,14 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(SpotinstPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(AsgInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
         .to(AsgInstanceSyncPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(GoogleFunctionInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(GoogleFunctionInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AwsSamInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(AwsSamInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AwsLambdaInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
+        .to(AwsLambdaInstanceSyncPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(K8sInstanceSyncPerpetualTaskParamsV2.class.getSimpleName())
+        .to(K8sInstanceSyncPerpetualTaskV2Executor.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)

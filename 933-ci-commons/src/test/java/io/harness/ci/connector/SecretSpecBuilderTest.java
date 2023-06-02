@@ -17,8 +17,8 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -158,6 +158,37 @@ public class SecretSpecBuilderTest extends CategoryTest {
     assertThat(decryptedSecrets.get("abc").getType()).isEqualTo(TEXT);
     Mockito.verify(secretDecryptor, Mockito.times(1))
         .decrypt(secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldConvertCustomSecretVariablesWithInvalidChar() {
+    SecretVariableDetails secretVariableDetails =
+        SecretVariableDetails.builder()
+            .secretVariableDTO(SecretVariableDTO.builder()
+                                   .name("abc//#-")
+                                   .type(SecretVariableDTO.Type.TEXT)
+                                   .secret(SecretRefData.builder()
+                                               .decryptedValue("pass".toCharArray())
+                                               .identifier("secret_id")
+                                               .scope(Scope.ACCOUNT)
+                                               .build())
+                                   .build())
+            .encryptedDataDetailList(singletonList(
+                EncryptedDataDetail.builder()
+                    .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.KMS).build())
+                    .build()))
+            .build();
+    when(secretDecryptor.decrypt(
+             secretVariableDetails.getSecretVariableDTO(), secretVariableDetails.getEncryptedDataDetailList()))
+        .thenReturn(secretVariableDetails.getSecretVariableDTO());
+    Map<String, SecretVariableDTO> cache = new HashMap<>();
+    Map<String, SecretParams> decryptedSecrets =
+        secretSpecBuilder.decryptCustomSecretVariables(singletonList(secretVariableDetails), cache);
+    assertThat(decryptedSecrets.get("abc____").getValue()).isEqualTo(encodeBase64("pass"));
+    assertThat(decryptedSecrets.get("abc____").getSecretKey()).isEqualTo(SECRET_KEY + "abc____");
+    assertThat(decryptedSecrets.get("abc____").getType()).isEqualTo(TEXT);
   }
 
   @Test

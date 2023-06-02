@@ -11,12 +11,14 @@ import static io.harness.rule.OwnerRule.ABHIJEET;
 import static io.harness.rule.OwnerRule.UTSAV;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +38,8 @@ import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.views.dto.CEViewShortHand;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
@@ -57,9 +61,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import graphql.com.google.common.collect.ImmutableList;
+import io.fabric8.utils.Lists;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
@@ -70,11 +77,13 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class RecommendationsOverviewQueryV2Test extends CategoryTest {
+  private static final Long DEFAULT_DAYS_BACK = 4L;
   private static final String ACCOUNT_ID = "accountId";
   private static final String NAME = "name";
   private static final String CLUSTER_NAME = "clusterName";
@@ -84,10 +93,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   private static final String NAMESPACE = "namespace";
   private static final String ID = "id0";
   private static final String PERSPECTIVE_ID = "perspectiveId";
+  private static final String PERSPECTIVE_NAME = "perspectiveName";
 
   private static final K8sRecommendationFilterDTO defaultFilter = K8sRecommendationFilterDTO.builder()
                                                                       .limit(GraphQLUtils.DEFAULT_LIMIT)
                                                                       .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                                                      .daysBack(DEFAULT_DAYS_BACK)
                                                                       .build();
   private ArgumentCaptor<Condition> conditionCaptor;
 
@@ -101,6 +112,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   @Mock private BigQueryHelper bigQueryHelper;
   @Mock private ViewParametersHelper viewParametersHelper;
   @InjectMocks private RecommendationsOverviewQueryV2 overviewQuery;
+  private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
 
   @Before
   public void setUp() throws Exception {
@@ -119,12 +131,19 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(
              eq(ACCOUNT_ID), any(Condition.class), eq(GraphQLUtils.DEFAULT_OFFSET), eq(GraphQLUtils.DEFAULT_LIMIT)))
         .thenReturn(Collections.emptyList());
+    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(false);
+
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(null))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
 
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()
                                             .limit(GraphQLUtils.DEFAULT_LIMIT)
                                             .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems()).isEmpty();
@@ -138,12 +157,18 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
              eq(ACCOUNT_ID), any(Condition.class), eq(GraphQLUtils.DEFAULT_OFFSET), eq(GraphQLUtils.DEFAULT_LIMIT)))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0", ResourceType.WORKLOAD)));
 
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(Collections.singletonList("id0")))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()
                                             .ids(singletonList(ID))
                                             .limit(GraphQLUtils.DEFAULT_LIMIT)
                                             .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems()).containsExactly(createRecommendationItem("id0"));
@@ -156,7 +181,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), any(Condition.class), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(defaultFilter, null);
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(defaultFilter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems())
@@ -170,6 +200,11 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), any(Condition.class), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()
                                             .names(singletonList(NAME))
                                             .namespaces(singletonList(NAMESPACE))
@@ -179,9 +214,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
                                             .minSaving(0D)
                                             .limit(GraphQLUtils.DEFAULT_LIMIT)
                                             .offset(GraphQLUtils.DEFAULT_OFFSET)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
 
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems())
@@ -199,7 +235,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), conditionCaptor.capture(), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems())
@@ -222,7 +263,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(CLUSTER_NAME, ViewIdOperator.NOT_IN));
 
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems())
@@ -247,7 +293,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(WORKLOAD_NAME, ViewIdOperator.NOT_NULL));
 
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(filter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     assertThat(recommendationsDTO.getItems())
@@ -280,7 +331,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(null);
 
-    assertThatThrownBy(() -> overviewQuery.recommendations(filter, null))
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+
+    assertThatThrownBy(() -> overviewQueryV2.recommendations(filter, null))
         .isExactlyInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(PERSPECTIVE_ID);
   }
@@ -294,8 +350,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(detailsQuery.recommendationDetails(any(RecommendationItemDTO.class), any(OffsetDateTime.class),
              any(OffsetDateTime.class), any(Long.class), eq(null)))
         .thenReturn(createRecommendationDetails());
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
 
-    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(defaultFilter, null);
+    final RecommendationsDTO recommendationsDTO = overviewQueryV2.recommendations(defaultFilter, null);
 
     assertRecommendationOverviewListResponse(recommendationsDTO);
     recommendationsDTO.getItems().forEach(
@@ -344,6 +404,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         .minSaving(0D)
         .limit(GraphQLUtils.DEFAULT_LIMIT)
         .offset(GraphQLUtils.DEFAULT_OFFSET)
+        .daysBack(DEFAULT_DAYS_BACK)
         .build();
   }
 
@@ -366,6 +427,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         .viewRules(singletonList(
             ViewRule.builder().viewConditions(ImmutableList.of(createViewCondition(fieldId, operator))).build()))
         .build();
+  }
+
+  private CEViewShortHand createCEViewShortHand() {
+    return CEViewShortHand.builder().uuid(PERSPECTIVE_ID).name(PERSPECTIVE_NAME).build();
   }
 
   private static ViewCondition createViewCondition(String fieldId, ViewIdOperator operator) {
@@ -395,9 +460,15 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     when(recommendationService.getFilterStats(eq(ACCOUNT_ID), any(), eq(columns), eq(CE_RECOMMENDATIONS)))
         .thenReturn(actualResponse);
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
+        .when(overviewQueryV2)
+        .getAllowedPerspectives(any());
+    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(true);
+    Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     List<FilterStatsDTO> result =
-        overviewQuery.recommendationFilterStats(columns, K8sRecommendationFilterDTO.builder().build(), null);
+        overviewQueryV2.recommendationFilterStats(columns, K8sRecommendationFilterDTO.builder().build(), null);
 
     verify(recommendationService, times(1)).getFilterStats(any(), conditionCaptor.capture(), any(), any());
 
@@ -420,6 +491,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     when(recommendationService.getFilterStats(eq(ACCOUNT_ID), any(), eq(columns), eq(CE_RECOMMENDATIONS)))
         .thenReturn(actualResponse);
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
+        .when(overviewQueryV2)
+        .getAllowedPerspectives(any());
+    when(rbacHelper.hasPerspectiveViewOnAllResources(any(), any(), any())).thenReturn(true);
+    Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     K8sRecommendationFilterDTO filter = K8sRecommendationFilterDTO.builder()
                                             .names(singletonList("name0"))
@@ -428,9 +505,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
                                             .resourceTypes(singletonList(ResourceType.WORKLOAD))
                                             .minCost(200D)
                                             .minSaving(100D)
+                                            .daysBack(DEFAULT_DAYS_BACK)
                                             .build();
 
-    List<FilterStatsDTO> result = overviewQuery.recommendationFilterStats(columns, filter, null);
+    List<FilterStatsDTO> result = overviewQueryV2.recommendationFilterStats(columns, filter, null);
 
     verify(recommendationService, times(1)).getFilterStats(any(), conditionCaptor.capture(), any(), any());
 
@@ -440,6 +518,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     Condition condition = conditionCaptor.getValue();
     assertCommonCondition(condition);
+    assertThat(condition.toString()).contains(CE_RECOMMENDATIONS.LASTPROCESSEDAT.getQualifiedName().toString());
 
     assertThat(condition.toString())
         .contains(CE_RECOMMENDATIONS.NAME.getQualifiedName().toString())
@@ -462,9 +541,17 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   public void testRecommendationStats() {
     when(recommendationService.getStats(eq(ACCOUNT_ID), any()))
         .thenReturn(RecommendationOverviewStats.builder().totalMonthlyCost(100D).totalMonthlySaving(100D).build());
+    RecommendationsOverviewQueryV2 overviewQueryV2 = Mockito.spy(overviewQuery);
+    Mockito.doReturn(Collections.singletonList(createCEViewShortHand()))
+        .when(overviewQueryV2)
+        .getAllowedPerspectives(any());
+    Mockito.doReturn(allowedMockedRecommendations(new ArrayList<>(List.of("id0", "id1"))))
+        .when(overviewQueryV2)
+        .listAllowedRecommendationsIdAndPerspectives(any());
+    Mockito.doReturn(emptyList()).when(overviewQueryV2).getPerspectiveRuleList(any());
 
     RecommendationOverviewStats stats =
-        overviewQuery.recommendationStats(K8sRecommendationFilterDTO.builder().build(), null);
+        overviewQueryV2.recommendationStats(K8sRecommendationFilterDTO.builder().build(), null);
 
     verify(recommendationService, times(1)).getStats(any(), conditionCaptor.capture());
 
@@ -479,8 +566,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     assertThat(condition).isNotNull();
     assertThat(condition.toString())
         .contains(CE_RECOMMENDATIONS.ISVALID.getQualifiedName().toString())
-        .contains("true")
-        .contains(CE_RECOMMENDATIONS.LASTPROCESSEDAT.getQualifiedName().toString());
+        .contains("true");
   }
 
   private void assertRecommendationOverviewListResponse(final RecommendationsDTO recommendationsDTO) {
@@ -509,6 +595,16 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         .resourceName(NAME)
         .recommendationDetails(null)
         .resourceType(resourceType)
+        .perspectiveId(PERSPECTIVE_ID)
+        .perspectiveName(PERSPECTIVE_NAME)
         .build();
+  }
+
+  private HashMap<String, CEViewShortHand> allowedMockedRecommendations(List<String> anomalieIds) {
+    HashMap<String, CEViewShortHand> allowedRecommendations = new HashMap<>();
+    if (!Lists.isNullOrEmpty(anomalieIds)) {
+      anomalieIds.forEach(anomalyId -> allowedRecommendations.put(anomalyId, createCEViewShortHand()));
+    }
+    return allowedRecommendations;
   }
 }

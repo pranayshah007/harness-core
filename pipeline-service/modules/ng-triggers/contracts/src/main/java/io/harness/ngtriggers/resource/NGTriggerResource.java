@@ -31,11 +31,13 @@ import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
-import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
+import io.harness.ngtriggers.beans.source.GitMoveOperationType;
+import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -270,20 +272,10 @@ public interface NGTriggerResource {
   getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 
-  @GET
-  @Path("{triggerIdentifier}/validatePipelineInputs")
-  @ApiOperation(hidden = true, value = "This validates whether yaml of trigger is valid or not",
-      nickname = "validatePipelineInputs")
-  @Hidden
-  ResponseDTO<ValidatePipelineInputsResponseDTO>
-  validatePipelineInputs(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
-          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
-      @PathParam("triggerIdentifier") String triggerIdentifier);
-
+  /**
+   * @deprecated
+   * Use getTriggerEventHistory from NGTriggerEventHistoryResource
+   */
   @GET
   @Path("{triggerIdentifier}/eventHistory")
   @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistory")
@@ -294,6 +286,7 @@ public interface NGTriggerResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
       })
+  @Deprecated
   ResponseDTO<Page<NGTriggerEventHistoryDTO>>
   getTriggerEventHistory(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -329,4 +322,17 @@ public interface NGTriggerResource {
   @ApiOperation(value = "This is dummy api to expose NGTriggerConfigV2", nickname = "NGTriggerConfigV2")
   @Hidden
   ResponseDTO<NGTriggerConfigV2> getNGTriggerConfigV2();
+
+  @PUT
+  @Hidden
+  @Path("/update-branch-name")
+  @InternalApi
+  ResponseDTO<TriggerUpdateCount> updateBranchName(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @QueryParam("operationType") GitMoveOperationType operationType,
+      @QueryParam("pipelineBranchName") String pipelineBranchName);
 }

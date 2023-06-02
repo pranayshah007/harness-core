@@ -14,47 +14,70 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
+import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+@PrepareForTest({UUIDGenerator.class})
 @OwnedBy(PIPELINE)
 public class PipelineExecutorTest extends CategoryTest {
   @InjectMocks PipelineExecutor pipelineExecutor;
   @Mock ExecutionHelper executionHelper;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
   @Mock PipelineTelemetryHelper pipelineTelemetryHelper;
+  @Mock PlanExecutionService planExecutionService;
+  @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
+
+  @Mock PMSExecutionService pmsExecutionService;
+  @Mock NodeExecutionService nodeExecutionService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -80,15 +103,16 @@ public class PipelineExecutorTest extends CategoryTest {
   boolean isDebug = false;
 
   PipelineEntity pipelineEntity = PipelineEntity.builder().allowStageExecutions(true).build();
-  ExecutionTriggerInfo executionTriggerInfo = ExecutionTriggerInfo.newBuilder().build();
-  ExecutionMetadata metadata = ExecutionMetadata.newBuilder().build();
-  PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
+  ExecutionTriggerInfo executionTriggerInfo =
+      ExecutionTriggerInfo.newBuilder().setTriggerType(TriggerType.MANUAL).build();
+  ExecutionMetadata metadata = ExecutionMetadata.newBuilder().setTriggerInfo(executionTriggerInfo).build();
+  PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().planExecutionId("planId").build();
   ExecArgs execArgs = ExecArgs.builder().metadata(metadata).planExecutionMetadata(planExecutionMetadata).build();
   PlanExecution planExecution = PlanExecution.builder().build();
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
   }
 
   @Test
@@ -98,7 +122,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(null, false, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false);
+        accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -109,17 +133,38 @@ public class PipelineExecutorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRunPipelineWithInputSetReferencesList() {
-    doReturnStatementsForFreshRun(null, true, null);
+    doReturn(runtimeInputYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
 
-    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetReferencesList(
-        accountId, orgId, projectId, pipelineId, moduleType, inputSetReferences, pipelineBranch, pipelineRepoId);
+    doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(any());
+    RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
+
+    doReturn(execArgs)
+        .when(executionHelper)
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null);
+
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
+
+    MergeInputSetRequestDTOPMS mergeInputSetRequestDTOPMS =
+        MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetReferences).build();
+    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetReferencesList(accountId,
+        orgId, projectId, pipelineId, moduleType, mergeInputSetRequestDTOPMS, pipelineBranch, pipelineRepoId, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
     verify(validateAndMergeHelper, times(1))
-        .getMergeInputSetFromPipelineTemplate(
-            accountId, orgId, projectId, pipelineId, inputSetReferences, pipelineBranch, pipelineRepoId, null);
-    verifyStatementsForFreshRun(null, true, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
+    verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    verify(executionHelper, times(1))
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null);
   }
 
   @Test
@@ -129,7 +174,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(null, false, stageIdentifiers);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runStagesWithRuntimeInputYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, runStageRequestDTO, useV2);
+        accountId, orgId, projectId, pipelineId, moduleType, runStageRequestDTO, useV2, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -142,8 +187,8 @@ public class PipelineExecutorTest extends CategoryTest {
   public void testRerunStagesWithRuntimeInputYaml() {
     doReturnStatementsForFreshRun(originalExecutionId, false, stageIdentifiers);
 
-    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunStagesWithRuntimeInputYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runStageRequestDTO, useV2, isDebug);
+    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunStagesWithRuntimeInputYaml(accountId, orgId,
+        projectId, pipelineId, moduleType, originalExecutionId, runStageRequestDTO, useV2, isDebug, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -157,7 +202,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(originalExecutionId, false, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runtimeInputYaml, useV2, false);
+        accountId, orgId, projectId, pipelineId, moduleType, originalExecutionId, runtimeInputYaml, useV2, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -168,15 +213,41 @@ public class PipelineExecutorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRerunPipelineWithInputSetReferencesList() {
-    doReturnStatementsForFreshRun(originalExecutionId, true, null);
+    doReturn(runtimeInputYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
 
+    doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(any());
+    RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
+
+    doReturn(execArgs)
+        .when(executionHelper)
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+            null);
+
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
+
+    MergeInputSetRequestDTOPMS mergeInputSetRequestDTOPMS =
+        MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetReferences).build();
     PlanExecutionResponseDto planExecutionResponse =
         pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgId, projectId, pipelineId, moduleType,
-            originalExecutionId, inputSetReferences, pipelineBranch, pipelineRepoId, false);
+            originalExecutionId, mergeInputSetRequestDTOPMS, pipelineBranch, pipelineRepoId, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
-    verifyStatementsForFreshRun(originalExecutionId, true, null);
+    verify(validateAndMergeHelper, times(1))
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
+    verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    verify(executionHelper, times(1))
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+            null);
   }
 
   private void doReturnStatementsForFreshRun(
@@ -195,13 +266,13 @@ public class PipelineExecutorTest extends CategoryTest {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false,
-              false);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+              null);
     } else {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null);
     }
 
     doReturn(planExecution)
@@ -223,12 +294,12 @@ public class PipelineExecutorTest extends CategoryTest {
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false,
-              false);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+              null);
     } else {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null);
     }
     verify(executionHelper, times(1))
         .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
@@ -263,10 +334,125 @@ public class PipelineExecutorTest extends CategoryTest {
     pipelineEntity.setIsDraft(true);
     doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
     assertThatThrownBy(()
-                           -> pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-                               accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false))
+                           -> pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgId, projectId,
+                               pipelineId, moduleType, runtimeInputYaml, useV2, false, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             String.format("Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineId, projectId));
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartPostExecutionRollback() {
+    MockedStatic<UUIDGenerator> mockSettings = Mockito.mockStatic(UUIDGenerator.class);
+    List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
+    when(UUIDGenerator.generateUuid()).thenReturn("planId");
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(null);
+    ExecutionMetadata originalExecutionMetadata =
+        ExecutionMetadata.newBuilder()
+            .setTriggerInfo(ExecutionTriggerInfo.newBuilder().setTriggerType(TriggerType.WEBHOOK).build())
+            .build();
+    doReturn(PlanExecution.builder().metadata(originalExecutionMetadata).build())
+        .when(planExecutionService)
+        .get(originalExecutionId);
+    doReturn(metadata)
+        .when(rollbackModeExecutionHelper)
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
+            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
+    PlanExecutionMetadata originalPlanExecutionMetadata =
+        PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
+    doReturn(Optional.of(originalPlanExecutionMetadata))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(originalExecutionId);
+    doReturn(planExecutionMetadata)
+        .when(rollbackModeExecutionHelper)
+        .transformPlanExecutionMetadata(originalPlanExecutionMetadata, "planId", ExecutionMode.POST_EXECUTION_ROLLBACK,
+            stageNodeExecutionIds, null);
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(
+            accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
+    assertThat(pipelineExecutor.startPostExecutionRollback(
+                   accountId, orgId, projectId, originalExecutionId, stageNodeExecutionIds, null))
+        .isEqualTo(planExecution);
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartPipelineRollback() {
+    MockedStatic<UUIDGenerator> mockSettings = Mockito.mockStatic(UUIDGenerator.class);
+    when(UUIDGenerator.generateUuid()).thenReturn("planId");
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(null);
+    ExecutionMetadata originalExecutionMetadata =
+        ExecutionMetadata.newBuilder()
+            .setTriggerInfo(ExecutionTriggerInfo.newBuilder().setTriggerType(TriggerType.WEBHOOK).build())
+            .build();
+    doReturn(PlanExecution.builder().metadata(originalExecutionMetadata).build())
+        .when(planExecutionService)
+        .get(originalExecutionId);
+    doReturn(metadata)
+        .when(rollbackModeExecutionHelper)
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
+            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, Collections.emptyList());
+    PlanExecutionMetadata originalPlanExecutionMetadata =
+        PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
+    doReturn(Optional.of(originalPlanExecutionMetadata))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(originalExecutionId);
+    doReturn(planExecutionMetadata)
+        .when(rollbackModeExecutionHelper)
+        .transformPlanExecutionMetadata(
+            originalPlanExecutionMetadata, "planId", ExecutionMode.PIPELINE_ROLLBACK, Collections.emptyList(), null);
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(
+            accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
+    doReturn(Collections.emptyList()).when(nodeExecutionService).fetchStageExecutions(any());
+    assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId, null))
+        .isEqualTo(planExecution);
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testSetTriggerInfo() {
+    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().build();
+    String jsonPayload = "jsonPayload";
+    String accountId = "acc";
+    String projectId = "pro";
+    String orgId = "org";
+    String pipelineId = "pipelineId";
+    String planExecutionId = "planId";
+    TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
+    PipelineStageInfo info = PipelineStageInfo.newBuilder()
+                                 .setExecutionId(planExecutionId)
+                                 .setProjectId(projectId)
+                                 .setOrgId(orgId)
+                                 .setIdentifier(pipelineId)
+                                 .build();
+
+    doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload(jsonPayload).build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(planExecutionId);
+
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId);
+
+    ExecArgs execArgs = ExecArgs.builder()
+                            .metadata(ExecutionMetadata.newBuilder().build())
+                            .planExecutionMetadata(PlanExecutionMetadata.builder().build())
+                            .build();
+    pipelineExecutor.setTriggerInfo(info, execArgs, accountId);
+
+    assertThat(execArgs.getMetadata().getTriggerInfo()).isEqualTo(triggerInfo);
+    assertThat(execArgs.getPlanExecutionMetadata().getTriggerJsonPayload()).isEqualTo(jsonPayload);
+    assertThat(execArgs.getPlanExecutionMetadata().getTriggerPayload()).isEqualTo(triggerPayload);
   }
 }

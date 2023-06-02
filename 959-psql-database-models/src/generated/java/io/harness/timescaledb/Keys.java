@@ -11,6 +11,7 @@
 package io.harness.timescaledb;
 
 import io.harness.timescaledb.tables.CeRecommendations;
+import io.harness.timescaledb.tables.ModuleLicenses;
 import io.harness.timescaledb.tables.NodeInfo;
 import io.harness.timescaledb.tables.NodePoolAggregated;
 import io.harness.timescaledb.tables.PipelineExecutionSummary;
@@ -19,6 +20,7 @@ import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
 import io.harness.timescaledb.tables.WorkloadInfo;
 import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
+import io.harness.timescaledb.tables.records.ModuleLicensesRecord;
 import io.harness.timescaledb.tables.records.NodeInfoRecord;
 import io.harness.timescaledb.tables.records.NodePoolAggregatedRecord;
 import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCdRecord;
@@ -45,6 +47,9 @@ public class Keys {
   public static final UniqueKey<CeRecommendationsRecord> CE_RECOMMENDATIONS_PKEY =
       Internal.createUniqueKey(CeRecommendations.CE_RECOMMENDATIONS, DSL.name("ce_recommendations_pkey"),
           new TableField[] {CeRecommendations.CE_RECOMMENDATIONS.ID}, true);
+  public static final UniqueKey<ModuleLicensesRecord> MODULE_LICENSES_PKEY =
+      Internal.createUniqueKey(ModuleLicenses.MODULE_LICENSES, DSL.name("module_licenses_pkey"),
+          new TableField[] {ModuleLicenses.MODULE_LICENSES.ID}, true);
   public static final UniqueKey<NodeInfoRecord> NODE_INFO_UNIQUE_RECORD_INDEX =
       Internal.createUniqueKey(NodeInfo.NODE_INFO, DSL.name("node_info_unique_record_index"),
           new TableField[] {NodeInfo.NODE_INFO.ACCOUNTID, NodeInfo.NODE_INFO.CLUSTERID, NodeInfo.NODE_INFO.INSTANCEID},

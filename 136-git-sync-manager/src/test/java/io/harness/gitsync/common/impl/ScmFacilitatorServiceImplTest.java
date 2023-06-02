@@ -10,13 +10,16 @@ package io.harness.gitsync.common.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,6 +46,9 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthentication
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmBadRequestException;
@@ -66,10 +72,14 @@ import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.core.runnable.GitBackgroundCacheRefreshHelper;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -90,8 +100,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -127,11 +135,11 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   Scope scope;
   ScmConnector scmConnector;
   @Mock GitFileCacheService gitFileCacheService;
-  ExecutorService executorService = Executors.newFixedThreadPool(1);
   DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   @InjectMocks GitFilePathHelper gitFilePathHelper;
   @Mock GitFilePathHelper gitFilePathHelperMock;
+  @Mock GitBackgroundCacheRefreshHelper gitBackgroundCacheRefreshHelper;
 
   String fileUrl = "https://github.com/harness/repoName/blob/branch/filePath";
 
@@ -140,7 +148,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     MockitoAnnotations.initMocks(this);
     scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
         scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService,
-        executorService, gitFilePathHelper, delegateServiceGrpcClient);
+        gitFilePathHelper, delegateServiceGrpcClient, gitBackgroundCacheRefreshHelper);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -170,6 +178,33 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(repositoryResponseDTOList.size()).isEqualTo(2);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("repo1");
     assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("repo2");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testListReposByRefConnectorNoOwner() {
+    GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
+                                             .connectionType(GitConnectionType.ACCOUNT)
+                                             .apiAccess(GithubApiAccessDTO.builder().build())
+                                             .url("https://github.com/")
+                                             .build();
+    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
+    scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
+    when(gitSyncConnectorHelper.getScmConnector(any(), any(), any(), any())).thenReturn(scmConnector);
+
+    List<Repository> repositories =
+        Arrays.asList(Repository.newBuilder().setName("repo1").setNamespace("harness").build(),
+            Repository.newBuilder().setName("repo2").setNamespace("harness").build(),
+            Repository.newBuilder().setName("repo3").setNamespace("harnessxy").build());
+    GetUserReposResponse getUserReposResponse = GetUserReposResponse.newBuilder().addAllRepos(repositories).build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
+    List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "");
+    assertThat(repositoryResponseDTOList.size()).isEqualTo(3);
+    assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("harness/repo1");
+    assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("harness/repo2");
+    assertThat(repositoryResponseDTOList.get(2).getName()).isEqualTo("harnessxy/repo3");
   }
 
   @Test
@@ -515,6 +550,26 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   }
 
   @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlForGitlab() {
+    mockStatic(GitClientHelper.class);
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .apiAccess(GitlabApiAccessDTO.builder().build())
+                                                .url(repoURL)
+                                                .build();
+    connectorInfo = ConnectorInfoDTO.builder().connectorConfig(gitlabConnectorDTO).build();
+    when(gitSyncConnectorHelper.getScmConnectorForGivenRepo(any(), any(), any(), any(), any()))
+        .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
+
+    when(GitClientHelper.getCompleteHTTPUrlForGitLab(any())).thenReturn(repoURL);
+    String responseUrl = scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName);
+
+    assertThat(responseUrl.equals(repoURL)).isTrue();
+  }
+
+  @Test
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
   public void testGetRepoUrlWhenInvalidConnectorType() {
@@ -576,6 +631,110 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
                                    .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
                                    .build()))
         .isInstanceOf(InvalidRequestException.class);
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap2 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap2.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap2.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap2.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).projectIdentifier(projectIdentifier).build())
+            .build());
+
+    ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO =
+        ScmGetBatchFilesByBranchRequestDTO.builder()
+            .accountIdentifier(accountIdentifier)
+            .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap2)
+            .build();
+    ScmGetBatchFilesByBranchRequestDTO finalScmGetBatchFilesByBranchRequestDTO = scmGetBatchFilesByBranchRequestDTO;
+    assertThatThrownBy(() -> finalScmGetBatchFilesByBranchRequestDTO.validate())
+        .isInstanceOf(InvalidRequestException.class);
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap3 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap3.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap3.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap3.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build());
+    scmGetBatchFilesByBranchRequestDTO = ScmGetBatchFilesByBranchRequestDTO.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap3)
+                                             .build();
+    scmGetBatchFilesByBranchRequestDTO.validate();
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap4 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap4.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap4.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap4.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier("orgIdentifier2")
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build());
+    scmGetBatchFilesByBranchRequestDTO = ScmGetBatchFilesByBranchRequestDTO.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap4)
+                                             .build();
+    ScmGetBatchFilesByBranchRequestDTO finalScmGetBatchFilesByBranchRequestDTO2 = scmGetBatchFilesByBranchRequestDTO;
+    assertThatThrownBy(() -> finalScmGetBatchFilesByBranchRequestDTO2.validate())
+        .isInstanceOf(InvalidRequestException.class);
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap5 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap5.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap5.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build());
+    scmGetFileByBranchRequestDTOMap5.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier("projectIdentifier2")
+                       .build())
+            .build());
+    scmGetBatchFilesByBranchRequestDTO = ScmGetBatchFilesByBranchRequestDTO.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap5)
+                                             .build();
+    ScmGetBatchFilesByBranchRequestDTO finalScmGetBatchFilesByBranchRequestDTO3 = scmGetBatchFilesByBranchRequestDTO;
+    assertThatThrownBy(() -> finalScmGetBatchFilesByBranchRequestDTO3.validate())
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -596,6 +755,25 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     scmFacilitatorService.processGitFileBatchRequest(null, gitFileRequestMap, false);
     verify(scmOrchestratorService, times(1)).processScmRequestUsingManager(any());
     verify(scmOrchestratorService, times(1)).processScmRequestUsingDelegate(any());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetUserDetails() {
+    UserDetailsRequestDTO userDetailsRequestDTO =
+        UserDetailsRequestDTO.builder()
+            .gitAccessDTO(GithubAccessTokenDTO.builder()
+                              .tokenRef(SecretRefData.builder()
+                                            .identifier("tokenRef")
+                                            .scope(io.harness.encryption.Scope.ACCOUNT)
+                                            .build())
+                              .build())
+            .build();
+    UserDetailsResponseDTO userDetailsResponseDTO =
+        UserDetailsResponseDTO.builder().userEmail("email").userName("userName").build();
+    doReturn(userDetailsResponseDTO).when(scmOrchestratorService).processScmRequestUsingManager(any());
+    assertEquals(userDetailsResponseDTO, scmFacilitatorService.getUserDetails(userDetailsRequestDTO));
   }
 
   private Scope getDefaultScope() {

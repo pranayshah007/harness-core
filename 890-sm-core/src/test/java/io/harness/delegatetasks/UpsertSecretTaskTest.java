@@ -11,7 +11,7 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -107,7 +107,9 @@ public class UpsertSecretTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunRenameTask() {
     when(upsertSecretTaskParameters.getTaskType()).thenReturn(UpsertSecretTaskType.RENAME);
-    when(vaultEncryptor.renameSecret(accountId, name, encryptedRecord, encryptionConfig)).thenReturn(encryptedRecord);
+    when(vaultEncryptor.renameSecret(
+             accountId, SecretText.builder().name(name).build(), encryptedRecord, encryptionConfig))
+        .thenReturn(encryptedRecord);
     UpsertSecretTaskResponse upsertSecretTaskResponse =
         (UpsertSecretTaskResponse) upsertSecretTask.run(upsertSecretTaskParameters);
     assertThat(upsertSecretTaskResponse).isNotNull();

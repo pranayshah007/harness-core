@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
@@ -39,6 +40,8 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -58,6 +61,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -69,6 +73,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -98,10 +103,14 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject private PlanExpansionService planExpansionService;
+
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject PlanExecutionService planExecutionService;
+  @Inject TransactionHelper transactionHelper;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -135,14 +144,43 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   void resolveParameters(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     log.info("Starting to Resolve step parameters");
-    Object resolvedStepParameters =
-        pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
+    ExpressionMode expressionMode = planNode.getExpressionMode();
+    Object resolvedStepParameters;
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
+      // Passing the FeatureFlag.
+      // TODO(archit): Remove feature flag support in engine
+      List<String> enabledFeatureFlags = new LinkedList<>();
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
+        enabledFeatureFlags.add(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION.name());
+      }
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_JSON_SUPPORT)) {
+        enabledFeatureFlags.add(FeatureName.PIE_EXECUTION_JSON_SUPPORT.name());
+      }
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
+        enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
+      }
+
+      resolvedStepParameters = pmsEngineExpressionService.resolve(
+          ambiance, planNode.getStepParameters(), expressionMode, enabledFeatureFlags);
+    } else {
+      resolvedStepParameters =
+          pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode);
+    }
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
-    // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
-    // for maps Find a better way to do this
-    nodeExecutionService.updateV2(nodeExecutionId,
-        ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+
+    transactionHelper.performTransaction(() -> {
+      // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
+      // for maps Find a better way to do this
+      nodeExecutionService.updateV2(nodeExecutionId,
+          ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+      planExpansionService.addStepInputs(ambiance, resolvedParameters);
+      return resolvedParameters;
+    });
     log.info("Resolved to step parameters");
   }
 
@@ -152,7 +190,18 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     String nodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       PlanNode planNode = planService.fetchNode(ambiance.getPlanId(), nodeId);
-      resolveParameters(ambiance, planNode);
+      try {
+        resolveParameters(ambiance, planNode);
+      } catch (Exception ex) {
+        // NOTE: If there is an exception occurred while resolving parameters and when condition evaluates to skipped
+        // then we should not throw exception but rather carry on the execution
+        ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
+        if (!check.isProceed()) {
+          log.info("Not Proceeding with  Execution. Reason : {}", check.getReason());
+          return;
+        }
+        throw ex;
+      }
 
       ExecutionCheck check = performPreFacilitationChecks(ambiance, planNode);
       if (!check.isProceed()) {
@@ -219,11 +268,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
         // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
         // Earlier pipeline status was marked from step itself.
-        Status planStatus =
-            planExecutionService.calculateStatusExcluding(ambiance.getPlanExecutionId(), nodeExecutionId);
-        if (!StatusUtils.isFinalStatus(planStatus)) {
-          planExecutionService.updateStatus(ambiance.getPlanExecutionId(), planStatus);
-        }
+
+        // Please refer the explanation added above the method - calculateAndUpdateRunningStatus(
+        planExecutionService.calculateAndUpdateRunningStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
@@ -291,26 +338,27 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
-        ops
-        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
-        NodeProjectionUtils.fieldsForExecutionStrategy);
-    if (isNotEmpty(nodeExecution.getNotifyId())) {
-      Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
-      StepResponseNotifyData responseData = StepResponseNotifyData.builder()
-                                                .nodeUuid(level.getSetupId())
-                                                .stepOutcomeRefs(outcomeService.fetchOutcomeRefs(nodeExecutionId))
-                                                .failureInfo(nodeExecution.getFailureInfo())
-                                                .identifier(level.getIdentifier())
-                                                .nodeExecutionId(level.getRuntimeId())
-                                                .status(nodeExecution.getStatus())
-                                                .adviserResponse(nodeExecution.getAdviserResponse())
-                                                .build();
-      waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
-    } else {
-      log.info("Ending Execution");
-      orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      NodeExecution nodeExecution =
+          nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
+      if (isNotEmpty(nodeExecution.getNotifyId())) {
+        Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+        StepResponseNotifyData responseData = StepResponseNotifyData.builder()
+                                                  .nodeUuid(level.getSetupId())
+                                                  .stepOutcomeRefs(outcomeService.fetchOutcomeRefs(nodeExecutionId))
+                                                  .failureInfo(nodeExecution.getFailureInfo())
+                                                  .identifier(level.getIdentifier())
+                                                  .nodeExecutionId(level.getRuntimeId())
+                                                  .status(nodeExecution.getStatus())
+                                                  .adviserResponse(nodeExecution.getAdviserResponse())
+                                                  .nodeExecutionEndTs(nodeExecution.getEndTs())
+                                                  .build();
+        waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
+      } else {
+        log.info("Ending Execution");
+        orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
+      }
     }
   }
 

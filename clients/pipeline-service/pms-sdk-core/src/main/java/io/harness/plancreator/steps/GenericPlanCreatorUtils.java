@@ -14,15 +14,19 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.commons.RepairActionCode;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -67,8 +71,23 @@ public class GenericPlanCreatorUtils {
     if (currentField != null && currentField.getNode() != null) {
       if (currentField.checkIfParentIsParallel(STEPS) || currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
         // Check if step is inside StepGroup and StepGroup is inside Parallel but not the step.
-        return YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP) == null
-            || currentField.checkIfParentIsParallel(STEP_GROUP);
+        YamlNode stepGroupNode = YamlUtils.findParentNode(currentField.getNode(), STEP_GROUP);
+        if (stepGroupNode == null) {
+          return true;
+        }
+        /**
+         * We need to check if parallel is in between stepGroup and step then it means that step is in parallel section
+         * otherwise parallel section might be above step group.
+         */
+        YamlNode parallelNodeParentOfStepGroupNode = YamlUtils.findParentNode(stepGroupNode, PARALLEL);
+        YamlNode parallelNodeParentOfCurrentField = YamlUtils.findParentNode(currentField.getNode(), PARALLEL);
+        if (parallelNodeParentOfCurrentField == null) {
+          return false;
+        }
+        if (parallelNodeParentOfStepGroupNode == null) {
+          return true;
+        }
+        return !Objects.equals(parallelNodeParentOfCurrentField.getUuid(), parallelNodeParentOfStepGroupNode.getUuid());
       }
     }
     return false;
@@ -97,6 +116,10 @@ public class GenericPlanCreatorUtils {
         return RepairActionCode.MANUAL_INTERVENTION;
       case RETRY:
         return RepairActionCode.RETRY;
+      case MARK_AS_FAILURE:
+        return RepairActionCode.MARK_AS_FAILURE;
+      case PIPELINE_ROLLBACK:
+        return RepairActionCode.PIPELINE_ROLLBACK;
       default:
         throw new InvalidRequestException(
 
@@ -107,5 +130,9 @@ public class GenericPlanCreatorUtils {
   public static String getRollbackStageNodeId(YamlField currentField) {
     String stageNodeId = getStageOrParallelNodeId(currentField);
     return stageNodeId + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX;
+  }
+
+  public OnFailPipelineRollbackParameters buildOnFailPipelineRollbackParameters(Set<FailureType> failureTypes) {
+    return OnFailPipelineRollbackParameters.builder().applicableFailureTypes(failureTypes).build();
   }
 }

@@ -45,7 +45,7 @@ public interface InfrastructureEntityService {
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, Collection<String> identifiers);
 
   boolean delete(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
-      @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
+      @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier, boolean forceDelete);
 
   boolean forceDeleteAllInEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier);

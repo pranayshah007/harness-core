@@ -14,12 +14,11 @@ import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
-import static io.harness.NGResourceFilterConstants.PAGE_KEY;
 import static io.harness.NGResourceFilterConstants.SEARCH_TERM_KEY;
-import static io.harness.NGResourceFilterConstants.SIZE_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -41,6 +40,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -122,10 +122,6 @@ public interface VariableResource {
   list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(ACCOUNT_KEY)
        String accountIdentifier, @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Page number of navigation. The default value is 0.") @QueryParam(
-          PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100.") @QueryParam(
-          SIZE_KEY) @DefaultValue("100") int size,
       @Parameter(
           description =
               "This would be used to filter Variables. Any Variable having the specified string in its Name or ID would be filtered.")
@@ -133,7 +129,8 @@ public interface VariableResource {
       @Parameter(description = "Specify whether or not to include all the Variables"
               + " accessible at the scope. For eg if set as true, at the Project scope we will get"
               + " org and account Variable also in the response.") @QueryParam(INCLUDE_VARIABLES_FROM_EVERY_SUB_SCOPE)
-      @DefaultValue("false") boolean includeVariablesFromEverySubScope);
+      @DefaultValue("false") boolean includeVariablesFromEverySubScope,
+      @BeanParam PageRequest pageRequest);
 
   @PUT
   @ApiOperation(value = "Update a Variable", nickname = "updateVariable")

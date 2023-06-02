@@ -12,9 +12,9 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -104,15 +104,15 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     String objectId = "objectId";
     doReturn(Optional.of(InputSetEntity.builder().objectIdOfYaml(objectId).build()))
         .when(pmsInputSetService)
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     EntityGitDetails returnedEntity =
         inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, inputSetYaml).get();
     verify(pmsInputSetService, times(1))
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
     returnedEntity = inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, overLayYaml).get();
     verify(pmsInputSetService, times(2))
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
   }
 

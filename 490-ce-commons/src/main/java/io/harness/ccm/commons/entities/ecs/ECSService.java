@@ -59,6 +59,7 @@ public final class ECSService implements PersistentEntity, UuidAware, CreatedAtA
   }
   @Id String uuid;
   String accountId;
+  String awsAccountId;
   String clusterId;
   String serviceArn;
   String serviceName;

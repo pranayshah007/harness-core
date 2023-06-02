@@ -54,4 +54,7 @@ public class RoleAssignmentDTO {
   public Boolean isManaged() {
     return TRUE.equals(managed);
   }
+  public Boolean isInternal() {
+    return TRUE.equals(internal);
+  }
 }

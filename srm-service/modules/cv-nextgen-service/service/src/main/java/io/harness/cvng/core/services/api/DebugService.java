@@ -18,6 +18,8 @@ import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 public interface DebugService {
   SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier);
 
+  boolean forceDeleteSLO(ProjectParams projectParams, String sloIdentifier);
+
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 
   CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier);

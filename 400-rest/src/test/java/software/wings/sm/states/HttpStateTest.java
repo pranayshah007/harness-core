@@ -47,8 +47,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -70,6 +70,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.task.common.DelegateRunnableTask;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.FailureType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.http.HttpServiceImpl;
@@ -177,6 +178,7 @@ public class HttpStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private AccountServiceImpl accountService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private ExecutionResponse asyncExecutionResponse;
 
@@ -804,6 +806,7 @@ public class HttpStateTest extends WingsBaseTest {
     on(httpState).set("infrastructureMappingService", infrastructureMappingService);
     on(httpState).set("featureFlagService", featureFlagService);
     on(httpState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(httpState).set("delegateTaskMigrationHelper", delegateTaskMigrationHelper);
 
     WorkflowStandardParamsParamMapper workflowStandardParamsParamMapper =
         injector.getInstance(WorkflowStandardParamsParamMapper.class);

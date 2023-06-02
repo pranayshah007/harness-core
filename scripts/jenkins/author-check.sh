@@ -3,7 +3,6 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -x
 set -e
 
 git config --global log.mailmap true
@@ -118,6 +117,7 @@ git log -1000 --oneline --format='%aN <%aE>' | sort -u |\
     grep -iv "^Milan Balaban <milan.balaban@harness.io>$" |\
     grep -iv "^Milos Paunovic <milos.paunovic@harness.io>$" |\
     grep -iv "^Mohit Garg <mohit.garg@harness.io>$" |\
+    grep -iv "^Yagyansh Bhatia <yagyansh.bhatia@harness.io>$" |\
     grep -iv "^Mounik V V S S <mounik.velavalivenkata@harness.io>$" |\
     grep -iv "^Mohit Kurani <mohit.kurani@harness.io>$" |\
     grep -iv "^Mounik V V S S <mounik.velavalivenkata@harness.io>$" |\
@@ -175,6 +175,8 @@ git log -1000 --oneline --format='%aN <%aE>' | sort -u |\
     grep -iv "^Sandesh Katta <katta.sandesh@harness.io>$" |\
     grep -iv "^Sanja Jokic <sanja.jokic@harness.io>$" |\
     grep -iv "^Sanyasi Naidu Annepu <sanyasi.naidu@harness.io>$" |\
+    grep -iv "^Sarthak Kasat <sarthak.kasat@harness.io>$" |\
+    grep -iv "^Sarvagnya Jatti <sarvagnya.jatti@harness.io>$" |\
     grep -iv "^Satyam Shanker <satyam.shanker@harness.io>$" |\
     grep -iv "^Seán Dunne <sean.dunne@harness.io>$" |\
     grep -iv "^Shalini Agrawal <shalini.agarwal@harness.io>$" |\
@@ -262,6 +264,7 @@ git log -1000 --oneline --format='%aN <%aE>' | sort -u |\
     grep -iv "^Dev Mittal <devki.mittal@harness.io>$" |\
     grep -iv "^Ankit Tiwari <ankit.tiwari@harness.io>$" |\
     grep -iv "^Kapil Garg <kapil.garg@harness.io>$" |\
+    grep -iv "^Enver Bisevac <enver.bisevac@harness.io>$" |\
     grep -iv "^Vikyath Harekal <vikyath.harekal@harness.io>$"` || :
 
 

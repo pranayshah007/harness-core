@@ -42,7 +42,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "DeploymentLogAnalysisKeys")

@@ -8,12 +8,15 @@
 package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.WingsException;
+import io.harness.exception.runtime.SCMRuntimeException;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -46,13 +49,19 @@ public class ScmGrpcClientUtils {
     }
   }
 
-  private WingsException processException(Exception ex) {
+  private RuntimeException processException(Exception ex) {
     if (ex instanceof WingsException) {
       return (WingsException) ex;
     } else if (ex instanceof StatusRuntimeException) {
       log.error("Unable to connect to Git Provider, error while connecting to scm service", ex);
-      return new ConnectException(
-          "Unable to connect to Git Provider, Please retry after sometime.", WingsException.USER);
+      StatusRuntimeException sre = (StatusRuntimeException) ex;
+      String errorMessage = isEmpty(sre.getMessage()) || sre.getMessage().equals("UNAVAILABLE: io exception")
+          ? "Unable to connect to Git Provider, Please retry after sometime"
+          : sre.getMessage();
+      if (sre.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+        return new ConnectException(errorMessage, WingsException.USER);
+      }
+      return new SCMRuntimeException("SCM request failed with: " + errorMessage, ErrorCode.SCM_API_ERROR);
     } else {
       log.error("Error connecting to scm service", ex);
       return new GeneralException(

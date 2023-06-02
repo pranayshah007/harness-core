@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -56,6 +57,19 @@ public class K8sWorkloadWatcherFactoryTest extends CategoryTest {
 
     workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("Job", true);
     assertThat(workloadWatcher).isInstanceOf(JobApiWatcher.class);
+
+    // case-insensitive input
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("deployment", true);
+    assertThat(workloadWatcher).isInstanceOf(DeploymentApiWatcher.class);
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("statefulSet", true);
+    assertThat(workloadWatcher).isInstanceOf(StatefulSetApiWatcher.class);
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("DAEMONset", true);
+    assertThat(workloadWatcher).isInstanceOf(DaemonSetApiWatcher.class);
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("deploymentconfig", true);
+    assertThat(workloadWatcher).isInstanceOf(DeploymentConfigCliWatcher.class);
   }
 
   @Test
@@ -76,6 +90,20 @@ public class K8sWorkloadWatcherFactoryTest extends CategoryTest {
 
     workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("Job", false);
     assertThat(workloadWatcher).isInstanceOf(JobCliWatcher.class);
+
+    // case-insensitive input
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("deployment", false);
+    assertThat(workloadWatcher).isInstanceOf(K8sCliWatcher.class);
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("statefulSet", false);
+    assertThat(workloadWatcher).isInstanceOf(K8sCliWatcher.class);
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("DAEMONset", false);
+    assertThat(workloadWatcher).isInstanceOf(K8sCliWatcher.class);
+
+    workloadWatcher = k8sWorkloadWatcherFactory.getWorkloadWatcher("deploymentconfig", false);
+    assertThat(workloadWatcher).isInstanceOf(DeploymentConfigCliWatcher.class);
   }
 
   @Test
@@ -84,16 +112,28 @@ public class K8sWorkloadWatcherFactoryTest extends CategoryTest {
   public void testInvalidWorkloadType() {
     assertThatThrownBy(() -> k8sWorkloadWatcherFactory.getWorkloadWatcher("UnsupportedWorkload", true))
         .matches(throwable -> {
-          assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
-          assertThat(throwable.getMessage()).contains("No enum constant");
+          assertThat(throwable).isInstanceOf(InvalidArgumentsException.class);
+          InvalidArgumentsException argumentsException = (InvalidArgumentsException) throwable;
+          assertThat((String) argumentsException.getParams().values().stream().findAny().get())
+              .contains("Unsupported or unknown kubernetes kind 'UnsupportedWorkload'");
           return true;
         });
 
     assertThatThrownBy(() -> k8sWorkloadWatcherFactory.getWorkloadWatcher("UnsupportedWorkload", false))
         .matches(throwable -> {
-          assertThat(throwable).isInstanceOf(IllegalArgumentException.class);
-          assertThat(throwable.getMessage()).contains("No enum constant");
+          assertThat(throwable).isInstanceOf(InvalidArgumentsException.class);
+          InvalidArgumentsException argumentsException = (InvalidArgumentsException) throwable;
+          assertThat((String) argumentsException.getParams().values().stream().findAny().get())
+              .contains("Unsupported or unknown kubernetes kind 'UnsupportedWorkload'");
           return true;
         });
+
+    assertThatThrownBy(() -> k8sWorkloadWatcherFactory.getWorkloadWatcher("", false)).matches(throwable -> {
+      assertThat(throwable).isInstanceOf(InvalidArgumentsException.class);
+      InvalidArgumentsException argumentsException = (InvalidArgumentsException) throwable;
+      assertThat((String) argumentsException.getParams().values().stream().findAny().get())
+          .contains("Empty or null kind provided");
+      return true;
+    });
   }
 }

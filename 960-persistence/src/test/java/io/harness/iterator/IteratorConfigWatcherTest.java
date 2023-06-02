@@ -10,7 +10,7 @@ package io.harness.iterator;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -20,28 +20,32 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({IteratorExecutionHandler.class})
-@PowerMockIgnore({"javax.xml.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class IteratorConfigWatcherTest {
   private static final String iteratorConfigPath = System.getProperty("user.dir");
   private static final String iteratorConfigFile = iteratorConfigPath + "/iterator_config.json";
   private IteratorConfigWatcher iteratorConfigWatcher;
+  private MockedStatic<IteratorExecutionHandler> aStatic;
 
   @Before
   public void setup() {
     IteratorExecutionHandler iteratorExecutionHandler = PowerMockito.mock(IteratorExecutionHandler.class);
-    mockStatic(IteratorExecutionHandler.class);
+    aStatic = mockStatic(IteratorExecutionHandler.class);
     iteratorConfigWatcher = new IteratorConfigWatcher(iteratorExecutionHandler, iteratorConfigPath, iteratorConfigFile);
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test

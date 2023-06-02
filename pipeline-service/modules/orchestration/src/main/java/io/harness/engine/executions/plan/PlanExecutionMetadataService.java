@@ -10,11 +10,26 @@ package io.harness.engine.executions.plan;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.RetryStagesMetadata;
 
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataService {
   Optional<PlanExecutionMetadata> findByPlanExecutionId(String planExecutionId);
   PlanExecutionMetadata save(PlanExecutionMetadata planExecutionMetadata);
+
+  /**
+   * Delete all PlanExecutionMetadata for given planExecutionIds
+   * Uses - planExecutionId_idx index
+   * @param planExecutionIds
+   */
+  void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds);
+
+  String getNotesForExecution(String planExecutionId);
+
+  RetryStagesMetadata getRetryStagesMetadata(String planExecutionId);
+
+  String updateNotesForExecution(String planExecutionId, String notes);
 }

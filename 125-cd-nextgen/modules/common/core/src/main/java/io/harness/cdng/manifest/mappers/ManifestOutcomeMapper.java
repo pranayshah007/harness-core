@@ -12,12 +12,16 @@ import static io.harness.cdng.manifest.ManifestType.AsgConfiguration;
 import static io.harness.cdng.manifest.ManifestType.AsgLaunchTemplate;
 import static io.harness.cdng.manifest.ManifestType.AsgScalingPolicy;
 import static io.harness.cdng.manifest.ManifestType.AsgScheduledUpdateGroupAction;
+import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionAliasDefinition;
+import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionDefinition;
+import static io.harness.cdng.manifest.ManifestType.AwsSamDirectory;
 import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsServiceDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
 import static io.harness.cdng.manifest.ManifestType.GoogleCloudFunctionDefinition;
+import static io.harness.cdng.manifest.ManifestType.GoogleCloudFunctionGenOneDefinition;
 import static io.harness.cdng.manifest.ManifestType.HelmChart;
 import static io.harness.cdng.manifest.ManifestType.K8Manifest;
 import static io.harness.cdng.manifest.ManifestType.Kustomize;
@@ -39,12 +43,16 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GoogleCloudFunctionDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.GoogleCloudFunctionGenOneDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
@@ -63,12 +71,16 @@ import io.harness.cdng.manifest.yaml.kinds.AsgLaunchTemplateManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.GitOpsDeploymentRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionGenOneDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -146,6 +158,14 @@ public class ManifestOutcomeMapper {
         return getAsgScheduledUpdateGroupActionOutcome(manifestAttributes);
       case GoogleCloudFunctionDefinition:
         return getGoogleCloudFunctionDefinitionManifestOutcome(manifestAttributes);
+      case AwsLambdaFunctionDefinition:
+        return getAwsLambdaDefinitionManifestOutcome(manifestAttributes);
+      case AwsLambdaFunctionAliasDefinition:
+        return getAwsLambdaAliasDefinitionManifestOutcome(manifestAttributes);
+      case AwsSamDirectory:
+        return getAwsSamDirectoryManifestOutcome(manifestAttributes);
+      case GoogleCloudFunctionGenOneDefinition:
+        return getGoogleCloudFunctionGenOneDefinitionManifestOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Manifest Config type: [%s]", manifestAttributes.getKind()));
@@ -176,6 +196,7 @@ public class ManifestOutcomeMapper {
         .store(k8sManifest.getStoreConfig())
         .valuesPaths(k8sManifest.getValuesPaths())
         .skipResourceVersioning(k8sManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(k8sManifest.getEnableDeclarativeRollback())
         .build();
   }
 
@@ -231,8 +252,9 @@ public class ManifestOutcomeMapper {
         .helmVersion(helmChartManifest.getHelmVersion())
         .valuesPaths(helmChartManifest.getValuesPaths())
         .skipResourceVersioning(helmChartManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback())
         .commandFlags(helmChartManifest.getCommandFlags())
-        .subChartName(helmChartManifest.getSubChartName())
+        .subChartPath(helmChartManifest.getSubChartPath())
         .build();
   }
 
@@ -242,9 +264,11 @@ public class ManifestOutcomeMapper {
         .identifier(kustomizeManifest.getIdentifier())
         .store(kustomizeManifest.getStoreConfig())
         .skipResourceVersioning(kustomizeManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(kustomizeManifest.getEnableDeclarativeRollback())
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
         .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
+        .commandFlags(kustomizeManifest.getCommandFlags())
         .build();
   }
 
@@ -264,6 +288,7 @@ public class ManifestOutcomeMapper {
         .identifier(openshiftManifest.getIdentifier())
         .store(openshiftManifest.getStoreConfig())
         .skipResourceVersioning(openshiftManifest.getSkipResourceVersioning())
+        .enableDeclarativeRollback(openshiftManifest.getEnableDeclarativeRollback())
         .paramsPaths(openshiftManifest.getParamsPaths())
         .build();
   }
@@ -365,6 +390,42 @@ public class ManifestOutcomeMapper {
       ManifestAttributes manifestAttributes) {
     GoogleCloudFunctionDefinitionManifest attributes = (GoogleCloudFunctionDefinitionManifest) manifestAttributes;
     return GoogleCloudFunctionDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private GoogleCloudFunctionGenOneDefinitionManifestOutcome getGoogleCloudFunctionGenOneDefinitionManifestOutcome(
+      ManifestAttributes manifestAttributes) {
+    GoogleCloudFunctionGenOneDefinitionManifest attributes =
+        (GoogleCloudFunctionGenOneDefinitionManifest) manifestAttributes;
+    return GoogleCloudFunctionGenOneDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private AwsLambdaDefinitionManifestOutcome getAwsLambdaDefinitionManifestOutcome(
+      ManifestAttributes manifestAttributes) {
+    AwsLambdaDefinitionManifest attributes = (AwsLambdaDefinitionManifest) manifestAttributes;
+    return AwsLambdaDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private AwsLambdaAliasDefinitionManifestOutcome getAwsLambdaAliasDefinitionManifestOutcome(
+      ManifestAttributes manifestAttributes) {
+    AwsLambdaFunctionAliasDefinitionManifest attributes = (AwsLambdaFunctionAliasDefinitionManifest) manifestAttributes;
+    return AwsLambdaAliasDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private AwsSamDirectoryManifestOutcome getAwsSamDirectoryManifestOutcome(ManifestAttributes manifestAttributes) {
+    AwsSamDirectoryManifest attributes = (AwsSamDirectoryManifest) manifestAttributes;
+    return AwsSamDirectoryManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .build();

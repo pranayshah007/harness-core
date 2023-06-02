@@ -9,8 +9,10 @@ import time
 import datetime
 
 from google.cloud import bigquery
+from google.cloud import pubsub_v1
 from google.cloud.exceptions import NotFound
 
+publisher = pubsub_v1.PublisherClient()
 ACCOUNTID_LOG = ""
 TABLE_NAME_FORMAT = "%s.BillingReport_%s.%s"
 
@@ -332,3 +334,16 @@ def update_connector_data_sync_status(jsonData, PROJECTID, client):
     except Exception as e:
         print_("  Failed to update connector data sync status", "WARN")
         raise e
+
+
+def send_event(topic_path, event_data):
+    message_json = json.dumps(event_data)
+    message_bytes = message_json.encode('utf-8')
+    # Publishes a message
+    try:
+        publish_future = publisher.publish(topic_path, data=message_bytes)
+        publish_future.result()  # Verify the publishing succeeded
+        print_('Message published: %s.' % event_data)
+    except Exception as e:
+        print_(e)
+        print_("Error while sending event: %s to pubsub: %s" % event_data, topic_path)

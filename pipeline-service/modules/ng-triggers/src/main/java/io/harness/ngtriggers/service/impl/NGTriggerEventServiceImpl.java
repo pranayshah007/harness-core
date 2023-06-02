@@ -20,6 +20,7 @@ import io.harness.repositories.spring.TriggerEventHistoryRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,27 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
   private TriggerEventHistoryRepository triggerEventHistoryRepository;
 
   @Override
-  public Criteria formCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
+  public Criteria formEventCriteria(String accountId, String eventCorrelationId, List<ExecutionStatus> statusList) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(TriggerEventHistoryKeys.accountId).is(accountId);
+    }
+
+    if (EmptyPredicate.isNotEmpty(eventCorrelationId)) {
+      criteria.and(TriggerEventHistoryKeys.eventCorrelationId).is(eventCorrelationId);
+    }
+
+    if (EmptyPredicate.isNotEmpty(statusList)) {
+      criteria.and(TriggerEventHistoryKeys.finalStatus).in(statusList);
+    }
+
+    Criteria searchCriteria = new Criteria();
+    criteria.andOperator(searchCriteria);
+    return criteria;
+  }
+
+  @Override
+  public Criteria formTriggerEventCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
       String identifier, String searchTerm, List<ExecutionStatus> statusList) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
@@ -87,5 +108,25 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
                             .and(TriggerEventHistoryKeys.targetIdentifier)
                             .is(pipelineIdentifier);
     triggerEventHistoryRepository.deleteBatch(criteria);
+  }
+
+  public void deleteTriggerEventHistory(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String triggerIdentifier) {
+    Criteria criteria = Criteria.where(TriggerEventHistoryKeys.accountId)
+                            .is(accountId)
+                            .and(TriggerEventHistoryKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(TriggerEventHistoryKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(TriggerEventHistoryKeys.targetIdentifier)
+                            .is(pipelineIdentifier)
+                            .and(TriggerEventHistoryKeys.triggerIdentifier)
+                            .is(triggerIdentifier);
+    DeleteResult deleteResult = triggerEventHistoryRepository.deleteTriggerEventHistoryForTriggerIdentifier(criteria);
+    if (!deleteResult.wasAcknowledged()) {
+      log.error(String.format("Unable to delete event history for trigger [%s]", triggerIdentifier));
+      return;
+    }
+    log.info("NGTrigger {} event history delete successful", triggerIdentifier);
   }
 }

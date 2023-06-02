@@ -20,8 +20,11 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.stripEnd;
+import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Repository;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -49,6 +52,7 @@ import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.utils.GitProviderDataObtainmentManager;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -63,6 +67,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jetty.util.StringUtil;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -73,6 +78,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private static final String AWS_CODECOMMIT_URL_PATTERN = "https://git-codecommit.%s.amazonaws.com/v1/repos/%s";
   private final NGTriggerService ngTriggerService;
   private final GitProviderDataObtainmentManager additionalDataObtainmentManager;
+  @Inject PmsFeatureFlagService featureFlagService;
 
   @Override
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
@@ -99,6 +105,11 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       } else if (wrapper.getGitConnectionType() == GitConnectionType.ACCOUNT) {
         evaluateWrapperForAccountLevelGitConnector(urls, eligibleTriggers, wrapper);
       }
+    }
+
+    // check for harness scm triggers
+    if (featureFlagService.isEnabled(originalEvent.getAccountId(), FeatureName.CODE_ENABLED)) {
+      evaluateWrapperForSCMConnector(urls, eligibleTriggers, filterRequestData);
     }
 
     if (isEmpty(eligibleTriggers)) {
@@ -139,6 +150,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     HashSet<String> urls = new HashSet<>();
 
     String httpUrl = repository.getHttpURL().toLowerCase();
+    httpUrl = GitClientHelper.convertToHttps(httpUrl);
     urls.add(httpUrl);
     // Add url without .git, to handle case, where user entered url without .git on connector
     if (httpUrl.endsWith(DOT_GIT)) {
@@ -158,17 +170,25 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private void evaluateWrapperForProjectLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String accUrl = wrapper.getUrl();
-    accUrl = sanitizeUrl(accUrl);
+    String sanitizedAccUrl = sanitizeUrl(accUrl);
 
     for (TriggerDetails details : wrapper.getTriggers()) {
       try {
         if (wrapper.getConnectorType() == ConnectorType.AZURE_REPO) {
-          final String repoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
-              accUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
-          String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+          final String sanitizedRepoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
+              sanitizedAccUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
+          String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(sanitizedRepoUrl)).findAny().orElse(null);
 
           if (!isBlank(finalUrl)) {
             eligibleTriggers.add(details);
+          } else {
+            final String repoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
+                accUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
+            finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+
+            if (!isBlank(finalUrl)) {
+              eligibleTriggers.add(details);
+            }
           }
         }
       } catch (Exception e) {
@@ -180,21 +200,34 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private void evaluateWrapperForAccountLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String accUrl = wrapper.getUrl();
-    accUrl = sanitizeUrl(accUrl);
+    String sanitizedAccUrl = sanitizeUrl(accUrl);
 
     for (TriggerDetails details : wrapper.getTriggers()) {
       try {
-        final String repoUrl =
+        final String sanitizedRepoUrl =
             new StringBuilder(128)
-                .append(accUrl)
-                .append(accUrl.endsWith("/") ? EMPTY : '/')
+                .append(sanitizedAccUrl)
+                .append(sanitizedAccUrl.endsWith("/") ? EMPTY : '/')
                 .append(details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
                 .toString();
 
-        String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+        String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(sanitizedRepoUrl)).findAny().orElse(null);
 
         if (!isBlank(finalUrl)) {
           eligibleTriggers.add(details);
+        } else {
+          final String repoUrl =
+              new StringBuilder(128)
+                  .append(accUrl)
+                  .append(accUrl.endsWith("/") ? EMPTY : '/')
+                  .append(details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
+                  .toString();
+
+          finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+
+          if (!isBlank(finalUrl)) {
+            eligibleTriggers.add(details);
+          }
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(details.getNgTriggerEntity()));
@@ -212,6 +245,34 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
 
     if (!isBlank(finalUrl)) {
       eligibleTriggers.addAll(wrapper.getTriggers());
+    } else {
+      finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(url)).findAny().orElse(null);
+
+      if (!isBlank(finalUrl)) {
+        eligibleTriggers.addAll(wrapper.getTriggers());
+      }
+    }
+  }
+
+  @VisibleForTesting
+  void evaluateWrapperForSCMConnector(
+      Set<String> urls, List<TriggerDetails> eligibleTriggers, FilterRequestData filterRequestData) {
+    for (TriggerDetails triggerDetail : filterRequestData.getDetails()) {
+      NGTriggerEntity ngTriggerEntity = triggerDetail.getNgTriggerEntity();
+      WebhookMetadata webhook = ngTriggerEntity.getMetadata().getWebhook();
+      if (webhook == null || webhook.getGit() == null) {
+        continue;
+      }
+
+      if (StringUtil.isBlank(webhook.getGit().getConnectorIdentifier())) {
+        String completeHarnessRepoName = getCompleteHarnessRepoName(ngTriggerEntity, webhook.getGit().getRepoName());
+        String finalUrl =
+            urls.stream().filter(u -> u.contains(completeHarnessRepoName.toLowerCase())).findAny().orElse(null);
+
+        if (!isBlank(finalUrl)) {
+          eligibleTriggers.add(triggerDetail);
+        }
+      }
     }
   }
 
@@ -224,12 +285,33 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   And we allow connector url as http://<something>, http://www.<something>, https://www.<something>
   This method will do the required fix
    */
+  @VisibleForTesting
   String sanitizeUrl(String url) {
     String modifiedUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     modifiedUrl = modifiedUrl.replaceFirst("http://", "https://");
     modifiedUrl = modifiedUrl.replaceFirst("https://www.", "https://");
 
+    if (modifiedUrl.contains("ssh://")) {
+      modifiedUrl = !modifiedUrl.contains("@") ? modifiedUrl.replaceFirst("ssh://", "git@")
+                                               : modifiedUrl.replaceFirst("ssh://", "");
+      modifiedUrl = modifiedUrl.contains(":") ? modifiedUrl : modifiedUrl.replaceFirst("/", ":");
+    }
+
     return modifiedUrl;
+  }
+
+  public String getCompleteHarnessRepoName(NGTriggerEntity ngTriggerEntity, String repo) {
+    repo = stripStart(repo, "/");
+    repo = stripEnd(repo, "/");
+    String parts[] = repo.split("/");
+    if (parts.length == 3) {
+      return ngTriggerEntity.getAccountId() + "/" + repo;
+    } else if (parts.length == 2) {
+      return ngTriggerEntity.getAccountId() + "/" + ngTriggerEntity.getOrgIdentifier() + "/" + repo;
+    } else {
+      return ngTriggerEntity.getAccountId() + "/" + ngTriggerEntity.getOrgIdentifier() + "/"
+          + ngTriggerEntity.getProjectIdentifier() + "/" + repo;
+    }
   }
 
   @VisibleForTesting
@@ -275,7 +357,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     // Map 1
     Map<String, List<TriggerDetails>> triggerToConnectorMap = new HashMap<>();
     triggerDetails.forEach(
-        triggerDetail -> generateConnectorFQNFromTriggerConfig(triggerDetail, triggerToConnectorMap));
+        triggerDetail -> generateConnectorFQNFromTriggerConfig(accountId, triggerDetail, triggerToConnectorMap));
 
     // Map 2
     Map<String, ConnectorConfigDTO> connectorMap = new HashMap<>();
@@ -309,20 +391,29 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
 
   @VisibleForTesting
   void generateConnectorFQNFromTriggerConfig(
-      TriggerDetails triggerDetail, Map<String, List<TriggerDetails>> triggerToConnectorMap) {
+      String accountId, TriggerDetails triggerDetail, Map<String, List<TriggerDetails>> triggerToConnectorMap) {
     NGTriggerEntity ngTriggerEntity = triggerDetail.getNgTriggerEntity();
     WebhookMetadata webhook = ngTriggerEntity.getMetadata().getWebhook();
     if (webhook == null || webhook.getGit() == null) {
       return;
     }
 
-    String fullyQualifiedIdentifier = getFullyQualifiedIdentifierRefString(
-        IdentifierRefHelper.getIdentifierRef(webhook.getGit().getConnectorIdentifier(), ngTriggerEntity.getAccountId(),
-            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier()));
+    try {
+      if (StringUtil.isBlank(webhook.getGit().getConnectorIdentifier())
+          && featureFlagService.isEnabled(accountId, FeatureName.CODE_ENABLED)) {
+        return;
+      }
 
-    List<TriggerDetails> triggerDetailList =
-        triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
+      String fullyQualifiedIdentifier = getFullyQualifiedIdentifierRefString(IdentifierRefHelper.getIdentifierRef(
+          webhook.getGit().getConnectorIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+          ngTriggerEntity.getProjectIdentifier()));
 
-    triggerDetailList.add(triggerDetail);
+      List<TriggerDetails> triggerDetailList =
+          triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
+
+      triggerDetailList.add(triggerDetail);
+    } catch (Exception ex) {
+      log.error(getTriggerSkipMessage(triggerDetail.getNgTriggerEntity()));
+    }
   }
 }

@@ -10,7 +10,6 @@ package io.harness.pms.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepInfo;
@@ -18,6 +17,7 @@ import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.steps.FolderPathConstants;
 import io.harness.steps.StepCategoryConstants;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 import io.harness.steps.policy.PolicyStepConstants;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -177,7 +177,7 @@ public class CommonStepInfo {
   StepInfo containerStepInfo =
       StepInfo.newBuilder()
           .setName("Container Step")
-          .setType(StepSpecTypeConstants.CONTAINER_STEP)
+          .setType(ContainerStepSpecTypeConstants.CONTAINER_STEP)
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Scripted").build())
           .build();
 

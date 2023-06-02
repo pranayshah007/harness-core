@@ -21,6 +21,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
@@ -64,11 +65,9 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
   @Inject private GitService gitService;
   @Inject private EncryptionService encryptionService;
   @Inject private GitUtilsDelegate gitUtilsDelegate;
-
+  @Inject private TerraformBaseHelper terraformBaseHelper;
   @Inject private S3Utils s3UtilsDelegate;
-
   @Inject private TerraformConfigInspectService terraformConfigInspectService;
-
   @Inject AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   public TerraformInputVariablesObtainTask(DelegateTaskPackage delegateTaskPackage,
@@ -153,7 +152,7 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
       }
 
       List<String> variables = terraformConfigInspectService.parseFieldsUnderCategory(absoluteModulePath,
-          BLOCK_TYPE.VARIABLES.name().toLowerCase(), parameters.isUseTfConfigInspectLatestVersion());
+          BLOCK_TYPE.VARIABLES.name().toLowerCase(), terraformBaseHelper.getTerraformConfigInspectVersion(parameters));
 
       if (variables != null) {
         variables.stream()

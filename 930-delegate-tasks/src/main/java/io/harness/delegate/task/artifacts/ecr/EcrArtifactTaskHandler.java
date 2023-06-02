@@ -13,7 +13,7 @@ import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_TAGS_PER_IMAGE
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDateDescending;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -34,7 +34,6 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -61,8 +60,8 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
         attributesRequest.getImagePath(), MAX_NO_OF_TAGS_PER_IMAGE);
     List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList =
         builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
-            .map(build -> EcrRequestResponseMapper.toEcrResponse(build, attributesRequest, null))
+            .sorted(new BuildDetailsInternalComparatorDateDescending()) // Sort by latest timestamp.
+            .map(build -> EcrRequestResponseMapper.toEcrResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(ecrArtifactDelegateResponseList);
   }
@@ -111,7 +110,6 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(EcrArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
-    List<Map<String, String>> labels;
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
     String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
         awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
@@ -122,16 +120,8 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
       lastSuccessfulBuild = ecrService.verifyBuildNumber(awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(),
           attributesRequest.getImagePath(), attributesRequest.getTag());
     }
-    labels = ecrService.getLabels(awsInternalConfig, attributesRequest.getImagePath(), attributesRequest.getRegion(),
-        Collections.singletonList(lastSuccessfulBuild.getNumber()));
-    EcrArtifactDelegateResponse ecrArtifactDelegateResponse;
-    if (EmptyPredicate.isNotEmpty(labels)) {
-      ecrArtifactDelegateResponse =
-          EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest, labels.get(0));
-    } else {
-      ecrArtifactDelegateResponse =
-          EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest, null);
-    }
+    EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
+        EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(ecrArtifactDelegateResponse));
   }
 
@@ -169,5 +159,9 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
     awsInternalConfig.setDefaultRegion(attributesRequest.getRegion());
     return awsInternalConfig;
+  }
+
+  boolean isRegex(EcrArtifactDelegateRequest artifactDelegateRequest) {
+    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getTagRegex());
   }
 }

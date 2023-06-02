@@ -123,19 +123,27 @@ if [[ "" != "$TEMPLATE_SERVICE_SECRET" ]]; then
 fi
 
 if [[ "" != "$CI_MANAGER_BASE_URL" ]]; then
-  export CI_MANAGER_BASE_URL; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
+  export CI_MANAGER_BASE_URL;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
-  export CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
-  export CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_SECRET" ]]; then
-  export CI_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_SECRET;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+  yq -i '.ciServiceSecret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_MANAGER_BASE_URL" ]]; then
@@ -260,6 +268,14 @@ fi
 
 if [[ "" != "$PMS_API_BASE_URL" ]]; then
   export PMS_API_BASE_URL; yq -i '.pmsApiBaseUrl=env(PMS_API_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
@@ -417,6 +433,11 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
+if [[ "" != "$ALLOWED_ORIGINS" ]]; then
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -469,6 +490,8 @@ replace_key_value iteratorsConfig.approvalInstanceIteratorConfig.enabled "$APPRO
 replace_key_value iteratorsConfig.approvalInstanceIteratorConfig.targetIntervalInSeconds "$APPROVAL_INSTANCE_ITERATOR_INTERVAL_SEC"
 replace_key_value orchestrationStepConfig.ffServerBaseUrl "$FF_SERVER_BASE_URL"
 replace_key_value orchestrationStepConfig.ffServerApiKey "$FF_SERVER_API_KEY"
+
+replace_key_value orchestrationStepConfig.containerStepConfig.logStreamingContainerStepBaseUrl "$LOG_STREAMING_CONTAINER_STEP_BASE_URL"
 
 replace_key_value shouldDeployWithGitSync "$ENABLE_GIT_SYNC"
 
@@ -549,3 +572,16 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+replace_key_value cfClientConfig.retries "$CF_RETRIES"
+replace_key_value cfClientConfig.sleepInterval "$CF_SLEEP_INTERVAL"
+
+replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
+replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"

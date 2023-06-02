@@ -24,35 +24,12 @@ import io.harness.yaml.schema.beans.YamlSchemaMetadata;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.STO)
 @UtilityClass
 public class StoBeansRegistrars {
-  private YamlSchemaRootClass createStepYaml(STOStepType stepType) {
-    return YamlSchemaRootClass.builder()
-        .entityType(stepType.getEntityType())
-        .availableAtProjectLevel(true)
-        .availableAtOrgLevel(false)
-        .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                .modulesSupported(Collections.singletonList(ModuleType.STO))
-                                .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                .build())
-        .availableAtAccountLevel(false)
-        .clazz(stepType.getNode())
-        .build();
-  }
-
-  private ImmutableList<YamlSchemaRootClass> createSecurityStepYamlDefinitions() {
-    ImmutableList.Builder<YamlSchemaRootClass> stepPaletteListBuilder = ImmutableList.<YamlSchemaRootClass>builder();
-
-    Arrays.asList(STOStepType.values()).forEach(e -> stepPaletteListBuilder.add(createStepYaml(e)));
-
-    return stepPaletteListBuilder.build();
-  }
-
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
       ImmutableList.<YamlSchemaRootClass>builder()
           .add(YamlSchemaRootClass.builder()
@@ -107,6 +84,6 @@ public class StoBeansRegistrars {
                    .availableAtAccountLevel(false)
                    .clazz(BackgroundStepNode.class)
                    .build())
-          .addAll(createSecurityStepYamlDefinitions())
+          .addAll(STOStepType.createSecurityStepYamlDefinitions())
           .build();
 }

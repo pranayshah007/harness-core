@@ -22,6 +22,10 @@ import static software.wings.beans.command.CommandType.ENABLE;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME;
+import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -37,7 +41,8 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -52,6 +57,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -65,6 +71,7 @@ import software.wings.api.InstanceElement;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.beans.Activity;
+import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -79,6 +86,7 @@ import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.aws.model.AwsAmiPreDeploymentData;
+import software.wings.service.impl.aws.model.AwsAmiServiceDeployRequest;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployResponse;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -101,6 +109,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
@@ -120,6 +129,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private AwsAmiServiceRollback state = new AwsAmiServiceRollback("stepName");
 
@@ -191,6 +201,16 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
     doReturn(application).when(workflowStandardParamsExtensionService).getApp(mockParams);
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
     doReturn(service).when(mockServiceResourceService).getWithDetails(any(), any());
+    doReturn("10").when(mockContext).renderExpression(eq(BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_BACKOFF_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_ERROR_RETRY_ACCOUNT_VARIABLE));
+    AmazonClientSDKDefaultBackoffStrategy sdkDefaultBackoffStrategy = AmazonClientSDKDefaultBackoffStrategy.builder()
+                                                                          .baseDelayInMs(10)
+                                                                          .throttledBaseDelayInMs(10)
+                                                                          .maxBackoffInMs(10)
+                                                                          .maxErrorRetry(10)
+                                                                          .build();
     doReturn(serviceSetupElement)
         .when(mockAwsAmiServiceStateHelper)
         .getSetupElementFromSweepingOutput(mockContext, AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME);
@@ -236,7 +256,15 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
     doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
 
     ExecutionResponse response = state.executeInternal(mockContext);
-    verify(mockDelegateService, times(1)).queueTaskV2(any(DelegateTask.class));
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(mockDelegateService, times(1)).queueTaskV2(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+    assertThat(delegateTask).isNotNull();
+    assertThat(delegateTask.getData().getParameters()).isNotNull();
+    assertThat(1).isEqualTo(delegateTask.getData().getParameters().length);
+    assertThat(delegateTask.getData().getParameters()[0] instanceof AwsAmiServiceDeployRequest).isTrue();
+    AwsAmiServiceDeployRequest params = (AwsAmiServiceDeployRequest) delegateTask.getData().getParameters()[0];
+    assertThat(params.getAwsConfig().getAmazonClientSDKDefaultBackoffStrategy()).isEqualTo(sdkDefaultBackoffStrategy);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(((AwsAmiDeployStateExecutionData) response.getStateExecutionData()).isRollback()).isTrue();
   }

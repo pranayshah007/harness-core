@@ -114,10 +114,11 @@ public class SCMGitSyncHelper {
     return ScmGitUtils.createScmPushResponse(yaml, gitBranchInfo, pushFileResponse, entityDetail, changeType);
   }
 
-  public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String filePath,
-      String connectorRef, boolean loadFromCache, EntityType entityType, Map<String, String> contextMap) {
-    contextMap =
-        GitSyncLogContextHelper.setContextMap(scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
+  public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String commitId,
+      String filePath, String connectorRef, boolean loadFromCache, EntityType entityType,
+      Map<String, String> contextMap, boolean getOnlyFileContent) {
+    contextMap = GitSyncLogContextHelper.setContextMap(
+        scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       final GetFileRequest getFileRequest =
@@ -125,14 +126,16 @@ public class SCMGitSyncHelper {
               .setRepoName(repoName)
               .setConnectorRef(connectorRef)
               .setBranchName(Strings.nullToEmpty(branchName))
+              .setCommitId(Strings.nullToEmpty(commitId))
               .setFilePath(filePath)
               .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache))
               .putAllContextMap(contextMap)
               .setEntityType(EntityTypeMapper.getEntityType(entityType))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
               .setPrincipal(getPrincipal())
+              .setGetOnlyFileContent(getOnlyFileContent)
               .build();
-      final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::getFile, getFileRequest);
 
       ScmGitMetaData scmGitMetaData = getScmGitMetaData(getFileResponse);
@@ -144,6 +147,7 @@ public class SCMGitSyncHelper {
         scmErrorHandler.processAndThrowException(getFileResponse.getStatusCode(),
             getScmErrorDetailsFromGitProtoResponse(getFileResponse.getError()), scmGitMetaData);
       }
+      log.info("Git SDK file content {} and scmGetMetadata : {}", getFileResponse.getFileContent(), scmGitMetaData);
       return ScmGetFileResponse.builder()
           .fileContent(getFileResponse.getFileContent())
           .gitMetaData(scmGitMetaData)
@@ -153,7 +157,7 @@ public class SCMGitSyncHelper {
 
   public ScmCreateFileGitResponse createFile(
       Scope scope, ScmCreateFileGitRequest gitRequest, Map<String, String> contextMap) {
-    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(),
+    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(), "",
         gitRequest.getFilePath(), GitOperation.CREATE_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
@@ -172,7 +176,7 @@ public class SCMGitSyncHelper {
               .setPrincipal(getPrincipal())
               .build();
 
-      final CreateFileResponse createFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final CreateFileResponse createFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::createFile, createFileRequest);
 
       if (isFailureResponse(createFileResponse.getStatusCode())) {
@@ -190,7 +194,7 @@ public class SCMGitSyncHelper {
 
   public ScmUpdateFileGitResponse updateFile(
       Scope scope, ScmUpdateFileGitRequest gitRequest, Map<String, String> contextMap) {
-    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(),
+    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(), "",
         gitRequest.getFilePath(), GitOperation.UPDATE_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
@@ -211,7 +215,7 @@ public class SCMGitSyncHelper {
               .setPrincipal(getPrincipal())
               .build();
 
-      final UpdateFileResponse updateFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final UpdateFileResponse updateFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::updateFile, updateFileRequest);
 
       if (isFailureResponse(updateFileResponse.getStatusCode())) {
@@ -241,7 +245,7 @@ public class SCMGitSyncHelper {
             .setPrincipal(getPrincipal())
             .build();
 
-    final CreatePRResponse createPRResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+    final CreatePRResponse createPRResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
         harnessToGitPushInfoServiceBlockingStub::createPullRequest, createPRRequest);
 
     if (isFailureResponse(createPRResponse.getStatusCode())) {
@@ -255,7 +259,8 @@ public class SCMGitSyncHelper {
 
   public ScmGetRepoUrlResponse getRepoUrl(
       Scope scope, String repoName, String connectorRef, Map<String, String> contextMap) {
-    contextMap = GitSyncLogContextHelper.setContextMap(scope, repoName, "", "", GitOperation.GET_REPO_URL, contextMap);
+    contextMap =
+        GitSyncLogContextHelper.setContextMap(scope, repoName, "", "", "", GitOperation.GET_REPO_URL, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       final GetRepoUrlRequest getRepoUrlRequest =
@@ -266,7 +271,7 @@ public class SCMGitSyncHelper {
               .putAllContextMap(contextMap)
               .build();
 
-      final GetRepoUrlResponse getRepoUrlResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final GetRepoUrlResponse getRepoUrlResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::getRepoUrl, getRepoUrlRequest);
 
       if (isFailureResponse(getRepoUrlResponse.getStatusCode())) {
@@ -300,6 +305,7 @@ public class SCMGitSyncHelper {
               .setEntityType(EntityTypeMapper.getEntityType(scmGetFileRequest.getEntityType()))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scmGetFileRequest.getScope()))
               .setPrincipal(getPrincipal())
+              .setGetOnlyFileContent(scmGetFileRequest.isGetOnlyFileContent())
               .build();
       sdkRequestMap.put(scmGetFileRequestEntry.getKey(), getFileRequest);
     }
@@ -309,7 +315,7 @@ public class SCMGitSyncHelper {
                                                           .putAllGetFileRequestMap(sdkRequestMap)
                                                           .build();
 
-    final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+    final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
         harnessToGitPushInfoServiceBlockingStub::getBatchFiles, getBatchFilesRequest);
 
     if (isFailureResponse(getBatchFilesResponse.getStatusCode())) {

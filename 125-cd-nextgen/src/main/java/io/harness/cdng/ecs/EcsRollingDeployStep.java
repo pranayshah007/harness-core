@@ -13,11 +13,13 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
+import io.harness.cdng.ecs.beans.EcsRollingDeployOutcome;
 import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -25,6 +27,8 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest.EcsRollingDeployRequestBuilder;
+import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest.EcsTaskArnRollingDeployRequestBuilder;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -42,6 +46,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -103,11 +109,22 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       return EcsStepCommonHelper.getFailureResponseBuilder(ecsRollingDeployResponse, stepResponseBuilder).build();
     }
 
+    EcsRollingDeployOutcome ecsRollingDeployOutcome =
+        EcsRollingDeployOutcome.builder()
+            .serviceName(ecsRollingDeployResponse.getEcsRollingDeployResult().getServiceName())
+            .build();
+
     List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
         ecsRollingDeployResponse, infrastructureOutcome.getInfrastructureKey());
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(ecsRollingDeployOutcome)
+                         .build())
+        .stepOutcome(stepOutcome)
+        .build();
   }
 
   @Override
@@ -130,6 +147,11 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
     EcsRollingDeployStepParameters ecsRollingDeployStepParameters =
         (EcsRollingDeployStepParameters) stepElementParameters.getSpec();
+
+    if (ecsStepExecutorParams.getEcsTaskDefinitionManifestContent() == null) {
+      return executeEcsTaskWithTaskArn(
+          stepElementParameters, ambiance, unitProgressData, ecsStepExecutorParams, executionPassThroughData);
+    }
 
     EcsRollingDeployRequestBuilder ecsRollingDeployRequestBuilder =
         EcsRollingDeployRequest.builder()
@@ -155,8 +177,8 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
     EcsRollingDeployRequest ecsRollingDeployRequest = ecsRollingDeployRequestBuilder.build();
 
-    return ecsStepCommonHelper.queueEcsTask(
-        stepElementParameters, ecsRollingDeployRequest, ambiance, executionPassThroughData, true);
+    return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsRollingDeployRequest, ambiance,
+        executionPassThroughData, true, TaskType.ECS_COMMAND_TASK_NG);
   }
 
   @Override
@@ -175,7 +197,37 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .build();
-    return ecsStepCommonHelper.queueEcsTask(
-        stepElementParameters, ecsPrepareRollbackDataRequest, ambiance, ecsPrepareRollbackDataPassThroughData, false);
+    return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsPrepareRollbackDataRequest, ambiance,
+        ecsPrepareRollbackDataPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
+  }
+
+  private TaskChainResponse executeEcsTaskWithTaskArn(StepElementParameters stepElementParameters, Ambiance ambiance,
+      UnitProgressData unitProgressData, EcsStepExecutorParams ecsStepExecutorParams,
+      EcsExecutionPassThroughData executionPassThroughData) {
+    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsRollingDeployStepParameters ecsRollingDeployStepParameters =
+        (EcsRollingDeployStepParameters) stepElementParameters.getSpec();
+    EcsTaskArnRollingDeployRequestBuilder ecsTaskArnRollingDeployRequestBuilder =
+        EcsTaskArnRollingDeployRequest.builder()
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_TASK_ARN_ROLLING_DEPLOY)
+            .commandName(ECS_ROLLING_DEPLOY_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .ecsTaskDefinitionArn(ecsStepCommonHelper.getTaskDefinitionArn(ambiance))
+            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
+            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+            .forceNewDeployment(true);
+
+    if (ecsRollingDeployStepParameters.getSameAsAlreadyRunningInstances().getValue() != null) {
+      ecsTaskArnRollingDeployRequestBuilder.sameAsAlreadyRunningInstances(
+          ecsRollingDeployStepParameters.getSameAsAlreadyRunningInstances().getValue().booleanValue());
+    }
+
+    return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsTaskArnRollingDeployRequestBuilder.build(),
+        ambiance, executionPassThroughData, true, TaskType.ECS_TASK_ARN_ROLLING_DEPLOY_NG);
   }
 }

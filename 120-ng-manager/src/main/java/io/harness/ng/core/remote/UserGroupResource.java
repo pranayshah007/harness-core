@@ -358,9 +358,15 @@ public class UserGroupResource {
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(
           description = "User Group Filter", required = true) @Body @NotNull UserGroupFilterDTO userGroupFilterDTO) {
-    List<UserGroupDTO> userGroups =
-        userGroupService.list(userGroupFilterDTO).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
-    return ResponseDTO.newResponse(userGroups);
+    List<UserGroup> userGroups = userGroupService.list(userGroupFilterDTO);
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
+                userGroupFilterDTO.getProjectIdentifier()),
+            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
+      userGroups = userGroupService.getPermittedUserGroups(userGroups);
+    }
+    List<UserGroupDTO> userGroupDTOs = userGroups.stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
+    return ResponseDTO.newResponse(userGroupDTOs);
   }
 
   @GET

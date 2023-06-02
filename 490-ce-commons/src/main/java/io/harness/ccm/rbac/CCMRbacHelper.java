@@ -7,26 +7,42 @@
 
 package io.harness.ccm.rbac;
 
+import java.util.Set;
+
 public interface CCMRbacHelper {
-  void checkFolderViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkFolderEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkFolderDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkFolderViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkFolderEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkFolderDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  Set<String> checkFolderIdsGivenPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Set<String> folderIds, String permission);
 
-  void checkPerspectiveViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkPerspectiveEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkPerspectiveDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkPerspectiveViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  boolean hasPerspectiveViewOnAllResources(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkPerspectiveEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkPerspectiveDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
-  void checkBudgetViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkBudgetEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-  void checkBudgetDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkBudgetViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkBudgetEditPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  void checkBudgetDeletePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
   void checkCostCategoryViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkCostCategoryEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkCostCategoryDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  void checkRecommendationsViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRecommendationsViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
-  void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkAnomalyViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
   boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
@@ -36,7 +52,15 @@ public interface CCMRbacHelper {
   void checkRuleEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleExecutePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String ruleId);
+  Set<String> checkRuleIdsGivenPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> ruleIds, String permission);
 
+  void checkAccountExecutePermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String accountId);
+  Set<String> checkAccountIdsGivenPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Set<String> accountIds, String permission);
   void checkRuleSetViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleSetDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkRuleSetEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);

@@ -7,8 +7,9 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepInfo;
@@ -25,8 +26,8 @@ import java.util.Map;
 
 public class ResourceConstraintStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.MANUAL_EFFORT;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.MANUAL_EFFORT;
   }
 
   @Override
@@ -43,10 +44,11 @@ public class ResourceConstraintStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ResourceConstraintState state = (ResourceConstraintState) getState(graphNode);
     QueueStepNode queueStepNode = new QueueStepNode();
-    baseSetup(graphNode, queueStepNode);
+    baseSetup(graphNode, queueStepNode, context.getIdentifierCaseFormat());
     QueueStepInfo queueStepInfo = new QueueStepInfo();
     queueStepInfo.setKey(MigratorUtility.RUNTIME_INPUT);
     queueStepInfo.setScope(getHoldingScope(state));

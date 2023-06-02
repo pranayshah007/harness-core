@@ -17,11 +17,14 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.Resolver;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
 public interface ExecutionSweepingOutputService extends Resolver<ExecutionSweepingOutput> {
   OptionalSweepingOutput resolveOptional(Ambiance ambiance, RefObject refObject);
+  Optional<Map<String, Object>> resolveFromJsonAsMap(Ambiance ambiance, RefObject refObject);
   List<OptionalSweepingOutput> listOutputsWithGivenNameAndSetupIds(
       Ambiance ambiance, String name, List<String> nodeIds);
   List<OptionalSweepingOutput> listOutputsWithGivenNameAndRuntimeIds(

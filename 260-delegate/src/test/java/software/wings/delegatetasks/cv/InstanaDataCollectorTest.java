@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -26,11 +26,12 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.InstanaConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateCVActivityLogService;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.instana.InstanaAnalyzeMetrics;
 import software.wings.service.impl.instana.InstanaDataCollectionInfo;
+import software.wings.service.impl.instana.InstanaDataCollector;
 import software.wings.service.impl.instana.InstanaInfraMetrics;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 

@@ -114,6 +114,19 @@ public interface FileStoreService {
       String projectIdentifier, @NotNull String identifier, boolean includeContent);
 
   /**
+   * Get file content as String.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param scopedFileIdentifier the scoped file identifier
+   * @param allowedBytesFileSize allowed bytes file size
+   * @return file content
+   */
+  String getFileContentAsString(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String scopedFileIdentifier, long allowedBytesFileSize);
+
+  /**
    * Download a file.
    *
    * @param accountIdentifier the account identifier

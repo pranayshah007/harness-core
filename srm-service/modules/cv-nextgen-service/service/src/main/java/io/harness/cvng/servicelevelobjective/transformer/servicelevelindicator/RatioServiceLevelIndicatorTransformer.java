@@ -10,27 +10,30 @@ package io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 
 public class RatioServiceLevelIndicatorTransformer
-    extends ServiceLevelIndicatorTransformer<RatioServiceLevelIndicator, ServiceLevelIndicatorSpec> {
+    extends ServiceLevelIndicatorTransformer<RatioServiceLevelIndicator, WindowBasedServiceLevelIndicatorSpec> {
   @Override
   public RatioServiceLevelIndicator getEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
       boolean isEnabled) {
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec();
     return RatioServiceLevelIndicator.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
-        .sliMissingDataType(serviceLevelIndicatorDTO.getSliMissingDataType())
+        .sliMissingDataType(serviceLevelIndicatorDTO.getSLIMissingDataType())
         .name(serviceLevelIndicatorDTO.getName())
-        .type(serviceLevelIndicatorDTO.getType())
         .metric1(ratioSLIMetricSpec.getMetric1())
         .metric2(ratioSLIMetricSpec.getMetric2())
+        .considerConsecutiveMinutes(ratioSLIMetricSpec.getConsiderConsecutiveMinutes())
+        .considerAllConsecutiveMinutesFromStartAsBad(
+            ratioSLIMetricSpec.getConsiderAllConsecutiveMinutesFromStartAsBad())
         .eventType(ratioSLIMetricSpec.getEventType())
         .thresholdValue(ratioSLIMetricSpec.getThresholdValue())
         .thresholdType(ratioSLIMetricSpec.getThresholdType())
@@ -41,15 +44,19 @@ public class RatioServiceLevelIndicatorTransformer
   }
 
   @Override
-  protected ServiceLevelIndicatorSpec getSpec(RatioServiceLevelIndicator serviceLevelIndicator) {
-    return ServiceLevelIndicatorSpec.builder()
+  protected WindowBasedServiceLevelIndicatorSpec getSpec(RatioServiceLevelIndicator serviceLevelIndicator) {
+    return WindowBasedServiceLevelIndicatorSpec.builder()
         .type(SLIMetricType.RATIO)
+        .sliMissingDataType(serviceLevelIndicator.getSliMissingDataType())
         .spec(RatioSLIMetricSpec.builder()
                   .eventType(serviceLevelIndicator.getEventType())
                   .metric1(serviceLevelIndicator.getMetric1())
                   .metric2(serviceLevelIndicator.getMetric2())
                   .thresholdValue(serviceLevelIndicator.getThresholdValue())
                   .thresholdType(serviceLevelIndicator.getThresholdType())
+                  .considerConsecutiveMinutes(serviceLevelIndicator.getConsiderConsecutiveMinutes())
+                  .considerAllConsecutiveMinutesFromStartAsBad(
+                      serviceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad())
                   .build())
         .build();
   }

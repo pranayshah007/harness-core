@@ -44,11 +44,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anySet;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -675,7 +675,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     infraProvisionerPageResponse.setResponse(singletonList(provisioner));
     doReturn(infraProvisionerPageResponse)
         .when(resourceLookupService)
-        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true);
+        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true, false);
     doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(APP_ID);
     HashSet<String> settingAttributeIds = new HashSet<>(singletonList("settingId"));
     Map<String, SettingAttribute> idToSettingAttributeMapping = new HashMap<>();
@@ -764,7 +764,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     infraProvisionerPageResponse.setResponse(singletonList(provisioner));
     doReturn(infraProvisionerPageResponse)
         .when(resourceLookupService)
-        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true);
+        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true, false);
     doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(APP_ID);
     HashSet<String> settingAttributeIds = new HashSet<>(singletonList("settingId"));
     Map<String, SettingAttribute> idToSettingAttributeMapping = new HashMap<>();

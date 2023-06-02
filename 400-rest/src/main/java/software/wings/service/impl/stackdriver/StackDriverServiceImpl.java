@@ -11,9 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.STACKDRIVER_ERROR;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 import static software.wings.common.VerificationConstants.STACK_DRIVER_METRIC;
 import static software.wings.common.VerificationConstants.TIME_DURATION_FOR_LOGS_IN_MINUTES;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.delegate.beans.TaskData;
 import io.harness.eraro.ErrorCode;

@@ -70,10 +70,16 @@ public class GetFilesInFolderForkTask extends RecursiveTask<List<FileChange>> {
     FindFilesInBranchRequest.Builder findFilesInBranchRequest = prepareRequestBuilder(updatedFolderPath);
 
     List<FileChange> filesInBranch = getAllFilesPresentInFolder(findFilesInBranchRequest);
-    List<String> newFoldersToBeProcessed = getListOfNewFoldersToBeProcessed(filesInBranch);
-    List<GetFilesInFolderForkTask> tasksForSubFolders = createTasksForSubFolders(newFoldersToBeProcessed);
+    /* In case of Azure we have the "recursionLevel" parameter set to Full by default.
+     This returns the parent and its descendant items.
+     Hence we do not need to create separate task to fetch its descendants files from the sub directories.
+     */
+    if (!provider.hasAzure()) {
+      List<String> newFoldersToBeProcessed = getListOfNewFoldersToBeProcessed(filesInBranch);
+      List<GetFilesInFolderForkTask> tasksForSubFolders = createTasksForSubFolders(newFoldersToBeProcessed);
+      addFilesOfSubfolders(filesList, tasksForSubFolders);
+    }
     addFilesOfThisFolder(filesList, filesInBranch);
-    addFilesOfSubfolders(filesList, tasksForSubFolders);
     return filesList;
   }
 
@@ -121,7 +127,7 @@ public class GetFilesInFolderForkTask extends RecursiveTask<List<FileChange>> {
     }
   }
 
-  private void addFilesOfThisFolder(List<FileChange> filesList, List<FileChange> filesInBranchResponse) {
+  void addFilesOfThisFolder(List<FileChange> filesList, List<FileChange> filesInBranchResponse) {
     List<FileChange> fileChangesInThisFolder = emptyIfNull(filesInBranchResponse)
                                                    .stream()
                                                    .filter(change -> change.getContentType() == ContentType.FILE)

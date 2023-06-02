@@ -162,6 +162,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
               .newApplicationDetails(response.getNewApplicationInfo())
               .manifestsPackage(tasExecutionPassThroughData.getTasManifestsPackage())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
+              .instanceCountType(tasCanaryAppSetupStepParameters.getTasInstanceCountType())
               .build(),
           StepCategory.STEP.name());
       TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =

@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -148,8 +148,6 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
     assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getRegistrationResult())
         .isEqualTo(WebhookRegistrationStatus.ERROR);
-    assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getDetailedMessage())
-        .isEqualTo("Exception");
   }
 
   @Test

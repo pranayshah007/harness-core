@@ -19,6 +19,7 @@ java_library(
         "//910-delegate-service-driver:module",
         "//920-delegate-agent-beans:module",
         "//930-delegate-tasks:module",
+        "//940-feature-flag:module",
         "//940-secret-manager-client:module",
         "//945-account-mgmt:module",
         "//950-delegate-tasks-beans:module",

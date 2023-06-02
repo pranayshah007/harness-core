@@ -85,9 +85,12 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
         int maxConcurrency = 0;
         if (!ParameterField.isBlank(
                 ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig().getValue()).getMaxConcurrency())) {
-          maxConcurrency = ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig().getValue())
-                               .getMaxConcurrency()
-                               .getValue();
+          maxConcurrency = Double
+                               .valueOf(String.valueOf(
+                                   ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig().getValue())
+                                       .getMaxConcurrency()
+                                       .getValue()))
+                               .intValue();
         }
         List<Child> children =
             matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
@@ -107,7 +110,10 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
     if (stepParameters.getStrategyConfig().getRepeat() != null) {
       int maxConcurrency = 0;
       if (!ParameterField.isBlank(stepParameters.getStrategyConfig().getRepeat().getMaxConcurrency())) {
-        maxConcurrency = stepParameters.getStrategyConfig().getRepeat().getMaxConcurrency().getValue();
+        maxConcurrency =
+            Double
+                .valueOf(String.valueOf(stepParameters.getStrategyConfig().getRepeat().getMaxConcurrency().getValue()))
+                .intValue();
       }
       List<Child> children = forLoopStrategyConfigService.fetchChildren(
           stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());

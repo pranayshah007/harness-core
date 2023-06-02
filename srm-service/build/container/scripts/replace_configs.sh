@@ -55,6 +55,10 @@ if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
   export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TICKET_SERVICE_REST_CLIENT_BASEURL" ]]; then
+  export TICKET_SERVICE_REST_CLIENT_BASEURL; yq -i '.ticketServiceRestClientConfig.baseUrl=env(TICKET_SERVICE_REST_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
   yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
@@ -119,7 +123,7 @@ if [[ "" != "$ENABLE_AUDIT" ]]; then
 fi
 
 if [[ "" != "$ENABLE_DEBUG_API" ]]; then
-  export $ENABLE_DEBUG_API; yq -i '.enableDebugAPI=env($ENABLE_DEBUG_API)' $CONFIG_FILE
+  export ENABLE_DEBUG_API; yq -i '.enableDebugAPI=env(ENABLE_DEBUG_API)' $CONFIG_FILE
 fi
 
 
@@ -136,6 +140,8 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAME
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
 replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
@@ -145,6 +151,27 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     INDEX=$(expr $INDEX + 1)
   done
 fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+replace_key_value redisLockConfig.redisUrl "$LOCK_CONFIG_REDIS_URL"
+replace_key_value redisLockConfig.envNamespace "$LOCK_CONFIG_ENV_NAMESPACE"
+replace_key_value redisLockConfig.sentinel "$LOCK_CONFIG_USE_SENTINEL"
+replace_key_value redisLockConfig.masterName "$LOCK_CONFIG_SENTINEL_MASTER_NAME"
+replace_key_value redisLockConfig.userName "$LOCK_CONFIG_REDIS_USERNAME"
+replace_key_value redisLockConfig.password "$LOCK_CONFIG_REDIS_PASSWORD"
+replace_key_value redisLockConfig.nettyThreads "$REDIS_NETTY_THREADS"
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
 
 if [[ "" != "$PMS_TARGET" ]]; then
   export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
@@ -270,7 +297,7 @@ if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
 fi
 
 if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
-  export ENABLE_DASHBOARD_TIMESCALE; yq -i 'enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
+  export ENABLE_DASHBOARD_TIMESCALE; yq -i '.enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
@@ -305,3 +332,7 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"

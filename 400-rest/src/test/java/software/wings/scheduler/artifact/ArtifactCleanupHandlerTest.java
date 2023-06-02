@@ -10,8 +10,8 @@ package software.wings.scheduler.artifact;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,18 +33,15 @@ import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(PersistenceIteratorFactory.class)
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactCleanupHandlerTest extends WingsBaseTest {
   @Mock PersistenceIteratorFactory persistenceIteratorFactory;
@@ -53,6 +50,7 @@ public class ArtifactCleanupHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void testRegisterIterators() {
     AccountStatusBasedEntityProcessController<ArtifactStream> accountStatusBasedEntityProcessController =
         new AccountStatusBasedEntityProcessController<>(accountService);

@@ -105,6 +105,6 @@ public class K8sTestHelper {
   }
 
   public static ProcessResult buildProcessResult(int exitCode) {
-    return new ProcessResult(exitCode, new ProcessOutput(null));
+    return new ProcessResult(exitCode, new ProcessOutput("some error".getBytes(StandardCharsets.UTF_8)));
   }
 }

@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.SRIRAM;
 
 import static software.wings.api.DeploymentType.KUBERNETES;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,8 +24,8 @@ import io.harness.serializer.YamlUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.ApmMetricCollectionInfo;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.metrics.MetricType;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.sm.states.DatadogState;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -57,7 +57,7 @@ public class APMParserTest extends WingsBaseTest {
         Optional.of(KUBERNETES));
 
     Iterator<List<APMMetricInfo>> metricInfoIterator = metricEndpointsInfo.values().iterator();
-    Collection<NewRelicMetricDataRecord> records =
+    Collection<software.wings.beans.dto.NewRelicMetricDataRecord> records =
         APMResponseParser.extract(Lists.newArrayList(APMResponseParser.APMResponseData.builder()
                                                          .text(textLoad)
                                                          .groupName(DEFAULT_GROUP_NAME)

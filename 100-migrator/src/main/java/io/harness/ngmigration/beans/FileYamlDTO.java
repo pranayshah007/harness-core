@@ -26,7 +26,11 @@ public class FileYamlDTO implements YamlDTO {
   private String identifier;
   private String content;
   private String fileUsage;
-
   private String projectIdentifier;
   private String orgIdentifier;
+  private String rootIdentifier;
+  // Higher the value the more deep the file is
+  private int depth;
+  // This is the path in the folder structure. e.g /service/folder1/folder2/file.yaml
+  private String filePath;
 }

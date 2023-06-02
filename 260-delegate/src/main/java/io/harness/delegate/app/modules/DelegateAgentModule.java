@@ -17,8 +17,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.delegate.app.DelegateGrpcServiceModule;
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
-import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
-import io.harness.delegate.app.modules.common.DelegateManagerGrpcClientModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;
@@ -32,8 +30,6 @@ import io.harness.managerclient.VerificationServiceClientModule;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.perpetualtask.PerpetualTaskWorkerModule;
 import io.harness.serializer.KryoModule;
-
-import software.wings.delegatetasks.k8s.client.KubernetesClientFactoryModule;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
@@ -75,7 +71,6 @@ public class DelegateAgentModule extends AbstractModule {
     configureCcmEventPublishing();
     install(new PerpetualTaskWorkerModule());
 
-    install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());
     install(new CITaskFactoryModule());
     install(new DelegateModule(configuration));

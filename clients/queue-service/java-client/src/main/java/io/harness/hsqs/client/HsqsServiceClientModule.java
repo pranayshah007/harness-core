@@ -10,6 +10,10 @@ package io.harness.hsqs.client;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.api.impl.HsqsClientServiceImpl;
+import io.harness.hsqs.client.model.HsqsClientConstants;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -18,6 +22,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
@@ -28,13 +33,13 @@ public class HsqsServiceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String serviceSecret;
   private final String clientId;
+  private final String queueEnvNamespace;
 
-  // Pass ClientId as Bearer for Queue Service as Queue Service support Bearer Auth Scheme
-  public HsqsServiceClientModule(
-      ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret, String clientId) {
-    this.serviceHttpClientConfig = serviceHttpClientConfig;
-    this.serviceSecret = serviceSecret;
+  public HsqsServiceClientModule(QueueServiceClientConfig queueServiceClientConfig, String clientId) {
+    this.serviceHttpClientConfig = queueServiceClientConfig.getHttpClientConfig();
+    this.serviceSecret = queueServiceClientConfig.getQueueServiceSecret();
     this.clientId = clientId;
+    this.queueEnvNamespace = queueServiceClientConfig.getEnvNamespace();
   }
 
   @Provides
@@ -46,6 +51,14 @@ public class HsqsServiceClientModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(HsqsServiceClient.class).toProvider(HsqsServiceHttpClientFactory.class).in(Scopes.SINGLETON);
+    bind(HsqsClient.class).toProvider(HsqsServiceHttpClientFactory.class).in(Scopes.SINGLETON);
+    bind(HsqsClientService.class).to(HsqsClientServiceImpl.class).in(Scopes.SINGLETON);
+  }
+
+  @Provides
+  @Singleton
+  @Named(HsqsClientConstants.QUEUE_SERVICE_ENV_NAMESPACE)
+  public String getQueueEnvNamespace() {
+    return this.queueEnvNamespace;
   }
 }

@@ -29,7 +29,6 @@ public class CurrentGenManagerMongoDBMetricsPublisher implements MetricsPublishe
   private final MetricService metricService;
   private static final String METRIC_PREFIX = "currentgen_manager_mongodb_";
   private static final Pattern METRIC_NAME_RE = Pattern.compile("[^a-zA-Z0-9_]");
-  private static final String WAIT_QUEUE_SIZE = "wait_queue_size";
   private static final String CONNECTION_POOL_SIZE = "connection_pool_size";
   private static final String CONNECTIONS_CHECKED_OUT = "connections_checked_out";
   private static final String CONNECTION_POOL_MAX_SIZE = "connection_pool_max_size";
@@ -47,7 +46,6 @@ public class CurrentGenManagerMongoDBMetricsPublisher implements MetricsPublishe
         recordMetric(CONNECTION_POOL_MAX_SIZE, harnessConnectionPoolStatistics.getMaxSize());
         recordMetric(CONNECTION_POOL_SIZE, harnessConnectionPoolStatistics.getSize());
         recordMetric(CONNECTIONS_CHECKED_OUT, harnessConnectionPoolStatistics.getCheckedOutCount());
-        recordMetric(WAIT_QUEUE_SIZE, harnessConnectionPoolStatistics.getWaitQueueSize());
       }
     });
   }

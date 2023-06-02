@@ -14,10 +14,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-@Value
+@Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(NON_NULL)
@@ -31,4 +31,6 @@ public class GcrRequestDTO {
   List<String> tagsList;
   /** Registry HostName. */
   String registryHostname;
+  /** Runtime input Yaml for expression resolution.*/
+  String runtimeInputYaml;
 }

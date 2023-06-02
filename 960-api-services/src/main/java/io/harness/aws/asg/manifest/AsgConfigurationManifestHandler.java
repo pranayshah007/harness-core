@@ -132,14 +132,14 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     chainState.setAutoScalingGroup(finalAutoScalingGroup);
 
     // wait all instances to be healthy in target groups
-    if ("BG".equals(chainState.getExecutionStrategy())) {
+    if (isNotEmpty(createAutoScalingGroupRequest.getTargetGroupARNs())) {
       List<String> instanceIds =
           finalAutoScalingGroup.getInstances().stream().map(Instance::getInstanceId).collect(Collectors.toList());
       Predicate<List<String>> predicate = arg
-          -> asgSdkManager.checkAllTargetsRegistered(arg, chainState.getTargetGroupArnList(),
+          -> asgSdkManager.checkAllTargetsRegistered(arg, createAutoScalingGroupRequest.getTargetGroupARNs(),
               asgConfigurationManifestRequest.getAwsInternalConfig(), asgConfigurationManifestRequest.getRegion());
-      asgSdkManager.info(
-          "Waiting all instances to be healthy in target groups [%s]", chainState.getTargetGroupArnList());
+      asgSdkManager.info("Waiting all instances to be healthy in target groups [%s]",
+          createAutoScalingGroupRequest.getTargetGroupARNs());
       String operation = format("Asg %s to reach steady state", finalAutoScalingGroup.getAutoScalingGroupName());
       asgSdkManager.waitReadyState(instanceIds, predicate, operation);
     }

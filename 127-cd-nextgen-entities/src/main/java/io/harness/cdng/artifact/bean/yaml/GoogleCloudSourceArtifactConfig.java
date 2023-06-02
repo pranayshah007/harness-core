@@ -70,6 +70,21 @@ public class GoogleCloudSourceArtifactConfig implements ArtifactConfig, Visitabl
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> sourceDirectory;
+
+  @NotNull @Wither GoogleCloudSourceFetchType fetchType;
+
+  /**
+   * branch where artifact source is located.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> branch;
+  /**
+   * commit id on which artifact source is located.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> commitId;
+  /**
+   * tag with which artifact source is located.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tag;
   /**
    * Identifier for artifact.
    */

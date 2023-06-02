@@ -65,8 +65,8 @@ public class GoogleCloudStorageArtifactResource {
   public ResponseDTO<GoogleCloudStorageBucketsResponseDTO> getBuckets(@QueryParam("project") String project,
       @QueryParam("connectorRef") String gcpConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
@@ -87,11 +87,11 @@ public class GoogleCloudStorageArtifactResource {
 
     // Getting the resolved connectorRef in case of expressions
     String resolvedGcpConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, gcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved project in case of expressions
-    String resolvedProject = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedProject = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, project, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =

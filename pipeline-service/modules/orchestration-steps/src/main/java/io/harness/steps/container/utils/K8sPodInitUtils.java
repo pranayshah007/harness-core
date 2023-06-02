@@ -29,6 +29,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.PIPELINE
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PIPELINE_ID_ATTR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PROJECT_ID_ATTR;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.SHARED_VOLUME_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_VOLUME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_WORK_DIR;
@@ -56,6 +57,8 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
+import io.harness.beans.yaml.extended.volumes.CIVolume;
+import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.delegate.beans.ci.pod.ContainerCapabilities;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
@@ -66,9 +69,11 @@ import io.harness.delegate.beans.ci.pod.PVCVolume;
 import io.harness.delegate.beans.ci.pod.PodToleration;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
-import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -83,10 +88,11 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
-import io.harness.steps.plugin.ContainerStepInfo;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
+import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
-import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 import io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml;
 import io.harness.steps.plugin.infrastructure.volumes.HostPathYaml;
 import io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml;
@@ -97,6 +103,7 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -123,6 +130,9 @@ public class K8sPodInitUtils {
 
   @Inject private PmsFeatureFlagHelper featureFlagHelper;
   @Inject private LogStreamingServiceConfiguration logStreamingServiceConfiguration;
+  @Inject ContainerExecutionConfig containerExecutionConfig;
+  @Inject LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject ContainerInitCpuMemHelper containerInitCpuMemHelper;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -139,6 +149,9 @@ public class K8sPodInitUtils {
   private String getK8PodIdentifier(String identifier) {
     StringBuilder sb = new StringBuilder(15);
     for (char c : identifier.toCharArray()) {
+      if (c == '_') {
+        continue;
+      }
       if (isAsciiAlphanumeric(c)) {
         sb.append(toLowerCase(c));
       }
@@ -212,8 +225,24 @@ public class K8sPodInitUtils {
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 
-  public Map<String, String> getVolumeToMountPath(List<PodVolume> volumes) {
+  public Map<String, String> getVolumeToMountPath(List<String> sharedPaths, List<PodVolume> volumes) {
     Map<String, String> volumeToMountPath = new HashMap<>();
+    int index = 0;
+    if (sharedPaths != null) {
+      for (String path : sharedPaths) {
+        if (isEmpty(path)) {
+          continue;
+        }
+
+        String volumeName = format("%s%d", SHARED_VOLUME_PREFIX, index);
+        if (path.equals(STEP_MOUNT_PATH) || path.equals(ADDON_VOL_MOUNT_PATH)) {
+          throw new InvalidRequestException(format("Shared path: %s is a reserved keyword ", path));
+        }
+        volumeToMountPath.put(volumeName, path);
+        index++;
+      }
+    }
+
     volumeToMountPath.put(STEP_VOLUME, STEP_MOUNT_PATH);
     volumeToMountPath.put(ADDON_VOLUME, ADDON_VOL_MOUNT_PATH);
 
@@ -237,19 +266,19 @@ public class K8sPodInitUtils {
   public List<PodVolume> convertDirectK8Volumes(ContainerK8sInfra k8sDirectInfraYaml) {
     List<PodVolume> podVolumes = new ArrayList<>();
 
-    List<ContainerVolume> volumes = k8sDirectInfraYaml.getSpec().getVolumes().getValue();
+    List<CIVolume> volumes = k8sDirectInfraYaml.getSpec().getVolumes().getValue();
     if (isEmpty(volumes)) {
       return podVolumes;
     }
 
     int index = 0;
-    for (ContainerVolume volume : volumes) {
+    for (CIVolume volume : volumes) {
       String volumeName = format("%s%d", VOLUME_PREFIX, index);
-      if (volume.getType() == ContainerVolume.Type.EMPTY_DIR) {
+      if (volume.getType() == CIVolume.Type.EMPTY_DIR) {
         podVolumes.add(convertEmptyDir(volumeName, (EmptyDirYaml) volume));
-      } else if (volume.getType() == ContainerVolume.Type.HOST_PATH) {
+      } else if (volume.getType() == CIVolume.Type.HOST_PATH) {
         podVolumes.add(convertHostPath(volumeName, (HostPathYaml) volume));
-      } else if (volume.getType() == ContainerVolume.Type.PERSISTENT_VOLUME_CLAIM) {
+      } else if (volume.getType() == CIVolume.Type.PERSISTENT_VOLUME_CLAIM) {
         podVolumes.add(convertPVCVolume(volumeName, (PersistentVolumeClaimYaml) volume));
       }
 
@@ -287,10 +316,17 @@ public class K8sPodInitUtils {
         .build();
   }
 
+  private List<Toleration> resolveTolerations(ParameterField<List<Toleration>> tolerations) {
+    if (tolerations == null || tolerations.isExpression() || tolerations.getValue() == null) {
+      return null;
+    } else {
+      return tolerations.getValue();
+    }
+  }
+
   public List<PodToleration> getPodTolerations(ParameterField<List<Toleration>> parameterizedTolerations) {
     List<PodToleration> podTolerations = new ArrayList<>();
-    List<Toleration> tolerations = null;
-    //                    Con.resolveTolerations(parameterizedTolerations);
+    List<Toleration> tolerations = resolveTolerations(parameterizedTolerations);
     if (tolerations == null) {
       return podTolerations;
     }
@@ -324,7 +360,7 @@ public class K8sPodInitUtils {
   private void validateTolerationEffect(String effect) {
     if (isNotEmpty(effect)) {
       if (!effect.equals("NoSchedule") && !effect.equals("PreferNoSchedule") && !effect.equals("NoExecute")) {
-        throw new CIStageExecutionException(format("Invalid value %s for effect in toleration", effect));
+        throw new ContainerStepExecutionException(format("Invalid value %s for effect in toleration", effect));
       }
     }
   }
@@ -332,7 +368,7 @@ public class K8sPodInitUtils {
   private void validateTolerationOperator(String operator) {
     if (isNotEmpty(operator)) {
       if (!operator.equals("Equal") && !operator.equals("Exists")) {
-        throw new CIStageExecutionException(format("Invalid value %s for operator in toleration", operator));
+        throw new ContainerStepExecutionException(format("Invalid value %s for operator in toleration", operator));
       }
     }
   }
@@ -386,25 +422,37 @@ public class K8sPodInitUtils {
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(key));
     if (!optionalSweepingOutput.isFound()) {
-      executionSweepingOutputResolver.consume(ambiance, key, value, StepCategory.STEP.name());
+      executionSweepingOutputResolver.consume(ambiance, key, value, StepCategory.STEP_GROUP.name());
     }
   }
 
   public Map<String, String> getLogServiceEnvVariables(ContainerDetailsSweepingOutput k8PodDetails, String accountID) {
     Map<String, String> envVars = new HashMap<>();
-    final String logServiceBaseUrl = logStreamingServiceConfiguration.getBaseUrl();
-
+    final String logServiceBaseUrl = containerExecutionConfig.getLogStreamingContainerStepBaseUrl();
+    log.info("log base url {}", logServiceBaseUrl);
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to fetch log service token attempt: {}"),
             format("Failed to fetch log service token after retrying {} times"));
 
     // Make a call to the log service and get back the token
-    String logServiceToken = Failsafe.with(retryPolicy).get(() -> logStreamingServiceConfiguration.getServiceToken());
+    String logServiceToken = Failsafe.with(retryPolicy)
+                                 .get(()
+                                          -> getLogServiceToken(accountID, logServiceBaseUrl,
+                                              logStreamingServiceConfiguration.getServiceToken()));
 
     envVars.put(LOG_SERVICE_TOKEN_VARIABLE, logServiceToken);
     envVars.put(LOG_SERVICE_ENDPOINT_VARIABLE, logServiceBaseUrl);
 
     return envVars;
+  }
+
+  public String getLogServiceToken(String accountID, String url, String token) {
+    log.info("Initiating token request to log service: {}", url);
+    try {
+      return logStreamingStepClientFactory.retrieveLogStreamingAccountToken(accountID);
+    } catch (IOException e) {
+      throw new GeneralException("Token request to log service call failed", e);
+    }
   }
 
   public Map<String, String> getCommonStepEnvVariables(
@@ -491,7 +539,11 @@ public class K8sPodInitUtils {
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.SECRETS).build();
   }
 
-  public Pair<Integer, Integer> getStepRequest(ContainerStepInfo containerStepInfo, String accountId) {
+  public Pair<Integer, Integer> getStepRequest(ContainerStepSpec containerStepInfo, String accountId) {
+    if (containerStepInfo instanceof InitContainerV2StepInfo) {
+      return getStepGroupRequest((InitContainerV2StepInfo) containerStepInfo, accountId);
+    }
+
     ContainerResource resources = ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getResources();
     Integer containerCpuLimit =
         getContainerCpuLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);
@@ -499,6 +551,10 @@ public class K8sPodInitUtils {
         getContainerMemoryLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);
 
     return Pair.of(containerCpuLimit, containerMemoryLimit);
+  }
+
+  public Pair<Integer, Integer> getStepGroupRequest(InitContainerV2StepInfo initContainerV2StepInfo, String accountId) {
+    return containerInitCpuMemHelper.getStepGroupRequest(initContainerV2StepInfo, accountId);
   }
 
   private Integer getContainerCpuLimit(ContainerResource resource, String stepType, String stepId, String accountID) {

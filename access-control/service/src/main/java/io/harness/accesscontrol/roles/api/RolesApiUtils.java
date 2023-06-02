@@ -9,6 +9,7 @@ package io.harness.accesscontrol.roles.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
@@ -40,7 +41,7 @@ public class RolesApiUtils {
                           .identifier(roleRequest.getIdentifier())
                           .name(roleRequest.getName())
                           .permissions(new HashSet<>(roleRequest.getPermissions()))
-                          .allowedScopeLevels(Collections.singleton("account"))
+                          .allowedScopeLevels(Collections.singleton(ScopeLevel.ACCOUNT))
                           .description(roleRequest.getDescription())
                           .tags(roleRequest.getTags())
                           .build();
@@ -53,7 +54,7 @@ public class RolesApiUtils {
                           .identifier(roleRequest.getIdentifier())
                           .name(roleRequest.getName())
                           .permissions(new HashSet<>(roleRequest.getPermissions()))
-                          .allowedScopeLevels(Collections.singleton("organization"))
+                          .allowedScopeLevels(Collections.singleton(ScopeLevel.ORGANIZATION))
                           .description(roleRequest.getDescription())
                           .tags(roleRequest.getTags())
                           .build();
@@ -66,7 +67,7 @@ public class RolesApiUtils {
                           .identifier(roleRequest.getIdentifier())
                           .name(roleRequest.getName())
                           .permissions(new HashSet<>(roleRequest.getPermissions()))
-                          .allowedScopeLevels(Collections.singleton("project"))
+                          .allowedScopeLevels(Collections.singleton(ScopeLevel.PROJECT))
                           .description(roleRequest.getDescription())
                           .tags(roleRequest.getTags())
                           .build();
@@ -92,10 +93,12 @@ public class RolesApiUtils {
     if (permissions != null) {
       rolesResponse.setPermissions(new ArrayList<>(permissions));
     }
-    Set<String> allowedScopeLevels = responseDTO.getRole().getAllowedScopeLevels();
+    Set<ScopeLevel> allowedScopeLevels = responseDTO.getRole().getAllowedScopeLevels();
     if (allowedScopeLevels != null) {
-      rolesResponse.setAllowedScopeLevels(new ArrayList<>(
-          allowedScopeLevels.stream().map(RolesApiUtils::getAllowedScopeEnum).collect(Collectors.toList())));
+      rolesResponse.setAllowedScopeLevels(new ArrayList<>(allowedScopeLevels.stream()
+                                                              .map(ScopeLevel::toString)
+                                                              .map(RolesApiUtils::getAllowedScopeEnum)
+                                                              .collect(Collectors.toList())));
     }
     rolesResponse.setDescription(responseDTO.getRole().getDescription());
     rolesResponse.setTags(responseDTO.getRole().getTags());

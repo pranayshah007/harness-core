@@ -35,13 +35,14 @@ public class BQConst {
 
   public static final String GCP_VM_BILLING_QUERY =
       "SELECT %s as productfamily, SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
-      + "FROM `%s` "
-      + "WHERE DATE(_PARTITIONTIME) >= Date('%s') and "
-      + "DATE(_PARTITIONTIME) <= Date('%s') and "
-      + "%s and "
-      + "usage_start_time >= '%s' and usage_end_time <= '%s' and %s "
-      + "and service.description = 'Compute Engine' "
-      + "group by gcpResourceName, gcpServiceName, productfamily";
+      + " FROM `%s` "
+      + " WHERE "
+      + " usage_start_time >= '%s' "
+      + " and usage_end_time <= '%s' "
+      + " and %s "
+      + " and %s "
+      + " and service.description = 'Compute Engine' "
+      + " group by gcpResourceName, gcpServiceName, productfamily";
 
   public static final String GCP_DESCRIPTION_CONDITION = "(sku.description like '%E2 Instance Core running%' OR "
       + "sku.description like '%RAM cost%' OR "
@@ -72,6 +73,17 @@ public class BQConst {
       + " INSERT INTO `%s` (cloudProviderId, entityId, entityType, entityName, labels, updatedAt) "
       + " VALUES ('%s', '%s', '%s', '%s', %s, '%s');";
 
+  public static final String ADD_COLUMN = "ALTER TABLE `%s` ADD COLUMN %s %s"; // tableName, columnName, columnDataType
+
+  public static final String COST_CATEGORY_DATA_TYPE = "ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>";
+
+  public static final String COST_CATEGORY_REMOVE = "UPDATE `%s` SET %s = [] "
+      + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
+
+  public static final String COST_CATEGORY_UPDATE = "UPDATE `%s` "
+      + "SET %s = %s "
+      + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
+
   public static final String CLOUD_PROVIDER_ENTITY_TAGS_TABLE_NAME = "cloudProviderEntityTags";
 
   public static final String cost = "cost";
@@ -100,4 +112,10 @@ public class BQConst {
   public static final String gcpResourceName = "gcpResourceName";
   public static final String azureVMMeterCategory = "Virtual Machines";
   public static final String gcpComputeService = "Compute Engine";
+  public static final String costCategory = "costCategory";
+  public static final String awsUsageAccountId = "awsUsageaccountid";
+  public static final String gcpBillingAccountId = "gcpBillingAccountId";
+  public static final String azureSubscriptionGuid = "azureSubscriptionGuid";
+
+  public static final String BIG_QUERY_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss zz";
 }

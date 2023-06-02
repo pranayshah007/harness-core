@@ -19,6 +19,8 @@ import io.harness.app.beans.entities.DashboardBuildsHealthInfo;
 import io.harness.cimanager.dashboard.api.CIDashboardOverviewResource;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.dashboards.GroupBy;
+import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -28,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
+@NextGenManagerAuth
 public class CIDashboardOverviewResourceImpl implements CIDashboardOverviewResource {
   private final CIOverviewDashboardService ciOverviewDashboardService;
   private final long HR_IN_MS = 60 * 60 * 1000;
@@ -42,11 +45,11 @@ public class CIDashboardOverviewResourceImpl implements CIDashboardOverviewResou
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval, previousInterval));
   }
 
-  public ResponseDTO<DashboardBuildExecutionInfo> getBuildExecution(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, long startInterval, long endInterval) {
+  public ResponseDTO<DashboardBuildExecutionInfo> getBuildExecution(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, GroupBy groupby, long startInterval, long endInterval) {
     log.info("Getting build execution");
     return ResponseDTO.newResponse(ciOverviewDashboardService.getBuildExecutionBetweenIntervals(
-        accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval));
+        accountIdentifier, orgIdentifier, projectIdentifier, groupby, startInterval, endInterval));
   }
 
   public ResponseDTO<DashboardBuildRepositoryInfo> getRepositoryBuild(

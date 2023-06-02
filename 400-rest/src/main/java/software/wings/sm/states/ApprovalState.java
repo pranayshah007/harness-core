@@ -185,6 +185,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
    * This should be used to get user groups to approval if {@link #userGroupAsExpression} is set.
    */
   @NotNull @Getter @Setter private String userGroupExpression;
+  @Getter @Setter private String description;
 
   @Override
   public KryoSerializer getKryoSerializer() {
@@ -243,6 +244,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   public ExecutionResponse execute(ExecutionContext context) {
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     String approvalId = generateUuid();
+    renderExpressions(context);
 
     if (isNotEmpty(getTemplateExpressions())) {
       resolveUserGroupFromTemplate(context, executionContext);
@@ -258,6 +260,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
                                                    .variables(getVariables())
                                                    .stageName(getStageName())
                                                    .triggeredBy(workflowStandardParams.getCurrentUser())
+                                                   .description(getDescription())
                                                    .build();
     if (disableAssertion != null) {
       ExecutionResponse skipResponse = handleSkipCondition(context, executionData);
@@ -318,6 +321,10 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
         throw new InvalidRequestException(
             "Invalid ApprovalStateType, it should be one of ServiceNow, Jira, HarnessUi or Custom Shell script");
     }
+  }
+
+  private void renderExpressions(ExecutionContext context) {
+    description = context.renderExpression(description);
   }
 
   private void resolveUserGroupFromTemplate(ExecutionContext context, ExecutionContextImpl executionContext) {

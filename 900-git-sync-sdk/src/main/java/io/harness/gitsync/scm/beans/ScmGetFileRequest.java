@@ -31,4 +31,5 @@ public class ScmGetFileRequest {
   boolean loadFromCache;
   EntityType entityType;
   Map<String, String> contextMap;
+  boolean getOnlyFileContent;
 }

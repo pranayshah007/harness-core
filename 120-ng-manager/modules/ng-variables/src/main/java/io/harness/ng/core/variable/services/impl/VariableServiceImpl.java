@@ -14,18 +14,15 @@ import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_V
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
-import static io.harness.utils.PageUtils.getPageRequest;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SortOrder;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
@@ -47,7 +44,6 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -108,16 +104,9 @@ public class VariableServiceImpl implements VariableService {
 
   @Override
   public PageResponse<VariableResponseDTO> list(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, int page, int size, String searchTerm, boolean includeVariablesFromEverySubScope) {
+      String projectIdentifier, String searchTerm, boolean includeVariablesFromEverySubScope, Pageable pageable) {
     Criteria criteria = getCriteriaForVariableList(
         accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, includeVariablesFromEverySubScope);
-    Pageable pageable = getPageRequest(
-        PageRequest.builder()
-            .pageIndex(page)
-            .pageSize(size)
-            .sortOrders(Collections.singletonList(
-                SortOrder.Builder.aSortOrder().withField(VariableKeys.createdAt, SortOrder.OrderType.DESC).build()))
-            .build());
     Page<Variable> variables = variableRepository.findAll(criteria, pageable);
 
     return PageUtils.getNGPageResponse(

@@ -130,11 +130,14 @@ public class GithubEntityToDTO implements ConnectorEntityToDTOMapper<GithubConne
     switch (apiAccessType) {
       case GITHUB_APP:
         final GithubAppApiAccess githubApiAccess = (GithubAppApiAccess) connector.getGithubApiAccess();
-        apiAccessSpecDTO = GithubAppSpecDTO.builder()
-                               .applicationId(githubApiAccess.getApplicationId())
-                               .installationId(githubApiAccess.getInstallationId())
-                               .privateKeyRef(SecretRefHelper.createSecretRef(githubApiAccess.getPrivateKeyRef()))
-                               .build();
+        apiAccessSpecDTO =
+            GithubAppSpecDTO.builder()
+                .applicationId(githubApiAccess.getApplicationId())
+                .installationId(githubApiAccess.getInstallationId())
+                .privateKeyRef(SecretRefHelper.createSecretRef(githubApiAccess.getPrivateKeyRef()))
+                .applicationIdRef(SecretRefHelper.createSecretRef(githubApiAccess.getApplicationIdRef()))
+                .installationIdRef(SecretRefHelper.createSecretRef(githubApiAccess.getInstallationIdRef()))
+                .build();
         break;
       case TOKEN:
         final GithubTokenApiAccess githubTokenApiAccess = (GithubTokenApiAccess) connector.getGithubApiAccess();

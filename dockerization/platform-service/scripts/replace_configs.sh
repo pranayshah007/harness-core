@@ -122,6 +122,10 @@ if [[ "" != "$SMTP_USE_SSL" ]]; then
   export SMTP_USE_SSL; yq -i '.notificationServiceConfig.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_START_TLS" ]]; then
+  export SMTP_START_TLS; yq -i '.notificationServiceConfig.smtp.startTLS=env(SMTP_START_TLS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$OVERRIDE_PREDEFINED_TEMPLATES" ]]; then
   export OVERRIDE_PREDEFINED_TEMPLATES; yq -i '.notificationServiceConfig.seedDataConfiguration.shouldOverrideAllPredefinedTemplates=env(OVERRIDE_PREDEFINED_TEMPLATES)' $CONFIG_FILE
 fi
@@ -226,6 +230,18 @@ fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
   export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.resourceGroupServiceConfig.redis.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ZENDESK_BASE_URL" ]]; then
+  export ZENDESK_BASE_URL; yq -i '.zendeskApiConfig.baseUrl=env(ZENDESK_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ZENDESK_TOKEN" ]]; then
+  export ZENDESK_TOKEN; yq -i '.zendeskApiConfig.token=env(ZENDESK_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$COVEO_TOKEN" ]]; then
+  export COVEO_TOKEN; yq -i '.zendeskApiConfig.coveoToken=env(COVEO_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then

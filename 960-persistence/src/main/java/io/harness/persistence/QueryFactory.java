@@ -24,18 +24,20 @@ import lombok.Getter;
 public class QueryFactory extends DefaultQueryFactory {
   private final TraceMode traceMode;
   @Getter private final int maxOperationTimeInMillis;
+  @Getter private final int maxDocumentsToBeFetched;
   @Getter private final Subject<Tracer> tracerSubject = new Subject<>();
 
-  public QueryFactory(TraceMode traceMode, int maxOperationTimeInMillis) {
+  public QueryFactory(TraceMode traceMode, int maxOperationTimeInMillis, int maxDocumentsToBeFetched) {
     this.traceMode = traceMode;
     this.maxOperationTimeInMillis = maxOperationTimeInMillis;
+    this.maxDocumentsToBeFetched = maxDocumentsToBeFetched;
   }
 
   @Override
   public <T> Query<T> createQuery(
       final Datastore datastore, final DBCollection collection, final Class<T> type, final DBObject query) {
-    final QueryImpl<T> item =
-        new HQuery<>(type, collection, datastore, traceMode, tracerSubject, maxOperationTimeInMillis);
+    final QueryImpl<T> item = new HQuery<>(
+        type, collection, datastore, traceMode, tracerSubject, maxOperationTimeInMillis, maxDocumentsToBeFetched);
 
     if (query != null) {
       item.setQueryObject(query);

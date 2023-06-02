@@ -10,9 +10,13 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.data.validator.EntityIdentifier;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -45,27 +49,58 @@ import lombok.experimental.FieldNameConstants;
 @Entity(value = "entityUnavailabilityStatuses")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
+public class EntityUnavailabilityStatuses
+    implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   @Id private String uuid;
-  @NotNull String accountId;
-  String orgIdentifier;
-  String projectIdentifier;
-  private String entityIdentifier;
-  private EntityType entityType;
-  private long startTime;
-  private long endTime;
-  private EntityUnavailabilityStatus status;
-  private long createdAt;
-  private long lastUpdatedAt;
+  @NotNull @EntityIdentifier String accountId;
+  @NotNull @EntityIdentifier String orgIdentifier;
+  @NotNull @EntityIdentifier String projectIdentifier;
+  @NotNull @EntityIdentifier private String entityIdentifier;
+  @NotNull @EntityIdentifier private EntityType entityType;
+  @NotNull private long startTime;
+  @NotNull private long endTime;
+  @NotNull private EntityUnavailabilityStatus status;
+  @NotNull private long createdAt;
+  @NotNull private long lastUpdatedAt;
+
+  @NotNull EntitiesRule entitiesRule;
+
+  @FdIndex private long createNextTaskIteration;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("entity_unavailability_start_end")
-                 .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
-                 .field(EntityUnavailabilityStatusesKeys.startTime)
+                 .name("entity_unavailability_start_end_idx")
+                 .field(EntityUnavailabilityStatusesKeys.accountId)
+                 .field(EntityUnavailabilityStatusesKeys.orgIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.projectIdentifier)
                  .field(EntityUnavailabilityStatusesKeys.endTime)
+                 .field(EntityUnavailabilityStatusesKeys.startTime)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project_idx")
+                 .field(EntityUnavailabilityStatusesKeys.accountId)
+                 .field(EntityUnavailabilityStatusesKeys.orgIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.projectIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
                  .build())
         .build();
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (fieldName.equals(EntityUnavailabilityStatusesKeys.createNextTaskIteration)) {
+      this.createNextTaskIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (fieldName.equals(EntityUnavailabilityStatusesKeys.createNextTaskIteration)) {
+      return createNextTaskIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 }

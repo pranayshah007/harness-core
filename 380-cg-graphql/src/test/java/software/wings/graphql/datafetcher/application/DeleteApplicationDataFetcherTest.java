@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

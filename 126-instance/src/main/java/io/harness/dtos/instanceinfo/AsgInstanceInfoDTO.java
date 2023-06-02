@@ -37,6 +37,7 @@ public class AsgInstanceInfoDTO extends InstanceInfoDTO {
         .part(infrastructureKey)
         .part(asgNameWithoutSuffix)
         .part(executionStrategy)
+        .part(production)
         .part(instanceId)
         .build()
         .toString();

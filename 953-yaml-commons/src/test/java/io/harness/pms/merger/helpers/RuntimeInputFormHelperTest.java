@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -21,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,7 +70,8 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     String yaml = readFile(filename);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
-    String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(jsonNode);
+    String templateYaml =
+        RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(new YamlNode(jsonNode).getField("pipeline"));
     assertNotNull(templateYaml);
     assertEquals(templateYaml, expectedTemplateYaml);
     assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
@@ -110,14 +113,14 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
   public void testCreateExecutionInputFormAndUpdateYamlFieldForStage() throws JsonProcessingException {
     String filename = "execution-input-pipeline.yaml";
     String expectedTemplateYaml = "stage:\n"
-        + "  identifier: \"sd\"\n"
-        + "  type: \"Approval\"\n"
-        + "  description: \"<+input>.executionInput()\"\n";
+        + "  identifier: sd\n"
+        + "  type: Approval\n"
+        + "  description: <+input>.executionInput()\n";
     String yaml = readFile(filename);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
     String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
-        jsonNode.get("pipeline").get("stages").get(0));
+        new YamlNode(jsonNode.get("pipeline").get("stages").get(0)).getField("stage"));
     assertNotNull(templateYaml);
     assertEquals(templateYaml, expectedTemplateYaml);
     assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
@@ -162,7 +165,20 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
 
-    RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(jsonNode);
+    RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(new YamlNode(jsonNode).getField("step"));
     assertThat(jsonNode).isEqualTo(mapper.readTree(yaml));
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateTemplateFromPipelineTemplateWithDefaults() {
+    String filename = "pipeline-template-defaults.yml";
+    String yaml = readFile(filename);
+    String templateYaml = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
+
+    String resFile = "pipeline-template-defaults-runtime.yml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
   }
 }

@@ -99,9 +99,9 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         io.harness.security.SecurityContextBuilder.setContext(principal);
         SourcePrincipalContextBuilder.setSourcePrincipal(principal);
       } else {
-        logAndThrowTokenException(
+        throw new InvalidRequestException(
             String.format("Invalid API key or incorrect JWT token request in account: %s", accountIdentifier),
-            INVALID_TOKEN, null);
+            INVALID_TOKEN, USER);
       }
     } else {
       super.filter(containerRequestContext);
@@ -164,7 +164,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   }
 
   private void logAndThrowTokenException(String errorMessage, ErrorCode errorCode, Throwable th) {
-    log.error(errorMessage, th);
+    log.warn(errorMessage, th);
     throw new InvalidRequestException(errorMessage, errorCode, USER);
   }
 }

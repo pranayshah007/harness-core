@@ -13,12 +13,12 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.nullIfEmpty;
-import static io.harness.encryption.ScopeHelper.getScope;
 import static io.harness.gitsync.common.YamlConstants.HARNESS_FOLDER_EXTENSION;
 import static io.harness.gitsync.common.YamlConstants.PATH_DELIMITER;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.SYNCED;
 import static io.harness.gitsync.common.remote.YamlGitConfigMapper.toYamlGitConfig;
 import static io.harness.ng.core.utils.URLDecoderUtility.getDecodedString;
+import static io.harness.scope.ScopeHelper.getScope;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;

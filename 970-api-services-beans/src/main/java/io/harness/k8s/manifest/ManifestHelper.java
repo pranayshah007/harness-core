@@ -56,6 +56,8 @@ public class ManifestHelper {
   public static final String values_filename = "values.yaml";
   public static final String yaml_file_extension = ".yaml";
   public static final String yml_file_extension = ".yml";
+  public static final String kustomizeFileNameYaml = "kustomization.yaml";
+  public static final String kustomizeFileNameYml = "kustomization.yml";
   public static final String currentReleaseWorkloadExpression = "${k8s.currentReleaseWorkload}";
   public static final String previousReleaseWorkloadExpression = "${k8s.previousReleaseWorkload}";
 
@@ -129,7 +131,7 @@ public class ManifestHelper {
 
   private static KubernetesResource getKubernetesResource(String spec, Map map) {
     String kind = getKind(map);
-    Map metadata = getMetadata(map);
+    Map metadata = getMetadata(map, kind);
     String name = getName(metadata);
 
     String namespace = null;
@@ -156,13 +158,15 @@ public class ManifestHelper {
     return metadata.get("name").toString();
   }
 
-  private static Map getMetadata(Map map) {
+  private static Map getMetadata(Map map, String kind) {
     if (!map.containsKey("metadata")) {
-      throw new KubernetesYamlException("Error processing yaml manifest. metadata not found in spec.");
+      throw new KubernetesYamlException(
+          format("Error processing yaml manifest of the kind: %s. metadata not found in spec.", kind));
     }
 
     if (map.get("metadata") == null) {
-      throw new KubernetesYamlException("Error processing yaml manifest. metadata is set to null in spec.");
+      throw new KubernetesYamlException(
+          format("Error processing yaml manifest of the kind: %s. metadata is set to null in spec.", kind));
     }
 
     return (Map) map.get("metadata");

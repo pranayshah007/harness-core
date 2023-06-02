@@ -13,8 +13,8 @@ import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 
 public interface DockerResourceService {
-  DockerResponseDTO getBuildDetails(
-      IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier, String projectIdentifier);
+  DockerResponseDTO getBuildDetails(IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier,
+      String projectIdentifier, String tagRegex);
 
   DockerResponseDTO getLabels(IdentifierRef dockerConnectorRef, String imagePath, DockerRequestDTO dockerRequestDTO,
       String orgIdentifier, String projectIdentifier);

@@ -20,6 +20,7 @@ import io.harness.validation.Update;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.ValidationResult;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.ownership.OwnedByAccount;
@@ -62,7 +63,7 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
 
   List<String> getSettingIdsForAccount(String accountId);
 
-  List<SettingAttribute> list(String accountId, SettingAttribute.SettingCategory category);
+  List<SettingAttribute> list(String accountId, SettingCategory category);
 
   List<SettingAttribute> getFilteredSettingAttributes(List<SettingAttribute> inputSettingAttributes,
       String appIdFromRequest, String envIdFromRequest, boolean forUsageInNewApp);
@@ -120,6 +121,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
   SettingAttribute getByName(String accountId, String appId, String attributeName);
 
   SettingAttribute getByName(String accountId, String appId, String envId, String attributeName);
+
+  SettingAttribute getConnectorByName(String accountId, String appId, String attributeName);
 
   SettingAttribute fetchSettingAttributeByName(
       @NotEmpty String accountId, @NotEmpty String attributeName, @NotNull SettingVariableTypes settingVariableTypes);

@@ -17,7 +17,7 @@ import io.harness.ccm.billing.preaggregated.PreAggregatedTableSchema;
 
 import software.wings.graphql.datafetcher.billing.QLCCMAggregateOperation;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import com.healthmarketscience.sqlbuilder.AliasedObject;
 import com.healthmarketscience.sqlbuilder.CustomSql;
 import com.healthmarketscience.sqlbuilder.FunctionCall;

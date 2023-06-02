@@ -10,6 +10,7 @@ package io.harness.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -58,6 +59,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @EqualsAndHashCode(exclude = {"uuid", "createdAt", "lastUpdatedAt", "validUntil"})
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegateTasks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DelegateTaskKeys")
@@ -91,14 +93,35 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
                  .field(DelegateTaskKeys.delegateId)
                  .field(DelegateTaskKeys.nextBroadcast)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("taskcountperaccount")
+                 .field(DelegateTaskKeys.accountId)
+                 .field(DelegateTaskKeys.delegateId)
+                 .field(DelegateTaskKeys.status)
+                 .build())
         .build();
   }
 
   private static final Long DEFAULT_FORCE_EXECUTE_TIMEOUT = Duration.ofSeconds(5).toMillis();
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
+  /**
+   * New Delegate architecture params
+   */
+  private String runnerType;
+  private byte[] taskData;
+  private byte[] runnerData;
+  private String resourceUri;
+  private String resourceMethod;
+  // moved from TaskData to here
+  private long executionTimeout;
+  private boolean async;
+  // --------------------------------------
+
+  // Will be marked deprecated after tasks are containerized
   private TaskData data;
 
+  // Will be marked deprecated after tasks are containerized
   private TaskDataV2 taskDataV2;
 
   private List<ExecutionCapability> executionCapabilities;
@@ -172,6 +195,8 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private int broadcastCount;
   private long nextBroadcast;
   private boolean forceExecute;
+  private boolean shouldSkipOpenStream;
+  private String baseLogKey;
   private int broadcastRound;
 
   @FdIndex private long expiry;

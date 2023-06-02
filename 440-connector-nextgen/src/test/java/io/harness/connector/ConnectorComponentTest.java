@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABHINAV;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.testing.TestExecution;
@@ -28,6 +29,7 @@ public class ConnectorComponentTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void componentConnectorTests() {
     for (Map.Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();

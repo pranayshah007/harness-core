@@ -9,6 +9,7 @@ package io.harness.gitsync.scm;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,5 +40,50 @@ public class BitbucketConnectorDTOTest extends GitSyncTestBase {
             .build();
     assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getName()).isEqualTo("repoName");
     assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg()).isEqualTo("repoOrg");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetRepositoryDetailsForBitbucketServerSSHAccount() {
+    String repoUrl = "ssh://git@dev.harness.io/";
+    BitbucketConnectorDTO bitbucketConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
+            .url(repoUrl)
+            .build();
+    assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getName()).isEqualTo(null);
+    assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoryDetailsForBitbucketServerHTTPS() {
+    String repoUrl = "https://bitbucket.dev.harness.io/scm/har/pratyushhelmcharts.git";
+    BitbucketConnectorDTO bitbucketConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.REPO)
+            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .url(repoUrl)
+            .build();
+    assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getName()).isEqualTo("pratyushhelmcharts");
+    assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg()).isEqualTo("har");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetRepositoryDetailsForBitbucketServerAccount() {
+    String repoUrl = "https://bitbucket.dev.harness.io";
+    BitbucketConnectorDTO bitbucketConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .url(repoUrl)
+            .build();
+    assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getName()).isEqualTo(null);
+    assertThat(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg()).isEqualTo(null);
   }
 }

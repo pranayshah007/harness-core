@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator;
 
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
+import io.harness.cvng.servicelevelobjective.entities.RollingSLOTarget;
 
 public class RollingSLOTargetTransformer implements SLOTargetTransformer<RollingSLOTarget, RollingSLOTargetSpec> {
   @Override

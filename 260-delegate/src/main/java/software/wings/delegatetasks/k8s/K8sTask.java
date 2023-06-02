@@ -30,7 +30,7 @@ import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sConstants;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sDelegateTaskParams.K8sDelegateTaskParamsBuilder;
@@ -87,7 +87,7 @@ public class K8sTask extends AbstractDelegateRunnableTask {
             .executeTask(k8sTaskParameters, null);
       } catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-        log.error("Exception in processing K8s task [{}]",
+        log.warn("Exception in processing K8s instance sync task [{}]",
             k8sTaskParameters.getCommandName() + ":" + k8sTaskParameters.getCommandType(), sanitizedException);
         return K8sTaskExecutionResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.FAILURE)

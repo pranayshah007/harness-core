@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
@@ -83,6 +84,7 @@ import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Singleton
 @Slf4j
@@ -108,7 +110,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
 
   @Override
   public ArtifactoryRepoDetailsDTO getRepositories(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
-      @NonNull String orgIdentifier, @NonNull String projectIdentifier) {
+      String orgIdentifier, String projectIdentifier) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()
@@ -251,6 +253,10 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   public ArtifactoryBuildDetailsDTO getSuccessfulBuild(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl,
       ArtifactoryRequestDTO artifactoryRequestDTO, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repositoryName),
+        MutablePair.of(NGArtifactConstants.REPOSITORY_FORMAT, repositoryFormat));
+    ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.TAG, artifactoryRequestDTO.getTag()),
+        MutablePair.of(NGArtifactConstants.TAG_REGEX, artifactoryRequestDTO.getTagRegex()));
     ArtifactoryConnectorDTO connector = getConnector(artifactoryConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(artifactoryConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -290,7 +296,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
 
   @Override
   public ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
-      @NonNull String orgIdentifier, @NonNull String projectIdentifier, @NotNull String repository) {
+      String orgIdentifier, String projectIdentifier, @NotNull String repository) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()

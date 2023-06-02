@@ -17,11 +17,14 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.secretmanagerclient.SecretType.SSHKey;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secretmanagerclient.SecretType.WinRmCredentials;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -35,6 +38,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SortOrder;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
@@ -51,6 +55,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
@@ -72,6 +77,7 @@ import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.models.Secret;
@@ -93,15 +99,19 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
@@ -170,8 +180,16 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         secretSpec.setValue(encryptedData.getPath());
       }
     }
+    SecretDTOV2 secretDTO = secret.toDTO();
+    if (null != secretDTO && secretDTO.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
+      sshKeySpecDTO.getAuth().setUseSshClient(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_CLIENT));
+      sshKeySpecDTO.getAuth().setUseSshj(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_SSHJ));
+    }
     return SecretResponseWrapper.builder()
-        .secret(secret.toDTO())
+        .secret(secretDTO)
         .updatedAt(secret.getLastModifiedAt())
         .createdAt(secret.getCreatedAt())
         .draft(secret.isDraft())
@@ -281,6 +299,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @VisibleForTesting
   public boolean checkIfSecretManagerUsedIsHarnessManaged(String accountIdentifier, SecretDTOV2 dto) {
+    /**
+     * SSH and WinRm are special kind of secrets and are not associated to any secret manager, therefore return false in
+     * such a case.
+     */
+    if (dto.getType() == SSHKey || dto.getType() == WinRmCredentials) {
+      return false;
+    }
+
     final String secretManagerIdentifier = getSecretManagerIdentifier(dto);
     /**
      * Using scope identifiers of secret because as of now Secrets can be created using SM at same scope. This should
@@ -303,9 +329,10 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
+    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
-    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
+    secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
     return getResponseWrapper(secret);
   }
 
@@ -370,8 +397,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
-      String searchTerm, int page, int size, ConnectorCategory sourceCategory,
-      boolean includeAllSecretsAccessibleAtScope) {
+      String searchTerm, ConnectorCategory sourceCategory, boolean includeAllSecretsAccessibleAtScope,
+      PageRequest pageRequest) {
     Criteria criteria = Criteria.where(SecretKeys.accountIdentifier).is(accountIdentifier);
     addCriteriaForRequestedScopes(criteria, orgIdentifier, projectIdentifier, includeAllSecretsAccessibleAtScope,
         includeSecretsFromEverySubScope);
@@ -396,12 +423,29 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       criteria.and(SecretKeys.identifier).in(identifiers);
     }
 
-    List<Secret> allMatchingSecrets = ngSecretService.list(criteria).getContent();
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(SECRET_RESOURCE_TYPE, null), SECRET_VIEW_PERMISSION)) {
+      if (isEmpty(pageRequest.getSortOrders())) {
+        SortOrder order =
+            SortOrder.Builder.aSortOrder().withField(SecretKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
+        pageRequest.setSortOrders(ImmutableList.of(order));
+      }
+      return ngSecretService.list(criteria, getPageRequest(pageRequest)).map(this::getResponseWrapper);
+    } else {
+      List<Secret> allMatchingSecrets =
+          ngSecretService
+              .list(criteria,
+                  getPageRequest(PageRequest.builder()
+                                     .pageIndex(0)
+                                     .pageSize(50000) // keeping the default max supported value
+                                     .sortOrders(pageRequest.getSortOrders())
+                                     .build()))
+              .getContent();
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
+      return ngSecretService
+          .getPaginatedResult(allMatchingSecrets, pageRequest.getPageIndex(), pageRequest.getPageSize())
+          .map(this::getResponseWrapper);
     }
-    return ngSecretService.getPaginatedResult(allMatchingSecrets, page, size).map(this::getResponseWrapper);
   }
 
   @VisibleForTesting
@@ -496,9 +540,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
             ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
       }
       if (remoteDeletionSuccess && localDeletionSuccess) {
-        secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-            projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
-
+        secretEntityReferenceHelper.deleteExistingSetupUsage(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
         publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
             EventsFrameworkMetadataConstants.DELETE_ACTION);
         return true;
@@ -521,8 +564,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         boolean deletionSuccess =
             ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
         if (deletionSuccess) {
-          secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-              projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+          secretEntityReferenceHelper.deleteExistingSetupUsage(
+              accountIdentifier, orgIdentifier, projectIdentifier, identifier);
           encryptedDataService.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
           publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
               EventsFrameworkMetadataConstants.DELETE_ACTION);
@@ -602,6 +645,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
     Secret updatedSecret = null;
     if (remoteUpdateSuccess) {
+      secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
       updatedSecret = ngSecretService.update(accountIdentifier, dto, false);
     }
     secretResponseWrapper = processAndGetSecret(remoteUpdateSuccess, updatedSecret);
@@ -638,6 +682,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
     Secret updatedSecret = null;
     if (remoteUpdateSuccess) {
+      secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
       updatedSecret = ngSecretService.update(accountIdentifier, dto, true);
     }
     secretResponseWrapper = processAndGetSecret(remoteUpdateSuccess, updatedSecret);
@@ -682,6 +727,31 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
     NGEncryptedData encryptedData = encryptedDataService.createSecretFile(
         accountIdentifier, dto, new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit()));
+
+    if (Optional.ofNullable(encryptedData).isPresent()) {
+      secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
+          dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
+      Secret secret = ngSecretService.create(accountIdentifier, dto, false);
+      secretResponseWrapper = getResponseWrapper(secret);
+      secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+      return secretResponseWrapper;
+    }
+    throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret file remotely", USER);
+  }
+
+  @SneakyThrows
+  @Override
+  public SecretResponseWrapper createFile(@NotNull String accountIdentifier, @NotNull SecretDTOV2 dto,
+      @NotNull String encryptionKey, @NotNull String encryptedValue) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
+    SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
+    NGEncryptedData encryptedData =
+        encryptedDataService.createSecretFile(accountIdentifier, dto, encryptionKey, encryptedValue);
 
     if (Optional.ofNullable(encryptedData).isPresent()) {
       secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
@@ -795,6 +865,35 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (!secretOptional.isPresent()) {
       throw new EntityNotFoundException(
           format("No such secret found [%s], please check identifier/scope and try again.", secretRef.getIdentifier()));
+    }
+  }
+
+  @Override
+  public void validateSecretDtoSpec(SecretDTOV2 secretDTO) {
+    if (secretDTO != null) {
+      if (secretDTO.getSpec() instanceof WinRmCredentialsSpecDTO) {
+        WinRmCredentialsSpecDTO winRmCredentialsSpecDTO = (WinRmCredentialsSpecDTO) secretDTO.getSpec();
+        validateCommandParameters(winRmCredentialsSpecDTO.getParameters());
+      }
+    }
+  }
+
+  private void validateCommandParameters(List<WinRmCommandParameter> parameters) {
+    if (!isEmpty(parameters)) {
+      validateParameterNameUnique(parameters);
+    }
+  }
+
+  private void validateParameterNameUnique(List<WinRmCommandParameter> parameters) {
+    Set<String> uniqueParamNames = new HashSet<>();
+    List<String> duplicateParamNames = parameters.stream()
+                                           .map(WinRmCommandParameter::getParameter)
+                                           .filter(param -> !uniqueParamNames.add(param))
+                                           .collect(Collectors.toList());
+
+    if (!isEmpty(duplicateParamNames)) {
+      throw new InvalidRequestException(format("Command parameter names must be unique, however duplicate(s) found: %s",
+          String.join(", ", duplicateParamNames)));
     }
   }
 

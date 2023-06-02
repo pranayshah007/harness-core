@@ -13,9 +13,11 @@ import io.harness.cdng.common.capacity.CountCapacitySpec;
 import io.harness.cdng.common.capacity.PercentageCapacitySpec;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepNode;
+import io.harness.data.structure.CompareUtils;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -42,11 +44,12 @@ public class ElastigroupDeployStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     SpotInstDeployState state = (SpotInstDeployState) getState(graphNode);
 
     ElastigroupDeployStepNode node = new ElastigroupDeployStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupDeployStepInfo elastigroupDeployStepInfo =
         ElastigroupDeployStepInfo.infoBuilder()
             .newService(getCapacity(state.getInstanceCount(), state.getInstanceUnitType()))
@@ -78,12 +81,15 @@ public class ElastigroupDeployStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    SpotInstDeployState state1 = (SpotInstDeployState) getState(stepYaml1);
+    SpotInstDeployState state2 = (SpotInstDeployState) getState(stepYaml2);
+    return state1.getDownsizeInstanceUnitType() == state2.getDownsizeInstanceUnitType()
+        && CompareUtils.compareObjects(state1.getDownsizeInstanceCount(), state2.getDownsizeInstanceCount())
+        && CompareUtils.compareObjects(state1.getInstanceCount(), state2.getInstanceCount());
   }
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 }

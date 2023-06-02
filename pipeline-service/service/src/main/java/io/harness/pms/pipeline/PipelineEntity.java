@@ -69,7 +69,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("pipelinesPMS")
 @TypeAlias("pipelinesPMS")
 @HarnessEntity(exportable = true)
-@ChangeDataCapture(table = "tags_info", dataStore = "pms-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "TagsInfoNGCD")
 @ChangeDataCapture(table = "pipelines", dataStore = "ng-harness", fields = {}, handler = "Pipelines")
 public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware {

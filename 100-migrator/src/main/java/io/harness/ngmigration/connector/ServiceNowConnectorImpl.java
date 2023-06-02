@@ -46,8 +46,6 @@ public class ServiceNowConnectorImpl implements BaseConnector {
     return ServiceNowConnectorDTO.builder()
         .serviceNowUrl(serviceNowConfig.getBaseUrl())
         .delegateSelectors(toSet(serviceNowConfig.getDelegateSelectors()))
-        .username(serviceNowConfig.getUsername())
-        .passwordRef(MigratorUtility.getSecretRef(migratedEntities, serviceNowConfig.getEncryptedPassword()))
         .auth(ServiceNowAuthenticationDTO.builder()
                   .authType(ServiceNowAuthType.USER_PASSWORD)
                   .credentials(ServiceNowUserNamePasswordDTO.builder()

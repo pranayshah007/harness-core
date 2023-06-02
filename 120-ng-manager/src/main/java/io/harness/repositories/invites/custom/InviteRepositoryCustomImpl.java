@@ -15,6 +15,7 @@ import io.harness.ng.core.invites.entities.Invite.InviteKeys;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -56,8 +57,8 @@ public class InviteRepositoryCustomImpl implements InviteRepositoryCustom {
   }
 
   @Override
-  public List<Invite> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findAllAndRemove(query, Invite.class);
+    return mongoTemplate.remove(query, Invite.class);
   }
 }

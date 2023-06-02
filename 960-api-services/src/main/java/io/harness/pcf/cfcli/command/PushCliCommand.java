@@ -19,8 +19,6 @@ import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.CDP)

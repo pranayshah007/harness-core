@@ -14,6 +14,8 @@ import static io.harness.cache.CacheBackend.NOOP;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
+import io.harness.SRMMongoPersistence;
+import io.harness.SRMPersistence;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.cache.CacheConfig;
@@ -38,6 +40,7 @@ import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.impl.AlwaysFalseFeatureFlagServiceImpl;
+import io.harness.cvng.ticket.clients.TicketServiceRestClientModule;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -58,6 +61,7 @@ import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.module.NotificationClientPersistenceModule;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -167,6 +171,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       @Override
       protected void configure() {
         bind(HPersistence.class).to(MongoPersistence.class);
+        bind(SRMPersistence.class).to(SRMMongoPersistence.class);
       }
     });
 
@@ -193,6 +198,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(ErrorTrackingClient.class).toInstance(Mockito.mock(ErrorTrackingClient.class));
       binder.bind(AccountClient.class).to(FakeAccountClient.class);
       binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
+      binder.bind(OpaServiceClient.class).toInstance(Mockito.mock(OpaServiceClient.class));
     }));
     MongoBackendConfiguration mongoBackendConfiguration =
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();
@@ -204,6 +210,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(new VerificationManagerClientModule("http://test-host"));
     modules.add(new MetricsModule());
     modules.add(new PersistentLockModule());
+    modules.add(new TicketServiceRestClientModule("http://test-host/ticket-service/"));
 
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
@@ -284,7 +291,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     Mockito
         .when(templateResourceClient.applyTemplatesOnGivenYamlV2(Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()))
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
         .thenAnswer((Answer<Call<ResponseDTO<TemplateMergeResponseDTO>>>) invocation -> {
           TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[12];
           String yaml = templateApplyRequestDTO.getOriginalEntityYaml();

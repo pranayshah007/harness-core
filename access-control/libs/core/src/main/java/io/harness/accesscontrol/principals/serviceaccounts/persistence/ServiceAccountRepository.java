@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,5 +25,5 @@ public interface ServiceAccountRepository
 
   Page<ServiceAccountDBO> findByScopeIdentifier(String scopeIdentifier, Pageable pageable);
 
-  List<ServiceAccountDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String scopeIdentifier);
+  Optional<ServiceAccountDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String scopeIdentifier);
 }

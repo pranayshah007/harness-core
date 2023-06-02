@@ -91,7 +91,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
         .stepParameters(stageParameters.build())
         .stepType(getStepType(stageElementConfig))
         .skipCondition(SkipInfoUtils.getSkipCondition(stageElementConfig.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageElementConfig.getWhen()))
+        .whenCondition(RunInfoUtils.getRunConditionForStage(stageElementConfig.getWhen()))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())

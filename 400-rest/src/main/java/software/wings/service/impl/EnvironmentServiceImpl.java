@@ -50,6 +50,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -184,8 +185,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Environment> list(PageRequest<Environment> request, boolean withTags, String tagFilter) {
-    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags);
+  public PageResponse<Environment> list(
+      PageRequest<Environment> request, boolean withTags, String tagFilter, boolean hitSecondary) {
+    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary);
   }
 
   @Override
@@ -193,7 +195,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       PageRequest<Environment> request, boolean withTags, String tagFilter, List<String> appIds) {
     // Time to list tags
     long startTime = System.currentTimeMillis();
-    PageResponse<Environment> pageResponse = list(request, withTags, tagFilter);
+    PageResponse<Environment> pageResponse = list(request, withTags, tagFilter, true);
     log.info("Total time taken to load tags {}", System.currentTimeMillis() - startTime);
 
     if (pageResponse.getResponse() == null) {
@@ -242,6 +244,15 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public Environment get(String appId, String envId) {
     return wingsPersistence.getWithAppId(Environment.class, appId, envId);
+  }
+
+  @Override
+  public Environment getWithTags(String appId, String envId) {
+    Environment environment = get(appId, envId);
+    if (environment != null) {
+      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId));
+    }
+    return environment;
   }
 
   @Override
@@ -634,10 +645,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public List<Environment> getEnvByAccountId(String accountId) {
+  public List<Environment> getEnvByAccountId(String accountId, boolean hitSecondary) {
     PageRequest<Environment> pageRequest =
         aPageRequest().addFilter(EnvironmentKeys.accountId, EQ, accountId).withLimit(UNLIMITED).build();
-    return wingsPersistence.query(Environment.class, pageRequest).getResponse();
+    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
+      return wingsPersistence.querySecondary(Environment.class, pageRequest).getResponse();
+    } else {
+      return wingsPersistence.query(Environment.class, pageRequest).getResponse();
+    }
   }
 
   @Override
@@ -648,16 +663,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds) {
+  public Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds, String accountId) {
     if (isEmpty(appIds)) {
       return new HashMap<>();
     }
     PageRequest<Environment> pageRequest = aPageRequest()
+                                               .addFilter(EnvironmentKeys.accountId, EQ, accountId)
                                                .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
                                                .addFieldsIncluded("_id", "appId", "environmentType")
                                                .build();
 
-    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null));
+    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
 
     List<Base> emptyList = new ArrayList<>();
 

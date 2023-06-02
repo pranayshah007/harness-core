@@ -1,5 +1,5 @@
 {
-  "clusters": [{
+  "clusters": [ {
     "text": "test data - host1 - log1",
     "label": 0
   }],
@@ -43,126 +43,140 @@
   "resultSummary": {
     "risk": 0,
     "score": 0,
-    "controlClusterHostFrequencies": [{
-      "frequencyData": [{
-        "frequencies": [{
-          "timeStamp": "27880755",
-          "count": 1
-        }],
-        "host": "host1"
-      },
-        {
-          "frequencies": [{
-            "timeStamp": "27880755",
-            "count": 2
-          }],
-          "host": "host2"
-        }
-      ],
-      "label": 0
-    }],
-    "testClusterSummaries": [{
-      "label": 0,
-      "clusterType": "KNOWN_EVENT",
-      "risk": 0,
-      "score": 0,
-      "count": 8,
-      "frequencyData": [{
-        "frequencies": [{
-          "timeStamp": "27880757",
-          "count": 1
-        }],
-        "host": "host1"
-      },
-        {
-          "frequencies": [{
-            "timeStamp": "27880757",
-            "count": 2
-          }],
-          "host": "host2"
-        }
-      ]
-    },
+    "controlClusterHostFrequencies": [
       {
-        "label": 0,
-        "clusterType": "UNEXPECTED_FREQUENCY",
-        "risk": 0,
-        "score": 0,
-        "count": 8,
-        "frequencyData": [{
-          "frequencies": [{
-            "timeStamp": "27880760",
-            "count": 2
+        "frequencyData": [
+          {
+            "frequencies": [
+              {
+                "timeStamp": 27880427,
+                "count": 1
+              }
+            ],
+            "host": "host1"
           },
-            {
-              "timeStamp": "27880761",
-              "count": 2
-            }
-          ],
-          "host": "host3"
-        }]
-      },
-      {
-        "label": 0,
-        "clusterType": "UNKNOWN_EVENT",
-        "risk": 0,
-        "score": 0,
-        "count": 8,
-        "frequencyData": [{
-          "frequencies": [{
-            "timeStamp": "27880760",
-            "count": 4
-          },
-            {
-              "timeStamp": "27880761",
-              "count": 4
-            }
-          ],
-          "host": "host4"
-        }]
+          {
+            "frequencies": [
+              {
+                "timeStamp": 27880427,
+                "count": 2
+              }
+            ],
+            "host": "host2"
+          }
+        ],
+        "label": 0
       }
-    ]
-  },
-  "hostSummaries": [{
-    "host": "host1",
-    "resultSummary": {
-      "risk": 0,
-      "score": 0,
-      "testClusterSummaries": [{
+    ],
+    "testClusterSummaries": [
+      {
         "label": 0,
         "clusterType": "KNOWN_EVENT",
         "risk": 0,
         "score": 0,
-        "count": 1,
-        "frequencyData": [{
-          "frequencies": [{
-            "timeStamp": "27880757",
-            "count": 1
-          }],
-          "host": "host1"
-        }]
-      }]
-    }
+        "count": 8,
+        "frequencyData": [
+          {
+            "frequencies": [
+              {
+                "timeStamp": 27880429,
+                "count": 1
+              }
+            ],
+            "host": "host1"
+          },
+          {
+            "frequencies": [
+              {
+                "timeStamp": 27880429,
+                "count": 2
+              }
+            ],
+            "host": "host2"
+          },
+          {
+            "frequencies": [
+              {
+                "timeStamp": 27880432,
+                "count": 2
+              },
+              {
+                "timeStamp": 27880433,
+                "count": 2
+              }
+            ],
+            "host": "host3"
+          },
+          {
+            "frequencies": [
+              {
+                "timeStamp": 27880432,
+                "count": 4
+              },
+              {
+                "timeStamp": 27880433,
+                "count": 4
+              }
+            ],
+            "host": "host4"
+          }
+        ]
+      }
+    ]
   },
+  "hostSummaries": [
+    {
+      "host": "host1",
+      "resultSummary": {
+        "risk": 0,
+        "score": 0,
+        "testClusterSummaries": [
+          {
+            "label": 0,
+            "clusterType": "KNOWN_EVENT",
+            "risk": 0,
+            "score": 0,
+            "count": 1,
+            "frequencyData": [
+              {
+                "frequencies": [
+                  {
+                    "timeStamp": 27880429,
+                    "count": 1
+                  }
+                ],
+                "host": "host1"
+              }
+            ]
+          }
+        ]
+      }
+    },
     {
       "host": "host2",
       "resultSummary": {
         "risk": 0,
         "score": 0,
-        "testClusterSummaries": [{
-          "label": 0,
-          "clusterType": "KNOWN_EVENT",
-          "risk": 0,
-          "score": 0,
-          "count": 2,
-          "frequencyData": [{
-            "frequencies": [{
-              "timeStamp": "27880757",
-              "count": 2
-            }],
-            "host": "host2"
-          }]
-        }]
+        "testClusterSummaries": [
+          {
+            "label": 0,
+            "clusterType": "KNOWN_EVENT",
+            "risk": 0,
+            "score": 0,
+            "count": 2,
+            "frequencyData": [
+              {
+                "frequencies": [
+                  {
+                    "timeStamp": 27880429,
+                    "count": 2
+                  }
+                ],
+                "host": "host2"
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -170,25 +184,30 @@
       "resultSummary": {
         "risk": 0,
         "score": 0,
-        "testClusterSummaries": [{
-          "label": 0,
-          "clusterType": "UNEXPECTED_FREQUENCY",
-          "risk": 0,
-          "score": 0,
-          "count": 4,
-          "frequencyData": [{
-            "frequencies": [{
-              "timeStamp": "27880760",
-              "count": 2
-            },
+        "testClusterSummaries": [
+          {
+            "label": 0,
+            "clusterType": "KNOWN_EVENT",
+            "risk": 0,
+            "score": 0,
+            "count": 4,
+            "frequencyData": [
               {
-                "timeStamp": "27880761",
-                "count": 2
+                "frequencies": [
+                  {
+                    "timeStamp": 27880432,
+                    "count": 2
+                  },
+                  {
+                    "timeStamp": 27880433,
+                    "count": 2
+                  }
+                ],
+                "host": "host3"
               }
-            ],
-            "host": "host3"
-          }]
-        }]
+            ]
+          }
+        ]
       }
     },
     {
@@ -196,25 +215,30 @@
       "resultSummary": {
         "risk": 0,
         "score": 0,
-        "testClusterSummaries": [{
-          "label": 0,
-          "clusterType": "UNKNOWN_EVENT",
-          "risk": 0,
-          "score": 0,
-          "count": 8,
-          "frequencyData": [{
-            "frequencies": [{
-              "timeStamp": "27880760",
-              "count": 4
-            },
+        "testClusterSummaries": [
+          {
+            "label": 0,
+            "clusterType": "KNOWN_EVENT",
+            "risk": 0,
+            "score": 0,
+            "count": 8,
+            "frequencyData": [
               {
-                "timeStamp": "27880761",
-                "count": 4
+                "frequencies": [
+                  {
+                    "timeStamp": 27880432,
+                    "count": 4
+                  },
+                  {
+                    "timeStamp": 27880433,
+                    "count": 4
+                  }
+                ],
+                "host": "host4"
               }
-            ],
-            "host": "host4"
-          }]
-        }]
+            ]
+          }
+        ]
       }
     }
   ]

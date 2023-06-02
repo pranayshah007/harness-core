@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @OwnedBy(PIPELINE)
 public enum GithubPRAction implements GitAction {
   @JsonProperty("Close") CLOSE("close", "Close"),
-  @JsonProperty("Edit") EDIT("edit", "Edit"),
+  @JsonProperty("Edit") EDIT("update", "Edit"),
   @JsonProperty("Open") OPEN("open", "Open"),
   @JsonProperty("Reopen") REOPEN("reopen", "Reopen"),
   @JsonProperty("Label") LABEL("label", "Label"),

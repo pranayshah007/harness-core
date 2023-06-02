@@ -29,20 +29,22 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
   }
 
   private static EC2RecommendationDTO convertToDto(EC2Recommendation recommendation) {
-    Optional<EC2RecommendationDetail> sameFamilyRecommendation =
-        recommendation.getRecommendationInfo()
-            .stream()
-            .filter(recommendationDetail
-                -> RecommendationTarget.SAME_INSTANCE_FAMILY.name().equals(
-                    recommendationDetail.getRecommendationType()))
-            .findAny();
-    Optional<EC2RecommendationDetail> crossFamilyRecommendation =
-        recommendation.getRecommendationInfo()
-            .stream()
-            .filter(recommendationDetail
-                -> RecommendationTarget.CROSS_INSTANCE_FAMILY.name().equals(
-                    recommendationDetail.getRecommendationType()))
-            .findAny();
+    Optional<EC2RecommendationDetail> sameFamilyRecommendation = Optional.empty();
+    Optional<EC2RecommendationDetail> crossFamilyRecommendation = Optional.empty();
+    if (recommendation.getRecommendationInfo() != null) {
+      sameFamilyRecommendation = recommendation.getRecommendationInfo()
+                                     .stream()
+                                     .filter(recommendationDetail
+                                         -> RecommendationTarget.SAME_INSTANCE_FAMILY.name().equals(
+                                             recommendationDetail.getRecommendationType()))
+                                     .findAny();
+      crossFamilyRecommendation = recommendation.getRecommendationInfo()
+                                      .stream()
+                                      .filter(recommendationDetail
+                                          -> RecommendationTarget.CROSS_INSTANCE_FAMILY.name().equals(
+                                              recommendationDetail.getRecommendationType()))
+                                      .findAny();
+    }
     return EC2RecommendationDTO.builder()
         .id(recommendation.getInstanceId())
         .awsAccountId(recommendation.getAwsAccountId())
@@ -56,12 +58,14 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
                      .cpuUtilisation(recommendation.getCurrentMaxCPU())
                      .memoryUtilisation(recommendation.getCurrentMaxMemory())
                      .build())
-        .sameFamilyRecommendation((sameFamilyRecommendation.isPresent())
-                ? instanceConverter.convertFromEntity(sameFamilyRecommendation.get())
-                : null)
-        .crossFamilyRecommendation((crossFamilyRecommendation.isPresent())
-                ? instanceConverter.convertFromEntity(crossFamilyRecommendation.get())
-                : null)
+        .sameFamilyRecommendation(
+            sameFamilyRecommendation
+                .map(ec2RecommendationDetail -> instanceConverter.convertFromEntity(ec2RecommendationDetail))
+                .orElse(null))
+        .crossFamilyRecommendation(
+            crossFamilyRecommendation
+                .map(recommendationDetail -> instanceConverter.convertFromEntity(recommendationDetail))
+                .orElse(null))
         .jiraDetails(recommendation.getJiraDetails())
         .build();
   }

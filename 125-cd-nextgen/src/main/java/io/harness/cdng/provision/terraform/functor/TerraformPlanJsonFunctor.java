@@ -14,10 +14,15 @@ import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
+import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -25,12 +30,14 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
 import com.google.inject.Inject;
+import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformPlanJsonFunctor implements SdkFunctor {
   public static final String TERRAFORM_PLAN_JSON = "terraformPlanJson";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
@@ -43,10 +50,17 @@ public class TerraformPlanJsonFunctor implements SdkFunctor {
     OptionalSweepingOutput output = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(tfPlanJsonOutputName));
     if (!output.isFound() || output.getOutput() == null) {
-      throw new InvalidRequestException(
-          "Missing output: " + tfPlanJsonOutputName + ". Terraform plan wasn't exported.");
+      // logic to get JSON plan from saved execution details
+      Optional<TerraformPlanExecutionDetails> tfPlanExecutionDetail =
+          getExecutionDetailsByProvisionerId(ambiance, tfPlanJsonOutputName);
+      if (tfPlanExecutionDetail.isPresent()) {
+        return String.format(TerraformPlanExpressionInterface.DELEGATE_EXPRESSION,
+            tfPlanExecutionDetail.get().getTfPlanJsonFieldId(), ambiance.getExpressionFunctorToken(), "jsonFilePath");
+      } else {
+        throw new InvalidRequestException(
+            "Missing output: " + tfPlanJsonOutputName + ". Terraform plan wasn't exported.");
+      }
     }
-
     TerraformPlanJsonOutput terraformPlanJsonOutput = (TerraformPlanJsonOutput) output.getOutput();
 
     return String.format(TerraformPlanExpressionInterface.DELEGATE_EXPRESSION,
@@ -57,7 +71,28 @@ public class TerraformPlanJsonFunctor implements SdkFunctor {
     return String.format("%s%s.\"%s.%s\"%s", EXPR_START, TERRAFORM_PLAN_JSON, baseFqn, outputName, EXPR_END);
   }
 
-  public static String getExpressionV2(String outputName) {
-    return String.format("%s%s.\"%s\"%s", EXPR_START, TERRAFORM_PLAN_JSON, outputName, EXPR_END);
+  public static String getExpression(String provisionerId) {
+    return String.format("%s%s.\"%s\"%s", EXPR_START, TERRAFORM_PLAN_JSON, provisionerId, EXPR_END);
+  }
+
+  private Optional<TerraformPlanExecutionDetails> getExecutionDetailsByProvisionerId(
+      Ambiance ambiance, String provisionerId) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+
+    return terraformPlanExectionDetailsService
+        .listAllPipelineTFPlanExecutionDetails(TFPlanExecutionDetailsKey.builder()
+                                                   .scope(Scope.builder()
+                                                              .accountIdentifier(accountId)
+                                                              .orgIdentifier(orgId)
+                                                              .projectIdentifier(projectId)
+                                                              .build())
+                                                   .pipelineExecutionId(planExecutionId)
+                                                   .build())
+        .stream()
+        .filter(executionDetail -> executionDetail.getProvisionerId().equals(provisionerId))
+        .findFirst();
   }
 }

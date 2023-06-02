@@ -10,6 +10,7 @@ package io.harness.cache;
 import static io.harness.cache.CacheBackend.REDIS;
 import static io.harness.cache.HarnessCacheManagerImpl.CACHE_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.rule.OwnerRule.KSHITIJ;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -183,6 +184,22 @@ public class HarnessCacheManagerImplTest extends CategoryTest {
     String cacheName = "testCache";
     String internalCacheName = String.format("%s/%s", cacheNamespace, cacheName);
     Factory<ExpiryPolicy> expiryPolicy = AccessedExpiryPolicy.factoryOf(Duration.TEN_MINUTES);
+    when(cacheManager.getCache(internalCacheName, String.class, Integer.class)).thenReturn(null);
+    when(cacheManager.createCache(eq(internalCacheName), any(MutableConfiguration.class)))
+        .thenThrow(new CacheException("Connection failed"));
+    Cache<String, Integer> cache = harnessCacheManager.getCache(cacheName, String.class, Integer.class, expiryPolicy);
+    assertThat(cache).isNotNull();
+    verify(cacheManager, times(1)).getCache(internalCacheName, String.class, Integer.class);
+    verify(cacheManager, times(1)).createCache(eq(internalCacheName), any(MutableConfiguration.class));
+  }
+
+  @Test
+  @Owner(developers = KSHITIJ)
+  @Category(UnitTests.class)
+  public void test_getCache_shouldReturnCacheAfterRetry() {
+    String cacheName = "testCache";
+    String internalCacheName = String.format("%s/%s", cacheNamespace, cacheName);
+    Factory<ExpiryPolicy> expiryPolicy = AccessedExpiryPolicy.factoryOf(Duration.TEN_MINUTES);
     when(cacheManager.getCache(internalCacheName, String.class, Integer.class))
         .thenReturn(null)
         .thenReturn(new NoOpCache<>());
@@ -190,7 +207,6 @@ public class HarnessCacheManagerImplTest extends CategoryTest {
         .thenThrow(new CacheException("Connection failed"));
     Cache<String, Integer> cache = harnessCacheManager.getCache(cacheName, String.class, Integer.class, expiryPolicy);
     assertThat(cache).isNotNull();
-    verify(cacheManager, times(1)).getCache(internalCacheName, String.class, Integer.class);
-    verify(cacheManager, times(1)).createCache(eq(internalCacheName), any(MutableConfiguration.class));
+    verify(cacheManager, times(2)).getCache(internalCacheName, String.class, Integer.class);
   }
 }

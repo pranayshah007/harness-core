@@ -74,6 +74,12 @@ public abstract class Variable implements PersistentEntity, NGAccountAccess {
                      VariableKeys.accountIdentifier, VariableKeys.orgIdentifier, VariableKeys.projectIdentifier))
                  .descSortField(VariableKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_lastModifiedAt_decreasing_sort_Index")
+                 .fields(Arrays.asList(
+                     VariableKeys.accountIdentifier, VariableKeys.orgIdentifier, VariableKeys.projectIdentifier))
+                 .descSortField(VariableKeys.lastModifiedAt)
+                 .build())
         .build();
   }
 

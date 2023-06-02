@@ -18,17 +18,21 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITE
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,8 +47,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.JWTGeneratorUtils;
 import io.harness.ng.core.invites.api.impl.InviteServiceImpl;
@@ -52,6 +58,7 @@ import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
+import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
@@ -68,6 +75,8 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.auth0.jwt.interfaces.Claim;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -217,6 +226,7 @@ public class InviteServiceImplTest extends CategoryTest {
 
     assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
+    verify(userClient, times(0)).updateUserTwoFactorAuthInfo(eq(emailId), any(TwoFactorAuthSettingsInfo.class));
   }
 
   @Test
@@ -235,6 +245,7 @@ public class InviteServiceImplTest extends CategoryTest {
 
     assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
+    verify(userClient, times(0)).updateUserTwoFactorAuthInfo(eq(emailId), any(TwoFactorAuthSettingsInfo.class));
   }
 
   @Test
@@ -298,7 +309,28 @@ public class InviteServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = PRATEEK)
   @Category(UnitTests.class)
+  public void testCreate_UserDoesNotExist_UserNotInvitedYet() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any()).execute())
+        .thenReturn(Response.success(new RestResponse(false)));
+    Invite dummyInvite = getDummyInvite();
+    dummyInvite.setExternalId("test_external_id");
+    InviteOperationResponse inviteOperationResponse = inviteService.create(dummyInvite, false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
   public void testCreate_NewUser_InviteAccepted_LdapGroup() {
+    final String testExternalId = "test_external_id";
     Invite invite = Invite.builder()
                         .accountIdentifier(accountIdentifier)
                         .orgIdentifier(orgIdentifier)
@@ -306,6 +338,7 @@ public class InviteServiceImplTest extends CategoryTest {
                         .approved(Boolean.FALSE)
                         .email(emailId)
                         .name(randomAlphabetic(7))
+                        .externalId(testExternalId)
                         .id(inviteId)
                         .roleBindings(getDummyInvite().getRoleBindings())
                         .inviteType(ADMIN_INITIATED_INVITE)
@@ -317,7 +350,6 @@ public class InviteServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(invite));
 
     InviteOperationResponse inviteOperationResponse = inviteService.create(invite, false, true);
-
     assertThat(inviteOperationResponse).isEqualTo(ACCOUNT_INVITE_ACCEPTED);
   }
 
@@ -470,8 +502,9 @@ public class InviteServiceImplTest extends CategoryTest {
     when(jwtGeneratorUtils.verifyJWTToken(any(), any())).thenReturn(Collections.singletonMap(InviteKeys.id, claim));
     when(inviteRepository.findFirstByIdAndDeleted(any(), any())).thenReturn(Optional.of(getDummyInvite()));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
+    doNothing().when(ngUserService).waitForRbacSetup(any(), anyString(), anyString());
     boolean result = inviteService.completeInvite(Optional.of(getDummyInvite()));
-
+    verify(ngUserService, times(1)).waitForRbacSetup(any(), anyString(), anyString());
     assertThat(result).isTrue();
     verify(inviteRepository, times(1)).updateInvite(idCapture.capture(), updateCapture.capture());
     assertThat(idCapture.getValue()).isEqualTo(inviteId);
@@ -505,6 +538,44 @@ public class InviteServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testCreate_withSsoEnabled_withAutoInviteAcceptanceEnabled_withTwoFactorEnforced() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Call<RestResponse<Optional<UserInfo>>> userUpdateCall = mock(Call.class);
+    when(userClient.updateUserTwoFactorAuthInfo(any(), any())).thenReturn(userUpdateCall);
+    when(userUpdateCall.execute())
+        .thenReturn(Response.success(new RestResponse<>(Optional.of(UserInfo.builder().build()))));
+    when(accountClient.getAccountDTO(any()).execute())
+        .thenReturn(Response.success(new RestResponse(AccountDTO.builder()
+                                                          .identifier(accountIdentifier)
+                                                          .companyName(accountIdentifier)
+                                                          .name(accountIdentifier)
+                                                          .isTwoFactorAdminEnforced(true)
+                                                          .build())));
+
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+    verify(notificationClient).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    assertThat(notificationChannelArgumentCaptor.getValue().getTemplateId()).isEqualTo(EMAIL_NOTIFY_TEMPLATE_ID);
+    assertThat(notificationChannelArgumentCaptor.getValue().getTemplateData().get(SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO))
+        .isEqualTo("true");
+    verify(userClient, times(1)).updateUserTwoFactorAuthInfo(eq(emailId), any(TwoFactorAuthSettingsInfo.class));
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testCreate_withSsoEnabled_withPLNoEmailForSamlAccountInvitesEnabled() throws IOException {
@@ -522,6 +593,39 @@ public class InviteServiceImplTest extends CategoryTest {
 
     assertThat(inviteOperationResponse).isEqualTo(USER_INVITE_NOT_REQUIRED);
     verify(notificationClient, times(0)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testCreate_withSsoEnabled_withPLNoEmailForSamlAccountInvitesEnabled_withTwoFactorEnforced()
+      throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> call = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(any(), anyBoolean(), anyBoolean())).thenReturn(call);
+    Call<RestResponse<Optional<UserInfo>>> userUpdateCall = mock(Call.class);
+    when(userClient.updateUserTwoFactorAuthInfo(any(), any())).thenReturn(userUpdateCall);
+    when(userUpdateCall.execute())
+        .thenReturn(Response.success(new RestResponse<>(Optional.of(UserInfo.builder().build()))));
+    when(accountClient.checkPLNoEmailForSamlAccountInvitesEnabledForAccount(anyString())).thenReturn(call);
+    when(accountClient.getAccountDTO(any()).execute())
+        .thenReturn(Response.success(new RestResponse(AccountDTO.builder()
+                                                          .identifier(accountIdentifier)
+                                                          .companyName(accountIdentifier)
+                                                          .name(accountIdentifier)
+                                                          .isTwoFactorAdminEnforced(true)
+                                                          .build())));
+    when(call.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+    verify(userClient, times(1)).updateUserTwoFactorAuthInfo(eq(emailId), any(TwoFactorAuthSettingsInfo.class));
   }
 
   @Test
@@ -556,5 +660,153 @@ public class InviteServiceImplTest extends CategoryTest {
     assertThat(notificationChannelArgumentCaptor.getValue().getTemplateId()).isEqualTo(EMAIL_INVITE_TEMPLATE_ID);
     assertThat(notificationChannelArgumentCaptor.getValue().getTemplateData().get(SHOULD_MAIL_CONTAIN_TWO_FACTOR_INFO))
         .isEqualTo("true");
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUserCreation_scimUser() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Invite invite = Invite.builder()
+                        .accountIdentifier("accountId")
+                        .approved(true)
+                        .email("primaryEmail")
+                        .name("displayName")
+                        .givenName("givenName")
+                        .familyName("familyName")
+                        .externalId("externalId")
+                        .accountIdentifier(accountIdentifier)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .inviteType(InviteType.SCIM_INITIATED_INVITE)
+                        .id(inviteId)
+                        .roleBindings(getDummyRoleBinding())
+                        .build();
+    when(inviteRepository.save(any())).thenReturn(invite);
+    ArgumentCaptor<UserInviteDTO> argumentCaptor = ArgumentCaptor.forClass(UserInviteDTO.class);
+    ArgumentCaptor<Boolean> argumentCaptor1 = ArgumentCaptor.forClass(Boolean.class);
+    ArgumentCaptor<Boolean> argumentCaptor2 = ArgumentCaptor.forClass(Boolean.class);
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(
+             argumentCaptor.capture(), argumentCaptor1.capture(), argumentCaptor2.capture()))
+        .thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    inviteService.create(invite, true, false);
+    assertThat(argumentCaptor1.getValue()).isEqualTo(true);
+    assertThat(argumentCaptor2.getValue()).isEqualTo(false);
+    assertThat(argumentCaptor.getValue().getName()).isEqualTo("displayName");
+    assertThat(argumentCaptor.getValue().getEmail()).isEqualTo("primaryEmail");
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUserCreation_withoutName_shouldPopulateEmailInNameField() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Invite invite = Invite.builder()
+                        .accountIdentifier("accountId")
+                        .approved(true)
+                        .email("primaryEmail")
+                        .accountIdentifier(accountIdentifier)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .id(inviteId)
+                        .roleBindings(getDummyRoleBinding())
+                        .inviteType(InviteType.ADMIN_INITIATED_INVITE)
+                        .build();
+    when(inviteRepository.save(any())).thenReturn(invite);
+    ArgumentCaptor<UserInviteDTO> argumentCaptor = ArgumentCaptor.forClass(UserInviteDTO.class);
+    ArgumentCaptor<Boolean> argumentCaptor1 = ArgumentCaptor.forClass(Boolean.class);
+    ArgumentCaptor<Boolean> argumentCaptor2 = ArgumentCaptor.forClass(Boolean.class);
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(
+             argumentCaptor.capture(), argumentCaptor1.capture(), argumentCaptor2.capture()))
+        .thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    inviteService.create(invite, true, false);
+    assertThat(argumentCaptor1.getValue()).isEqualTo(true);
+    assertThat(argumentCaptor2.getValue()).isEqualTo(false);
+    assertThat(argumentCaptor.getValue().getName()).isEqualTo("primaryEmail");
+    assertThat(argumentCaptor.getValue().getEmail()).isEqualTo("primaryEmail");
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetRedirectUrl_ExistingPasswordUser_shouldSend2fa() throws IOException {
+    String userId = randomAlphabetic(10);
+
+    InviteAcceptResponse inviteAcceptResponse = InviteAcceptResponse.builder()
+                                                    .response(USER_INVITED_SUCCESSFULLY)
+                                                    .userInfo(UserInfo.builder().uuid(userId).email(emailId).build())
+                                                    .accountIdentifier(accountIdentifier)
+                                                    .build();
+    AccountDTO accountDTO = AccountDTO.builder()
+                                .authenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                                .isTwoFactorAdminEnforced(true)
+                                .companyName(randomAlphabetic(7))
+                                .build();
+
+    when(ngUserService.isUserPasswordSet(accountIdentifier, emailId)).thenReturn(true);
+    when(accountClient.getAccountDTO(accountIdentifier).execute())
+        .thenReturn(Response.success(new RestResponse(accountDTO)));
+    when(userClient.updateUserTwoFactorAuthInfo(eq(emailId), any(TwoFactorAuthSettingsInfo.class)).execute())
+        .thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
+
+    Call call = mock(Call.class);
+    when(userClient.sendTwoFactorAuthenticationResetEmail(userId, accountIdentifier)).thenReturn(call);
+    when(call.execute()).thenReturn(Response.success(new RestResponse(true)));
+
+    URI uri = inviteService.getRedirectUrl(
+        inviteAcceptResponse, URLEncoder.encode(emailId, "UTF-8"), emailId, randomAlphabetic(10));
+
+    assertThat(uri).isNotNull();
+    assertThat(uri).isEqualTo(URI.create(String.format("/ng/#/account/%s/home/get-started", accountIdentifier)));
+    verify(userClient, times(1)).sendTwoFactorAuthenticationResetEmail(userId, accountIdentifier);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetRedirectUrl_ExistingPasswordUser_shouldNotSend2fa() throws IOException {
+    String userId = randomAlphabetic(10);
+    InviteAcceptResponse inviteAcceptResponse =
+        InviteAcceptResponse.builder()
+            .response(USER_INVITED_SUCCESSFULLY)
+            .userInfo(UserInfo.builder().uuid(userId).email(emailId).twoFactorAuthenticationEnabled(true).build())
+            .accountIdentifier(accountIdentifier)
+            .build();
+    when(ngUserService.isUserPasswordSet(accountIdentifier, emailId)).thenReturn(true);
+
+    AccountDTO accountDTO = AccountDTO.builder()
+                                .authenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                                .isTwoFactorAdminEnforced(true)
+                                .companyName(randomAlphabetic(7))
+                                .build();
+    when(accountClient.getAccountDTO(accountIdentifier).execute())
+        .thenReturn(Response.success(new RestResponse(accountDTO)));
+
+    Call call = mock(Call.class);
+    when(userClient.sendTwoFactorAuthenticationResetEmail(userId, accountIdentifier)).thenReturn(call);
+    when(call.execute()).thenReturn(Response.success(new RestResponse(true)));
+
+    URI uri = inviteService.getRedirectUrl(
+        inviteAcceptResponse, URLEncoder.encode(emailId, "UTF-8"), emailId, randomAlphabetic(10));
+
+    assertThat(uri).isNotNull();
+    assertThat(uri).isEqualTo(URI.create(String.format("/ng/#/account/%s/home/get-started", accountIdentifier)));
+    verify(userClient, never()).sendTwoFactorAuthenticationResetEmail(any(String.class), any(String.class));
   }
 }

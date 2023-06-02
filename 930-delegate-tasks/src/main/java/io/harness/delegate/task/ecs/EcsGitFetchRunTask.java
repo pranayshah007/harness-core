@@ -100,8 +100,8 @@ public class EcsGitFetchRunTask extends AbstractDelegateRunnableTask {
 
       FetchFilesResult ecsTaskDefinitionFetchFilesResult = null;
       if (taskDefinitionEcsGitFetchRunTaskFileConfig != null) {
-        ecsTaskDefinitionFetchFilesResult = fetchFile(
-            taskDefinitionEcsGitFetchRunTaskFileConfig, executionLogCallback, ecsGitFetchRunTaskRequest.getAccountId());
+        ecsTaskDefinitionFetchFilesResult = fetchFile(taskDefinitionEcsGitFetchRunTaskFileConfig, executionLogCallback,
+            ecsGitFetchRunTaskRequest.getAccountId(), ecsGitFetchRunTaskRequest.isCloseLogStream());
         executionLogCallback.saveExecutionLog(
             color(format("%nFetched task definition from Git successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
       }
@@ -112,8 +112,9 @@ public class EcsGitFetchRunTask extends AbstractDelegateRunnableTask {
 
       FetchFilesResult ecsRunTaskRequestDefinitionFetchFilesResult = null;
       if (ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig != null) {
-        ecsRunTaskRequestDefinitionFetchFilesResult = fetchFile(ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig,
-            executionLogCallback, ecsGitFetchRunTaskRequest.getAccountId());
+        ecsRunTaskRequestDefinitionFetchFilesResult =
+            fetchFile(ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig, executionLogCallback,
+                ecsGitFetchRunTaskRequest.getAccountId(), ecsGitFetchRunTaskRequest.isCloseLogStream());
         executionLogCallback.saveExecutionLog(
             color(format("%nFetched ecs run task request definition from Git successfully..%n"), LogColor.White,
                 LogWeight.Bold),
@@ -138,7 +139,7 @@ public class EcsGitFetchRunTask extends AbstractDelegateRunnableTask {
   }
 
   private FetchFilesResult fetchFile(EcsGitFetchRunTaskFileConfig ecsGitFetchRunTaskFileConfig,
-      LogCallback executionLogCallback, String accountId) throws Exception {
+      LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
     executionLogCallback.saveExecutionLog(color(format("Fetching ecs run task config file"), White, Bold));
     GitStoreDelegateConfig gitStoreDelegateConfig = ecsGitFetchRunTaskFileConfig.getGitStoreDelegateConfig();
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
@@ -165,7 +166,7 @@ public class EcsGitFetchRunTask extends AbstractDelegateRunnableTask {
         String filePath = ecsGitFetchRunTaskFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
-        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
+        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
         try {
           filesResult =
               gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);

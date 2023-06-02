@@ -11,6 +11,7 @@ import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.expression.ExpressionEvaluator;
 
@@ -22,13 +23,24 @@ import lombok.experimental.UtilityClass;
 public class K8sTaskCapabilityHelper extends ConnectorCapabilityBaseHelper {
   public static List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
+    return fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator, false);
+  }
+
+  public static List<ExecutionCapability> fetchRequiredExecutionCapabilities(
+      ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator, boolean useSocketCapability) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     KubernetesClusterConfigDTO kubernetesClusterConfigDTO = (KubernetesClusterConfigDTO) connectorConfigDTO;
     KubernetesCredentialDTO credential = kubernetesClusterConfigDTO.getCredential();
     if (credential.getKubernetesCredentialType() == KubernetesCredentialType.MANUAL_CREDENTIALS) {
       KubernetesClusterDetailsDTO k8sManualCreds = (KubernetesClusterDetailsDTO) credential.getConfig();
-      capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-          k8sManualCreds.getMasterUrl(), maskingEvaluator));
+
+      if (useSocketCapability) {
+        SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+            k8sManualCreds.getMasterUrl(), capabilityList);
+      } else {
+        capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+            k8sManualCreds.getMasterUrl(), maskingEvaluator));
+      }
     } else if (credential.getKubernetesCredentialType() != KubernetesCredentialType.INHERIT_FROM_DELEGATE) {
       throw new UnknownEnumTypeException(
           "Kubernetes Credential Type", String.valueOf(credential.getKubernetesCredentialType()));

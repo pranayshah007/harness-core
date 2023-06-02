@@ -13,9 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class TerraformCloudApiException extends RuntimeException {
   private int statusCode;
   public TerraformCloudApiException(String message, int statusCode) {

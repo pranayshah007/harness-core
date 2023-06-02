@@ -36,6 +36,7 @@ public class OpenshiftManifestOutcome implements ManifestOutcome {
   String type = ManifestType.OpenshiftTemplate;
   StoreConfig store;
   ParameterField<Boolean> skipResourceVersioning;
+  ParameterField<Boolean> enableDeclarativeRollback;
   ParameterField<List<String>> paramsPaths;
 
   public ParameterField<List<String>> getParamsPaths() {

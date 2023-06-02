@@ -14,8 +14,8 @@ import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
 import io.harness.ModuleType;
-import io.harness.account.AccountClient;
 import io.harness.account.AccountConfig;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.license.CdLicenseUsageCgClient;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
@@ -24,12 +24,10 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.telemetry.CdTelemetryStatusRepository;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
-import io.harness.telemetry.beans.CdTelemetrySentStatus.CdTelemetrySentStatusKeys;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -37,14 +35,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @OwnedBy(CDP)
 public class CdTelemetryPublisher {
   @Inject private CDLicenseUsageImpl cdLicenseUsageService;
   @Inject private TelemetryReporter telemetryReporter;
-  @Inject private AccountClient accountClient;
+  @Inject private AccountUtils accountUtils;
   @Inject private CdLicenseUsageCgClient licenseUsageCgClient;
   @Inject private CdTelemetryStatusRepository cdTelemetryStatusRepository;
   @Inject private AccountConfig accountConfig;
@@ -66,9 +63,8 @@ public class CdTelemetryPublisher {
   public void recordTelemetry() {
     log.info("CdTelemetryPublisher recordTelemetry execute started.");
     try {
-      List<AccountDTO> accountDTOList = getAllAccounts();
-      for (AccountDTO accountDTO : accountDTOList) {
-        String accountId = accountDTO.getIdentifier();
+      List<String> accountIdList = accountUtils.getAllAccountIds();
+      for (String accountId : accountIdList) {
         try {
           sendEvent(accountId);
         } catch (Exception e) {
@@ -125,13 +121,7 @@ public class CdTelemetryPublisher {
     return CGRestUtils.getResponse(licenseUsageCgClient.getActiveServiceUsage(accountId));
   }
 
-  List<AccountDTO> getAllAccounts() {
-    return CGRestUtils.getResponse(accountClient.getAllAccounts());
-  }
-
   public void deleteByAccount(String accountId) {
-    Criteria criteria = new Criteria();
-    criteria.and(CdTelemetrySentStatusKeys.accountId).is(accountId);
-    cdTelemetryStatusRepository.deleteAll(cdTelemetryStatusRepository.findAllByAccountId(accountId));
+    cdTelemetryStatusRepository.deleteAllByAccountId(accountId);
   }
 }

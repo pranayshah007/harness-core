@@ -28,12 +28,16 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.DbRefResolver;
+import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.guice.annotation.GuiceModule;
 
@@ -78,16 +82,25 @@ public class PipelineOutboxPersistenceConfig extends AbstractMongoClientConfigur
   }
 
   @Bean(name = "pipeline-outbox-secondary")
-  public MongoTemplate mongoTemplate() throws Exception {
-    MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
-    mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    MongoTemplate mongoTemplate = new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    MongoTemplate mongoTemplate = new HMongoTemplate(databaseFactory, converter, mongoConfig);
     mongoTemplate.setReadPreference(ReadPreference.secondary());
     return mongoTemplate;
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  public MappingMongoConverter mappingMongoConverter(MongoDatabaseFactory databaseFactory,
+      MongoCustomConversions customConversions, MongoMappingContext mappingContext) {
+    DbRefResolver dbRefResolver = new DefaultDbRefResolver(databaseFactory);
+    MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
+    converter.setCustomConversions(customConversions);
+    converter.setCodecRegistryProvider(databaseFactory);
+    converter.setMapKeyDotReplacement(DOT_REPLACEMENT);
+    return converter;
+  }
+
+  @Bean
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 

@@ -43,13 +43,6 @@ if [[ "" != "$LOGGERS" ]]; then
   done
 fi
 
-if [[ "" != "$SERVER_PORT" ]]; then
-  export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
-else
-  yq -i '.server.applicationConnectors[0].port=7090' $CONFIG_FILE
-fi
-
-
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
@@ -113,6 +106,19 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
+  export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOG_STREAMING_SERVICE_BASEURL" ]]; then
   export LOG_STREAMING_SERVICE_BASEURL; yq -i '.logStreamingServiceConfig.baseUrl=env(LOG_STREAMING_SERVICE_BASEURL)' $CONFIG_FILE
 fi
@@ -128,6 +134,62 @@ else
   yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
+  export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_SERVICE_SECRET" ]]; then
+  export MANAGER_SERVICE_SECRET; yq -i '.managerServiceSecret=env(MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
+  export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_CLIENT_BASE_URL" ]]; then
+  export MANAGER_CLIENT_BASE_URL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ACCESS_CONTROL_BASE_URL" ]]; then
+  export ACCESS_CONTROL_BASE_URL; yq -i '.accessControlClient.accessControlServiceConfig.baseUrl=env(ACCESS_CONTROL_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ACCESS_CONTROL_SECRET" ]]; then
+  export ACCESS_CONTROL_SECRET; yq -i '.accessControlClient.accessControlServiceSecret=env(ACCESS_CONTROL_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$ACCESS_CONTROL_ENABLED" ]]; then
+  export ACCESS_CONTROL_ENABLED; yq -i '.accessControlClient.enableAccessControl=env(ACCESS_CONTROL_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BACKSTAGE_BASE_URL" ]]; then
+  export BACKSTAGE_BASE_URL; yq -i '.backstageHttpClientConfig.baseUrl=env(BACKSTAGE_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BACKSTAGE_SERVICE_SECRET" ]]; then
+  export BACKSTAGE_SERVICE_SECRET; yq -i '.backstageServiceSecret=env(BACKSTAGE_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
+  export IDP_SERVICE_SECRET; yq -i '.idpServiceSecret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
+  export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_GITSYNC_AUTHORITY" ]]; then
+  export NG_MANAGER_GITSYNC_AUTHORITY; yq -i '.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_GITSYNC_AUTHORITY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_TARGET" ]]; then
+  export MANAGER_TARGET; yq -i '.managerTarget=env(MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_AUTHORITY" ]]; then
+  export MANAGER_AUTHORITY; yq -i '.managerAuthority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
@@ -138,3 +200,29 @@ replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value redisLockConfig.sentinel $LOCK_CONFIG_USE_SENTINEL
+replace_key_value redisLockConfig.envNamespace $LOCK_CONFIG_ENV_NAMESPACE
+replace_key_value redisLockConfig.redisUrl $LOCK_CONFIG_REDIS_URL
+replace_key_value redisLockConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
+replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
+replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
+replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
+replace_key_value backstageSaToken "$BACKSTAGE_SA_TOKEN"
+replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
+replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
+replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
+replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
+replace_key_value jwtAuthSecret "$JWT_AUTH_SECRET"
+replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
+replace_key_value provisionModuleConfig.triggerPipelineUrl "$TRIGGER_PIPELINE_URL"
+replace_key_value accessControlClient.enableAccessControl $ACCESS_CONTROL_ENABLED
+replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
+replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
+replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL"
+replace_key_value env "$ENV"
+replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"
+replace_key_value backstageAppBaseUrl "$BACKSTAGE_APP_BASE_URL"
+replace_key_value backstagePostgresHost "$BACKSTAGE_POSTGRES_HOST"
+replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH

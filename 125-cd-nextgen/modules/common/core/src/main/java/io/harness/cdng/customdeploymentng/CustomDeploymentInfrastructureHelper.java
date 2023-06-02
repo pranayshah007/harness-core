@@ -323,7 +323,8 @@ public class CustomDeploymentInfrastructureHelper {
     if (infraEntity.isPresent()) {
       if (infraEntity.get().getObsolete()) {
         throw new InvalidRequestException(String.format(
-            "Infrastructure - [%s] is obsolete, please update the infrastructure", infrastructure.getInfraName()));
+            "Infrastructure - [%s] is obsolete as Deployment Template with Id: [%s] has been updated, please reconcile the infrastructure",
+            infrastructure.getInfraName(), infrastructure.getCustomDeploymentRef().getTemplateRef()));
       }
     } else {
       throw new InvalidRequestException(

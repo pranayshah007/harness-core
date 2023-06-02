@@ -8,16 +8,14 @@
 package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
@@ -47,6 +45,7 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PipelineExceptionsHelper;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -212,14 +211,14 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       return Optional.of(savedEntity);
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
-      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
+      log.info("Fetching pipeline from working branchName - " + branchName);
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
+            accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
       } else {
-        savedEntity = fetchRemoteEntity(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
       }
     }
     return Optional.of(savedEntity);
@@ -245,7 +244,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
           fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
     } catch (WingsException ex) {
       String fallBackBranch = getFallBackBranch(savedEntity);
-      if (shouldRetryWithFallBackBranch(PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
+      if (PipelineGitXHelper.shouldRetryWithFallBackBranch(
+              PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
         GitAwareContextHelper.updateGitEntityContextWithBranch(fallBackBranch);
@@ -280,14 +280,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .repoName(savedEntity.getRepo())
             .loadFromCache(loadFromCache)
             .entityType(EntityType.PIPELINES)
+            .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
             .build(),
         Collections.emptyMap());
-  }
-
-  @VisibleForTesting
-  boolean shouldRetryWithFallBackBranch(ScmException scmException, String branchTried, String pipelineFallBackBranch) {
-    return scmException != null && SCM_BAD_REQUEST.equals(scmException.getCode())
-        && (isNotEmpty(pipelineFallBackBranch) && !branchTried.equals(pipelineFallBackBranch));
   }
 
   @Override
@@ -470,6 +465,15 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
         ()
             -> moveConfigOperations(pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria,
                 moveConfigOperationType));
+  }
+
+  @Override
+  public PipelineEntity updateEntity(Criteria criteria, Update update) {
+    Query query = new Query(criteria);
+    return Failsafe.with(DEFAULT_RETRY_POLICY)
+        .get(()
+                 -> mongoTemplate.findAndModify(
+                     query, update, new FindAndModifyOptions().returnNew(true), PipelineEntity.class));
   }
 
   @VisibleForTesting

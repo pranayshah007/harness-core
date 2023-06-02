@@ -47,6 +47,6 @@ public class CustomArtifactTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public ArtifactTaskResponse run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
-    return customArtifactTaskHelper.getArtifactCollectResponse(taskParameters);
+    return customArtifactTaskHelper.getArtifactCollectResponse(taskParameters, getLogStreamingTaskClient());
   }
 }

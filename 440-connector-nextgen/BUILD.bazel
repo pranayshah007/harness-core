@@ -49,6 +49,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
         "//clients/ngsettings:module",
+        "//clients/template-service:module",
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )
@@ -119,7 +120,7 @@ java_library(
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mockito_mockito_inline",
         "@maven//:org_modelmapper_modelmapper",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_commons",

@@ -17,4 +17,5 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class SshWinRmConstants {
   public static final String HOSTNAME_HOST_ATTRIBUTE = "hostname";
+  public static final String FILE_STORE_SCRIPT_ERROR_MSG = "Script from Harness File Store cannot be empty, file: %s";
 }

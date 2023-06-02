@@ -8,8 +8,6 @@
 package io.harness.cdng.provision.terraformcloud.resources.service;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,8 +26,10 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetOrganizationsTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetWorkspacesTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.exception.DelegateServiceDriverException;
@@ -61,8 +61,9 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformCloudResourceServiceImpl implements TerraformCloudResourceService {
-  private static String FAILED_TO_GET_ORGANIZATIONS_ERROR_MESSAGE = "Failed to get terraform cloud organizations: %s";
-  private static String FAILED_TO_GET_WORKSPACES_ERROR_MESSAGE = "Failed to get terraform cloud workspaces: %s";
+  private static final String FAILED_TO_GET_ORGANIZATIONS_ERROR_MESSAGE =
+      "Failed to get terraform cloud organizations: %s";
+  private static final String FAILED_TO_GET_WORKSPACES_ERROR_MESSAGE = "Failed to get terraform cloud workspaces: %s";
   private static final int TIMEOUT_IN_SECONDS = 60;
 
   private final ConnectorService connectorService;
@@ -85,11 +86,10 @@ public class TerraformCloudResourceServiceImpl implements TerraformCloudResource
     TerraformCloudConnectorDTO connector = getConnector(connectorRef);
     List<EncryptedDataDetail> encryptedData = getEncryptionDetails(connector, access);
 
-    TerraformCloudTaskParams taskParams = TerraformCloudTaskParams.builder()
-                                              .terraformCloudConnectorDTO(connector)
-                                              .terraformCloudTaskType(GET_ORGANIZATIONS)
-                                              .encryptionDetails(encryptedData)
-                                              .build();
+    TerraformCloudGetOrganizationsTaskParams taskParams = TerraformCloudGetOrganizationsTaskParams.builder()
+                                                              .terraformCloudConnectorDTO(connector)
+                                                              .encryptionDetails(encryptedData)
+                                                              .build();
 
     DelegateResponseData responseData = getResponseData(access, taskParams, TaskType.TERRAFORM_CLOUD_TASK_NG.name());
     return getOrganizations(responseData);
@@ -103,12 +103,11 @@ public class TerraformCloudResourceServiceImpl implements TerraformCloudResource
     TerraformCloudConnectorDTO connector = getConnector(connectorRef);
     List<EncryptedDataDetail> encryptedData = getEncryptionDetails(connector, access);
 
-    TerraformCloudTaskParams taskParams = TerraformCloudTaskParams.builder()
-                                              .terraformCloudConnectorDTO(connector)
-                                              .terraformCloudTaskType(GET_WORKSPACES)
-                                              .encryptionDetails(encryptedData)
-                                              .organization(organization)
-                                              .build();
+    TerraformCloudGetWorkspacesTaskParams taskParams = TerraformCloudGetWorkspacesTaskParams.builder()
+                                                           .terraformCloudConnectorDTO(connector)
+                                                           .encryptionDetails(encryptedData)
+                                                           .organization(organization)
+                                                           .build();
 
     DelegateResponseData responseData = getResponseData(access, taskParams, TaskType.TERRAFORM_CLOUD_TASK_NG.name());
     return getWorkspaces(responseData);

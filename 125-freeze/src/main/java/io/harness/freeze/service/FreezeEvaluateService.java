@@ -18,7 +18,7 @@ public interface FreezeEvaluateService {
       String accountId, String orgIdentifier, String projectIdentifier, Map<FreezeEntityType, List<String>> entityMap);
 
   List<FreezeSummaryResponseDTO> getActiveFreezeEntities(
-      String accountId, String orgIdentifier, String projectIdentifier);
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   List<FreezeSummaryResponseDTO> getActiveManualFreezeEntities(
       String accountId, String orgIdentifier, String projectIdentifier, Map<FreezeEntityType, List<String>> entityMap);

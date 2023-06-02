@@ -6,6 +6,7 @@
  */
 
 package io.harness.cvng.beans.change;
+
 import io.harness.cvng.beans.activity.ActivityType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,14 +23,16 @@ import org.apache.commons.collections4.MapUtils;
 
 @AllArgsConstructor
 public enum ChangeSourceType {
-  //@JsonProperty added for swagger as it doesnt understand @JsonValue
+  //@JsonProperty added for swagger as it doesn't understand @JsonValue
   @JsonProperty("HarnessCDNextGen")
-  HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT, false),
+  HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT, true),
   @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty", ChangeCategory.ALERTS, ActivityType.PAGER_DUTY, false),
   @JsonProperty("K8sCluster") KUBERNETES("K8sCluster", ChangeCategory.INFRASTRUCTURE, ActivityType.KUBERNETES, false),
   @JsonProperty("HarnessCD")
   HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN, false),
   @JsonProperty("HarnessFF") HARNESS_FF("HarnessFF", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG, true),
+  @JsonProperty("HarnessCE")
+  HARNESS_CE("HarnessCE", ChangeCategory.CHAOS_EXPERIMENT, ActivityType.CHAOS_EXPERIMENT, true),
   @JsonProperty("CustomDeploy")
   CUSTOM_DEPLOY("CustomDeploy", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_DEPLOY, false),
   @JsonProperty("CustomIncident")
@@ -39,7 +42,6 @@ public enum ChangeSourceType {
   @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false);
 
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
-  private static Map<String, ChangeSourceType> STRING_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<ChangeCategory, List<ChangeSourceType>> CATEGORY_TO_CHANGE_SOURCE_TYPES_MAP;
 
   private String value;
@@ -50,6 +52,11 @@ public enum ChangeSourceType {
   @JsonValue
   public String getValue() {
     return value;
+  }
+
+  @Override
+  public String toString() {
+    return this.value;
   }
 
   public static List<ChangeSourceType> getForCategory(ChangeCategory changeCategory) {
@@ -70,19 +77,5 @@ public enum ChangeSourceType {
       throw new IllegalStateException("Activity type:" + activityType + " not mapped to ChangeSourceType");
     }
     return ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP.get(activityType);
-  }
-
-  public static ChangeSourceType fromString(String stringValue) {
-    if (MapUtils.isEmpty(STRING_TO_CHANGE_SOURCE_TYPE_MAP)) {
-      STRING_TO_CHANGE_SOURCE_TYPE_MAP =
-          Arrays.stream(ChangeSourceType.values())
-              .collect(Collectors.toMap(ChangeSourceType::getValue, Function.identity()));
-      // TODO: Remove this once UI migrated to jsonValues for queryParams
-      Arrays.asList(ChangeSourceType.values()).forEach(cst -> STRING_TO_CHANGE_SOURCE_TYPE_MAP.put(cst.name(), cst));
-    }
-    if (!STRING_TO_CHANGE_SOURCE_TYPE_MAP.containsKey(stringValue)) {
-      throw new IllegalStateException("Change source type should be in : " + STRING_TO_CHANGE_SOURCE_TYPE_MAP.keySet());
-    }
-    return STRING_TO_CHANGE_SOURCE_TYPE_MAP.get(stringValue);
   }
 }

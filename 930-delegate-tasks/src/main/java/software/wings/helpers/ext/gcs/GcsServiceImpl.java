@@ -56,13 +56,13 @@ import org.json.JSONObject;
 @Slf4j
 public class GcsServiceImpl implements GcsService {
   private GcpHelperService gcpHelperService;
-  private static int MAX_GCS_ARTIFACT_PATH_LIMIT = 1000;
-  private static int MAX_GCS_BUILD_DETAILS_LIMIT = 100;
+  private static int MAX_GCS_ARTIFACT_PATH_LIMIT = 10000;
+  private static int MAX_GCS_BUILD_DETAILS_LIMIT = 1000;
   private final SimpleDateFormat GCS_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
   private static final String LAST_UPDATED_AT = "lastUpdatedAt";
 
   private PriorityQueue<GCSPair> gcsBuildDetailsQueue = new PriorityQueue<>(MAX_GCS_BUILD_DETAILS_LIMIT,
-      (a, b) -> (int) (Long.parseLong(b.getUpdatedTime()) - Long.parseLong(a.getUpdatedTime())));
+      (a, b) -> Long.compare(Long.parseLong(b.getUpdatedTime()), Long.parseLong(a.getUpdatedTime())));
 
   @Inject
   public GcsServiceImpl(GcpHelperService gcpHelperService) {

@@ -8,6 +8,7 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -23,6 +24,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,8 +46,9 @@ public class K8sApplyBaseStepInfo {
   ParameterField<Boolean> skipSteadyStateCheck;
   @YamlSchemaTypes(runtime)
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @Size(min = 1)
   ParameterField<List<String>> filePaths;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonProperty("overrides") List<ManifestConfigWrapper> overrides;

@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
@@ -23,9 +24,11 @@ import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -70,7 +73,7 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private ServiceTemplateService serviceTemplateService;
 
-  private static Set<NGMigrationEntityType> overrideTypes = Sets.newHashSet(SERVICE_VARIABLE, MANIFEST);
+  private static Set<NGMigrationEntityType> overrideTypes = Sets.newHashSet(SERVICE_VARIABLE, MANIFEST, CONFIG_FILE);
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -120,8 +123,8 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
         ((NGServiceOverrideConfig) yamlFile.getYaml()).getServiceOverrideInfoConfig();
     String yaml = getYamlString(yamlFile);
@@ -134,7 +137,10 @@ public class ServiceVariableMigrationService extends NgMigrationService {
                                                .build();
 
     Response<ResponseDTO<ServiceOverrideResponseDTO>> resp =
-        ngClient.upsertServiceOverride(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(requestDTO)).execute();
+        ngClient
+            .upsertServiceOverride(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(requestDTO))
+            .execute();
     log.info("Service variables creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -145,27 +151,29 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     ServiceVariable serviceVariable = (ServiceVariable) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(serviceVariable, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(
+        migrationContext, serviceVariable, migrationContext.getInputDTO().getCustomExpressions());
     List<NGYamlFile> files = new ArrayList<>();
 
     if (!doReferenceExists(migratedEntities, serviceVariable.getEnvId(), serviceVariable.getServiceId())) {
-      return files;
+      return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
 
-    NGYamlFile yamlFile = getBlankServiceOverride(inputDTO, migratedEntities, serviceVariable.getEnvId(),
-        serviceVariable.getServiceId(), serviceVariable.getCgBasicInfo());
+    NGYamlFile yamlFile = getBlankServiceOverride(
+        migrationContext, serviceVariable.getEnvId(), serviceVariable.getServiceId(), serviceVariable.getCgBasicInfo());
     boolean reused = false;
     // Check if we already have some migrated entity for service/environment combo
     NGYamlFile existingOverride =
-        findExistingOverride(entities, migratedEntities, serviceVariable.getEnvId(), serviceVariable.getServiceId());
+        findExistingOverride(migrationContext, serviceVariable.getEnvId(), serviceVariable.getServiceId());
     if (existingOverride != null) {
       yamlFile = existingOverride;
       reused = true;
     }
-    NGVariable ngVariable = MigratorUtility.getNGVariable(serviceVariable, migratedEntities);
+    NGVariable ngVariable = MigratorUtility.getNGVariable(migrationContext, serviceVariable);
     NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
         ((NGServiceOverrideConfig) yamlFile.getYaml()).getServiceOverrideInfoConfig();
     if (ngVariable != null) {
@@ -175,11 +183,12 @@ public class ServiceVariableMigrationService extends NgMigrationService {
       files.add(yamlFile);
       migratedEntities.putIfAbsent(entityId, yamlFile);
     }
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
-  public static NGYamlFile findExistingOverride(Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NGYamlFile> migratedEntities, String envId, String serviceId) {
+  public static NGYamlFile findExistingOverride(MigrationContext migrationContext, String envId, String serviceId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     if (EmptyPredicate.isNotEmpty(migratedEntities)
         && migratedEntities.keySet().stream().anyMatch(migrated -> overrideTypes.contains(migrated.getType()))) {
       List<CgEntityId> alreadyMigratedOverrides = migratedEntities.keySet()
@@ -199,6 +208,10 @@ public class ServiceVariableMigrationService extends NgMigrationService {
           migratedServiceId = manifest.getServiceId();
           migratedEnvId = manifest.getEnvId();
         }
+        if (cgEntityId.getType() == CONFIG_FILE) {
+          migratedServiceId = ConfigFileMigrationService.getServiceId(migrationContext, cgEntityId);
+          migratedEnvId = ConfigFileMigrationService.getEnvId(migrationContext, cgEntityId);
+        }
         // If we already migrated variable/manifest which had the same env & service. We then just merge them
         if (Objects.equals(migratedEnvId, envId) && Objects.equals(migratedServiceId, serviceId)) {
           return migratedEntities.get(cgEntityId);
@@ -208,12 +221,17 @@ public class ServiceVariableMigrationService extends NgMigrationService {
     return null;
   }
 
-  public static NGYamlFile getBlankServiceOverride(MigrationInputDTO inputDTO,
-      Map<CgEntityId, NGYamlFile> migratedEntities, String envId, String serviceId, CgBasicInfo cgBasicInfo) {
+  public static NGYamlFile getBlankServiceOverride(
+      MigrationContext migrationContext, String envId, String serviceId, CgBasicInfo cgBasicInfo) {
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    NgEntityDetail ngEntityDetail =
-        NgEntityDetail.builder().orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+    NgEntityDetail ngEntityDetail = NgEntityDetail.builder()
+                                        .entityType(SERVICE_VARIABLE)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .build();
     String environmentRef = MigratorUtility.getIdentifierWithScope(migratedEntities, envId, ENVIRONMENT);
     String serviceRef = MigratorUtility.getIdentifierWithScope(migratedEntities, serviceId, SERVICE);
     NGServiceOverrideConfig serviceOverride = NGServiceOverrideConfig.builder()
@@ -235,7 +253,8 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

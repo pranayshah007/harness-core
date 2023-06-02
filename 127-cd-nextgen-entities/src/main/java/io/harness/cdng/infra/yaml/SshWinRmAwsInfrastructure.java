@@ -16,14 +16,12 @@ import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping.SshWinRmAwsInfraMappingBuilder;
-import io.harness.filters.ConnectorRefExtractorHelper;
-import io.harness.filters.WithConnectorRef;
+import io.harness.filters.GenericEntityRefExtractorHelper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
-import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,22 +30,25 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.Collections;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AWS)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = GenericEntityRefExtractorHelper.class)
 @TypeAlias("SshWinRmAwsInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure")
-public class SshWinRmAwsInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+public class SshWinRmAwsInfrastructure extends InfrastructureDetailsAbstract implements SshWinRmInfrastructure {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -131,6 +132,9 @@ public class SshWinRmAwsInfrastructure
     if (!ParameterField.isNull(config.getHostConnectionType())) {
       resultantInfra = resultantInfra.withHostConnectionType(config.getHostConnectionType());
     }
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
+    }
 
     return resultantInfra;
   }
@@ -138,5 +142,10 @@ public class SshWinRmAwsInfrastructure
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     return Collections.singletonMap(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractSecretRefs() {
+    return Collections.singletonMap(YAMLFieldNameConstants.CREDENTIALS_REF, credentialsRef);
   }
 }

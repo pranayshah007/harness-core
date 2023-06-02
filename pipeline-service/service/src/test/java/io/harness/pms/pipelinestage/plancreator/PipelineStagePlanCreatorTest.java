@@ -12,15 +12,19 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
@@ -50,6 +54,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -58,6 +64,7 @@ public class PipelineStagePlanCreatorTest {
   @Mock PipelineStageHelper pipelineStageHelper;
   @Mock KryoSerializer kryoSerializer;
   @Mock PMSPipelineServiceImpl pmsPipelineService;
+  @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @InjectMocks PipelineStagePlanCreator pipelineStagePlanCreator;
 
   private String ORG = "org";
@@ -139,10 +146,17 @@ public class PipelineStagePlanCreatorTest {
         .when(pmsPipelineService)
         .getPipeline("acc", "org", "project", "childPipeline", false, false);
 
+    doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
+        .when(pmsGitSyncHelper)
+        .getEntityGitDetailsFromBytes(any());
+
     PipelineStageNode pipelineStageNode = YamlUtils.read(yamlField, PipelineStageNode.class);
     assertThat(SecurityContextBuilder.getPrincipal()).isNull();
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
     PlanCreationResponse response =
         pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(yamlField, PipelineStageNode.class));
+    mockSettings.close();
     assertThat(SecurityContextBuilder.getPrincipal()).isNotNull();
     assertThat(response.getPlanNode()).isNotNull();
     PlanNode planNode = response.getPlanNode();
@@ -152,6 +166,9 @@ public class PipelineStagePlanCreatorTest {
     assertThat(planNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.ASYNC);
     assertThat(planNode.getExpressionMode()).isEqualTo(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+
+    // Verifying the new Git Context For ChildPipeline
+    verify(pmsGitSyncHelper, times(1)).getEntityGitDetailsFromBytes(any());
   }
 
   @Test
@@ -172,9 +189,18 @@ public class PipelineStagePlanCreatorTest {
         .when(pmsPipelineService)
         .getPipeline("acc", "org", "project", "childPipeline", false, false);
 
+    doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
+        .when(pmsGitSyncHelper)
+        .getEntityGitDetailsFromBytes(any());
+
     doReturn(new byte[9]).when(kryoSerializer).asBytes(any());
     PipelineStageNode stageNode = YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class);
+
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
     pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class));
+    mockSettings.close();
+
     verify(pipelineStageHelper, times(1)).validateFailureStrategy(stageNode.getFailureStrategies());
   }
 

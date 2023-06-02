@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 
 import java.time.Instant;
 import lombok.Builder;
@@ -20,4 +20,6 @@ public class SLIAnalyseResponse {
   private SLIState sliState;
   private long runningBadCount;
   private long runningGoodCount;
+  private Long goodEventCount;
+  private Long badEventCount;
 }

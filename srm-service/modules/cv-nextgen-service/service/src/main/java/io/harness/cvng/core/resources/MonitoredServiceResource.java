@@ -242,11 +242,16 @@ public class MonitoredServiceResource {
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MonitoredServiceListItemDTO>> list(
       @NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
-      @QueryParam("environmentIdentifier") String environmentIdentifier, @QueryParam("offset") @NotNull Integer offset,
-      @QueryParam("pageSize") @NotNull Integer pageSize, @QueryParam("filter") String filter,
+      @QueryParam("environmentIdentifier") String environmentIdentifier,
+      @QueryParam("environmentIdentifiers") List<String> environmentIdentifiers,
+      @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
+      @QueryParam("filter") String filter,
       @NotNull @QueryParam("servicesAtRiskFilter") @ApiParam(defaultValue = "false") boolean servicesAtRiskFilter) {
+    if (isNotEmpty(environmentIdentifier)) {
+      environmentIdentifiers = Collections.singletonList(environmentIdentifier);
+    }
     return ResponseDTO.newResponse(monitoredServiceService.list(
-        projectParams.getProjectParams(), environmentIdentifier, offset, pageSize, filter, servicesAtRiskFilter));
+        projectParams.getProjectParams(), environmentIdentifiers, offset, pageSize, filter, servicesAtRiskFilter));
   }
 
   @GET

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra.yaml;
 
+import static io.harness.cdng.k8s.K8sEntityHelper.K8S_INFRA_NAMESPACE_REGEX_PATTERN;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
@@ -32,15 +33,19 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.KUBERNETES_AZURE)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("k8sAzureInfrastructure")
@@ -57,7 +62,7 @@ public class K8sAzureInfrastructure
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @YamlSchemaTypes({expression})
-  @Pattern(regexp = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+  @Pattern(regexp = K8S_INFRA_NAMESPACE_REGEX_PATTERN)
   @Wither
   ParameterField<String> namespace;
   @NotNull
@@ -141,6 +146,10 @@ public class K8sAzureInfrastructure
     if (!ParameterField.isNull(config.getUseClusterAdminCredentials())) {
       resultantInfra = resultantInfra.withUseClusterAdminCredentials(config.getUseClusterAdminCredentials());
     }
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
+    }
+
     return resultantInfra;
   }
 

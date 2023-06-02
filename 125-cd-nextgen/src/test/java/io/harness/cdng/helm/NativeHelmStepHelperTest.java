@@ -29,17 +29,18 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.beans.FeatureName;
@@ -129,6 +130,7 @@ import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParam
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -250,6 +252,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
             .helmVersion(HelmVersion.V3)
+            .store(GitStore.builder().build())
             .skipResourceVersioning(ParameterField.createValueField(true))
             .build();
     ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().build();
@@ -259,6 +262,29 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     assertThat(nativeHelmStepHelper.getHelmSupportedManifestOutcome(manifestOutcomes))
         .isEqualTo(helmChartManifestOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetHelmChartManifestsOutcomeWithHarnessAndInheritFromManifestStore() {
+    HelmChartManifestOutcome helmChartManifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .identifier("HelmChart")
+            .helmVersion(HelmVersion.V3)
+            .skipResourceVersioning(ParameterField.createValueField(true))
+            .store(HarnessStore.builder().build())
+            .build();
+    ValuesManifestOutcome valuesManifestOutcome =
+        ValuesManifestOutcome.builder().store(InheritFromManifestStoreConfig.builder().build()).build();
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
+    manifestOutcomes.add(helmChartManifestOutcome);
+    manifestOutcomes.add(valuesManifestOutcome);
+
+    assertThatThrownBy(() -> nativeHelmStepHelper.getHelmSupportedManifestOutcome(manifestOutcomes))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "InheritFromManifest store type is not supported with Manifest identifier: HelmChart, Manifest type: HelmChart, Manifest store type: Harness");
   }
 
   @Test
@@ -761,9 +787,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -887,9 +913,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(localStoreFetchFilesResultMap.get("helmOverride3").getLocalStoreFileContents().get(0)).isEqualTo("Test");
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -979,9 +1005,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -1103,9 +1129,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(localStoreFetchFilesResultMap.get("helmOverride3").getLocalStoreFileContents().get(0)).isEqualTo("Test");
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -1415,9 +1441,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -1504,9 +1530,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -1622,9 +1648,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThat(localStoreFetchFilesResultMap.get("helmOverride3").getLocalStoreFileContents().get(0)).isEqualTo("Test");
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2499,7 +2525,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithNonProdEnvType() {
     doReturn(NON_PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     HelmSpecParameters stepParams = HelmDeployStepParams.infoBuilder().build();
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.queueNativeHelmTask(
         StepElementParameters.builder().spec(stepParams).build(),
@@ -2534,7 +2560,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithProdEnvType() {
     doReturn(PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     HelmSpecParameters helmSpecParameters = HelmDeployStepParams.infoBuilder().build();
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.queueNativeHelmTask(
         StepElementParameters.builder().spec(helmSpecParameters).build(),
@@ -2578,6 +2604,22 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     assertThat(releaseDetailsCaptor.getValue().getReleaseName()).isEqualTo("test-release-name");
     assertThat(releaseNameCaptor.getValue()).isEqualTo(RELEASE_NAME);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetReleaseHistoryPrefix() {
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled("test-account", FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+    assertThat(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance)).isNullOrEmpty();
+
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled("test-account", FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+    assertThat(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
+        .isEqualTo(NativeHelmStepHelper.RELEASE_HISTORY_PREFIX);
   }
 
   public Ambiance getAmbiance() {

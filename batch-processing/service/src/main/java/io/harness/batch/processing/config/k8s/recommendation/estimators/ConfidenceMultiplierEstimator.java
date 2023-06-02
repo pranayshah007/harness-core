@@ -7,10 +7,10 @@
 
 package io.harness.batch.processing.config.k8s.recommendation.estimators;
 
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.cpu;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.memory;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.scaleResourceAmount;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.cpu;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.makeResourceMap;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.memory;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.scaleResourceAmount;
 
 import io.harness.batch.processing.config.k8s.recommendation.ContainerState;
 

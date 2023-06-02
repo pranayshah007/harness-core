@@ -35,11 +35,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,15 +49,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  public static final String NULL_STR = "null";
   private final List<String> VALIDATORS = Lists.newArrayList("allowedValues", "regex", "default");
 
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
@@ -65,8 +71,13 @@ public class YamlUtils {
       configureObjectMapperForNG(new ObjectMapper(new YAMLFactory()));
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
+    mapper.registerModule(new EdgeCaseRegexModule());
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    mapper.disable(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.registerModule(new Jdk8Module());
@@ -77,6 +88,15 @@ public class YamlUtils {
     // map empty string to null instead of failing with Mapping Exception
     mapper.coercionConfigFor(LinkedHashMap.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
     mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
+  }
+
+  // Takes stringified yaml as input and returns the JsonNode
+  public JsonNode readAsJsonNode(String yaml) {
+    try {
+      return mapper.readTree(yaml);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
+    }
   }
 
   public <T> T read(String yaml, Class<T> cls) throws IOException {
@@ -95,12 +115,35 @@ public class YamlUtils {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml");
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+    }
+  }
+
+  public String writeYamlString(Object object) {
+    try {
+      return mapper.writeValueAsString(object).replace("---\n", "");
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
   }
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+  // save. The below yaml is invalid and should not be allowed to save.
+  /*
+  pipeline:
+    name: pipeline
+    orgIdentifier: org
+    projectIdentifier: project
+    orgIdentifier: org
+   */
+  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
+    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
+    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
+    return readTreeInternal(content, mapperWithDuplicate);
   }
 
   public YamlField tryReadTree(String content) {
@@ -166,6 +209,40 @@ public class YamlUtils {
       return field;
     }
     throw new InvalidRequestException("No Top root node available in the yaml.");
+  }
+
+  public void replaceFieldInJsonNodeFromAnotherJsonNode(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    if (baseNode == null || valueNode == null) {
+      return;
+    }
+    if (baseNode.getNodeType() != valueNode.getNodeType()) {
+      throw new InvalidRequestException("Both jsonNodes must be of same nodeType. Can not replace the values.");
+    }
+    if (baseNode.isObject()) {
+      injectUuidInObjectWithLeafValues(baseNode, valueNode, fieldName);
+    } else if (baseNode.isArray()) {
+      injectUuidInArrayWithLeafUuid(baseNode, valueNode, fieldName);
+    }
+  }
+
+  private void injectUuidInObjectWithLeafValues(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    ObjectNode objectNode = (ObjectNode) baseNode;
+    if (objectNode.get(fieldName) != null) {
+      objectNode.put(fieldName, valueNode.get(fieldName));
+    }
+    for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
+      Entry<String, JsonNode> field = it.next();
+      if (!field.getValue().isValueNode()) {
+        replaceFieldInJsonNodeFromAnotherJsonNode(field.getValue(), valueNode.get(field.getKey()), fieldName);
+      }
+    }
+  }
+
+  private void injectUuidInArrayWithLeafUuid(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    ArrayNode arrayNode = (ArrayNode) baseNode;
+    for (int index = 0; index < arrayNode.size(); index++) {
+      replaceFieldInJsonNodeFromAnotherJsonNode(arrayNode.get(index), valueNode.get(index), fieldName);
+    }
   }
 
   public YamlField injectUuidWithLeafUuid(String content) throws IOException {
@@ -378,13 +455,38 @@ public class YamlUtils {
     return qualifiedNameList;
   }
 
-  public String getStageFqnPath(YamlNode yamlNode) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
+  private String getStageFQNPathForV1Yaml(List<String> qualifiedNames, YamlNode yamlNode) {
+    if (qualifiedNames.size() == 1) {
+      if (!EmptyPredicate.isEmpty(yamlNode.getName())) {
+        return qualifiedNames.get(0) + "." + yamlNode.getName();
+      }
+      return qualifiedNames.get(0);
+    }
+    return qualifiedNames.get(0) + "." + qualifiedNames.get(1);
+  }
+
+  public String getStageFqnPath(YamlNode yamlNode, String yamlVersion) {
+    // If yamlVersion is V1 then use stages as root fieldName because stages is the root. If it's V0, then pipeline.
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode,
+        PipelineVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
+    if (qualifiedNames.size() > 0 && PipelineVersion.isV1(yamlVersion)) {
+      return getStageFQNPathForV1Yaml(qualifiedNames, yamlNode);
+    }
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }
 
     return qualifiedNames.get(0) + "." + qualifiedNames.get(1) + "." + qualifiedNames.get(2);
+  }
+
+  public boolean isStageNode(YamlNode node) {
+    if (node == null) {
+      return false;
+    }
+    if (node.getFieldName() != null && node.getFieldName().equals(YAMLFieldNameConstants.STAGE)) {
+      return true;
+    }
+    return YamlUtils.findParentNode(node, YAMLFieldNameConstants.STAGES) != null;
   }
 
   private String getQNForNode(YamlNode yamlNode, YamlNode parentNode, boolean shouldAppendStrategyExpression) {
@@ -423,6 +525,12 @@ public class YamlUtils {
       return name + STRATEGY_IDENTIFIER_POSTFIX;
     }
     return name;
+  }
+
+  public static boolean shouldIncludeInQualifiedName(
+      final String identifier, final String setupId, boolean skipExpressionChain) {
+    return !shouldNotIncludeInQualifiedName(identifier) && !identifier.equals(YAMLFieldNameConstants.PARALLEL + setupId)
+        && !skipExpressionChain;
   }
 
   public boolean shouldNotIncludeInQualifiedName(String fieldName) {
@@ -633,13 +741,18 @@ public class YamlUtils {
 
   private void removeUuidInObject(JsonNode node) {
     ObjectNode objectNode = (ObjectNode) node;
+    List<String> removalKeyList = new ArrayList<>();
     for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
       Entry<String, JsonNode> field = it.next();
       if (field.getKey().equals(YamlNode.UUID_FIELD_NAME)) {
-        objectNode.remove(field.getKey());
+        removalKeyList.add(field.getKey());
       } else {
         removeUuid(field.getValue());
       }
+    }
+
+    for (String key : removalKeyList) {
+      objectNode.remove(key);
     }
   }
 
@@ -654,5 +767,23 @@ public class YamlUtils {
     YamlNode yamlNode = yamlField.getNode();
     ObjectNode currJsonNode = (ObjectNode) yamlNode.getCurrJsonNode();
     currJsonNode.set(fieldName, new TextNode(value));
+  }
+
+  public List<YamlField> extractStageFieldsFromPipeline(String yaml) throws IOException {
+    List<YamlNode> stages = extractPipelineField(yaml).fromYamlPath("stages").getNode().asArray();
+    List<YamlField> stageFields = new LinkedList<>();
+
+    stages.forEach(yamlNode -> {
+      YamlField stageField = yamlNode.getField("stage");
+      YamlField parallelStageField = yamlNode.getField("parallel");
+      if (stageField != null) {
+        stageFields.add(stageField);
+      } else if (parallelStageField != null) {
+        // in case of parallel, we fetch the stage node array again
+        List<YamlNode> parallelStages = parallelStageField.getNode().asArray();
+        parallelStages.forEach(parallelStage -> { stageFields.add(parallelStage.getField("stage")); });
+      }
+    });
+    return stageFields;
   }
 }

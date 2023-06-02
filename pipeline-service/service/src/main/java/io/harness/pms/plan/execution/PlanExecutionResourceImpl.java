@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
@@ -29,8 +30,11 @@ import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -48,7 +52,11 @@ import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.stages.StageExecutionResponse;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
+import io.harness.utils.PipelineGitXHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -79,18 +87,36 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
+  @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private NGSettingsClient settingsClient;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> runPipelineWithInputSetPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String inputSetPipelineYaml) {
-    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId,
-        orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser);
+      boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String notes, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
+    PlanExecutionResponseDto planExecutionResponseDto =
+        pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  public ResponseDTO<PlanExecutionResponseDto> runPostExecutionRollback(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String planExecutionId, String stageNodeExecutionIds,
+      String notes) {
+    // TODO:(BRIJESH) Take stageNodeExecutionIds as list.
+    // pipelineIdentifier needed for access control check
+    PlanExecution planExecution = pipelineExecutor.startPostExecutionRollback(accountId, orgIdentifier,
+        projectIdentifier, planExecutionId, Collections.singletonList(stageNodeExecutionIds), notes);
+    return ResponseDTO.newResponse(PlanExecutionResponseDto.builder().planExecution(planExecution).build());
   }
 
   @Override
@@ -98,11 +124,13 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> runPipelineWithInputSetPipelineYamlV2(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
-    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, true, false);
+      boolean useFQNIfErrorResponse, String notes, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
+    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId,
+        orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, true, false, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -112,9 +140,12 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean useFQNIfErrorResponse, RunStageRequestDTO runStageRequestDTO) {
+      boolean useFQNIfErrorResponse, RunStageRequestDTO runStageRequestDTO, String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     return ResponseDTO.newResponse(pipelineExecutor.runStagesWithRuntimeInputYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, runStageRequestDTO, false));
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, runStageRequestDTO, false, notes));
   }
 
   @Override
@@ -122,13 +153,15 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> rerunStagesWithRuntimeInputYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
-      @ResourceIdentifier @NotEmpty String pipelineIdentifier,
-      @NotNull
-
-      String originalExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo, boolean useFQNIfErrorResponse,
-      RunStageRequestDTO runStageRequestDTO) {
-    return ResponseDTO.newResponse(pipelineExecutor.rerunStagesWithRuntimeInputYaml(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, moduleType, originalExecutionId, runStageRequestDTO, false, false));
+      @ResourceIdentifier @NotEmpty String pipelineIdentifier, @NotNull String originalExecutionId,
+      GitEntityFindInfoDTO gitEntityBasicInfo, boolean useFQNIfErrorResponse, RunStageRequestDTO runStageRequestDTO,
+      String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
+    return ResponseDTO.newResponse(
+        pipelineExecutor.rerunStagesWithRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, moduleType, originalExecutionId, runStageRequestDTO, false, false, notes));
   }
 
   @Override
@@ -138,10 +171,13 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
+      boolean useFQNIfErrorResponse, String inputSetPipelineYaml, String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, false, false);
+            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, false, false, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -150,12 +186,14 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> rerunPipelineWithInputSetPipelineYamlV2(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
+      boolean useFQNIfErrorResponse, String inputSetPipelineYaml, String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, true, false);
+            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, true, false, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -164,13 +202,13 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> debugStagesWithRuntimeInputYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
-      @ResourceIdentifier @NotEmpty String pipelineIdentifier,
-      @NotNull
-
-      String originalExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo, boolean useFQNIfErrorResponse,
-      RunStageRequestDTO runStageRequestDTO) {
+      @ResourceIdentifier @NotEmpty String pipelineIdentifier, @NotNull String originalExecutionId,
+      GitEntityFindInfoDTO gitEntityBasicInfo, boolean useFQNIfErrorResponse, RunStageRequestDTO runStageRequestDTO) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     return ResponseDTO.newResponse(pipelineExecutor.rerunStagesWithRuntimeInputYaml(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, moduleType, originalExecutionId, runStageRequestDTO, false, true));
+        projectIdentifier, pipelineIdentifier, moduleType, originalExecutionId, runStageRequestDTO, false, true, null));
   }
 
   @Override
@@ -178,12 +216,14 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> debugPipelineWithInputSetPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, false, true);
+            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, false, true, null);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -192,12 +232,14 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> debugPipelineWithInputSetPipelineYamlV2(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, true, true);
+            pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, true, true, null);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -207,6 +249,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @ResourceIdentifier @NotEmpty String pipelineIdentifier,
       @NotNull String planExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     return ResponseDTO.newResponse(retryExecutionHelper.validateRetry(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId));
   }
@@ -217,13 +262,14 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier,
       @Parameter(description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean useFQNIfErrorResponse, @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO) {
-    PlanExecutionResponseDto planExecutionResponseDto =
-        pipelineExecutor.runPipelineWithInputSetReferencesList(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, mergeInputSetRequestDTO.getInputSetReferences(),
-            gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId());
+      boolean useFQNIfErrorResponse, @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO, String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
+    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetReferencesList(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, mergeInputSetRequestDTO,
+        gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -240,11 +286,13 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @Parameter(description = PipelineResourceConstants.USE_FQN_IF_ERROR_RESPONSE_ERROR_MESSAGE,
           required = true) boolean useFQNIfErrorResponse,
       @RequestBody(required = true, description = "InputSet reference details") @NotNull
-      @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO) {
-    PlanExecutionResponseDto planExecutionResponseDto =
-        pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, originalExecutionId, mergeInputSetRequestDTO.getInputSetReferences(),
-            gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), false);
+      @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO, String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
+    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.rerunPipelineWithInputSetReferencesList(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, originalExecutionId,
+        mergeInputSetRequestDTO, gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), false, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -255,9 +303,11 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectId,
       @Parameter(
           description = "The Interrupt type needed to be applied to the execution. Choose a value from the enum list.")
-      @NotNull PlanExecutionInterruptType executionInterruptType,
+      @NotNull PlanExecutionInterruptTypePipeline executionInterruptTypePipeline,
       @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE
               + " on which the Interrupt needs to be applied.") @NotNull String planExecutionId) {
+    PlanExecutionInterruptType executionInterruptType =
+        PlanExecutionInterruptType.getPipelineExecutionInterrupt(executionInterruptTypePipeline.getDisplayName());
     PipelineExecutionSummaryEntity executionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
 
@@ -272,8 +322,17 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Override
   // TODO(prashant) : This is a temp route for now merge it with the above. Need be done in sync with UI changes
   public ResponseDTO<InterruptDTO> handleStageInterrupt(@NotNull String accountId, @NotNull String orgId,
-      @NotNull String projectId, @NotNull PlanExecutionInterruptType executionInterruptType,
+      @NotNull String projectId, @NotNull PlanExecutionInterruptTypeStage executionInterruptTypeStage,
       @NotNull String planExecutionId, @NotNull String nodeExecutionId) {
+    PlanExecutionInterruptType executionInterruptType =
+        PlanExecutionInterruptType.getPipelineExecutionInterrupt(executionInterruptTypeStage.getDisplayName());
+    PipelineExecutionSummaryEntity executionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
+
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()),
+        PipelineRbacPermissions.PIPELINE_EXECUTE);
+    checkIfInterruptIsBehindSettingsAndIsEnabled(accountId, orgId, projectId, executionInterruptType);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, nodeExecutionId));
   }
@@ -316,6 +375,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<List<StageExecutionResponse>> getStagesExecutionList(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     Optional<PipelineEntity> optionalPipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (!optionalPipelineEntity.isPresent()) {
@@ -352,8 +414,10 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String previousExecutionId,
       @NotNull List<String> retryStagesIdentifier, boolean runAllStages,
-
-      @ResourceIdentifier @NotEmpty String pipelineIdentifier, String inputSetPipelineYaml) {
+      @ResourceIdentifier @NotEmpty String pipelineIdentifier, String inputSetPipelineYaml, String notes) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
+    }
     if (retryStagesIdentifier.size() == 0) {
       throw new InvalidRequestException("You need to select the stage to retry!!");
     }
@@ -366,7 +430,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.retryPipelineWithInputSetPipelineYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml,
-        previousExecutionId, retryStagesIdentifier, runAllStages, false, false);
+        previousExecutionId, retryStagesIdentifier, runAllStages, false, false, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -379,7 +443,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
         pmsExecutionService.getPipelineExecutionSummaryEntity(
             accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
     String rootParentId = pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId();
-    return ResponseDTO.newResponse(retryExecutionHelper.getRetryHistory(rootParentId));
+    return ResponseDTO.newResponse(retryExecutionHelper.getRetryHistory(rootParentId, planExecutionId));
   }
 
   @Override
@@ -393,5 +457,29 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
             accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
     String rootParentId = pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId();
     return ResponseDTO.newResponse(retryExecutionHelper.getRetryLatestExecutionId(rootParentId));
+  }
+
+  private void checkIfInterruptIsBehindSettingsAndIsEnabled(@NotNull String accountId, @NotNull String orgId,
+      @NotNull String projectId, PlanExecutionInterruptType executionInterruptType) {
+    String allowUserToMarkStepAsFailedExplicitlySettingsStatus = null;
+    String allowUserToMarkStepAsFailedExplicitly = "allow_user_to_mark_step_as_failed_explicitly";
+    String allowUserToMarkStepAsFailedExplicitlyTrueValue = "true";
+    if (PlanExecutionInterruptType.UserMarkedFailure.equals(executionInterruptType)) {
+      try {
+        allowUserToMarkStepAsFailedExplicitlySettingsStatus =
+            NGRestUtils
+                .getResponse(
+                    settingsClient.getSetting(allowUserToMarkStepAsFailedExplicitly, accountId, orgId, projectId))
+                .getValue();
+      } catch (Exception ex) {
+        log.error(String.format("Could not fetch setting [%s]", allowUserToMarkStepAsFailedExplicitly), ex);
+        throw new InvalidRequestException(
+            "Could not fetch [Allow user to mark the step as failed explicitly] Settings, Please contact Harness for further support.");
+      }
+      if (!allowUserToMarkStepAsFailedExplicitlyTrueValue.equals(allowUserToMarkStepAsFailedExplicitlySettingsStatus)) {
+        throw new InvalidRequestException(
+            "[Allow user to mark the step as failed explicitly] Settings is not enabled, Please enable this setting if you want to use this product.");
+      }
+    }
   }
 }

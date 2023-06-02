@@ -22,7 +22,7 @@ import io.harness.exception.WingsException;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.NewRelicDeploymentMarkerPayload;
-import software.wings.service.impl.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.newrelic.NewRelicDataCollectionInfo;
 import software.wings.service.intfc.newrelic.NewRelicDelegateService;

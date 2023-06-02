@@ -7,13 +7,16 @@
 
 package io.harness.serializer.morphia;
 
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.msp.entities.MarginDetails;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
+import io.harness.ccm.views.entities.RuleRecommendation;
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.entities.ViewCustomField;
 import io.harness.morphia.MorphiaRegistrar;
@@ -28,6 +31,7 @@ public class ViewsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ViewCustomField.class);
     set.add(CEReportSchedule.class);
     set.add(BusinessMapping.class);
+    set.add(BusinessMappingHistory.class);
     set.add(CEViewFolder.class);
 
     // governance
@@ -35,6 +39,10 @@ public class ViewsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Rule.class);
     set.add(RuleEnforcement.class);
     set.add(RuleExecution.class);
+    set.add(RuleRecommendation.class);
+
+    // msp
+    set.add(MarginDetails.class);
   }
 
   @Override

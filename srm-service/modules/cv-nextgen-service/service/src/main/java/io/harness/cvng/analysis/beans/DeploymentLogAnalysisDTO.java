@@ -9,6 +9,8 @@ package io.harness.cvng.analysis.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.cvng.core.beans.LogFeedback;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
@@ -95,17 +97,24 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ClusterSummary {
     int label;
     ClusterType clusterType;
+    ClusterType previousClusterType;
     int risk;
+    int previousRisk;
     public Risk getRiskLevel() {
       return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
+    }
+    public Risk getPreviousRiskLevel() {
+      return Risk.valueOfRiskForDeploymentLogAnalysis(previousRisk);
     }
     double score;
     int count;
     List<Double> testFrequencyData;
+    public LogFeedback feedback;
+    LogFeedback feedbackApplied;
 
     List<HostFrequencyData> frequencyData;
     public List<Double> getTestFrequencyData() {
@@ -127,14 +136,14 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class TimestampFrequencyCount {
     Long timeStamp;
     Double count;
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class HostFrequencyData {
     List<TimestampFrequencyCount> frequencies;
     String host;
@@ -174,14 +183,14 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ClusterHostFrequencyData {
     List<HostFrequencyData> frequencyData;
     int label;
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class ResultSummary {
     int risk;
     public Risk getRiskLevel() {
@@ -235,7 +244,7 @@ public class DeploymentLogAnalysisDTO {
   }
 
   @Value
-  @Builder
+  @Builder(toBuilder = true)
   public static class HostSummary {
     String host;
     ResultSummary resultSummary;

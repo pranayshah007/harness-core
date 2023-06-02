@@ -21,5 +21,5 @@ public interface ModuleLicenseRepository extends CrudRepository<ModuleLicense, S
   List<ModuleLicense> findByAccountIdentifierAndModuleType(String accountIdentifier, ModuleType moduleType);
   List<ModuleLicense> findByAccountIdentifier(String accountIdentifier);
   List<ModuleLicense> findByModuleTypeAndExpiryTimeGreaterThanEqual(ModuleType moduleType, long expiryTime);
-  List<ModuleLicense> findAllByAccountIdentifier(String accountIdentifier);
+  long deleteAllByAccountIdentifier(String accountIdentifier);
 }

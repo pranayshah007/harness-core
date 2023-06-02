@@ -13,9 +13,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.InstanaConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.instana.InstanaRestClient;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.intfc.instana.InstanaDelegateService;
 import software.wings.service.intfc.security.EncryptionService;
 

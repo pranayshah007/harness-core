@@ -119,6 +119,12 @@ public class EncryptedData implements EncryptedRecord, PersistentEntity, UuidAwa
                 .field(EncryptedDataKeys.accountId)
                 .field(EncryptedDataKeys.type)
                 .field(EncryptedDataKeys.createdAt)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("encryptionTypeNgMetadataGCPIteration")
+                .field(EncryptedDataKeys.encryptionType)
+                .field(EncryptedDataKeys.ngMetadata)
+                .field(EncryptedDataKeys.nextLocalToGcpKmsMigrationIteration)
                 .build())
         .build();
   }

@@ -57,6 +57,7 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
   private String approvalId;
   private String workflowId;
   private String appId;
+  private String description;
   private Integer timeoutMillis;
   private EmbeddedUser triggeredBy;
 
@@ -137,6 +138,8 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
         ExecutionDataValue.builder().displayName("Approval Status").value(getStatus()).build());
     putNotNull(
         executionDetails, "issueUrl", ExecutionDataValue.builder().displayName("Issue URL").value(issueUrl).build());
+    putNotNull(executionDetails, "description",
+        ExecutionDataValue.builder().displayName("Description").value(description).build());
 
     if (ticketUrl != null && ticketType != null) {
       putNotNull(executionDetails, "issueUrl",

@@ -16,6 +16,7 @@ import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.git.model.PushResultGit.pushResultBuilder;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -25,9 +26,9 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -70,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -86,6 +88,7 @@ import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.util.SystemReader;
 import org.junit.AfterClass;
@@ -222,6 +225,34 @@ public class GitClientV2ImplTest extends CategoryTest {
         .hasMessageContaining("Unable to checkout given reference: main");
 
     request.setBranch("master");
+    request.setRepoUrl(remoteUrl);
+    gitClient.ensureRepoLocallyClonedAndUpdated(request);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testEnsureRepoLocallyClonedAndUpdatedForUnsureOrNonExistentBranch() throws Exception {
+    String repoPathInternal = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
+    createRepo(repoPathInternal, false);
+    Git gitInternal = Git.open(new File(repoPathInternal));
+
+    assertThatThrownBy(() -> gitClient.ensureRepoLocallyClonedAndUpdated(null)).isInstanceOf(GeneralException.class);
+    GitBaseRequest request = GitBaseRequest.builder()
+                                 .repoUrl(repoPathInternal)
+                                 .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                 .branch("main")
+                                 .build();
+
+    doReturn(repoPathInternal).when(gitClientHelper).getRepoDirectory(request);
+    String remoteUrl = addRemote(repoPathInternal);
+    assertThat(gitInternal.getRepository().getConfig().getString("remote", "origin", "url")).isEqualTo(remoteUrl);
+
+    assertThatThrownBy(() -> gitClient.ensureRepoLocallyClonedAndUpdated(request))
+        .hasMessageContaining("Unable to checkout given reference: main");
+
+    request.setUnsureOrNonExistentBranch(true);
+    request.setBranch("master-test");
     request.setRepoUrl(remoteUrl);
     gitClient.ensureRepoLocallyClonedAndUpdated(request);
   }
@@ -865,5 +896,22 @@ public class GitClientV2ImplTest extends CategoryTest {
     assertThat(git3.remoteList().call().get(0).getURIs().get(0).getPath()).isEqualTo(wrongRemoteUrl);
     git3.close();
     SystemReader.setInstance(null);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testListRemote() {
+    addRemote(repoPath);
+    GitBaseRequest request = GitBaseRequest.builder()
+                                 .repoUrl(repoPath)
+                                 .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                 .build();
+    Map<String, Ref> remoteListing = gitClient.listRemote(request);
+    assertThat(remoteListing.get("HEAD").getTarget().getName()).isEqualTo("refs/heads/master");
+    assertThat(remoteListing.get("refs/tags/base").getTarget().getName()).isEqualTo("refs/tags/base");
+    assertThat(remoteListing.get("refs/heads/master").getTarget().getName()).isEqualTo("refs/heads/master");
+    assertThat(remoteListing.get("refs/remotes/origin/master").getTarget().getName())
+        .isEqualTo("refs/remotes/origin/master");
   }
 }

@@ -48,7 +48,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -87,6 +89,8 @@ public class ServiceResource {
   private final ServiceEntityService serviceEntityService;
   private final ServiceEntityManagementService serviceEntityManagementService;
 
+  private static final int MAX_LIMIT = 1000;
+
   @GET
   @Path("{serviceIdentifier}")
   @ApiOperation(value = "Gets a Service by identifier", nickname = "getService")
@@ -100,8 +104,7 @@ public class ServiceResource {
       throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
     }
-    return ResponseDTO.newResponse(
-        serviceEntity.get().getVersion().toString(), serviceEntity.map(ServiceElementMapper::writeDTO).orElse(null));
+    return ResponseDTO.newResponse(serviceEntity.map(ServiceElementMapper::writeDTO).orElse(null));
   }
 
   @POST
@@ -111,15 +114,14 @@ public class ServiceResource {
     ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
-    return ResponseDTO.newResponse(
-        createdService.getVersion().toString(), ServiceElementMapper.writeDTO(createdService));
+    return ResponseDTO.newResponse(ServiceElementMapper.writeDTO(createdService));
   }
 
   @POST
   @Path("/batch")
   @ApiOperation(value = "Create Services", nickname = "createServices")
-  public ResponseDTO<PageResponse<ServiceResponseDTO>> createServices(
-      @QueryParam("accountId") String accountId, @NotNull @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
+  public ResponseDTO<PageResponse<ServiceResponseDTO>> createServices(@QueryParam("accountId") String accountId,
+      @NotNull @Valid @Size(max = MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     List<ServiceEntity> serviceEntities =
         serviceRequestDTOs.stream()
             .map(serviceRequestDTO -> {
@@ -150,8 +152,7 @@ public class ServiceResource {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
-    return ResponseDTO.newResponse(
-        updatedService.getVersion().toString(), ServiceElementMapper.writeDTO(updatedService));
+    return ResponseDTO.newResponse(ServiceElementMapper.writeDTO(updatedService));
   }
 
   @PUT
@@ -163,15 +164,15 @@ public class ServiceResource {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity upsertedService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(
-        upsertedService.getVersion().toString(), ServiceElementMapper.writeDTO(upsertedService));
+    return ResponseDTO.newResponse(ServiceElementMapper.writeDTO(upsertedService));
   }
 
   @GET
   @ApiOperation(value = "Gets Service list for a project", nickname = "getServiceListForProject")
   public ResponseDTO<PageResponse<ServiceResponseDTO>> listServicesForProject(
-      @QueryParam("page") @DefaultValue("0") int page, @QueryParam("size") @DefaultValue("100") int size,
-      @QueryParam("accountId") String accountId, @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam("page") @DefaultValue("0") int page,
+      @QueryParam("size") @DefaultValue("100") @Max(MAX_LIMIT) int size, @QueryParam("accountId") String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers, @QueryParam("sort") List<String> sort) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);

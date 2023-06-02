@@ -95,14 +95,14 @@ public class StepGroupStepTest extends NGCommonUtilitiesTestBase {
             .skipCondition(ParameterField.createValueField("skipConfition"))
             .failureStrategies(
                 ParameterField.createValueField(Collections.singletonList(FailureStrategyConfig.builder().build())))
-            .when(StepWhenCondition.builder().build())
+            .when(ParameterField.createValueField(StepWhenCondition.builder().build()))
             .build();
     stepGroupStepParameters = StepGroupStepParameters.getStepParameters(stepGroupElementConfig, CHILD_ID);
     assertThat(stepGroupStepParameters.getName()).isEqualTo("name");
     assertThat(stepGroupStepParameters.getIdentifier()).isEqualTo("identifier");
     assertThat(stepGroupStepParameters.getChildNodeID()).isEqualTo(CHILD_ID);
     assertThat(stepGroupStepParameters.getSkipCondition().getValue()).isEqualTo("skipConfition");
-    assertThat(stepGroupStepParameters.getFailureStrategies().getValue()).isNotEmpty();
+    assertThat(stepGroupStepParameters.getFailureStrategies()).isNotEmpty();
     assertThat(stepGroupStepParameters.getWhen()).isNotNull();
   }
 }

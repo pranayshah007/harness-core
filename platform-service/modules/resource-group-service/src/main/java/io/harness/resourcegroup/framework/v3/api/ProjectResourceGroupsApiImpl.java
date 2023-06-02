@@ -12,8 +12,6 @@ import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGRO
 import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
 import static io.harness.resourcegroup.v1.remote.dto.ManagedFilter.NO_FILTER;
 
-import static java.lang.String.format;
-
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;

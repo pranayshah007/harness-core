@@ -48,8 +48,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -81,7 +81,7 @@ public class ArtifactConnectionDataFetcherTest extends CategoryTest {
         .thenReturn(page);
 
     QLArtifactConnection connection = dataFetcher.fetchConnection(
-        anyList(), any(QLPageQueryParameters.class), (List<QLNoOpSortCriteria>) Matchers.isNull());
+        anyList(), any(QLPageQueryParameters.class), (List<QLNoOpSortCriteria>) ArgumentMatchers.isNull());
 
     verify(dataFetcher, times(1)).populateFilters(any(), any(), any(Class.class), anyBoolean());
     verify(utils, times(1)).populate(any(), any(), any(DataFetcherUtils.Controller.class));

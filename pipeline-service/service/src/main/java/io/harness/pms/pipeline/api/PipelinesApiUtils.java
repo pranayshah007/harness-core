@@ -24,13 +24,15 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.PolicyMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.ExecutorInfoDTO;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
-import io.harness.pms.pipeline.mappers.CacheStateMapper;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
@@ -42,8 +44,11 @@ import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
+import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
+import io.harness.spec.server.pipeline.v1.model.ParentStageInfo;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
@@ -53,6 +58,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.TemplateValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 import io.harness.utils.ApiUtils;
 
@@ -140,7 +146,7 @@ public class PipelinesApiUtils {
       return null;
     }
     CacheResponseMetadataDTO cacheResponseMetadataDTO = new CacheResponseMetadataDTO();
-    cacheResponseMetadataDTO.setCacheState(CacheStateMapper.getCacheStateEnum(cacheResponseMetadata.getCacheState()));
+    cacheResponseMetadataDTO.setCacheState(GitXCacheMapper.getCacheStateEnum(cacheResponseMetadata.getCacheState()));
     cacheResponseMetadataDTO.setTtlLeft(cacheResponseMetadata.getTtlLeft());
     cacheResponseMetadataDTO.setLastUpdatedAt(cacheResponseMetadata.getLastUpdatedAt());
     return cacheResponseMetadataDTO;
@@ -274,6 +280,7 @@ public class PipelinesApiUtils {
     recentExecutionInfo.setEnded(executionInfo.getEndTs());
     recentExecutionInfo.setExecutionStatus(getExecutionStatus(executionInfo.getStatus()));
     recentExecutionInfo.setExecutorInfo(getExecutorInfo(executionInfo.getExecutorInfo()));
+    recentExecutionInfo.setParentStageInfo(getParentStageInfo(executionInfo.getParentStageInfo()));
     return recentExecutionInfo;
   }
 
@@ -293,6 +300,24 @@ public class PipelinesApiUtils {
     executorInfo.setEmail(infoDTO.getEmail());
     executorInfo.setTriggerType(getTrigger(infoDTO.getTriggerType()));
     return executorInfo;
+  }
+
+  public static ParentStageInfo getParentStageInfo(PipelineStageInfo pipelineStageInfo) {
+    if (pipelineStageInfo == null) {
+      return null;
+    }
+    ParentStageInfo parentStageInfo = new ParentStageInfo();
+    parentStageInfo.setHasParentPipeline(pipelineStageInfo.getHasParentPipeline());
+    if (!pipelineStageInfo.getHasParentPipeline()) {
+      return parentStageInfo;
+    }
+    parentStageInfo.setExecutionId(pipelineStageInfo.getExecutionId());
+    parentStageInfo.setIdentifier(pipelineStageInfo.getIdentifier());
+    parentStageInfo.setStageNodeId(pipelineStageInfo.getStageNodeId());
+    parentStageInfo.setRunSequence(pipelineStageInfo.getRunSequence());
+    parentStageInfo.setProjectId(pipelineStageInfo.getProjectId());
+    parentStageInfo.setOrgId(pipelineStageInfo.getOrgId());
+    return parentStageInfo;
   }
 
   public static TriggerTypeEnum getTrigger(TriggerType triggerType) {
@@ -355,6 +380,32 @@ public class PipelinesApiUtils {
         .repoName(gitDetails.getRepoName())
         .build();
   }
+  public static GitEntityInfo populateGitImportDetails(GitImportInfo gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .connectorRef(gitDetails.getConnectorRef())
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
+
+  public static GitEntityInfo populateGitMoveDetails(GitMoveDetails gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .commitMsg(gitDetails.getCommitMessage())
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
+        .baseBranch(gitDetails.getBaseBranch())
+        .connectorRef(gitDetails.getConnectorRef())
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
 
   public static GitEntityInfo populateGitUpdateDetails(GitUpdateDetails gitDetails) {
     if (gitDetails == null) {
@@ -412,6 +463,10 @@ public class PipelinesApiUtils {
                 ? null
                 : buildGovernanceMetadataFromProto(event.getResult().getGovernanceMetadata()))
         .startTs(event.getStartTs())
+        .templateValidationResponse(
+            new TemplateValidationResponseBody()
+                .validYaml(event.getResult().getTemplateValidationResponse().isValidYaml())
+                .exceptionMessage(event.getResult().getTemplateValidationResponse().getExceptionMessage()))
         .endTs(event.getEndTs());
   }
 
@@ -455,5 +510,29 @@ public class PipelinesApiUtils {
                    .denyMessages(policy.getDenyMessagesList())
                    .status(GovernanceStatus.fromValue(policy.getStatus().toUpperCase())))
         .collect(Collectors.toList());
+  }
+
+  public static MoveConfigOperationDTO buildMoveConfigOperationDTO(GitMoveDetails gitDetails,
+      io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType moveConfigOperationType) {
+    return MoveConfigOperationDTO.builder()
+        .repoName(gitDetails.getRepoName())
+        .branch(gitDetails.getBranchName())
+        .moveConfigOperationType(getMoveConfigType(moveConfigOperationType))
+        .connectorRef(gitDetails.getConnectorRef())
+        .baseBranch(gitDetails.getBaseBranch())
+        .commitMessage(gitDetails.getCommitMessage())
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
+        .filePath(gitDetails.getFilePath())
+        .build();
+  }
+
+  public static io.harness.pms.pipeline.MoveConfigOperationType getMoveConfigType(
+      io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType moveConfigOperationType) {
+    switch (moveConfigOperationType) {
+      case INLINE_TO_REMOTE:
+        return io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+      default:
+        throw new InvalidRequestException("Invalid move config type provided.");
+    }
   }
 }

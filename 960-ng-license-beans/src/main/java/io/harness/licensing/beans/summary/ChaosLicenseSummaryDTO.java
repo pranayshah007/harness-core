@@ -33,6 +33,6 @@ import lombok.experimental.SuperBuilder;
 
 @Schema(name = "ChaosModuleLicense", description = "This contains details of the Chaos License in Harness")
 public class ChaosLicenseSummaryDTO extends LicensesWithSummaryDTO {
-  Integer totalChaosExperimentRuns;
-  Integer totalChaosInfrastructures;
+  int totalChaosExperimentRuns;
+  int totalChaosInfrastructures;
 }

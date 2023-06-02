@@ -19,7 +19,9 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitPollingConfigToDelegateReqMapper {
-  public GitHubPollingDelegateRequest getGitHubDelegateRequest(ConnectorDetails connectorDetails, String webhookId) {
-    return GitDelegateRequestUtils.getGitHubDelegateRequest(connectorDetails, webhookId, GitPollingSourceType.GITHUB);
+  public GitHubPollingDelegateRequest getGitHubDelegateRequest(
+      ConnectorDetails connectorDetails, String webhookId, String repository) {
+    return GitDelegateRequestUtils.getGitHubDelegateRequest(
+        connectorDetails, webhookId, repository, GitPollingSourceType.GITHUB);
   }
 }

@@ -923,14 +923,15 @@ public class AuthHandler {
                                                .addFieldsIncluded("_id", "appId", "environmentType")
                                                .build();
 
-    List<Environment> list = getAllEntities(pageRequest, () -> environmentService.list(pageRequest, false, null));
+    List<Environment> list =
+        getAllEntities(pageRequest, () -> environmentService.list(pageRequest, false, null, false));
 
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 
   private Map<String, List<Base>> getAppIdWorkflowMap(String accountId) {
-    List<Workflow> list =
-        workflowService.list(accountId, Arrays.asList("_id", "appId", "envId", "templatized", "templateExpressions"));
+    List<Workflow> list = workflowService.list(
+        accountId, Arrays.asList("_id", "appId", "envId", "templatized", "templateExpressions"), Workflow.RBAC_INDEX);
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 
@@ -1055,7 +1056,8 @@ public class AuthHandler {
   public Set<String> getEnvIdsByFilter(String appId, EnvFilter envFilter) {
     PageRequest<Environment> pageRequest =
         aPageRequest().addFilter("appId", Operator.EQ, appId).addFieldsIncluded("_id", "environmentType").build();
-    List<Environment> envList = getAllEntities(pageRequest, () -> environmentService.list(pageRequest, false, null));
+    List<Environment> envList =
+        getAllEntities(pageRequest, () -> environmentService.list(pageRequest, false, null, false));
 
     return getEnvIdsByFilter(envList, envFilter);
   }

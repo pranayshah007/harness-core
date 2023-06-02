@@ -24,7 +24,6 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -61,7 +60,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testOnMessageWithMorphia() {
     String waitInstanceId = generateUuid();
     String correlationId = generateUuid();
@@ -76,7 +75,7 @@ public class NotifyEventListenerTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
-  @RealMongo
+
   @SpringWaiter
   public void testOnMessageWithSpring() {
     String waitInstanceId = generateUuid();

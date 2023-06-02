@@ -20,6 +20,11 @@ import java.util.Map;
 
 public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecutor<ServiceGuardLogAnalysisState> {
   @Override
+  public void handleFinalStatuses(ServiceGuardLogAnalysisState analysisState) {
+    // no - op
+  }
+
+  @Override
   protected String scheduleAnalysis(AnalysisInput analysisInput) {
     return logAnalysisService.scheduleServiceGuardLogAnalysisTask(analysisInput);
   }
@@ -36,6 +41,9 @@ public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecut
   @Override
   public AnalysisStatus getExecutionStatus(ServiceGuardLogAnalysisState serviceGuardLogAnalysisState) {
     if (serviceGuardLogAnalysisState.getStatus() != AnalysisStatus.SUCCESS) {
+      if (serviceGuardLogAnalysisState.getWorkerTaskId() == null) {
+        return AnalysisStatus.CREATED;
+      }
       Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
           logAnalysisService.getTaskStatus(Arrays.asList(serviceGuardLogAnalysisState.getWorkerTaskId()));
       LearningEngineTask.ExecutionStatus taskStatus = taskStatuses.get(serviceGuardLogAnalysisState.getWorkerTaskId());

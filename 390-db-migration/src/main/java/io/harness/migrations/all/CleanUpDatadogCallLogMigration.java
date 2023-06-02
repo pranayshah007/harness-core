@@ -12,9 +12,9 @@ import static io.harness.mongo.MongoUtils.setUnset;
 import io.harness.migrations.Migration;
 import io.harness.time.Timestamp;
 
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallLogKeys;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;

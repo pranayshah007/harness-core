@@ -7,11 +7,14 @@
 
 package io.harness.plancreator.stages;
 
-import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.beans.FeatureName;
+import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -29,6 +32,8 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
+import io.harness.utils.ExecutionModeUtils;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -47,6 +52,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
   @Inject KryoSerializer kryoSerializer;
+  @Inject PmsFeatureFlagService featureFlagService;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -60,10 +66,13 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
-      PlanCreationResponse planForRollbackStage =
-          RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField, kryoSerializer);
-      responseMap.put(stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
-          planForRollbackStage);
+    }
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
+    String accountIdentifier = planCreationContextValue.getAccountIdentifier();
+    if (!ExecutionModeUtils.isRollbackMode(executionMode)
+        && featureFlagService.isEnabled(accountIdentifier, FeatureName.PIPELINE_ROLLBACK)) {
+      PipelineRollbackStageHelper.addPipelineRollbackStageDependency(responseMap, ctx.getCurrentField());
     }
     return responseMap;
   }
@@ -92,26 +101,6 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .setNodeIdentifier(stageYamlField.getNode().getIdentifier())
               .setEdgeLayoutList(
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
-              .build());
-
-      // create node for corresponding rollback Stage
-      stageYamlFieldMap.put(
-          stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX,
-          GraphLayoutNode.newBuilder()
-              .setNodeUUID(
-                  stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
-              .setNodeType(stageYamlField.getNode().getType())
-              .setName(
-                  stageYamlField.getNode().getName() + " " + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_NODE_NAME)
-              .setNodeGroup(StepOutcomeGroup.STAGE.name())
-              .setNodeIdentifier(
-                  stageYamlField.getNode().getUuid() + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
-              .setEdgeLayoutList(i == 0 ? EdgeLayoutList.newBuilder().build()
-                                        : EdgeLayoutList.newBuilder()
-                                              .addNextIds(stagesYamlField.get(i - 1).getNode().getUuid()
-                                                  + NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX)
-                                              .build())
-              .setIsRollbackStageNode(true)
               .build());
     }
     return GraphLayoutResponse.builder()

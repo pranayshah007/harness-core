@@ -38,7 +38,7 @@ import static software.wings.beans.Service.ServiceKeys;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -48,6 +48,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -135,11 +136,12 @@ public class ServiceResourceTest extends CategoryTest {
         .get("ACCOUNT_ID", serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier(),
             serviceRequestDTO.getIdentifier(), false);
 
-    ServiceResponseDTO serviceResponse =
-        serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false).getData();
+    ResponseDTO<ServiceResponseDTO> serviceResponseDTOResponseDTO =
+        serviceResource.get("IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false);
 
-    assertThat(serviceResponse).isNotNull();
-    assertThat(serviceResponse).isEqualTo(serviceResponseDTO);
+    assertThat(serviceResponseDTOResponseDTO.getData()).isNotNull();
+    assertThat(serviceResponseDTOResponseDTO.getData()).isEqualTo(serviceResponseDTO);
+    assertThat(serviceResponseDTOResponseDTO.getEntityTag()).isNull();
   }
 
   @Test
@@ -232,7 +234,7 @@ public class ServiceResourceTest extends CategoryTest {
         .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
     assertThat(
         serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, CUSTOM_REMOTE).getData())
-        .containsExactlyInAnyOrder(Template, Delete, Upgrade, Fetch, List, Rollback, Install, History, Version);
+        .containsExactlyInAnyOrder(Template, Delete, Upgrade, List, Rollback, Install, History, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, GIT).getData())
         .containsExactlyInAnyOrder(Template, Delete, Upgrade, List, Rollback, Install, History, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V2, GITHUB).getData())
@@ -257,8 +259,7 @@ public class ServiceResourceTest extends CategoryTest {
             Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
     assertThat(
         serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, CUSTOM_REMOTE).getData())
-        .containsExactlyInAnyOrder(
-            Pull, Install, Upgrade, Add, Template, Update, Rollback, History, Uninstall, List, Version);
+        .containsExactlyInAnyOrder(Install, Upgrade, Template, Rollback, History, Uninstall, List, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, GIT).getData())
         .containsExactlyInAnyOrder(History, Install, List, Template, Uninstall, Rollback, Upgrade, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.NATIVE_HELM, HelmVersion.V3, GITHUB).getData())
@@ -283,7 +284,7 @@ public class ServiceResourceTest extends CategoryTest {
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, OCI).getData())
         .containsExactlyInAnyOrder(Fetch, Template, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, CUSTOM_REMOTE).getData())
-        .containsExactlyInAnyOrder(Fetch, Template, Version);
+        .containsExactlyInAnyOrder(Template, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, GIT).getData())
         .containsExactlyInAnyOrder(Template, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V2, GITHUB).getData())
@@ -303,7 +304,7 @@ public class ServiceResourceTest extends CategoryTest {
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, OCI).getData())
         .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, CUSTOM_REMOTE).getData())
-        .containsExactlyInAnyOrder(Add, Template, Pull, Update, Version);
+        .containsExactlyInAnyOrder(Template, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, GIT).getData())
         .containsExactlyInAnyOrder(Template, Version);
     assertThat(serviceResource.getHelmCommandFlags(ServiceSpecType.KUBERNETES, HelmVersion.V3, GITHUB).getData())

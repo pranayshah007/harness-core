@@ -20,6 +20,7 @@ import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
@@ -83,6 +84,9 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
       expectedSshConfig.setSshSessionTimeout(timeout);
       performTest(expectedSshConfig);
       return CapabilityResponse.builder().validated(true).delegateCapability(capability).build();
+    } catch (JSchException ex) {
+      log.info("Exception in sshSession Validation, cause {}", ex.getMessage());
+      return CapabilityResponse.builder().validated(false).delegateCapability(capability).build();
     } catch (Exception ex) {
       log.info("Exception in sshSession Validation", ex);
       return CapabilityResponse.builder().validated(false).delegateCapability(capability).build();
@@ -90,7 +94,11 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
   }
 
   @VisibleForTesting
-  void performTest(SshSessionConfig expectedSshConfig) throws JSchException {
-    getSSHSession(expectedSshConfig).disconnect();
+  void performTest(SshSessionConfig expectedSshConfig) throws Exception {
+    if (expectedSshConfig.isUseSshClient()) {
+      SshClientManager.test(expectedSshConfig);
+    } else {
+      getSSHSession(expectedSshConfig).disconnect();
+    }
   }
 }

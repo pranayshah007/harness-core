@@ -15,6 +15,7 @@ import io.harness.timescaledb.tables.BillingData;
 import io.harness.timescaledb.tables.CeRecommendations;
 import io.harness.timescaledb.tables.Environments;
 import io.harness.timescaledb.tables.KubernetesUtilizationData;
+import io.harness.timescaledb.tables.ModuleLicenses;
 import io.harness.timescaledb.tables.NgInstanceStats;
 import io.harness.timescaledb.tables.NodeInfo;
 import io.harness.timescaledb.tables.NodePoolAggregated;
@@ -58,6 +59,11 @@ public class Tables {
    */
   public static final KubernetesUtilizationData KUBERNETES_UTILIZATION_DATA =
       KubernetesUtilizationData.KUBERNETES_UTILIZATION_DATA;
+
+  /**
+   * The table <code>public.module_licenses</code>.
+   */
+  public static final ModuleLicenses MODULE_LICENSES = ModuleLicenses.MODULE_LICENSES;
 
   /**
    * The table <code>public.ng_instance_stats</code>.

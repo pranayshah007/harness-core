@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 45
+version: 52
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -446,6 +446,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_serviceaccount_list
+    name: List Service Accounts
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_serviceaccount_edit
     name: Create or Edit ServiceAccount
     status: ACTIVE
@@ -739,6 +747,30 @@ permissions:
       - project
   - identifier: chi_slo_delete
     name: Delete a SLO
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_view
+    name: View Downtime
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_edit
+    name: Create or Edit a Downtime
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_delete
+    name: Delete a Downtime
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -1105,6 +1137,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: chaos_chaosexperiment_execute
+    name: Execute a Chaos Experiment
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: chaos_chaosgameday_view
     name: View a Chaos GameDay
     status: ACTIVE
@@ -1298,55 +1338,61 @@ permissions:
       - project
   - identifier: ccm_cloudAssetGovernanceRule_edit
     name: Edit a CCM Governance Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRule_view
     name: View a CCM Governance Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRule_delete
     name: Delete a CCM Governance Rule
-    status: EXPERIMENTAL
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRule_execute
+    name: Enforce a CCM Governance  Rule
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_edit
     name: Edit a CCM Governance  Rule Set
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_view
     name: View a CCM Governance Rule Set
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_delete
     name: Delete a CCM Governance Rule Set
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceEnforcement_edit
     name: Edit a CCM Governance Enforcement
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceEnforcement_view
     name: View a CCM Governance Enforcement
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_cloudAssetGovernanceEnforcement_delete
     name: Delete a CCM Governance Enforcement
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1386,3 +1432,73 @@ permissions:
     status: ACTIVE
     allowedScopeLevels:
       - account
+  - identifier: idp_idpsettings_manage
+    name: Manage Policies in settings UI
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: code_repo_view
+    name: View a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: code_repo_edit
+    name: Create or Edit a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: code_repo_delete
+    name: Delete a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: code_repo_push
+    name: Push to a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_create
+    name: Create a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_edit
+    name: Edit a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_delete
+    name: Delete a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_view
+    name: View a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project

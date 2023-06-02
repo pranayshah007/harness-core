@@ -19,8 +19,10 @@ import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployWithoutTrafficRequest;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployWithoutTrafficRequest.GoogleFunctionDeployWithoutTrafficRequestBuilder;
@@ -44,7 +46,10 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -90,7 +95,7 @@ public class GoogleFunctionsDeployWithoutTrafficStep
           googleFunctionsDeployWithoutTrafficStepParameters.getUpdateFieldMask().getValue());
     }
     return googleFunctionsHelper.queueTask(stepParameters, googleFunctionDeployWithoutTrafficRequestBuilder.build(),
-        ambiance, googleFunctionsStepPassThroughData, true);
+        ambiance, googleFunctionsStepPassThroughData, true, TaskType.GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK);
   }
 
   @Override
@@ -118,6 +123,7 @@ public class GoogleFunctionsDeployWithoutTrafficStep
       return googleFunctionsHelper.handleStepExceptionFailure(
           (GoogleFunctionsStepExceptionPassThroughData) passThroughData);
     }
+
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData =
         (GoogleFunctionsStepPassThroughData) passThroughData;
@@ -141,6 +147,15 @@ public class GoogleFunctionsDeployWithoutTrafficStep
     executionSweepingOutputService.consume(ambiance,
         OutcomeExpressionConstants.GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_OUTCOME, googleFunctionDeployOutcome,
         StepOutcomeGroup.STEP.name());
+
+    InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
+    GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
+        (GcpGoogleFunctionInfraConfig) googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance);
+    List<ServerInstanceInfo> serverInstanceInfoList =
+        googleFunctionsHelper.getServerInstanceInfo(googleFunctionDeployWithoutTrafficResponse,
+            gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
+    instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
@@ -152,6 +167,6 @@ public class GoogleFunctionsDeployWithoutTrafficStep
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return googleFunctionsHelper.startChainLink(this, ambiance, stepParameters);
+    return googleFunctionsHelper.startChainLink(ambiance, stepParameters);
   }
 }

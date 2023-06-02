@@ -24,33 +24,39 @@ import io.harness.rule.Owner;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(MaintenanceController.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HealthResourceTest extends CategoryTest {
   @Mock private HealthService healthService;
+  MockedStatic<MaintenanceController> maintenanceControllerMockedStatic;
   @Inject @InjectMocks private HealthResource healthResource;
 
   @Before
   public void setup() {
-    PowerMockito.mockStatic(MaintenanceController.class);
+    maintenanceControllerMockedStatic = Mockito.mockStatic(MaintenanceController.class);
+  }
+
+  @After
+  public void cleanup() {
+    maintenanceControllerMockedStatic.close();
   }
 
   @Test
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testGet_success() throws Exception {
-    when(MaintenanceController.getMaintenanceFlag()).thenReturn(false);
+    maintenanceControllerMockedStatic.when(() -> MaintenanceController.getMaintenanceFlag()).thenReturn(false);
     when(healthService.check()).thenReturn(HealthCheck.Result.healthy());
 
     String healthResponse = healthResource.get().getData();

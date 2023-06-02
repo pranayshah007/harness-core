@@ -10,16 +10,16 @@ package software.wings.delegatetasks.cv;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -31,11 +31,11 @@ import io.harness.rule.Owner;
 import io.harness.time.Timestamp;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.MetricDataStoreService;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.analysis.MetricsDataCollectionInfo;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 
 import com.google.common.collect.Lists;
@@ -130,7 +130,7 @@ public class MetricDataCollectionTaskTest extends WingsBaseTest {
     when(metricsDataCollectionInfo.getStartTime()).thenReturn(now);
     when(metricsDataCollectionInfo.getDataCollectionStartTime()).thenReturn(now);
     metricsDataCollectionTask.collectAndSaveData(metricsDataCollectionInfo);
-    verifyZeroInteractions(metricStoreService);
+    verifyNoInteractions(metricStoreService);
   }
 
   @Test

@@ -10,11 +10,23 @@ package io.harness.models;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
+@FieldNameConstants(innerTypeName = "Keys")
 public class EnvironmentInstanceCountModel {
   private String envIdentifier;
   private int count;
+
+  public static ProjectionOperation getProjection() {
+    return Aggregation.project()
+        .andExpression("_id." + Keys.envIdentifier)
+        .as(Keys.envIdentifier)
+        .andExpression(Keys.count)
+        .as(Keys.count);
+  }
 }

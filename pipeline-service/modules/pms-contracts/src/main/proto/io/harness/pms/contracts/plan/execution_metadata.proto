@@ -11,6 +11,7 @@ option java_multiple_files = true;
 
 import "io/harness/pms/contracts/plan/trigger_info.proto";
 import "io/harness/pms/contracts/plan/principal_info.proto";
+import "io/harness/pms/contracts/execution/executable_response.proto";
 
 // next ID: 18
 message ExecutionMetadata {
@@ -28,6 +29,11 @@ message ExecutionMetadata {
   PipelineStageInfo pipelineStageInfo = 16;
   string harnessVersion = 17;
   bool isDebug = 18;
+  ExecutionMode executionMode = 19;
+  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21;
+  string originalPlanExecutionIdForRollbackMode = 22;
+  // storing details for all the PMS settings used as per need in execution flow
+  map<string, string> settingToValueMap = 23;
 }
 
 message RetryExecutionInfo {
@@ -46,8 +52,21 @@ message PipelineStageInfo {
   int32 runSequence = 7;
 }
 
+message PostExecutionRollbackInfo {
+  string postExecutionRollbackStageId = 1;  // if stage is under strategy then this will be the strategy setup id
+  io.harness.pms.contracts.execution.StrategyMetadata rollbackStageStrategyMetadata = 2;
+  string originalStageExecutionId = 3;
+}
+
 enum PipelineStoreType {
   UNDEFINED = 0;  // this is for backwards compatibility
   INLINE = 1;
   REMOTE = 2;
+}
+
+enum ExecutionMode {
+  UNDEFINED_MODE = 0;  // will be treated as NORMAL
+  NORMAL = 1;
+  POST_EXECUTION_ROLLBACK = 2;
+  PIPELINE_ROLLBACK = 3;
 }

@@ -15,7 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
+@JsonTypeName(ContainerStepSpecTypeConstants.CONTAINER_STEP)
 @TypeAlias("ContainerStepNode")
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepNode")
@@ -47,7 +47,7 @@ public class ContainerStepNode extends PmsAbstractStepNode {
   ContainerStepInfo containerStepInfo;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.CONTAINER_STEP;
+    return ContainerStepSpecTypeConstants.CONTAINER_STEP;
   }
 
   @Override
@@ -56,7 +56,7 @@ public class ContainerStepNode extends PmsAbstractStepNode {
   }
 
   enum StepType {
-    Container(StepSpecTypeConstants.CONTAINER_STEP);
+    Container(ContainerStepSpecTypeConstants.CONTAINER_STEP);
     @Getter String name;
     StepType(String name) {
       this.name = name;

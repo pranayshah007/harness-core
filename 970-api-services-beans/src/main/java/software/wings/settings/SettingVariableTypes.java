@@ -249,6 +249,7 @@ public enum SettingVariableTypes {
   SERVICENOW("ServiceNow"),
 
   SECRET_TEXT,
+  SECRET_FILE,
 
   YAML_GIT_SYNC,
 

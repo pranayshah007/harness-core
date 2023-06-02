@@ -9,7 +9,6 @@ package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
-import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,10 +23,8 @@ import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
-import io.harness.cvng.servicelevelobjective.beans.SLOTargetFilterDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -35,7 +32,6 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObj
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.WeeklyCalendarSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -44,6 +40,7 @@ import io.harness.rule.ResourceTestRule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
@@ -59,7 +56,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   @Inject private Injector injector;
   @Inject private HPersistence hPersistence;
   @Inject private MonitoredServiceService monitoredServiceService;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MetricPackService metricPackService;
 
@@ -79,20 +75,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testGetSLODashboardWidgets_emptyResponse() {
-    Response response = RESOURCES.client()
-                            .target("http://localhost:9998/slo-dashboard/widgets")
-                            .queryParam("accountId", builderFactory.getContext().getAccountId())
-                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
-                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
-                            .request(MediaType.APPLICATION_JSON_TYPE)
-                            .get();
-    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
@@ -311,56 +293,52 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetRiskCount() {
-    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                          .identifier("id1")
-                                          .userJourneyRef("uj1")
-                                          .type(ServiceLevelIndicatorType.AVAILABILITY)
-                                          .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                            .identifier("id1")
+                                            .userJourneyRefs(Collections.singletonList("uj1"))
+                                            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO);
     SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                                                 .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                                                 .errorBudgetRemainingPercentage(10)
                                                 .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
                                                 .build();
     hPersistence.save(sloHealthIndicator);
-    sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder()
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id5")
-                 .userJourneyRef("uj2")
-                 .type(ServiceLevelIndicatorType.AVAILABILITY)
+                 .userJourneyRefs(Collections.singletonList("uj2"))
                  .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO);
     sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                              .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                              .errorBudgetRemainingPercentage(10)
                              .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
                              .build();
     hPersistence.save(sloHealthIndicator);
-    sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder()
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id2")
-                 .userJourneyRef("uj1")
-                 .type(ServiceLevelIndicatorType.AVAILABILITY)
-                 .target(SLOTargetDTO.builder()
-                             .type(SLOTargetType.CALENDER)
-                             .sloTargetPercentage(80.0)
-                             .spec(CalenderSLOTargetSpec.builder()
-                                       .type(SLOCalenderType.WEEKLY)
-                                       .spec(WeeklyCalendarSpec.builder().dayOfWeek(DayOfWeek.MONDAY).build())
-                                       .build())
-                             .build())
+                 .userJourneyRefs(Collections.singletonList("uj1"))
+                 .sloTarget(SLOTargetDTO.builder()
+                                .type(SLOTargetType.CALENDER)
+                                .sloTargetPercentage(80.0)
+                                .spec(CalenderSLOTargetSpec.builder()
+                                          .type(SLOCalenderType.WEEKLY)
+                                          .spec(WeeklyCalendarSpec.builder().dayOfWeek(DayOfWeek.MONDAY).build())
+                                          .build())
+                                .build())
                  .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO);
     sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                              .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                              .errorBudgetRemainingPercentage(-10)
                              .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
                              .build();
     hPersistence.save(sloHealthIndicator);
-    sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder()
+    sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id3")
-                 .type(ServiceLevelIndicatorType.AVAILABILITY)
-                 .userJourneyRef("uj2")
+                 .userJourneyRefs(Collections.singletonList("uj3"))
                  .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO);
 
     Response response = RESOURCES.client()
                             .target("http://localhost:9998/slo-dashboard/risk-count")
@@ -368,7 +346,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                             .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
                             .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
                             .queryParam("userJourneyIdentifiers", "uj1")
-                            .queryParam("sliTypes", "Availability")
                             .queryParam("targetTypes", "Rolling")
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .get();
@@ -385,13 +362,12 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void test_sloWidgetIdentifier() {
-    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                          .identifier("id1")
-                                          .userJourneyRef("uj1")
-                                          .type(ServiceLevelIndicatorType.AVAILABILITY)
-                                          .build();
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
+                                            .identifier("id1")
+                                            .userJourneyRefs(Collections.singletonList("uj1"))
+                                            .build();
 
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO);
     SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
                                                 .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
                                                 .errorBudgetRemainingPercentage(10)

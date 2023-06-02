@@ -7,7 +7,6 @@
 
 package io.harness.cdng.envGroup.services;
 
-import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
@@ -33,6 +32,7 @@ import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKey
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
 import io.harness.cdng.events.EnvironmentGroupDeleteEvent;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
@@ -87,7 +87,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   private final EnvironmentGroupRepository environmentRepository;
   private final Producer setupUsagesEventProducer;
-  private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   private final EntitySetupUsageService entitySetupUsageService;
   private final EnvironmentGroupServiceHelper environmentGroupServiceHelper;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
@@ -99,12 +98,11 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   @Inject
   public EnvironmentGroupServiceImpl(EnvironmentGroupRepository environmentRepository,
       @Named(EventsFrameworkConstants.SETUP_USAGE) Producer setupUsagesEventProducer,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, EntitySetupUsageService entitySetupUsageService,
-      EnvironmentGroupServiceHelper environmentGroupServiceHelper, TransactionTemplate transactionTemplate,
-      OutboxService outboxService, AccountClient accountClient, NGSettingsClient settingsClient) {
+      EntitySetupUsageService entitySetupUsageService, EnvironmentGroupServiceHelper environmentGroupServiceHelper,
+      TransactionTemplate transactionTemplate, OutboxService outboxService, AccountClient accountClient,
+      NGSettingsClient settingsClient) {
     this.environmentRepository = environmentRepository;
     this.setupUsagesEventProducer = setupUsagesEventProducer;
-    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
     this.entitySetupUsageService = entitySetupUsageService;
     this.environmentGroupServiceHelper = environmentGroupServiceHelper;
     this.transactionTemplate = transactionTemplate;
@@ -153,9 +151,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   public EnvironmentGroupEntity delete(String accountId, String orgIdentifier, String projectIdentifier,
       String envGroupId, Long version, boolean forceDelete) {
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
-      throw new InvalidRequestException(
-          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
-          USER);
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
     Optional<EnvironmentGroupEntity> envGroupEntity =
         get(accountId, orgIdentifier, projectIdentifier, envGroupId, false);
@@ -372,7 +368,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   public void setupUsagesForEnvironmentList(EnvironmentGroupEntity envGroupEntity) {
     EntityDetailProtoDTO envGroupDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(envGroupEntity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(envGroupEntity.getAccountId(),
                 envGroupEntity.getOrgIdentifier(), envGroupEntity.getProjectIdentifier(),
                 envGroupEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.ENVIRONMENT_GROUP)
@@ -455,10 +451,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
@@ -466,11 +459,6 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
   }
 
   protected boolean isNgSettingsFFEnabled(String accountIdentifier) {

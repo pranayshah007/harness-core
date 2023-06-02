@@ -16,7 +16,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -328,10 +328,10 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).build();
     RoleAssignmentFilter roleAssignmentFilter =
         RoleAssignmentFilter.builder().scopeFilter(randomAlphabetic(10)).build();
-    when(roleAssignmentDao.list(pageRequest, roleAssignmentFilter))
+    when(roleAssignmentDao.list(pageRequest, roleAssignmentFilter, true))
         .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
     PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, roleAssignmentFilter);
     assertTrue(pageResponse.isEmpty());
-    verify(roleAssignmentDao, times(1)).list(pageRequest, roleAssignmentFilter);
+    verify(roleAssignmentDao, times(1)).list(pageRequest, roleAssignmentFilter, true);
   }
 }

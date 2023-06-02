@@ -29,4 +29,5 @@ public class TerraformExecutionDataParameters {
   TerraformBackendConfig backendConfig;
   ParameterField<List<String>> targets;
   Map<String, Object> environmentVariables;
+  ParameterField<Boolean> isTerraformCloudCli;
 }

@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateDisconnectDetectorIterator
-    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
+    extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
   private static final long DELEGATE_DISCONNECT_TIMEOUT = 5L;
   private static final long DELEGATE_EXPIRY_CHECK_MINUTES = 1L;
 
@@ -73,6 +73,25 @@ public class DelegateDisconnectDetectorIterator
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<Delegate, MorphiaFilterExpander<Delegate>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions, Delegate.class,
+                MongoPersistenceIterator.<Delegate, MorphiaFilterExpander<Delegate>>builder()
+                    .clazz(Delegate.class)
+                    .fieldName(DelegateKeys.delegateDisconnectDetectorNextIteration)
+                    .filterExpander(q
+                        -> q.field(DelegateKeys.lastHeartBeat)
+                               .lessThan(
+                                   System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(DELEGATE_DISCONNECT_TIMEOUT)))
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(Duration.ofMinutes(DELEGATE_EXPIRY_CHECK_MINUTES + 2))
+                    .handler(this)
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

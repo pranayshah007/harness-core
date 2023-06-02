@@ -38,6 +38,11 @@ enum StringOperator {
   IN
 }
 
+enum BooleanOperator {
+  EQUALS
+  NOT_EQUALS
+}
+
 enum IdOperator {
   EQUALS
   IN

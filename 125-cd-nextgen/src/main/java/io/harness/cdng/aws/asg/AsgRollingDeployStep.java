@@ -16,6 +16,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -23,6 +24,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -33,7 +35,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -125,11 +126,12 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
-            .skipMatching(Boolean.TRUE.equals(asgSpecParameters.getSkipMatching().getValue()))
+            .skipMatching(ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getSkipMatching()))
             .useAlreadyRunningInstances(
-                Boolean.TRUE.equals(asgSpecParameters.getUseAlreadyRunningInstances().getValue()))
-            .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
-            .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
+                ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()))
+            .instanceWarmup(ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getInstanceWarmup()))
+            .minimumHealthyPercentage(
+                ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getMinimumHealthyPercentage()))
             .amiImageId(amiImageId)
             .build();
 
@@ -179,23 +181,24 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       return AsgStepCommonHelper.getFailureResponseBuilder(asgRollingDeployResponse, stepResponseBuilder).build();
     }
 
-    AsgRollingDeployOutcome asgRollingDeployOutcome =
-        AsgRollingDeployOutcome.builder()
-            .asgStoreManifestsContent(
-                asgRollingDeployResponse.getAsgRollingDeployResult().getAsgStoreManifestsContent())
-            .autoScalingGroupContainer(
-                asgRollingDeployResponse.getAsgRollingDeployResult().getAutoScalingGroupContainer())
-            .build();
+    AsgRollingDeployResult asgRollingDeployResult = asgRollingDeployResponse.getAsgRollingDeployResult();
 
-    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_ROLLING_DEPLOY_OUTCOME,
-        asgRollingDeployOutcome, StepOutcomeGroup.STEP.name());
+    AsgRollingDeployOutcome asgRollingDeployOutcome =
+        AsgRollingDeployOutcome.builder().asg(asgRollingDeployResult.getAutoScalingGroupContainer()).build();
 
     List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(asgRollingDeployResponse,
         infrastructureOutcome.getInfrastructureKey(),
         asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(stepOutcome)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(asgRollingDeployOutcome)
+                         .build())
+        .build();
   }
 
   @Override

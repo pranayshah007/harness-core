@@ -15,11 +15,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
+import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO.PROJECT;
 import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.UnitStatus.RUNNING;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
@@ -38,9 +40,12 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -67,6 +72,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -75,6 +81,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -143,6 +150,7 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -190,6 +198,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class CDStepHelper {
@@ -210,6 +219,7 @@ public class CDStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
@@ -351,6 +361,7 @@ public class CDStepHelper {
     bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
+  @NotNull
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
     notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
@@ -359,6 +370,7 @@ public class CDStepHelper {
     return purgedRepoUrl + "/" + purgedRepoName;
   }
 
+  @NotNull
   public String getGitRepoUrlForAzureProject(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
     notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
@@ -367,24 +379,24 @@ public class CDStepHelper {
     return purgedRepoUrl + GIT + purgedRepoName;
   }
 
+  @NotNull
   public String convertGitAccountProjectUrlToRepoUrl(
-      GitConfigDTO gitConfigDTO, GitStoreConfig gitStoreConfig, String repoName) {
-    if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
-      return getGitRepoUrl(gitConfigDTO, repoName);
-    } else if (gitStoreConfig instanceof AzureRepoStore
-        && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT) {
-      return getGitRepoUrlForAzureProject(gitConfigDTO, repoName);
-    } else {
-      return "";
+      GitStoreConfig gitstoreConfig, ScmConnector scmConnector, GitAuthType gitAuthType, String repoName) {
+    if (gitstoreConfig instanceof AzureRepoStore && gitAuthType == GitAuthType.HTTP) {
+      return getGitRepoUrlForAzureProject(scmConnector, repoName);
     }
+    return getGitRepoUrl(scmConnector, repoName);
   }
 
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
-      String repoUrl = convertGitAccountProjectUrlToRepoUrl(gitConfigDTO, gitstoreConfig, repoName);
-      if (isNotEmpty(repoUrl)) {
+      if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT
+          || (gitstoreConfig instanceof AzureRepoStore
+              && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT)) {
+        String repoUrl =
+            convertGitAccountProjectUrlToRepoUrl(gitstoreConfig, gitConfigDTO, gitConfigDTO.getGitAuthType(), repoName);
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
       }
@@ -411,8 +423,9 @@ public class CDStepHelper {
       }
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
-      if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
-        String repoUrl = getGitRepoUrlForAzureProject(azureRepoConnectorDTO, repoName);
+      if (azureRepoConnectorDTO.getConnectionType() == PROJECT) {
+        String repoUrl = convertGitAccountProjectUrlToRepoUrl(
+            gitstoreConfig, azureRepoConnectorDTO, azureRepoConnectorDTO.getAuthentication().getAuthType(), repoName);
         azureRepoConnectorDTO.setUrl(repoUrl);
         azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }
@@ -548,6 +561,10 @@ public class CDStepHelper {
         K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome = (K8sAzureInfrastructureOutcome) infrastructure;
         releaseName = k8sAzureInfrastructureOutcome.getReleaseName();
         break;
+      case KUBERNETES_AWS:
+        K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome = (K8sAwsInfrastructureOutcome) infrastructure;
+        releaseName = k8sAwsInfrastructureOutcome.getReleaseName();
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));
     }
@@ -557,6 +574,18 @@ public class CDStepHelper {
 
     validateReleaseName(releaseName);
     return releaseName;
+  }
+
+  public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
+    String content = getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize);
+    return "${ngBase64Manager.encode(\"" + content + "\")}";
+  }
+
+  public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
+    return cdExpressionResolver.renderExpression(ambiance,
+        fileStoreService.getFileContentAsString(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), scopedFilePath,
+            allowedBytesFileSize));
   }
 
   private static void validateReleaseName(String name) {
@@ -700,8 +729,8 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
 
-  public boolean useDeclarativeRollback(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK_NG);
+  public boolean isEnabledSupportHPAAndPDB(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_HPA_AND_PDB_NG);
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
@@ -799,6 +828,17 @@ public class CDStepHelper {
     return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
   }
 
+  public Optional<ServiceHooksOutcome> getServiceHooksOutcome(Ambiance ambiance) {
+    OptionalOutcome serviceHooksOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+
+    if (!serviceHooksOutcome.isFound()) {
+      return Optional.empty();
+    }
+
+    return Optional.of((ServiceHooksOutcome) serviceHooksOutcome.getOutcome());
+  }
+
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -858,6 +898,25 @@ public class CDStepHelper {
           "Cannot find service. Make sure this is running in a CD stage with service configured");
     }
     return ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml();
+  }
+
+  public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
+    boolean retVal = true;
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      if (manifestOutcome.getStore() != null) {
+        retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+      }
+    }
+    return retVal;
+  }
+
+  public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
+    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
+      if (manifest.getStore() != null && ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public List<String> fetchFilesContentFromLocalStore(
@@ -950,9 +1009,14 @@ public class CDStepHelper {
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 
-  @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
       TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
+    return mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, taskSelectors, "", false);
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
+      Set<String> taskSelectors, String baseLogKey, boolean shouldSkipOpenStream) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     return DelegateTaskRequest.builder()
         .taskParameters((TaskParameters) taskData.getParameters()[0])
@@ -969,6 +1033,33 @@ public class CDStepHelper {
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
         .stageId(submitTaskRequest.getStageId())
+        .baseLogKey(baseLogKey)
+        .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
+  }
+
+  public List<TaskSelector> getDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
+    Set<String> delegateSelectors;
+    switch (connectorInfoDTO.getConnectorType()) {
+      case GITHUB:
+        delegateSelectors = ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case GIT:
+        delegateSelectors = ((GitConfigDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case BITBUCKET:
+        delegateSelectors = ((BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case GITLAB:
+        delegateSelectors = ((GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      default:
+        throw new UnsupportedOperationException("Unknown Connector Config for delegate selectors");
+    }
+
+    return TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)
+                                               .stream()
+                                               .map(TaskSelectorYaml::new)
+                                               .collect(Collectors.toList()));
   }
 }

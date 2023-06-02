@@ -59,6 +59,8 @@ public class TerraformRollbackStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.name",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.spec.provisionerIdentifier",
-            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.description");
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.description",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.spec.skipRefreshCommand",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Rollback.when");
   }
 }

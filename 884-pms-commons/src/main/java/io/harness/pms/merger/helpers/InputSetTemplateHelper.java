@@ -14,11 +14,14 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -28,25 +31,53 @@ public class InputSetTemplateHelper {
     return RuntimeInputFormHelper.createRuntimeInputForm(pipelineYaml, true);
   }
 
+  // only to be used for get runtime input form API, everywhere else the above method is to be used
+  public String createTemplateWithDefaultValuesFromPipeline(String pipelineYaml) {
+    return RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineYaml);
+  }
+
   public String createTemplateFromPipelineForGivenStages(String pipelineYaml, List<String> stageIdentifiers) {
     String template = RuntimeInputFormHelper.createRuntimeInputForm(pipelineYaml, true);
     if (EmptyPredicate.isEmpty(template)) {
       return null;
     }
-    return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers);
+    return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, false);
+  }
+
+  public String createTemplateWithDefaultValuesFromPipelineForGivenStages(
+      String pipelineYaml, List<String> stageIdentifiers) {
+    String template = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineYaml);
+    if (EmptyPredicate.isEmpty(template)) {
+      return null;
+    }
+    return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, true);
+  }
+
+  public String createTemplateWithDefaultValuesAndModifiedPropertiesFromPipelineForGivenStages(
+      String mergedPipelineYaml, String pipelineYaml, List<String> stageIdentifiers) {
+    String template = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineYaml);
+    if (EmptyPredicate.isEmpty(template)) {
+      return null;
+    }
+    String resolvedTemplateYaml = removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, true);
+    return removePropertiesIfNotRequired(mergedPipelineYaml, resolvedTemplateYaml, pipelineYaml, stageIdentifiers);
   }
 
   public String removeRuntimeInputFromYaml(String pipelineYaml, String runtimeInputYaml) {
     return RuntimeInputFormHelper.removeRuntimeInputsFromYaml(pipelineYaml, runtimeInputYaml, false);
   }
 
-  public String removeNonRequiredStages(String template, String pipelineYaml, List<String> stageIdentifiers) {
+  public String removeNonRequiredStages(
+      String template, String pipelineYaml, List<String> stageIdentifiers, boolean keepDefaultValues) {
     YamlConfig pipelineYamlConfig = new YamlConfig(pipelineYaml);
     YamlConfig templateConfig = new YamlConfig(template);
     Map<FQN, Object> templateFQNMap = templateConfig.getFqnToValueMap();
     Set<FQN> nonRuntimeInputFQNs = new HashSet<>();
     templateFQNMap.keySet().forEach(key -> {
       String value = templateFQNMap.get(key).toString().replace("\"", "");
+      if (keepDefaultValues && key.isDefault()) {
+        return;
+      }
       if (!NGExpressionUtils.matchesInputSetPattern(value)) {
         nonRuntimeInputFQNs.add(key);
       }
@@ -56,5 +87,33 @@ public class InputSetTemplateHelper {
       FQNHelper.removeNonRequiredStages(templateFQNMap, stageIdentifiers);
     }
     return new YamlConfig(templateFQNMap, pipelineYamlConfig.getYamlMap()).getYaml();
+  }
+
+  public String removePropertiesIfNotRequired(
+      String mergedPipelineYaml, String template, String pipelineYaml, List<String> stageIdentifiers) {
+    YamlConfig mergedPipelineYamlConfig = new YamlConfig(mergedPipelineYaml);
+    Map<FQN, Object> mergedPipelineYamlFQNMap = mergedPipelineYamlConfig.getFqnToValueMap();
+    Set<FQN> filteredSet = mergedPipelineYamlFQNMap.keySet()
+                               .stream()
+                               .filter(key
+                                   -> key.getFqnList().size() >= 5
+                                       && key.getFqnList()
+                                              .get(key.getFqnList().size() - 1)
+                                              .getKey()
+                                              .equals(YAMLFieldNameConstants.CLONE_CODEBASE)
+                                       && mergedPipelineYamlFQNMap.get(key) == BooleanNode.TRUE)
+                               .collect(Collectors.toSet());
+
+    List<String> stageIdentifiersWithCloneEnabled =
+        filteredSet.stream().map(FQN::getStageIdentifier).collect(Collectors.toList());
+
+    if (EmptyPredicate.isNotEmpty(stageIdentifiersWithCloneEnabled)) {
+      YamlConfig pipelineYamlConfig = new YamlConfig(pipelineYaml);
+      YamlConfig templateConfig = new YamlConfig(template);
+      Map<FQN, Object> templateFQNMap = templateConfig.getFqnToValueMap();
+      FQNHelper.removeProperties(templateFQNMap, stageIdentifiers, stageIdentifiersWithCloneEnabled);
+      return new YamlConfig(templateFQNMap, pipelineYamlConfig.getYamlMap()).getYaml();
+    }
+    return template;
   }
 }

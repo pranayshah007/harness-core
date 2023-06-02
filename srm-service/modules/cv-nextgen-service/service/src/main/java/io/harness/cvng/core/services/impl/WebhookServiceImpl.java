@@ -123,7 +123,7 @@ public class WebhookServiceImpl implements WebhookService {
   @SRMServiceAuthIfHasApiKey
   public void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
-    customChangeEventPublisherService.registerCustomChangeEvent(
+    customChangeEventPublisherService.publishCustomChangeEvent(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload);
   }
 

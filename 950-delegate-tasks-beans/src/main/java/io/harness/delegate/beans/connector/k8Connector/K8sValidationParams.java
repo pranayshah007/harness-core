@@ -24,10 +24,12 @@ public class K8sValidationParams implements ConnectorValidationParams, Execution
   KubernetesClusterConfigDTO kubernetesClusterConfigDTO;
   List<EncryptedDataDetail> encryptedDataDetails;
   String connectorName;
+  boolean useSocketCapability;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(kubernetesClusterConfigDTO, maskingEvaluator);
+    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
+        kubernetesClusterConfigDTO, maskingEvaluator, useSocketCapability);
   }
 
   @Override

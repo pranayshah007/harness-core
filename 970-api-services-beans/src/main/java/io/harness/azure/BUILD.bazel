@@ -10,7 +10,9 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = [],
+    deps = [
+        "//:lombok",
+    ],
 )
 
 run_analysis_per_module()

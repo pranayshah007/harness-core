@@ -15,13 +15,13 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
-import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
+import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -76,6 +76,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.rbac.CDNGRbacUtility;
 import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -94,6 +95,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -169,8 +171,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
-    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
-        yamlField.getNode().getParentNode().getCurrJsonNode());
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(yamlField);
   }
 
   @SneakyThrows
@@ -178,7 +179,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
     if (stageNode.getStrategy() != null && MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
-      throw new InvalidRequestException("Both strategy and multi-deployment is not supported. Please use any one");
+      throw new InvalidRequestException(
+          "Looping Strategy and Multi Service/Environment configurations are not supported together in a single stage. Please use any one of these");
     }
     stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
     stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
@@ -201,7 +203,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .stepParameters(stageParameters.build())
             .stepType(getStepType(stageNode))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(
+                stageNode.getWhen(), ctx.getGlobalContext().get("metadata").getMetadata().getExecutionMode()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -240,13 +243,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         throw new InvalidRequestException("Execution section cannot be absent in deploy stage");
       }
 
+      final boolean isProjectScopedResourceConstraintQueue = featureFlagHelperService.isEnabled(
+          ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE);
       if (v2Flow(stageNode)) {
         if (isGitopsEnabled(stageNode.getDeploymentStageConfig())) {
           // GitOps flow doesn't fork on environments, so handling it in this function.
           return buildPlanCreationResponse(ctx, planCreationResponseMap, stageNode, specField, executionField);
         } else {
-          List<AdviserObtainment> adviserObtainments =
-              addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
+          List<AdviserObtainment> adviserObtainments = addResourceConstraintDependencyWithWhenCondition(
+              planCreationResponseMap, specField, ctx, isProjectScopedResourceConstraintQueue);
           String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
           Optional<String> provisionerIdOptional =
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
@@ -257,7 +262,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       } else {
         final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField);
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
-        addEnvAndInfraDependency(planCreationResponseMap, specField, pipelineInfrastructure);
+        addEnvAndInfraDependency(
+            planCreationResponseMap, specField, pipelineInfrastructure, ctx, isProjectScopedResourceConstraintQueue);
         addServiceDependency(planCreationResponseMap, specField, stageNode, serviceField);
       }
 
@@ -304,7 +310,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;
       String planNodeId = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(config);
-      if (siblingField == null) {
+      String pipelineRollbackStageId = StrategyUtils.getPipelineRollbackStageId(context.getCurrentField());
+      if (siblingField == null || Objects.equals(siblingField.getUuid(), pipelineRollbackStageId)) {
         edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
       } else {
         edgeLayoutList = EdgeLayoutList.newBuilder()
@@ -340,9 +347,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private List<AdviserObtainment> addResourceConstraintDependencyWithWhenCondition(
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField) {
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
     return InfrastructurePmsPlanCreator.addResourceConstraintDependency(
-        planCreationResponseMap, specField, kryoSerializer);
+        planCreationResponseMap, specField, kryoSerializer, context, isProjectScopedResourceConstraintQueue);
   }
 
   private boolean v2Flow(DeploymentStageNode stageNode) {
@@ -352,14 +360,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
     boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
         && deploymentStageConfig.getService().getUseFromStage() != null
-        && deploymentStageConfig.getService().getUseFromStage().getValue() != null
-        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getValue().getStage());
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
     boolean isServices = deploymentStageConfig.getServices() != null;
     return isServices || isServiceV2 || serviceV2UseFromStage;
   }
 
   private void addEnvAndInfraDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      YamlField specField, PipelineInfrastructure pipelineInfrastructure) throws IOException {
+      YamlField specField, PipelineInfrastructure pipelineInfrastructure, PlanCreationContext ctx,
+      boolean isProjectScopedResourceConstraintQueue) throws IOException {
     final YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     if (infraField != null) {
       // Adding infrastructure node
@@ -383,8 +391,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           PlanCreationResponse.builder().node(infraDefPlanNode.getUuid(), infraDefPlanNode).build());
 
       YamlNode infraNode = infraField.getNode();
-      planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV1(
-          infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid()));
+      planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV1(infraNode,
+          infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid(), ctx,
+          isProjectScopedResourceConstraintQueue));
     }
   }
 
@@ -725,17 +734,16 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
     List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
     try {
-      if (!EmptyPredicate.isEmpty(ctx.getAccountIdentifier())
-          && featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-        String accountId = ctx.getAccountIdentifier();
-        String orgId = ctx.getOrgIdentifier();
-        String projectId = ctx.getProjectIdentifier();
-        if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-                featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
-          return;
-        }
-        projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
+      String accountId = ctx.getAccountIdentifier();
+      String orgId = ctx.getOrgIdentifier();
+      String projectId = ctx.getProjectIdentifier();
+      String pipelineId = ctx.getPipelineIdentifier();
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, orgId, projectId,
+              accessControlClient, CDNGRbacUtility.constructPrincipalFromPlanCreationContextValue(ctx.getMetadata()))) {
+        return;
       }
+
+      projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, pipelineId);
     } catch (Exception e) {
       log.error(
           "NG Freeze: Failure occurred when evaluating execution should fail due to freeze at the time of plan creation");

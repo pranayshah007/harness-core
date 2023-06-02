@@ -16,6 +16,7 @@ public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  String GITOPS_SYNC = "GitOpsSync";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
@@ -29,6 +30,7 @@ public interface StepSpecTypeConstants {
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String K8S_CANARY_DEPLOY = "K8sCanaryDeploy";
   String K8S_DELETE = "K8sDelete";
+  String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
 
   String TERRAFORM_APPLY = "TerraformApply";
   String TERRAFORM_PLAN = "TerraformPlan";
@@ -61,6 +63,8 @@ public interface StepSpecTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String DEPLOYMENT_STAGE = "Deployment";
   String JENKINS_BUILD = "JenkinsBuild";
+  String JENKINS_BUILD_V2 = "JenkinsBuildV2";
+  String BAMBOO_BUILD = "BambooBuild";
 
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
   String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
@@ -75,6 +79,7 @@ public interface StepSpecTypeConstants {
   String TANZU_COMMAND = "TanzuCommand";
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
+  String TAS_ROUTE_MAPPING = "RouteMapping";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
@@ -89,6 +94,11 @@ public interface StepSpecTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
+
+  String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+  String AWS_LAMBDA = "AwsLambda";
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
@@ -111,4 +121,13 @@ public interface StepSpecTypeConstants {
   String ASG_BLUE_GREEN_SWAP_SERVICE = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_BUILD = "AwsSamBuild";
+  String AWS_SAM_ROLLBACK = "AwsSamRollback";
+
+  String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

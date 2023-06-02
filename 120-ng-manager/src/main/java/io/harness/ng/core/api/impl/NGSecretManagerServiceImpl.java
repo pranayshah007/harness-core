@@ -170,6 +170,11 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
     return getGlobalSecretManagerFromCGWithRetry(accountIdentifier);
   }
 
+  @Override
+  public SecretManagerConfigDTO getGlobalSecretManagerFromCG(String accountIdentifier) {
+    return getGlobalSecretManagerFromCGWithRetry(accountIdentifier);
+  }
+
   private SecretManagerConfigDTO getGlobalSecretManagerFromCGWithRetry(String accountIdentifier) {
     log.info("[GetGlobalSecretManagerFromCGWithRetry]: Getting global secret manager from CG for account:{}",
         accountIdentifier);

@@ -35,6 +35,9 @@ import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.Scope;
@@ -42,6 +45,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.git.checks.GitStatusCheckHelper;
 import io.harness.git.checks.GitStatusCheckParams;
+import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -215,6 +219,34 @@ public class GitBuildStatusUtility {
         .build();
   }
 
+  private GitRepositoryDTO getRepositoryFromApiUrl(ConnectorDetails gitConnector, String url) {
+    if (gitConnector.getConnectorConfig() instanceof GitlabConnectorDTO) {
+      GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
+
+      if (!GitAuthType.HTTP.equals(gitlabConnectorDTO.getAuthentication().getAuthType())
+          || gitlabConnectorDTO.getApiAccess() == null
+          || !(gitlabConnectorDTO.getApiAccess().getSpec() instanceof GitlabTokenSpecDTO)) {
+        return null;
+      }
+      GitlabTokenSpecDTO gitlabTokenSpecDTO = (GitlabTokenSpecDTO) gitlabConnectorDTO.getApiAccess().getSpec();
+      String apiUrl = gitlabTokenSpecDTO.getApiUrl();
+      if (StringUtils.isBlank(apiUrl)) {
+        return null;
+      }
+      url = StringUtils.removeEnd(url, PATH_SEPARATOR);
+      apiUrl = StringUtils.removeEnd(apiUrl, PATH_SEPARATOR) + PATH_SEPARATOR;
+      String ownerAndRepo = StringUtils.removeStart(url, apiUrl);
+      ownerAndRepo = StringUtils.removeEnd(ownerAndRepo, ".git");
+      if (ownerAndRepo.contains("/")) {
+        String[] parts = ownerAndRepo.split("/");
+        String repo = parts[parts.length - 1];
+        String owner = StringUtils.removeEnd(ownerAndRepo, "/" + repo);
+        return GitRepositoryDTO.builder().name(repo).org(owner).build();
+      }
+    }
+    return null;
+  }
+
   public CIBuildStatusPushParameters getCIBuildStatusPushParams(
       Ambiance ambiance, BuildStatusUpdateParameter buildStatusUpdateParameter, Status status, String commitSha) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -229,12 +261,15 @@ public class GitBuildStatusUtility {
     String finalRepo = GitClientHelper.getGitRepo(url);
     String ownerName = GitClientHelper.getGitOwner(url, false);
 
+    GitRepositoryDTO gitRepositoryDTO = getRepositoryFromApiUrl(gitConnector, url);
+    if (gitRepositoryDTO != null) {
+      finalRepo = gitRepositoryDTO.getName();
+      ownerName = gitRepositoryDTO.getOrg();
+    }
+
     GitSCMType gitSCMType = retrieveSCMType(gitConnector);
 
-    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(ambiance);
-    String stageExecutionId = ambiance.getStageExecutionId();
-    String detailsUrl = getBuildDetailsUrl(ngAccess, ambiance.getMetadata().getPipelineIdentifier(),
-        ambiance.getMetadata().getExecutionUuid(), stageSetupId, stageExecutionId);
+    String detailsUrl = getBuildDetailsUrl(ambiance);
 
     return CIBuildStatusPushParameters.builder()
         .detailsUrl(detailsUrl)
@@ -409,12 +444,16 @@ public class GitBuildStatusUtility {
   }
 
   private ConnectorDetails getGitConnector(NGAccess ngAccess, String connectorRef) {
-    return connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+    return connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
   }
 
-  private String getBuildDetailsUrl(
-      NGAccess ngAccess, String pipelineId, String executionId, String stageSetupId, String stageExecutionId) {
+  public String getBuildDetailsUrl(Ambiance ambiance) {
+    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
+    String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+    String executionId = ambiance.getMetadata().getExecutionUuid();
     return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 

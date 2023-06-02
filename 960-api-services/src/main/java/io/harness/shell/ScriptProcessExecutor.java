@@ -7,6 +7,7 @@
 
 package io.harness.shell;
 
+import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -23,6 +24,7 @@ import static io.harness.logging.LogLevel.INFO;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -42,6 +44,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.HashMap;
@@ -157,6 +160,10 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         } else {
           deleteFileIfExists(scriptFile.getAbsolutePath());
           deleteFileIfExists(kubeConfigFile.getAbsolutePath());
+          deleteDirectoryAndItsContentIfExists(Paths.get(String.valueOf(workingDirectory), AZURE_LOGIN_CONFIG_DIR_PATH)
+                                                   .normalize()
+                                                   .toAbsolutePath()
+                                                   .toString());
           if (gcpKeyFile.isPresent()) {
             deleteFileIfExists(gcpKeyFile.get().toAbsolutePath().toString());
           }
@@ -190,6 +197,11 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
+    return executeCommandString(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis, true);
+  }
+
+  public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean denoteOverallSuccess) {
     try {
       ExecuteCommandResponse executeCommandResponse = null;
 
@@ -202,7 +214,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
             executeCommandResponse = executeBashScript(command,
                 envVariablesToCollect == null ? Collections.emptyList() : envVariablesToCollect,
                 secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect,
-                timeoutInMillis);
+                timeoutInMillis, denoteOverallSuccess);
           } catch (Exception e) {
             log.error("[ScriptProcessExecutor-01] Error while executing script on delegate: ", e);
             saveExecutionLog(format("Exception: %s", e), ERROR);
@@ -220,7 +232,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   }
 
   private ExecuteCommandResponse executeBashScript(String command, List<String> envVariablesToCollect,
-      List<String> secretVariablesToCollect, Long timeoutInMillis) throws IOException {
+      List<String> secretVariablesToCollect, Long timeoutInMillis, boolean denoteOverallSuccess) throws IOException {
     ShellExecutionDataBuilder executionDataBuilder = ShellExecutionData.builder();
     ExecuteCommandResponseBuilder executeCommandResponseBuilder = ExecuteCommandResponse.builder();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
@@ -258,7 +270,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
     // combine both variable types
     List<String> allVariablesToCollect =
-        Stream.concat(envVariablesToCollect.stream(), secretVariablesToCollect.stream()).collect(Collectors.toList());
+        Stream.concat(envVariablesToCollect.stream(), secretVariablesToCollect.stream())
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toList());
 
     if (!allVariablesToCollect.isEmpty()) {
       envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";
@@ -331,11 +345,16 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }
+
+      validateExportedVariables(envVariablesMap);
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
-      if (commandExecutionStatus == SUCCESS) {
+      // TODO closeLogStream function is broken
+      if (commandExecutionStatus == SUCCESS && denoteOverallSuccess) {
         saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, SUCCESS);
+      } else if (commandExecutionStatus == SUCCESS) {
+        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, RUNNING);
       } else {
         saveExecutionLog(format("CommandExecution failed with exit code: (%d)", processResult.getExitValue()), ERROR);
       }
@@ -349,12 +368,20 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     } catch (RuntimeException e) {
       handleException(
           executionDataBuilder, envVariablesMap, e, format("Exception occurred in Script execution. Reason: %s", e));
+    } catch (Exception e) {
+      commandExecutionStatus = FAILURE;
+      handleException(
+          executionDataBuilder, envVariablesMap, e, format("Exception occurred while executing Script: %s", e));
     } finally {
       if (isEmpty(config.getWorkingDirectory())) {
         deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
       } else {
         deleteFileIfExists(scriptFile.getAbsolutePath());
         deleteFileIfExists(kubeConfigFile.getAbsolutePath());
+        deleteDirectoryAndItsContentIfExists(Paths.get(String.valueOf(workingDirectory), AZURE_LOGIN_CONFIG_DIR_PATH)
+                                                 .normalize()
+                                                 .toAbsolutePath()
+                                                 .toString());
         if (envVariablesOutputFile != null) {
           deleteFileIfExists(envVariablesOutputFile.getAbsolutePath());
         }

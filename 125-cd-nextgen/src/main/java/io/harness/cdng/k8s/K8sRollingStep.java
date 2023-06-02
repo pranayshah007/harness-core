@@ -109,7 +109,6 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
     final String accountId = AmbianceUtils.getAccountId(ambiance);
-
     boolean isCanaryWorkflow = false;
     String canaryStepFqn = k8sRollingStepParameters.getCanaryStepFqn();
     if (canaryStepFqn != null) {
@@ -143,13 +142,15 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
             .pruningEnabled(pruningEnabled)
-            .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
-      Map<String, String> k8sCommandFlag =
-          k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
-      rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
+      rollingRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
+
+    Map<String, String> k8sCommandFlag =
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
+    rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sRollingDeployRequest k8sRollingDeployRequest = rollingRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     TaskChainResponse response =
@@ -189,8 +190,10 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     K8sExecutionPassThroughData k8sExecutionPassThroughData = (K8sExecutionPassThroughData) passThroughData;
-    K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder = K8sRollingOutcome.builder().releaseName(
-        cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()));
+    K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder =
+        K8sRollingOutcome.builder()
+            .releaseName(cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()))
+            .manifest(k8sExecutionPassThroughData.getK8sGitFetchInfo());
 
     K8sDeployResponse k8sTaskExecutionResponse;
     try {

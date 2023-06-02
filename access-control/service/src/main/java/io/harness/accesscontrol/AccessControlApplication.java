@@ -17,6 +17,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
@@ -36,6 +37,8 @@ import io.harness.accesscontrol.principals.serviceaccounts.iterators.ServiceAcco
 import io.harness.accesscontrol.principals.usergroups.iterators.UserGroupReconciliationIterator;
 import io.harness.accesscontrol.principals.users.iterators.UserReconciliationIterator;
 import io.harness.accesscontrol.resources.resourcegroups.iterators.ResourceGroupReconciliationIterator;
+import io.harness.accesscontrol.roleassignments.worker.DefaultViewerRoleACLCreationService;
+import io.harness.accesscontrol.roleassignments.worker.ProjectOrgBasicRoleCreationService;
 import io.harness.accesscontrol.roleassignments.worker.UserRoleAssignmentRemovalService;
 import io.harness.accesscontrol.scopes.harness.iterators.ScopeReconciliationIterator;
 import io.harness.accesscontrol.support.reconciliation.SupportPreferenceReconciliationIterator;
@@ -284,6 +287,8 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(SupportRoleAssignmentsReconciliationService.class));
     environment.lifecycle().manage(injector.getInstance(UserRoleAssignmentRemovalService.class));
+    environment.lifecycle().manage(injector.getInstance(ProjectOrgBasicRoleCreationService.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultViewerRoleACLCreationService.class));
   }
 
   private void registerJerseyProviders(Environment environment) {
@@ -373,6 +378,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     serviceToSecretMapping.put(ACCESS_CONTROL_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(CODE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(IDENTITY_SERVICE.getServiceId(), configuration.getIdentityServiceSecret());
+    serviceToSecretMapping.put(IDP_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
   }

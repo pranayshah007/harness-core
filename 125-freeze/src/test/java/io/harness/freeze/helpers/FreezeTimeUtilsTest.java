@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
 import io.harness.freeze.beans.RecurrenceSpec;
@@ -72,7 +73,10 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     freezeWindow.setStartTime("2022-12-19 04:30 PM");
     freezeWindow.setTimeZone("Asia/Calcutt");
     freezeWindow.setRecurrence(recurrence);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.ENABLED))
+        .isInstanceOf(InvalidRequestException.class)
+        .matches(ex -> ex.getMessage().equals("Invalid TimeZone Selected"));
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.DISABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Invalid TimeZone Selected"));
   }
@@ -132,6 +136,22 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     CurrentOrUpcomingWindow currentOrUpcomingWindow = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows1);
     assertThat(currentOrUpcomingWindow.getStartTime()).isEqualTo(1705834800000L);
     assertThat(currentOrUpcomingWindow.getEndTime()).isEqualTo(1705836600000L);
+
+    FreezeWindow freezeWindow2 = new FreezeWindow();
+    freezeWindow2.setDuration("30m");
+    freezeWindow2.setStartTime("2027-01-21 04:30 PM");
+    freezeWindow2.setTimeZone(timeZone);
+    Recurrence recurrence2 = new Recurrence();
+    recurrence2.setRecurrenceType(RecurrenceType.MONTHLY);
+    RecurrenceSpec recurrenceSpec1 = new RecurrenceSpec();
+    recurrenceSpec.setValue(3);
+    recurrence2.setSpec(recurrenceSpec1);
+    freezeWindow2.setRecurrence(recurrence2);
+    List<FreezeWindow> windows2 = new ArrayList<>();
+    windows2.add(freezeWindow2);
+    CurrentOrUpcomingWindow currentOrUpcomingWindow1 = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows2);
+    assertThat(currentOrUpcomingWindow1.getStartTime()).isEqualTo(1800529200000L);
+    assertThat(currentOrUpcomingWindow1.getEndTime()).isEqualTo(1800531000000L);
   }
 
   @Test
@@ -183,6 +203,22 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     windows1.add(freezeWindow1);
     List<Long> nextWindow = FreezeTimeUtils.fetchUpcomingTimeWindow(windows1);
     assertThat(nextWindow.get(0)).isEqualTo(1705834800000L);
+
+    FreezeWindow freezeWindow2 = new FreezeWindow();
+    freezeWindow2.setDuration("30m");
+    freezeWindow2.setStartTime("2027-01-21 04:30 PM");
+    freezeWindow2.setTimeZone(timeZone);
+    Recurrence recurrence2 = new Recurrence();
+    recurrence2.setRecurrenceType(RecurrenceType.MONTHLY);
+    RecurrenceSpec recurrenceSpec1 = new RecurrenceSpec();
+    recurrenceSpec.setUntil("2023-01-21 05:00 PM");
+    recurrenceSpec.setValue(3);
+    recurrence2.setSpec(recurrenceSpec1);
+    freezeWindow2.setRecurrence(recurrence2);
+    List<FreezeWindow> windows2 = new ArrayList<>();
+    windows2.add(freezeWindow2);
+    List<Long> nextWindow1 = FreezeTimeUtils.fetchUpcomingTimeWindow(windows2);
+    assertThat(nextWindow1.get(0)).isEqualTo(1800529200000L);
   }
 
   @Test
@@ -241,11 +277,17 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     recurrence.setRecurrenceType(RecurrenceType.MONTHLY);
     recurrence.setSpec(recurrenceSpec);
     freezeWindow.setRecurrence(recurrence);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.ENABLED))
+        .isInstanceOf(InvalidRequestException.class)
+        .matches(ex -> ex.getMessage().equals("Time zone cannot be empty"));
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.DISABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Time zone cannot be empty"));
     freezeWindow.setTimeZone(timeZone);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.ENABLED))
+        .isInstanceOf(InvalidRequestException.class)
+        .matches(ex -> ex.getMessage().equals("Freeze window start time should be less than 5 years"));
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.DISABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Freeze window start time should be less than 5 years"));
   }
@@ -258,7 +300,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     freezeWindow.setEndTime("2025-01-19 04:00 PM");
     freezeWindow.setStartTime("2025-01-19 04:30 PM");
     freezeWindow.setTimeZone(timeZone);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow, FreezeStatus.ENABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Window Start time is greater than Window end Time"));
 
@@ -266,7 +308,10 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     freezeWindow1.setEndTime("2025-01-19 05:00 PM");
     freezeWindow1.setStartTime("2025-01-19 04:35 PM");
     freezeWindow1.setTimeZone(timeZone);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1, FreezeStatus.ENABLED))
+        .isInstanceOf(InvalidRequestException.class)
+        .matches(ex -> ex.getMessage().equals("Freeze window time should be at least 30 minutes"));
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1, FreezeStatus.DISABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Freeze window time should be at least 30 minutes"));
 
@@ -274,7 +319,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     freezeWindow2.setEndTime("2026-01-19 05:00 PM");
     freezeWindow2.setStartTime("2025-01-19 04:30 PM");
     freezeWindow2.setTimeZone(timeZone);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow2))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow2, FreezeStatus.ENABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Freeze window time should be less than 365 days"));
   }
@@ -287,7 +332,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     freezeWindow1.setEndTime("2022-01-19 05:00 PM");
     freezeWindow1.setStartTime("2022-01-19 04:30 PM");
     freezeWindow1.setTimeZone(timeZone);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1, FreezeStatus.ENABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Freeze Window is already expired"));
 
@@ -295,7 +340,8 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     freezeWindow2.setEndTime("2025-01-19 05:00 PM");
     freezeWindow2.setStartTime("2025-01-19 04:30 PM");
     freezeWindow2.setTimeZone(timeZone);
-    assertThatCode(() -> FreezeTimeUtils.validateTimeRange(freezeWindow2)).doesNotThrowAnyException();
+    assertThatCode(() -> FreezeTimeUtils.validateTimeRange(freezeWindow2, FreezeStatus.ENABLED))
+        .doesNotThrowAnyException();
   }
 
   @Test
@@ -311,7 +357,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     Recurrence recurrence1 = new Recurrence();
     recurrence1.setSpec(recurrenceSpec1);
     freezeWindow1.setRecurrence(recurrence1);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow1, FreezeStatus.ENABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("Recurrence Type cannot be empty"));
 
@@ -325,7 +371,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     recurrence2.setSpec(recurrenceSpec2);
     recurrence2.setRecurrenceType(RecurrenceType.DAILY);
     freezeWindow2.setRecurrence(recurrence2);
-    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow2))
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow2, FreezeStatus.ENABLED))
         .isInstanceOf(InvalidRequestException.class)
         .matches(ex -> ex.getMessage().equals("End time for recurrence cannot be less than current time"));
 
@@ -339,6 +385,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     recurrence3.setSpec(recurrenceSpec3);
     recurrence3.setRecurrenceType(RecurrenceType.DAILY);
     freezeWindow3.setRecurrence(recurrence3);
-    assertThatCode(() -> FreezeTimeUtils.validateTimeRange(freezeWindow3)).doesNotThrowAnyException();
+    assertThatCode(() -> FreezeTimeUtils.validateTimeRange(freezeWindow3, FreezeStatus.ENABLED))
+        .doesNotThrowAnyException();
   }
 }

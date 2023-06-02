@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
@@ -27,6 +28,7 @@ const (
 	defaultTimeoutSecs int64         = 14400 // 4 hour
 	defaultNumRetries  int32         = 1
 	outputEnvSuffix    string        = ".out"
+	outputDotEnvSuffix string        = "-output.env"
 	cmdExitWaitTime    time.Duration = time.Duration(0)
 	batchSize                        = 100
 	boldYellowColor    string        = "\u001b[33;1m"
@@ -249,6 +251,9 @@ func (r *runTask) getShell(ctx context.Context) (string, string, error) {
 	} else if r.shellType == pb.ShellType_PWSH {
 		return "pwsh", "-Command", nil
 	} else if r.shellType == pb.ShellType_PYTHON {
+		if runtime.GOOS == "windows" {
+			return "python", "-c", nil
+		}
 		return "python3", "-c", nil
 	}
 	return "", "", fmt.Errorf("Unknown shell type: %s", r.shellType)
@@ -275,7 +280,7 @@ func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string
 	} else if isPython {
 		cmd += "\nimport os\n"
 	}
-	
+
 	for _, o := range outputVars {
 		if isPsh {
 			cmd += fmt.Sprintf("\n$val = \"%s $Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)

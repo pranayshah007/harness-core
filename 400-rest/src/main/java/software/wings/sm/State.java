@@ -8,7 +8,6 @@
 package software.wings.sm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -19,6 +18,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.serializer.MapperUtils;
 import io.harness.tasks.ResponseData;
@@ -54,6 +54,7 @@ public abstract class State {
   public static final Integer INFINITE_TIMEOUT = -1;
 
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @SchemaIgnore private String id;
 
@@ -350,10 +351,12 @@ public abstract class State {
   protected void renderDelegateTask(
       ExecutionContext context, DelegateTask task, StateExecutionContext stateExecutionContext) {
     context.resetPreparedCache();
-    if (task.getData().getParameters().length == 1 && task.getData().getParameters()[0] instanceof TaskParameters) {
+    Object[] taskParameters =
+        task.getData() != null ? task.getData().getParameters() : task.getTaskDataV2().getParameters();
+    if (taskParameters.length == 1 && taskParameters[0] instanceof TaskParameters) {
       task.setWorkflowExecutionId(context.getWorkflowExecutionId());
-      ExpressionReflectionUtils.applyExpression(task.getData().getParameters()[0],
-          (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
+      ExpressionReflectionUtils.applyExpression(
+          taskParameters[0], (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
     }
   }
 
@@ -365,13 +368,14 @@ public abstract class State {
   protected void appendDelegateTaskDetails(ExecutionContext context, DelegateTask delegateTask) {
     if (isSelectionLogsTrackingForTasksEnabled()) {
       if (isBlank(delegateTask.getUuid())) {
-        delegateTask.setUuid(generateUuid());
+        delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
       }
 
       stateExecutionService.appendDelegateTaskDetails(context.getStateExecutionInstanceId(),
           DelegateTaskDetails.builder()
               .delegateTaskId(delegateTask.getUuid())
-              .taskDescription(delegateTask.calcDescription())
+              .taskDescription(
+                  delegateTask.getData() != null ? delegateTask.calcDescription() : delegateTask.calcDescriptionV2())
               .setupAbstractions(delegateTask.getSetupAbstractions())
               .build());
     }

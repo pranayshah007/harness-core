@@ -58,10 +58,12 @@ public interface EnvironmentService extends OwnedByApplication {
   /**
    * List.
    *
-   * @param request     the request
+   * @param request      the request
+   * @param hitSecondary
    * @return the page response
    */
-  PageResponse<Environment> list(PageRequest<Environment> request, boolean withTags, String tagFilter);
+  PageResponse<Environment> list(
+      PageRequest<Environment> request, boolean withTags, String tagFilter, boolean hitSecondary);
 
   PageResponse<Environment> listWithSummary(
       PageRequest<Environment> request, boolean withTags, String tagFilter, List<String> appIds);
@@ -70,11 +72,14 @@ public interface EnvironmentService extends OwnedByApplication {
 
   /**
    * Gets the environment and does not throw exception if not found
+   *
    * @param appId
    * @param envId
    * @return
    */
   Environment get(@NotEmpty String appId, @NotEmpty String envId);
+
+  Environment getWithTags(@NotEmpty String appId, @NotEmpty String envId);
 
   Environment getEnvironmentByName(String appId, String environmentName);
 
@@ -138,21 +143,23 @@ public interface EnvironmentService extends OwnedByApplication {
    */
   List<Environment> getEnvByApp(@NotEmpty String appId);
 
-  List<Environment> getEnvByAccountId(String accountId);
+  List<Environment> getEnvByAccountId(String accountId, boolean hitSecondary);
 
   /**
    * Gets env ids by app.
+   *
    * @param appId
    * @return
    */
   List<String> getEnvIdsByApp(@NotEmpty String appId);
 
-  Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds);
+  Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds, String accountId);
 
   /**
-   * @param appIds the applicationIds for which we need to fetch the environments
+   * @param appIds          the applicationIds for which we need to fetch the environments
    * @param environmentType The type of environment needed
-   * @return A map of the ids of environments in the given application and of the given type grouped by applications
+   * @return A map of the ids of environments in the given application and of the given type grouped
+   * by applications
    */
   Map<String, Set<String>> getAppIdEnvIdMap(Set<String> appIds);
 

@@ -13,9 +13,9 @@ import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -39,10 +39,10 @@ import software.wings.beans.ServiceVariable;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
-import javax.cache.Cache;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -66,7 +66,7 @@ public class SecretManagerFunctorTest extends WingsBaseTest {
 
     int token = HashGenerator.generateIntegerHash();
 
-    when(secretsCache.get(anyString())).thenReturn(null);
+    when(secretsCache.getIfPresent(anyString())).thenReturn(null);
     SecretManagerFunctor secretManagerFunctor = buildFunctor(token, featureFlagService);
     assertFunctor(secretManagerFunctor);
 

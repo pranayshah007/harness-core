@@ -59,6 +59,12 @@ public final class TimeSeriesThreshold
                  .field(TimeSeriesThresholdKeys.accountId)
                  .field(TimeSeriesThresholdKeys.projectIdentifier)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project_idx")
+                 .field(TimeSeriesThresholdKeys.accountId)
+                 .field(TimeSeriesThresholdKeys.orgIdentifier)
+                 .field(TimeSeriesThresholdKeys.projectIdentifier)
+                 .build())
         .build();
   }
 

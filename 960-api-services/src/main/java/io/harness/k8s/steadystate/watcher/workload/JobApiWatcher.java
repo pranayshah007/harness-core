@@ -54,7 +54,7 @@ public class JobApiWatcher implements WorkloadWatcher {
     BatchV1Api batchV1Api = new BatchV1Api(apiClient);
     while (true) {
       try {
-        V1Job job = batchV1Api.readNamespacedJobStatus(workload.getName(), workload.getNamespace(), null);
+        V1Job job = batchV1Api.readNamespacedJob(workload.getName(), workload.getNamespace(), null);
         K8ApiResponseDTO response = statusViewer.extractRolloutStatus(job);
         executionLogCallback.saveExecutionLog(response.getMessage());
 

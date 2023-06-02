@@ -13,9 +13,10 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -43,30 +44,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SafeHttpCall.class})
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class RemoteSchemaGetterTest {
   private YamlSchemaClient schemaClient;
   private RemoteSchemaGetter remoteSchemaGetter;
+  private MockedStatic<SafeHttpCall> aStatic;
 
   @Before
   public void setUp() {
     schemaClient = mock(YamlSchemaClient.class);
     remoteSchemaGetter = spy(new RemoteSchemaGetter(schemaClient, ModuleType.CD, "accountId"));
-    PowerMockito.mockStatic(SafeHttpCall.class);
+    aStatic = mockStatic(SafeHttpCall.class);
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test

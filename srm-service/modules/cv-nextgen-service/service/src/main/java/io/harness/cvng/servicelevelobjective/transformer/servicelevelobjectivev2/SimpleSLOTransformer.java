@@ -13,11 +13,10 @@ import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
@@ -25,7 +24,7 @@ import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -41,6 +40,16 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
+
+    if (simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType() != null
+        && serviceLevelObjectiveV2DTO.getTags() == null) {
+      Map<String, String> tags = new HashMap<>();
+      tags.put("serviceLevelIndicatorType", simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType().toString());
+      serviceLevelObjectiveV2DTO.setTags(tags);
+    }
+    SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
+                              .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
+    long currentTime = System.currentTimeMillis();
     return SimpleServiceLevelObjective.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
@@ -52,8 +61,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .userJourneyIdentifiers(serviceLevelObjectiveV2DTO.getUserJourneyRefs())
         .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
             serviceLevelObjectiveV2DTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0)))
-        .sloTarget(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
-                       .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec()))
+        .target(sloTarget)
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
         .enabled(isEnabled)
         .serviceLevelIndicatorType(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
@@ -64,35 +72,13 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
         .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
         .type(ServiceLevelObjectiveType.SIMPLE)
-        .startedAt(System.currentTimeMillis())
-        .build();
-  }
-
-  @Override
-  public SimpleServiceLevelObjective getSLOV2(ServiceLevelObjective serviceLevelObjective) {
-    return SimpleServiceLevelObjective.builder()
-        .accountId(serviceLevelObjective.getAccountId())
-        .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-        .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-        .uuid(serviceLevelObjective.getUuid())
-        .identifier(serviceLevelObjective.getIdentifier())
-        .name(serviceLevelObjective.getName())
-        .desc(serviceLevelObjective.getDesc())
-        .tags(serviceLevelObjective.getTags() == null ? Collections.emptyList() : serviceLevelObjective.getTags())
-        .userJourneyIdentifiers(Collections.singletonList(serviceLevelObjective.getUserJourneyIdentifier()))
-        .notificationRuleRefs(serviceLevelObjective.getNotificationRuleRefs())
-        .sloTarget(serviceLevelObjective.getSloTarget())
-        .enabled(serviceLevelObjective.isEnabled())
-        .lastUpdatedAt(serviceLevelObjective.getLastUpdatedAt())
-        .createdAt(serviceLevelObjective.getCreatedAt())
-        .startedAt(serviceLevelObjective.getCreatedAt())
-        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
-        .nextNotificationIteration(serviceLevelObjective.getNextNotificationIteration())
-        .serviceLevelIndicatorType(serviceLevelObjective.getType())
-        .healthSourceIdentifier(serviceLevelObjective.getHealthSourceIdentifier())
-        .monitoredServiceIdentifier(serviceLevelObjective.getMonitoredServiceIdentifier())
-        .serviceLevelIndicators(serviceLevelObjective.getServiceLevelIndicators())
-        .type(ServiceLevelObjectiveType.SIMPLE)
+        .sliEvaluationType(((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+                               .getServiceLevelIndicators()
+                               .get(0)
+                               .getType())
+        .startedAt(currentTime)
+        .createdAt(currentTime)
+        .lastUpdatedAt(currentTime)
         .build();
   }
 
@@ -120,34 +106,13 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .notificationRuleRefs(
             notificationRuleService.getNotificationRuleRefDTOs(serviceLevelObjective.getNotificationRuleRefs()))
         .sloTarget(SLOTargetDTO.builder()
-                       .type(serviceLevelObjective.getSloTarget().getType())
-                       .spec(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjective.getSloTarget().getType())
-                                 .getSLOTargetSpec(serviceLevelObjective.getSloTarget()))
+                       .type(serviceLevelObjective.getTarget().getType())
+                       .spec(sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjective.getTarget().getType())
+                                 .getSLOTargetSpec(serviceLevelObjective.getTarget()))
                        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
                        .build())
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .userJourneyRefs(serviceLevelObjective.getUserJourneyIdentifiers())
-        .build();
-  }
-
-  public ServiceLevelObjectiveV2DTO getSLOV2DTO(ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
-    return ServiceLevelObjectiveV2DTO.builder()
-        .type(ServiceLevelObjectiveType.SIMPLE)
-        .description(serviceLevelObjectiveDTO.getDescription())
-        .identifier(serviceLevelObjectiveDTO.getIdentifier())
-        .name(serviceLevelObjectiveDTO.getName())
-        .orgIdentifier(serviceLevelObjectiveDTO.getOrgIdentifier())
-        .projectIdentifier(serviceLevelObjectiveDTO.getProjectIdentifier())
-        .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .healthSourceRef(serviceLevelObjectiveDTO.getHealthSourceRef())
-                  .monitoredServiceRef(serviceLevelObjectiveDTO.getMonitoredServiceRef())
-                  .serviceLevelIndicators(serviceLevelObjectiveDTO.getServiceLevelIndicators())
-                  .serviceLevelIndicatorType(serviceLevelObjectiveDTO.getType())
-                  .build())
-        .notificationRuleRefs(serviceLevelObjectiveDTO.getNotificationRuleRefs())
-        .userJourneyRefs(Collections.singletonList(serviceLevelObjectiveDTO.getUserJourneyRef()))
-        .sloTarget(serviceLevelObjectiveDTO.getTarget())
-        .tags(serviceLevelObjectiveDTO.getTags())
         .build();
   }
 }

@@ -1,0 +1,25 @@
+service:
+  serviceInputs:
+    serviceDefinition:
+      type: Kubernetes
+      spec:
+        artifacts:
+          primary:
+            primaryArtifactRef: cs
+            sources:
+              - identifier: cs
+                type: DockerRegistry
+                spec:
+                  connectorRef: dockerConnectorId
+                  imagePath: <+input>
+                  tag: <+input>
+
+        manifests:
+          - manifest:
+              identifier: manifestId
+              type: K8sManifest
+              spec:
+                store:
+                  type: Git
+                  spec:
+                    connectorRef: gitConnectorId

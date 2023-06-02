@@ -12,6 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V6;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -19,6 +23,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
@@ -65,6 +70,9 @@ public class TerraformTaskNGParameters
   boolean tfModuleSourceInheritSSH;
   long timeoutInMillis;
   boolean useOptimizedTfPlan;
+  boolean isTerraformCloudCli;
+  boolean skipTerraformRefresh;
+  @Expression(ALLOW_SECRETS) Map<String, String> terraformCommandFlags;
   // For plan
   TerraformCommand terraformCommand;
 
@@ -164,6 +172,43 @@ public class TerraformTaskNGParameters
   }
 
   public TaskType getDelegateTaskType() {
-    return this.backendConfigFileInfo == null ? TaskType.TERRAFORM_TASK_NG : TaskType.TERRAFORM_TASK_NG_V2;
+    if (hasS3Store()) {
+      return TERRAFORM_TASK_NG_V6;
+    }
+    if (isNotEmpty(this.terraformCommandFlags)) {
+      return TERRAFORM_TASK_NG_V5;
+    }
+    if (this.skipTerraformRefresh) {
+      return TaskType.TERRAFORM_TASK_NG_V4;
+    }
+    if (this.isTerraformCloudCli) {
+      return TaskType.TERRAFORM_TASK_NG_V3;
+    } else {
+      return this.backendConfigFileInfo == null ? TERRAFORM_TASK_NG : TaskType.TERRAFORM_TASK_NG_V2;
+    }
+  }
+
+  private boolean hasS3Store() {
+    // check config files
+    if (this.fileStoreConfigFiles instanceof S3StoreTFDelegateConfig) {
+      return true;
+    }
+    // check for backend configuration
+    if (this.backendConfigFileInfo instanceof RemoteTerraformBackendConfigFileInfo
+        && ((RemoteTerraformBackendConfigFileInfo) this.backendConfigFileInfo).getFilestoreFetchFilesConfig()
+                instanceof S3StoreTFDelegateConfig) {
+      return true;
+    }
+    // check for var files
+    if (isNotEmpty(varFileInfos)) {
+      for (TerraformVarFileInfo terraformVarFileInfo : varFileInfos) {
+        if (terraformVarFileInfo instanceof RemoteTerraformVarFileInfo
+            && ((RemoteTerraformVarFileInfo) terraformVarFileInfo).filestoreFetchFilesConfig
+                instanceof S3StoreTFDelegateConfig) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

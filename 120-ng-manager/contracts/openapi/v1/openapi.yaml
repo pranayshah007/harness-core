@@ -1,35 +1,46 @@
 openapi: 3.0.3
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1'
+  version: '1.0'
   description: This is the Open Api Spec 3 for NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub
   contact:
     email: contact@harness.io
 servers:
-  - url: 'https://api.harness.io'
+  - url: 'https://app.harness.io'
     description: Harness host URL.
 tags:
   - name: Organization
-    description: This contains APIs for Organizations.
+    description: 'Create and manage organizations in your account. You use organizations to group together related projects. For example, you can use an organization to group together projects within a business unit or division.'
   - name: Org Project
-    description: This contains APIs for Projects.
-    x-displayName: Project
+    description: This contains APIs for projects.
+    x-displayName: 'Project [Beta]'
   - name: Account Secret
-    description: This contains APIs for Account-scoped Secrets.
-    x-displayName: Account Secrets
+    description: This contains APIs for account-scoped secrets.
+    x-displayName: 'Account Secrets [Beta]'
   - name: Org Secret
-    description: This contains APIs for Organization-scoped Secrets.
-    x-displayName: Organization Secrets
+    description: This contains APIs for organization-scoped secrets.
+    x-displayName: 'Organization Secrets [Beta]'
   - name: Project Secret
-    description: This contains APIs for Project-scoped Secrets.
-    x-displayName: Project Secrets
+    description: This contains APIs for project-scoped secrets.
+    x-displayName: 'Project Secrets [Beta]'
   - name: Account Services
-    description: This contains APIs for Account-scoped Services.
+    description: This contains APIs for account-scoped services.
+    x-displayName: 'Account Services [Beta]'
   - name: Org Services
-    description: This contains APIs for Organization-scoped Services.
-    x-displayName: Organization Services
+    description: This contains APIs for organization-scoped services.
+    x-displayName: 'Organization Services [Beta]'
   - name: Project Services
-    description: This contains APIs for Project-scoped Services.
+    description: This contains APIs for project-scoped services.
+    x-displayName: 'Project Services [Beta]'
+  - name: Account Favorites
+    description: This contains APIs for account-scoped Favorites.
+    x-displayName: 'Account Favorites [Beta]'
+  - name: Org Favorites
+    description: This contains APIs for organization-scoped Favorites.
+    x-displayName: 'Organization Favorites [Beta]'
+  - name: Project Favorites
+    description: This contains APIs for project-scoped Favorites.
+    x-displayName: 'Project Favorites [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -37,7 +48,7 @@ paths:
       operationId: get-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves the specified service'
+      description: Retrieves the specified service
       security:
         - x-api-key: []
       responses:
@@ -73,7 +84,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/ForceDelete'
-      description: Deletes the requested service
+      description: Deletes the requested service.
       security:
         - x-api-key: []
       tags:
@@ -144,9 +155,9 @@ paths:
       operationId: get-org-scoped-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves the specified service'
+      description: Retrieves the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       responses:
         '200':
           $ref: '#/components/responses/ServiceResponse'
@@ -167,7 +178,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Updates the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Org Services
     delete:
@@ -181,7 +192,7 @@ paths:
         - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Org Services
   '/v1/orgs/{org}/services':
@@ -222,7 +233,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Org Services
@@ -238,7 +249,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Creates a service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Org Services
     parameters:
@@ -249,9 +260,9 @@ paths:
       operationId: get-account-scoped-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves the specified service'
+      description: Retrieves the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       responses:
         '200':
           $ref: '#/components/responses/ServiceResponse'
@@ -271,7 +282,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Updates the specified service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Account Services
     delete:
@@ -285,10 +296,10 @@ paths:
         - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Account Services
-  '/v1/services':
+  /v1/services:
     get:
       summary: List services
       responses:
@@ -326,7 +337,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Account Services
@@ -342,13 +353,13 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Creates a service
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       tags:
         - Account Services
     parameters: []
   /v1/orgs:
     post:
-      summary: Create an organization
+      summary: 'Create an organization [Beta]'
       operationId: create-organization
       responses:
         '201':
@@ -363,7 +374,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     get:
-      summary: List organizations
+      summary: 'List organizations [Beta]'
       operationId: get-organizations
       responses:
         '200':
@@ -391,7 +402,7 @@ paths:
         required: true
         description: Organization identifier
     get:
-      summary: Retrieve an organization
+      summary: 'Retrieve an organization [Beta]'
       responses:
         '200':
           $ref: '#/components/responses/OrganizationResponse'
@@ -404,7 +415,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     put:
-      summary: Update an organization
+      summary: 'Update an organization [Beta]'
       operationId: update-organization
       responses:
         '200':
@@ -419,7 +430,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     delete:
-      summary: Delete an organization
+      summary: 'Delete an organization [Beta]'
       operationId: delete-organization
       responses:
         '200':
@@ -524,6 +535,147 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
+  /v1/ip-allowlist:
+    post:
+      summary: Create a IP Allowlist config
+      operationId: create-ip-allowlist-config
+      responses:
+        '201':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      description: Creates a new IP Allowlist config
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
+      tags:
+        - IP Allowlist
+      x-internal: false
+    get:
+      summary: List IP Allowlist Configs
+      operationId: get-ip-allowlist-configs
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigListResponse'
+      description: Retrieves the information of the IP Allowlist Config
+      parameters:
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - schema:
+            type: string
+          in: query
+          description: This is to filter IP allowlist configs only blocked from UI or API
+          name: allowed_source_type
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+      x-internal: false
+    parameters: []
+  '/v1/ip-allowlist/{ip-config-identifier}':
+    get:
+      summary: Retrieve a IP Allowlist config
+      operationId: get-ip-allowlist-config
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Retrieves the specified IP Allowlist config
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      tags:
+        - IP Allowlist
+      x-internal: false
+    parameters:
+      - schema:
+          type: string
+        name: ip-config-identifier
+        in: path
+        required: true
+    put:
+      summary: Update IP Allowlist config
+      operationId: update-ip-allowlist-config
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
+      description: Updates the specified IP Allowlist config
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+      x-internal: false
+    delete:
+      summary: Delete an IP Allowlist config
+      operationId: delete-ip-allowlist-config
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the specified IP Allowlist config
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+      x-internal: false
+  '/v1/ip-allowlist/validate-unique-identifier/{ip-config-identifier}':
+    get:
+      summary: Validate unique IP Allowlist config identifier
+      operationId: validate-unique-ip-allowlist-config-identifier
+      description: Checks whether the IP Allowlist config identifier is unique or not
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+      x-internal: false
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistValidateUniqueIdentifierResponse'
+    parameters:
+      - schema:
+          type: string
+        name: ip-config-identifier
+        in: path
+        required: true
+  /v1/ip-allowlist/validate/ip-address:
+    get:
+      summary: Validate IP address lies in a specified range or not
+      operationId: validate-ip-address-allowlisted-or-not
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistConfigValidateResponse'
+      description: Checks whether the IP address is allowed or not. It also supports checking against a specific IP block range.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: string
+          in: query
+          name: ip_address
+          description: This is the IP address that needs to be checked if allowed or not
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: custom_ip_address_block
+          description: This is the IP address or block of IP address against which we need to verify if a given IP address is allowed or not. If not passed we do the validation against the IP configs within Harness.
+      security:
+        - x-api-key: []
+      tags:
+        - IP Allowlist
+      x-internal: false
+    parameters: []
   /v1/secrets:
     post:
       summary: Create a secret
@@ -584,10 +736,30 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
       tags:
         - Account Secret
       security:
         - x-api-key: []
+    parameters: []
+  /v1/secrets/validate-secret-ref:
+    post:
+      summary: Validate secret reference
+      operationId: validate-account-secret-ref
+      description: Validates if the secret at the secretManager path can be referenced
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Secret
+      requestBody:
+        $ref: '#/components/requestBodies/SecretValidationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretValidationResponse'
+    parameters: []
   '/v1/orgs/{org}/secrets':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
@@ -650,10 +822,35 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
       tags:
         - Org Secret
       security:
         - x-api-key: []
+  '/v1/orgs/{org}/secrets/validate-secret-ref':
+    post:
+      summary: Validate secret reference
+      operationId: validate-org-secret-ref
+      description: Validates if the secret at the secretManager path can be referenced
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/SecretValidationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretValidationResponse'
+      tags:
+        - Org Secret
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Identifier field of the organization the resource is scoped to
   '/v1/orgs/{org}/projects/{project}/secrets':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
@@ -717,10 +914,41 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
       tags:
         - Project Secret
       security:
         - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/secrets/validate-secret-ref':
+    post:
+      summary: Validate secret reference
+      operationId: validate-project-secret-ref
+      description: Validates if the secret at the secretManager path can be referenced
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/SecretValidationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretValidationResponse'
+      tags:
+        - Project Secret
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Identifier field of the organization the resource is scoped to
+      - schema:
+          type: string
+        name: project
+        in: path
+        required: true
+        description: Identifier field of the project to which the resource is scoped.
   '/v1/secrets/{secret}':
     parameters:
       - schema:
@@ -871,6 +1099,167 @@ paths:
         - Project Secret
       security:
         - x-api-key: []
+  /v1/favorites:
+    post:
+      summary: Create a favorite at account level
+      operationId: create-account-favorite
+      description: Creates favorite resource of a user at account level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Account Favorites
+      x-internal: true
+  '/v1/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resources of a user at account level
+      operationId: get-account-favorites
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at account level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Account Favorites
+      x-internal: true
+    delete:
+      summary: Delete a account level favorite
+      operationId: delete-account-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Favorites
+      description: Deletes the requested favorite at account level.
+      x-internal: true
+  '/v1/orgs/{org}/favorites':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+    post:
+      summary: Create a favorite at org level
+      operationId: create-org-favorite
+      description: Creates favorite resource of a user at organisation level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Org Favorites
+      x-internal: true
+  '/v1/orgs/{org}/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resources of a user at organization level
+      operationId: get-org-favorites
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at organization level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Org Favorites
+      x-internal: true
+    delete:
+      summary: Delete a org level favorite
+      operationId: delete-org-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      description: Deletes the requested favorite at organization level.
+      security:
+        - x-api-key: []
+      tags:
+        - Org Favorites
+      x-internal: true
+  '/v1/orgs/{org}/projects/{project}/favorites':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    post:
+      summary: Create a favorite at project level
+      operationId: create-project-favorite
+      description: Creates favorite resource of a user at project level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Project Favorites
+      x-internal: true
+  '/v1/orgs/{org}/projects/{project}/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resources of a user at project level
+      operationId: get-project-favorites
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at project level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Project Favorites
+      x-internal: true
+    delete:
+      summary: Delete a project level favorite
+      operationId: delete-project-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      description: Deletes the requested favorite at project level.
+      security:
+        - x-api-key: []
+      tags:
+        - Project Favorites
+      x-internal: true
   /v1/module-versions:
     get:
       summary: List Module Versions
@@ -913,33 +1302,33 @@ components:
         account:
           type: string
           description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         identifier:
           type: string
           description: Identifier of the Service Request.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization Identifier for the Entity.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Project Identifier for the Entity.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Name of the Service Request.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Description of the entity
@@ -956,6 +1345,70 @@ components:
       required:
         - identifier
         - name
+    FavoriteDTO:
+      type: object
+      x-examples:
+        example-1:
+          org: sample_organization
+          project: sample_project
+          user_id: example_userId
+          module: example_module
+          resource_type: example_resourceType
+          resource_id: example_resourceId
+      description: This is the favorite entity defined in Harness
+      title: FavoriteDTO
+      properties:
+        org:
+          type: string
+          description: Organization Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        project:
+          type: string
+          description: Project Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        user_id:
+          type: string
+          description: Identifier of the user.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        module:
+          $ref: '#/components/schemas/ModuleType'
+        resource_type:
+          $ref: '#/components/schemas/FavoritesResourceType'
+          description: Type of resource
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        resource_id:
+          type: string
+          description: Resource Identifier of the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+    FavoriteResponse:
+      type: object
+      x-examples:
+        example-1:
+          FavoriteDTO:
+            user_id: example_userId
+            org: sample_organization
+            project: sample_project
+            resource_type: Example_resourceType
+            resource_id: This is a example resource
+          created: 1234567890
+      title: FavoriteResponse
+      properties:
+        Favorite:
+          $ref: '#/components/schemas/FavoriteDTO'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for favorite.
     ServiceResponse:
       type: object
       x-examples:
@@ -1011,15 +1464,15 @@ components:
         identifier:
           type: string
           description: Identifier of the Service
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Name of the Service
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Description of the entity
@@ -1050,15 +1503,15 @@ components:
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Organization identifier
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Organization name
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           maxLength: 1024
@@ -1087,6 +1540,15 @@ components:
         - TEMPLATESERVICE
         - GOVERNANCE
         - CHAOS
+        - CET
+    FavoritesResourceType:
+      type: string
+      enum:
+        - CONNECTOR
+        - DELEGATE
+        - PIPELINE
+        - SECRET
+        - PROJECT
     CreateProjectRequest:
       description: Create project request
       type: object
@@ -1113,15 +1575,15 @@ components:
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Project identifier
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Project name
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization identifier for the project
@@ -1427,6 +1889,12 @@ components:
             value:
               type: string
               description: Value of the Secret
+            additional_metadata:
+              type: object
+              properties:
+                values:
+                  type: object
+              description: Additional metadata of the secret if any exist
           required:
             - type
             - secret_manager_identifier
@@ -1567,21 +2035,21 @@ components:
         name:
           type: string
           description: Secret name
-          pattern: '^[0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
         identifier:
           type: string
           minLength: 1
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Secret identifier
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization identifier for secret
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         project:
           type: string
           description: Project identifier for secret
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         tags:
           type: object
           additionalProperties:
@@ -1659,6 +2127,132 @@ components:
           type: string
           description: Microservices version
       description: Microservice Version Info
+    SecretValidationMetadata:
+      title: SecretValidationMetadata
+      type: object
+      description: Details of the secret reference
+      properties:
+        secret_manager_identifier:
+          type: string
+          description: Identifier of the secretManager
+        secret_ref_path:
+          type: string
+          description: Path to the secret present which needs to be referenced.
+      required:
+        - secretManagerIdentifer
+        - secretRefPath
+    SecretValidationResponse:
+      title: SecretValidationResponse
+      type: object
+      description: Response of the secret reference validation
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          description: Secret reference path validation result
+    IPAllowlistConfig:
+      title: IPAllowlistConfig
+      x-stoplight:
+        id: v6ozn5wcwdwhg
+      type: object
+      description: This contains data for a config set in Harness to allow selected IPs
+      properties:
+        name:
+          type: string
+          description: Name of the IP Config defined in Harness
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        identifier:
+          type: string
+          description: Identifier of the IP Config
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        description:
+          type: string
+          description: Description of the entity
+        enabled:
+          type: boolean
+          default: false
+          description: 'If true, it will allow all the IPs that are part of the config and block others.'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: IP Allowlist tags
+          maxProperties: 128
+        allowed_source_type:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AllowedSourceType'
+        ip_address:
+          type: string
+      required:
+        - name
+        - identifier
+        - ip_address
+    AllowedSourceType:
+      title: AllowedSourceType
+      x-stoplight:
+        id: z6z1v0ym6pp0n
+      type: string
+      enum:
+        - UI
+        - API
+      description: This denotes source from which IPs are allowed.
+    IPAllowlistConfigRequest:
+      title: IPAllowlistConfigRequest
+      x-stoplight:
+        id: xgbzir9wm0meq
+      type: object
+      description: This is the request spec to create IP Allowlist config in Harness
+      properties:
+        ip_allowlist_config:
+          $ref: '#/components/schemas/IPAllowlistConfig'
+    IPAllowlistConfigResponse:
+      title: IPAllowlistConfigResponse
+      x-stoplight:
+        id: ykl8b62ijl5wt
+      type: object
+      properties:
+        ip_allowlist_config:
+          $ref: '#/components/schemas/IPAllowlistConfig'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for the IP Allowlist config.
+        updated:
+          type: integer
+          format: int64
+          description: Last modification timestamp for IP Allowlist config.
+      required:
+        - ip_allowlist_config
+        - created
+        - updated
+    IPAllowlistConfigValidateResponse:
+      title: IPAllowlistConfigValidateResponse
+      x-stoplight:
+        id: ll7dxdbr3e2yg
+      type: object
+      properties:
+        allowed_for_custom_block:
+          type: boolean
+          description: This indicates if given IP Address lies in range of custome IP block or not.
+        allowlisted_configs:
+          type: array
+          description: |
+            This is the list of IP configs configured in Harness from which IP address is allowed. This is empty in case of custom IP address block.
+          items:
+            $ref: '#/components/schemas/IPAllowlistConfigResponse'
+        allowed_for_ui:
+          type: boolean
+          description: This indicates if a given IP is allowlisted in Harness for UI requests
+        allowed_for_api:
+          type: boolean
+          description: This indicates if a given IP is allowlisted in Harness for API requests
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1856,6 +2450,54 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+    FavoriteResponse:
+      description: Favorite response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-response-json:
+              value:
+                Favorite:
+                  org: sample_organization
+                  project: sample_project
+                  user_id: example_userId
+                  resource_type: Example_resourceType
+                  resource_id: Example_resourceId
+                created: 1234567890
+    FavoriteListResponse:
+      description: Favorite list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-list-response-json:
+              value:
+                - Favorite:
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                    user_id: example_userId
+                    resource_type: Example_resourceType
+                    resource_id: Example_resourceId
+                  created: 1234567890
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     ProjectListResponse:
       description: Project list response
       content:
@@ -2103,6 +2745,56 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    SecretValidationResponse:
+      description: 'Response of the secret reference validation '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SecretValidationResponse'
+          examples:
+            Example 1:
+              value:
+                success: true
+                message: 'Validation is Successful, Secret can be referenced'
+    IPAllowlistConfigResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/IPAllowlistConfigResponse'
+    IPAllowlistConfigListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/IPAllowlistConfigResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    IPAllowlistConfigValidateResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/IPAllowlistConfigValidateResponse'
+    IPAllowlistValidateUniqueIdentifierResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: boolean
   requestBodies:
     ServiceRequest:
       content:
@@ -2624,6 +3316,36 @@ components:
               - file
               - spec
       required: true
+    SecretValidationRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SecretRequest'
+          examples:
+            Example 1:
+              value:
+                secret_manager_identifier: prod_sm_one
+                secret_ref_path: path1/path2#key
+      description: Details of the secret reference
+    IPAllowlistConfigRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/IPAllowlistConfigRequest'
+    FavoriteRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FavoriteDTO'
+          examples:
+            ProjectFavConnector:
+              value:
+                org: org_id
+                project: project_id
+                user_id: user_id
+                module: CD
+                resource_type: CONNECTOR
+                resource_id: resource_id
   parameters:
     Page:
       name: page
@@ -2640,7 +3362,8 @@ components:
       schema:
         type: integer
         default: 30
-      description: 'Pagination: Number of items to return'
+        maximum: 1000
+      description: Number of items to return per page.
     SearchTerm:
       name: search_term
       in: query
@@ -2648,6 +3371,13 @@ components:
       schema:
         type: string
       description: This would be used to filter resources having attributes matching with search term.
+    ResourceId:
+      name: resource_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to do operations on the favorite entity.
     AccountHeader:
       name: Harness-Account
       in: header
@@ -2687,6 +3417,13 @@ components:
       schema:
         type: string
       description: Identifier field of the organization the resource is scoped to
+    UserIdPathParam:
+      name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: This would be used to fetch the Favorites of the user.
     PrivateSecret:
       name: private_secret
       in: query
@@ -2740,3 +3477,10 @@ components:
           - ASC
           - DESC
       description: Order on the basis of which sorting is done.
+    ResourceType:
+      name: resource_type
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/FavoritesResourceType'
+      description: Determines the type of favorite entity requested.

@@ -35,7 +35,7 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
 public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
-  String newReleaseName;
+  @Expression(ALLOW_SECRETS) String newReleaseName;
   List<String> routeMaps;
   Integer upsizeCount;
   Integer downSizeCount;

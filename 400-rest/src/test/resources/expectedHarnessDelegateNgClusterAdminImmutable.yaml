@@ -43,6 +43,7 @@ metadata:
   namespace: harness-delegate-ng
 spec:
   replicas: 8
+  minReadySeconds: 120
   selector:
     matchLabels:
       harness.io/name: harness-delegate
@@ -77,7 +78,7 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 10
-          failureThreshold: 2
+          failureThreshold: 3
         startupProbe:
           httpGet:
             path: /api/health
@@ -118,6 +119,10 @@ spec:
           value: "true"
         - name: LOG_STREAMING_SERVICE_URL
           value: "http://localhost:8079"
+        - name: DELEGATE_RESOURCE_THRESHOLD
+          value: ""
+        - name: DYNAMIC_REQUEST_HANDLING
+          value: "false"
 
 
 ---

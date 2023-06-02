@@ -9,7 +9,9 @@ package io.harness.cvng.notification.beans;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum ErrorTrackingEventStatus {
-  @JsonProperty("NewEvents") NEW_EVENTS("New Events");
+  @JsonProperty("NewEvents") NEW_EVENTS("New Events"),
+  @JsonProperty("CriticalEvents") CRITICAL_EVENTS("Critical Events"),
+  @JsonProperty("ResurfacedEvents") RESURFACED_EVENTS("Resurfaced Events");
 
   private final String displayName;
 

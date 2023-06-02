@@ -62,11 +62,21 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       name = getLockName(name);
       RLock lock = client.getLock(name);
-      boolean locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
+      boolean locked;
+      if (client.getConfig().isSentinelConfig()) {
+        log.debug("[RedisSentinelMode]: Trying Async lock");
+        locked = lock.tryLockAsync(0, timeout.toMillis(), TimeUnit.MILLISECONDS).get(1, TimeUnit.SECONDS);
+        log.debug("[RedisSentinelMode]: Async lock acquired successfully");
+      } else {
+        locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
+      }
       if (locked) {
         log.debug("Lock acquired on {} for timeout {}", name, timeout);
-        return RedisAcquiredLock.builder().lock(lock).build();
+        return RedisAcquiredLock.builder().lock(lock).isSentinelMode(client.getConfig().isSentinelConfig()).build();
       }
+    } catch (InterruptedException iex) {
+      log.error(format(ERROR_MESSAGE, name), iex);
+      Thread.currentThread().interrupt();
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
     }
@@ -93,11 +103,6 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
   }
 
   @Override
-  public AcquiredLock tryToAcquireEphemeralLock(Class entityClass, String entityId, Duration timeout) {
-    return tryToAcquireLock(entityClass, entityId, timeout);
-  }
-
-  @Override
   public AcquiredLock tryToAcquireLock(String name, Duration timeout) {
     try {
       return acquireLock(name, timeout);
@@ -111,10 +116,23 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       name = getLockName(name);
       RLock lock = client.getLock(name);
-      boolean locked = lock.tryLock(waitTime.toMillis(), -1, TimeUnit.MILLISECONDS);
-      if (locked) {
-        return RedisAcquiredLock.builder().lock(lock).isLeaseInfinite(true).build();
+      boolean locked;
+      if (client.getConfig().isSentinelConfig()) {
+        locked = lock.tryLockAsync(waitTime.toMillis(), -1, TimeUnit.MILLISECONDS)
+                     .get(waitTime.toMillis(), TimeUnit.MILLISECONDS);
+      } else {
+        locked = lock.tryLock(waitTime.toMillis(), -1, TimeUnit.MILLISECONDS);
       }
+      if (locked) {
+        return RedisAcquiredLock.builder()
+            .lock(lock)
+            .isLeaseInfinite(true)
+            .isSentinelMode(client.getConfig().isSentinelConfig())
+            .build();
+      }
+    } catch (InterruptedException iex) {
+      log.error(format(ERROR_MESSAGE, name), iex);
+      Thread.currentThread().interrupt();
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
     }
@@ -122,8 +140,13 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
   }
 
   @Override
-  public AcquiredLock tryToAcquireEphemeralLock(String name, Duration timeout) {
-    return tryToAcquireLock(name, timeout);
+  public AcquiredLock waitToAcquireLockOptional(String name, Duration lockTimeout, Duration waitTimeout) {
+    try {
+      return waitToAcquireLock(name, lockTimeout, waitTimeout);
+    } catch (WingsException ex) {
+      log.error("Failed to acquire a Redis lock {} ", ex);
+      return null;
+    }
   }
 
   @Override
@@ -137,11 +160,20 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       name = getLockName(name);
       RLock lock = client.getLock(name);
-      boolean locked = lock.tryLock(waitTimeout.toMillis(), lockTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      boolean locked;
+      if (client.getConfig().isSentinelConfig()) {
+        locked = lock.tryLockAsync(waitTimeout.toMillis(), lockTimeout.toMillis(), TimeUnit.MILLISECONDS)
+                     .get(lockTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      } else {
+        locked = lock.tryLock(waitTimeout.toMillis(), lockTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      }
       if (locked) {
         log.debug("Acquired lock on {} for {} having a wait Timeout of {}", name, lockTimeout, waitTimeout);
-        return RedisAcquiredLock.builder().lock(lock).build();
+        return RedisAcquiredLock.builder().lock(lock).isSentinelMode(client.getConfig().isSentinelConfig()).build();
       }
+    } catch (InterruptedException iex) {
+      log.error(format(ERROR_MESSAGE, name), iex);
+      Thread.currentThread().interrupt();
     } catch (Exception ex) {
       throw new UnexpectedException(format(ERROR_MESSAGE, name), ex);
     }

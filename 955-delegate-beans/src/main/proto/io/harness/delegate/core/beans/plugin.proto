@@ -1,0 +1,36 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate.core.beans;
+
+option java_multiple_files = true;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+/*
+ Schedule is for perpetual execution support. No reason perpetual jobs should have a separate definition. They are same
+ as standard jobs, just run on a schedule.
+ */
+message ExecutionSchedule {
+  google.protobuf.Duration interval = 1;  // Interval between successive iterations
+  google.protobuf.Duration timeout = 2;   // Timeout for one iteration of the job
+}
+
+/*
+ Any parameters describing the job. data needs to be in byte format as delegate might be just passing it through without
+ deserialization. Other fields can be interpreted by delegate.
+ */
+message InputData {
+  // We could use only bytes, but Any gives us additional benefit of knowing the runtime data type for a negligible
+  // additional size in bytes. There might also be a minimal performance penalty. There is nothing preventing users
+  // using plain proto objects as bytes bypassing Any
+  oneof data {
+    google.protobuf.Any proto_data = 1;  // for executions with proto spec.
+    bytes binary_data = 2;               // for executions with any unstructured data formats including legacy kryo
+  }
+}

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -33,4 +34,8 @@ public class NgManifestsMetadataSweepingOutput implements ExecutionSweepingOutpu
   @NotNull ServiceDefinitionType serviceDefinitionType;
   @NotNull String serviceIdentifier;
   String environmentIdentifier;
+
+  // added for override v2
+  Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride;
+  List<ManifestConfigWrapper> svcManifests;
 }

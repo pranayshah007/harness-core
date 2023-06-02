@@ -9,6 +9,7 @@ package io.harness.gitsync.common.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.common.dtos.GitErrorMetadata;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,6 +21,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ScmErrorDetails {
+  int statusCode;
+  GitErrorMetadata gitErrorMetadata;
   String error;
   String explanation;
   String hint;

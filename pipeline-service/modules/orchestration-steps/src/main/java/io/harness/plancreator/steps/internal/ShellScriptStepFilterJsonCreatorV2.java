@@ -35,7 +35,6 @@ public class ShellScriptStepFilterJsonCreatorV2 extends GenericStepPMSFilterJson
 
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, AbstractStepNode yamlField) {
-    super.handleNode(filterCreationContext, yamlField);
     ShellScriptStepNode scriptStepNode = (ShellScriptStepNode) yamlField;
     ShellScriptStepInfo scriptStepInfo = scriptStepNode.getShellScriptStepInfo();
     if (!Boolean.TRUE.equals(scriptStepInfo.getOnDelegate().getValue())) {
@@ -56,6 +55,7 @@ public class ShellScriptStepFilterJsonCreatorV2 extends GenericStepPMSFilterJson
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
     }
-    return FilterCreationResponse.builder().build();
+
+    return super.handleNode(filterCreationContext, yamlField);
   }
 }

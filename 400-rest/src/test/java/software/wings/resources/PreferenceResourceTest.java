@@ -19,7 +19,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -102,7 +102,7 @@ public class PreferenceResourceTest extends WingsBaseTest {
       deployPref.setUuid(PREFERENCE_ID);
       PageResponse<Preference> pageResponse = new PageResponse<>();
       pageResponse.setResponse(asList(deployPref));
-      when(preferenceService.list(any(PageRequest.class), any())).thenReturn(pageResponse);
+      when(preferenceService.list(any(PageRequest.class), any(), any())).thenReturn(pageResponse);
       RestResponse<PageResponse<Preference>> restResponse =
           RESOURCES.client()
               .target("/preference?accountId=" + ACCOUNT_ID)

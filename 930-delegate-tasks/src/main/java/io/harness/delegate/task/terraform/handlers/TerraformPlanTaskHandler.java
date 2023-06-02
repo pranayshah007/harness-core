@@ -9,6 +9,7 @@ package io.harness.delegate.task.terraform.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.AMAZON_S3;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.ARTIFACTORY;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_NO_CONFIG_SET;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_NO_CONFIG_SET;
@@ -26,11 +27,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
+import io.harness.delegate.task.terraform.TerraformTaskNGResponse.TerraformTaskNGResponseBuilder;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
@@ -72,6 +75,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     String scriptDirectory;
     String baseDir = terraformBaseHelper.getBaseDir(taskParameters.getEntityId());
     Map<String, String> commitIdToFetchedFilesMap = new HashMap<>();
+    Map<String, Map<String, String> > keyVersionMap = new HashMap<>();
 
     if (taskParameters.getConfigFile() != null) {
       GitStoreDelegateConfig conFileFileGitStore = taskParameters.getConfigFile().getGitStoreDelegateConfig();
@@ -116,15 +120,37 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
       scriptDirectory = terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(artifactoryStoreDelegateConfig,
           taskParameters.getAccountId(), taskParameters.getWorkspace(), taskParameters.getCurrentStateFileId(),
           logCallback, baseDir);
+    } else if (taskParameters.getFileStoreConfigFiles() != null
+        && taskParameters.getFileStoreConfigFiles().getType() == AMAZON_S3) {
+      S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+          (S3StoreTFDelegateConfig) taskParameters.getFileStoreConfigFiles();
+      if (isNotEmpty(s3StoreTFDelegateConfig.getRegion()) && isNotEmpty(s3StoreTFDelegateConfig.getBucketName())
+          && isNotEmpty(s3StoreTFDelegateConfig.getPaths()) && isNotEmpty(s3StoreTFDelegateConfig.getPaths().get(0))) {
+        logCallback.saveExecutionLog(
+            format("Fetching config files from S3. Region: [%s]  Bucket: [%s]  Folder path: [%s]",
+                s3StoreTFDelegateConfig.getRegion(), s3StoreTFDelegateConfig.getBucketName(),
+                s3StoreTFDelegateConfig.getPaths().get(0)),
+            INFO, CommandExecutionStatus.RUNNING);
+      }
+      scriptDirectory = terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+          s3StoreTFDelegateConfig, taskParameters, baseDir, keyVersionMap, logCallback);
     } else {
       throw NestedExceptionUtils.hintWithExplanationException(HINT_NO_CONFIG_SET, EXPLANATION_NO_CONFIG_SET,
           new TerraformCommandExecutionException("No Terraform config set", WingsException.USER));
     }
 
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
-    List<String> varFilePaths =
-        terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(taskParameters.getVarFileInfos(),
-            scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory, commitIdToFetchedFilesMap);
+    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory,
+        commitIdToFetchedFilesMap, taskParameters.isTerraformCloudCli(), keyVersionMap);
+
+    if (taskParameters.isTerraformCloudCli() && !varFilePaths.isEmpty()) {
+      logCallback.saveExecutionLog(format("Var files are moved in %s having a suffix: .auto.tfvars", scriptDirectory),
+          INFO, CommandExecutionStatus.RUNNING);
+      for (String varFilePath : varFilePaths) {
+        TerraformHelperUtils.copytfCloudVarFilesToScriptDirectory(varFilePath, scriptDirectory);
+      }
+    }
 
     String tfBackendConfigDirectory = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
 
@@ -136,9 +162,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     TerraformBackendConfigFileInfo configFileInfo;
     if (taskParameters.getBackendConfigFileInfo() != null) {
       configFileInfo = taskParameters.getBackendConfigFileInfo();
-      backendConfigFile =
-          terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(configFileInfo, scriptDirectory,
-              logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory, commitIdToFetchedFilesMap);
+      backendConfigFile = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(configFileInfo,
+          scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory,
+          commitIdToFetchedFilesMap, keyVersionMap);
     }
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
@@ -168,6 +194,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
               .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
               .accountId(taskParameters.getAccountId())
+              .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
+              .skipTerraformRefresh(taskParameters.isSkipTerraformRefresh())
+              .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -184,52 +213,60 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
       String uploadedTfStateFile = terraformBaseHelper.uploadTfStateFile(
           taskParameters.getAccountId(), delegateId, taskId, taskParameters.getEntityId(), tfStateFile);
 
-      logCallback.saveExecutionLog(color("\nEncrypting terraform plan \n", LogColor.Yellow, LogWeight.Bold), INFO,
-          CommandExecutionStatus.RUNNING);
-
-      String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
-
-      EncryptedRecordData encryptedTfPlan = terraformBaseHelper.encryptPlan(
-          Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
-
+      EncryptedRecordData encryptedTfPlan = null;
       String tfHumanReadablePlanFileId = null;
-      if (taskParameters.isSaveTerraformHumanReadablePlan()) {
-        planHumanReadableOutputStream.flush();
-        planHumanReadableOutputStream.close();
-        String tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
-
-        tfHumanReadablePlanFileId = terraformBaseHelper.uploadTfPlanHumanReadable(taskParameters.getAccountId(),
-            delegateId, taskId, taskParameters.getEntityId(), planName, tfHumanReadableFilePath);
-      }
-
       String tfPlanJsonFileId = null;
-      if (taskParameters.isSaveTerraformStateJson()
-          && planJsonLogOutputStream.getTfPlanShowJsonStatus().equals(CommandExecutionStatus.SUCCESS)) {
-        // We're going to read content from json plan file and ideally no one should write anything into output
-        // stream at this stage. Just in case let's flush everything from buffer and close output stream
-        // We have enough guards at different layers to prevent repeat close as result of autocloseable
-        planJsonLogOutputStream.flush();
-        planJsonLogOutputStream.close();
-        String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
 
-        tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
-            taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+      if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+        logCallback.saveExecutionLog(color("\nEncrypting terraform plan \n", LogColor.Yellow, LogWeight.Bold), INFO,
+            CommandExecutionStatus.RUNNING);
 
-        logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
-            INFO, CommandExecutionStatus.RUNNING);
+        String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
+
+        encryptedTfPlan = terraformBaseHelper.encryptPlan(
+            Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
+
+        if (taskParameters.isSaveTerraformHumanReadablePlan()) {
+          planHumanReadableOutputStream.flush();
+          planHumanReadableOutputStream.close();
+          String tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
+
+          tfHumanReadablePlanFileId = terraformBaseHelper.uploadTfPlanHumanReadable(taskParameters.getAccountId(),
+              delegateId, taskId, taskParameters.getEntityId(), planName, tfHumanReadableFilePath);
+        }
+
+        if (taskParameters.isSaveTerraformStateJson()
+            && planJsonLogOutputStream.getTfPlanShowJsonStatus().equals(CommandExecutionStatus.SUCCESS)) {
+          // We're going to read content from json plan file and ideally no one should write anything into output
+          // stream at this stage. Just in case let's flush everything from buffer and close output stream
+          // We have enough guards at different layers to prevent repeat close as result of autocloseable
+          planJsonLogOutputStream.flush();
+          planJsonLogOutputStream.close();
+          String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
+
+          tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
+              taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+
+          logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
+              INFO, CommandExecutionStatus.RUNNING);
+        }
       }
 
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);
 
-      return TerraformTaskNGResponse.builder()
-          .commitIdForConfigFilesMap(commitIdToFetchedFilesMap)
-          .encryptedTfPlan(encryptedTfPlan)
-          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .stateFileId(uploadedTfStateFile)
-          .detailedExitCode(detailedExitCode)
-          .tfPlanJsonFileId(tfPlanJsonFileId)
-          .tfHumanReadablePlanFileId(tfHumanReadablePlanFileId)
-          .build();
+      TerraformTaskNGResponseBuilder response = TerraformTaskNGResponse.builder();
+      response.commitIdForConfigFilesMap(commitIdToFetchedFilesMap);
+      response.keyVersionMap(keyVersionMap);
+      response.commandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      response.stateFileId(uploadedTfStateFile);
+      response.detailedExitCode(detailedExitCode);
+
+      if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+        response.encryptedTfPlan(encryptedTfPlan);
+        response.tfPlanJsonFileId(tfPlanJsonFileId);
+        response.tfHumanReadablePlanFileId(tfHumanReadablePlanFileId);
+      }
+      return response.build();
     }
   }
 }

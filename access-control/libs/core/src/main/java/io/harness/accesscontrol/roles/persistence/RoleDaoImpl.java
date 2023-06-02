@@ -129,10 +129,9 @@ public class RoleDaoImpl implements RoleDao {
 
   @Override
   public Optional<Role> delete(String identifier, String scopeIdentifier, boolean managed) {
-    return roleRepository.deleteByIdentifierAndScopeIdentifierAndManaged(identifier, scopeIdentifier, managed)
-        .stream()
-        .findFirst()
-        .flatMap(r -> Optional.of(fromDBO(r)));
+    Optional<RoleDBO> optionalRoleDBO =
+        roleRepository.deleteByIdentifierAndScopeIdentifierAndManaged(identifier, scopeIdentifier, managed);
+    return optionalRoleDBO.map(RoleDBOMapper::fromDBO);
   }
 
   @Override

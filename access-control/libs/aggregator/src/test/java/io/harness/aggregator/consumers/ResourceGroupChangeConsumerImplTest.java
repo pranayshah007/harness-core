@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -77,8 +77,8 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     resourceGroupRepository = mock(ResourceGroupRepository.class);
-    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
-        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
+    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(), aclRepository);
     resourceGroupChangeConsumer = new ResourceGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository,
         resourceGroupRepository, AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

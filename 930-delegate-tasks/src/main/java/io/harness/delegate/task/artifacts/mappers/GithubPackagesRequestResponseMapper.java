@@ -20,8 +20,8 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
+import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -103,6 +103,7 @@ public class GithubPackagesRequestResponseMapper {
         .versionRegex(request.getVersionRegex())
         .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
         .packageUrl(buildDetails.getArtifactPath())
+        .label(buildDetails.getLabels())
         .build();
   }
 

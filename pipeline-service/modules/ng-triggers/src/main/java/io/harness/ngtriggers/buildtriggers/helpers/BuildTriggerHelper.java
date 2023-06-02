@@ -42,6 +42,7 @@ import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.AzureArtifactsPayload;
+import io.harness.polling.contracts.BambooPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.CustomPayload;
 import io.harness.polling.contracts.DockerHubPayload;
@@ -88,14 +89,17 @@ public class BuildTriggerHelper {
   public static final String NPM = "npm";
   public static final String NUGET = "nuget";
 
-  public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
+  public Optional<String> fetchPipelineYamlForTrigger(TriggerDetails triggerDetails) {
+    PMSPipelineResponseDTO response = fetchPipelineForTrigger(triggerDetails);
+    return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+  }
+
+  public PMSPipelineResponseDTO fetchPipelineForTrigger(TriggerDetails triggerDetails) {
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-    PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
-        ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
-
-    return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
+    return NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(ngTriggerEntity.getTargetIdentifier(),
+        ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
+        ngTriggerConfigV2.getPipelineBranchName(), null, false));
   }
 
   public Optional<String> fetchResolvedTemplatesPipelineForTrigger(TriggerDetails triggerDetails) {
@@ -104,7 +108,7 @@ public class BuildTriggerHelper {
     TemplatesResolvedPipelineResponseDTO response =
         NGRestUtils.getResponse(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-            ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
+            ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false, "true"));
 
     return response != null ? Optional.of(response.getResolvedTemplatesPipelineYaml()) : Optional.empty();
   }
@@ -301,6 +305,8 @@ public class BuildTriggerHelper {
       validatePollingItemForAMI(pollingItem);
     } else if (pollingPayloadData.hasGoogleCloudStoragePayload()) {
       validatePollingItemForGoogleCloudStorage(pollingItem);
+    } else if (pollingPayloadData.hasBambooPayload()) {
+      validatePollingItemForBamboo(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -358,6 +364,15 @@ public class BuildTriggerHelper {
     JenkinsPayload jenkinsPayload = pollingItem.getPollingPayloadData().getJenkinsPayload();
 
     String error = checkFiledValueError("jobName", jenkinsPayload.getJobName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForBamboo(PollingItem pollingItem) {
+    BambooPayload bambooPayload = pollingItem.getPollingPayloadData().getBambooPayload();
+
+    String error = checkFiledValueError("planKey", bambooPayload.getPlanKey());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -630,6 +645,23 @@ public class BuildTriggerHelper {
         return Collections.emptyList();
       }
       inputs = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<List<NGVariableTrigger>>() {});
+    }
+    return inputs;
+  }
+
+  public List<String> validateAndFetchStringListFromJsonNode(BuildTriggerOpsData buildTriggerOpsData, String key) {
+    List<String> inputs = buildTriggerOpsData.getPipelineBuildSpecMap().containsKey(key)
+        ? JsonUtils.asList(
+            ((JsonNode) buildTriggerOpsData.getPipelineBuildSpecMap().get(key)).asText(), new TypeReference<>() {})
+        : Collections.emptyList();
+    if (isEmpty(inputs)) {
+      EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
+      Object evaluateExpression =
+          engineExpressionEvaluator.evaluateExpression(key, buildTriggerOpsData.getTriggerSpecMap());
+      if (evaluateExpression == null) {
+        return Collections.emptyList();
+      }
+      inputs = JsonUtils.asList(evaluateExpression.toString(), new TypeReference<>() {});
     }
     return inputs;
   }

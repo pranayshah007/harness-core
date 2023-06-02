@@ -56,6 +56,7 @@ public class K8sBGSwapServicesVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.description",
             "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.name",
             "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.spec.delegateSelectors",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.timeout");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.timeout",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.when");
   }
 }

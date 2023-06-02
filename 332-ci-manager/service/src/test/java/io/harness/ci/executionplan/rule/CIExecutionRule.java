@@ -23,7 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.beans.entities.IACMServiceConfig;
-import io.harness.beans.execution.QueueServiceClient;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -39,7 +39,6 @@ import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.license.CILicenseNoopServiceImpl;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.cistatus.service.GithubService;
@@ -58,6 +57,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.iacmserviceclient.IACMServiceClient;
 import io.harness.iacmserviceclient.IACMServiceClientFactory;
 import io.harness.impl.scm.ScmServiceClientImpl;
@@ -77,6 +77,8 @@ import io.harness.rule.InjectorRuleMixin;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.service.ScmServiceClient;
 import io.harness.springdata.SpringPersistenceTestModule;
+import io.harness.ssca.beans.entities.SSCAServiceConfig;
+import io.harness.ssca.client.SSCAServiceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -169,7 +171,13 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(IACMServiceConfig.class)
             .toInstance(
                 IACMServiceConfig.builder().baseUrl("http://localhost:4000").globalToken("api/v1/token").build());
+        bind(SSCAServiceConfig.class)
+            .toInstance(
+                SSCAServiceConfig.builder()
+                    .httpClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:8186").build())
+                    .build());
         bind(IACMServiceClient.class).toProvider(IACMServiceClientFactory.class).in(Scopes.SINGLETON);
+        bind(SSCAServiceClient.class).toInstance(mock(SSCAServiceClient.class));
       }
     });
 
@@ -229,6 +237,8 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .cacheGCSConfig(StepImageConfig.builder().image("cachegcs:1.2.3").build())
             .cacheS3Config(StepImageConfig.builder().image("caches3:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
+            .sscaOrchestrationConfig(StepImageConfig.builder().image("sscaorchestrate:0.0.1").build())
+            .sscaEnforcementConfig(StepImageConfig.builder().image("sscaEnforcement:0.0.1").build())
             .vmImageConfig(vmImageConfig)
             .build();
 
@@ -243,7 +253,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                                  .liteEngineImage("harness/ci-lite-engine:1.4.0")
                                                  .pvcDefaultStorageSize(25600)
                                                  .stepConfig(ciStepConfig)
-                                                 .queueServiceClient(QueueServiceClient.builder().build())
+                                                 .queueServiceClientConfig(QueueServiceClientConfig.builder().build())
                                                  .build(),
         false));
 

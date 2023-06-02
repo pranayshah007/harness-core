@@ -10,6 +10,7 @@ package software.wings.service.impl.workflow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
@@ -58,6 +59,7 @@ import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
 import static software.wings.common.InfrastructureConstants.INFRA_ID_EXPRESSION;
 import static software.wings.common.ProvisionerConstants.GENERIC_ROLLBACK_NAME_FORMAT;
 import static software.wings.common.WorkflowConstants.WORKFLOW_INFRAMAPPING_VALIDATION_MESSAGE;
@@ -146,6 +148,7 @@ import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.LimitEnforcementUtils;
 import io.harness.limits.checker.StaticLimitCheckerWithDecrement;
 import io.harness.limits.counter.service.CounterSyncer;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.observer.Rejection;
 import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
@@ -459,11 +462,15 @@ public class WorkflowServiceImpl implements WorkflowService {
   }
 
   @Override
-  public List<Workflow> list(String accountId, List<String> projectFields) {
+  public List<Workflow> list(String accountId, List<String> projectFields, String queryHint) {
     Query<Workflow> workflowQuery =
         wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });
-    return emptyIfNull(workflowQuery.asList());
+    FindOptions findOptions = new FindOptions();
+    if (isNotEmpty(queryHint)) {
+      findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
+    }
+    return emptyIfNull(workflowQuery.asList(findOptions));
   }
 
   /**
@@ -671,7 +678,7 @@ public class WorkflowServiceImpl implements WorkflowService {
   public PageResponse<Workflow> listWorkflows(
       PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter) {
     PageResponse<Workflow> workflows =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags, false);
 
     if (workflows != null && workflows.getResponse() != null) {
       for (Workflow workflow : workflows.getResponse()) {
@@ -688,10 +695,13 @@ public class WorkflowServiceImpl implements WorkflowService {
           List<WorkflowExecution> workflowExecutions;
 
           FindOptions findOptions = new FindOptions();
+          findOptions.hint(
+              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
           findOptions.limit(previousExecutionsCount);
           workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
                                    .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
                                    .filter(WorkflowExecutionKeys.appId, workflow.getAppId())
+                                   .filter(WorkflowExecutionKeys.accountId, workflow.getAccountId())
                                    .order(Sort.descending(WorkflowExecutionKeys.createdAt))
                                    .project(WorkflowExecutionKeys.stateMachine, false)
                                    .project(WorkflowExecutionKeys.serviceExecutionSummaries, false)
@@ -822,6 +832,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (workflow == null) {
       return null;
     }
+    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId));
     loadOrchestrationWorkflow(workflow, version);
     return workflow;
   }
@@ -1312,7 +1323,9 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (orchestrationWorkflow instanceof CanaryOrchestrationWorkflow) {
       CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
 
-      validateOrchestrationLevelFailureStrategies(canaryOrchestrationWorkflow);
+      if (featureFlagService.isNotEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, accountId)) {
+        validateOrchestrationLevelFailureStrategies(canaryOrchestrationWorkflow);
+      }
 
       if (featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, accountId)) {
         Map<List<GraphNode>, List<FailureStrategy>> stepsToStrategiesMap =
@@ -2963,7 +2976,8 @@ public class WorkflowServiceImpl implements WorkflowService {
             runtimeValues.put(parameter, previousRuntimeValues.getOrDefault(parameter, ""));
           }
         }
-        runtimeValues.put("buildNo", previousRuntimeValues.get("buildNo")); // special handling for buildNo
+        runtimeValues.put("buildNo",
+            previousRuntimeValues.get("buildNo")); // special handling for buildNo
         artifactStreamMetadata =
             ArtifactStreamMetadata.builder().artifactStreamId(artifactStreamId).runtimeValues(runtimeValues).build();
       }
@@ -4013,7 +4027,10 @@ public class WorkflowServiceImpl implements WorkflowService {
     // Do we need checks for isServiceTemplatized or isInfraDefinitionTemplatized
 
     DeploymentType deploymentType = null;
-    Service service = serviceResourceService.get(appId, serviceId, false);
+    Service service = null;
+    if (serviceId != null) {
+      service = serviceResourceService.get(appId, serviceId, false);
+    }
 
     if (service != null) {
       deploymentType = service.getDeploymentType();

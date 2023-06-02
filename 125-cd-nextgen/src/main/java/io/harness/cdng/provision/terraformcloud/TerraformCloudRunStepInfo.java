@@ -7,7 +7,7 @@
 
 package io.harness.cdng.provision.terraformcloud;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -68,9 +68,11 @@ public class TerraformCloudRunStepInfo implements CDAbstractStepInfo, WithConnec
   @Valid
   TerraformCloudRunExecutionSpec terraformCloudRunExecutionSpec;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> message;
+  @JsonProperty("runMessage")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> message;
 
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
@@ -91,7 +93,7 @@ public class TerraformCloudRunStepInfo implements CDAbstractStepInfo, WithConnec
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 
   @Override
@@ -100,6 +102,7 @@ public class TerraformCloudRunStepInfo implements CDAbstractStepInfo, WithConnec
     return TerraformCloudRunStepParameters.infoBuilder()
         .delegateSelectors(delegateSelectors)
         .spec(terraformCloudRunExecutionSpec.getSpecParams())
+        .message(message)
         .build();
   }
 

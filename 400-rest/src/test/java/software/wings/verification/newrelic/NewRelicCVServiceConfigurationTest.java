@@ -10,8 +10,8 @@ package software.wings.verification.newrelic;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 import static software.wings.common.VerificationConstants.CV_24x7_STATE_EXECUTION;
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

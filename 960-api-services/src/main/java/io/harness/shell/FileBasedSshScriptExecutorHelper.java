@@ -24,6 +24,10 @@ import io.harness.exception.SshRetryableException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.NoopExecutionCallback;
+import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.xfer.ScpRequest;
+import io.harness.shell.ssh.xfer.ScpResponse;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -47,19 +51,27 @@ public class FileBasedSshScriptExecutorHelper {
   public static CommandExecutionStatus scpOneFile(String remoteFilePath,
       AbstractScriptExecutor.FileProvider fileProvider, SshSessionConfig config, LogCallback logCallback,
       boolean shouldSaveExecutionLogs) {
-    Consumer<String> saveExecutionLog = checkAndSaveExecutionLogFunction(logCallback, shouldSaveExecutionLogs);
-    Consumer<String> saveExecutionLogError =
-        checkAndSaveExecutionLogErrorFunction(logCallback, shouldSaveExecutionLogs);
-
-    try {
-      return scpOneFile(
-          remoteFilePath, fileProvider, false, config, logCallback, saveExecutionLog, saveExecutionLogError);
-    } catch (SshRetryableException ex) {
-      log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
-          config.getExecutionId(), config.getHost());
-      saveExecutionLog.accept(format("Retry connecting to %s ....", config.getHost()));
-      return scpOneFile(
-          remoteFilePath, fileProvider, true, config, logCallback, saveExecutionLog, saveExecutionLogError);
+    if (config.isUseSshClient()) {
+      if (!shouldSaveExecutionLogs) {
+        logCallback = new NoopExecutionCallback();
+      }
+      ScpResponse scpResponse = SshClientManager.scpUpload(
+          ScpRequest.builder().fileProvider(fileProvider).remoteFilePath(remoteFilePath).build(), config, logCallback);
+      return scpResponse.getStatus();
+    } else {
+      Consumer<String> saveExecutionLog = checkAndSaveExecutionLogFunction(logCallback, shouldSaveExecutionLogs);
+      Consumer<String> saveExecutionLogError =
+          checkAndSaveExecutionLogErrorFunction(logCallback, shouldSaveExecutionLogs);
+      try {
+        return scpOneFile(
+            remoteFilePath, fileProvider, false, config, logCallback, saveExecutionLog, saveExecutionLogError);
+      } catch (SshRetryableException ex) {
+        log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
+            config.getExecutionId(), config.getHost());
+        saveExecutionLog.accept(format("Retry connecting to %s ....", config.getHost()));
+        return scpOneFile(
+            remoteFilePath, fileProvider, true, config, logCallback, saveExecutionLog, saveExecutionLogError);
+      }
     }
   }
 

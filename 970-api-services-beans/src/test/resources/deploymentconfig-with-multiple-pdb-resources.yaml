@@ -1,0 +1,76 @@
+kind: "DeploymentConfig"
+apiVersion: "v1"
+metadata:
+  name: "test-deployment-config"
+spec:
+  template:
+    metadata:
+      labels:
+        app: "test-deployment-config"
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.7.9
+          ports:
+            - containerPort: 80
+          env:
+            - name: config_env_var
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: special.how
+            - name: secret_env_var
+              valueFrom:
+                secretKeyRef:
+                  name: mysecret
+                  key: username
+          envFrom:
+            - configMapRef:
+                name: example
+            - secretRef:
+                name: example
+  replicas: 5
+  selector:
+    app: test-deployment-config
+  triggers:
+    - type: ConfigChange
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment-config
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment-config
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-3
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment-config
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-custom
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment-config-green

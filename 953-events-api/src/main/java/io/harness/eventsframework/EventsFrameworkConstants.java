@@ -26,6 +26,7 @@ public final class EventsFrameworkConstants {
   public static final String WEBHOOK_REQUEST_PAYLOAD_DETAILS = "webhook_request_payload_data";
   public static final String WEBHOOK_EVENTS_STREAM = "webhook_events_stream";
   public static final String POLLING_EVENTS_STREAM = "polling_events_stream";
+  public static final String TRIGGER_EXECUTION_EVENTS_STREAM = "trigger_execution_events_stream";
   public static final String GIT_PUSH_EVENT_STREAM = "git_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
   public static final String GIT_BRANCH_HOOK_EVENT_STREAM = "git_branch_hook_event_stream";
@@ -90,6 +91,7 @@ public final class EventsFrameworkConstants {
 
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER";
+  public static final String MODULE_LICENSES_REDIS_EVENT_CONSUMER = "MODULE_LICENSES_REDIS_EVENT_CONSUMER";
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD";
   public static final String PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER =
@@ -98,6 +100,7 @@ public final class EventsFrameworkConstants {
 
   public static final String APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER =
       "APPLICATION_TIMESCALE_REDIS_CHANGE_EVENT_CONSUMER";
+  public static final String CDNG_ORCHESTRATION_EVENT_CONSUMER = "CDNG_ORCHESTRATION_EVENT_CONSUMER";
 
   public static final String START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC = "pipeline_start_plan";
   public static final int START_PARTIAL_PLAN_CREATOR_BATCH_SIZE = 20;
@@ -118,10 +121,10 @@ public final class EventsFrameworkConstants {
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String INTERNAL_CHANGE_EVENT_FF = "cf_svc_updates";
+  public static final String INTERNAL_CHANGE_EVENT_CE = "chaos_change_events";
 
   public static final int INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE = 1;
-
-  public static final int INTERNAL_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
+  public static final int INTERNAL_CHANGE_EVENT_CE_BATCH_SIZE = 1;
 
   public static final String SRM_STATEMACHINE_EVENT = "srm_statemachine_event";
   public static final int SRM_STATEMACHINE_EVENT_BATCH_SIZE = 1;
@@ -143,6 +146,7 @@ public final class EventsFrameworkConstants {
   public static final int WEBHOOK_REQUEST_PAYLOAD_DETAILS_MAX_TOPIC_SIZE = 10000;
   public static final int WEBHOOK_EVENTS_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int POLLING_EVENTS_STREAM_MAX_TOPIC_SIZE = 10000;
+  public static final int TRIGGER_EXECUTION_EVENTS_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_PUSH_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_PR_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
@@ -155,6 +159,7 @@ public final class EventsFrameworkConstants {
   public static final Duration NG_ACCOUNT_SETUP_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
   public static final Duration WEBHOOK_EVENTS_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(150);
   public static final Duration POLLING_EVENTS_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
+  public static final Duration TRIGGER_EXECUTION_EVENTS_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration GIT_PUSH_EVENT_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration GIT_PR_EVENT_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration GIT_BRANCH_HOOK_EVENT_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
@@ -184,6 +189,7 @@ public final class EventsFrameworkConstants {
   public static final int FULL_SYNC_STREAM_READ_BATCH_SIZE = 20;
   public static final int WEBHOOK_EVENTS_STREAM_BATCH_SIZE = 20;
   public static final int POLLING_EVENTS_STREAM_BATCH_SIZE = 50;
+  public static final int TRIGGER_EXECUTION_EVENTS_STREAM_BATCH_SIZE = 50;
   public static final int GIT_PUSH_EVENT_STREAM_BATCH_SIZE = 50;
   public static final int GIT_PR_EVENT_STREAM_BATCH_SIZE = 50;
   public static final int GIT_BRANCH_HOOK_EVENT_STREAM_BATCH_SIZE = 50;
@@ -197,10 +203,10 @@ public final class EventsFrameworkConstants {
   public static final String CG_NOTIFY_EVENT = "cg_notify_event";
   public static final int CG_NOTIFY_EVENT_TOPIC_SIZE = 100000;
   public static final int CG_NOTIFY_EVENT_BATCH_SIZE = 50;
-  public static final Duration CG_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
+  public static final Duration CG_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofMinutes(10);
 
   public static final String CG_GENERAL_EVENT = "cg_general_event";
   public static final int CG_GENERAL_EVENT_TOPIC_SIZE = 100000;
   public static final int CG_GENERAL_EVENT_BATCH_SIZE = 50;
-  public static final Duration CG_GENERAL_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
+  public static final Duration CG_GENERAL_EVENT_MAX_PROCESSING_TIME = Duration.ofMinutes(10);
 }

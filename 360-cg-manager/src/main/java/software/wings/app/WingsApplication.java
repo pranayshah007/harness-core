@@ -68,6 +68,7 @@ import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.resources.DelegateTaskResource;
 import io.harness.delegate.resources.DelegateTaskResourceV2;
+import io.harness.delegate.resources.core.CoreDelegateResource;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
 import io.harness.dms.DmsModule;
@@ -75,8 +76,6 @@ import io.harness.event.EventsModule;
 import io.harness.event.listener.EventListener;
 import io.harness.event.reconciliation.service.DeploymentReconExecutorService;
 import io.harness.event.reconciliation.service.DeploymentReconTask;
-import io.harness.event.reconciliation.service.LookerEntityReconExecutorService;
-import io.harness.event.reconciliation.service.LookerEntityReconTask;
 import io.harness.event.usagemetrics.EventsModuleHelper;
 import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
@@ -96,6 +95,7 @@ import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
+import io.harness.iterator.FailDelegateTaskIteratorOnDMS;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorExecutionHandlerImpl;
 import io.harness.lock.AcquiredLock;
@@ -109,6 +109,7 @@ import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migrations.MigrationModule;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.QuartzCleaner;
 import io.harness.mongo.tracing.TraceMode;
@@ -153,6 +154,7 @@ import io.harness.queue.consumers.GeneralEventConsumerCg;
 import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
 import io.harness.scheduler.PersistentScheduler;
@@ -161,7 +163,6 @@ import io.harness.secrets.SecretMigrationEventListener;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.CurrentGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
@@ -260,6 +261,8 @@ import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.UserAccountLevelDataMigrationJob;
+import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.service.impl.applicationmanifest.AppManifestSettingAttributePTaskManager;
 import software.wings.service.impl.applicationmanifest.ManifestPerpetualTaskManger;
@@ -305,6 +308,7 @@ import software.wings.sm.StateStatusUpdate;
 import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
 import software.wings.yaml.gitSync.GitSyncPollingIterator;
+import software.wings.yaml.gitSync.GitSyncPollingJob;
 
 import com.codahale.metrics.InstrumentedExecutorService;
 import com.codahale.metrics.MetricRegistry;
@@ -787,7 +791,7 @@ public class WingsApplication extends Application<MainConfiguration> {
           new IteratorExecutionHandlerImpl(iteratorConfigPath, iteratorConfigFile);
 
       if (isManager()) {
-        registerIteratorsManager(injector, iteratorExecutionHandler);
+        registerIteratorsManager(injector, iteratorExecutionHandler, configuration);
       }
       if (shouldEnableDelegateMgmt) {
         registerIteratorsDelegateService(injector, iteratorExecutionHandler);
@@ -877,6 +881,8 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(configuration.getCacheConfig());
     modules.add(cacheModule);
+    modules.add(new DelegateServiceCacheModule(
+        configuration.getDelegateServiceRedisConfig(), configuration.isEnableRedisForDelegateService()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -1000,6 +1006,16 @@ public class WingsApplication extends Application<MainConfiguration> {
     });
 
     modules.add(DmsModule.getInstance(shouldEnableDelegateMgmt(configuration)));
+
+    // WE SHOULD AVOID STATIC INJECTS, EXCEPT TO RESOLVE P0/P1 ISSUES.
+    // PLEASE READ ABOUT HOW DO IT AT GUICE OFFICE DOC SITE
+    // https://github.com/google/guice/wiki/Injections#static-injections
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        requestStaticInjection(WorkflowExecutionServiceHelper.class);
+      }
+    });
   }
 
   private void registerEventConsumers(final Injector injector) {
@@ -1168,7 +1184,8 @@ public class WingsApplication extends Application<MainConfiguration> {
             .filter(klazz
                 -> StringUtils.startsWithAny(klazz.getPackage().getName(), AppResource.class.getPackage().getName(),
                     DelegateTaskResource.class.getPackage().getName(),
-                    DelegateTaskResourceV2.class.getPackage().getName()))
+                    DelegateTaskResourceV2.class.getPackage().getName(),
+                    CoreDelegateResource.class.getPackage().getName()))
             .collect(Collectors.toSet());
 
     if (!configuration.isGraphQLEnabled()) {
@@ -1198,6 +1215,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
     environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
+    environment.lifecycle().manage(injector.getInstance(UserAccountLevelDataMigrationJob.class));
   }
 
   private void registerManagedBeansManager(
@@ -1297,7 +1315,11 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
-
+    if (configuration.isMoveGitPollingToRunnable()) {
+      injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitPolling")))
+          .scheduleWithFixedDelay(
+              injector.getInstance(GitSyncPollingJob.class), random.nextInt(5), 60L, TimeUnit.SECONDS);
+    }
     if (configuration.getDataReconciliationConfig() == null) {
       injector.getInstance(DeploymentReconExecutorService.class)
           .scheduleWithFixedDelay(
@@ -1308,9 +1330,6 @@ public class WingsApplication extends Application<MainConfiguration> {
               configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
     }
 
-    injector.getInstance(LookerEntityReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(LookerEntityReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
     ImmutableList<Class<? extends AccountDataRetentionEntity>> classes =
         ImmutableList.<Class<? extends AccountDataRetentionEntity>>builder()
             .add(WorkflowExecution.class)
@@ -1365,6 +1384,11 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
           15L, TimeUnit.SECONDS);
     }
+
+    delegateExecutor.scheduleWithFixedDelay(
+        new Schedulable("Failed while auto revoking delegate tokens",
+            () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
+        1L, 1L, TimeUnit.HOURS);
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {
@@ -1441,9 +1465,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   /**
    * All the observers that belong to Delegate heart beat service.
+   *
    * @param injector
    * @param delegatePollingHeartbeatService singleton polling heartbeat processing class
-   * @param delegateStreamHeartbeatService singleton streaming heartbeat processing class
+   * @param delegateStreamHeartbeatService  singleton streaming heartbeat processing class
    */
   private void registerHeartbeatServiceObservers(Injector injector,
       DelegatePollingHeartbeatService delegatePollingHeartbeatService,
@@ -1520,10 +1545,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(PerpetualTaskRecordHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DelegateDisconnectDetectorIterator.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(FailDelegateTaskIterator.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(FailDelegateTaskIteratorOnDMS.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterator(iteratorExecutionHandler);
   }
 
-  public static void registerIteratorsManager(Injector injector, IteratorExecutionHandler iteratorExecutionHandler) {
+  public static void registerIteratorsManager(
+      Injector injector, IteratorExecutionHandler iteratorExecutionHandler, MainConfiguration configuration) {
     injector.getInstance(AlertReconciliationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(ArtifactCollectionHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(ArtifactCleanupHandler.class).registerIterator(iteratorExecutionHandler);
@@ -1555,7 +1582,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(LdapGroupScheduledHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(TimeoutEngine.class).registerIterator(iteratorExecutionHandler);
-    injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
+    if (!configuration.isMoveGitPollingToRunnable()) {
+      injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
+    }
   }
 
   private void registerCronJobs(Injector injector) {

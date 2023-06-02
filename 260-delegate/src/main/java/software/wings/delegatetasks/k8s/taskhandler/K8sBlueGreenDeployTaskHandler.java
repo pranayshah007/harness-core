@@ -25,6 +25,7 @@ import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.addRevisionNumber;
+import static io.harness.k8s.manifest.VersionUtils.addSuffixToConfigmapsAndSecrets;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
@@ -55,12 +56,13 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
-import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -103,6 +105,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
   @Inject private K8sBGBaseHandler k8sBGBaseHandler;
 
   private K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig = new K8sBlueGreenHandlerConfig();
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
   private K8sReleaseHandler releaseHandler;
   private int currentReleaseNumber;
 
@@ -137,7 +140,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
       ExecutionLogCallback executionLogCallback =
           k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, FetchFiles);
       executionLogCallback.saveExecutionLog(
-          color("\nStarting Kubernetes Blue-Greeen Deployment", LogColor.White, LogWeight.Bold));
+          color("\nStarting Kubernetes Blue-Green Deployment", LogColor.White, LogWeight.Bold));
 
       success = k8sTaskHelper.fetchManifestFilesAndWriteToDirectory(
           k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig(),
@@ -264,8 +267,8 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
         k8sBlueGreenDeployTaskParameters.getK8sClusterConfig(), false);
     k8sBlueGreenHandlerConfig.setKubernetesConfig(kubernetesConfig);
 
-    k8sBlueGreenHandlerConfig.setClient(
-        Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    k8sBlueGreenHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
 
     try {
       k8sTaskHelperBase.deleteSkippedManifestFiles(
@@ -279,6 +282,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
 
       List<KubernetesResource> resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback);
       k8sBlueGreenHandlerConfig.setResources(resources);
+      k8sRequestHandlerContext.setResources(resources);
       k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
     } catch (Exception e) {
       log.error("Exception:", e);
@@ -298,8 +302,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
     }
 
     return k8sTaskHelperBase.dryRunManifests(k8sBlueGreenHandlerConfig.getClient(),
-        k8sBlueGreenHandlerConfig.getResources(), k8sDelegateTaskParams, executionLogCallback,
-        k8sBlueGreenDeployTaskParameters.isUseNewKubectlVersion());
+        k8sBlueGreenHandlerConfig.getResources(), k8sDelegateTaskParams, executionLogCallback);
   }
 
   @VisibleForTesting
@@ -364,7 +367,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
         // create a clone
         k8sBlueGreenHandlerConfig.setStageService(
             getKubernetesResourceFromSpec(k8sBlueGreenHandlerConfig.getPrimaryService().getSpec()));
-        k8sBlueGreenHandlerConfig.getStageService().appendSuffixInName("-stage");
+        k8sBlueGreenHandlerConfig.getStageService().appendSuffixInName("-stage", k8sRequestHandlerContext);
         k8sBlueGreenHandlerConfig.getResources().add(k8sBlueGreenHandlerConfig.getStageService());
         executionLogCallback.saveExecutionLog(format("Created Stage service [%s] using Spec from Primary Service [%s]",
             k8sBlueGreenHandlerConfig.getStageService().getResourceId().getName(),
@@ -414,19 +417,29 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
 
       if (isNotTrue(k8sBlueGreenDeployTaskParameters.getSkipVersioningForAllK8sObjects()) && !useDeclarativeRollback) {
         executionLogCallback.saveExecutionLog("\nVersioning resources.");
-        addRevisionNumber(k8sBlueGreenHandlerConfig.getResources(), currentReleaseNumber);
+        addRevisionNumber(k8sRequestHandlerContext, currentReleaseNumber);
       }
+
+      if (useDeclarativeRollback) {
+        executionLogCallback.saveExecutionLog(
+            format("Adding stage color [%s] as a suffix to Configmap and Secret names.",
+                k8sBlueGreenHandlerConfig.getStageColor()));
+        addSuffixToConfigmapsAndSecrets(
+            k8sRequestHandlerContext, k8sBlueGreenHandlerConfig.getStageColor(), executionLogCallback);
+      }
+
       KubernetesResource managedWorkload = getManagedWorkload(k8sBlueGreenHandlerConfig.getResources());
-      managedWorkload.appendSuffixInName('-' + k8sBlueGreenHandlerConfig.getStageColor());
+      managedWorkload.appendSuffixInName('-' + k8sBlueGreenHandlerConfig.getStageColor(), k8sRequestHandlerContext);
       managedWorkload.addLabelsInPodSpec(ImmutableMap.of(HarnessLabels.releaseName,
           k8sBlueGreenHandlerConfig.getReleaseName(), HarnessLabels.color, k8sBlueGreenHandlerConfig.getStageColor()));
-      managedWorkload.addLabelsInDeploymentSelector(
-          ImmutableMap.of(HarnessLabels.color, k8sBlueGreenHandlerConfig.getStageColor()));
+      managedWorkload.addLabelsInResourceSelector(
+          ImmutableMap.of(HarnessLabels.color, k8sBlueGreenHandlerConfig.getStageColor()), k8sRequestHandlerContext);
       k8sBlueGreenHandlerConfig.setManagedWorkload(managedWorkload);
 
-      k8sBlueGreenHandlerConfig.getPrimaryService().addColorSelectorInService(
-          k8sBlueGreenHandlerConfig.getPrimaryColor());
-      k8sBlueGreenHandlerConfig.getStageService().addColorSelectorInService(k8sBlueGreenHandlerConfig.getStageColor());
+      k8sBlueGreenHandlerConfig.getPrimaryService().addColorSelector(
+          k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sRequestHandlerContext);
+      k8sBlueGreenHandlerConfig.getStageService().addColorSelector(
+          k8sBlueGreenHandlerConfig.getStageColor(), k8sRequestHandlerContext);
 
       executionLogCallback.saveExecutionLog("\nWorkload to deploy is: "
           + color(managedWorkload.getResourceId().kindNameRef(),

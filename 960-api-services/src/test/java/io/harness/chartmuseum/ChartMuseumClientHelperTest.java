@@ -15,10 +15,10 @@ import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,7 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -62,9 +62,7 @@ public class ChartMuseumClientHelperTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
 
     doReturn(CHARTMUSEUM_BIN_PATH).when(k8sGlobalConfigService).getChartMuseumPath(false);
-    doReturn(startedProcess)
-        .when(clientHelper)
-        .startProcess(anyString(), anyMapOf(String.class, String.class), any(StringBuffer.class));
+    doReturn(startedProcess).when(clientHelper).startProcess(anyString(), anyMap(), any(StringBuffer.class));
     doReturn(process).when(startedProcess).getProcess();
     doReturn(true).when(process).isAlive();
   }

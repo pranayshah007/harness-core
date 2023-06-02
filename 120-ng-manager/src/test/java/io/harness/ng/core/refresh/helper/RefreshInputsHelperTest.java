@@ -41,6 +41,7 @@ import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -84,6 +85,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   EnvironmentRefreshHelper environmentRefreshHelper;
   @Mock AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
+  @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
 
   @Before
   public void setup() {
@@ -93,7 +95,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
-        serviceEntityService, accountClient, settingsClient));
+        serviceEntityService, accountClient, settingsClient, environmentEntitySetupUsageHelper));
+
     environmentRefreshHelper =
         spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);

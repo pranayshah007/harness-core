@@ -30,7 +30,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
@@ -40,6 +42,7 @@ import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
@@ -48,7 +51,6 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
@@ -73,6 +75,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -102,6 +105,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private SecretUtils secretUtils;
   @Inject private CILicenseService ciLicenseService;
   @Inject CodebaseUtils codebaseUtils;
+  @Inject SSCAServiceUtils sscaServiceUtils;
 
   private static String RUNTIME_CLASS_NAME = "gvisor";
 
@@ -249,9 +253,16 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
     Map<String, String> gitEnvVars =
         codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
+    SecretEnvVars secretEnvVars = getSecretEnvVars(ambiance);
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
+
+    Caching caching = initializeStepInfo.getStageElementConfig().getCaching();
+    if (caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false)) {
+      Map<String, String> cacheEnvVars = k8InitializeTaskUtils.getCacheEnvironmentVariable();
+      commonEnvVars.putAll(cacheEnvVars);
+    }
 
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForK8(ngAccess, infrastructure);
@@ -276,7 +287,7 @@ public class K8InitializeTaskParamsBuilder {
     CIK8ContainerParams liteEngineContainerParams = internalContainerParamsProvider.getLiteEngineContainerParams(
         harnessInternalImageConnector, new HashMap<>(), k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars,
         tiEnvVars, stoEnvVars, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
-        k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance);
+        k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance, secretEnvVars);
 
     List<CIK8ContainerParams> containerParams = new ArrayList<>();
     containerParams.add(liteEngineContainerParams);
@@ -285,12 +296,12 @@ public class K8InitializeTaskParamsBuilder {
         getStageContainerDefinitions(initializeStepInfo, infrastructure, ambiance);
     consumePortDetails(ambiance, stageCtrDefinitions);
     Map<String, List<ConnectorConversionInfo>> stepConnectors =
-        k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getStageElementConfig(), ambiance);
+        k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getExecutionElementConfig(), ambiance);
     for (ContainerDefinitionInfo containerDefinitionInfo : stageCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
           harnessInternalImageConnector, commonEnvVars, stoEnvVars, stepConnectors, volumeToMountPath,
           k8InitializeTaskUtils.getWorkDir(), k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix,
-          secretVariableDetails, githubApiTokenFunctorConnectors, os);
+          secretVariableDetails, githubApiTokenFunctorConnectors, os, secretEnvVars);
       containerParams.add(cik8ContainerParams);
     }
 
@@ -304,13 +315,21 @@ public class K8InitializeTaskParamsBuilder {
         ambiance, ContainerPortDetails.builder().portDetails(portDetails).build(), PORT_DETAILS);
   }
 
+  private SecretEnvVars getSecretEnvVars(Ambiance ambiance) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    Map<String, String> sscaEnvVars = sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
+    return SecretEnvVars.builder().sscaEnvVars(sscaEnvVars).build();
+  }
+
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
       ContainerDefinitionInfo containerDefinitionInfo, ConnectorDetails harnessInternalImageConnector,
       Map<String, String> commonEnvVars, Map<String, String> stoEnvVars,
       Map<String, List<ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
       String workDirPath, ContainerSecurityContext ctrSecurityContext, String logPrefix,
       List<SecretVariableDetails> secretVariableDetails, Map<String, ConnectorDetails> githubApiTokenFunctorConnectors,
-      OSType os) {
+      OSType os, SecretEnvVars secretEnvVars) {
     Map<String, String> envVars = new HashMap<>();
     if (isNotEmpty(containerDefinitionInfo.getEnvVars())) {
       envVars.putAll(containerDefinitionInfo.getEnvVars()); // Put customer input env variables
@@ -377,7 +396,7 @@ public class K8InitializeTaskParamsBuilder {
                                   .connectorDetailsMap(stepConnectorDetails)
                                   .functorConnectors(githubApiTokenFunctorConnectors)
                                   .plainTextSecretsByName(internalContainerParamsProvider.getLiteEngineSecretVars(
-                                      emptyMap(), emptyMap(), stoEnvVars))
+                                      emptyMap(), emptyMap(), stoEnvVars, secretEnvVars))
                                   .build())
             .commands(containerDefinitionInfo.getCommands())
             .ports(containerDefinitionInfo.getPorts())

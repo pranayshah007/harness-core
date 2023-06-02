@@ -18,6 +18,7 @@ public interface OperationEvaluator {
   String STARTS_WITH_OPERATOR = "StartsWith";
   String ENDS_WITH_OPERATOR = "EndsWith";
   String CONTAINS_OPERATOR = "Contains";
+  String DOES_NOT_CONTAIN_OPERATOR = "DoesNotContain";
   String REGEX_OPERATOR = "Regex";
   String IN_OPERATOR = "In";
   String NOT_IN_OPERATOR = "NotIn";

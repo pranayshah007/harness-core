@@ -9,7 +9,7 @@ package software.wings.service.impl.yaml;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 
 @OwnedBy(HarnessTeam.CDP)

@@ -8,21 +8,21 @@
 package io.harness.ci.config;
 
 import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Value;
-import org.codehaus.jackson.annotate.JsonIgnore;
 
-@Builder
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExecutionLimits {
+  ExecutionLimitSpec freeNewUser;
+  ExecutionLimitSpec freeBasicUser;
   ExecutionLimitSpec free;
   ExecutionLimitSpec team;
   ExecutionLimitSpec enterprise;
@@ -32,5 +32,6 @@ public class ExecutionLimits {
   public static class ExecutionLimitSpec {
     long defaultTotalExecutionCount;
     long defaultMacExecutionCount;
+    long dailyMaxBuildsCount;
   }
 }

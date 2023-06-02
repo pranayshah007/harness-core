@@ -648,10 +648,10 @@ public class K8sRollingRollbackBaseHandler {
       }
 
       if (result.getExitValue() != 0) {
-        logCallback.saveExecutionLog(format("%nFailed to rollback resource %s in namespace %s to revision %s. Error %s",
+        logCallback.saveExecutionLog(format("%nFailed to rollback resource %s in namespace %s to revision %s. %n%s",
             kubernetesResourceIdRevision.getWorkload().kindNameRef(),
             kubernetesResourceIdRevision.getWorkload().getNamespace(), kubernetesResourceIdRevision.getRevision(),
-            result.getOutput()));
+            result.hasOutput() ? result.outputUTF8() : ""));
 
         if (isErrorFrameworkEnabled) {
           String explanation = result.hasOutput()

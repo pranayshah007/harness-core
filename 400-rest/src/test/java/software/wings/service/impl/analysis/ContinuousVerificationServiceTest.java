@@ -21,7 +21,7 @@ import static java.time.Duration.ofMillis;
 import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 import io.harness.annotations.dev.HarnessModule;

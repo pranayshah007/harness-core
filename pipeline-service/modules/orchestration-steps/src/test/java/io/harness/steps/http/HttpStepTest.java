@@ -7,45 +7,69 @@
 
 package io.harness.steps.http;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HttpCertificateNG;
 import io.harness.category.element.UnitTests;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpStepResponse;
+import io.harness.delegate.task.http.HttpTaskParametersNg;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.LogStreamingStepClientImpl;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.steps.StepUtils;
+import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
+
+import software.wings.beans.TaskType;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import org.joor.Reflect;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,16 +77,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({StepUtils.class, TaskRequestsUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class HttpStepTest extends CategoryTest {
   @Inject private StepElementParameters stepElementParameters;
   @Inject private Ambiance ambiance;
+
+  @Mock EngineExpressionService engineExpressionService;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @InjectMocks private HttpStepParameters httpStepParameters;
 
@@ -71,6 +94,23 @@ public class HttpStepTest extends CategoryTest {
   @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   @Mock private NGLogCallback ngLogCallback;
   @InjectMocks HttpStep httpStep;
+  @Mock private StepHelper stepHelper;
+  private MockedStatic<TaskRequestsUtils> aStatic;
+
+  private String TEST_URL = "https://www.google.com";
+
+  @Before
+  public void setup() {
+    aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
+    Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
+    Reflect.on(httpStep).set("engineExpressionService", engineExpressionService);
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
+  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -92,7 +132,12 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name1", var1);
     variables.put("name4", var4);
 
-    Map<String, String> evaluatedVariables = HttpStep.evaluateOutputVariables(variables, response1);
+    // mocked pms evaluator
+    doReturn("metadataValue")
+        .when(engineExpressionService)
+        .evaluateExpression(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
+
+    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, null);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name1")).isEqualTo("metadataValue");
     assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
@@ -101,7 +146,7 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name3", var3);
 
     HttpStepResponse response2 = HttpStepResponse.builder().httpResponseBody(body).build();
-    evaluatedVariables = HttpStep.evaluateOutputVariables(variables, response2);
+    evaluatedVariables = httpStep.evaluateOutputVariables(variables, response2, null);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name2")).isNull();
     assertThat(evaluatedVariables.get("name3")).isNull();
@@ -214,13 +259,12 @@ public class HttpStepTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testObtainTask() {
-    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
-    aStatic.when(() -> TaskRequestsUtils.prepareTaskRequestWithTaskSelector(any(), any(), any(), any()))
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ambiance = Ambiance.newBuilder().build();
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
-                             .url(ParameterField.createValueField("https://www.google.com"))
+                             .url(ParameterField.createValueField(TEST_URL))
                              .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
                                  delegateSelectors != null ? delegateSelectors.getValue() : null)))
                              .build();
@@ -251,14 +295,12 @@ public class HttpStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleTask() throws Exception {
     ambiance = Ambiance.newBuilder().build();
-    PowerMockito.mockStatic(StepUtils.class);
-    PowerMockito.mockStatic(TaskRequestsUtils.class);
 
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
 
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
-                             .url(ParameterField.createValueField("https://www.google.com"))
+                             .url(ParameterField.createValueField(TEST_URL))
                              .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
                                  delegateSelectors != null ? delegateSelectors.getValue() : null)))
                              .assertion(ParameterField.createValueField("<+httpResponseCode> == 200"))
@@ -276,7 +318,7 @@ public class HttpStepTest extends CategoryTest {
 
     assertThat(stepResponse.getStatus().name().equals(Status.SUCCEEDED.name())).isEqualTo(true);
     assertThat(outcome.getHttpMethod().equals("GET")).isEqualTo(true);
-    assertThat(outcome.getHttpUrl().equals("https://www.google.com")).isEqualTo(true);
+    assertThat(outcome.getHttpUrl().equals(TEST_URL)).isEqualTo(true);
     assertThat(outcome.getHttpResponseCode()).isEqualTo(200);
     assertThat(outcome.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(outcome.getErrorMsg()).isEqualTo("No error message");
@@ -288,5 +330,145 @@ public class HttpStepTest extends CategoryTest {
     stepResponse = httpStep.handleTaskResult(ambiance, stepElementParameters, () -> httpStepResponse);
     assertThat(stepResponse.getStatus().name().equals(Status.FAILED.name())).isEqualTo(true);
     assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("assertion failed");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testObtainTaskWithExpressionBody() {
+    // expected task parameters as argument matchers
+    HttpTaskParametersNg expectedTaskParams = HttpTaskParametersNg.builder()
+                                                  .body("namespace: <+input>")
+                                                  .url(TEST_URL)
+                                                  .method("GET")
+                                                  .socketTimeoutMillis(1200000)
+                                                  .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds("20m"))
+                                  .taskType(TaskType.HTTP_TASK_NG.name())
+                                  .parameters(new Object[] {expectedTaskParams})
+                                  .build();
+
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ambiance = Ambiance.newBuilder().build();
+    httpStepParameters = HttpStepParameters.infoBuilder()
+                             .method(ParameterField.createValueField("GET"))
+                             .url(ParameterField.createValueField(TEST_URL))
+                             .requestBody(ParameterField.createExpressionField(true, "namespace: <+input>", null, true))
+                             .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
+                                 delegateSelectors != null ? delegateSelectors.getValue() : null)))
+                             .build();
+    stepElementParameters = StepElementParameters.builder().spec(httpStepParameters).build();
+
+    // adding a timeout field
+    stepElementParameters = StepElementParameters.builder()
+                                .spec(httpStepParameters)
+                                .timeout(ParameterField.createValueField("20m"))
+                                .build();
+
+    // non null task request
+    assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateReturnsEmptyIfCertAndCertKeyIsEmpty() {
+    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
+                                                .certificate(ParameterField.createValueField(""))
+                                                .certificateKey(ParameterField.createValueField(""))
+                                                .build();
+    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
+    assertThat(certificate).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateCertKeyCanBeEmpty() {
+    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
+                                                .certificate(ParameterField.createValueField("value"))
+                                                .certificateKey(ParameterField.createValueField(""))
+                                                .build();
+    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
+    assertThat(certificate).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testCreateCertificateCertCannotBeEmpty() {
+    assertThatThrownBy(()
+                           -> httpStep.createCertificate(HttpStepParameters.infoBuilder()
+                                                             .certificate(ParameterField.createValueField(""))
+                                                             .certificateKey(ParameterField.createValueField("value"))
+                                                             .build()))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testObtainTaskWithInputVariables() {
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ambiance = Ambiance.newBuilder().build();
+
+    List<NGVariable> inputVariables = new ArrayList<>();
+    inputVariables.add(
+        StringNGVariable.builder().name("URL").value(ParameterField.createValueField("https://www.abc.xyz")).build());
+    inputVariables.add(
+        StringNGVariable.builder().name("MY_CODE").value(ParameterField.createValueField("200")).build());
+
+    httpStepParameters =
+        HttpStepParameters.infoBuilder()
+            .method(ParameterField.createValueField("GET"))
+            .url(ParameterField.createValueField(TEST_URL))
+            .delegateSelectors(ParameterField.createValueField(
+                CollectionUtils.emptyIfNull(delegateSelectors != null ? delegateSelectors.getValue() : null)))
+            .inputVariables(NGVariablesUtils.getMapOfVariables(inputVariables))
+            .assertion(ParameterField.createValueField("<+httpResponseCode>==<+spec.inputVariables.MY_CODE>"))
+            .build();
+
+    assertThat(httpStepParameters.getInputVariables().getValue().get("MY_CODE")).isNotNull();
+    assertThat(httpStepParameters.getInputVariables().getValue().get("URL")).isNotNull();
+
+    // adding a timeout field
+    stepElementParameters = StepElementParameters.builder()
+                                .spec(httpStepParameters)
+                                .timeout(ParameterField.createValueField("20m"))
+                                .build();
+
+    assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testEncodeURL() {
+    NGLogCallback logCallback = mock(NGLogCallback.class);
+    String url1 = "https://www.example.com/path%20with%20encoded%20spaces";
+    assertThat(httpStep.encodeURL(url1, logCallback)).isEqualTo(url1);
+
+    String url2 =
+        "https://www.example.com/Apply MS patches AMA Prod servers (Monthly-Sun)?api-version=2017-05-15-preview";
+    String expected2 =
+        "https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview";
+    assertThat(httpStep.encodeURL(url2, logCallback)).isEqualTo(expected2);
+    verify(logCallback)
+        .saveExecutionLog(eq(
+            "Encoded URL: https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview"));
+
+    String url3 = "https://www.example.com/@user?param=value";
+    assertThat(httpStep.encodeURL(url3, logCallback)).isEqualTo(url3);
+    verify(logCallback).saveExecutionLog(eq("Encoded URL: https://www.example.com/@user?param=value"));
+
+    String url4 = "https://www.example.com/already%20encoded?param=value";
+    assertThat(httpStep.encodeURL(url4, logCallback)).isEqualTo(url4);
+
+    String url5 = "";
+    assertThat(httpStep.encodeURL(url5, logCallback)).isEqualTo(url5);
   }
 }

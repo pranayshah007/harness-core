@@ -8,8 +8,7 @@
 package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -19,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -66,18 +66,24 @@ public class StepElementConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   ParameterField<Timeout> timeout;
+  @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  StepWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  ParameterField<StepWhenCondition> when;
 
   @NotNull String type;
   @JsonProperty("spec")
@@ -91,8 +97,8 @@ public class StepElementConfig {
   @Builder
   public StepElementConfig(String uuid, String identifier, String name, String description,
       ParameterField<Timeout> timeout, ParameterField<List<FailureStrategyConfig>> failureStrategies, String type,
-      StepSpecType stepSpecType, ParameterField<String> skipCondition, StepWhenCondition when,
-      ParameterField<List<String>> delegateSelectors) {
+      StepSpecType stepSpecType, ParameterField<String> skipCondition, ParameterField<StepWhenCondition> when,
+      ParameterField<List<String>> delegateSelectors, PolicyConfig enforce) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -104,5 +110,6 @@ public class StepElementConfig {
     this.skipCondition = skipCondition;
     this.delegateSelectors = delegateSelectors;
     this.when = when;
+    this.enforce = enforce;
   }
 }

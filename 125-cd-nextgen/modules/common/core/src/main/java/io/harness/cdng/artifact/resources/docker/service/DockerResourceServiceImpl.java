@@ -17,10 +17,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.cdng.artifact.resources.docker.mappers.DockerResourceMapper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
@@ -68,6 +70,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Singleton
 @Slf4j
@@ -89,14 +92,14 @@ public class DockerResourceServiceImpl implements DockerResourceService {
   }
 
   @Override
-  public DockerResponseDTO getBuildDetails(
-      IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier, String projectIdentifier) {
+  public DockerResponseDTO getBuildDetails(IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier,
+      String projectIdentifier, String tagRegex) {
     DockerConnectorDTO connector = getConnector(dockerConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(
-        imagePath, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
+        imagePath, null, tagRegex, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           dockerRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess, "Docker Get Builds task failure due to error");
@@ -106,6 +109,10 @@ public class DockerResourceServiceImpl implements DockerResourceService {
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
     } catch (ExplanationException e) {
+      if (e.getMessage().contains("no metadata was returned")) {
+        throw new HintException(
+            HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH, new InvalidRequestException(e.getMessage(), USER));
+      }
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
@@ -129,6 +136,9 @@ public class DockerResourceServiceImpl implements DockerResourceService {
   @Override
   public DockerBuildDetailsDTO getSuccessfulBuild(IdentifierRef dockerConnectorRef, String imagePath,
       DockerRequestDTO dockerRequestDTO, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath));
+    ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.TAG, dockerRequestDTO.getTag()),
+        MutablePair.of(NGArtifactConstants.TAG_REGEX, dockerRequestDTO.getTagRegex()));
     DockerConnectorDTO connector = getConnector(dockerConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

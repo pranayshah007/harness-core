@@ -204,6 +204,16 @@ public final class HelmCommandTemplateFactory {
           default:
             return HelmConstants.V2Commands.HELM_FETCH_ALL_VERSIONS_COMMAND_TEMPLATE;
         }
+      case GET_MANIFEST:
+        switch (version) {
+          case V3:
+          case V380:
+            return HelmConstants.V3Commands.HELM_GET_MANIFEST;
+          case V2:
+          default:
+            return HelmConstants.V2Commands.HELM_GET_MANIFEST;
+        }
+
       default:
         throw new InvalidRequestException(format("Command Type [%s] is not supported", commandType.toString()));
     }

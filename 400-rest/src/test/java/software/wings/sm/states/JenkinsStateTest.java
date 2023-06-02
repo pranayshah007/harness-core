@@ -24,10 +24,10 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +41,8 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.api.JenkinsExecutionData;
@@ -102,6 +104,8 @@ public class JenkinsStateTest extends CategoryTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+  @Mock private FeatureFlagService featureFlagService;
 
   @InjectMocks private JenkinsState jenkinsState = new JenkinsState("jenkins");
 

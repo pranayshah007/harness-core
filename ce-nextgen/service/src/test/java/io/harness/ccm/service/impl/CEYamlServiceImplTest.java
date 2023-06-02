@@ -8,11 +8,11 @@
 package io.harness.ccm.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CEYamlServiceImplTest extends CategoryTest {
@@ -102,7 +102,7 @@ public class CEYamlServiceImplTest extends CategoryTest {
     final String expectedYamlContent =
         IOUtils.toString(this.getClass().getResourceAsStream("/yaml/autostopping-only.yaml"), StandardCharsets.UTF_8);
 
-    verifyZeroInteractions(k8sServiceAccountDelegateTaskClient);
+    verifyNoInteractions(k8sServiceAccountDelegateTaskClient);
 
     assertThat(actualYamlContent).isNotBlank();
     assertThat(actualYamlContent).isEqualTo(expectedYamlContent);

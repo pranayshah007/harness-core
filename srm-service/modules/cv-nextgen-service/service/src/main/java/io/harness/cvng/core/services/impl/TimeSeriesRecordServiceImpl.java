@@ -57,7 +57,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.UpdateOptions;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
@@ -357,6 +359,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
+
     // For backward compatibility
     metricPackThresholds.forEach(metricPackThreshold
         -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));
@@ -659,7 +662,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                       + TimeSeriesGroupValue.TimeSeriesValueKeys.riskScore)
                                   .greaterThan(0);
     }
-    return timeSeriesRecordQuery.asList();
+    return timeSeriesRecordQuery.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override

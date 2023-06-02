@@ -8,6 +8,9 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_UPDATED;
@@ -20,12 +23,13 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleSetCreateEvent;
 import io.harness.ccm.audittrails.events.RuleSetDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleSetUpdateEvent;
-// import io.harness.ccm.rbac.CCMRbacHelper
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreateRuleSetDTO;
 import io.harness.ccm.views.dto.CreateRuleSetFilterDTO;
@@ -36,6 +40,7 @@ import io.harness.ccm.views.helper.RuleSetList;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -43,7 +48,6 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -64,7 +68,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -110,7 +116,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class GovernanceRuleSetResource {
   public static final String ACCOUNT_ID = "accountId";
-  //  private final CCMRbacHelper rbacHelper
+  private final CCMRbacHelper rbacHelper;
   private final RuleSetService ruleSetService;
   private final GovernanceRuleService ruleService;
   private final TelemetryReporter telemetryReporter;
@@ -124,9 +130,9 @@ public class GovernanceRuleSetResource {
   @Inject
   public GovernanceRuleSetResource(RuleSetService ruleSetService, GovernanceRuleService ruleService,
       TelemetryReporter telemetryReporter, OutboxService outboxService,
-      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      CENextGenConfiguration configuration) {
-    //    this rbacHelper  rbacHelper
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, CENextGenConfiguration configuration,
+      CCMRbacHelper rbacHelper) {
+    this.rbacHelper = rbacHelper;
     this.ruleSetService = ruleSetService;
     this.ruleService = ruleService;
     this.telemetryReporter = telemetryReporter;
@@ -150,24 +156,37 @@ public class GovernanceRuleSetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing rule Set object") @Valid CreateRuleSetDTO createRuleSetDTO) {
-    // rbacHelper checkRuleSetEditPermission(accountId, null, null)
+    rbacHelper.checkRuleSetEditPermission(accountId, null, null);
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
+
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     if (ruleSetService.fetchByName(accountId, ruleSet.getName(), true) != null) {
       throw new InvalidRequestException("Rule Set with this name already exits");
     }
     if (!ruleSet.getIsOOTB()) {
       ruleSet.setAccountId(accountId);
-    } else {
+      ruleService.check(accountId, ruleSet.getRulesIdentifier());
+    } else if (ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+      ruleService.check(GLOBAL_ACCOUNT_ID, ruleSet.getRulesIdentifier());
+    } else {
+      throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
+    }
+    Set<String> uniqueRuleIds = new HashSet<>();
+    uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    Set<String> rulesPermitted =
+        rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
+    if (rulesPermitted.size() != uniqueRuleIds.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE),
+          WingsException.USER, null);
     }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
-    ruleService.check(accountId, ruleSet.getRulesIdentifier());
     ruleSetService.save(ruleSet);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -192,11 +211,11 @@ public class GovernanceRuleSetResource {
             description = "update a existing Rule pack", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<RuleSet>
-  updateRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+  updateRuleSet(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
-    //  rbacHelper checkRuleSetEditPermission(accountId, null, null)
+    rbacHelper.checkRuleSetEditPermission(accountId, null, null);
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -204,20 +223,33 @@ public class GovernanceRuleSetResource {
     ruleSet.toDTO();
     ruleSet.setAccountId(accountId);
     RuleSet oldRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
+    if (oldRuleSet.getIsOOTB()) {
+      throw new InvalidRequestException("Editing OOTB Rule Set is not allowed");
+    }
     ruleService.check(accountId, ruleSet.getRulesIdentifier());
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
+    Set<String> uniqueRuleIds = new HashSet<>();
+    uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    Set<String> rulesPermitted =
+        rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
+    if (rulesPermitted.size() != uniqueRuleIds.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE),
+          WingsException.USER, null);
+    }
     ruleSetService.update(accountId, ruleSet);
+    RuleSet updatedRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleSetUpdateEvent(accountId, ruleSet.toDTO(), oldRuleSet.toDTO()));
-      return ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
+      outboxService.save(new RuleSetUpdateEvent(accountId, updatedRuleSet.toDTO(), oldRuleSet.toDTO()));
+      return updatedRuleSet;
     })));
   }
 
@@ -236,27 +268,26 @@ public class GovernanceRuleSetResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<RuleSet>
-  updateRuleOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+  updateRuleSetOOTB(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
-    //  rbacHelper checkRuleSetEditPermission(accountId, null, null)
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
-    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule pack is not allowed");
-    }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     ruleSet.toDTO();
-    ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+    if (!ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Editing OOTB rule set is not allowed");
+    }
     ruleSetService.fetchById(GLOBAL_ACCOUNT_ID, ruleSet.getUuid(), false);
     if (ruleSet.getRulesIdentifier().size() > configuration.getGovernanceConfig().getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules In a Set is exceeded ");
     }
     ruleService.check(GLOBAL_ACCOUNT_ID, ruleSet.getRulesIdentifier());
     ruleSetService.update(GLOBAL_ACCOUNT_ID, ruleSet);
-    return ResponseDTO.newResponse(ruleSet);
+    return ResponseDTO.newResponse(ruleSetService.fetchById(GLOBAL_ACCOUNT_ID, ruleSet.getUuid(), false));
   }
 
   @POST
@@ -276,7 +307,7 @@ public class GovernanceRuleSetResource {
           description = "Request body containing rule packs object") @Valid CreateRuleSetDTO createRuleSetDTO,
       @PathParam("id") @Parameter(
           required = true, description = "Unique identifier for the rule packs") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleSetViewPermission(accountId, null, null)
+    rbacHelper.checkRuleSetViewPermission(accountId, null, null);
     RuleSet query = createRuleSetDTO.getRuleSet();
     List<Rule> rules = new ArrayList<>();
     ruleSetService.fetchByName(accountId, query.getName(), false);
@@ -300,7 +331,7 @@ public class GovernanceRuleSetResource {
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule pack object")
       @Valid CreateRuleSetFilterDTO createRuleSetFilterDTO) {
-    // rbacHelper checkRuleSetPermission(accountId, null, null)
+    rbacHelper.checkRuleSetViewPermission(accountId, null, null);
     if (createRuleSetFilterDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -327,7 +358,7 @@ public class GovernanceRuleSetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("ruleSetId") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleSetDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleSetDeletePermission(accountId, null, null);
     RuleSet ruleSet = ruleSetService.fetchById(accountId, uuid, false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);

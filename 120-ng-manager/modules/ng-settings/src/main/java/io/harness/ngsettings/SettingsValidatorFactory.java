@@ -8,12 +8,18 @@
 package io.harness.ngsettings;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MAX_CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MAX_PIPELINE_TIMEOUT_SECONDS;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MAX_STAGE_TIMEOUT_SECONDS;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MAX_STEP_TIMEOUT_SECONDS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ngsettings.services.SettingEnforcementValidator;
 import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.impl.validators.DisableBuiltInHarnessSMValidator;
+import io.harness.ngsettings.services.impl.validators.enforcement.EnforcementMaxLimitValidator;
+import io.harness.ngsettings.services.impl.validators.enforcement.TimeoutMaxLimitEnforcementValidator;
 import io.harness.ngsettings.utils.SettingValidatorRegistrar;
 
 import java.util.ArrayList;
@@ -28,6 +34,14 @@ public class SettingsValidatorFactory {
   static {
     registrar.put(SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER,
         new SettingValidatorRegistrar(DisableBuiltInHarnessSMValidator.class));
+    registrar.put(SettingIdentifiers.PIPELINE_TIMEOUT_IDENTIFIER,
+        new SettingValidatorRegistrar(MAX_PIPELINE_TIMEOUT_SECONDS, TimeoutMaxLimitEnforcementValidator.class));
+    registrar.put(SettingIdentifiers.STAGE_TIMEOUT_IDENTIFIER,
+        new SettingValidatorRegistrar(MAX_STAGE_TIMEOUT_SECONDS, TimeoutMaxLimitEnforcementValidator.class));
+    registrar.put(SettingIdentifiers.STEP_TIMEOUT_IDENTIFIER,
+        new SettingValidatorRegistrar(MAX_STEP_TIMEOUT_SECONDS, TimeoutMaxLimitEnforcementValidator.class));
+    registrar.put(SettingIdentifiers.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS,
+        new SettingValidatorRegistrar(MAX_CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, EnforcementMaxLimitValidator.class));
   }
 
   public static List<String> getSettingIdentifiersWithValidators() {

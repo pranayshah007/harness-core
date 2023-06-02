@@ -144,14 +144,10 @@ public class ParallelPlanCreatorTest extends CategoryTest {
     assertThat(layoutNodeInfo).isNotNull();
     assertThat(layoutNodeInfo.getStartingNodeId()).isNull();
     Map<String, GraphLayoutNode> layoutNodes = layoutNodeInfo.getLayoutNodes();
-    assertThat(layoutNodes).hasSize(6);
+    assertThat(layoutNodes).hasSize(3);
     assertThat(layoutNodes.containsKey(stage0Field.getNode().getUuid())).isTrue();
     assertThat(layoutNodes.containsKey(stage1Field.getNode().getUuid())).isTrue();
     assertThat(layoutNodes.containsKey(parallelStagesField.getNode().getUuid())).isTrue();
-
-    assertThat(layoutNodes.containsKey(stage0Field.getNode().getUuid() + "_rollbackStage")).isTrue();
-    assertThat(layoutNodes.containsKey(stage1Field.getNode().getUuid() + "_rollbackStage")).isTrue();
-    assertThat(layoutNodes.containsKey(parallelStagesField.getNode().getUuid() + "_rollbackStage")).isTrue();
 
     GraphLayoutNode graphLayoutNode0 = layoutNodes.get(stage0Field.getNode().getUuid());
     assertThat(graphLayoutNode0.getNodeUUID()).isEqualTo(stage0Field.getNode().getUuid());
@@ -241,6 +237,31 @@ public class ParallelPlanCreatorTest extends CategoryTest {
     ParallelPlanCreator parallelPlanCreator = new ParallelPlanCreator();
     GraphLayoutResponse layoutNodeInfo = parallelPlanCreator.getLayoutNodeInfo(stepContext, parallelStepsField);
     assertThat(layoutNodeInfo).isEqualTo(GraphLayoutResponse.builder().build());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetLayoutNodeInfoForParallelStagesWithPRBStage() throws IOException {
+    ParallelPlanCreator parallelPlanCreator = new ParallelPlanCreator();
+    String stagesYaml = "stages:\n"
+        + "  - parallel:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "  - stage:\n"
+        + "      identifier: prb-abc\n"
+        + "      name: Pipeline Rollback Stage\n"
+        + "      type: PipelineRollback\n";
+    YamlField stagesYamlField = YamlUtils.injectUuidInYamlField(stagesYaml);
+    YamlField parallelField =
+        stagesYamlField.getNode().getField("stages").getNode().asArray().get(0).getField("parallel");
+    GraphLayoutResponse layoutNodeInfo = parallelPlanCreator.getLayoutNodeInfo(stageContext, parallelField);
+    assertThat(layoutNodeInfo).isNotNull();
+    for (GraphLayoutNode graphLayoutNode : layoutNodeInfo.getLayoutNodes().values()) {
+      assertThat(graphLayoutNode.getEdgeLayoutList().getNextIdsList()).isNullOrEmpty();
+    }
   }
 
   @Test

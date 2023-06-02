@@ -12,6 +12,12 @@ import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOUR
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.LICENSE_PERMISSION;
+import static io.harness.NGConstants.LICENSE_RESOURCE;
+import static io.harness.NGConstants.ORGANIZATION_RESOURCE;
+import static io.harness.NGConstants.ORGANIZATION_VIEW_PERMISSION;
+import static io.harness.NGConstants.PROJECT_RESOURCE;
+import static io.harness.NGConstants.PROJECT_VIEW_PERMISSION;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -25,13 +31,19 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import static java.lang.Boolean.FALSE;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
@@ -53,6 +65,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UsersCountDTO;
@@ -110,6 +123,10 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -119,7 +136,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -131,6 +150,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Singleton
@@ -162,6 +182,7 @@ public class NgUserServiceImpl implements NgUserService {
   private final LastAdminCheckService lastAccountAdminCheckService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final DefaultUserGroupService defaultUserGroupService;
+  private final AccessControlClient accessControlClient;
   private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
@@ -172,7 +193,8 @@ public class NgUserServiceImpl implements NgUserService {
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
       LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService,
+      @Named("PRIVILEGED") AccessControlClient accessControlClient) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
@@ -188,6 +210,7 @@ public class NgUserServiceImpl implements NgUserService {
     this.lastAccountAdminCheckService = lastAccountAdminCheckService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.defaultUserGroupService = defaultUserGroupService;
+    this.accessControlClient = accessControlClient;
   }
 
   @Override
@@ -223,10 +246,7 @@ public class NgUserServiceImpl implements NgUserService {
           userIds.addAll(userFilter.getIdentifiers());
         }
         if (userFilter.getEmails() != null) {
-          userIds.addAll(getUserMetadataByEmails(new ArrayList<>(userFilter.getEmails()))
-                             .stream()
-                             .map(UserMetadataDTO::getUuid)
-                             .collect(toList()));
+          userIds.addAll(getUserIdsByEmails(new ArrayList<>(userFilter.getEmails())));
         }
         userMembershipCriteria.and(UserMembershipKeys.userId).in(userIds);
       }
@@ -240,8 +260,39 @@ public class NgUserServiceImpl implements NgUserService {
     userMetadataCriteria.and(UserMetadataKeys.userId).in(userMembershipPage.getContent());
     Page<UserMetadata> userMetadataPage =
         userMetadataRepository.findAll(userMetadataCriteria, getPageRequest(pageRequest));
+    if (ngFeatureFlagHelperService.isEnabled(
+            scope.getAccountIdentifier(), FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+      try {
+        Page<UserMetadataDTO> userMetadataDTOPage =
+            updateExternallyManagedFlagFromUserAccountLevelData(userMetadataPage, scope.getAccountIdentifier());
+        return PageUtils.getNGPageResponse(userMetadataDTOPage);
+      } catch (Exception exception) {
+        log.error(
+            "Exception while fetching list of NG users using user account level data, falling back to older logic",
+            exception);
+        return PageUtils.getNGPageResponse(userMetadataPage.map(UserMetadataMapper::toDTO));
+      }
+    } else {
+      return PageUtils.getNGPageResponse(userMetadataPage.map(UserMetadataMapper::toDTO));
+    }
+  }
 
-    return PageUtils.getNGPageResponse(userMetadataPage.map(UserMetadataMapper::toDTO));
+  private Page<UserMetadataDTO> updateExternallyManagedFlagFromUserAccountLevelData(
+      Page<UserMetadata> userMetadataPage, String accountIdentifier) {
+    List<String> userEmails = userMetadataPage.get().map(userMetadata -> userMetadata.getEmail()).collect(toList());
+    List<UserInfo> listUserInfoFromCG =
+        listCurrentGenUsers(accountIdentifier, UserFilterNG.builder().emailIds(userEmails).build());
+    Map<String, UserInfo> emailToCGUserInfoMap = new HashMap<>();
+    emailToCGUserInfoMap = listUserInfoFromCG.stream().collect(toMap(u -> u.getEmail(), Function.identity()));
+
+    Page<UserMetadataDTO> userMetadataDTOPage = userMetadataPage.map(user -> UserMetadataMapper.toDTO(user));
+    for (UserMetadataDTO userMetadataDTO : userMetadataDTOPage.getContent()) {
+      UserInfo userInfoFromCG = emailToCGUserInfoMap.get(userMetadataDTO.getEmail());
+      if (isNotEmpty(userMetadataDTO.getEmail()) && null != userInfoFromCG) {
+        userMetadataDTO.setExternallyManaged(userInfoFromCG.isExternallyManaged());
+      }
+    }
+    return userMetadataDTOPage;
   }
 
   private Criteria getUserMembershipCriteria(Scope scope, boolean includeParentScopes) {
@@ -294,7 +345,7 @@ public class NgUserServiceImpl implements NgUserService {
                             .is(scope.getOrgIdentifier())
                             .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                             .is(scope.getProjectIdentifier());
-    return userMembershipRepository.findAllUserIds(criteria, Pageable.unpaged()).getContent();
+    return userMembershipRepository.findAllUserIds(criteria, Pageable.ofSize(50000)).getContent();
   }
 
   @Override
@@ -305,21 +356,23 @@ public class NgUserServiceImpl implements NgUserService {
 
   public Optional<UserMetadataDTO> getUserByEmail(String email, boolean fetchFromCurrentGen) {
     if (!fetchFromCurrentGen) {
-      Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmail(email);
+      Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmailIgnoreCase(email);
       return user.map(UserMetadataMapper::toDTO);
     } else {
       Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(email));
-      UserMetadataDTO userMetadataDTO = userInfo
-                                            .map(user
-                                                -> UserMetadataDTO.builder()
-                                                       .uuid(user.getUuid())
-                                                       .name(user.getName())
-                                                       .email(user.getEmail())
-                                                       .locked(user.isLocked())
-                                                       .disabled(user.isDisabled())
-                                                       .externallyManaged(user.isExternallyManaged())
-                                                       .build())
-                                            .orElse(null);
+      UserMetadataDTO userMetadataDTO =
+          userInfo
+              .map(user
+                  -> UserMetadataDTO.builder()
+                         .uuid(user.getUuid())
+                         .name(user.getName())
+                         .email(user.getEmail())
+                         .locked(user.isLocked())
+                         .disabled(user.isDisabled())
+                         .externallyManaged(user.isExternallyManaged())
+                         .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+                         .build())
+              .orElse(null);
       return Optional.ofNullable(userMetadataDTO);
     }
   }
@@ -344,7 +397,7 @@ public class NgUserServiceImpl implements NgUserService {
   @Override
   public List<UserMetadataDTO> listUsersHavingRole(Scope scope, String roleIdentifier) {
     if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(scope.getAccountIdentifier()))) {
-      return getUserMetadata(new ArrayList<>(listUserIds(scope)));
+      return listUsers(scope);
     }
     PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
         getResponse(accessControlAdminClient.getFilteredRoleAssignments(scope.getAccountIdentifier(),
@@ -460,10 +513,7 @@ public class NgUserServiceImpl implements NgUserService {
                                           .is(scope.getOrgIdentifier())
                                           .and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY)
                                           .is(scope.getProjectIdentifier());
-    return userMembershipRepository.findAll(userMembershipCriteria)
-        .stream()
-        .map(UserMembership::getUserId)
-        .collect(toSet());
+    return userMembershipRepository.findAllUserIds(userMembershipCriteria, Pageable.unpaged()).toSet();
   }
 
   @VisibleForTesting
@@ -515,23 +565,25 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<UserMetadataDTO> getUserMetadata(List<String> userIds) {
-    return userMetadataRepository.findAll(Criteria.where(UserMembershipKeys.userId).in(userIds), Pageable.unpaged())
+    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.userId).in(userIds), Pageable.ofSize(50000))
         .map(UserMetadataMapper::toDTO)
         .stream()
         .collect(toList());
   }
 
   @Override
-  public List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds) {
-    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.email).in(emailIds), Pageable.unpaged())
-        .map(UserMetadataMapper::toDTO)
-        .stream()
-        .collect(toList());
+  public CloseableIterator<UserMetadata> streamUserMetadata(List<String> userIds) {
+    return userMetadataRepository.stream(Criteria.where(UserMetadataKeys.userId).in(userIds));
   }
 
   @Override
-  public Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable) {
-    return userMembershipRepository.findAll(criteria, pageable);
+  public List<String> getUserIdsByEmails(List<String> emailIds) {
+    return userMetadataRepository.findAllIds(Criteria.where(UserMetadataKeys.email).in(emailIds));
+  }
+
+  @Override
+  public CloseableIterator<UserMembership> streamUserMemberships(Criteria criteria) {
+    return userMembershipRepository.stream(criteria);
   }
 
   @Override
@@ -571,6 +623,66 @@ public class NgUserServiceImpl implements NgUserService {
     }
     defaultUserGroupService.addUserToDefaultUserGroup(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
+  }
+
+  @Override
+  public void waitForRbacSetup(Scope scope, String userId, String email) {
+    try {
+      boolean rbacSetupSuccessful = busyPollUntilAccountRBACSetupCompletes(scope, userId, 100, 1000);
+      if (FALSE.equals(rbacSetupSuccessful)) {
+        log.error("User [{}] couldn't be assigned at scope [{}] in stipulated time", userId, scope);
+        throw new InvalidRequestException(
+            "Provisioning access took longer than usual, please try logging-in in few minutes");
+      } else {
+        log.info("Polling for RBAC setup is successful for the user [{}] at scope [{}]", userId, scope);
+      }
+    } catch (Exception e) {
+      log.error(String.format("Failed to check rbac setup for user [%s] at scope [%s] ", userId, scope), e);
+      throw new InvalidRequestException("Provisioning access failed, please contact support");
+    }
+  }
+
+  @VisibleForTesting
+  protected boolean busyPollUntilAccountRBACSetupCompletes(
+      Scope scope, String userId, int maxAttempts, long retryDurationInMillis) {
+    RetryConfig config = RetryConfig.custom()
+                             .maxAttempts(maxAttempts)
+                             .waitDuration(Duration.ofMillis(retryDurationInMillis))
+                             .retryOnResult(FALSE::equals)
+                             .retryExceptions(Exception.class)
+                             .ignoreExceptions(IOException.class)
+                             .build();
+    Retry retry = Retry.of("check rbac setup", config);
+    Retry.EventPublisher publisher = retry.getEventPublisher();
+    publisher.onRetry(event
+        -> log.info("Retrying access check for user {} at scope {} {}", userId, scope.toString(), event.toString()));
+    Supplier<Boolean> hasAccess = Retry.decorateSupplier(retry,
+        ()
+            -> accessControlClient.hasAccess(io.harness.accesscontrol.acl.api.Principal.builder()
+                                                 .principalType(PrincipalType.USER)
+                                                 .principalIdentifier(userId)
+                                                 .build(),
+                ResourceScope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()),
+                Resource.of(getScopeResource(scope), null), getScopePermission(scope)));
+    return hasAccess.get();
+  }
+
+  private String getScopePermission(Scope scope) {
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      return PROJECT_VIEW_PERMISSION;
+    } else if (!isEmpty(scope.getOrgIdentifier())) {
+      return ORGANIZATION_VIEW_PERMISSION;
+    }
+    return LICENSE_PERMISSION;
+  }
+
+  private String getScopeResource(Scope scope) {
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      return PROJECT_RESOURCE;
+    } else if (!isEmpty(scope.getOrgIdentifier())) {
+      return ORGANIZATION_RESOURCE;
+    }
+    return LICENSE_RESOURCE;
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {
@@ -652,6 +764,7 @@ public class NgUserServiceImpl implements NgUserService {
                                     .locked(userInfo.isLocked())
                                     .disabled(userInfo.isDisabled())
                                     .externallyManaged(userInfo.isExternallyManaged())
+                                    .twoFactorAuthenticationEnabled(userInfo.isTwoFactorAuthenticationEnabled())
                                     .build();
     try {
       userMetadataRepository.save(userMetadata);
@@ -728,13 +841,37 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
+  public void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource) {
+    String accountIdentifier = scope.getAccountIdentifier();
+    try {
+      if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+        CGRestUtils.getResponse(userClient.updateNGUserToCGWithSource(userId, accountIdentifier, userSource));
+      }
+    } catch (Exception e) {
+      log.error("Couldn't update user Account level data for user {} in account {}", userId, accountIdentifier, e);
+    }
+  }
+  @Override
   public Optional<UserInfo> getUserById(String userId) {
     return CGRestUtils.getResponse(userClient.getUserById(userId));
   }
 
   @Override
+  public Optional<UserInfo> getUserByIdAndAccount(String userId, String accountId) {
+    return CGRestUtils.getResponse(userClient.getUserByIdAndAccount(userId, accountId));
+  }
+  @Override
   public boolean isUserAtScope(String userId, Scope scope) {
-    return isNotEmpty(getUsersAtScope(Collections.singleton(userId), scope));
+    Criteria criteria = Criteria.where(UserMembershipKeys.userId)
+                            .is(userId)
+                            .and(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.ORG_IDENTIFIER_KEY)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY)
+                            .is(scope.getProjectIdentifier());
+
+    return null != userMembershipRepository.findOne(criteria);
   }
 
   @Override
@@ -749,12 +886,20 @@ public class NgUserServiceImpl implements NgUserService {
       update.set(UserMetadataKeys.locked, user.isLocked());
       update.set(UserMetadataKeys.disabled, user.isDisabled());
       update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, user.isTwoFactorAuthenticationEnabled());
     }
     if (!isBlank(user.getEmail()) && !user.getEmail().equals(savedUserOpt.get().getEmail())) {
       update.set(UserMetadataKeys.email, user.getEmail());
       update.set(UserMetadataKeys.locked, user.isLocked());
       update.set(UserMetadataKeys.disabled, user.isDisabled());
       update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, user.isTwoFactorAuthenticationEnabled());
+    }
+    if (user.isTwoFactorAuthenticationEnabled() != savedUserOpt.get().isTwoFactorAuthenticationEnabled()) {
+      update.set(UserMetadataKeys.locked, user.isLocked());
+      update.set(UserMetadataKeys.disabled, user.isDisabled());
+      update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, user.isTwoFactorAuthenticationEnabled());
     }
     return userMetadataRepository.updateFirst(user.getUuid(), update) != null;
   }
@@ -769,20 +914,23 @@ public class NgUserServiceImpl implements NgUserService {
         return false;
       }
       Criteria userMembershipCriteria = getCriteriaForFetchingChildScopes(userId, scope);
-      List<UserMembership> userMemberships = userMembershipRepository.findAll(userMembershipCriteria);
       validateUserMembershipsDeletion(scope, userId, removeUserFilter);
 
       Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
       String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
       String userName = userMetadata.map(UserMetadata::getName).orElse(null);
 
-      userMemberships.forEach(
-          userMembership -> Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      try (CloseableIterator<UserMembership> iterator = userMembershipRepository.stream(userMembershipCriteria)) {
+        while (iterator.hasNext()) {
+          UserMembership userMembership = iterator.next();
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             userMembershipRepository.delete(userMembership);
             outboxService.save(new RemoveCollaboratorEvent(
                 scope.getAccountIdentifier(), userMembership.getScope(), publicIdentifier, userId, userName, source));
             return userMembership;
-          })));
+          }));
+        }
+      }
     }
     return true;
   }
@@ -791,19 +939,21 @@ public class NgUserServiceImpl implements NgUserService {
   public boolean removeUserWithCriteria(String userId, UserMembershipUpdateSource source, Criteria criteria) {
     log.info("Trying to remove user {} with criteria {}", userId, criteria.toString());
     try (TimeLogger timeLogger = new TimeLogger(LoggerFactory.getLogger(getClass().getName()))) {
-      List<UserMembership> userMemberships = userMembershipRepository.findAll(criteria);
-
       Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
       String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
       String userName = userMetadata.map(UserMetadata::getName).orElse(null);
 
-      userMemberships.forEach(
-          userMembership -> Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      try (CloseableIterator<UserMembership> iterator = userMembershipRepository.stream(criteria)) {
+        while (iterator.hasNext()) {
+          UserMembership userMembership = iterator.next();
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             userMembershipRepository.delete(userMembership);
             outboxService.save(new RemoveCollaboratorEvent(userMembership.getScope().getAccountIdentifier(),
                 userMembership.getScope(), publicIdentifier, userId, userName, source));
             return userMembership;
-          })));
+          }));
+        }
+      }
     }
     return true;
   }
@@ -940,7 +1090,29 @@ public class NgUserServiceImpl implements NgUserService {
                             .and(UserMembershipKeys.createdAt)
                             .gte(startInterval)
                             .lt(endInterval);
-    long newUsersCount = userMembershipRepository.findAllUserIds(criteria, Pageable.unpaged()).stream().count();
-    return UsersCountDTO.builder().totalCount(listUserIds(scope).stream().count()).newCount(newUsersCount).build();
+    long newUsersCount = userMembershipRepository.count(criteria);
+    criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                   .is(scope.getAccountIdentifier())
+                   .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                   .is(scope.getOrgIdentifier())
+                   .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                   .is(scope.getProjectIdentifier());
+    return UsersCountDTO.builder().totalCount(userMembershipRepository.count(criteria)).newCount(newUsersCount).build();
+  }
+
+  @Override
+  public UserMetadata updateUserMetadataInternal(UserMetadataDTO user) {
+    Optional<UserMetadata> savedUserOpt = userMetadataRepository.findDistinctByUserId(user.getUuid());
+    if (!savedUserOpt.isPresent()) {
+      return null;
+    }
+
+    Update update = new Update();
+
+    if (!isNull(user.isExternallyManaged())) {
+      update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+    }
+
+    return userMetadataRepository.updateFirst(user.getUuid(), update);
   }
 }

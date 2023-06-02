@@ -28,7 +28,6 @@ public class NgCustomSecretExpressionEvaluator extends ExpressionEvaluator {
                                  .expressionFunctorToken(secretFunctor)
                                  .delegateMetricsService(delegateMetricsService)
                                  .ngSecretService(ngSecretService)
-                                 .evaluateSync(true)
                                  .orgId(orgIdentifier)
                                  .projectId(projectIdentifier)
                                  .build();

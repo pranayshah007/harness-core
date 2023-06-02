@@ -1,0 +1,12 @@
+stages:
+  - id: stage1
+    name: stage1
+    type: custom
+    spec:
+      steps:
+        - type: Http
+          name: HttpStep
+          spec:
+            url: google.com
+            method: GET
+          timeout: 10s

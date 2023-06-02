@@ -15,11 +15,11 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.MetricDataStoreService;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.analysis.MetricsDataCollectionInfo;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 
 import com.google.common.collect.Iterables;

@@ -142,6 +142,10 @@ public class SecurityStageStepPMS implements ChildExecutable<StageElementParamet
                 ciStepArtifactOutcome.getStepArtifacts().getPublishedImageArtifacts().forEach(
                     integrationStageOutcomeBuilder::imageArtifact);
               }
+              if (isNotEmpty(ciStepArtifactOutcome.getStepArtifacts().getPublishedSbomArtifacts())) {
+                ciStepArtifactOutcome.getStepArtifacts().getPublishedSbomArtifacts().forEach(
+                    integrationStageOutcomeBuilder::sbomArtifact);
+              }
             }
           }
         }

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.mappers;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
@@ -19,7 +20,11 @@ import lombok.experimental.UtilityClass;
 public class CustomRequestResponseMapper {
   public CustomArtifactDelegateResponse toCustomArtifactDelegateResponse(
       BuildDetails buildDetails, CustomArtifactDelegateRequest attributeRequest) {
-    String version = attributeRequest.getVersion() != null ? attributeRequest.getVersion() : buildDetails.getNumber();
+    String version = attributeRequest.getVersion() != null ? attributeRequest.getVersion() : "";
+    if (buildDetails != null && EmptyPredicate.isNotEmpty(buildDetails.getNumber())) {
+      version = buildDetails.getNumber();
+    }
+
     return CustomArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .sourceType(ArtifactSourceType.CUSTOM_ARTIFACT)

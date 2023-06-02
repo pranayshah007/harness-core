@@ -26,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @JsonDeserialize(using = ChangeEventDTODeserializer.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-@FieldNameConstants
+@FieldNameConstants(innerTypeName = "ChangeEventDTOKeys")
 public class ChangeEventDTO {
   String id;
   @NotNull String accountId;

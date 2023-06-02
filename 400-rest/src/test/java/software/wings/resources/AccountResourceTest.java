@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.HANTANG;
 
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +24,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.seeddata.SampleDataProviderService;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.beans.Account;
 import software.wings.features.api.FeatureService;
@@ -70,7 +71,8 @@ public class AccountResourceTest extends CategoryTest {
       ResourceTestRule.builder()
           .instance(new AccountResource(accountService, userService, licenseServiceProvider, accountPermissionUtils,
               featureService, jobScheduler, gcpMarketPlaceApiHandler, sampleDataProviderServiceProvider,
-              mock(AuthService.class), harnessUserGroupService, adminLicenseHttpClient))
+              mock(AuthService.class), harnessUserGroupService, adminLicenseHttpClient,
+              mock(DelegateAuthService.class)))
           .build();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 

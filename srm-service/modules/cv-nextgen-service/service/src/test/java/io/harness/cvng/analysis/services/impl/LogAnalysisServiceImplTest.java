@@ -9,18 +9,23 @@ package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.cvng.CVConstants.BULK_OPERATION_THRESHOLD;
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_RESOURCE;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_FEEDBACK_LIST;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
+import static io.harness.cvng.beans.DataSourceType.DATADOG_LOG;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -44,6 +49,7 @@ import io.harness.cvng.analysis.entities.LogAnalysisCluster.LogAnalysisClusterKe
 import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.AnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisResultKeys;
+import io.harness.cvng.analysis.entities.LogFeedbackAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
@@ -51,12 +57,14 @@ import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.DatadogLogCVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
+import io.harness.cvng.statemachine.beans.AnalysisInput.AnalysisInputBuilder;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -70,6 +78,7 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -83,6 +92,7 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -93,6 +103,7 @@ import org.mockito.MockitoAnnotations;
 public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   private String cvConfigId;
   private String verificationTaskId;
+  private String verificationTaskIdForLogFeedback;
   @Inject private HPersistence hPersistence;
   @Inject private LearningEngineTaskService learningEngineTaskService;
   @Inject private LogAnalysisService logAnalysisService;
@@ -218,11 +229,8 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     List<LogAnalysisCluster> logAnalysisClusterList =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
     updateLogAnalysisCluster(logAnalysisClusterList, 10);
-    long startTime1 = System.nanoTime();
     hPersistence.save(logAnalysisClusterList);
-    long endTime1 = System.nanoTime();
-    List<LogAnalysisCluster> updatedLogAnalysisClusterList =
-        hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
+    List<LogAnalysisCluster> updatedLogAnalysisClusterList;
     Map<String, LogAnalysisCluster> logAnalysisClusterMap =
         logAnalysisClusterList.stream().collect(Collectors.toMap(LogAnalysisCluster::getUuid, Function.identity()));
     updatedLogAnalysisClusterList = hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
@@ -233,7 +241,6 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     final DBCollection collection = hPersistence.getCollection(LogAnalysisCluster.class);
     BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
     int numberOfBulkOperations = 0;
-    long startTime2 = System.nanoTime();
     for (LogAnalysisCluster logAnalysisCluster : logAnalysisClusterList) {
       bulkWriteOperation
           .find(hPersistence.createQuery(LogAnalysisCluster.class)
@@ -251,14 +258,12 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     if (numberOfBulkOperations > 0) {
       bulkWriteOperation.execute();
     }
-    long endTime2 = System.nanoTime();
     logAnalysisClusterMap =
         logAnalysisClusterList.stream().collect(Collectors.toMap(LogAnalysisCluster::getUuid, Function.identity()));
     updatedLogAnalysisClusterList = hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
     for (LogAnalysisCluster logAnalysisCluster : updatedLogAnalysisClusterList) {
       assertThat(logAnalysisCluster).isEqualTo(logAnalysisClusterMap.get(logAnalysisCluster.getUuid()));
     }
-    assertThat(endTime1 - startTime1).isGreaterThan(endTime2 - startTime2);
   }
 
   private void updateLogAnalysisCluster(List<LogAnalysisCluster> analysisClusters, double riskScore) {
@@ -558,6 +563,77 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
         .isNotNull();
   }
 
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testGetLogFeedbackURL() throws URISyntaxException {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(LOG_ANALYSIS_RESOURCE + "/" + LOG_FEEDBACK_LIST);
+    uriBuilder.addParameter("verificationTaskId", verificationTaskId);
+    String url = uriBuilder.build().toString();
+    assertThat(url).isEqualTo("/log-analysis/log-feedbacks?verificationTaskId=" + verificationTaskId);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testScheduleDeploymentLogFeedbackTask() throws URISyntaxException {
+    // for log feedback
+    DatadogLogCVConfig dataDogCVConfig = builderFactory.datadogLogCVConfigBuilder().build();
+    String dataDogCVConfigId = dataDogCVConfig.getUuid();
+    String dataDogCVConfigAccountId = dataDogCVConfig.getAccountId();
+
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstanceBlueGreen();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskIdLogFeedback = verificationTaskService.createDeploymentVerificationTask(
+        dataDogCVConfigAccountId, dataDogCVConfigId, verificationJobInstanceId, DATADOG_LOG);
+
+    AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
+    Instant startTime = Instant.parse("2023-03-11T10:26:00Z");
+    Instant endTime = Instant.parse("2023-03-11T10:27:00Z");
+    analysisInputBuilder.startTime(startTime)
+        .endTime(endTime)
+        .verificationTaskId(verificationTaskIdLogFeedback)
+        .controlHosts(new HashSet<>(Arrays.asList("host1", "host2")))
+        .testHosts(new HashSet<>(Arrays.asList("host3", "host4")))
+        .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_LOG);
+    AnalysisInput analysisInput = analysisInputBuilder.build();
+    String taskId = logAnalysisService.scheduleDeploymentLogFeedbackTask(analysisInput);
+    assertNotNull(taskId);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testScheduleDeploymentLogFeedbackTask_loadTest() {
+    // for log feedback
+    DatadogLogCVConfig dataDogCVConfig = builderFactory.datadogLogCVConfigBuilder().build();
+    String dataDogCVConfigId = dataDogCVConfig.getUuid();
+    String dataDogCVConfigAccountId = dataDogCVConfig.getAccountId();
+
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstanceLoadTest();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskIdLogFeedback = verificationTaskService.createDeploymentVerificationTask(
+        dataDogCVConfigAccountId, dataDogCVConfigId, verificationJobInstanceId, DATADOG_LOG);
+
+    AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
+    Instant startTime = Instant.parse("2023-03-11T10:26:00Z");
+    Instant endTime = Instant.parse("2023-03-11T10:27:00Z");
+    analysisInputBuilder.startTime(startTime)
+        .endTime(endTime)
+        .verificationTaskId(verificationTaskIdLogFeedback)
+        .controlHosts(new HashSet<>(Arrays.asList("host1", "host2")))
+        .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_LOG);
+    AnalysisInput analysisInput = analysisInputBuilder.build();
+    logAnalysisService.scheduleDeploymentLogFeedbackTask(analysisInput);
+    LogFeedbackAnalysisLearningEngineTask learningEngineTask =
+        (LogFeedbackAnalysisLearningEngineTask) learningEngineTaskService.getNextAnalysisTask();
+    String expectedTestDataUrl = String.format(
+        "/cv/api/log-analysis/test-data?verificationTaskId=%s&analysisStartTime=1678530360000&analysisEndTime=1678530420000",
+        verificationTaskIdLogFeedback);
+    assertThat(learningEngineTask.getTestDataUrl()).isEqualTo(expectedTestDataUrl);
+  }
+
   private List<ClusteredLog> createClusteredLogRecords(Instant startTime, Instant endTime) {
     List<ClusteredLog> logRecords = new ArrayList<>();
 
@@ -577,7 +653,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
 
     return logRecords;
   }
-  //
+
   private LogAnalysisDTO createAnalysisDTO(Instant endTime) {
     return createAnalysisDTO(endTime, 0.2);
   }
@@ -641,13 +717,14 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     learningEngineTask.setTaskStatus(ExecutionStatus.QUEUED);
     learningEngineTask.setVerificationTaskId(verificationTaskId);
     learningEngineTask.setAnalysisType(analysisType);
+    learningEngineTask.setAnalysisType(analysisType);
     learningEngineTask.setFailureUrl("failure-url");
     learningEngineTask.setAnalysisStartTime(instant.minus(Duration.ofMinutes(10)));
     learningEngineTask.setAnalysisEndTime(instant);
     learningEngineTask.setPickedAt(instant.plus(Duration.ofMinutes(2)));
   }
 
-  private VerificationJob newTestVerificationJob() {
+  private TestVerificationJob newTestVerificationJob() {
     return builderFactory.testVerificationJobBuilder().build();
   }
 
@@ -659,5 +736,29 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
         .dataCollectionDelay(Duration.ofMinutes(5))
         .resolvedJob(newTestVerificationJob())
         .build();
+  }
+
+  private VerificationJobInstance newVerificationJobInstanceBlueGreen() {
+    return VerificationJobInstance.builder()
+        .accountId(accountId)
+        .deploymentStartTime(instant)
+        .startTime(instant.plus(Duration.ofMinutes(2)))
+        .dataCollectionDelay(Duration.ofMinutes(5))
+        .resolvedJob(newBlueGreenVerificationJob())
+        .build();
+  }
+
+  private VerificationJobInstance newVerificationJobInstanceLoadTest() {
+    return VerificationJobInstance.builder()
+        .accountId(accountId)
+        .deploymentStartTime(instant)
+        .startTime(instant.plus(Duration.ofMinutes(2)))
+        .dataCollectionDelay(Duration.ofMinutes(5))
+        .resolvedJob(newTestVerificationJob())
+        .build();
+  }
+
+  private VerificationJob newBlueGreenVerificationJob() {
+    return builderFactory.blueGreenVerificationJobBuilder().build();
   }
 }

@@ -16,6 +16,7 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
         "//960-api-services:module",
+        "//970-ng-commons:module",
         "//980-commons:module",
     ],
 )

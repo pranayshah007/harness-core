@@ -43,11 +43,13 @@ import io.harness.cdng.provision.azure.AzureTemplateFile;
 import io.harness.cdng.provision.azure.AzureTenantSpec;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -57,6 +59,7 @@ import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
+import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -74,7 +77,8 @@ import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisionerMapper {
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
@@ -117,7 +121,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
     String provisionerId = state.getProvisionerId();
 
@@ -141,7 +146,7 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
 
   private AbstractStepNode getAzureBP(WorkflowMigrationContext context, GraphNode graphNode) {
     AzureCreateBPStepNode node = new AzureCreateBPStepNode();
-    baseSetup(graphNode, node);
+    baseSetup(graphNode, node, context.getIdentifierCaseFormat());
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
     AzureCreateBPStepConfiguration configuration =
         AzureCreateBPStepConfiguration.builder()
@@ -158,7 +163,7 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
 
   private AbstractStepNode getAzureARM(WorkflowMigrationContext context, GraphNode graphNode) {
     AzureCreateARMResourceStepNode node = new AzureCreateARMResourceStepNode();
-    baseSetup(graphNode, node);
+    baseSetup(graphNode, node, context.getIdentifierCaseFormat());
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
 
     AzureCreateARMResourceStepConfiguration config =
@@ -189,7 +194,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
                                  .type(StoreConfigType.HARNESS)
                                  .spec(HarnessStore.builder()
                                            .files(ParameterField.createValueField(List.of("/"
-                                               + generateFileIdentifier("infraProvisioners/" + provisioner.getName()))))
+                                               + generateFileIdentifier("infraProvisioners/" + provisioner.getName(),
+                                                   context.getIdentifierCaseFormat()))))
                                            .build())
                                  .build();
       } else {
@@ -210,7 +216,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
       parameterFile.setStore(StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(gitStore).build());
     } else if (isNotEmpty(state.getInlineParametersExpression())) {
       List<String> fileNames = new ArrayList<>();
-      fileNames.add("/" + getParameterFileName(context.getWorkflow().getName(), state.getName()));
+      fileNames.add("/"
+          + getParameterFileName(context.getWorkflow().getName(), state.getName(), context.getIdentifierCaseFormat()));
       parameterFile.setStore(StoreConfigWrapper.builder()
                                  .type(StoreConfigType.HARNESS)
                                  .spec(HarnessStore.builder().files(ParameterField.createValueField(fileNames)).build())
@@ -339,8 +346,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
   }
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -349,7 +356,8 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
     if (state.getParametersGitFileConfig() == null && isNotEmpty(state.getInlineParametersExpression())) {
       byte[] fileContent = state.getInlineParametersExpression().getBytes(StandardCharsets.UTF_8);
-      NGYamlFile yamlConfigFile = getYamlConfigFile(inputDTO, fileContent, getParameterFileName(name, state.getName()));
+      NGYamlFile yamlConfigFile = getYamlConfigFile(
+          inputDTO, fileContent, getParameterFileName(name, state.getName(), inputDTO.getIdentifierCaseFormat()));
       if (null != yamlConfigFile) {
         result.add(yamlConfigFile);
       }
@@ -359,9 +367,9 @@ public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisione
   }
 
   @NotNull
-  private static String getParameterFileName(String workflowName, String stateName) {
+  private static String getParameterFileName(String workflowName, String stateName, CaseFormat identifierCaseFormat) {
     String fileName = workflowName + "/" + stateName + "/armParameters.json";
-    return generateFileIdentifier(fileName);
+    return generateFileIdentifier(fileName, identifierCaseFormat);
   }
 
   private Boolean isBlueprint(Map<CgEntityId, CgEntityNode> entities, String provisionerId, ARMProvisionState state) {

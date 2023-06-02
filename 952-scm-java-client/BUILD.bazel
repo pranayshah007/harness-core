@@ -13,6 +13,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//953-git-sync-commons:module",
         "//954-connector-beans:module",
         "//960-api-services/src/main/java/io/harness/cistatus/service:module",
         "//960-api-services/src/main/java/io/harness/git:module",

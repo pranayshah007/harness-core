@@ -101,6 +101,15 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
 
         // check downsize old flag and downsize it
         if (!ecsBlueGreenSwapTargetGroupsRequest.isDoNotDownsizeOldService()) {
+          if (ecsBlueGreenSwapTargetGroupsRequest.getDownsizeOldServiceDelayInSecs() != null
+              && ecsBlueGreenSwapTargetGroupsRequest.getDownsizeOldServiceDelayInSecs() > 0L) {
+            swapTargetGroupLogCallback.saveExecutionLog(
+                color(format("Waiting for %d seconds before downsizing service %s",
+                          ecsBlueGreenSwapTargetGroupsRequest.getDownsizeOldServiceDelayInSecs(),
+                          ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName()),
+                    LogColor.White, LogWeight.Bold));
+            ecsCommandTaskHelper.sleepInSeconds(ecsBlueGreenSwapTargetGroupsRequest.getDownsizeOldServiceDelayInSecs());
+          }
           swapTargetGroupLogCallback.saveExecutionLog(format(
               "Removing green service:  %s scaling policies", ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName()));
           // deleting scaling policies for old service

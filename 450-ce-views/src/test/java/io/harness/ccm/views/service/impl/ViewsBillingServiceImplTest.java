@@ -12,13 +12,13 @@ import static io.harness.rule.OwnerRule.SAHILDEEP;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -129,8 +129,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private TableResult resultSet;
   @Mock private FieldValueList row;
   @Mock private CEMetadataRecordDao ceMetadataRecordDao;
-  @Mock BigQueryService bigQueryService;
-  @Mock BigQueryHelper bigQueryHelper;
+  @Mock private BigQueryService bigQueryService;
+  @Mock private BigQueryHelper bigQueryHelper;
 
   private Schema schema;
   private List<Field> fields;
@@ -151,17 +151,19 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod().when(viewsQueryBuilder).getAliasFromField(any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean());
-    doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString());
+        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean(), anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
     doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
@@ -171,7 +173,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
     doCallRealMethod()
         .when(viewsQueryHelper)
-        .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean());
+        .buildQueryParams(
+            any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean());
     doCallRealMethod().when(viewsQueryHelper).getDefaultViewGroupBy(any());
     doCallRealMethod().when(viewsQueryHelper).getViewFieldInput(any());
     doCallRealMethod().when(viewsQueryHelper).getUpdatedFiltersForPrevPeriod(any());

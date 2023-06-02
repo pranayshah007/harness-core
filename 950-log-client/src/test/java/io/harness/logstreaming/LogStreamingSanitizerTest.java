@@ -95,4 +95,21 @@ public class LogStreamingSanitizerTest extends CategoryTest {
             + "      **************\n"
             + "       **************");
   }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGenericSanitize_Null_Empty_Message() {
+    LogStreamingSanitizer logSanitizer = LogStreamingSanitizer.builder().build();
+
+    // empty message
+    LogLine logLine = LogLine.builder().message("").build();
+    logSanitizer.sanitizeLogMessage(logLine);
+    Assertions.assertThat(logLine.getMessage()).isEqualTo("");
+
+    // null message
+    logLine.setMessage(null);
+    logSanitizer.sanitizeLogMessage(logLine);
+    Assertions.assertThat(logLine.getMessage()).isNull();
+  }
 }

@@ -51,6 +51,11 @@ public class EnvironmentYamlV2VisitorHelperTest extends CategoryTest {
     assertThat(entityDetailProto.getType()).isEqualTo(EntityTypeProtoEnum.ENVIRONMENT);
     assertThat(entityDetailProto.getIdentifierRef().getIdentifier().getValue()).isEqualTo("ref");
 
+    // Case1: without expression with empty environmentRefString
+    environmentYamlV2 = EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("")).build();
+    entityDetailProtoDTOS = envVisitor.addReference(environmentYamlV2, accountId, orgId, projectId, contextMap);
+    assertThat(entityDetailProtoDTOS).isEmpty();
+
     // case2: with expression
     environmentYamlV2 = EnvironmentYamlV2.builder()
                             .environmentRef(ParameterField.createExpressionField(true, "<+b>", null, false))

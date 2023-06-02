@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.ssh.SshCommandStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
@@ -67,6 +68,7 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
+  @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -126,11 +128,14 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
           .build();
     }
 
+    ShellScriptProvisionOutcome shellScriptProvisionOutcome =
+        new ShellScriptProvisionOutcome(parseOutput(response.getOutput()));
+    provisionerOutputHelper.saveProvisionerOutputByStepIdentifier(ambiance, shellScriptProvisionOutcome);
     return StepResponse.builder()
         .unitProgressList(response.getUnitProgressData().getUnitProgresses())
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
-                         .outcome(new ShellScriptProvisionOutcome(parseOutput(response.getOutput())))
+                         .outcome(shellScriptProvisionOutcome)
                          .build())
         .status(Status.SUCCEEDED)
         .build();

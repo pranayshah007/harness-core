@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration.service;
 
-import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -55,7 +54,7 @@ public class CreateProjectService {
 
     List<ProjectCreateResultDTO> allResults = new ArrayList<>();
     for (Application app : apps) {
-      String identifier = MigratorUtility.generateIdentifier(app.getName());
+      String identifier = MigratorUtility.generateIdentifier(app.getName(), createRequest.getIdentifierCaseFormat());
       String name = MigratorUtility.generateName(app.getName());
       Response<ResponseDTO<ProjectResponse>> resp =
           ngClient
@@ -66,7 +65,6 @@ public class CreateProjectService {
                                    .color("#0063f7")
                                    .description(app.getDescription())
                                    .identifier(identifier)
-                                   .modules(Collections.singletonList(ModuleType.CD))
                                    .name(name)
                                    .tags(new HashMap<>())
                                    .build())

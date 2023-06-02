@@ -96,11 +96,15 @@ public class DelegateTokenNgResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName) {
+      @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName,
+      @Parameter(
+          description =
+              "Epoch time in milliseconds after which the token will be marked as revoked. There can be a delay of upto one hour from the epoch value provided and actual revoking of the token.")
+      @QueryParam("revokeAfter") Long revokeAfter) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
     return new RestResponse<>(CGRestUtils.getResponse(
-        delegateTokenClient.createToken(accountIdentifier, orgIdentifier, projectIdentifier, tokenName)));
+        delegateTokenClient.createToken(accountIdentifier, orgIdentifier, projectIdentifier, tokenName, revokeAfter)));
   }
 
   @PUT

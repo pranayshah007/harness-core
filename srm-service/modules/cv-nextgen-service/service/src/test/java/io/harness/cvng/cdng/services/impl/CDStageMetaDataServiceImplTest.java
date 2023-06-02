@@ -8,6 +8,7 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +19,7 @@ import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.client.RequestExecutor;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CDStageMetaDataDTO.ServiceEnvRef;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -51,7 +53,7 @@ public class CDStageMetaDataServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
-  public void testGetServiceAndEnvironmentRef_withValid() {
+  public void testGetServiceAndEnvironmentRef_serviceEnvRefListIsMissing() {
     YamlField yamlField = getVerifyStepYamlField("pipeline/pipeline-with-verify.yaml");
     responseDTO = ResponseDTO.newResponse(
         CDStageMetaDataDTO.builder().serviceRef("serviceIdentifier").environmentRef("envIdentifier").build());
@@ -60,6 +62,81 @@ public class CDStageMetaDataServiceImplTest extends CvNextGenTestBase {
         yamlField.getNode().getParentNode().getParentNode().getParentNode().getParentNode());
     assertThat(result.getData().getServiceRef()).isEqualTo("serviceIdentifier");
     assertThat(result.getData().getEnvironmentRef()).isEqualTo("envIdentifier");
+    assertThat(result.getData().getServiceEnvRefList().get(0).getServiceRef()).isEqualTo("serviceIdentifier");
+    assertThat(result.getData().getServiceEnvRefList().get(0).getEnvironmentRef()).isEqualTo("envIdentifier");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetServiceAndEnvironmentRef_serviceEnvIsMissing() {
+    YamlField yamlField = getVerifyStepYamlField("pipeline/pipeline-with-verify.yaml");
+    responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder()
+            .serviceEnvRef(ServiceEnvRef.builder().serviceRef("s1").environmentRef("e1").build())
+            .build());
+    Mockito.when(requestExecutor.execute(any())).thenReturn(responseDTO);
+    ResponseDTO<CDStageMetaDataDTO> result = cdStageMetaDataService.getServiceAndEnvironmentRef(
+        yamlField.getNode().getParentNode().getParentNode().getParentNode().getParentNode());
+    assertThat(result.getData().getServiceRef()).isNull();
+    assertThat(result.getData().getEnvironmentRef()).isNull();
+    assertThat(result.getData().getServiceEnvRefList().get(0).getServiceRef()).isEqualTo("s1");
+    assertThat(result.getData().getServiceEnvRefList().get(0).getEnvironmentRef()).isEqualTo("e1");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetServiceAndEnvironmentRef_serviceEnvRefListIsPresent() {
+    YamlField yamlField = getVerifyStepYamlField("pipeline/pipeline-with-verify.yaml");
+    responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder()
+            .serviceRef("serviceIdentifier")
+            .environmentRef("envIdentifier")
+            .serviceEnvRef(ServiceEnvRef.builder().serviceRef("s1").environmentRef("e1").build())
+            .build());
+    Mockito.when(requestExecutor.execute(any())).thenReturn(responseDTO);
+    ResponseDTO<CDStageMetaDataDTO> result = cdStageMetaDataService.getServiceAndEnvironmentRef(
+        yamlField.getNode().getParentNode().getParentNode().getParentNode().getParentNode());
+    assertThat(result.getData().getServiceRef()).isEqualTo("serviceIdentifier");
+    assertThat(result.getData().getEnvironmentRef()).isEqualTo("envIdentifier");
+    assertThat(result.getData().getServiceEnvRefList().get(0).getServiceRef()).isEqualTo("s1");
+    assertThat(result.getData().getServiceEnvRefList().get(0).getEnvironmentRef()).isEqualTo("e1");
+  }
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetServiceAndEnvironmentRef_serviceEnvRefListAndServiceRefAreMissing() {
+    YamlField yamlField = getVerifyStepYamlField("pipeline/pipeline-with-verify.yaml");
+    responseDTO = ResponseDTO.newResponse(CDStageMetaDataDTO.builder().environmentRef("env").build());
+    Mockito.when(requestExecutor.execute(any())).thenReturn(responseDTO);
+    ResponseDTO<CDStageMetaDataDTO> result = cdStageMetaDataService.getServiceAndEnvironmentRef(
+        yamlField.getNode().getParentNode().getParentNode().getParentNode().getParentNode());
+    assertThat(result).isNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetServiceAndEnvironmentRef_serviceEnvRefListAndEnvRefAreMissing() {
+    YamlField yamlField = getVerifyStepYamlField("pipeline/pipeline-with-verify.yaml");
+    responseDTO = ResponseDTO.newResponse(CDStageMetaDataDTO.builder().serviceRef("svc").build());
+    Mockito.when(requestExecutor.execute(any())).thenReturn(responseDTO);
+    ResponseDTO<CDStageMetaDataDTO> result = cdStageMetaDataService.getServiceAndEnvironmentRef(
+        yamlField.getNode().getParentNode().getParentNode().getParentNode().getParentNode());
+    assertThat(result).isNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetServiceAndEnvironmentRef_serviceEnvRefListAndEnvRefAndSvcRefAreMissing() {
+    YamlField yamlField = getVerifyStepYamlField("pipeline/pipeline-with-verify.yaml");
+    responseDTO = ResponseDTO.newResponse(CDStageMetaDataDTO.builder().build());
+    Mockito.when(requestExecutor.execute(any())).thenReturn(responseDTO);
+    ResponseDTO<CDStageMetaDataDTO> result = cdStageMetaDataService.getServiceAndEnvironmentRef(
+        yamlField.getNode().getParentNode().getParentNode().getParentNode().getParentNode());
+    assertThat(result).isNull();
   }
 
   @SneakyThrows

@@ -1511,7 +1511,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
                                                   .addFilter(EnvironmentKeys.appId, EQ, app.getAppId())
                                                   .addOrder(EnvironmentKeys.name, SortOrder.OrderType.ASC)
                                                   .build();
-    List<Environment> environments = environmentService.list(pageRequestEnv, false, null).getResponse();
+    List<Environment> environments = environmentService.list(pageRequestEnv, false, null, false).getResponse();
 
     if (environments != null) {
       // iterate over environments
@@ -2909,6 +2909,8 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
     } else if (entity instanceof UserGroup) {
       return SETUP_FOLDER;
     } else if (entity instanceof ApiKeyEntry) {
+      return SETUP_FOLDER;
+    } else if (entity instanceof Account) {
       return SETUP_FOLDER;
     }
     throw new InvalidRequestException(

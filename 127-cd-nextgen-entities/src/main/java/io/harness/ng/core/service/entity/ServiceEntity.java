@@ -18,6 +18,9 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -57,7 +60,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("servicesNG")
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
-@ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
 public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
@@ -78,6 +80,15 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
                  .field(ServiceEntityKeys.createdAt)
                  .field(ServiceEntityKeys.deleted)
                  .field(ServiceEntityKeys.deletedAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_deleted_collation_en")
+                 .field(ServiceEntityKeys.accountId)
+                 .field(ServiceEntityKeys.orgIdentifier)
+                 .field(ServiceEntityKeys.projectIdentifier)
+                 .field(ServiceEntityKeys.deleted)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
         .build();
   }

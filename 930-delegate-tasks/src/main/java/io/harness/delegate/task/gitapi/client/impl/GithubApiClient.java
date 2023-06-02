@@ -9,6 +9,7 @@ package io.harness.delegate.task.gitapi.client.impl;
 
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.GITHUB_APP;
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.TOKEN;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
@@ -172,7 +173,9 @@ public class GithubApiClient implements GitApiClient {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
     String repoOwner = gitConfigDTO.getGitRepositoryDetails().getOrg();
-    String repoName = gitConfigDTO.getGitRepositoryDetails().getName();
+    String repoName = gitConfigDTO.getGitRepositoryDetails().getName() != null
+        ? gitConfigDTO.getGitRepositoryDetails().getName()
+        : attributesRequest.getRepository();
     String webhookId = attributesRequest.getWebhookId();
     String token = retrieveAuthToken(gitConnector);
 
@@ -231,11 +234,13 @@ public class GithubApiClient implements GitApiClient {
   }
 
   private String fetchTokenUsingGithubAppSpec(GithubConnectorDTO gitConfigDTO, GithubAppSpecDTO spec) {
-    return githubService.getToken(GithubAppConfig.builder()
-                                      .installationId(spec.getInstallationId())
-                                      .appId(spec.getApplicationId())
-                                      .privateKey(new String(spec.getPrivateKeyRef().getDecryptedValue()))
-                                      .githubUrl(getGitApiURL(gitConfigDTO.getUrl()))
-                                      .build());
+    return githubService.getToken(
+        GithubAppConfig.builder()
+            .installationId(
+                getSecretAsStringFromPlainTextOrSecretRef(spec.getInstallationId(), spec.getInstallationIdRef()))
+            .appId(getSecretAsStringFromPlainTextOrSecretRef(spec.getApplicationId(), spec.getApplicationIdRef()))
+            .privateKey(new String(spec.getPrivateKeyRef().getDecryptedValue()))
+            .githubUrl(getGitApiURL(gitConfigDTO.getUrl()))
+            .build());
   }
 }

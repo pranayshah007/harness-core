@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitops.models.Agent;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationQuery;
+import io.harness.gitops.models.ApplicationResource;
+import io.harness.gitops.models.ApplicationSyncRequest;
 import io.harness.gitops.models.Cluster;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.models.Repository;
@@ -25,6 +27,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -41,4 +44,27 @@ public interface GitopsResourceClient {
   @POST("repositories") Call<PageResponse<Repository>> listRepositories(@Body RepositoryQuery query);
 
   @POST("clusters") Call<PageResponse<Cluster>> listClusters(@Body ClusterQuery query);
+
+  @GET("agents/{agentIdentifier}/applications/{applicationName}")
+  Call<ApplicationResource> refreshApplication(@Path("agentIdentifier") String agentId,
+      @Path("applicationName") String applicationName,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) @NotEmpty String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) @NotEmpty String projectIdentifier,
+      @Query(value = NGResourceFilterConstants.APPLICATION_REFRESH_TYPE) @NotEmpty String refreshType);
+
+  @POST("agents/{agentIdentifier}/applications/{applicationName}/sync")
+  Call<ApplicationResource> syncApplication(@Path("agentIdentifier") String agentId,
+      @Path("applicationName") String applicationName,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) @NotEmpty String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) @NotEmpty String projectIdentifier,
+      @Body ApplicationSyncRequest syncRequest);
+
+  @GET("agents/{agentIdentifier}/applications/{applicationName}")
+  Call<ApplicationResource> getApplication(@Path("agentIdentifier") String agentId,
+      @Path("applicationName") String applicationName,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) @NotEmpty String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) @NotEmpty String projectIdentifier);
 }

@@ -95,7 +95,7 @@ public class TerragruntClientFactory {
     try {
       CliResponse result =
           cliHelper.executeCliCommand(command, timeoutInMillis, envVars, pwd, new NoopExecutionCallback(), command,
-              new EmptyLogOutputStream(), new TerraformCliErrorLogOutputStream(logCallback));
+              new EmptyLogOutputStream(), new TerraformCliErrorLogOutputStream(logCallback), 0);
 
       if (result.getExitCode() != 0) {
         log.error(format("Command [%s] failed with exit code [%d] and error: %s", command, result.getExitCode(),

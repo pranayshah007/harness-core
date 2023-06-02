@@ -24,9 +24,9 @@ public class SpotinstTrafficShiftAlbDeployParameters extends SpotInstTaskParamet
   @Builder
   public SpotinstTrafficShiftAlbDeployParameters(String appId, String accountId, String activityId, String commandName,
       String workflowExecutionId, Integer timeoutIntervalInMin, String awsRegion, ElastiGroup newElastigroup,
-      ElastiGroup oldElastigroup) {
+      ElastiGroup oldElastigroup, boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin,
-        SPOT_INST_ALB_SHIFT_DEPLOY, awsRegion);
+        SPOT_INST_ALB_SHIFT_DEPLOY, awsRegion, timeoutSupported);
     this.newElastigroup = newElastigroup;
     this.oldElastigroup = oldElastigroup;
   }

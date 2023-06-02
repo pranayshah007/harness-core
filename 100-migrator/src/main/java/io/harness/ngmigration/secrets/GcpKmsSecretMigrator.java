@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.secrets;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
-public class GcpKmsSecretMigrator implements SecretMigrator {
+public class GcpKmsSecretMigrator implements io.harness.ngmigration.secrets.SecretMigrator {
   @Override
   public SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig secretManagerConfig, String secretManagerIdentifier) {
@@ -47,9 +48,19 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
         .type(SecretText)
         .spec(SecretTextSpecDTO.builder()
                   .valueType(ValueType.Inline)
-                  .value("__PLEASE_FIX_ME__")
+                  .value(PLEASE_FIX_ME)
                   .secretManagerIdentifier(secretManagerIdentifier)
                   .build());
+  }
+
+  @Override
+  public String getEncryptionKey(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
+  }
+
+  @Override
+  public String getEncryptionValue(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
   }
 
   @Override
@@ -63,10 +74,11 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    String gcpSecretFileIdentifier =
-        String.format("migratedGcpKms_%s", MigratorUtility.generateIdentifier(gcpKmsConfig.getName()));
+    String gcpSecretFileIdentifier = String.format("migratedGcpKms_%s",
+        MigratorUtility.generateIdentifier(gcpKmsConfig.getName(), inputDTO.getIdentifierCaseFormat()));
 
     NgEntityDetail gcpEntityDetail = NgEntityDetail.builder()
+                                         .entityType(NGMigrationEntityType.SECRET)
                                          .identifier(gcpSecretFileIdentifier)
                                          .orgIdentifier(orgIdentifier)
                                          .projectIdentifier(projectIdentifier)

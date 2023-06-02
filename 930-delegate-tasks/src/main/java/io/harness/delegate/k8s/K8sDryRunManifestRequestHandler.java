@@ -8,11 +8,13 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.k8s.K8sCommandUnitConstants.K8sDryRun;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
+import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -24,6 +26,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.KubernetesCliCommandType;
@@ -35,16 +38,24 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sDryRunManifestRequest;
 import io.harness.delegate.task.k8s.K8sDryRunManifestResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.filesystem.FileIo;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogWeight;
@@ -88,11 +99,21 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
 
     LogCallback logCallback = k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
         k8sDryRunManifestRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
-
+    ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
+    ServiceHookHandler serviceHookHandler = new ServiceHookHandler(
+        k8sDryRunManifestRequest.getServiceHooks(), serviceHookTaskParams, steadyStateTimeoutInMillis);
     logCallback.saveExecutionLog(color("\nStarting Kubernetes Dry Run", White, LogWeight.Bold));
-    k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sDryRunManifestRequest.getManifestDelegateConfig(),
-        this.manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sDryRunManifestRequest.getAccountId());
+    serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
 
+    k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sDryRunManifestRequest.getManifestDelegateConfig(),
+        this.manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sDryRunManifestRequest.getAccountId(),
+        false);
+
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
+    logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     String dryRunManifestYaml = manifestDryRunYaml(k8sDryRunManifestRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, K8sDryRun, true, commandUnitsProgress));
     return K8sDeployResponse.builder()
@@ -105,20 +126,37 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
       LogCallback executionLogCallback) throws Exception {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(format("Release Name: [%s]", this.releaseName), Yellow, Bold));
-    this.kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
-    this.client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+    this.kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    this.client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
+
+    KubernetesReleaseDetails releaseDetails = null;
+    // For backward compatibility if delegate is released before ng-manager
+    if (request.getUseDeclarativeRollback() != null) {
+      K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(request.getUseDeclarativeRollback());
+      IK8sReleaseHistory releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, releaseName);
+      int currentReleaseNumber = releaseHistory.getNextReleaseNumber(request.isInCanaryWorkflow());
+      if (request.getUseDeclarativeRollback() && isEmpty(releaseHistory) && !request.isInCanaryWorkflow()) {
+        currentReleaseNumber =
+            k8sTaskHelperBase.getNextReleaseNumberFromOldReleaseHistory(kubernetesConfig, releaseName);
+      }
+
+      releaseDetails = KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber).build();
+    }
+
+    List<String> manifestOverrideFiles =
+        getManifestOverrideFlies(request, releaseDetails != null ? releaseDetails.toContextMap() : emptyMap());
 
     this.resources =
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
             this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
             isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
-    return dryRunManifests(k8sDelegateTaskParams, executionLogCallback, request.isUseNewKubectlVersion());
+    return dryRunManifests(k8sDelegateTaskParams, executionLogCallback);
   }
 
-  private String dryRunManifests(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
-      boolean useKubectlNewVersion) throws Exception {
+  private String dryRunManifests(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback)
+      throws Exception {
     try {
       executionLogCallback.saveExecutionLog(color("\nValidating manifests with Dry Run", White, Bold), INFO);
       FileIo.writeUtf8StringToFile(k8sDelegateTaskParams.getWorkingDirectory() + "/" + DRY_RUN_MANIFEST_FILE_NAME,
@@ -127,9 +165,7 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
       Kubectl overriddenClient =
           k8sTaskHelperBase.getOverriddenClient(this.client, this.resources, k8sDelegateTaskParams);
 
-      final ApplyCommand dryrun = useKubectlNewVersion
-          ? overriddenClient.apply().filename(DRY_RUN_MANIFEST_FILE_NAME).dryRunClient(true)
-          : overriddenClient.apply().filename(DRY_RUN_MANIFEST_FILE_NAME).dryrun(true);
+      final ApplyCommand dryrun = overriddenClient.apply().filename(DRY_RUN_MANIFEST_FILE_NAME).dryrun(true);
       ProcessResponse response =
           k8sTaskHelperBase.runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();

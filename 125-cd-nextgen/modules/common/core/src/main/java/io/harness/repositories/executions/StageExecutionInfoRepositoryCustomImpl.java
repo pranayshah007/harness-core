@@ -18,6 +18,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.utils.StageStatus;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +76,9 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
   }
 
   @Override
-  public List<StageExecutionInfo> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findAllAndRemove(query, StageExecutionInfo.class);
+    return mongoTemplate.remove(query, StageExecutionInfo.class);
   }
 
   public Criteria createScopeCriteria(Scope scope) {
@@ -86,5 +87,16 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
     criteria.and(StageExecutionInfoKeys.orgIdentifier).is(scope.getOrgIdentifier());
     criteria.and(StageExecutionInfoKeys.projectIdentifier).is(scope.getProjectIdentifier());
     return criteria;
+  }
+
+  @Override
+  public StageExecutionInfo findByStageExecutionId(String stageExecutionId, Scope scope) {
+    Criteria criteria = new Criteria();
+    criteria.and(StageExecutionInfoKeys.accountIdentifier).is(scope.getAccountIdentifier());
+    criteria.and(StageExecutionInfoKeys.orgIdentifier).is(scope.getOrgIdentifier());
+    criteria.and(StageExecutionInfoKeys.projectIdentifier).is(scope.getProjectIdentifier());
+    criteria.and(StageExecutionInfoKeys.stageExecutionId).is(stageExecutionId);
+    Query query = new Query(criteria);
+    return mongoTemplate.findOne(query, StageExecutionInfo.class);
   }
 }

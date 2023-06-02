@@ -87,6 +87,19 @@ public class TerraformPlanExpressionFunctor implements ExpressionFunctor, Terraf
         expressionFunctorToken, "humanReadableFilePath");
   }
 
+  @Override
+  public String policyChecksJsonFilePath() {
+    if (cachedTerraformPlanParam == null) {
+      TerraformPlanParam terraformPlanParam = findTerraformPlanParam();
+      if (terraformPlanParam == null) {
+        return null;
+      }
+      this.cachedTerraformPlanParam = terraformPlanParam;
+    }
+    return format(POLICY_CHECKS_DELEGATE_EXPRESSION, cachedTerraformPlanParam.getPolicyChecksFileId(),
+        expressionFunctorToken, "tfcPolicyChecks");
+  }
+
   private TerraformPlanParam findTerraformPlanParam() {
     TerraformPlanParam terraformPlanParam = obtainTfPlanFunction.apply(this.planSweepingOutputName);
     if (terraformPlanParam == null) {

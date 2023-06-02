@@ -16,11 +16,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface NGTriggerEventsService {
-  Criteria formCriteria(String accountId, String orgId, String projectId, String targetIdentifier, String identifier,
-      String searchTerm, List<ExecutionStatus> statusList);
+  Criteria formEventCriteria(String accountId, String eventCorrelationId, List<ExecutionStatus> statusList);
+  Criteria formTriggerEventCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
+      String identifier, String searchTerm, List<ExecutionStatus> statusList);
 
   Page<TriggerEventHistory> getEventHistory(Criteria criteria, Pageable pageable);
 
   void deleteAllForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  void deleteTriggerEventHistory(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String triggerIdentifier);
 }

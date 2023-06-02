@@ -31,6 +31,7 @@ message ExpressionRenderBlobResponse {
 message ExpressionEvaluateBlobRequest {
   io.harness.pms.contracts.ambiance.Ambiance ambiance = 1;
   string expression = 2;
+  io.harness.pms.contracts.plan.ExpressionMode expressionMode = 3;
 }
 
 message ExpressionEvaluateBlobResponse {

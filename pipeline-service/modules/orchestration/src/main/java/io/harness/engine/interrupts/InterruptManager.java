@@ -37,7 +37,7 @@ public class InterruptManager {
                               .nodeExecutionId(interruptPackage.getNodeExecutionId())
                               .interruptConfig(interruptPackage.getInterruptConfig())
                               .build();
-    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(
              LOCK_NAME_PREFIX + interrupt.getPlanExecutionId(), Duration.ofSeconds(15), Duration.ofMinutes(1));
          AutoLogContext ignore = interrupt.autoLogContext()) {
       if (lock == null) {

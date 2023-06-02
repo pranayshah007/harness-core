@@ -7,6 +7,7 @@
 
 package software.wings.service.impl;
 
+import static io.harness.beans.FeatureName.SPG_ENABLE_NOTIFICATION_RULES;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.Misc.getDurationString;
 
@@ -14,6 +15,7 @@ import static software.wings.alerts.AlertStatus.Closed;
 import static software.wings.alerts.AlertStatus.Open;
 import static software.wings.alerts.AlertStatus.Pending;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+import static software.wings.beans.alert.AlertType.ARTIFACT_COLLECTION_FAILED;
 import static software.wings.beans.alert.AlertType.ApprovalNeeded;
 import static software.wings.beans.alert.AlertType.CONTINUOUS_VERIFICATION_ALERT;
 import static software.wings.beans.alert.AlertType.DEPLOYMENT_RATE_APPROACHING_LIMIT;
@@ -92,10 +94,9 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._955_ALERT_BEANS)
 public class AlertServiceImpl implements AlertService {
   // TODO: check if ARTIFACT_COLLECTION_FAILED alert type needs to be added here
-  private static final List<AlertType> ALERT_TYPES_TO_NOTIFY_ON =
-      ImmutableList.of(DelegatesDown, DEPLOYMENT_RATE_APPROACHING_LIMIT, INSTANCE_USAGE_APPROACHING_LIMIT,
-          USAGE_LIMIT_EXCEEDED, USERGROUP_SYNC_FAILED, RESOURCE_USAGE_APPROACHING_LIMIT, GitSyncError,
-          GitConnectionError, InvalidKMS, CONTINUOUS_VERIFICATION_ALERT, ApprovalNeeded, ManualInterventionNeeded);
+  private static final List<AlertType> ALERT_TYPES_TO_NOTIFY_ON = ImmutableList.of(DelegatesDown,
+      DEPLOYMENT_RATE_APPROACHING_LIMIT, INSTANCE_USAGE_APPROACHING_LIMIT, USAGE_LIMIT_EXCEEDED, USERGROUP_SYNC_FAILED,
+      RESOURCE_USAGE_APPROACHING_LIMIT, GitSyncError, GitConnectionError, InvalidKMS, CONTINUOUS_VERIFICATION_ALERT);
   private static final List<AlertType> CLOSED_ALERT_TYPES_TO_NOTIFY_ON =
       ImmutableList.of(CONTINUOUS_VERIFICATION_ALERT, InvalidKMS);
   private static final Iterable<AlertStatus> STATUS_ACTIVE = ImmutableSet.of(Open, Pending);
@@ -119,8 +120,16 @@ public class AlertServiceImpl implements AlertService {
 
   @Override
   public List<AlertType> listCategoriesAndTypes(String accountId) {
+    List<AlertType> listOfAlertsType = new ArrayList<>(ALERT_TYPES_TO_NOTIFY_ON);
+
+    if (featureFlagService.isEnabled(SPG_ENABLE_NOTIFICATION_RULES, accountId)) {
+      listOfAlertsType.add(ApprovalNeeded);
+      listOfAlertsType.add(ManualInterventionNeeded);
+      listOfAlertsType.add(ARTIFACT_COLLECTION_FAILED);
+    }
+
     return Arrays.stream(software.wings.beans.alert.AlertType.values())
-        .filter(AlertServiceImpl.ALERT_TYPES_TO_NOTIFY_ON::contains)
+        .filter(listOfAlertsType::contains)
         .collect(toList());
   }
 
@@ -250,8 +259,16 @@ public class AlertServiceImpl implements AlertService {
   }
 
   private void publishEvent(Alert alert) {
+    List<AlertType> listOfAlertsType = new ArrayList<>(ALERT_TYPES_TO_NOTIFY_ON);
+
+    if (featureFlagService.isEnabled(SPG_ENABLE_NOTIFICATION_RULES, alert.getAccountId())) {
+      listOfAlertsType.add(ApprovalNeeded);
+      listOfAlertsType.add(ManualInterventionNeeded);
+      listOfAlertsType.add(ARTIFACT_COLLECTION_FAILED);
+    }
+
     try {
-      if (ALERT_TYPES_TO_NOTIFY_ON.contains(alert.getType())) {
+      if (listOfAlertsType.contains(alert.getType())) {
         eventPublisher.publishEvent(
             Event.builder().eventData(alertEventData(alert)).eventType(EventType.OPEN_ALERT).build());
       } else {
@@ -422,7 +439,7 @@ public class AlertServiceImpl implements AlertService {
       accountId = appService.getAccountIdByAppId(appId);
     }
 
-    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED)) {
+    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, ARTIFACT_COLLECTION_FAILED)) {
       for (Alert alert : alerts) {
         ArtifactCollectionFailedAlert data = (ArtifactCollectionFailedAlert) alert.getAlertData();
         if (data.getArtifactStreamId().equals(artifactStreamId)) {
@@ -434,7 +451,7 @@ public class AlertServiceImpl implements AlertService {
 
   @Override
   public void deleteArtifactStreamAlertForAccount(String accountId) {
-    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED)) {
+    try (HIterator<Alert> alerts = findExistingAlertsOfType(accountId, null, ARTIFACT_COLLECTION_FAILED)) {
       for (Alert alert : alerts) {
         ArtifactCollectionFailedAlert data = (ArtifactCollectionFailedAlert) alert.getAlertData();
         wingsPersistence.delete(alert);

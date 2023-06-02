@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -73,6 +74,7 @@ public class DelegateQueueTask implements Runnable {
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private static long BROADCAST_INTERVAL = TimeUnit.MINUTES.toMillis(1);
   private static int MAX_BROADCAST_ROUND = 3;
@@ -84,7 +86,13 @@ public class DelegateQueueTask implements Runnable {
     }
 
     try {
-      rebroadcastUnassignedTasks();
+      // don't run on old DB once all tasks has been migrated.
+      if (!delegateTaskMigrationHelper.isDelegateTaskMigrationFinished()) {
+        rebroadcastUnassignedTasks(false);
+      }
+      if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
+        rebroadcastUnassignedTasks(true);
+      }
     } catch (WingsException exception) {
       ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
     } catch (Exception exception) {
@@ -95,25 +103,25 @@ public class DelegateQueueTask implements Runnable {
   // TODO Fix this iterator so that all managers work on different set of tasks
 
   @VisibleForTesting
-  protected void rebroadcastUnassignedTasks() {
+  protected void rebroadcastUnassignedTasks(boolean isMigrationEnabled) {
     // Re-broadcast queued tasks not picked up by any Delegate and not in process of validation
     long now = clock.millis();
-    Query<DelegateTask> unassignedTasksQuery = persistence.createQuery(DelegateTask.class, excludeAuthority)
-                                                   .filter(DelegateTaskKeys.status, QUEUED)
-                                                   .field(DelegateTaskKeys.nextBroadcast)
-                                                   .lessThan(now)
-                                                   .field(DelegateTaskKeys.expiry)
-                                                   .greaterThan(now)
-                                                   .field(DelegateTaskKeys.broadcastRound)
-                                                   .lessThan(MAX_BROADCAST_ROUND)
-                                                   .field(DelegateTaskKeys.delegateId)
-                                                   .doesNotExist();
+    Query<DelegateTask> unassignedTasksQuery =
+        persistence.createQuery(DelegateTask.class, excludeAuthority, isMigrationEnabled)
+            .filter(DelegateTaskKeys.status, QUEUED)
+            .field(DelegateTaskKeys.nextBroadcast)
+            .lessThan(now)
+            .field(DelegateTaskKeys.expiry)
+            .greaterThan(now)
+            .field(DelegateTaskKeys.broadcastRound)
+            .lessThan(MAX_BROADCAST_ROUND)
+            .field(DelegateTaskKeys.delegateId)
+            .doesNotExist();
 
     try (HIterator<DelegateTask> iterator = new HIterator<>(unassignedTasksQuery.fetch())) {
-      int count = 0;
       while (iterator.hasNext()) {
         DelegateTask delegateTask = iterator.next();
-        Query<DelegateTask> query = persistence.createQuery(DelegateTask.class, excludeAuthority)
+        Query<DelegateTask> query = persistence.createQuery(DelegateTask.class, excludeAuthority, isMigrationEnabled)
                                         .filter(DelegateTaskKeys.uuid, delegateTask.getUuid())
                                         .filter(DelegateTaskKeys.broadcastCount, delegateTask.getBroadcastCount());
 
@@ -149,14 +157,15 @@ public class DelegateQueueTask implements Runnable {
         alreadyTriedDelegates.addAll(broadcastToDelegates);
 
         UpdateOperations<DelegateTask> updateOperations =
-            persistence.createUpdateOperations(DelegateTask.class)
+            persistence.createUpdateOperations(DelegateTask.class, isMigrationEnabled)
                 .set(DelegateTaskKeys.lastBroadcastAt, now)
                 .set(DelegateTaskKeys.broadcastCount, delegateTask.getBroadcastCount() + 1)
                 .set(DelegateTaskKeys.eligibleToExecuteDelegateIds, eligibleDelegatesList)
                 .set(DelegateTaskKeys.nextBroadcast, now + nextInterval)
                 .set(DelegateTaskKeys.alreadyTriedDelegates, alreadyTriedDelegates)
                 .set(DelegateTaskKeys.broadcastRound, broadcastRoundCount);
-        delegateTask = persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
+        delegateTask =
+            persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions, isMigrationEnabled);
         // update failed, means this was broadcast by some other manager
         if (delegateTask == null) {
           log.debug("Cannot find delegate task, update failed on broadcast");
@@ -170,7 +179,6 @@ public class DelegateQueueTask implements Runnable {
         } else {
           rebroadcastDelegateTaskUsingTaskData(delegateTask);
         }
-        count++;
       }
     }
   }

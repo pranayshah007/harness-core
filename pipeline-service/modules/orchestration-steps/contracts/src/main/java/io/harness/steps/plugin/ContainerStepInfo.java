@@ -31,7 +31,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -63,13 +63,13 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
+@JsonTypeName(ContainerStepSpecTypeConstants.CONTAINER_STEP)
 @SimpleVisitorHelper(helperClass = ContainerStepInfoVisitorHelper.class)
 @TypeAlias("containerStepInfo")
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepInfo")
 public class ContainerStepInfo extends ContainerBaseStepInfo
-    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters {
+    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters, ContainerStepSpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -144,7 +144,7 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
   @Override
   @JsonIgnore
   public StepType getStepType() {
-    return StepSpecTypeConstants.CONTAINER_STEP_TYPE;
+    return ContainerStepSpecTypeConstants.CONTAINER_STEP_TYPE;
   }
 
   @Override
@@ -167,5 +167,11 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  @JsonIgnore
+  public ContainerStepType getType() {
+    return ContainerStepType.RUN_CONTAINER;
   }
 }

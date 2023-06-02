@@ -11,23 +11,29 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
 import static io.harness.ng.core.common.beans.ApiKeyType.USER;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
 
 import io.harness.NgManagerTestBase;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.AccountOrgProjectValidator;
@@ -50,7 +56,11 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serviceaccount.ServiceAccountDTO;
+import io.harness.token.ApiKeyTokenPasswordCacheHelper;
+import io.harness.token.TokenValidationHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -60,11 +70,13 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class TokenServiceImplTest extends NgManagerTestBase {
   private TokenService tokenService;
+  private TokenServiceImpl tokenServiceImpl;
   private TokenRepository tokenRepository;
   private ApiKeyService apiKeyService;
   private OutboxService outboxService;
@@ -80,6 +92,9 @@ public class TokenServiceImplTest extends NgManagerTestBase {
   private TransactionTemplate transactionTemplate;
   private Token token;
   private AccountService accountService;
+  private TokenValidationHelper tokenValidationHelper;
+  @Inject private ApiKeyTokenPasswordCacheHelper apiKeyTokenPasswordCacheHelper;
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   Instant nextDay = Instant.now().plusSeconds(86400);
   String tokensUUId = generateUuid();
 
@@ -92,6 +107,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     parentIdentifier = randomAlphabetic(10);
     tokenRepository = mock(TokenRepository.class);
     tokenService = new TokenServiceImpl();
+    tokenServiceImpl = new TokenServiceImpl();
     apiKeyService = mock(ApiKeyService.class);
     outboxService = mock(OutboxService.class);
     serviceAccountService = mock(ServiceAccountService.class);
@@ -99,6 +115,9 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     accountOrgProjectValidator = mock(AccountOrgProjectValidator.class);
     transactionTemplate = mock(TransactionTemplate.class);
     accountService = mock(AccountService.class);
+    tokenValidationHelper = new TokenValidationHelper();
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
+    apiKeyTokenPasswordCacheHelper = new ApiKeyTokenPasswordCacheHelper();
 
     tokenDTO = TokenDTO.builder()
                    .accountIdentifier(accountIdentifier)
@@ -114,7 +133,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
                    .tags(new HashMap<>())
                    .build();
     token = Token.builder()
-                .scheduledExpireTime(Instant.now())
+                .scheduledExpireTime(Instant.now().plusSeconds(86500))
                 .validTo(Instant.now().plusSeconds(86500))
                 .validFrom(Instant.now())
                 .accountIdentifier(accountIdentifier)
@@ -139,6 +158,12 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     FieldUtils.writeField(tokenService, "accountOrgProjectValidator", accountOrgProjectValidator, true);
     FieldUtils.writeField(tokenService, "transactionTemplate", transactionTemplate, true);
     FieldUtils.writeField(tokenService, "accountService", accountService, true);
+    FieldUtils.writeField(tokenService, "tokenValidationHelper", tokenValidationHelper, true);
+    FieldUtils.writeField(
+        tokenValidationHelper, "apiKeyTokenPasswordCacheHelper", apiKeyTokenPasswordCacheHelper, true);
+    FieldUtils.writeField(tokenService, "ngFeatureFlagHelperService", ngFeatureFlagHelperService, true);
+    FieldUtils.writeField(tokenServiceImpl, "accountOrgProjectValidator", accountOrgProjectValidator, true);
+    FieldUtils.writeField(tokenServiceImpl, "apiKeyService", apiKeyService, true);
   }
 
   @Test
@@ -147,7 +172,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
   public void testCreateToken_sat() {
     ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
     apiKey.setUuid(randomAlphabetic(10));
-    doReturn(apiKey).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    doReturn(Optional.of(apiKey)).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
     AccountDTO accountDTO =
         AccountDTO.builder()
             .serviceAccountConfig(ServiceAccountConfig.builder().apiKeyLimit(5).tokenLimit(5).build())
@@ -180,7 +205,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
                        .build();
     ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
     apiKey.setUuid(randomAlphabetic(10));
-    doReturn(apiKey).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    doReturn(Optional.of(apiKey)).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
     AccountDTO accountDTO =
         AccountDTO.builder()
             .serviceAccountConfig(ServiceAccountConfig.builder().apiKeyLimit(5).tokenLimit(5).build())
@@ -241,7 +266,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
   public void testRotateToken_sat() {
     ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
     apiKey.setUuid(randomAlphabetic(10));
-    doReturn(apiKey).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    doReturn(Optional.of(apiKey)).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
     doReturn(Optional.of(TokenDTOMapper.getTokenFromDTO(tokenDTO, Duration.ofDays(2).toMillis())))
         .when(tokenRepository)
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifierAndIdentifier(
@@ -273,7 +298,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
     apiKey.setUuid(randomAlphabetic(10));
-    doReturn(apiKey).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    doReturn(Optional.of(apiKey)).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
     Token newToken = TokenDTOMapper.getTokenFromDTO(tokenDTO, Duration.ofDays(2).toMillis());
     newToken.setUuid(randomAlphabetic(10));
     doReturn(newToken).when(tokenRepository).save(any());
@@ -299,7 +324,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
     apiKey.setUuid(randomAlphabetic(10));
-    doReturn(apiKey).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    doReturn(Optional.of(apiKey)).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
     doReturn(Optional.of(TokenDTOMapper.getTokenFromDTO(tokenDTO, Duration.ofDays(2).toMillis())))
         .when(tokenRepository)
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifierAndIdentifier(
@@ -317,5 +342,84 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     assertThat(tokenString).startsWith(USER.getValue());
     assertThat(tokenString.split("\\.")[1]).isEqualTo(token.getAccountIdentifier());
     assertThat(tokenString.split("\\.")[2]).isEqualTo(token.getUuid());
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateApiKeyToken_with_cache() {
+    tokenDTO.setApiKeyType(SERVICE_ACCOUNT);
+    token.setApiKeyType(SERVICE_ACCOUNT);
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    String email = "test123@mailinator.in";
+    token.setEncodedPassword(encodedPassword);
+    when(tokenRepository.findById(anyString())).thenReturn(Optional.of(token));
+    when(serviceAccountService.getServiceAccountDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
+        .thenReturn(ServiceAccountDTO.builder().email(email).name(email).build());
+
+    doReturn(false)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(accountIdentifier, FeatureName.PL_SUPPORT_JWT_TOKEN_SCIM_API);
+
+    String delimiter = ".";
+    final String apiKeyDummy = "sat" + delimiter + accountIdentifier + delimiter + identifier + delimiter + rawPassword;
+
+    TokenDTO resultTokenDTO = tokenService.validateToken(accountIdentifier, apiKeyDummy);
+
+    assertThat(resultTokenDTO).isNotNull();
+    assertThat(resultTokenDTO.getEncodedPassword()).isNull();
+    assertThat(resultTokenDTO.getEmail()).isEqualTo(email);
+    assertThat(apiKeyTokenPasswordCacheHelper.get(identifier)).isEqualTo(rawPassword);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testValidateTokenRequest() {
+    tokenDTO.setApiKeyType(USER);
+    token.setApiKeyType(USER);
+    doReturn(Optional.empty()).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    tokenServiceImpl.validateTokenRequest(tokenDTO.getAccountIdentifier(), tokenDTO.getOrgIdentifier(),
+        tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(), tokenDTO.getParentIdentifier(),
+        tokenDTO.getApiKeyIdentifier(), tokenDTO);
+    verify(apiKeyService, atLeastOnce())
+        .getApiKey(anyString(), anyString(), anyString(), any(), anyString(), anyString());
+    verify(apiKeyService, atLeastOnce()).createApiKey(any());
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testCreateToken_missingAPIKey() {
+    tokenDTO = TokenDTO.builder()
+                   .accountIdentifier(accountIdentifier)
+                   .orgIdentifier(orgIdentifier)
+                   .name(randomAlphabetic(10))
+                   .projectIdentifier(projectIdentifier)
+                   .identifier(identifier)
+                   .parentIdentifier(parentIdentifier)
+                   .apiKeyIdentifier(randomAlphabetic(10))
+                   .apiKeyType(SERVICE_ACCOUNT)
+                   .scheduledExpireTime(Instant.now().toEpochMilli())
+                   .description("")
+                   .tags(new HashMap<>())
+                   .build();
+    ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
+    apiKey.setUuid(randomAlphabetic(10));
+    when(apiKeyService.getApiKey(any(), any(), any(), any(), any(), any()))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(apiKey));
+    AccountDTO accountDTO =
+        AccountDTO.builder()
+            .serviceAccountConfig(ServiceAccountConfig.builder().apiKeyLimit(5).tokenLimit(5).build())
+            .build();
+    doReturn(accountDTO).when(accountService).getAccount(any());
+    Token newToken = TokenDTOMapper.getTokenFromDTO(tokenDTO, Duration.ofDays(2).toMillis());
+    newToken.setUuid(randomAlphabetic(10));
+    doReturn(newToken).when(tokenRepository).save(any());
+    tokenService.createToken(tokenDTO);
+    verify(apiKeyService, atLeastOnce()).createApiKey(any());
   }
 }

@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
+import io.harness.cdng.provision.terraform.TerraformDestroyStepParameters.TerraformDestroyStepParametersBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
@@ -20,6 +21,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validation.OneOfField;
 import io.harness.validation.Validator;
 import io.harness.walktree.visitor.Visitable;
 
@@ -30,7 +32,6 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -47,6 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("terraformDestroyStepInfo")
 @JsonTypeName(StepSpecTypeConstants.TERRAFORM_DESTROY)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@OneOfField(fields = {"terraformStepConfiguration", "terraformCloudCliStepConfiguration"})
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformDestroyStepInfo")
 public class TerraformDestroyStepInfo
     extends TerraformDestroyBaseStepInfo implements CDAbstractStepInfo, Visitable, WithConnectorRef {
@@ -55,13 +57,16 @@ public class TerraformDestroyStepInfo
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull @JsonProperty("configuration") TerraformStepConfiguration terraformStepConfiguration;
+  @JsonProperty("configuration") TerraformStepConfiguration terraformStepConfiguration;
+  @JsonProperty("cloudCliConfiguration") TerraformCloudCliStepConfiguration terraformCloudCliStepConfiguration;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformDestroyStepInfo(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, TerraformStepConfiguration terraformStepConfiguration) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, TerraformStepConfiguration terraformStepConfiguration,
+      TerraformCloudCliStepConfiguration terraformCloudCliStepConfiguration) {
     super(provisionerIdentifier, delegateSelectors);
     this.terraformStepConfiguration = terraformStepConfiguration;
+    this.terraformCloudCliStepConfiguration = terraformCloudCliStepConfiguration;
   }
 
   @Override
@@ -79,16 +84,30 @@ public class TerraformDestroyStepInfo
   @Override
   public SpecParameters getSpecParameters() {
     validateSpecParams();
-    return TerraformDestroyStepParameters.infoBuilder()
-        .provisionerIdentifier(provisionerIdentifier)
-        .delegateSelectors(delegateSelectors)
-        .configuration(terraformStepConfiguration.toStepParameters())
-        .build();
+
+    TerraformDestroyStepParametersBuilder builder = TerraformDestroyStepParameters.infoBuilder();
+
+    builder.provisionerIdentifier(getProvisionerIdentifier());
+    builder.delegateSelectors(getDelegateSelectors());
+
+    if (terraformStepConfiguration != null) {
+      builder.configuration(terraformStepConfiguration.toStepParameters());
+    } else if (terraformCloudCliStepConfiguration != null) {
+      builder.configuration(terraformCloudCliStepConfiguration.toStepParameters());
+    }
+
+    return builder.build();
   }
 
   void validateSpecParams() {
-    Validator.notNullCheck("Terraform Step configuration is null", terraformStepConfiguration);
-    terraformStepConfiguration.validateParams();
+    if (terraformStepConfiguration != null) {
+      Validator.notNullCheck("Terraform Step configuration is null", terraformStepConfiguration);
+      terraformStepConfiguration.validateParams();
+    }
+    if (terraformCloudCliStepConfiguration != null) {
+      Validator.notNullCheck("Terraform Step configuration is null", terraformCloudCliStepConfiguration);
+      terraformCloudCliStepConfiguration.validateParams();
+    }
   }
 
   @Override
@@ -96,25 +115,42 @@ public class TerraformDestroyStepInfo
     validateSpecParams();
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
 
-    if (terraformStepConfiguration.terraformStepConfigurationType == TerraformStepConfigurationType.INLINE) {
-      TerraformExecutionData terraformExecutionData = terraformStepConfiguration.terraformExecutionData;
+    if (terraformStepConfiguration != null) {
+      if (terraformStepConfiguration.terraformStepConfigurationType == TerraformStepConfigurationType.INLINE) {
+        TerraformExecutionData terraformExecutionData = terraformStepConfiguration.terraformExecutionData;
 
-      connectorRefMap.put("configuration.spec.configFiles.store.spec.connectorRef",
-          terraformExecutionData.getTerraformConfigFilesWrapper().store.getSpec().getConnectorReference());
+        connectorRefMap.put("configuration.spec.configFiles.store.spec.connectorRef",
+            terraformExecutionData.getTerraformConfigFilesWrapper().store.getSpec().getConnectorReference());
 
-      List<TerraformVarFileWrapper> terraformVarFiles = terraformExecutionData.getTerraformVarFiles();
+        List<TerraformVarFileWrapper> terraformVarFiles = terraformExecutionData.getTerraformVarFiles();
+        extractConnectorRefFromVarFile(connectorRefMap, terraformVarFiles, "configuration");
+      }
+    } else if (terraformCloudCliStepConfiguration != null) {
+      TerraformCloudCliExecutionData terraformCloudCliExecutionData =
+          terraformCloudCliStepConfiguration.terraformCloudCliExecutionData;
 
-      if (EmptyPredicate.isNotEmpty(terraformVarFiles)) {
-        for (TerraformVarFileWrapper terraformVarFile : terraformVarFiles) {
-          if (terraformVarFile.getVarFile().getType().equals(TerraformVarFileTypes.Remote)) {
-            connectorRefMap.put("configuration.spec.varFiles." + terraformVarFile.getVarFile().identifier
-                    + ".spec.store.spec.connectorRef",
-                ((RemoteTerraformVarFileSpec) terraformVarFile.varFile.spec).store.getSpec().getConnectorReference());
-          }
+      connectorRefMap.put("cloudCliConfiguration.spec.configFiles.store.spec.connectorRef",
+          terraformCloudCliExecutionData.getTerraformConfigFilesWrapper().store.getSpec().getConnectorReference());
+
+      List<TerraformVarFileWrapper> terraformVarFiles = terraformCloudCliExecutionData.getTerraformVarFiles();
+      extractConnectorRefFromVarFile(connectorRefMap, terraformVarFiles, "cloudCliConfiguration");
+    }
+
+    return connectorRefMap;
+  }
+
+  private void extractConnectorRefFromVarFile(Map<String, ParameterField<String>> connectorRefMap,
+      List<TerraformVarFileWrapper> terraformVarFiles, String configName) {
+    if (EmptyPredicate.isNotEmpty(terraformVarFiles)) {
+      for (TerraformVarFileWrapper terraformVarFile : terraformVarFiles) {
+        if (terraformVarFile.getVarFile().getType().equals(TerraformVarFileTypes.Remote)) {
+          connectorRefMap.put(String.format("%s.spec.varFiles." + terraformVarFile.getVarFile().identifier
+                                      + ".spec.store.spec.connectorRef",
+                                  configName),
+              ((RemoteTerraformVarFileSpec) terraformVarFile.varFile.spec).store.getSpec().getConnectorReference());
         }
       }
     }
-    return connectorRefMap;
   }
 
   @Override

@@ -18,6 +18,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
+import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
@@ -34,6 +36,8 @@ import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -42,6 +46,8 @@ import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviser;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviserParameters;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.retry.RetryAdviser;
@@ -117,6 +123,8 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(ctx.getCurrentField().getNode().getUuid())
@@ -132,8 +140,9 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
                                        .build())
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .whenCondition(isStepInsideRollback
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
+                    : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -280,10 +289,21 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention, currentField));
           break;
         case PIPELINE_ROLLBACK:
-          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
-          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                                        .build());
+          OnFailPipelineRollbackParameters onFailPipelineRollbackParameters =
+              GenericPlanCreatorUtils.buildOnFailPipelineRollbackParameters(failureTypes);
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnFailPipelineRollbackAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(onFailPipelineRollbackParameters)))
+                  .build());
+          break;
+        case MARK_AS_FAILURE:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnMarkFailureAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkFailureAdviserParameters.builder()
+                                                                                .applicableFailureTypes(failureTypes)
+                                                                                .nextNodeId(nextNodeUuid)
+                                                                                .build())))
+                  .build());
           break;
         default:
           Switch.unhandled(actionType);
@@ -441,9 +461,12 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         return RepairActionCode.MANUAL_INTERVENTION;
       case RETRY:
         return RepairActionCode.RETRY;
+      case MARK_AS_FAILURE:
+        return RepairActionCode.MARK_AS_FAILURE;
+      case PIPELINE_ROLLBACK:
+        return RepairActionCode.PIPELINE_ROLLBACK;
       default:
         throw new InvalidRequestException(
-
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
   }

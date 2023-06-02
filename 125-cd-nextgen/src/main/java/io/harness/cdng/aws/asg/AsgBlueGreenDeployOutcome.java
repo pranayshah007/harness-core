@@ -27,5 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("asgBlueGreenDeployOutcome")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgBlueGreenDeployOutcome")
 public class AsgBlueGreenDeployOutcome implements Outcome, ExecutionSweepingOutput {
-  AutoScalingGroupContainer stageAutoScalingGroupContainer;
+  AutoScalingGroupContainer stageAsg;
+  AutoScalingGroupContainer prodAsg;
 }

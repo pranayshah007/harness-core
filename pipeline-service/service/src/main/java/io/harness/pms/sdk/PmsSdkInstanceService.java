@@ -89,7 +89,7 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
       throw new InvalidRequestException("Name is empty");
     }
 
-    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(
              LOCK_NAME_PREFIX + request.getName(), Duration.ofMinutes(1), Duration.ofMinutes(2))) {
       if (lock == null) {
         throw new InitializeSdkException("Could not acquire lock");

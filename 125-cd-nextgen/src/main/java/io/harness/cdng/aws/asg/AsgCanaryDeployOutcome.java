@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
@@ -26,5 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("asgCanaryDeployOutcome")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeployOutcome")
 public class AsgCanaryDeployOutcome implements Outcome, ExecutionSweepingOutput {
-  String canaryAsgName;
+  AutoScalingGroupContainer asg;
 }

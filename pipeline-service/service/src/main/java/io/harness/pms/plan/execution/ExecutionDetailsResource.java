@@ -21,6 +21,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -35,12 +36,15 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
+import io.harness.pms.pipeline.PipelineExecutionNotesDTO;
 import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
@@ -70,6 +74,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -117,6 +122,7 @@ public class ExecutionDetailsResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final ExecutionHelper executionHelper;
+  @Inject private final PlanExecutionMetadataService planExecutionMetadataService;
 
   @POST
   @Path("/summary")
@@ -366,6 +372,29 @@ public class ExecutionDetailsResource {
   }
 
   @GET
+  @Path("/{planExecutionId}/metadata/details")
+  @ApiOperation(value = "Get plan metadata details of an execution", nickname = "getExecutionDataDetails")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "getExecutionDataDetails",
+      summary = "Get execution metadata details of a pipeline execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns plan metadata details of a execution")
+      })
+  @Hidden
+  public ResponseDTO<ExecutionMetaDataResponseDetailsDTO>
+  getExecutionsDetails(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to get Metadata") String planExecutionId) {
+    ExecutionMetaDataResponseDetailsDTO executionDetailsResponseDTO =
+        pmsExecutionService.getExecutionDataDetails(planExecutionId);
+    return ResponseDTO.newResponse(executionDetailsResponseDTO);
+  }
+
+  @GET
   @Produces({"application/yaml"})
   @Path("/{planExecutionId}/inputset")
   @ApiOperation(value = "Gets  inputsetYaml", nickname = "getInputsetYaml")
@@ -386,10 +415,12 @@ public class ExecutionDetailsResource {
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam("resolveExpressions") @DefaultValue("false") boolean resolveExpressions,
+      @QueryParam("resolveExpressionsType") @DefaultValue("UNKNOWN") ResolveInputYamlType resolveExpressionsType,
       @Parameter(description = "Plan Execution Id for which we want to get the Input Set YAML",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     return pmsExecutionService
-        .getInputSetYamlWithTemplate(accountId, orgId, projectId, planExecutionId, false, resolveExpressions)
+        .getInputSetYamlWithTemplate(
+            accountId, orgId, projectId, planExecutionId, false, resolveExpressions, resolveExpressionsType)
         .getInputSetYaml();
   }
 
@@ -403,7 +434,6 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
-  @Hidden
   public ResponseDTO<InputSetYamlWithTemplateDTO>
   getInputsetYamlV2(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                     @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -411,11 +441,19 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(
+          description = "A boolean that indicates whether or not expressions should be resolved in input set yaml ")
       @QueryParam("resolveExpressions") @DefaultValue("false") boolean resolveExpressions,
+      @Parameter(
+          description =
+              "Resolve Expressions Type indicates what kind of expressions should be resolved in input set yaml. "
+              + "The default value is UNKNOWN in which case no expressions will be resolved"
+              + "Choose a value from the enum list: [RESOLVE_ALL_EXPRESSIONS, RESOLVE_TRIGGER_EXPRESSIONS, UNKNOWN]")
+      @QueryParam("resolveExpressionsType") @DefaultValue("UNKNOWN") ResolveInputYamlType resolveExpressionsType,
       @Parameter(description = "Plan Execution Id for which we want to get the Input Set YAML",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     return ResponseDTO.newResponse(pmsExecutionService.getInputSetYamlWithTemplate(
-        accountId, orgId, projectId, planExecutionId, false, resolveExpressions));
+        accountId, orgId, projectId, planExecutionId, false, resolveExpressions, resolveExpressionsType));
   }
 
   @GET
@@ -468,5 +506,53 @@ public class ExecutionDetailsResource {
     Criteria criteria = pmsExecutionService.formCriteriaForRepoAndBranchListing(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, repoName);
     return ResponseDTO.newResponse(pmsExecutionService.getListOfBranches(criteria));
+  }
+
+  @GET
+  @Path("/{planExecutionId}/notes")
+  @ApiOperation(value = "Get Notes of an execution from planExecutionMetadata", nickname = "getNotesForExecution")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "getNotesForExecution", summary = "Get Notes for a pipelineExecution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Notes of a pipelineExecution")
+      })
+  public ResponseDTO<PipelineExecutionNotesDTO>
+  getNotesForPlanExecution(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to get notes",
+          required = true) String planExecutionId) {
+    String pipelineExecutionNotes = planExecutionMetadataService.getNotesForExecution(planExecutionId);
+    return ResponseDTO.newResponse(PipelineExecutionNotesDTO.builder().notes(pipelineExecutionNotes).build());
+  }
+
+  @PUT
+  @Path("/{planExecutionId}/notes")
+  @ApiOperation(value = "Updates Notes of a pipelineExecution", nickname = "updateNotesForExecution")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @Operation(operationId = "updateNotesForExecution", summary = "Updates Notes for a pipelineExecution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Notes of a pipelineExecution")
+      })
+  public ResponseDTO<PipelineExecutionNotesDTO>
+  updateNotesForPlanExecution(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @NotNull @Parameter(description = PlanExecutionResourceConstants.NOTES_OF_A_PIPELINE_EXECUTION,
+          required = true) @QueryParam(NGCommonEntityConstants.NOTES_FOR_PIPELINE_EXECUTION) String notes,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to update notes",
+          required = true) String planExecutionId) {
+    String pipelineExecutionNotes = planExecutionMetadataService.updateNotesForExecution(planExecutionId, notes);
+    return ResponseDTO.newResponse(PipelineExecutionNotesDTO.builder().notes(pipelineExecutionNotes).build());
   }
 }

@@ -11,15 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingRollbackBaseStepInfo.K8sRollingRollbackBaseStepInfoKeys;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.K8sRollingReleaseOutput;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -69,7 +69,6 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -118,11 +117,9 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
     K8sRollingRollbackDeployRequestBuilder rollbackRequestBuilder = K8sRollingRollbackDeployRequest.builder();
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
-      Map<String, String> k8sCommandFlag =
-          k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingRollbackStepParameters.getCommandFlags());
-      rollbackRequestBuilder.k8sCommandFlags(k8sCommandFlag);
-    }
+    Map<String, String> k8sCommandFlag =
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingRollbackStepParameters.getCommandFlags());
+    rollbackRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     if (k8sRollingOptionalOutput.isFound()) {
       K8sRollingOutcome k8sRollingOutcome = (K8sRollingOutcome) k8sRollingOptionalOutput.getOutput();
       rollbackRequestBuilder.releaseName(k8sRollingOutcome.getReleaseName())
@@ -134,6 +131,9 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
       rollbackRequestBuilder.releaseName(releaseOutput.getName());
     }
 
+    ManifestsOutcome manifestsOutcome = k8sStepHelper.resolveManifestsOutcome(ambiance);
+    ManifestOutcome k8sManifestOutcome = k8sStepHelper.getK8sSupportedManifestOutcome(manifestsOutcome.values());
+
     rollbackRequestBuilder.commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)
         .taskType(K8sTaskType.DEPLOYMENT_ROLLING_ROLLBACK)
         .timeoutIntervalInMin(
@@ -141,7 +141,7 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
         .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
         .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
         .pruningEnabled(pruningEnabled)
-        .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId))
+        .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
         .build();
 
     return k8sStepHelper

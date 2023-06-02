@@ -7,9 +7,6 @@
 
 package io.harness.audit.api.streaming.impl;
 
-import static io.harness.auditevent.streaming.dto.StreamingBatchDTO.StreamingBatchDTOKeys.createdAt;
-import static io.harness.auditevent.streaming.dto.StreamingBatchDTO.StreamingBatchDTOKeys.status;
-
 import io.harness.audit.api.streaming.AggregateStreamingService;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
@@ -39,11 +36,13 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.log4j.Log4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@Log4j
 public class AggregateStreamingServiceImpl implements AggregateStreamingService {
   private final StreamingDestinationRepository streamingDestinationRepository;
   private final StreamingBatchRepository streamingBatchRepository;
@@ -94,16 +93,16 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
   private Optional<StreamingBatchDTO> getLatestSuccessfulBatch(String accountIdentifier) {
     Criteria criteria = Criteria.where(StreamingBatchDTOKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(status)
+                            .and(StreamingBatchDTOKeys.status)
                             .is(BatchStatus.SUCCESS);
-    Sort sort = Sort.by(Sort.Direction.DESC, createdAt);
+    Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchDTOKeys.createdAt);
     return Optional.ofNullable(streamingBatchRepository.findOne(criteria, sort));
   }
 
   private long getFailedBatchCount(String accountIdentifier) {
     Criteria criteria = Criteria.where(StreamingBatchDTOKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(status)
+                            .and(StreamingBatchDTOKeys.status)
                             .is(BatchStatus.FAILED);
     return streamingBatchRepository.count(criteria);
   }
@@ -113,13 +112,20 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
                             .is(accountIdentifier)
                             .and(StreamingBatchDTOKeys.streamingDestinationIdentifier)
                             .is(streamingDestinationIdentifier);
-    Sort sort = Sort.by(Sort.Direction.DESC, createdAt);
+    Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchDTOKeys.createdAt);
     return Optional.ofNullable(streamingBatchRepository.findOne(criteria, sort));
   }
 
   private Optional<ConnectorDTO> getConnectorDTO(String connectorId, String accountIdentifier) {
-    return NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountIdentifier, null, null),
-        "Could not get connector response for account: " + accountIdentifier + " after {} attempts.");
+    Optional<ConnectorDTO> connectorDTOOptional = Optional.empty();
+    try {
+      connectorDTOOptional =
+          NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountIdentifier, null, null),
+              "Could not get connector response for account: " + accountIdentifier + " after {} attempts.");
+    } catch (Exception exception) {
+      log.warn(String.format("Exception while fetching connector [%s]", connectorId), exception);
+    }
+    return connectorDTOOptional;
   }
 
   @Override

@@ -10,6 +10,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/drone/go-scm/scm"
 	gitCli "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -20,11 +26,6 @@ import (
 	"github.com/harness/harness-core/product/ci/scm/gitclient"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
 	"go.uber.org/zap"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 // FindFile returns the contents of a file based on a ref or branch.
@@ -220,7 +221,7 @@ func UpdateFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap
 	inputParams.Branch = fileRequest.GetBranch()
 	// github uses blob id for update check, others use commit id
 	switch fileRequest.GetProvider().Hook.(type) {
-	case *pb.Provider_Github:
+	case *pb.Provider_Github, *pb.Provider_Harness:
 		inputParams.BlobID = fileRequest.GetBlobId()
 	default:
 		inputParams.Sha, err = getCommitIdIfEmptyInRequest(ctx, fileRequest.GetCommitId(), fileRequest.GetSlug(), fileRequest.GetBranch(),
@@ -545,6 +546,18 @@ func parseCrudResponse(ctx context.Context, client *scm.Client, body io.Reader, 
 			return "", ""
 		}
 		return out.RefUpdates[0].NewObjectID, ""
+	case *pb.Provider_Harness:
+		// We try to find out the latest commit on the file, which is most-likely the commit done by SCM itself
+		type harnessResponse struct {
+			CommitID string `json:"commit_Id"`
+		}
+		out := harnessResponse{}
+		err := json.Unmarshal([]byte(bodyStr), &out)
+		if err != nil {
+			log.Errorw("parseCrudResponse unable to get commitid from Harness CRUD operation", zap.Error(err))
+			return "", ""
+		}
+		return out.CommitID, ""
 	default:
 		return "", ""
 	}

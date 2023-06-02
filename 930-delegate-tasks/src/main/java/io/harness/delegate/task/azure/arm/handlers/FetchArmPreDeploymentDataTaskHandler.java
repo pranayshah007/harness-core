@@ -57,8 +57,8 @@ public class FetchArmPreDeploymentDataTaskHandler extends AzureResourceCreationA
   private AzureFetchArmPreDeploymentDataTaskResponse fetchPreDeploymentData(AzureConfig azureConfig,
       AzureLogCallbackProvider logCallbackProvider,
       AzureFetchArmPreDeploymentDataTaskParameters azureARMTaskNGParameters) {
-    AzureClientContext azureClientContext = new AzureClientContext(
-        azureConfig, azureARMTaskNGParameters.getSubscriptionId(), azureARMTaskNGParameters.getResourceGroupName());
+    AzureClientContext azureClientContext = new AzureClientContext(azureConfig,
+        azureARMTaskNGParameters.getSubscriptionId(), azureARMTaskNGParameters.getResourceGroupName(), false);
     DeploymentResourceGroupContext context = DeploymentResourceGroupContext.builder()
                                                  .azureClientContext(azureClientContext)
                                                  .logStreamingTaskClient(logCallbackProvider)

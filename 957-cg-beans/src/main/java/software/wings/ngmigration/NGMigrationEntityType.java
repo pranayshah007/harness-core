@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 public enum NGMigrationEntityType {
   WORKFLOW_EXECUTION,
   TEMPLATE,
+  SERVICE_COMMAND_TEMPLATE,
   ACCOUNT,
   APPLICATION,
   DUMMY_HEAD,
@@ -34,8 +35,11 @@ public enum NGMigrationEntityType {
   CONTAINER_TASK,
   TRIGGER,
   MANIFEST,
+  FILE_STORE,
   AMI_STARTUP_SCRIPT,
-  ELASTIGROUP_CONFIGURATION;
+  SECRET_MANAGER_TEMPLATE,
+  ELASTIGROUP_CONFIGURATION,
+  MONITORED_SERVICE_TEMPLATE;
 
   private String yamlFolderName;
 

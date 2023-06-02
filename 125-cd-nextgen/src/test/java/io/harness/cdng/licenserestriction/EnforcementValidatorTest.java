@@ -12,14 +12,13 @@ import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.EntityType;
@@ -60,18 +59,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
 @Slf4j
-@PrepareForTest({NGRestUtils.class, PipelineSetupUsageUtils.class})
 @OwnedBy(CDP)
 public class EnforcementValidatorTest extends CategoryTest {
-  @Mock private LicenseUsageInterface<CDLicenseUsageDTO, CDUsageRequestParams> licenseUsageInterface;
+  @Mock private LicenseUsageInterface licenseUsageInterface;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private EnforcementClientService enforcementClientService;
   @InjectMocks private EnforcementValidator enforcementValidator;
@@ -174,7 +172,7 @@ public class EnforcementValidatorTest extends CategoryTest {
         .getLicenseUsage(eq(ACCOUNT_ID), eq(ModuleType.CD), anyLong(),
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICES).build()));
 
-    Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = Mockito.mockStatic(NGRestUtils.class);
     List<EntitySetupUsageDTO> allReferredUsages = getReferredUsages("S3", "S4");
     Call<ResponseDTO<List<EntitySetupUsageDTO>>> responseDTOCallMock = Mockito.mock(Call.class);
     doReturn(responseDTOCallMock)
@@ -182,10 +180,13 @@ public class EnforcementValidatorTest extends CategoryTest {
         .listAllReferredUsages(anyInt(), anyInt(), eq(ACCOUNT_ID),
             eq(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID)),
             eq(EntityType.SERVICE), eq(null));
-    when(NGRestUtils.getResponse(any(), any())).thenReturn(allReferredUsages);
-    Mockito.mockStatic(PipelineSetupUsageUtils.class);
-    when(PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
-             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(YAML), eq(allReferredUsages)))
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any(), any())).thenReturn(allReferredUsages);
+    MockedStatic<PipelineSetupUsageUtils> pipelineSetupUsageUtilsMockedStatic =
+        Mockito.mockStatic(PipelineSetupUsageUtils.class);
+    pipelineSetupUsageUtilsMockedStatic
+        .when(()
+                  -> PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
+                      eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(YAML), eq(allReferredUsages)))
         .thenReturn(
             allReferredUsages.stream().map(EntitySetupUsageDTO::getReferredEntity).collect(Collectors.toList()));
 

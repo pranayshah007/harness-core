@@ -12,20 +12,23 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.REETIKA;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -35,6 +38,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
@@ -79,6 +83,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -92,6 +97,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -109,6 +115,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private LastAdminCheckService lastAdminCheckService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
+  @Mock private AccessControlClient accessControlClient;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
@@ -173,6 +180,7 @@ public class NgUserServiceImplTest extends CategoryTest {
     final ArgumentCaptor<Criteria> userMetadataCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(userMembershipRepository.findAllUserIds(any(), any())).thenReturn(PageTestUtils.getPage(userIds, 1));
     when(userMetadataRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(userMetadata, 1));
+    when(userMetadataRepository.findAllIds(any())).thenReturn(List.of("ug3"));
 
     UserFilter userFilter = UserFilter.builder()
                                 .emails(Sets.newHashSet("ug3@harness.io"))
@@ -181,7 +189,8 @@ public class NgUserServiceImplTest extends CategoryTest {
     ngUserService.listUsers(scope, pageRequest, userFilter);
 
     verify(userMembershipRepository, times(1)).findAllUserIds(userMembershipCriteriaArgumentCaptor.capture(), any());
-    verify(userMetadataRepository, times(2)).findAll(userMetadataCriteriaArgumentCaptor.capture(), any());
+    verify(userMetadataRepository, times(1)).findAll(userMetadataCriteriaArgumentCaptor.capture(), any());
+    verify(userMetadataRepository, times(1)).findAllIds(userMetadataCriteriaArgumentCaptor.capture());
 
     Criteria userMembershipCriteria = userMembershipCriteriaArgumentCaptor.getValue();
     assertNotNull(userMembershipCriteria);
@@ -286,13 +295,15 @@ public class NgUserServiceImplTest extends CategoryTest {
 
   private void preLastAdminFailure(String userId, Scope scope, UserMembership userMembership) {
     when(userMembershipRepository.findOne(any())).thenReturn(userMembership);
-    when(userMembershipRepository.findAll(any(Criteria.class))).thenReturn(Collections.singletonList(userMembership));
+    when(userMembershipRepository.stream(any(Criteria.class)))
+        .thenReturn(createCloseableIterator(List.of(userMembership).iterator()));
     when(lastAdminCheckService.doesAdminExistAfterRemoval(any(), any())).thenReturn(false);
   }
 
   private void assertSuccessfulRemoveUserFromScope(String userId, Scope scope, UserMembership userMembership) {
     when(userMembershipRepository.findOne(any())).thenReturn(userMembership);
-    when(userMembershipRepository.findAll(any(Criteria.class))).thenReturn(Collections.singletonList(userMembership));
+    when(userMembershipRepository.stream(any(Criteria.class)))
+        .thenReturn(createCloseableIterator(List.of(userMembership).iterator()));
     when(lastAdminCheckService.doesAdminExistAfterRemoval(any(), any())).thenReturn(true);
     when(userMetadataRepository.findDistinctByUserId(userId))
         .thenReturn(Optional.of(UserMetadata.builder().userId(userId).build()));
@@ -523,6 +534,33 @@ public class NgUserServiceImplTest extends CategoryTest {
     assertInviteUser(scope, singletonList(newEmail), addUsersDTO);
   }
 
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void testWaitForRbacSetup() {
+    doReturn(true).when(accessControlClient).hasAccess(any(), any(), any(), anyString());
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, null);
+    String email = randomAlphabetic(10) + '@' + randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
+    ngUserService.waitForRbacSetup(scope, userId, email);
+    verify(accessControlClient, times(1)).hasAccess(any(), any(), any(), anyString());
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void busyPollUntilAccountRBACSetupCompletes_VerifyMaxRetries() {
+    for (int i = 0; i < 3; i++) {
+      doReturn(false).when(accessControlClient).hasAccess(any(), any(), any(), anyString());
+    }
+    Scope scope = Scope.of(accountIdentifier, null, null);
+    String email = "testEmail";
+    String userId = "testUserId";
+    boolean result = ngUserService.busyPollUntilAccountRBACSetupCompletes(scope, userId, 3, 100);
+    assertFalse(result);
+    verify(accessControlClient, times(3)).hasAccess(any(), any(), any(), anyString());
+  }
+
   private void assertInviteUser(Scope scope, List<String> emailsExpectedToBeInvited, AddUsersDTO addUsersDTO) {
     Map<String, AddUserResponse> inviteResponse = new HashMap<>();
     emailsExpectedToBeInvited.forEach(email -> inviteResponse.put(email, AddUserResponse.USER_INVITED_SUCCESSFULLY));
@@ -557,5 +595,22 @@ public class NgUserServiceImplTest extends CategoryTest {
     preAddUserToScope(userId, scope, new ArrayList<>(), new ArrayList<>());
     ngUserService.addUserToScope(userId, scope, null, null, UserMembershipUpdateSource.USER);
     assertAddUserToScope(scope, singletonList(userId), null);
+  }
+
+  private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

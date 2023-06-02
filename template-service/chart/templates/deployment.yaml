@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+        {{- include "template-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  progressDeadlineSeconds: 600
+  selector:
+    matchLabels:
+      {{- include "template-service.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "template-service.selectorLabels" . | nindent 8 }}
+    spec:
+      {{ include "template-service.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "template-service.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      {{- if .Values.global.database.mongo.installed }}
+      - name: wait-for-mongo
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mongodb-replicaset"
+      {{- end }}
+      - name: wait-for-timescale
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=timescaledb-single-chart"
+      - name: wait-for-pipeline-service
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=pipeline-service"
+      containers:
+      - name: template-service
+        image:  {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        ports:
+          - name: grpc-template
+            containerPort: {{ .Values.service.grpcport }}
+            protocol: "TCP"
+          - name: http-template
+            containerPort: {{ .Values.service.port }}
+            protocol: "TCP"
+          - name: grpc-gitsync
+            containerPort: {{ .Values.service.gitsyncgrpcport }}
+            protocol: "TCP"
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        env:
+          {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 10 }}
+          - name : TIMESCALE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.timescaleSecret.password.name }}
+                key: {{ .Values.timescaleSecret.password.key }}
+          - name: MONGO_URI
+            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "template-harness" "context" $) }}
+        envFrom:
+        - configMapRef:
+            name: template-service
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          periodSeconds: 5
+          failureThreshold: 8
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: 40
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 20
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - template-service
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

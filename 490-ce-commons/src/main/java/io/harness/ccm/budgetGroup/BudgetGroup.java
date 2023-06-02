@@ -58,4 +58,27 @@ public final class BudgetGroup implements PersistentEntity, UuidAware, AccountAc
   long createdAt;
   long lastUpdatedAt;
   HashMap<Long, BudgetCostData> budgetGroupHistory;
+
+  public BudgetGroup toDTO() {
+    return BudgetGroup.builder()
+        .uuid(getUuid())
+        .accountId(getAccountId())
+        .name(getName())
+        .budgetGroupMonthlyBreakdown(getBudgetGroupMonthlyBreakdown())
+        .period(getPeriod())
+        .budgetGroupAmount(getBudgetGroupAmount())
+        .actualCost(getActualCost())
+        .forecastCost(getForecastCost())
+        .lastMonthCost(getLastMonthCost())
+        .alertThresholds(getAlertThresholds())
+        .childEntities(getChildEntities())
+        .parentBudgetGroupId(getParentBudgetGroupId())
+        .cascadeType(getCascadeType())
+        .startTime(getStartTime())
+        .endTime(getEndTime())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .budgetGroupHistory(getBudgetGroupHistory())
+        .build();
+  }
 }

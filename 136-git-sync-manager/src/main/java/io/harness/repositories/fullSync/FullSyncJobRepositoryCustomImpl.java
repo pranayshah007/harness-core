@@ -15,8 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -42,7 +42,7 @@ public class FullSyncJobRepositoryCustomImpl implements FullSyncJobRepositoryCus
   }
 
   @Override
-  public List<GitFullSyncJob> deleteAll(Criteria criteria) {
-    return mongoTemplate.findAllAndRemove(new Query(criteria), GitFullSyncJob.class);
+  public DeleteResult deleteAll(Criteria criteria) {
+    return mongoTemplate.remove(new Query(criteria), GitFullSyncJob.class);
   }
 }

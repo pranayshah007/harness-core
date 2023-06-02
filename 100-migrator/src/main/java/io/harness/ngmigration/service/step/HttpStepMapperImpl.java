@@ -10,8 +10,13 @@ package io.harness.ngmigration.service.step;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.step.HttpStepFunctor;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.http.HttpStepInfo;
@@ -24,11 +29,16 @@ import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.HttpState;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +49,13 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class HttpStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
       return Collections.singletonList(
@@ -54,8 +65,9 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context, graphNode);
+  public TemplateStepNode getTemplateSpec(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode, String skipCondition) {
+    return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);
   }
 
   @Override
@@ -72,10 +84,11 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
-    baseSetup(graphNode, httpStepNode);
+    baseSetup(graphNode, httpStepNode, context.getIdentifierCaseFormat());
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
       log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
@@ -107,10 +120,11 @@ public class HttpStepMapperImpl extends StepMapper {
     if (EmptyPredicate.isNotEmpty(state.getResponseProcessingExpressions())) {
       httpStepInfoBuilder.outputVariables(state.getResponseProcessingExpressions()
                                               .stream()
+                                              .filter(output -> StringUtils.isNotBlank(output.getName()))
                                               .map(output
                                                   -> StringNGVariable.builder()
                                                          .type(NGVariableType.STRING)
-                                                         .name(output.getName())
+                                                         .name(StringUtils.trim(output.getName()))
                                                          .value(ParameterField.createValueField(output.getValue()))
                                                          .build())
                                               .collect(Collectors.toList()));
@@ -166,7 +180,38 @@ public class HttpStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(HttpStepFunctor::new)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public boolean loopingSupported() {
     return true;
+  }
+
+  @Override
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    // Fix delegate selectors in the workflow
+    HttpState state = (HttpState) getState(graphNode);
+    overrideTemplateDelegateSelectorInputs(templateInputs, state.getTags());
   }
 }

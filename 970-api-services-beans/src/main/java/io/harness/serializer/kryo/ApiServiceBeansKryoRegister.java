@@ -37,6 +37,8 @@ import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.deployment.InstanceDetails;
 import io.harness.ecs.EcsContainerDetails;
 import io.harness.exception.HelmClientException;
+import io.harness.exception.OciHelmDockerApiException;
+import io.harness.exception.OpenShiftClientException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.git.UsernamePasswordAuthRequest;
 import io.harness.git.model.AuthInfo;
@@ -109,6 +111,7 @@ import io.harness.pcf.model.ManifestType;
 import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedDataParams;
@@ -128,6 +131,7 @@ import io.harness.servicenow.ServiceNowImportSetTransformMapResult;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
+import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
 import io.harness.shell.CommandExecutionData;
@@ -167,14 +171,17 @@ import software.wings.helpers.ext.gcb.models.GcbArtifactObjects;
 import software.wings.helpers.ext.gcb.models.GcbArtifacts;
 import software.wings.helpers.ext.gcb.models.GcbBuildSource;
 import software.wings.helpers.ext.gcb.models.GcbResult;
+import software.wings.helpers.ext.gcb.models.HashType;
 import software.wings.helpers.ext.gcb.models.LogStreamingOption;
 import software.wings.helpers.ext.gcb.models.LoggingMode;
 import software.wings.helpers.ext.gcb.models.MachineType;
+import software.wings.helpers.ext.gcb.models.RepoSource;
 import software.wings.helpers.ext.gcb.models.SourceProvenance;
 import software.wings.helpers.ext.gcb.models.StorageSource;
 import software.wings.helpers.ext.gcb.models.SubstitutionOption;
 import software.wings.helpers.ext.gcb.models.TimeSpan;
 import software.wings.helpers.ext.gcb.models.VerifyOption;
+import software.wings.helpers.ext.gcb.models.Volume;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
@@ -412,6 +419,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmCliCommandType.class, 97033);
     kryo.register(EnclaveOptions.class, 97034);
     kryo.register(KubernetesResource.class, 97035);
+    kryo.register(OciHelmDockerApiException.class, 97036);
+    kryo.register(OpenShiftClientException.class, 97037);
 
     kryo.register(BuildOptions.class, 7414);
     kryo.register(BuiltImage.class, 7426);
@@ -427,6 +436,9 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(StorageSource.class, 7421);
     kryo.register(SourceProvenance.class, 7422);
     kryo.register(TimeSpan.class, 7425);
+    kryo.register(RepoSource.class, 7438);
+    kryo.register(HashType.class, 7450);
+    kryo.register(Volume.class, 7451);
     kryo.register(AzureImageGallery.class, 40017);
     kryo.register(AzureImageDefinition.class, 40018);
     kryo.register(ExecutionCredential.ExecutionType.class, 5023);
@@ -459,6 +471,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServiceNowImportSetResponseNG.class, 97116);
     kryo.register(ServiceNowImportSetTransformMapResult.class, 97117);
     kryo.register(ServiceNowStagingTable.class, 97118);
+    kryo.register(ServiceNowTicketTypeDTO.class, 97120);
     kryo.register(AdfsAccessTokenResponse.class, 10000121);
     kryo.register(GitPollingWebhookData.class, 73001);
     kryo.register(MultivaluedHashMap.class, 73002);
@@ -476,5 +489,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(WebhookSecretData.class, 80312);
     kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
+    kryo.register(TfConfigInspectVersion.class, 9000313);
   }
 }

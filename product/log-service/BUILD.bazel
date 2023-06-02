@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//product/log-service/cli",
         "@com_github_joho_godotenv//autoload",
+        "@org_uber_go_automaxprocs//:automaxprocs",
     ],
 )
 

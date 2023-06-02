@@ -39,8 +39,9 @@ public class StreamingDestinationMapper {
       return new AwsS3StreamingDestinationSpecDTO()
           .bucket(((AwsS3StreamingDestination) streamingDestination).getBucket())
           .type(AWS_S3);
-    } else
+    } else {
       throw new UnknownEnumTypeException("Streaming Destination type", streamingDestination.getType().name());
+    }
   }
 
   public StreamingDestinationDTO toDTO(StreamingDestination streamingDestination) {

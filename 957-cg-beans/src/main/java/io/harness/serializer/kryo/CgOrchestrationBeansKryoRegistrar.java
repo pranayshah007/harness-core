@@ -65,7 +65,6 @@ import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.metrics.MetricType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.sm.ExecutionInterruptEffect;
 import software.wings.sm.PipelineSummary;
 import software.wings.sm.StateTypeScope;
@@ -87,13 +86,10 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(Variable.class, 5378);
     kryo.register(GitFileConfig.class, 5472);
     kryo.register(LicenseInfo.class, 5511);
-    kryo.register(ThirdPartyApiCallLog.class, 5377);
     kryo.register(ArtifactVariable.class, 7195);
     kryo.register(ArtifactStreamSummary.class, 7202);
     kryo.register(ArtifactStreamMetadata.class, 8126);
     kryo.register(ArtifactSummary.class, 8127);
-    kryo.register(ThirdPartyApiCallLog.ThirdPartyApiCallField.class, 71100);
-    kryo.register(ThirdPartyApiCallLog.FieldType.class, 71101);
 
     // Put promoted classes here and do not change the id
     kryo.register(SweepingOutput.class, 3101);

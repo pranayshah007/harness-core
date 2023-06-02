@@ -15,8 +15,8 @@ import static software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetu
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -33,6 +33,7 @@ import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSwapSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -80,6 +81,7 @@ public class AzureWebAppSlotSwapTest extends WingsBaseTest {
   @Mock protected ActivityService activityService;
   @Mock protected transient AzureSweepingOutputServiceHelper azureSweepingOutputServiceHelper;
   @Mock protected StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Spy @InjectMocks private ServiceTemplateHelper serviceTemplateHelper;
   @Spy @InjectMocks AzureWebAppSlotSwap state = new AzureWebAppSlotSwap("Slot swap state");
 

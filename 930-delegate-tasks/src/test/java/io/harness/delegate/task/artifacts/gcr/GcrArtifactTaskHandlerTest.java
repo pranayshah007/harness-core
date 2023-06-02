@@ -19,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiService;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -36,6 +37,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,6 +58,11 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
   private static final String TEST_ACCESS_TOKEN = String.format("{\"access_token\": \"%s\"}", TEST_PROJECT_ID);
   private final char[] serviceAccountKeyFileContent =
       String.format("{\"project_id\": \"%s\"}", TEST_PROJECT_ID).toCharArray();
+  private static final String SHA = "SHA";
+  private static final String SHA_V2 = "SHAV2";
+  private static final String VERSION = "version";
+  private static final String IMAGE_PATH = "imagePath";
+  private static final Map<String, String> LABEL = Map.of("a", "b", "c", "d");
 
   private GoogleCredential googleCredential;
 
@@ -64,13 +71,15 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuildFromRegex() throws IOException {
     googleCredential = new GoogleCredential();
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("version").build();
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).labels(LABEL).build();
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().artifactMetaInfo(artifactMetaInfo).number(VERSION).build();
     GcrInternalConfig garInternalConfig;
     garInternalConfig =
         GcrInternalConfig.builder().basicAuthHeader("Bearer Auth").registryHostname("registryHostname").build();
     doReturn(buildDetailsInternal)
         .when(gcrApiService)
-        .getLastSuccessfulBuildFromRegex(garInternalConfig, "imagePath", "v.*");
+        .getLastSuccessfulBuildFromRegex(garInternalConfig, IMAGE_PATH, "v.*");
     doReturn(googleCredential).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
     doReturn("Bearer Auth").when(gcpHelperService).getBasicAuthHeader(serviceAccountKeyFileContent, false);
     GcrArtifactDelegateRequest gcrDelegateRequest =
@@ -89,7 +98,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                     .build())
             .tagRegex("v.*")
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         gcrArtifactTaskHandler.getLastSuccessfulBuild(gcrDelegateRequest);
@@ -99,7 +108,10 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
         .isInstanceOf(GcrArtifactDelegateResponse.class);
     GcrArtifactDelegateResponse attributes =
         (GcrArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
-    assertThat(attributes.getTag()).isEqualTo("version");
+    assertThat(attributes.getTag()).isEqualTo(VERSION);
+    assertThat(attributes.getLabel()).isEqualTo(LABEL);
+    assertThat(attributes.getBuildDetails().getMetadata().get(SHA)).isEqualTo(SHA);
+    assertThat(attributes.getBuildDetails().getMetadata().get(SHA_V2)).isEqualTo(SHA_V2);
   }
 
   @Test
@@ -107,11 +119,13 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuildVerify() throws IOException {
     googleCredential = new GoogleCredential();
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("version").build();
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).labels(LABEL).build();
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().number(VERSION).artifactMetaInfo(artifactMetaInfo).build();
     GcrInternalConfig garInternalConfig;
     garInternalConfig =
         GcrInternalConfig.builder().basicAuthHeader("Bearer Auth").registryHostname("registryHostname").build();
-    doReturn(buildDetailsInternal).when(gcrApiService).verifyBuildNumber(garInternalConfig, "imagePath", "version");
+    doReturn(buildDetailsInternal).when(gcrApiService).verifyBuildNumber(garInternalConfig, IMAGE_PATH, VERSION);
     doReturn(googleCredential).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
     doReturn("Bearer Auth").when(gcpHelperService).getBasicAuthHeader(serviceAccountKeyFileContent, false);
     GcrArtifactDelegateRequest gcrDelegateRequest =
@@ -128,9 +142,9 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                                     .build())
                             .build())
                     .build())
-            .tag("version")
+            .tag(VERSION)
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         gcrArtifactTaskHandler.getLastSuccessfulBuild(gcrDelegateRequest);
@@ -140,7 +154,10 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
         .isInstanceOf(GcrArtifactDelegateResponse.class);
     GcrArtifactDelegateResponse attributes =
         (GcrArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
-    assertThat(attributes.getTag()).isEqualTo("version");
+    assertThat(attributes.getTag()).isEqualTo(VERSION);
+    assertThat(attributes.getLabel()).isEqualTo(LABEL);
+    assertThat(attributes.getBuildDetails().getMetadata().get(SHA)).isEqualTo(SHA);
+    assertThat(attributes.getBuildDetails().getMetadata().get(SHA_V2)).isEqualTo(SHA_V2);
   }
   @Test
   @Owner(developers = vivekveman)
@@ -148,7 +165,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
   public void testgetBuilds() throws IOException {
     googleCredential = new GoogleCredential();
 
-    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("version").build();
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number(VERSION).build();
 
     List<BuildDetailsInternal> ls = new ArrayList<>();
     ls.add(buildDetailsInternal);
@@ -156,7 +173,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
 
     garInternalConfig =
         GcrInternalConfig.builder().basicAuthHeader("Bearer Auth").registryHostname("registryHostname").build();
-    doReturn(ls).when(gcrApiService).getBuilds(garInternalConfig, "imagePath", 10000);
+    doReturn(ls).when(gcrApiService).getBuilds(garInternalConfig, IMAGE_PATH, 10000);
 
     doReturn(googleCredential).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
 
@@ -177,7 +194,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                             .build())
                     .build())
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     ArtifactTaskExecutionResponse builds = gcrArtifactTaskHandler.getBuilds(gcrDelegateRequest);
@@ -186,7 +203,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
     assertThat(builds.getArtifactDelegateResponses().size()).isEqualTo(1);
     assertThat(builds.getArtifactDelegateResponses().get(0)).isInstanceOf(GcrArtifactDelegateResponse.class);
     GcrArtifactDelegateResponse attributes = (GcrArtifactDelegateResponse) builds.getArtifactDelegateResponses().get(0);
-    assertThat(attributes.getTag()).isEqualTo("version");
+    assertThat(attributes.getTag()).isEqualTo(VERSION);
   }
 
   @Test
@@ -199,7 +216,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
 
     garInternalConfig =
         GcrInternalConfig.builder().basicAuthHeader("Bearer Auth").registryHostname("registryHostname").build();
-    doReturn(true).when(gcrApiService).validateCredentials(garInternalConfig, "imagePath");
+    doReturn(true).when(gcrApiService).validateCredentials(garInternalConfig, IMAGE_PATH);
 
     doReturn(googleCredential).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
 
@@ -220,7 +237,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                             .build())
                     .build())
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     ArtifactTaskExecutionResponse response = gcrArtifactTaskHandler.validateArtifactServer(gcrDelegateRequest);
@@ -238,7 +255,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
 
     garInternalConfig =
         GcrInternalConfig.builder().basicAuthHeader("Bearer Auth").registryHostname("registryHostname").build();
-    doReturn(true).when(gcrApiService).verifyImageName(garInternalConfig, "imagePath");
+    doReturn(true).when(gcrApiService).verifyImageName(garInternalConfig, IMAGE_PATH);
 
     doReturn(googleCredential).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
 
@@ -259,7 +276,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                             .build())
                     .build())
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     ArtifactTaskExecutionResponse response = gcrArtifactTaskHandler.validateArtifactImage(gcrDelegateRequest);
@@ -291,7 +308,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                     .build())
             .tagRegex("v.*")
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     assertThatThrownBy(() -> gcrArtifactTaskHandler.getLastSuccessfulBuild(gcrDelegateRequest))
@@ -322,7 +339,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                             .build())
                     .build())
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     assertThatThrownBy(() -> gcrArtifactTaskHandler.getBuilds(gcrDelegateRequest))
@@ -353,7 +370,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                             .build())
                     .build())
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     assertThatThrownBy(() -> gcrArtifactTaskHandler.validateArtifactServer(gcrDelegateRequest))
@@ -383,7 +400,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                             .build())
                     .build())
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     assertThatThrownBy(() -> gcrArtifactTaskHandler.validateArtifactImage(gcrDelegateRequest))
@@ -410,9 +427,9 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
                                     .build())
                             .build())
                     .build())
-            .tag("version")
+            .tag(VERSION)
             .registryHostname("registryHostname")
-            .imagePath("imagePath")
+            .imagePath(IMAGE_PATH)
             .build();
 
     gcrArtifactTaskHandler.decryptRequestDTOs(gcrDelegateRequest);

@@ -48,7 +48,8 @@ public class SpawnChildRequestProcessor implements SdkResponseProcessor {
 
     // Attach a Callback to the parent for the child
     EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
-    waitNotifyEngine.waitForAllOn(publisherName, callback, childInstanceId);
+    String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, callback, childInstanceId);
+    log.info("SpawnChildRequestProcessor registered a waitInstance with id: {}", waitInstanceId);
 
     // Update the parent with executable response
     nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),

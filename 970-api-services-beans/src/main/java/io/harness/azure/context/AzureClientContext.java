@@ -19,4 +19,5 @@ public class AzureClientContext {
   @NonNull private AzureConfig azureConfig;
   @NonNull private String subscriptionId;
   @NonNull private String resourceGroupName;
+  private boolean extendedReadTimeout;
 }

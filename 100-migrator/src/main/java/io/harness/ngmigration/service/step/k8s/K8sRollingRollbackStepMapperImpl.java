@@ -10,19 +10,19 @@ package io.harness.ngmigration.service.step.k8s;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 
-public class K8sRollingRollbackStepMapperImpl extends StepMapper {
+public class K8sRollingRollbackStepMapperImpl extends K8sAbstractStepMapperImpl {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -36,9 +36,10 @@ public class K8sRollingRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sRollingRollbackStepNode k8sRollingStepNode = new K8sRollingRollbackStepNode();
-    baseSetup(graphNode, k8sRollingStepNode);
+    baseSetup(graphNode, k8sRollingStepNode, context.getIdentifierCaseFormat());
     k8sRollingStepNode.setK8sRollingRollbackStepInfo(
         K8sRollingRollbackStepInfo.infoBuilder().pruningEnabled(ParameterField.createValueField(false)).build());
     return k8sRollingStepNode;

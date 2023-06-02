@@ -79,7 +79,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     List<YamlNode> stages = stagesYamlField.getNode().asArray();
     String approvalStageUuid = Objects.requireNonNull(stages.get(0).getField("stage")).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(approvalStageUuid);
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null);
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null, null);
     PlanNode planForParentNode = stagesPlanCreator.createPlanForParentNode(context, stagesConfig, childrenNodeIds);
     assertThat(planForParentNode).isNotNull();
 
@@ -114,7 +114,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(parallelDeploymentStages).isNotNull();
     String parallelStagesUuid = parallelDeploymentStages.getNode().getUuid();
 
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(kryoSerializer);
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(kryoSerializer, null);
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         stagesPlanCreator.createPlanForChildrenNodes(context, stagesConfig);
     assertThat(planForChildrenNodes).isNotEmpty();
@@ -149,13 +149,12 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(parallelDeploymentStages).isNotNull();
     String parallelStagesUuid = parallelDeploymentStages.getNode().getUuid();
 
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null);
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null, null);
     GraphLayoutResponse layoutNodeInfo = stagesPlanCreator.getLayoutNodeInfo(context, stagesConfig);
     assertThat(layoutNodeInfo).isNotNull();
     assertThat(layoutNodeInfo.getStartingNodeId()).isEqualTo(approvalStageUuid);
-    assertThat(layoutNodeInfo.getLayoutNodes()).hasSize(2);
+    assertThat(layoutNodeInfo.getLayoutNodes()).hasSize(1);
     assertThat(layoutNodeInfo.getLayoutNodes().containsKey(approvalStageUuid)).isTrue();
-    assertThat(layoutNodeInfo.getLayoutNodes().containsKey(approvalStageUuid + "_rollbackStage")).isTrue();
 
     GraphLayoutNode stageLayoutNode = layoutNodeInfo.getLayoutNodes().get(approvalStageUuid);
     assertThat(stageLayoutNode.getNodeUUID()).isEqualTo(approvalStageUuid);
@@ -168,12 +167,5 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(edgeLayoutList).isNotNull();
     assertThat(edgeLayoutList.getNextIdsList()).hasSize(1);
     assertThat(edgeLayoutList.getNextIds(0)).isEqualTo(parallelStagesUuid);
-
-    GraphLayoutNode rollbackStageLayoutNode = layoutNodeInfo.getLayoutNodes().get(approvalStageUuid + "_rollbackStage");
-    assertThat(rollbackStageLayoutNode.getNodeUUID()).isEqualTo(approvalStageUuid + "_rollbackStage");
-    assertThat(rollbackStageLayoutNode.getNodeType()).isEqualTo("Approval");
-    assertThat(rollbackStageLayoutNode.getName()).isEqualTo("a1-1 (Rollback Stage)");
-    assertThat(rollbackStageLayoutNode.getNodeGroup()).isEqualTo("STAGE");
-    assertThat(rollbackStageLayoutNode.getNodeIdentifier()).isEqualTo(approvalStageUuid + "_rollbackStage");
   }
 }

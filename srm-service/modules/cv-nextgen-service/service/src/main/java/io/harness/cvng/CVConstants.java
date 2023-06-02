@@ -19,6 +19,7 @@ import java.util.Set;
 public interface CVConstants {
   String SERVICE_BASE_URL = "/cv/api";
   Duration MAX_DATA_RETENTION_DURATION = Duration.ofDays(180);
+  Duration BASELINE_RETENTION_DURATION = Duration.ofDays(730);
   /**
    * This should be set in findOption for the queries that are potentially working with large data.
    * This should be used for anything that is using
@@ -47,6 +48,10 @@ public interface CVConstants {
   String DATA_SOURCE_TYPE = "type";
   String SLO_SPEC = "type";
   String DOWNTIME_SPEC_TYPE = "type";
+  String SECONDARY_EVENTS_TYPE = "type";
+
+  String RULE_TYPE = "type";
+
   String SLO_TARGET_TYPE = "type";
   String SLI_METRIC_TYPE = "type";
   String METRIC_THRESHOLD_METRIC_TYPE = "type";
@@ -69,6 +74,7 @@ public interface CVConstants {
   String SLI_TYPE_PARAM_MESSAGE = "For filtering on the basis of SLI types";
   String TARGET_TYPE_PARAM_MESSAGE = "For filtering on the basis of target types";
   String ERROR_BUDGET_RISK_PARAM_MESSAGE = "For filtering on the basis of error budget risks";
+  String VERIFICATION_TASK_ID = "verificationTaskId";
 
   String ENVIRONMENT = System.getenv("ENV") == null ? "localhost" : System.getenv("ENV");
   Set<String> LEARNING_ENGINE_TASKS_METRIC_LIST = Collections.unmodifiableSet(

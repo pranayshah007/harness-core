@@ -7,14 +7,22 @@
 
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 
+import static java.lang.String.format;
+
+import io.harness.beans.FileReference;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.ssh.CommandUnitSourceType;
 import io.harness.cdng.ssh.CommandUnitSpecType;
 import io.harness.cdng.ssh.CommandUnitWrapper;
 import io.harness.cdng.ssh.CopyCommandUnitSpec;
+import io.harness.cdng.ssh.ScriptCommandUnitSpec;
+import io.harness.cdng.ssh.SshWinRmConfigFileHelper;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -23,15 +31,23 @@ import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.steps.shellscript.HarnessFileStoreSource;
+import io.harness.steps.shellscript.ShellScriptBaseSource;
 
 import software.wings.api.DeploymentType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
-import java.util.Optional;
+import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreatorV2 {
+  @Inject private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.COMMAND);
@@ -46,13 +62,16 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
     return response;
   }
 
-  private void validateStrategy(StrategyConfig strategy) {
-    if (strategy != null
-        && ((ParameterField.isNotNull(strategy.getMatrixConfig()) && strategy.getMatrixConfig().getValue() != null)
-            || (strategy.getParallelism() != null
-                && (strategy.getParallelism().getValue() != null
-                    || strategy.getParallelism().getExpressionValue() != null)))) {
-      throw new InvalidYamlException("Command step supports only repeat strategy.");
+  private void validateStrategy(ParameterField<StrategyConfig> strategy) {
+    if (isNotNull(strategy) && strategy.getValue() != null
+        && ((isNotNull(strategy.getValue().getMatrixConfig())
+                && strategy.getValue().getMatrixConfig().getValue() != null)
+            || (strategy.getValue().getParallelism() != null
+                && (strategy.getValue().getParallelism().getValue() != null
+                    || strategy.getValue().getParallelism().getExpressionValue() != null))
+            || strategy.getValue().getRepeat() == null
+            || ParameterField.isNull(strategy.getValue().getRepeat().getItems()))) {
+      throw new InvalidYamlException("Command step support repeat strategy with items syntax.");
     }
   }
 
@@ -65,12 +84,22 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
   }
 
   private void validateCommandUnits(FilterCreationContext filterCreationContext, AbstractStepNode stepNode) {
-    Optional<CommandUnitWrapper> copyCommandUnit = findCopyCommandUnit(stepNode);
-    if (copyCommandUnit.isPresent() && isArtifactSourceType(copyCommandUnit.get())
-        && isWinRmDeploymentType(filterCreationContext)) {
-      throw new InvalidYamlException(
-          "Copy command unit is not supported for WinRm deployment type. Please use download command unit instead.");
-    }
+    List<CommandUnitWrapper> copyCommandUnits = findCommandUnits(stepNode, CommandUnitSpecType.COPY);
+    copyCommandUnits.forEach(copyCommandUnit -> {
+      if (isArtifactSourceType(copyCommandUnit) && isWinRmDeploymentType(filterCreationContext)) {
+        throw new InvalidYamlException(
+            "Copy command unit is not supported for WinRm deployment type. Please use download command unit instead.");
+      }
+    });
+
+    List<CommandUnitWrapper> scriptCommandUnits = findCommandUnits(stepNode, CommandUnitSpecType.SCRIPT);
+    scriptCommandUnits.forEach(scriptCommandUnit -> {
+      if (isScriptFromHarnessFileStore(scriptCommandUnit)) {
+        HarnessFileStoreSource harnessFileStoreSource =
+            (HarnessFileStoreSource) ((ScriptCommandUnitSpec) scriptCommandUnit.getSpec()).getSource().getSpec();
+        validateScriptFromHarnessFileStore(filterCreationContext, harnessFileStoreSource);
+      }
+    });
   }
 
   private boolean isWinRmDeploymentType(FilterCreationContext filterCreationContext) {
@@ -87,20 +116,41 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
     }
   }
 
-  private Optional<CommandUnitWrapper> findCopyCommandUnit(AbstractStepNode stepNode) {
+  private boolean isScriptFromHarnessFileStore(CommandUnitWrapper commandUnitWrapper) {
+    if (commandUnitWrapper.getSpec() instanceof ScriptCommandUnitSpec) {
+      ScriptCommandUnitSpec scriptCommandUnitSpec = (ScriptCommandUnitSpec) commandUnitWrapper.getSpec();
+      return Objects.equals(scriptCommandUnitSpec.getSource().getSpec().getType(), ShellScriptBaseSource.HARNESS);
+    }
+    return false;
+  }
+
+  private void validateScriptFromHarnessFileStore(
+      FilterCreationContext filterCreationContext, HarnessFileStoreSource harnessFileStoreSource) {
+    String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
+    String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
+    String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
+    String scopedFilePath = harnessFileStoreSource.getFile().getValue();
+    String script = sshWinRmConfigFileHelper.fetchFileContent(
+        FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier));
+    if (isEmpty(script)) {
+      throw new InvalidRequestException(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
+    }
+  }
+
+  private List<CommandUnitWrapper> findCommandUnits(AbstractStepNode stepNode, String commandUnitType) {
     if (stepNode == null || !stepNode.getClass().isAssignableFrom(CommandStepNode.class)) {
-      return Optional.empty();
+      return Collections.emptyList();
     }
     CommandStepNode commandStepNode = (CommandStepNode) stepNode;
     if (commandStepNode.getCommandStepInfo() == null
         || commandStepNode.getCommandStepInfo().getCommandUnits() == null) {
-      return Optional.empty();
+      return Collections.emptyList();
     }
     return commandStepNode.getCommandStepInfo()
         .getCommandUnits()
         .stream()
-        .filter(i -> CommandUnitSpecType.COPY.equals(i.getType()))
-        .findFirst();
+        .filter(i -> commandUnitType.equals(i.getType()))
+        .collect(Collectors.toList());
   }
 
   private JsonNode findDeploymentType(FilterCreationContext filterCreationContext) {

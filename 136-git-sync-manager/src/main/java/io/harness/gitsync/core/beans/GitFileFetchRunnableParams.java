@@ -10,7 +10,7 @@ package io.harness.gitsync.core.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.gitsync.common.service.ScmFacilitatorService;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,7 +25,8 @@ public class GitFileFetchRunnableParams {
   Scope scope;
   String repoName;
   String branchName;
+  String commitId;
   String filePath;
   String connectorRef;
-  ScmFacilitatorService scmFacilitatorService;
+  ScmConnector scmConnector;
 }

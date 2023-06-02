@@ -26,8 +26,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmSpecParameters;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.k8s.K8sApplyStepParameters;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.K8sSpecParameters;
@@ -56,6 +58,7 @@ import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.KustomizeManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
@@ -122,6 +125,7 @@ import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.base.Preconditions;
@@ -149,7 +153,6 @@ public class K8sHelmCommonStepHelper {
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   protected static final Set<String> HELM_CHART_REPO_STORE_TYPES =
       ImmutableSet.of(ManifestStoreType.S3, ManifestStoreType.GCS, ManifestStoreType.HTTP, ManifestStoreType.OCI);
-  protected static final String SUB_CHARTS_FOLDER = "charts/";
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private K8sEntityHelper k8sEntityHelper;
@@ -159,6 +162,7 @@ public class K8sHelmCommonStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") protected KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE =
       "Incompatible manifest store type. Cannot convert manifest outcome to HelmChartManifestOutcome.";
@@ -183,20 +187,8 @@ public class K8sHelmCommonStepHelper {
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
 
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
-              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        }
-      }
-    }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       gitFetchFilesConfigs.addAll(
           mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
@@ -427,7 +419,7 @@ public class K8sHelmCommonStepHelper {
 
     List<HelmFetchFileConfig> helmFetchFileConfigList = mapHelmChartManifestsToHelmFetchFileConfig(
         helmChartManifestOutcome.getIdentifier(), getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()),
-        helmChartManifestOutcome.getType(), helmManifest.getSubChartName());
+        helmChartManifestOutcome.getType(), helmManifest.getSubChartPath());
 
     helmFetchFileConfigList.addAll(mapValuesManifestsToHelmFetchFileConfig(aggregatedValuesManifests));
     HelmValuesFetchRequest helmValuesFetchRequest =
@@ -502,9 +494,9 @@ public class K8sHelmCommonStepHelper {
       HelmChartManifestOutcome manifestOutcome = (HelmChartManifestOutcome) k8sManifestOutcome;
       valuesPaths = getParameterFieldValue(manifestOutcome.getValuesPaths());
       folderPath = getParameterFieldValue(gitStoreConfig.getFolderPath());
-      String subChartName = getParameterFieldValue(manifestOutcome.getSubChartName());
-      if (isNotEmpty(subChartName)) {
-        folderPath = Paths.get(folderPath, SUB_CHARTS_FOLDER, subChartName).toString();
+      String subChartPath = getParameterFieldValue(manifestOutcome.getSubChartPath());
+      if (isNotEmpty(subChartPath)) {
+        folderPath = Paths.get(folderPath, subChartPath).toString();
       }
     }
     List<GitFetchFilesConfig> gitFetchFilesConfigList = new ArrayList<>();
@@ -593,10 +585,12 @@ public class K8sHelmCommonStepHelper {
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
-            .subChartName(
+            .subChartPath(
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
-                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartName())
+                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartPath())
                     : "")
+            .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
             .build();
 
       case ManifestType.Kustomize:
@@ -615,6 +609,7 @@ public class K8sHelmCommonStepHelper {
                           getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
                               .getKustomizeYamlFolderPath())
                       : null)
+              .commandFlags(getKustomizeCmdFlags(kustomizeManifestOutcome.getCommandFlags()))
               .build();
         } else if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
           throw new UnsupportedOperationException(
@@ -630,6 +625,7 @@ public class K8sHelmCommonStepHelper {
                     : null)
             .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
             .kustomizeDirPath(getParameterFieldValue(gitStoreConfig.getFolderPath()))
+            .commandFlags(getKustomizeCmdFlags(kustomizeManifestOutcome.getCommandFlags()))
             .build();
 
       case ManifestType.OpenshiftTemplate:
@@ -984,15 +980,16 @@ public class K8sHelmCommonStepHelper {
   }
 
   public static List<HelmFetchFileConfig> mapHelmChartManifestsToHelmFetchFileConfig(
-      String identifier, List<String> valuesPaths, String manifestType, String subChartName) {
+      String identifier, List<String> valuesPaths, String manifestType, String subChartPath) {
     List<HelmFetchFileConfig> helmFetchFileConfigList = new ArrayList<>();
-    if (isEmpty(subChartName)) {
-      helmFetchFileConfigList.add(
-          createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
-    } else {
-      helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType,
-          Arrays.asList(Paths.get(SUB_CHARTS_FOLDER, subChartName, VALUES_YAML_KEY).toString()), true));
+
+    String defaultValuesPath = VALUES_YAML_KEY;
+    if (isNotEmpty(subChartPath)) {
+      defaultValuesPath = Paths.get(subChartPath, VALUES_YAML_KEY).toString();
     }
+    helmFetchFileConfigList.add(
+        createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(defaultValuesPath), true));
+
     if (isNotEmpty(valuesPaths)) {
       helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType, valuesPaths, false));
     }
@@ -1296,5 +1293,41 @@ public class K8sHelmCommonStepHelper {
     for (String scopedFilePath : scopedFilePathList) {
       logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
+  }
+
+  private Map<String, String> getKustomizeCmdFlags(List<KustomizeManifestCommandFlag> kustomizeManifestCommandFlags) {
+    if (kustomizeManifestCommandFlags != null) {
+      Map<String, String> commandFlags = new HashMap<>();
+      for (KustomizeManifestCommandFlag kustomizeManifestCommandFlag : kustomizeManifestCommandFlags) {
+        commandFlags.put(kustomizeManifestCommandFlag.getCommandType().toKustomizeCommandName(),
+            getParameterFieldValue(kustomizeManifestCommandFlag.getFlag()));
+      }
+      return commandFlags;
+    }
+    return null;
+  }
+
+  public List<ServiceHookDelegateConfig> getServiceHooks(Ambiance ambiance) {
+    Optional<ServiceHooksOutcome> serviceHookOutcome = cdStepHelper.getServiceHooksOutcome(ambiance);
+    if (serviceHookOutcome.isPresent()) {
+      cdExpressionResolver.updateExpressions(ambiance, serviceHookOutcome);
+      return getServiceHooksDelegateConfig(serviceHookOutcome.get());
+    }
+    return null;
+  }
+
+  private List<ServiceHookDelegateConfig> getServiceHooksDelegateConfig(ServiceHooksOutcome serviceHooksOutcome) {
+    List<ServiceHookDelegateConfig> serviceHooks = new ArrayList<>();
+    serviceHooksOutcome.forEach((identifier, serviceHookOutcome) -> {
+      ServiceHookDelegateConfig serviceHook =
+          ServiceHookDelegateConfig.builder()
+              .hookType(serviceHookOutcome.getType().getDisplayName())
+              .content(((InlineStoreConfig) serviceHookOutcome.getStore()).getContent().getValue())
+              .identifier(identifier)
+              .serviceHookActions(serviceHookOutcome.getActions())
+              .build();
+      serviceHooks.add(serviceHook);
+    });
+    return serviceHooks;
   }
 }

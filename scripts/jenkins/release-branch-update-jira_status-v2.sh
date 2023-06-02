@@ -19,7 +19,7 @@ EXCLUDED_KEYS_LIST=""
 #checking if Pre QA hotfix already contains RELEASE_BE_SAAS or not
 for KEY in ${EXCLUSION_KEYS}
 do
-    EXCLUDE_PROJECTS=",PIE,"
+    EXCLUDE_PROJECTS=",PIE,IDP,"
     echo "Excluded Key - $KEY"
     IFS="-" read -ra PROJNUM <<< "$KEY"
     PROJ="${PROJNUM[0]}"

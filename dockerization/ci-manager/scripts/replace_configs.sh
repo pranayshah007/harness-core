@@ -71,6 +71,10 @@ if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   export GCR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image=env(GCR_PUSH_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ACR_PUSH_IMAGE" ]]; then
+  export ACR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushACRConfig.image=env(ACR_PUSH_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ENABLE_AUTH" ]]; then
   export ENABLE_AUTH; yq -i '.enableAuth=env(ENABLE_AUTH)' $CONFIG_FILE
 fi
@@ -212,6 +216,10 @@ if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
   export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$API_URL" ]]; then
   export API_URL; yq -i '.apiUrl=env(API_URL)' $CONFIG_FILE
 fi
@@ -242,6 +250,10 @@ fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
@@ -431,3 +443,6 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"

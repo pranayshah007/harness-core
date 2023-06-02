@@ -11,9 +11,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +33,7 @@ import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
@@ -44,7 +46,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
 
 import java.text.SimpleDateFormat;
@@ -63,18 +65,18 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private PlanService planService;
   @Mock private PlanExecutionService planExecutionService;
   @Mock private NodeTypeLookupService nodeTypeLookupService;
-  @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private NotificationHelper notificationHelper;
   @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;
+  @Mock PmsExecutionSummaryService pmsExecutionSummaryService;
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
 
   @Before
   public void setUp() throws Exception {
     executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
-        planExecutionService, nodeTypeLookupService, pmsExecutionSummaryRespository, pmsGitSyncHelper,
-        notificationHelper, recentExecutionsInfoHelper);
+        planExecutionService, nodeTypeLookupService, pmsGitSyncHelper, notificationHelper, recentExecutionsInfoHelper,
+        pmsExecutionSummaryService);
   }
 
   @Test
@@ -99,10 +101,13 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
             .executionInputConfigured(true)
             .allowStagesExecution(true)
             .build();
-    PlanExecution planExecution =
-        PlanExecution.builder()
-            .metadata(ExecutionMetadata.newBuilder().setRunSequence(1).setPipelineIdentifier("pipelineId").build())
-            .build();
+    PlanExecution planExecution = PlanExecution.builder()
+                                      .metadata(ExecutionMetadata.newBuilder()
+                                                    .setRunSequence(1)
+                                                    .setPipelineIdentifier("pipelineId")
+                                                    .setExecutionMode(ExecutionMode.NORMAL)
+                                                    .build())
+                                      .build();
 
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .uuid(generateUuid())
@@ -137,7 +142,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
         .saveExecutionInfo(
             anyString(), anyString(), anyString(), anyString(), executionSummaryInfoArgumentCaptor.capture());
 
-    when(pmsExecutionSummaryRespository.save(pipelineExecutionSummaryEntityArgumentCaptor.capture())).thenReturn(null);
+    doReturn(null).when(pmsExecutionSummaryService).save(pipelineExecutionSummaryEntityArgumentCaptor.capture());
 
     when(nodeTypeLookupService.findNodeTypeServiceName(anyString())).thenReturn("pms");
 
@@ -170,6 +175,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
         .isEqualTo(planExecutionMetadata.getExecutionInputConfigured());
     assertThat(capturedEntity.getStoreType()).isNull();
     assertThat(capturedEntity.getConnectorRef()).isNull();
+    assertThat(capturedEntity.getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
+    assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
   }

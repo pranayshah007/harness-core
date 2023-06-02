@@ -29,12 +29,17 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.infrastructure.InfrastructureResourceClient;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
+import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraDefSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -48,6 +53,8 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.infra.InfraDefMapper;
 import io.harness.ngmigration.service.infra.InfraMapperFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
@@ -80,6 +87,7 @@ import retrofit2.Response;
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
+  @Inject InfrastructureResourceClient infrastructureResourceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -92,7 +100,7 @@ public class InfraMigrationService extends NgMigrationService {
         .appId(basicInfo.getAppId())
         .accountId(basicInfo.getAccountId())
         .cgEntityId(basicInfo.getId())
-        .entityType(NGMigrationEntityType.ENVIRONMENT.name())
+        .entityType(NGMigrationEntityType.INFRA.name())
         .accountIdentifier(basicInfo.getAccountId())
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
@@ -139,11 +147,16 @@ public class InfraMigrationService extends NgMigrationService {
     children.add(CgEntityId.builder().id(infra.getInfrastructure().getCloudProviderId()).type(CONNECTOR).build());
 
     List<String> connectorIds = InfraMapperFactory.getInfraDefMapper(infra).getConnectorIds(infra);
-    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+    if (isNotEmpty(connectorIds)) {
       children.addAll(connectorIds.stream()
                           .filter(StringUtils::isNotBlank)
                           .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
                           .collect(Collectors.toList()));
+    }
+
+    if (isNotEmpty(infra.getProvisionerId())) {
+      children.add(
+          CgEntityId.builder().id(infra.getProvisionerId()).type(NGMigrationEntityType.INFRA_PROVISIONER).build());
     }
 
     if (infra.getCloudProviderType() == AWS) {
@@ -170,8 +183,8 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(
@@ -196,35 +209,47 @@ public class InfraMigrationService extends NgMigrationService {
                                                .yaml(getYamlString(yamlFile))
                                                .build();
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createInfrastructure(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(infraReqDTO)).execute();
+        ngClient
+            .createInfrastructure(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(infraReqDTO))
+            .execute();
     log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(infra, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(migrationContext, infra, inputDTO.getCustomExpressions());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     InfraDefMapper infraDefMapper = InfraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
-    Set<CgEntityId> infraSpecIds = graph.get(entityId)
+    Set<CgEntityId> infraSpecIds = migrationContext.getGraph()
+                                       .get(entityId)
                                        .stream()
                                        .filter(cgEntityId -> cgEntityId.getType() == ELASTIGROUP_CONFIGURATION)
                                        .collect(Collectors.toSet());
     List<ElastigroupConfiguration> elastigroupConfigurations =
-        elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
+        elastigroupConfigurationMigrationService.getElastigroupConfigurations(migrationContext, infraSpecIds);
 
-    Infrastructure infraSpec =
-        infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
+    Infrastructure infraSpec = infraDefMapper.getSpec(migrationContext, infra, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
-      return Collections.emptyList();
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .type(entityId.getType())
+                                                     .cgBasicInfo(infra.getCgBasicInfo())
+                                                     .reason("Unknown infra type or Failed to migrate the infra")
+                                                     .build()))
+          .build();
     }
     InfrastructureConfig infrastructureConfig =
         InfrastructureConfig.builder()
@@ -248,6 +273,7 @@ public class InfraMigrationService extends NgMigrationService {
                 ((NGEnvironmentConfig) envNgYamlFile.getYaml()).getNgEnvironmentInfoConfig().getName(), name))
             .yaml(infrastructureConfig)
             .ngEntityDetail(NgEntityDetail.builder()
+                                .entityType(NGMigrationEntityType.INFRA)
                                 .identifier(identifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
@@ -263,11 +289,24 @@ public class InfraMigrationService extends NgMigrationService {
             .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+    try {
+      InfrastructureDefinition entity = (InfrastructureDefinition) cgEntityNode.getEntity();
+      String envId = entity.getEnvId();
+      CgEntityId env = CgEntityId.builder().id(envId).type(ENVIRONMENT).build();
+      if (!migratedEntities.containsKey(env)) {
+        return null;
+      }
+      String envIdentifier = migratedEntities.get(env).getNgEntityDetail().getIdentifier();
+      return getInfra(accountIdentifier, ngEntityDetail, envIdentifier);
+    } catch (Exception ex) {
+      log.warn("Failed to retrieve the infra. ", ex);
+    }
     return null;
   }
 
@@ -279,5 +318,20 @@ public class InfraMigrationService extends NgMigrationService {
   @Override
   public boolean canMigrate(CgEntityId id, CgEntityId root, boolean migrateAll) {
     return migrateAll || root.getType().equals(NGMigrationEntityType.ENVIRONMENT);
+  }
+
+  private YamlDTO getInfra(String accountId, NgEntityDetail ngEntityDetail, String envIdentifier) {
+    try {
+      InfrastructureResponse response =
+          NGRestUtils.getResponse(infrastructureResourceClient.getInfra(ngEntityDetail.getIdentifier(), accountId,
+              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), envIdentifier));
+      if (response == null || StringUtils.isBlank(response.getInfrastructure().getYaml())) {
+        return null;
+      }
+      return YamlUtils.read(response.getInfrastructure().getYaml(), InfrastructureConfig.class);
+    } catch (Exception ex) {
+      log.warn("Error when getting infra - ", ex);
+      return null;
+    }
   }
 }

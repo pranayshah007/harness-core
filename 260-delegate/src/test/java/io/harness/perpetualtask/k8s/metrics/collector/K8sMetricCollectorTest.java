@@ -18,11 +18,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -73,7 +73,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CE)
@@ -181,7 +181,7 @@ public class K8sMetricCollectorTest extends CategoryTest {
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(CcmConstants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
     k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient, controllerFetcher);
-    verifyZeroInteractions(eventPublisher);
+    verifyNoInteractions(eventPublisher);
     Mockito.verify(controllerFetcher).getTopLevelOwner(pod1);
     Mockito.verify(controllerFetcher).getTopLevelOwner(pod2);
   }

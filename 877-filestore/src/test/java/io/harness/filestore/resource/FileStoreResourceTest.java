@@ -24,9 +24,9 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -45,6 +45,7 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -72,7 +73,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
@@ -179,7 +180,7 @@ public class FileStoreResourceTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testCreateFileWith128CharsIdentifier() {
-    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    String identifier = RandomStringUtils.random(128, true, false);
     final FileDTO createRequest = FileDTO.builder()
                                       .parentIdentifier("Root")
                                       .identifier(identifier)
@@ -423,7 +424,7 @@ public class FileStoreResourceTest extends CategoryTest {
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_EDIT_PERMISSION));
     when(fileStoreService.listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES))
         .thenReturn(entityServiceUsageList);
-    ResponseDTO<Page<EntitySetupUsageDTO>> response =
+    ResponseDTO<PageResponse<EntitySetupUsageDTO>> response =
         fileStoreResource.getReferencedBy(page, size, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES, null);
 
     verify(fileStoreService).listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES);

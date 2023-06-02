@@ -26,7 +26,7 @@ import io.harness.delegate.clienttools.KubectlVersion;
 import io.harness.delegate.clienttools.KustomizeVersion;
 import io.harness.delegate.clienttools.OcVersion;
 import io.harness.exception.InvalidRequestException;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 
 import javax.annotation.Nullable;
@@ -48,7 +48,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
   @Override
   public String getGoTemplateClientPath() {
     try {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_1);
+      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2);
     } catch (IllegalArgumentException e) {
       return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
     }

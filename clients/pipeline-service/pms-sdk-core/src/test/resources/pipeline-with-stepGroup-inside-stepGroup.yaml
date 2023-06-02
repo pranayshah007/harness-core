@@ -1,0 +1,42 @@
+pipeline:
+  name: stepGroupTest
+  identifier: stepGroupTest
+  tags: {}
+  stages:
+    - stage:
+        name: Custom
+        identifier: Custom
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: parent
+                  identifier: parent
+                  steps:
+                    - stepGroup:
+                        name: child_1
+                        identifier: child_1
+                        steps:
+                          - step:
+                              type: Wait
+                              name: Wait_1
+                              identifier: Wait_1
+                              spec:
+                                duration: 10m
+                          - step:
+                              type: Wait
+                              name: Wait_2
+                              identifier: Wait_2
+                              spec:
+                                duration: 10m
+                    - step:
+                        type: Wait
+                        name: Wait_3
+                        identifier: Wait_3
+                        spec:
+                          duration: 10m
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}

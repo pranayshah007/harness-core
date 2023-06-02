@@ -9,11 +9,12 @@ package io.harness.debezium;
 
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import java.util.List;
 import java.util.Properties;
 
 public interface DebeziumService {
   DebeziumEngine<ChangeEvent<String, String>> getEngine(Properties props, MongoCollectionChangeConsumer changeConsumer,
-      String collection, DebeziumController debeziumController);
+      String collection, DebeziumController debeziumController, List<Integer> listOfErrorCodesForOffsetReset);
 
   void closeEngine(DebeziumEngine debeziumEngine, String collection) throws Exception;
 }

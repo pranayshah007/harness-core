@@ -9,11 +9,12 @@ package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
@@ -21,8 +22,10 @@ import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.Report;
 import io.harness.product.ci.engine.proto.RunTestsStep;
@@ -46,7 +49,7 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
 
   public UnitStep serializeStepWithStepParameters(RunTestsStepInfo runTestsStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
-      String stepName) {
+      String stepName, Ambiance ambiance) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -83,6 +86,9 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     if (language == null) {
       throw new CIStageExecutionException("language cannot be null");
     }
+    if (language.equalsIgnoreCase("python") && featureFlagService.isEnabled(FeatureName.CI_PYTHON_TI, accountId)) {
+      throw new CIStageExecutionException("python TI is not enabled for this account");
+    }
     runTestsStepBuilder.setLanguage(language.toLowerCase());
     runTestsStepBuilder.setBuildTool(buildTool.toLowerCase());
 
@@ -98,8 +104,11 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
       runTestsStepBuilder.addAllEnvVarOutputs(outputVarNames);
     }
 
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+
     Map<String, String> envvars =
-        resolveMapParameter("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "RunTests", identifier, runTestsStepInfo.getEnvVariables(), false, fVal);
+    envvars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envvars);
     if (!isEmpty(envvars)) {
       runTestsStepBuilder.putAllEnvironment(envvars);
     }
@@ -108,6 +117,12 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
         "TestAnnotations", "RunTests", identifier, runTestsStepInfo.getTestAnnotations(), false);
     if (StringUtils.isNotEmpty(testAnnotations)) {
       runTestsStepBuilder.setTestAnnotations(testAnnotations);
+    }
+
+    String testRoot = RunTimeInputHandler.resolveStringParameter(
+        "TestRoot", "RunTests", identifier, runTestsStepInfo.getTestRoot(), false);
+    if (StringUtils.isNotEmpty(testRoot)) {
+      runTestsStepBuilder.setTestRoot(testRoot);
     }
 
     String packages = RunTimeInputHandler.resolveStringParameter(
@@ -130,6 +145,11 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     String frameworkVersion = RunTimeInputHandler.resolveDotNetVersion(runTestsStepInfo.getFrameworkVersion());
     if (StringUtils.isNotEmpty(frameworkVersion)) {
       runTestsStepBuilder.setFrameworkVersion(frameworkVersion.toLowerCase());
+    }
+
+    String pythonVersion = RunTimeInputHandler.resolvePythonVersion(runTestsStepInfo.getPythonVersion());
+    if (StringUtils.isNotEmpty(pythonVersion)) {
+      runTestsStepBuilder.setPythonVersion(pythonVersion.toLowerCase());
     }
 
     UnitTestReport reports = runTestsStepInfo.getReports().getValue();

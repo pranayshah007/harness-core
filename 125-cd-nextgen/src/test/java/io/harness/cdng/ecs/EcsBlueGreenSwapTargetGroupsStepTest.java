@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -27,6 +28,7 @@ import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
@@ -56,6 +58,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import software.wings.beans.TaskType;
+
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Rule;
@@ -79,6 +83,7 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
       EcsBlueGreenSwapTargetGroupsStepParameters.infoBuilder()
           .ecsBlueGreenCreateServiceFnq("serviceFnq")
           .doNotDownsizeOldService(ParameterField.<Boolean>builder().value(true).build())
+          .downsizeOldServiceDelayInSecs(ParameterField.<Integer>builder().value(60).build())
           .build();
   private final StepElementParameters stepElementParameters =
       StepElementParameters.builder().spec(ecsSpecParameters).timeout(ParameterField.createValueField("10m")).build();
@@ -233,7 +238,9 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
                                                   .taskRequest(TaskRequest.newBuilder().build())
                                                   .passThroughData(ecsExecutionPassThroughData)
                                                   .build();
-    doReturn(taskChainResponseMock).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(taskChainResponseMock)
+        .when(ecsStepCommonHelper)
+        .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
 
     ecsBlueGreenSwapTargetGroupsStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
 
@@ -266,10 +273,13 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
             .doNotDownsizeOldService(
                 ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue() != null
                 && ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue())
+            .downsizeOldServiceDelayInSecs(
+                ParameterFieldHelper.getParameterFieldValue(ecsSpecParameters.getDownsizeOldServiceDelayInSecs()))
             .build();
 
     verify(ecsStepCommonHelper)
         .queueEcsTask(stepElementParameters, ecsBlueGreenSwapTargetGroupsRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true);
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG);
   }
 }

@@ -11,12 +11,13 @@ import io.harness.cvng.downtime.beans.DowntimeSpec;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeDetails;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
 public interface DowntimeSpecDetailsTransformer<E extends DowntimeDetails, T extends DowntimeSpec> {
   E getDowntimeDetails(T spec);
-  T getDowntimeSpec(E entity);
+  T getDowntimeSpec(E entity, String timeZone);
   DowntimeDuration getDowntimeDuration(E entity);
 
   boolean isPastDowntime(E entity);
@@ -32,6 +33,21 @@ public interface DowntimeSpecDetailsTransformer<E extends DowntimeDetails, T ext
         return startTime + (Duration.ofDays(downtimeDuration.getDurationValue()).toSeconds());
       case WEEKS:
         return startTime + (Duration.ofDays(7L * downtimeDuration.getDurationValue()).toSeconds());
+      default:
+        throw new IllegalStateException("type: " + downtimeDuration.getDurationType() + " is not handled");
+    }
+  }
+
+  default LocalDateTime getLocalEndTime(LocalDateTime startTime, DowntimeDuration downtimeDuration) {
+    switch (downtimeDuration.getDurationType()) {
+      case MINUTES:
+        return startTime.plusMinutes(downtimeDuration.getDurationValue());
+      case HOURS:
+        return startTime.plusHours(downtimeDuration.getDurationValue());
+      case DAYS:
+        return startTime.plusDays(downtimeDuration.getDurationValue());
+      case WEEKS:
+        return startTime.plusWeeks(downtimeDuration.getDurationValue());
       default:
         throw new IllegalStateException("type: " + downtimeDuration.getDurationType() + " is not handled");
     }

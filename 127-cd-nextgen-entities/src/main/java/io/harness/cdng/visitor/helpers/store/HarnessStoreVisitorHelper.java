@@ -12,9 +12,11 @@ import static io.harness.cdng.visitor.YamlTypes.PATH_CONNECTOR;
 import io.harness.beans.FileReference;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.ng.core.filestore.dto.FileDTO;
@@ -24,6 +26,7 @@ import io.harness.walktree.visitor.entityreference.EntityReferenceExtractor;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,23 +71,27 @@ public class HarnessStoreVisitorHelper implements EntityReferenceExtractor {
   public Set<EntityDetailProtoDTO> getEntityDetailsProtoDTO(ParameterField<List<String>> valuesFiles,
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Map<String, Object> contextMap,
       String overridePathFieldName) {
-    List<String> files = ParameterFieldHelper.getParameterFieldListValue(valuesFiles, false);
+    List<String> files = ParameterFieldHelper.getParameterFieldValue(valuesFiles) instanceof List
+        ? ParameterFieldHelper.getParameterFieldListValue(valuesFiles, false)
+        : Collections.emptyList();
     Set<EntityDetailProtoDTO> result = new HashSet<>(files.size());
-    files.forEach(scopedFilePath -> {
-      FileReference fileReference =
-          FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
-      Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),
-          fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath());
+    files.stream().filter(EmptyPredicate::isNotEmpty).forEach(scopedFilePath -> {
+      if (!EngineExpressionEvaluator.hasExpressions(scopedFilePath)) {
+        FileReference fileReference =
+            FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
+        Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),
+            fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath());
 
-      if (fileDTO.isPresent()) {
-        String fullQualifiedDomainName =
-            VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + overridePathFieldName;
-        String fileScopedIdentifier =
-            FileReference.getScopedFileIdentifier(fileReference.getScope(), fileDTO.get().getIdentifier());
+        if (fileDTO.isPresent()) {
+          String fullQualifiedDomainName =
+              VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + overridePathFieldName;
+          String fileScopedIdentifier =
+              FileReference.getScopedFileIdentifier(fileReference.getScope(), fileDTO.get().getIdentifier());
 
-        result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
-            projectIdentifier, fullQualifiedDomainName, ParameterField.createValueField(fileScopedIdentifier),
-            EntityTypeProtoEnum.FILES));
+          result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
+              projectIdentifier, fullQualifiedDomainName, ParameterField.createValueField(fileScopedIdentifier),
+              EntityTypeProtoEnum.FILES));
+        }
       }
     });
 

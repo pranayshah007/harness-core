@@ -51,6 +51,8 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -150,19 +152,6 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
       return skipTaskRequestOrThrowException(ambiance);
     }
 
-    if (StepUtils.isStepInRollbackSection(ambiance)
-        && EmptyPredicate.isNotEmpty(ecsCanaryDeleteStepParameters.getEcsCanaryDeleteFnq())) {
-      OptionalSweepingOutput existingCanaryDeleteOutput = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(ecsCanaryDeleteStepParameters.getEcsCanaryDeleteFnq() + "."
-              + OutcomeExpressionConstants.ECS_CANARY_DELETE_OUTCOME));
-      if (existingCanaryDeleteOutput.isFound()) {
-        return TaskRequest.newBuilder()
-            .setSkipTaskRequest(
-                SkipTaskRequest.newBuilder().setMessage(ECS_CANARY_DELETE_STEP_ALREADY_EXECUTED).build())
-            .build();
-      }
-    }
-
     EcsCanaryDeleteDataOutcome ecsCanaryDeleteDataOutcome =
         (EcsCanaryDeleteDataOutcome) ecsCanaryDeleteDataOptionalOutput.getOutput();
 
@@ -183,7 +172,8 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
 
     return ecsStepCommonHelper
         .queueEcsTask(stepElementParameters, ecsCanaryDeleteRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
   }
 

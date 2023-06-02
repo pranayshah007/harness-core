@@ -9,6 +9,8 @@
 
 package io.harness.cdng.provision.terragrunt;
 
+import static java.util.Objects.requireNonNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -32,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TerragruntConfigDAL {
+  private static final String NOT_NULL_MESSAGE = "%s must not be null";
+
   @Inject private HPersistence persistence;
   @Inject private EngineExpressionService engineExpressionService;
 
@@ -70,5 +74,32 @@ public class TerragruntConfigDAL {
                              .filter(TerragruntConfigKeys.entityId, entityId)
                              .order(Sort.descending(TerragruntConfigKeys.createdAt))
                              .fetch());
+  }
+
+  public void deleteForAccount(String accountId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+
+    persistence.delete(
+        persistence.createQuery(TerragruntConfig.class).filter(TerragruntConfigKeys.accountId, accountId));
+  }
+
+  public void deleteForOrganization(String accountId, String orgId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+
+    persistence.delete(persistence.createQuery(TerragruntConfig.class)
+                           .filter(TerragruntConfigKeys.accountId, accountId)
+                           .filter(TerragruntConfigKeys.orgId, orgId));
+  }
+
+  public void deleteForProject(String accountId, String orgId, String projectId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+    requireNonNull(projectId, String.format(NOT_NULL_MESSAGE, projectId));
+
+    persistence.delete(persistence.createQuery(TerragruntConfig.class)
+                           .filter(TerragruntConfigKeys.accountId, accountId)
+                           .filter(TerragruntConfigKeys.orgId, orgId)
+                           .filter(TerragruntConfigKeys.projectId, projectId));
   }
 }

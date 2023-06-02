@@ -13,9 +13,9 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.SplunkConfig;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.splunk.SplunkDataCollectionInfoV2;
 

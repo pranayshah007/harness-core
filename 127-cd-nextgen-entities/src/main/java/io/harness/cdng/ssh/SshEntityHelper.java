@@ -36,6 +36,7 @@ import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmInfrastructure;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
@@ -149,7 +150,7 @@ public class SshEntityHelper {
             .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
-            .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(azureInfrastructureOutcome.getHostTags()))
             .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
             .build();
       case SSH_WINRM_AWS:
@@ -167,7 +168,7 @@ public class SshEntityHelper {
             .sshKeySpecDto(sshKeySpecDto)
             .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
             .region(awsInfrastructureOutcome.getRegion())
-            .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(awsInfrastructureOutcome.getHostTags()))
             .build();
 
       case CUSTOM_DEPLOYMENT:
@@ -216,7 +217,7 @@ public class SshEntityHelper {
             .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
-            .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(azureInfrastructureOutcome.getHostTags()))
             .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
             .build();
       case SSH_WINRM_AWS:
@@ -234,7 +235,7 @@ public class SshEntityHelper {
             .winRmCredentials(winRmCredentials)
             .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
             .region(awsInfrastructureOutcome.getRegion())
-            .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
+            .tags(filterInfraTags(awsInfrastructureOutcome.getHostTags()))
             .build();
       default:
         throw new UnsupportedOperationException(
@@ -266,7 +267,13 @@ public class SshEntityHelper {
 
     try {
       InfrastructureConfig config = YamlPipelineUtils.read(yaml, InfrastructureConfig.class);
-      Infrastructure infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
+      SshWinRmInfrastructure infrastructure =
+          (SshWinRmInfrastructure) config.getInfrastructureDefinitionConfig().getSpec();
+
+      if (infrastructure.getCredentialsRef() != null && infrastructure.getCredentialsRef().isExpression()) {
+        return;
+      }
+
       String credentialRef = getInfrastructureCredentialRef(infrastructure);
 
       if (deploymentType == ServiceDefinitionType.SSH) {

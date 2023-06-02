@@ -8,6 +8,7 @@
 package io.harness.delegate.task.pcf.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import static java.lang.String.format;
 
@@ -20,6 +21,7 @@ import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
 
@@ -33,18 +35,18 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class CfSwapRollbackCommandRequestNG extends AbstractTasTaskRequest {
   List<CfServiceData> instanceData;
-  List<String> routeMaps;
+  @Expression(ALLOW_SECRETS) List<String> routeMaps;
   TasApplicationInfo activeApplicationDetails;
   TasApplicationInfo newApplicationDetails;
   TasApplicationInfo inActiveApplicationDetails;
-  String cfAppNamePrefix;
+  @Expression(ALLOW_SECRETS) String cfAppNamePrefix;
   Integer activeAppRevision;
   boolean enforceSslValidation;
   boolean useAppAutoScalar;
   String existingAppNamingStrategy;
   boolean downsizeOldApplication;
   boolean swapRouteOccurred;
-  List<String> tempRoutes;
+  @Expression(ALLOW_SECRETS) List<String> tempRoutes;
   boolean upsizeInActiveApp;
 
   @Builder

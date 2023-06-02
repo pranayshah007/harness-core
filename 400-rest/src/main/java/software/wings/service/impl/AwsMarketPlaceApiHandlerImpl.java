@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.DeployMode;
 import io.harness.exception.WingsException;
+import io.harness.licensing.Edition;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.MarketPlace;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -68,11 +70,16 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   @Inject private SecretManager secretManager;
   @Inject private AuthenticationUtils authenticationUtils;
   @Inject private MarketPlaceService marketPlaceService;
-
+  private final String MANUALLY_PROVISIONED_MESSAGE =
+      "Instructions to get started should be emailed shortly. If not, please contact Harness at support@harness.io";
   private static final String INFO = "INFO";
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
   private final String AWS_FREE_TRIAL_DIMENSION = "AWSMPFreeTrial";
+  private final String HARNESS_TEST_2_PRODUCT_CODE = "9g3jcw6iic4tpylipcti8vwcx";
+  private final Integer MINIMUM_DIMENSION_V2_LENGTH = 3;
+  private final String KILO_CONVERSION = "K";
+  private final String MILLION_CONVERSION = "M";
   @Override
   public Response processAWSMarktPlaceOrder(String token) {
     /**
@@ -118,9 +125,19 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     String customerIdentifierCode = resolveCustomerResult.getCustomerIdentifier();
     String productCode = resolveCustomerResult.getProductCode();
 
+    // V2 Product codes use dimension string to retrieve license info
+    List<String> awsMarketPlaceV2ProductCodes = new ArrayList();
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceFfProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCiProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceStoProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceSrmProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCdProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCcmProductCode());
+    awsMarketPlaceV2ProductCodes.add(HARNESS_TEST_2_PRODUCT_CODE);
+
     if (!marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)
         && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)
-        && !marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+        && (!awsMarketPlaceV2ProductCodes.contains(productCode))) {
       final String message =
           "Customer order from AWS could not be resolved, please contact Harness at support@harness.io";
       log.error("Invalid AWS productcode received:[{}],", productCode);
@@ -146,6 +163,25 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     log.info("oEntitlementResult=[{}]", entitlements);
     String dimension = entitlements.getEntitlements().get(0).getDimension();
     Integer orderQuantity = getOrderQuantity(dimension);
+    log.info("Dimension=[{}]", dimension);
+    log.info("Order Quantity=[{}]", orderQuantity);
+
+    if (isManuallyProvisioned(dimension)) {
+      log.info("Manually provision license for Dimension=[{}], EntitlementResult=[{}]", dimension, entitlements);
+      return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+    }
+
+    if (awsMarketPlaceV2ProductCodes.contains(productCode)) {
+      orderQuantity = getDimensionQuantity(dimension);
+
+      if (!isDimensionV2Provisionable(dimension, orderQuantity)) {
+        log.info(
+            "Dimensions provided does not include required all information. Dimension=[{}], EntitlementResult=[{}]",
+            dimension, entitlements);
+        return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      }
+    }
+
     Date expirationDate = entitlements.getEntitlements().get(0).getExpirationDate();
     String licenseType = getLicenseType(dimension);
     Optional<MarketPlace> marketPlaceMaybe =
@@ -172,28 +208,41 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
                         .expirationDate(expirationDate)
                         .productCode(productCode)
                         .licenseType(licenseType)
+                        .dimension(dimension)
                         .build();
+      log.info("New MarketPlace=[{}]", marketPlace);
       wingsPersistence.save(marketPlace);
     }
 
-    if (existingCustomer && (!marketPlace.getOrderQuantity().equals(orderQuantity))
-        || (!marketPlace.getExpirationDate().equals(expirationDate))) {
+    if (existingCustomer && !marketPlace.getProductCode().equals(productCode)) {
+      log.info(
+          "This is an existing customer:[{}], purchasing another module. Existing product code [{}], adding product code [{}]. Desired dimension: [{}]",
+          customerIdentifierCode, marketPlace.getProductCode(), productCode, dimension);
+      final String message = String.format(
+          "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. License details: Quantity: %d, License expiration: %s",
+          orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
+      return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+
+    } else if (existingCustomer
+        && (!marketPlace.getOrderQuantity().equals(orderQuantity)
+            || (!marketPlace.getExpirationDate().equals(expirationDate)))) {
       log.info(
           "This is an existing customer:[{}], updating orderQuantity from [{}] to [{}], updating expirationDate from [{}] to [{}]",
           customerIdentifierCode, marketPlace.getOrderQuantity(), orderQuantity, marketPlace.getExpirationDate(),
           expirationDate);
-      /**
-       * This is an update to an existing order, treat this as an update
-       */
-      licenseService.updateLicenseForProduct(
-          marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime());
-
-      marketPlace.setOrderQuantity(orderQuantity);
-      wingsPersistence.save(marketPlace);
-
-      final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      final String message = String.format(
+          "Looks like you already have a license. Please reach out to harness@support.io to update the existing license. License details: Quantity: %d, License expiration: %s.",
           orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
       return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+
+      // TODO: Implement/verify updateLicenseForProduct
+      // licenseService.updateLicenseForProduct(
+      //     marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime(),
+      //     dimension);
+
+      // final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      //     orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
+      // return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
 
     } else if (!existingCustomer) {
       /**
@@ -201,20 +250,25 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
        */
 
       UserInvite userInvite = userService.createUserInviteForMarketPlace();
+      log.info("New User Invite=[{}]", userInvite);
 
       String marketPlaceToken = getMarketPlaceToken(marketPlace, userInvite);
 
       URI redirectUrl = null;
       try {
         redirectUrl = new URI(authenticationUtils.getBaseUrl()
-            + ("#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken));
+            + ("auth/#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken)
+            + getUTMUrlParams(marketPlaceConfig, productCode));
       } catch (URISyntaxException e) {
         throw new WingsException(e);
       }
+      log.info("Redirect URL=[{}]", redirectUrl);
+
       return Response.seeOther(redirectUrl).build();
 
     } else {
-      final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      final String message = String.format(
+          "License details: Service Instances: %d, License expiration: %s. If any issues, please contact Harness at support@harness.io",
           orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
       return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
     }
@@ -267,5 +321,86 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       default:
         return 50;
     }
+  }
+
+  // User will manually provision working closely with Harness
+  private boolean isManuallyProvisioned(String dimension) {
+    boolean shouldManuallyProvision = false;
+    String escapeProvisionKey = "x";
+    if (StringUtils.isNotBlank(dimension) && dimension.toLowerCase().endsWith(escapeProvisionKey)) {
+      shouldManuallyProvision = true;
+    }
+    return shouldManuallyProvision;
+  }
+
+  // Will only try to provision license when the dimension follows these rules
+  public boolean isDimensionV2Provisionable(String dimension, Integer quantity) {
+    boolean isProvisionReady = false;
+    Edition plan = licenseService.getDimensionPlan(dimension);
+
+    if (StringUtils.isNotBlank(dimension) && dimension.split("_").length >= MINIMUM_DIMENSION_V2_LENGTH && plan != null
+        && quantity != null) {
+      isProvisionReady = true;
+    }
+    return isProvisionReady;
+  }
+
+  // Gets quantity from dimension string
+  public Integer getDimensionQuantity(String dimension) {
+    Integer quantity = 0;
+    // split string from underscore
+    String[] result = dimension.split("_");
+
+    String tempQuantityStr = "0";
+    if (result.length >= MINIMUM_DIMENSION_V2_LENGTH) {
+      tempQuantityStr = result[result.length - 1];
+    }
+
+    // Handle K (1000) and M (1000000) units
+    if (tempQuantityStr.contains(KILO_CONVERSION)) {
+      tempQuantityStr = tempQuantityStr.replace(KILO_CONVERSION, "000");
+    }
+
+    if (tempQuantityStr.contains(MILLION_CONVERSION)) {
+      tempQuantityStr = tempQuantityStr.replace(MILLION_CONVERSION, "000000");
+    }
+
+    try {
+      if (Integer.parseInt(tempQuantityStr) > 0) {
+        quantity = Integer.parseInt(tempQuantityStr);
+      }
+
+    } catch (Exception e) {
+      log.error("Failed to get quantity for dimension:[{}]", dimension, e);
+    }
+
+    return quantity;
+  }
+
+  private String getUTMUrlParams(MarketPlaceConfig marketPlaceConfig, String productCode) {
+    // TODO: Add for CE (Chaos)
+    String UTMUrlParam = "";
+
+    if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=cd&utm_campaign=23-4-6-cd-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceCiProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ci&utm_campaign=23-4-6-ci-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ff&utm_campaign=23-4-6-ff-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ce&utm_campaign=23-4-6-ccm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=sto&utm_campaign=23-4-6-srm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceSrmProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=sto&utm_campaign=23-4-6-srm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    }
+
+    return UTMUrlParam;
   }
 }

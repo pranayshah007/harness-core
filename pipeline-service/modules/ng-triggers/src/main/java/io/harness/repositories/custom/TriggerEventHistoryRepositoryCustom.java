@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ public interface TriggerEventHistoryRepositoryCustom {
   List<TriggerEventHistory> findAll(Criteria criteria);
   Page<TriggerEventHistory> findAll(Criteria criteria, Pageable pageable);
   List<TriggerEventHistory> findAllActivationTimestampsInRange(Criteria criteria);
-
   void deleteBatch(Criteria criteria);
+
+  DeleteResult deleteTriggerEventHistoryForTriggerIdentifier(Criteria criteria);
 }

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -187,6 +187,7 @@ public class ExpansionRequestsExtractorTest extends CategoryTest {
         case CE:
           assertThat(expansionRequest.getFqn()).isEqualTo("pipeline/stages/[1]/stage/spec/execution");
           break;
+        default:
       }
     }
   }

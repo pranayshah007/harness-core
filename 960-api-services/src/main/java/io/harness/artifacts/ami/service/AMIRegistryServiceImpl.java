@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
-import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF_MAX_ERROR_RETRIES;
 
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -31,9 +30,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
@@ -46,8 +45,6 @@ import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.retry.PredefinedBackoffStrategies;
-import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.autoscaling.model.AmazonAutoScalingException;
 import com.amazonaws.services.cloudformation.model.AmazonCloudFormationException;
@@ -89,6 +86,7 @@ public class AMIRegistryServiceImpl implements AMIRegistryService {
   private static final String AMI_RESOURCE_FILTER_PREFIX = "ami-";
 
   @Inject private AwsCallTracker tracker;
+  @Inject private AwsApiHelperService awsApiHelperService;
 
   @Override
   public List<BuildDetails> listBuilds(AwsInternalConfig awsInternalConfig, String region,
@@ -339,7 +337,7 @@ public class AMIRegistryServiceImpl implements AMIRegistryService {
 
     ClientConfiguration clientConfiguration = new ClientConfiguration();
 
-    RetryPolicy retryPolicy = getRetryPolicy(awsConfig);
+    RetryPolicy retryPolicy = awsApiHelperService.getRetryPolicy(awsConfig);
 
     clientConfiguration.setRetryPolicy(retryPolicy);
 
@@ -382,18 +380,6 @@ public class AMIRegistryServiceImpl implements AMIRegistryService {
     }
 
     return credentialsProvider;
-  }
-
-  private RetryPolicy getRetryPolicy(AwsInternalConfig awsConfig) {
-    AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-
-    return defaultBackoffStrategy != null
-        ? new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
-            new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(defaultBackoffStrategy.getBaseDelayInMs(),
-                defaultBackoffStrategy.getThrottledBaseDelayInMs(), defaultBackoffStrategy.getMaxBackoffInMs()),
-            defaultBackoffStrategy.getMaxErrorRetry(), false)
-        : new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
-            new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(), DEFAULT_BACKOFF_MAX_ERROR_RETRIES, false);
   }
 
   private void constructBuildDetails(List<BuildDetails> buildDetails, Image image) {

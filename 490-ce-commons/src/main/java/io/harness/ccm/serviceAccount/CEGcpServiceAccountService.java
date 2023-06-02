@@ -17,5 +17,6 @@ import java.io.IOException;
 @OwnedBy(CE)
 public interface CEGcpServiceAccountService {
   CEGcpServiceAccount create(String accountId, String ccmProjectId);
-  CEGcpServiceAccount provisionAndRetrieveServiceAccount(String accountId, String ccmProjectId) throws IOException;
+  CEGcpServiceAccount provisionAndRetrieveServiceAccount(
+      String accountId, String ccmProjectId, String serviceAccountEmailSource) throws IOException;
 }

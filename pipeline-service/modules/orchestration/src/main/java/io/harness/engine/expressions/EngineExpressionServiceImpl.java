@@ -18,6 +18,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -37,7 +38,18 @@ public class EngineExpressionServiceImpl implements EngineExpressionService {
 
   @Override
   public Object evaluateExpression(Ambiance ambiance, String expression) {
-    String json = pmsEngineExpressionService.evaluateExpression(ambiance, expression);
+    return evaluateExpression(ambiance, expression, null);
+  }
+
+  @Override
+  public Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
+    String json;
+    if (mode != null && mode != ExpressionMode.UNKNOWN_MODE && mode != ExpressionMode.UNRECOGNIZED) {
+      json = pmsEngineExpressionService.evaluateExpression(
+          ambiance, expression, ExpressionModeMapper.fromExpressionModeProto(mode));
+    } else {
+      json = pmsEngineExpressionService.evaluateExpression(ambiance, expression);
+    }
     Object result;
     try {
       result = RecastOrchestrationUtils.fromJson(json, Object.class);
@@ -45,5 +57,17 @@ public class EngineExpressionServiceImpl implements EngineExpressionService {
       result = json;
     }
     return result;
+  }
+
+  @Override
+  public Object resolve(Ambiance ambiance, Object o, io.harness.expression.common.ExpressionMode expressionMode,
+      Map<String, String> contextMap) {
+    return pmsEngineExpressionService.resolve(ambiance, o, expressionMode, contextMap);
+  }
+
+  @Override
+  public Object evaluateExpression(Ambiance ambiance, String expression,
+      io.harness.expression.common.ExpressionMode expressionMode, Map<String, String> contextMap) {
+    return pmsEngineExpressionService.evaluateExpression(ambiance, expression, expressionMode, contextMap);
   }
 }

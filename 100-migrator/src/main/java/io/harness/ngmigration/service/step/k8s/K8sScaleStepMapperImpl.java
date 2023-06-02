@@ -15,9 +15,9 @@ import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.k8s.PercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -30,10 +30,10 @@ import software.wings.sm.states.k8s.K8sScale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sScaleStepMapperImpl extends StepMapper {
+public class K8sScaleStepMapperImpl extends K8sAbstractStepMapperImpl {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -50,10 +50,11 @@ public class K8sScaleStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     K8sScale state = (K8sScale) getState(graphNode);
     K8sScaleStepNode k8sScaleStepNode = new K8sScaleStepNode();
-    baseSetup(graphNode, k8sScaleStepNode);
+    baseSetup(graphNode, k8sScaleStepNode, context.getIdentifierCaseFormat());
 
     InstanceSelectionBase spec;
     if (state.getInstanceUnitType().equals(InstanceUnitType.COUNT)) {

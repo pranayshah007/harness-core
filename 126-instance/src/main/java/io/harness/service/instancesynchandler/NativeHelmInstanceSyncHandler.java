@@ -10,6 +10,8 @@ package io.harness.service.instancesynchandler;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -47,6 +49,10 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return InfrastructureKind.KUBERNETES_DIRECT;
   } // design issue, not actually used anymore
 
+  public boolean isInstanceSyncV2Enabled() {
+    return false;
+  }
+
   @Override
   public InfrastructureDetails getInfrastructureDetails(InstanceInfoDTO instanceInfoDTO) {
     if (instanceInfoDTO instanceof NativeHelmInstanceInfoDTO) {
@@ -67,9 +73,11 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
       throw new InvalidArgumentsException("Parameter serverInstanceInfoList cannot be null or empty");
     }
     if (!((infrastructureOutcome instanceof K8sDirectInfrastructureOutcome)
-            || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome))) {
+            || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome)
+            || (infrastructureOutcome instanceof K8sAwsInfrastructureOutcome)
+            || (infrastructureOutcome instanceof K8sAzureInfrastructureOutcome))) {
       throw new InvalidArgumentsException(Pair.of("infrastructureOutcome",
-          "Must be instance of K8sDirectInfrastructureOutcome or K8sGcpInfrastructureOutcome"));
+          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome, K8sAwsInfrastructureOutcome or K8sAzureInfrastructureOutcome"));
     }
 
     if (serverInstanceInfoList.get(0) instanceof NativeHelmServerInstanceInfo) {

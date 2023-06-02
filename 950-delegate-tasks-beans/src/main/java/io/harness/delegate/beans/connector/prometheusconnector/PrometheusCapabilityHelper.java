@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
@@ -23,12 +24,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.CV)
 public class PrometheusCapabilityHelper {
+  private static final String PROMETHEUS_BASIC_QUERY = "api/v1/query?query=up";
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       ExpressionEvaluator maskingEvaluator, ConnectorConfigDTO prometheusConnectorDTO) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     PrometheusConnectorDTO connectorDTO = (PrometheusConnectorDTO) prometheusConnectorDTO;
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        connectorDTO.getUrl(), maskingEvaluator));
+        connectorDTO.getUrl() + PROMETHEUS_BASIC_QUERY, HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
     return capabilityList;
   }

@@ -10,11 +10,11 @@ package software.wings.delegatetasks.cv;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -31,9 +31,9 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.NewRelicConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
 import software.wings.helpers.ext.newrelic.NewRelicRestClient;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.newrelic.NewRelicApplicationInstance;
 import software.wings.service.impl.newrelic.NewRelicApplicationInstancesResponse;

@@ -19,9 +19,10 @@ public interface OpaConstants {
 
   String OPA_EVALUATION_TYPE_PIPELINE = "pipeline";
   String OPA_EVALUATION_ACTION_PIPELINE_RUN = "onrun";
-  String OPA_EVALUATION_ACTION_PIPELINE_SAVE = "onsave";
+  String OPA_EVALUATION_ACTION_SAVE = "onsave";
 
   String OPA_STATUS_PASS = "pass";
   String OPA_STATUS_WARNING = "warning";
   String OPA_STATUS_ERROR = "error";
+  String OPA_EVALUATION_TYPE_TEMPLATE = "template";
 }

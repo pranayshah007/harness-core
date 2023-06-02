@@ -238,7 +238,7 @@ public interface ArtifactService extends OwnedByArtifactStream {
   boolean deleteArtifactsByUniqueKey(ArtifactStream artifactStream, ArtifactStreamAttributes artifactStreamAttributes,
       Collection<String> artifactKeys);
 
-  Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream);
+  Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream, boolean hitSecondary);
 
   Query<Artifact> prepareCleanupQuery(ArtifactStream artifactStream);
 
@@ -255,4 +255,5 @@ public interface ArtifactService extends OwnedByArtifactStream {
   List<ArtifactFile> fetchArtifactFiles(String artifactId);
 
   List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId);
+  List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId, String buildNo);
 }

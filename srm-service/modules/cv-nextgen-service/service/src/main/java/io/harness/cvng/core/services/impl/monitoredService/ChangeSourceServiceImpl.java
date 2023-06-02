@@ -13,9 +13,9 @@ import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.client.VerificationManagerService;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.sidekick.RetryChangeSourceHandleDeleteSideKickData;
@@ -218,6 +218,13 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
     if (noUniqueIdentifier.isPresent()) {
       throw new InvalidRequestException(
           String.format("Multiple Change Sources exists with the same identifier %s", noUniqueIdentifier.get()));
+    }
+
+    for (ChangeSourceDTO changeSourceDTO : changeSourceDTOs) {
+      if (!changeSourceDTO.getSpec().getType().equals(changeSourceDTO.getType())) {
+        throw new InvalidRequestException(String.format(
+            "Invalid Change Category for change source with identifier %s", changeSourceDTO.getIdentifier()));
+      }
     }
   }
 

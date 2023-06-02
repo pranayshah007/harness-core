@@ -10,6 +10,7 @@ package io.harness.batch.processing.pricing.gcp.bigquery;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
+import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
 
 import java.time.Instant;
@@ -34,4 +35,12 @@ public interface BigQueryHelperService {
 
   Map<String, VMInstanceBillingData> getGcpVMBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);
+
+  void addCostCategoriesColumnInUnifiedTable(String tableName);
+
+  void removeAllCostCategories(String tableName, String startTime, String endTime, CloudProvider cloudProvider,
+      List<String> cloudProviderAccountIds);
+
+  void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds);
 }

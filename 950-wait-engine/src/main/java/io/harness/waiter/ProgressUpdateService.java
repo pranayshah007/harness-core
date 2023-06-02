@@ -86,6 +86,9 @@ public class ProgressUpdateService implements Runnable {
               + " and waitInstanceIds - "
               + waitInstances.stream().map(WaitInstance::getUuid).collect(Collectors.toList()));
         }
+      } catch (IllegalStateException e) {
+        log.error("Caught Illegal Stage exception, probably mongo client reset", e);
+        break;
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);
       } finally {

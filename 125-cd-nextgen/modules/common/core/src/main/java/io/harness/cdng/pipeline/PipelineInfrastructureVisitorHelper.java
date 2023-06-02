@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;

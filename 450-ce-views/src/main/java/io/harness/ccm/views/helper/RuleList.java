@@ -25,9 +25,9 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 public class RuleList {
   @Schema(description = "Total items") int totalItems;
-  @Schema(description = "List of rules executions") List<Rule> rule;
+  @Schema(description = "List of rules executions") List<Rule> rules;
 
   public RuleList toDTO() {
-    return RuleList.builder().totalItems(getTotalItems()).rule(getRule()).build();
+    return RuleList.builder().totalItems(getTotalItems()).rules(getRules()).build();
   }
 }

@@ -13,9 +13,8 @@ import static io.harness.eventsframework.schemas.entity.ScopeProtoEnum.ACCOUNT;
 import static io.harness.eventsframework.schemas.entity.ScopeProtoEnum.PROJECT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -25,9 +24,11 @@ import io.harness.beans.EntityReference;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityGitMetadata;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
@@ -45,6 +46,7 @@ import io.harness.ng.core.entitysetupusage.helper.GitInfoPopulatorForConnector;
 import io.harness.ng.core.entitysetupusage.helper.SetupUsageGitInfoPopulator;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.utils.PageUtils;
 
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
@@ -58,6 +60,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(DX)
 public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
@@ -101,6 +105,24 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
   }
 
   @Test
+  @Owner(developers = OwnerRule.ADITHYA)
+  @Category(UnitTests.class)
+  public void toEntityDTOWhenGitMetadataIsPresent() {
+    EntityDetailProtoDTO referredByEntity =
+        createEntityDetailDTOWithGitMetadata("pipelineIdentifier", EntityTypeProtoEnum.PIPELINES, branch, repo);
+    EntitySetupUsageCreateV2DTO createSetupUsageDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                          .setAccountIdentifier(accountIdentifier)
+                                                          .setReferredByEntity(referredByEntity)
+                                                          .setDeleteOldReferredByRecords(true)
+                                                          .build();
+    List<EntitySetupUsage> entitySetupUsages = entitySetupUsageEventDTOMapper.toEntityDTO(createSetupUsageDTO);
+    assertThat(entitySetupUsages.size()).isEqualTo(1);
+    EntitySetupUsage entitySetupUsage = entitySetupUsages.get(0);
+    assertThat(entitySetupUsage.getReferredByEntity().getEntityGitMetadata().getBranch()).isEqualTo(branch);
+    assertThat(entitySetupUsage.getReferredByEntity().getEntityGitMetadata().getRepo()).isEqualTo(repo);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void toEntityDTOWithGitBranchPopulated() {
@@ -126,9 +148,13 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
         .thenReturn(YamlGitConfigDTO.builder().branch(branch).repo(repo).build());
 
     Page<ConnectorResponseDTO> mockedConnectorResponseDTO = createTheMockedConnectorResponse();
-    when(connectorService.list(eq(0), anyInt(), any(), any(), any(), any(), any(), any(), any(), any()))
+    Pageable pageable1 =
+        PageUtils.getPageRequest(0, 100, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString()));
+    Pageable pageable2 =
+        PageUtils.getPageRequest(1, 100, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString()));
+    when(connectorService.list(any(), any(), any(), any(), any(), any(), any(), (Boolean) any(), eq(pageable1)))
         .thenReturn(mockedConnectorResponseDTO);
-    when(connectorService.list(eq(1), anyInt(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(connectorService.list(any(), any(), any(), any(), any(), any(), any(), (Boolean) any(), eq(pageable2)))
         .thenReturn(Page.empty());
     final GitEntityInfo newBranch = GitEntityInfo.builder().branch(branch).yamlGitConfigId(repo).build();
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
@@ -322,6 +348,21 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
     return EntityDetailProtoDTO.newBuilder()
         .setIdentifierRef(identifierRefProtoDTO)
         .setType(entityTypeProtoEnum)
+        .build();
+  }
+  private EntityDetailProtoDTO createEntityDetailDTOWithGitMetadata(
+      String identifier, EntityTypeProtoEnum entityTypeProtoEnum, String branch, String repo) {
+    IdentifierRefProtoDTO identifierRefProtoDTO = IdentifierRefProtoDTO.newBuilder()
+                                                      .setAccountIdentifier(StringValue.of(accountIdentifier))
+                                                      .setOrgIdentifier(StringValue.of(orgIdentifier))
+                                                      .setProjectIdentifier(StringValue.of(projectIdentifier))
+                                                      .setIdentifier(StringValue.of(identifier))
+                                                      .setScope(PROJECT)
+                                                      .build();
+    return EntityDetailProtoDTO.newBuilder()
+        .setIdentifierRef(identifierRefProtoDTO)
+        .setType(entityTypeProtoEnum)
+        .setEntityGitMetadata(EntityGitMetadata.newBuilder().setRepo(repo).setBranch(branch).build())
         .build();
   }
 

@@ -19,6 +19,7 @@ import io.harness.account.AccountConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -46,12 +47,14 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.signup.SignupDomainDenylistConfiguration;
 import io.harness.signup.SignupNotificationConfiguration;
 import io.harness.subscription.SubscriptionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
+import software.wings.security.authentication.oauth.BitbucketConfig;
 import software.wings.security.authentication.oauth.GitlabConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -101,6 +104,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String ACCOUNT_PACKAGE = "io.harness.account.resource";
   public static final String LICENSE_PACKAGE = "io.harness.licensing.api.resource";
   public static final String SUBSCRIPTION_PACKAGE = "io.harness.subscription.resource";
+  public static final String CREDIT_PACKAGE = "io.harness.credit.resource";
   public static final String POLLING_PACKAGE = "io.harness.polling.resource";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.resource";
   public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
@@ -111,12 +115,14 @@ public class NextGenConfiguration extends Configuration {
   public static final String TAS_PACKAGE = "io.harness.ng.core.tas.resources";
   public static final String VARIABLE_RESOURCE_PACKAGE = "io.harness.ng.core.variable.resources";
   public static final String CD_OVERVIEW_PACKAGE = "io.harness.ng.overview.resource";
+  public static final String ROLLBACK_PACKAGE = "io.harness.ng.rollback";
   public static final String ACTIVITY_HISTORY_PACKAGE = "io.harness.ng.core.activityhistory.resource";
   public static final String SERVICE_ACCOUNTS_PACKAGE = "io.harness.ng.serviceaccounts.resource";
   public static final String BUCKETS_PACKAGE = "io.harness.ng.core.buckets.resources";
   public static final String CLUSTER_GCP_PACKAGE = "io.harness.ng.core.k8s.cluster.resources.gcp";
   public static final String WEBHOOK_PACKAGE = "io.harness.ng.webhook.resources";
   public static final String ENVIRONMENT_PACKAGE = "io.harness.ng.core.environment.resources";
+  public static final String SERVICE_OVERRIDES_PACKAGE = "io.harness.ng.core.serviceoverrides.resources";
   public static final String USERPROFILE_PACKAGE = "io.harness.ng.userprofile.resource";
   public static final String USER_PACKAGE = "io.harness.ng.core.user.remote";
   public static final String JIRA_PACKAGE = "io.harness.ng.jira.resources";
@@ -145,6 +151,10 @@ public class NextGenConfiguration extends Configuration {
   public static final String OAUTH_RESOURCE_PACKAGE = "io.harness.ng.oauth";
   public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
+  public static final String SERVICE_DISCOVERY_PACKAGE = "io.harness.ng.servicediscovery";
+
+  public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
+  public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
   public static final String MANIFEST_RESOURCE_PACKAGE = "io.harness.ng.core.manifests.resources";
@@ -155,6 +165,9 @@ public class NextGenConfiguration extends Configuration {
   private static final String GCP_PACKAGE = "io.harness.ng.core.gcp.resources";
   private static final String MODULEVERSION_RESOURCE_PACKAGE = "io.harness.ng.moduleversion.resource";
   private static final String TERRAFORM_CLOUD_RESOURCE_PACKAGE = "io.harness.ng.core.terraformcloud.resources";
+  private static final String EOL_BANNER_RESOURCE_PACKAGE = "io.harness.ng.core.eolbanner.resources";
+  private static final String TERRAFORM_RESOURCE_PACKAGE = "io.harness.ng.core.terraform.resources";
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -179,6 +192,8 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("chaosServiceClientConfig") private ServiceHttpClientConfig chaosServiceClientConfig;
+  @JsonProperty("serviceDiscoveryServiceClientConfig")
+  private ServiceHttpClientConfig serviceDiscoveryServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean enableAuth;
@@ -230,6 +245,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "signupTargetEnv") private String signupTargetEnv;
   @JsonProperty(value = "delegateStatusEndpoint") private String delegateStatusEndpoint;
   @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
+  @JsonProperty(value = "bitbucketConfig") private BitbucketConfig bitbucketConfig;
   @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
   @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
   @JsonProperty(value = "opaConnectivityEnabled") private boolean opaConnectivityEnabled;
@@ -245,6 +261,10 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
+  @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
+  @JsonProperty("signupDomainDenylistConfig")
+  private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -274,9 +294,10 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.FILTER_PACKAGE, NextGenConfiguration.SIGNUP_PACKAGE,
                 NextGenConfiguration.MOCKSERVER_PACKAGE, NextGenConfiguration.ACCOUNT_PACKAGE,
                 NextGenConfiguration.LICENSE_PACKAGE, NextGenConfiguration.SUBSCRIPTION_PACKAGE,
-                NextGenConfiguration.POLLING_PACKAGE, NextGenConfiguration.ENFORCEMENT_PACKAGE,
-                NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE, NextGenConfiguration.ARTIFACTS_PACKAGE,
-                NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE, NextGenConfiguration.CD_OVERVIEW_PACKAGE,
+                NextGenConfiguration.CREDIT_PACKAGE, NextGenConfiguration.POLLING_PACKAGE,
+                NextGenConfiguration.ENFORCEMENT_PACKAGE, NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE,
+                NextGenConfiguration.ARTIFACTS_PACKAGE, NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE,
+                NextGenConfiguration.CD_OVERVIEW_PACKAGE, NextGenConfiguration.ROLLBACK_PACKAGE,
                 NextGenConfiguration.ACTIVITY_HISTORY_PACKAGE, NextGenConfiguration.SERVICE_PACKAGE,
                 NextGenConfiguration.SERVICE_ACCOUNTS_PACKAGE, NextGenConfiguration.BUCKETS_PACKAGE,
                 NextGenConfiguration.CLUSTER_GCP_PACKAGE, NextGenConfiguration.WEBHOOK_PACKAGE,
@@ -300,7 +321,10 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.MODULEVERSION_RESOURCE_PACKAGE, NextGenConfiguration.REFRESH_RESOURCE_PACKAGE,
                 DEPLOYMENT_STAGE_PACKAGE, NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE,
                 NextGenConfiguration.TAS_PACKAGE, NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE,
-                NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE))
+                NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
+                NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
+                NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
+                NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE))
         .collect(Collectors.toSet());
   }
 

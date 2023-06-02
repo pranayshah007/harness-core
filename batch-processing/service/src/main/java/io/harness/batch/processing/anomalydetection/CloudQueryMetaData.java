@@ -163,7 +163,7 @@ public class CloudQueryMetaData {
     md5HashFunction.addCustomParams(new CustomSql(concatFunction.toString()));
     base64Function.addCustomParams(new CustomSql(md5HashFunction.toString()));
     if (isAliased) {
-      return AliasedObject.toAliasedObject(md5HashFunction, "hashcode");
+      return AliasedObject.toAliasedObject(base64Function, "hashcode");
     } else {
       return new CustomSql(base64Function.toString());
     }

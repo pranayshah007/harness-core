@@ -21,7 +21,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -627,10 +627,8 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
         .getResourceGroupFilterCriteria(resourceGroupFilterDTOArgumentCaptor.capture());
     verify(resourceGroupV2RepositoryMock, times(1)).findAll(criteria, Pageable.unpaged());
     assertThat(result.getTotalElements()).isEqualTo(permittedResourceGroups.size());
-    assertThat(result.getContent()
-                   .stream()
-                   .map((item) -> item.getResourceGroup().getIdentifier())
-                   .collect(Collectors.toList()))
+    assertThat(
+        result.getContent().stream().map(item -> item.getResourceGroup().getIdentifier()).collect(Collectors.toList()))
         .isEqualTo(permittedResourceGroups.stream().map(ResourceGroup::getIdentifier).collect(Collectors.toList()));
   }
 

@@ -89,22 +89,22 @@ public class TerragruntDestroyTaskNGTest extends CategoryTest {
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
     when(cliHelper.executeCliCommand(eq("terragrunt init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
-             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("terragrunt workspace list"), anyLong(), eq(destroyParameters.getEnvVars()),
-             any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .exitCode(0)
                         .output("")
                         .build());
     when(cliHelper.executeCliCommand(eq("terragrunt workspace new test-workspace"), anyLong(),
-             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(
         cliHelper.executeCliCommand(
             eq("terragrunt destroy -auto-approve --terragrunt-non-interactive  -target=\"test-target\"   -var-file=\"test-terragrunt-12345.tfvars\" "),
-            anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+            anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
 
     when(taskService.uploadStateFile(eq("workingDir/"), eq("test-workspace"), any(), any(), any(), any(), any()))
@@ -144,20 +144,20 @@ public class TerragruntDestroyTaskNGTest extends CategoryTest {
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
     when(cliHelper.executeCliCommand(eq("terragrunt init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
-             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("terragrunt workspace list"), anyLong(), eq(destroyParameters.getEnvVars()),
-             any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .exitCode(0)
                         .output("")
                         .build());
     when(cliHelper.executeCliCommand(eq("terragrunt workspace new test-workspace"), anyLong(),
-             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("terragrunt apply -input=false tfdestroyplan"), anyLong(),
-             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
 
     when(taskService.uploadStateFile(eq("workingDir/"), eq("test-workspace"), any(), any(), any(), any(), any()))
@@ -195,22 +195,22 @@ public class TerragruntDestroyTaskNGTest extends CategoryTest {
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
     when(cliHelper.executeCliCommand(
              eq("echo \"y\" | terragrunt run-all init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
-             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
-             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .exitCode(0)
                         .output("")
                         .build());
     when(cliHelper.executeCliCommand(eq("terragrunt run-all workspace new test-workspace"), anyLong(),
-             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+             eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(
         cliHelper.executeCliCommand(
             eq("terragrunt run-all destroy -auto-approve --terragrunt-non-interactive  -target=\"test-target\"   -var-file=\"test-terragrunt-12345.tfvars\" "),
-            anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+            anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
 
     when(taskService.uploadStateFile(eq("workingDir/"), eq("test-workspace"), any(), any(), any(), any(), any()))
@@ -246,8 +246,8 @@ public class TerragruntDestroyTaskNGTest extends CategoryTest {
         .thenReturn(terragruntContext);
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
-    when(cliHelper.executeCliCommand(
-             eq("terragrunt init"), anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+    when(cliHelper.executeCliCommand(eq("terragrunt init"), anyLong(), eq(destroyParameters.getEnvVars()), any(), any(),
+             any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder()
                         .command("terragrunt init")
                         .error("command failed")

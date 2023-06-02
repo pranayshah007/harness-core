@@ -7,7 +7,7 @@
 
 package software.wings.service.intfc.verification;
 
-import software.wings.verification.CVActivityLog;
+import software.wings.beans.dto.CVActivityLog;
 
 public interface CVActivityLogger {
   default void info(String message, long... timestampParams) {

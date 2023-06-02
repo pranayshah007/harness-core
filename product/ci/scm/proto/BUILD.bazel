@@ -10,7 +10,7 @@ load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
 
 proto_library(
     name = "ciscmpb_proto",
-    srcs = ["scm.proto"],
+    srcs = ["scm_service.proto"],
     visibility = ["//visibility:public"],
     deps = ["@com_google_protobuf//:timestamp_proto"],
 )

@@ -11,7 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -21,12 +21,12 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.CVActivityLog.CVActivityLogKeys;
+import software.wings.beans.dto.CVActivityLog.LogLevel;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.verification.CVActivityLogService;
 import software.wings.verification.CVActivityLog;
-import software.wings.verification.CVActivityLog.CVActivityLogKeys;
-import software.wings.verification.CVActivityLog.LogLevel;
 
 import com.google.inject.Inject;
 import java.time.Instant;

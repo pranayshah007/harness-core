@@ -51,6 +51,7 @@ import io.harness.persistence.UuidAccess;
 import software.wings.audit.EntityAuditRecord;
 import software.wings.audit.EntityAuditRecord.EntityAuditRecordBuilder;
 import software.wings.audit.ResourceType;
+import software.wings.beans.Account;
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
@@ -207,6 +208,15 @@ public class EntityHelper {
       affectedResourceType = entityType;
       affectedResourceOperation = type.name();
       log.info("Auditing user. User : {}. Operation : {}.", entityName, affectedResourceOperation);
+    } else if (entity instanceof Account) {
+      Account account = (Account) entity;
+      entityType = EntityType.ACCOUNT.name();
+      entityName = account.getAccountName();
+      affectedResourceId = account.getUuid();
+      affectedResourceName = account.getAccountName();
+      affectedResourceType = entityType;
+      affectedResourceOperation = type.name();
+      log.info("Auditing account. Account : {}. Operation : {}.", entityName, affectedResourceOperation);
     } else if (entity instanceof UserInvite) {
       UserInvite userInvite = (UserInvite) entity;
       entityType = EntityType.USER_INVITE.name();
@@ -845,6 +855,8 @@ public class EntityHelper {
         finalYaml = ((UserGroup) entity).getName() + YAML_EXTENSION;
       } else if (entity instanceof ApiKeyEntry) {
         finalYaml = ((ApiKeyEntry) entity).getName() + YAML_EXTENSION;
+      } else if (entity instanceof Account) {
+        finalYaml = ((Account) entity).getAccountName() + YAML_EXTENSION;
       } else {
         finalYaml = yamlPrefix;
       }

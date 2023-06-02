@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
@@ -20,8 +21,10 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(callSuper = true)
 public class RecurringDowntimeSpec extends DowntimeSpec {
-  @ApiModelProperty(required = true) @NotNull private long recurrenceEndTime;
+  @Deprecated private long recurrenceEndTime;
+  private String recurrenceEndDateTime;
   @ApiModelProperty(required = true) @NotNull private DowntimeDuration downtimeDuration;
   @ApiModelProperty(required = true) @NotNull private DowntimeRecurrence downtimeRecurrence;
 

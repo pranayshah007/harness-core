@@ -25,10 +25,11 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @Configuration
@@ -73,13 +74,13 @@ public class AccessControlPreferencePersistenceConfig extends AbstractMongoClien
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
   @Bean
-  public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter(), mongoBackendConfiguration);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, mongoBackendConfiguration);
   }
 
   @Override

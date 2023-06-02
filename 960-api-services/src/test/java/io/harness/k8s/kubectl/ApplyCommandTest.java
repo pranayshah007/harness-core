@@ -91,13 +91,13 @@ public class ApplyCommandTest extends CategoryTest {
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testDryRunClient() {
-    Kubectl client = Kubectl.client(null, null);
+    Kubectl client = KubectlFactory.getKubectlClient(null, null, null);
 
-    ApplyCommand applyCommand = client.apply().filename("manifests.yaml").dryRunClient(true).output("yaml");
+    ApplyCommand applyCommand = client.apply().filename("manifests.yaml").dryrun(true).output("yaml");
 
     assertThat(applyCommand.command().contains("--dry-run=client")).isTrue();
 
-    applyCommand.dryRunClient(false);
+    applyCommand.dryrun(false);
     assertThat(applyCommand.command().contains("--dry-run=client")).isFalse();
   }
 

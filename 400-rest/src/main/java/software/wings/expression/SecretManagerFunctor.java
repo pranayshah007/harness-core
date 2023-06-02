@@ -44,6 +44,7 @@ import software.wings.beans.ServiceVariable;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +52,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-import javax.cache.Cache;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Value;
@@ -74,7 +74,6 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private String workflowExecutionId;
   private int expressionFunctorToken;
   private final ExecutorService expressionEvaluatorExecutor;
-  private final boolean evaluateSync;
 
   @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
   @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
@@ -89,13 +88,11 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
       throw new FunctorException("Inappropriate usage of internal functor");
     }
     try {
-      if (!evaluateSync) {
-        if (expressionEvaluatorExecutor != null) {
-          // Offload expression evaluation of secrets to another threadpool.
-          return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
-        }
+      if (expressionEvaluatorExecutor != null) {
+        // Offload expression evaluation of secrets to another threadpool.
+        return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
       }
-      log.debug("Expression evaluation is being processed synchronously");
+      log.warn("Error while performing evaluating secrets async !! trying in sync");
       return obtainInternal(secretName);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretName + "]", ex);
@@ -185,7 +182,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     if (secretsCache != null) {
       delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_LOOKUPS);
-      EncryptedDataDetails cachedValue = secretsCache.get(encryptedData.getUuid());
+      EncryptedDataDetails cachedValue = secretsCache.getIfPresent(encryptedData.getUuid());
       if (cachedValue != null) {
         // Cache hit.
         delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_HITS);

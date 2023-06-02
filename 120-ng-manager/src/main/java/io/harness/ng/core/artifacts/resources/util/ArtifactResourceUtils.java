@@ -23,7 +23,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
@@ -33,21 +37,40 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
+import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
+import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
+import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
+import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
+import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
+import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
+import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
+import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.environment.beans.Environment;
@@ -70,6 +93,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -92,19 +116,25 @@ import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotFoundException;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ArtifactResourceUtils {
-  private final String preStageFqn = "pipeline/stages/";
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject TemplateResourceClient templateResourceClient;
   @Inject ServiceEntityService serviceEntityService;
   @Inject EnvironmentService environmentService;
   @Inject NexusResourceService nexusResourceService;
+  @Inject DockerResourceService dockerResourceService;
   @Inject GARResourceService garResourceService;
+  @Inject GcrResourceService gcrResourceService;
+  @Inject EcrResourceService ecrResourceService;
+  @Inject AcrResourceService acrResourceService;
   @Inject ArtifactoryResourceService artifactoryResourceService;
   @Inject AccessControlClient accessControlClient;
   @Inject CustomResourceService customResourceService;
@@ -119,6 +149,11 @@ public class ArtifactResourceUtils {
     if (isEmpty(pipelineIdentifier)) {
       return runtimeInputYaml;
     }
+
+    if (gitEntityBasicInfo == null) {
+      gitEntityBasicInfo = new GitEntityFindInfoDTO();
+    }
+
     MergeInputSetResponseDTOPMS response =
         NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier,
             projectIdentifier, pipelineIdentifier, gitEntityBasicInfo.getBranch(),
@@ -140,14 +175,20 @@ public class ArtifactResourceUtils {
     TemplateMergeResponseDTO response = NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
         accountId, orgIdentifier, projectIdentifier, gitEntityBasicInfo.getBranch(),
         gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(), BOOLEAN_FALSE_VALUE,
-        TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()));
+        TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build(), false));
     return response.getMergedPipelineYaml();
   }
 
-  public String getResolvedImagePath(String accountId, String orgIdentifier, String projectIdentifier,
+  @Nullable
+  public String getResolvedFieldValue(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String runtimeInputYaml, String imagePath, String fqnPath,
       GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
-    if (EngineExpressionEvaluator.hasExpressions(imagePath)) {
+    final ParameterField<String> imageParameterField = RuntimeInputValuesValidator.getInputSetParameterField(imagePath);
+    if (imageParameterField == null) {
+      return imagePath;
+    } else if (!imageParameterField.isExpression()) {
+      return imageParameterField.getValue();
+    } else {
       // this check assumes ui sends -1 as pipeline identifier when pipeline is under construction
       if ("-1".equals(pipelineIdentifier)) {
         throw new InvalidRequestException(String.format(
@@ -164,19 +205,47 @@ public class ArtifactResourceUtils {
       YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
       Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
 
+      EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
       if (isEmpty(serviceId)) {
         // pipelines with inline service definitions
-        serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+        serviceId = serviceRefAndFQN.getEntityRef();
       }
+      serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
+
       // get environment ref
-      String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+      String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
       List<YamlField> aliasYamlField =
           getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
       CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
           new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField);
-      imagePath = CDYamlExpressionEvaluator.renderExpression(imagePath);
+      String resolvedImagePath = CDYamlExpressionEvaluator.renderExpression(
+          imagePath, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      final ParameterField<String> imageParameter =
+          RuntimeInputValuesValidator.getInputSetParameterField(resolvedImagePath);
+      if (imageParameter == null || imageParameter.isExpression()) {
+        return null;
+      } else {
+        return imageParameter.getValue();
+      }
     }
-    return imagePath;
+  }
+
+  @Nullable
+  private String resolveEntityIdIfExpression(
+      String entityId, String mergedCompleteYaml, EntityRefAndFQN entityRefAndFQN) {
+    if (isNotEmpty(entityId) && EngineExpressionEvaluator.hasExpressions(entityId)) {
+      CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
+          new CDYamlExpressionEvaluator(mergedCompleteYaml, entityRefAndFQN.getEntityFQN(), new ArrayList<>());
+      return CDYamlExpressionEvaluator.renderExpression(entityRefAndFQN.getEntityRef());
+    }
+    return entityId;
+  }
+
+  @Nullable
+  private String getResolvedEnvironmentId(
+      String mergedCompleteYaml, String stageIdentifier, Map<FQN, Object> fqnObjectMap) {
+    EntityRefAndFQN environmentRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.ENVIRONMENT_REF);
+    return resolveEntityIdIfExpression(environmentRefAndFQN.getEntityRef(), mergedCompleteYaml, environmentRefAndFQN);
   }
 
   public void resolveParameterFieldValues(String accountId, String orgIdentifier, String projectIdentifier,
@@ -203,12 +272,14 @@ public class ArtifactResourceUtils {
     YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
     Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
 
+    EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
     if (isEmpty(serviceId)) {
       // pipelines with inline service definitions
-      serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+      serviceId = serviceRefAndFQN.getEntityRef();
     }
+    serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
     // get environment ref
-    String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+    String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
     List<YamlField> aliasYamlField =
         getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
     CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
@@ -239,13 +310,14 @@ public class ArtifactResourceUtils {
       String stageIdentifier = split[2];
       YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
       Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
-
+      EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
       if (isEmpty(serviceId)) {
         // pipelines with inline service definitions
-        serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+        serviceId = serviceRefAndFQN.getEntityRef();
       }
+      serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
       // get environment ref
-      String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+      String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
       List<YamlField> aliasYamlField =
           getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
       CDExpressionEvaluator CDExpressionEvaluator =
@@ -273,6 +345,22 @@ public class ArtifactResourceUtils {
       }
     }
     return null;
+  }
+
+  private EntityRefAndFQN getEntityRefAndFQN(
+      Map<FQN, Object> fqnToObjectMap, String stageIdentifier, String yamlTypes) {
+    for (Map.Entry<FQN, Object> mapEntry : fqnToObjectMap.entrySet()) {
+      String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
+      String fieldName = mapEntry.getKey().getFieldName();
+      if (stageIdentifier.equals(nodeStageIdentifier) && yamlTypes.equals(fieldName)
+          && mapEntry.getValue() instanceof TextNode) {
+        return EntityRefAndFQN.builder()
+            .entityRef(((TextNode) mapEntry.getValue()).asText())
+            .entityFQN(mapEntry.getKey().getExpressionFqn())
+            .build();
+      }
+    }
+    return EntityRefAndFQN.builder().build();
   }
 
   /**
@@ -337,6 +425,11 @@ public class ArtifactResourceUtils {
 
     // node from service will have updated details
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
+
+    // In case of Nexus2&3 configs, coz they have one more spec in their ArtifactConfig like no other artifact source.
+    if (artifactSpecNode.getFieldName().equals("spec")) {
+      artifactSpecNode = artifactSpecNode.getParentNode();
+    }
 
     if (artifactSpecNode.getParentNode() != null
         && "template".equals(artifactSpecNode.getParentNode().getFieldName())) {
@@ -477,24 +570,27 @@ public class ArtifactResourceUtils {
       }
     }
 
+    nexusConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    groupId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+    groupId = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
         groupId, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactRepositoryUrl = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    artifactRepositoryUrl = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
-        artifactId, fqnPath, gitEntityBasicInfo, serviceRef);
-    repositoryPort = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    artifactId = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, artifactId, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryPort = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repositoryPort, fqnPath, gitEntityBasicInfo, serviceRef);
-    packageName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    packageName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
-    group = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+    group = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
         group, fqnPath, gitEntityBasicInfo, serviceRef);
-    repositoryName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    repositoryName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    artifactPath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     return nexusResourceService.getBuildDetails(connectorRef, repositoryName, repositoryPort, artifactPath,
         repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId, extension,
@@ -552,24 +648,27 @@ public class ArtifactResourceUtils {
       }
     }
 
+    nexusConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    groupId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+    groupId = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
         groupId, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactRepositoryUrl = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    artifactRepositoryUrl = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
-        artifactId, fqnPath, gitEntityBasicInfo, serviceRef);
-    repositoryPort = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    artifactId = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, artifactId, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryPort = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repositoryPort, fqnPath, gitEntityBasicInfo, serviceRef);
-    packageName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    packageName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
-    group = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+    group = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
         group, fqnPath, gitEntityBasicInfo, serviceRef);
-    repositoryName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    repositoryName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    artifactPath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     return nexusResourceService.getBuildDetails(connectorRef, repositoryName, repositoryPort, artifactPath,
         repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId, extension,
@@ -608,23 +707,23 @@ public class ArtifactResourceUtils {
     }
 
     // Getting the resolvedConnectorRef
-    String resolvedConnectorRef = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    String resolvedConnectorRef = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, gcpConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolvedRegion
-    String resolvedRegion = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    String resolvedRegion = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolvedRepositoryName
-    String resolvedRepositoryName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRepositoryName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolvedProject
-    String resolvedProject = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    String resolvedProject = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, project, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolvedPackage
-    String resolvedPackage = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    String resolvedPackage = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, pkg, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =
@@ -632,6 +731,74 @@ public class ArtifactResourceUtils {
 
     return garResourceService.getBuildDetails(connectorRef, resolvedRegion, resolvedRepositoryName, resolvedProject,
         resolvedPackage, version, versionRegex, orgIdentifier, projectIdentifier);
+  }
+
+  public GARBuildDetailsDTO getLastSuccessfulBuildV2GAR(String gcpConnectorIdentifier, String region,
+      String repositoryName, String project, String pkg, String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, GarRequestDTO garRequestDTO, String fqnPath,
+      String serviceRef, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    if (StringUtils.isNotBlank(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+          (GoogleArtifactRegistryConfig) artifactSpecFromService;
+
+      if (isEmpty(garRequestDTO.getVersion())) {
+        garRequestDTO.setVersion((String) googleArtifactRegistryConfig.getVersion().fetchFinalValue());
+      }
+
+      if (isBlank(gcpConnectorIdentifier)) {
+        gcpConnectorIdentifier = (String) googleArtifactRegistryConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (isBlank(repositoryName)) {
+        repositoryName = (String) googleArtifactRegistryConfig.getRepositoryName().fetchFinalValue();
+      }
+
+      if (isBlank(region)) {
+        region = (String) googleArtifactRegistryConfig.getRegion().fetchFinalValue();
+      }
+
+      if (isBlank(pkg)) {
+        pkg = (String) googleArtifactRegistryConfig.getPkg().fetchFinalValue();
+      }
+
+      if (isBlank(project)) {
+        project = (String) googleArtifactRegistryConfig.getProject().fetchFinalValue();
+      }
+
+      if (isEmpty(garRequestDTO.getVersionRegex())) {
+        garRequestDTO.setVersionRegex((String) googleArtifactRegistryConfig.getVersionRegex().fetchFinalValue());
+      }
+    }
+
+    repositoryName = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    gcpConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), gcpConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    region = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), region, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    garRequestDTO.setVersion(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), garRequestDTO.getVersion(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    project = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), project, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(gcpConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    pkg = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), pkg, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    garRequestDTO.setVersionRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        garRequestDTO.getRuntimeInputYaml(), garRequestDTO.getVersionRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    return garResourceService.getLastSuccessfulBuild(
+        connectorRef, region, repositoryName, project, pkg, garRequestDTO, orgIdentifier, projectIdentifier);
   }
 
   public ArtifactoryImagePathsDTO getArtifactoryImagePath(String repositoryType, String artifactoryConnectorIdentifier,
@@ -659,7 +826,7 @@ public class ArtifactResourceUtils {
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     // resolving Repository
-    String resolvedRepository = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    String resolvedRepository = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
 
     return artifactoryResourceService.getImagePaths(
@@ -680,7 +847,7 @@ public class ArtifactResourceUtils {
         repositoryFormat = nexusRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
       }
     }
-    repositoryFormat = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    repositoryFormat = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -702,7 +869,7 @@ public class ArtifactResourceUtils {
         repositoryFormat = nexus2RegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
       }
     }
-    repositoryFormat = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+    repositoryFormat = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -744,17 +911,17 @@ public class ArtifactResourceUtils {
             script = customScriptInlineSource.getScript().fetchFinalValue().toString();
           }
         }
-        if (customScriptInfo.getInputs() != null && isEmpty(customScriptInfo.getInputs())) {
+        if (isEmpty(customScriptInfo.getInputs())) {
           inputs = customArtifactConfig.getInputs();
         }
-        if (customScriptInfo.getDelegateSelector() != null && isEmpty(customScriptInfo.getDelegateSelector())) {
+        if (isEmpty(customScriptInfo.getDelegateSelector())) {
           delegateSelector =
               (List<io.harness.plancreator.steps.TaskSelectorYaml>) customArtifactConfig.getDelegateSelectors()
                   .fetchFinalValue();
         }
       }
 
-      if (isEmpty(script) || script.equalsIgnoreCase("<+input>")) {
+      if (isEmpty(script) || NGExpressionUtils.isRuntimeField(script)) {
         return Collections.emptyList();
       }
 
@@ -785,13 +952,348 @@ public class ArtifactResourceUtils {
     if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
       script = getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
           customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
-      arrayPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+      arrayPath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
           customScriptInfo.getRuntimeInputYaml(), arrayPath, fqnPath, gitEntityBasicInfo, serviceRef);
-      versionPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+      versionPath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
           customScriptInfo.getRuntimeInputYaml(), versionPath, fqnPath, gitEntityBasicInfo, serviceRef);
     }
     return customResourceService.getBuilds(script, versionPath, arrayPath,
         NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
         delegateSelector);
+  }
+
+  public DockerBuildDetailsDTO getLastSuccessfulBuildV2Docker(String imagePath, String dockerConnectorIdentifier,
+      String tag, String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo, DockerRequestDTO requestDTO, String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
+      }
+      if (isEmpty(dockerConnectorIdentifier)) {
+        dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(requestDTO.getTag())) {
+        requestDTO.setTag((String) dockerHubArtifactConfig.getTag().fetchFinalValue());
+      }
+      if (isEmpty(requestDTO.getTagRegex())) {
+        requestDTO.setTagRegex((String) dockerHubArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+    }
+
+    dockerConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), dockerConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    imagePath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    requestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), requestDTO.getTag(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    requestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), requestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return dockerResourceService.getSuccessfulBuild(
+        connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
+  }
+
+  public GcrBuildDetailsDTO getSuccessfulBuildV2GCR(String imagePath, String gcrConnectorIdentifier, String accountId,
+      String orgIdentifier, String projectIdentifier, String fqnPath, String serviceRef, String pipelineIdentifier,
+      GitEntityFindInfoDTO gitEntityBasicInfo, GcrRequestDTO gcrRequestDTO) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = (String) gcrArtifactConfig.getImagePath().fetchFinalValue();
+      }
+
+      if (isEmpty(gcrRequestDTO.getTag())) {
+        gcrRequestDTO.setTag((String) gcrArtifactConfig.getTag().fetchFinalValue());
+      }
+
+      if (isEmpty(gcrRequestDTO.getRegistryHostname())) {
+        gcrRequestDTO.setRegistryHostname((String) gcrArtifactConfig.getRegistryHostname().fetchFinalValue());
+      }
+
+      if (isEmpty(gcrConnectorIdentifier)) {
+        gcrConnectorIdentifier = (String) gcrArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (isEmpty(gcrRequestDTO.getTagRegex())) {
+        gcrRequestDTO.setTagRegex((String) gcrArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+    }
+
+    imagePath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        gcrRequestDTO.getRuntimeInputYaml(), imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    gcrConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        gcrRequestDTO.getRuntimeInputYaml(), gcrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    gcrRequestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        gcrRequestDTO.getRuntimeInputYaml(), gcrRequestDTO.getTag(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    gcrRequestDTO.setRegistryHostname(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, gcrRequestDTO.getRuntimeInputYaml(), gcrRequestDTO.getRegistryHostname(), fqnPath,
+        gitEntityBasicInfo, serviceRef));
+
+    gcrRequestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        gcrRequestDTO.getRuntimeInputYaml(), gcrRequestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return gcrResourceService.getSuccessfulBuild(
+        connectorRef, imagePath, gcrRequestDTO, orgIdentifier, projectIdentifier);
+  }
+
+  public EcrBuildDetailsDTO getLastSuccessfulBuildV2ECR(String imagePath, String ecrConnectorIdentifier,
+      String accountId, String orgIdentifier, String projectIdentifier, String fqnPath, String serviceRef,
+      String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo, EcrRequestDTO ecrRequestDTO) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
+
+      if (isEmpty(ecrRequestDTO.getTag())) {
+        ecrRequestDTO.setTag((String) ecrArtifactConfig.getTag().fetchFinalValue());
+      }
+
+      if (isEmpty(ecrConnectorIdentifier)) {
+        ecrConnectorIdentifier = (String) ecrArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (isEmpty(ecrRequestDTO.getRegion())) {
+        ecrRequestDTO.setRegion((String) ecrArtifactConfig.getRegion().fetchFinalValue());
+      }
+
+      if (isEmpty(imagePath)) {
+        imagePath = (String) ecrArtifactConfig.getImagePath().fetchFinalValue();
+      }
+
+      if (isEmpty(ecrRequestDTO.getTagRegex())) {
+        ecrRequestDTO.setTagRegex((String) ecrArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+    }
+
+    ecrConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        ecrRequestDTO.getRuntimeInputYaml(), ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    ecrRequestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        ecrRequestDTO.getRuntimeInputYaml(), ecrRequestDTO.getTag(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    ecrRequestDTO.setRegion(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        ecrRequestDTO.getRuntimeInputYaml(), ecrRequestDTO.getRegion(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    imagePath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        ecrRequestDTO.getRuntimeInputYaml(), imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    ecrRequestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        ecrRequestDTO.getRuntimeInputYaml(), ecrRequestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return ecrResourceService.getSuccessfulBuild(
+        connectorRef, imagePath, ecrRequestDTO, orgIdentifier, projectIdentifier);
+  }
+
+  public AcrBuildDetailsDTO getLastSuccessfulBuildV2ACR(String subscriptionId, String registry, String repository,
+      String azureConnectorIdentifier, String accountId, String orgIdentifier, String projectIdentifier, String fqnPath,
+      String serviceRef, String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
+      AcrRequestDTO acrRequestDTO) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
+      resolveParameterFieldValues(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          acrRequestDTO.getRuntimeInputYaml(), acrArtifactConfig.getStringParameterFields(), fqnPath,
+          gitEntityBasicInfo, serviceRef);
+      if (isEmpty(registry)) {
+        registry = (String) acrArtifactConfig.getRegistry().fetchFinalValue();
+      }
+
+      if (isEmpty(subscriptionId)) {
+        subscriptionId = (String) acrArtifactConfig.getSubscriptionId().fetchFinalValue();
+      }
+
+      if (isEmpty(acrRequestDTO.getTag())) {
+        acrRequestDTO.setTag((String) acrArtifactConfig.getTag().fetchFinalValue());
+      }
+
+      if (isEmpty(acrRequestDTO.getTagRegex())) {
+        acrRequestDTO.setTagRegex((String) acrArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+
+      if (isEmpty(azureConnectorIdentifier)) {
+        azureConnectorIdentifier = (String) acrArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (isEmpty(repository)) {
+        repository = (String) acrArtifactConfig.getRepository().fetchFinalValue();
+      }
+    }
+
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return acrResourceService.getLastSuccessfulBuild(
+        connectorRef, subscriptionId, registry, repository, orgIdentifier, projectIdentifier, acrRequestDTO);
+  }
+
+  public NexusBuildDetailsDTO getLastSuccessfulBuildV2Nexus3(String repository, String repositoryPort,
+      String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String nexusConnectorIdentifier,
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceRef, NexusRequestDTO nexusRequestDTO) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
+      if (NexusConstant.DOCKER.equals(nexusRegistryArtifactConfig.getRepositoryFormat().getValue())) {
+        NexusRegistryDockerConfig nexusRegistryDockerConfig =
+            (NexusRegistryDockerConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
+
+        if (isEmpty(artifactRepositoryUrl)) {
+          artifactRepositoryUrl = (String) nexusRegistryDockerConfig.getRepositoryUrl().fetchFinalValue();
+        }
+
+        if (isEmpty(artifactPath)) {
+          artifactPath = (String) nexusRegistryDockerConfig.getArtifactPath().fetchFinalValue();
+        }
+
+        if (isEmpty(repositoryFormat)) {
+          repositoryFormat = (String) nexusRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+        }
+
+        if (isEmpty(nexusConnectorIdentifier)) {
+          nexusConnectorIdentifier = (String) nexusRegistryArtifactConfig.getConnectorRef().fetchFinalValue();
+        }
+
+        if (isEmpty(repositoryPort)) {
+          repositoryPort = (String) nexusRegistryDockerConfig.getRepositoryPort().fetchFinalValue();
+        }
+
+        if (isEmpty(nexusRequestDTO.getTag())) {
+          nexusRequestDTO.setTag((String) nexusRegistryArtifactConfig.getTag().fetchFinalValue());
+        }
+
+        if (isEmpty(nexusRequestDTO.getTagRegex())) {
+          nexusRequestDTO.setTagRegex((String) nexusRegistryArtifactConfig.getTagRegex().fetchFinalValue());
+        }
+
+        if (isEmpty(repository)) {
+          repository = (String) nexusRegistryArtifactConfig.getRepository().fetchFinalValue();
+        }
+
+      } else {
+        throw new InvalidRequestException("Please select a docker artifact");
+      }
+    }
+
+    nexusConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryPort = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), repositoryPort, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    artifactRepositoryUrl = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    nexusRequestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), nexusRequestDTO.getTag(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    nexusRequestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), nexusRequestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    artifactPath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    repository = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        nexusRequestDTO.getRuntimeInputYaml(), repository, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return nexusResourceService.getSuccessfulBuild(connectorRef, repository, repositoryPort, artifactPath,
+        repositoryFormat, artifactRepositoryUrl, nexusRequestDTO, orgIdentifier, projectIdentifier);
+  }
+
+  public ArtifactoryBuildDetailsDTO getLastSuccessfulBuildV2Artifactory(String repository, String artifactPath,
+      String repositoryFormat, String artifactRepositoryUrl, String artifactoryConnectorIdentifier, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceRef, ArtifactoryRequestDTO artifactoryRequestDTO) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+      if (isEmpty(repository)) {
+        repository = (String) artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue();
+      }
+      // There is an overload in this endpoint so to make things clearer:
+      // artifactPath is the artifactDirectory for Artifactory Generic
+      // artifactPath is the artifactPath for Artifactory Docker
+      if (isEmpty(artifactPath)) {
+        if (artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().equals("docker")) {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        } else {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactDirectory().fetchFinalValue();
+        }
+      }
+
+      if (isEmpty(artifactRepositoryUrl)) {
+        artifactRepositoryUrl = (String) artifactoryRegistryArtifactConfig.getRepositoryUrl().fetchFinalValue();
+      }
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier = (String) artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+      if (isEmpty(artifactoryRequestDTO.getTagRegex())) {
+        artifactoryRequestDTO.setTagRegex((String) artifactoryRegistryArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+
+      if (isEmpty(repositoryFormat)) {
+        repositoryFormat = (String) artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+      }
+
+      if (isEmpty(artifactoryRequestDTO.getTag())) {
+        artifactoryRequestDTO.setTag((String) artifactoryRegistryArtifactConfig.getTag().fetchFinalValue());
+      }
+    }
+
+    artifactoryConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, artifactoryRequestDTO.getRuntimeInputYaml(), artifactoryConnectorIdentifier, fqnPath,
+        gitEntityBasicInfo, serviceRef);
+    repository = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactoryRequestDTO.getRuntimeInputYaml(), repository, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactoryRequestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactoryRequestDTO.getRuntimeInputYaml(), artifactoryRequestDTO.getTag(), fqnPath, gitEntityBasicInfo,
+        serviceRef));
+
+    artifactoryRequestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, artifactoryRequestDTO.getRuntimeInputYaml(), artifactoryRequestDTO.getTagRegex(), fqnPath,
+        gitEntityBasicInfo, serviceRef));
+
+    artifactPath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactoryRequestDTO.getRuntimeInputYaml(), artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    artifactRepositoryUrl = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactoryRequestDTO.getRuntimeInputYaml(), artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
+        artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return artifactoryResourceService.getSuccessfulBuild(connectorRef, repository, artifactPath, repositoryFormat,
+        artifactRepositoryUrl, artifactoryRequestDTO, orgIdentifier, projectIdentifier);
+  }
+
+  @Data
+  @Builder
+  private static class EntityRefAndFQN {
+    String entityRef;
+    String entityFQN;
   }
 }

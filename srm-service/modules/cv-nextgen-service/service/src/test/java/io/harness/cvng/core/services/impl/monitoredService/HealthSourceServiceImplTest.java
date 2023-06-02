@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
@@ -26,10 +27,13 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceS
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.encryption.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.rule.Owner;
 
@@ -48,6 +52,7 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
   @Inject HealthSourceService healthSourceService;
   @Inject MetricPackService metricPackService;
   @Inject CVConfigService cvConfigService;
+  @Inject MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
 
   String identifier;
   String name;
@@ -115,6 +120,34 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfig.getMetricPack())
         .isEqualTo(metricPackService.getMetricPack(accountId, orgIdentifier, projectIdentifier,
             DataSourceType.APP_DYNAMICS, CVNextGenConstants.ERRORS_PACK_IDENTIFIER));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testCreate_MonitoringSourcePTCreation() {
+    HealthSource healthSource = createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSourceService.create(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier,
+        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource), true);
+    String workerId = monitoringSourcePerpetualTaskService.getDeploymentWorkerId(accountId, orgIdentifier,
+        projectIdentifier, connectorIdentifier, nameSpaceIdentifier + "/" + healthSource.getIdentifier());
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks =
+        monitoringSourcePerpetualTaskService.listByConnectorIdentifier(
+            accountId, orgIdentifier, projectIdentifier, connectorIdentifier, Scope.PROJECT);
+    assertThat(monitoringSourcePerpetualTasks).hasSize(2);
+
+    // Delete HealthSource and create new one and make sure it is created with new connector id
+    healthSourceService.delete(
+        accountId, orgIdentifier, projectIdentifier, nameSpaceIdentifier, Arrays.asList(healthSource.getIdentifier()));
+    connectorIdentifier = "connector2";
+    healthSource = createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSourceService.create(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier,
+        monitoredServiceIdentifier, nameSpaceIdentifier, Sets.newHashSet(healthSource), true);
+    workerId = monitoringSourcePerpetualTaskService.getDeploymentWorkerId(accountId, orgIdentifier, projectIdentifier,
+        connectorIdentifier, nameSpaceIdentifier + "/" + healthSource.getIdentifier());
+    monitoringSourcePerpetualTasks = monitoringSourcePerpetualTaskService.listByConnectorIdentifier(
+        accountId, orgIdentifier, projectIdentifier, connectorIdentifier, Scope.PROJECT);
+    assertThat(monitoringSourcePerpetualTasks).hasSize(2);
   }
 
   @Test

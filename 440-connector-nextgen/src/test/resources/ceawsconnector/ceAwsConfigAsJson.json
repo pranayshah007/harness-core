@@ -16,7 +16,8 @@
         "VISIBILITY",
         "OPTIMIZATION",
         "GOVERNANCE",
-        "COMMITMENT_ORCHESTRATOR"
+        "COMMITMENT_ORCHESTRATOR",
+        "CLUSTER_ORCHESTRATOR"
       ],
       "curAttributes": {
         "reportName": "report_name_utsav",

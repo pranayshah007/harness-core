@@ -23,13 +23,16 @@ import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExcepti
 import io.harness.expression.common.ExpressionConstants;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.DateTimeFunctor;
+import io.harness.serializer.JsonUtils;
 import io.harness.text.resolver.ExpressionResolver;
 import io.harness.text.resolver.StringReplacer;
+import io.harness.text.resolver.StringReplacerResponse;
 import io.harness.text.resolver.TrackingExpressionResolver;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +60,9 @@ public class EngineExpressionEvaluator {
 
   private static final Pattern VALID_VARIABLE_FIELD_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   private static final Pattern ALIAS_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
+  public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
+  public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
+  public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
 
   private static final int MAX_DEPTH = 15;
 
@@ -241,14 +247,30 @@ public class EngineExpressionEvaluator {
     return evaluateExpressionInternal(expression, prepareContext(ctx), MAX_DEPTH, expressionMode);
   }
 
-  private Object evaluateExpressionInternal(
+  protected Object evaluateExpressionInternal(
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     EvaluateExpressionResolver resolver = new EvaluateExpressionResolver(this, ctx, depth, expressionMode);
-    String finalExpression = runStringReplacer(expression, resolver);
+
     try {
-      return evaluateInternal(finalExpression, ctx);
+      if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
+        StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
+        Object evaluatedExpression = evaluateInternalV2(replacerResponse, ctx);
+
+        // If the evaluated expression has nested expressions again, then evaluate else return
+        if (evaluatedExpression instanceof String && hasExpressions((String) evaluatedExpression)) {
+          return evaluateExpressionInternal((String) evaluatedExpression, ctx, depth - 1, expressionMode);
+        }
+        return evaluatedExpression;
+      } else {
+        String finalExpression = runStringReplacer(expression, resolver);
+        return evaluateInternal(finalExpression, ctx);
+      }
     } catch (JexlException ex) {
+      log.error(format("Failed to evaluate final expression: %s", expression), ex);
+      if (expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
+        return expression;
+      }
       if (ex.getCause() instanceof EngineFunctorException) {
         throw new EngineExpressionEvaluationException(
             (EngineFunctorException) ex.getCause(), createExpression(expression));
@@ -256,7 +278,6 @@ public class EngineExpressionEvaluator {
         // For backwards compatibility.
         throw new EngineExpressionEvaluationException((FunctorException) ex.getCause(), createExpression(expression));
       }
-      log.error(format("Failed to evaluate final expression: %s", expression), ex);
       throw NestedExceptionUtils.hintWithExplanationException(
           JexlRuntimeExceptionHandler.getHintMessage(ex, expression),
           JexlRuntimeExceptionHandler.getExplanationMessage(ex),
@@ -425,17 +446,29 @@ public class EngineExpressionEvaluator {
     return object;
   }
 
-  private Object evaluatePrefixCombinations(
+  protected Object evaluatePrefixCombinations(
       @NotNull String expressionBlock, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     // Apply all the prefixes and return first one that evaluates successfully.
     List<String> finalExpressions = preProcessExpression(expressionBlock);
-    Object object = null;
+    Object object = evaluateCombinations(expressionBlock, finalExpressions, ctx, depth, expressionMode);
+    if (object == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
+      return ExpressionConstants.EXPR_START + expressionBlock + ExpressionConstants.EXPR_END;
+    }
+    return object;
+  }
+
+  protected Object evaluateCombinations(String expressionBlock, List<String> finalExpressions,
+      @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
+    Object object;
     for (String finalExpression : finalExpressions) {
       try {
         if (hasExpressions(finalExpression)) {
           object = evaluateExpressionInternal(finalExpression, ctx, depth - 1, expressionMode);
         } else {
           object = evaluateInternal(finalExpression, ctx);
+        }
+        if (object != null) {
+          return object;
         }
       } catch (JexlException ex) {
         if (ex.getCause() instanceof EngineFunctorException) {
@@ -446,20 +479,12 @@ public class EngineExpressionEvaluator {
           throw new EngineExpressionEvaluationException(
               (FunctorException) ex.getCause(), createExpression(expressionBlock));
         }
-        log.debug(format("Failed to evaluate final expression: %s", finalExpression), ex);
       } catch (EngineFunctorException ex) {
         throw new EngineExpressionEvaluationException(ex, createExpression(expressionBlock));
       } catch (FunctorException ex) {
         // For backwards compatibility.
         throw new EngineExpressionEvaluationException(ex, createExpression(expressionBlock));
       }
-
-      if (object != null) {
-        return object;
-      }
-    }
-    if (object == null && expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
-      return ExpressionConstants.EXPR_START + expressionBlock + ExpressionConstants.EXPR_END;
     }
     return null;
   }
@@ -476,7 +501,7 @@ public class EngineExpressionEvaluator {
    * @param expression the original expression
    * @return the final expression
    */
-  private List<String> preProcessExpression(@NotNull String expression) {
+  protected List<String> preProcessExpression(@NotNull String expression) {
     String normalizedExpression = applyStaticAliases(expression);
     if (hasExpressions(normalizedExpression)) {
       return Collections.singletonList(normalizedExpression);
@@ -493,7 +518,7 @@ public class EngineExpressionEvaluator {
    * @param expression the original expression
    * @return the final expression
    */
-  private String applyStaticAliases(@NotNull String expression) {
+  protected String applyStaticAliases(@NotNull String expression) {
     for (int i = 0; i < ExpressionEvaluatorUtils.DEPTH_LIMIT; i++) {
       if (staticAliases.containsKey(expression)) {
         expression = staticAliases.get(expression);
@@ -527,8 +552,46 @@ public class EngineExpressionEvaluator {
   }
 
   protected Object evaluateByCreatingExpression(@NotNull String expression, @NotNull EngineJexlContext ctx) {
+    if (ctx.isFeatureFlagEnabled(PIE_EXECUTION_JSON_SUPPORT)) {
+      return engine.createScript(expression).execute(ctx);
+    }
     JexlExpression jexlExpression = engine.createExpression(expression);
     return jexlExpression.evaluate(ctx);
+  }
+
+  /**
+   * Evaluate an expression with the given context. This variant is non-recursive and doesn't support harness
+   * expressions - variables delimited by <+...>.
+   * It checks smartly if rendered expressions needs to be evaluated or not
+   */
+  protected Object evaluateInternalV2(@NotNull StringReplacerResponse response, @NotNull EngineJexlContext ctx) {
+    return evaluateByCreatingExpressionV2(response, ctx);
+  }
+
+  protected Object evaluateByCreatingExpressionV2(
+      @NotNull StringReplacerResponse response, @NotNull EngineJexlContext ctx) {
+    // All expressions in the input are rendered thus no jexl evaluation required.
+    String expression = response.getFinalExpressionValue();
+
+    if (ctx.isFeatureFlagEnabled(PIE_EXECUTION_JSON_SUPPORT)) {
+      try {
+        return engine.createScript(expression).execute(ctx);
+      } catch (Exception e) {
+        if (response.isOnlyRenderedExpressions()) {
+          return expression;
+        }
+        throw e;
+      }
+    }
+    try {
+      JexlExpression jexlExpression = engine.createExpression(expression);
+      return jexlExpression.evaluate(ctx);
+    } catch (Exception e) {
+      if (response.isOnlyRenderedExpressions()) {
+        return expression;
+      }
+      throw e;
+    }
   }
 
   protected Object evaluateByCreatingScript(@NotNull String expression, @NotNull EngineJexlContext ctx) {
@@ -567,6 +630,13 @@ public class EngineExpressionEvaluator {
     StringReplacer replacer =
         new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);
     return replacer.replace(expression);
+  }
+
+  private static StringReplacerResponse runStringReplacerWithResponse(
+      @NotNull String expression, @NotNull ExpressionResolver resolver) {
+    StringReplacer replacer =
+        new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);
+    return replacer.replaceWithRenderCheck(expression);
   }
 
   public static boolean isSingleExpression(String str) {
@@ -627,12 +697,23 @@ public class EngineExpressionEvaluator {
       return expressionMode;
     }
 
+    public boolean isAnyCollection(Object value) {
+      return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
+          || value instanceof Iterable;
+    }
+
     @Override
     public String resolveInternal(String expression) {
       try {
         Object value = engineExpressionEvaluator.evaluateExpressionBlock(expression, ctx, depth, expressionMode);
         if (value == null) {
           unresolvedExpressions.add(expression);
+        }
+        if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
+          // Use the asJson only when the FF is enabled.
+          if (isAnyCollection(value)) {
+            return JsonUtils.asJson(value);
+          }
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {
@@ -665,6 +746,11 @@ public class EngineExpressionEvaluator {
     @Override
     public ExpressionMode getExpressionMode() {
       return expressionMode;
+    }
+
+    @Override
+    public Object getContextValue(String key) {
+      return ctx.get(key);
     }
 
     @Override
@@ -710,6 +796,11 @@ public class EngineExpressionEvaluator {
     }
 
     @Override
+    public Object getContextValue(String key) {
+      return ctx.get(key);
+    }
+
+    @Override
     public String resolveInternal(String expression) {
       PartialEvaluateResult result = engineExpressionEvaluator.partialEvaluateExpressionBlock(
           expression, ctx, partialCtx, depth - 1, expressionMode);
@@ -735,6 +826,11 @@ public class EngineExpressionEvaluator {
     @Override
     public ExpressionMode getExpressionMode() {
       return expressionMode;
+    }
+
+    @Override
+    public Object getContextValue(String key) {
+      return partialCtx.get(key);
     }
 
     @Override

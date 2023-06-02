@@ -12,7 +12,6 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.analysis.entities.VerificationTaskBase;
-import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -29,6 +28,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -76,6 +76,7 @@ public class CompositeSLORecord extends VerificationTaskBase implements Persiste
   @Setter(AccessLevel.PRIVATE) private long epochMinute;
   private double runningBadCount;
   private double runningGoodCount;
+  private Map<String, SLIRecord> scopedIdentifierSLIRecordMap;
 
   private int sloVersion;
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());

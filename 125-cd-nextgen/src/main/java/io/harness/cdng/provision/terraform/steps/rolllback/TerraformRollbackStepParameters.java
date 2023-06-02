@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.provision.terraform.TerraformCliOptionFlag;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -39,4 +40,6 @@ public class TerraformRollbackStepParameters implements SpecParameters {
   private ParameterField<String> provisionerIdentifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> skipRefreshCommand;
+  List<TerraformCliOptionFlag> commandFlags;
 }

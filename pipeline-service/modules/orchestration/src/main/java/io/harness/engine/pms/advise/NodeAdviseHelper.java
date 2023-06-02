@@ -9,7 +9,7 @@ package io.harness.engine.pms.advise;
 
 import io.harness.engine.pms.advise.publisher.NodeAdviseEventPublisher;
 import io.harness.execution.NodeExecution;
-import io.harness.plan.PlanNode;
+import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 
@@ -18,12 +18,12 @@ import com.google.inject.Inject;
 public class NodeAdviseHelper {
   @Inject private NodeAdviseEventPublisher nodeAdviseEventPublisher;
 
-  public void queueAdvisingEvent(NodeExecution nodeExecution, PlanNode planNode, Status fromStatus) {
+  public void queueAdvisingEvent(NodeExecution nodeExecution, Node planNode, Status fromStatus) {
     nodeAdviseEventPublisher.publishEvent(nodeExecution, planNode, fromStatus);
   }
 
   public void queueAdvisingEvent(
-      NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus) {
+      NodeExecution nodeExecution, FailureInfo failureInfo, Node planNode, Status fromStatus) {
     nodeAdviseEventPublisher.publishEvent(nodeExecution, failureInfo, planNode, fromStatus);
   }
 }

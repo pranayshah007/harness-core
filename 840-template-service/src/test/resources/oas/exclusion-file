@@ -1,3 +1,0 @@
-dto-exclusion: io.harness.template.beans.TemplateDeleteListRequestDTO
-dto-exclusion: io.harness.template.TemplateFilterPropertiesDTO
-operation-exclusion: io.harness.template.resources.NGTemplateResource.getTemplateReferences

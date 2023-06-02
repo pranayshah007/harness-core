@@ -135,6 +135,8 @@ public class GithubDTOToEntity implements ConnectorDTOToEntityMapper<GithubConne
             .applicationId(githubAppSpecDTO.getApplicationId())
             .installationId(githubAppSpecDTO.getInstallationId())
             .privateKeyRef(SecretRefHelper.getSecretConfigString(githubAppSpecDTO.getPrivateKeyRef()))
+            .installationIdRef(SecretRefHelper.getSecretConfigString(githubAppSpecDTO.getInstallationIdRef()))
+            .applicationIdRef(SecretRefHelper.getSecretConfigString(githubAppSpecDTO.getApplicationIdRef()))
             .build();
       case OAUTH:
         final GithubOauthDTO GithubOauthDTO = (GithubOauthDTO) spec;

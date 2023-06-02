@@ -21,4 +21,7 @@ public class GitFileLocationDetails {
   String branch;
   String commitId;
   String filepath;
+  // Forced to add this field here for now to maintain backward compatibility
+  // TODO see how we can change name of the class to suit the logic better
+  boolean getOnlyFileContent;
 }

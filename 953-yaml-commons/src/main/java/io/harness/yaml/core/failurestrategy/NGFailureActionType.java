@@ -30,7 +30,9 @@ public enum NGFailureActionType {
   @JsonProperty(NGFailureActionTypeConstants.MANUAL_INTERVENTION)
   MANUAL_INTERVENTION(NGFailureActionTypeConstants.MANUAL_INTERVENTION),
   @JsonProperty(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES)
-  PROCEED_WITH_DEFAULT_VALUES(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES);
+  PROCEED_WITH_DEFAULT_VALUES(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES),
+  @JsonProperty(NGFailureActionTypeConstants.MARK_AS_FAILURE)
+  MARK_AS_FAILURE(NGFailureActionTypeConstants.MARK_AS_FAILURE);
 
   String yamlName;
 

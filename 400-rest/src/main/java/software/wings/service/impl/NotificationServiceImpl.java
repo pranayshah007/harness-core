@@ -19,6 +19,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.ActionableNotification;
@@ -60,6 +61,7 @@ public class NotificationServiceImpl implements NotificationService {
   @Inject private NotificationDispatcherService notificationDispatcherService;
   @Inject private NotificationMessageResolver notificationMessageResolver;
   @Inject private MainConfiguration configuration;
+  @Inject private HtmlInputSanitizer userNameSanitizer;
 
   @Override
   public PageResponse<Notification> list(PageRequest<Notification> pageRequest) {
@@ -139,8 +141,9 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setNotificationTemplateId(ARTIFACT_APPROVAL_NOTIFICATION_STATUS.name());
         placeHolderData.put("NOTIFICATION_STATUS", approvalNotification.getStage().name().toLowerCase());
         placeHolderData.put("USER_NAME",
-            approvalNotification.getLastUpdatedBy() == null ? "Harness System"
-                                                            : approvalNotification.getLastUpdatedBy().getName());
+            approvalNotification.getLastUpdatedBy() == null
+                ? "Harness System"
+                : userNameSanitizer.sanitizeInput(approvalNotification.getLastUpdatedBy().getName()));
       } else if (notification.getNotificationTemplateId() == null) {
         notification.setNotificationTemplateId(ARTIFACT_APPROVAL_NOTIFICATION.name());
       }

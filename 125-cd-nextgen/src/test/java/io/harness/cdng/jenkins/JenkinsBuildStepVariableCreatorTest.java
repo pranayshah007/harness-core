@@ -91,7 +91,8 @@ public class JenkinsBuildStepVariableCreatorTest extends CategoryTest {
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.jobParameter.name",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.connectorRef",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.jobParameter.booleankey",
-            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.jobName");
+            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.jobName",
+            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -103,7 +104,6 @@ public class JenkinsBuildStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.type",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.identifier",
-            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.when",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.startTs",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.endTs");
   }

@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.AzureArtifactsSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -98,9 +99,16 @@ public class AzureArtifactsOutcome implements ArtifactOutcome {
    * */
   String imagePullSecret;
 
+  Map<String, String> metadata;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return AzureArtifactsSummary.builder().packageName(packageName).version(version).packageId(packageId).build();
+    return AzureArtifactsSummary.builder()
+        .packageName(packageName)
+        .version(version)
+        .packageId(packageId)
+        .tag(packageName + ":" + version)
+        .build();
   }
 
   @Override

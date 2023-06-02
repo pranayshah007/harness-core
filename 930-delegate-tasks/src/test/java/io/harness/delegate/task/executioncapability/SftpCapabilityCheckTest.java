@@ -22,12 +22,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SftpCapabilityCheck.class})
+@RunWith(MockitoJUnitRunner.class)
 public class SftpCapabilityCheckTest extends CategoryTest {
   private final SftpCapability sftpCapability = SftpCapability.builder().sftpUrl("sftp:\\\\10.0.0.1").build();
 
@@ -37,10 +36,10 @@ public class SftpCapabilityCheckTest extends CategoryTest {
   @Owner(developers = MATT)
   @Category(UnitTests.class)
   public void shouldTestPerformCapabilityCheck() throws Exception {
-    SSHClient sshClient = PowerMockito.mock(SSHClient.class);
-    PowerMockito.whenNew(SSHClient.class).withAnyArguments().thenReturn(sshClient);
-    CapabilityResponse capabilityResponse = sftpCapabilityCheck.performCapabilityCheck(sftpCapability);
-    assertThat(capabilityResponse).isNotNull();
-    assertThat(capabilityResponse.isValidated()).isTrue();
+    try (MockedConstruction<SSHClient> ignored = Mockito.mockConstruction(SSHClient.class)) {
+      CapabilityResponse capabilityResponse = sftpCapabilityCheck.performCapabilityCheck(sftpCapability);
+      assertThat(capabilityResponse).isNotNull();
+      assertThat(capabilityResponse.isValidated()).isTrue();
+    }
   }
 }

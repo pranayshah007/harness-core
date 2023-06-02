@@ -12,11 +12,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/harness/harness-core/commons/go/lib/logs"
 	"github.com/harness/harness-core/product/log-service/client"
@@ -177,6 +178,8 @@ func (b *RemoteWriter) Write(p []byte) (n int, err error) {
 			b.Lock()
 			b.pending = append(b.pending, line)
 			b.Unlock()
+		} else {
+			b.log.Infow("stream closed but still attempting to write", "key", b.key)
 		}
 
 		b.Lock()
@@ -216,6 +219,8 @@ func (b *RemoteWriter) Close() error {
 	}
 	err := b.upload()
 	// Close the log stream once upload has completed. Log in case of any error
+
+	b.log.Infow("content before closing stream on ", "key", b.key, "logs", string(b.prev))
 
 	if errc := b.client.Close(context.Background(), b.key); errc != nil {
 		b.log.Errorw("failed to close log stream", "key", b.key, zap.Error(errc))

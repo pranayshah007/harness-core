@@ -25,13 +25,14 @@ import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
+import io.harness.cdng.hooks.steps.ServiceHooksStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
-import io.harness.cdng.service.steps.ServiceStepV3Parameters;
-import io.harness.cdng.service.steps.ServiceStepV3Parameters.ServiceStepV3ParametersBuilder;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters.ServiceStepV3ParametersBuilder;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -62,7 +63,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -81,16 +81,16 @@ public class ServiceAllInOnePlanCreatorUtils {
   public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
       ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
-    if (isConcreteServiceRefUnavailable(serviceYamlV2) && isConcreteUseFromStageUnavailable(serviceYamlV2)) {
+    if (isConcreteServiceRefUnavailable(serviceYamlV2) && serviceYamlV2.getUseFromStage() == null) {
       throw new InvalidRequestException("At least one of serviceRef and useFromStage fields is required.");
     }
 
     if (serviceYamlV2.getServiceRef() != null && isNotBlank(serviceYamlV2.getServiceRef().getValue())
-        && serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getValue() != null) {
+        && serviceYamlV2.getUseFromStage() != null) {
       throw new InvalidRequestException("Only one of serviceRef and useFromStage fields are allowed.");
     }
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
-        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage().getValue(), specField)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
 
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -103,10 +103,18 @@ public class ServiceAllInOnePlanCreatorUtils {
       serviceOverrideInputs =
           ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
     }
+
+    ParameterField<String> infraRef = ParameterField.createValueField(null);
+    if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
+    } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+    }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
                                                               .inputs(finalServiceYaml.getServiceInputs())
-
+                                                              .infraId(infraRef)
                                                               .childrenNodeIds(childrenNodeIds)
                                                               .serviceOverrideInputs(serviceOverrideInputs)
                                                               .deploymentType(serviceType)
@@ -121,7 +129,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       KryoSerializer kryoSerializer, ServiceYamlV2 serviceYamlV2, EnvironmentGroupYaml environmentGroupYaml,
       String serviceNodeId, String nextNodeId, ServiceDefinitionType serviceType) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
-        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage().getValue(), specField)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
 
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -159,7 +167,7 @@ public class ServiceAllInOnePlanCreatorUtils {
       KryoSerializer kryoSerializer, ServiceYamlV2 serviceYamlV2, EnvironmentsYaml environmentsYaml,
       String serviceNodeId, String nextNodeId, ServiceDefinitionType serviceType) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
-        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage().getValue(), specField)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
 
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -221,8 +229,7 @@ public class ServiceAllInOnePlanCreatorUtils {
   }
 
   private boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
-    return serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getValue() != null
-        && isNotEmpty(serviceYamlV2.getUseFromStage().getValue().getStage());
+    return serviceYamlV2.getUseFromStage() != null && serviceYamlV2.getUseFromStage().getStage() != null;
   }
 
   private List<String> addChildrenNodes(
@@ -277,7 +284,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .stepParameters(new EmptyStepParameters())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
             .skipExpressionChain(true)
             .skipGraphType(SkipType.SKIP_TREE)
@@ -285,6 +292,25 @@ public class ServiceAllInOnePlanCreatorUtils {
     nodeIds.add(configFilesNode.getUuid());
     planCreationResponseMap.put(
         configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
+
+    // Add serviceHooks node
+    final PlanNode serviceHooksNode =
+        PlanNode.builder()
+            .uuid("hooks-" + UUIDGenerator.generateUuid())
+            .stepType(ServiceHooksStep.STEP_TYPE)
+            .name(PlanCreatorConstants.SERVICE_HOOKS_NODE_NAME)
+            .identifier(YamlTypes.SERVICE_HOOKS)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    nodeIds.add(serviceHooksNode.getUuid());
+    planCreationResponseMap.put(
+        serviceHooksNode.getUuid(), PlanCreationResponse.builder().planNode(serviceHooksNode).build());
 
     // Add Azure settings node
     if (serviceType == ServiceDefinitionType.AZURE_WEBAPP) {
@@ -356,15 +382,15 @@ public class ServiceAllInOnePlanCreatorUtils {
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
     final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     String stage = useFromStage.getStage();
-    if (stage == null) {
-      throw new InvalidRequestException("Stage identifier not present in useFromStage");
+    if (stage.isBlank()) {
+      throw new InvalidRequestException("Stage identifier is empty in useFromStage");
     }
 
     try {
       YamlField propagatedFromStageConfig = PlanCreatorUtils.getStageConfig(serviceField, stage);
       if (propagatedFromStageConfig == null) {
-        throw new InvalidArgumentsException("Invalid identifier [" + stage
-            + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        throw new InvalidArgumentsException(
+            "Stage with identifier [" + stage + "] given for service propagation does not exist.");
       }
 
       DeploymentStageNode stageElementConfig =
@@ -412,17 +438,6 @@ public class ServiceAllInOnePlanCreatorUtils {
         return NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getServiceRef().getExpressionValue());
       } else {
         return isBlank(serviceYamlV2.getServiceRef().getValue());
-      }
-    }
-    return true;
-  }
-
-  private boolean isConcreteUseFromStageUnavailable(@NonNull ServiceYamlV2 serviceYamlV2) {
-    if (serviceYamlV2.getUseFromStage() != null) {
-      if (serviceYamlV2.getUseFromStage().isExpression()) {
-        return NGExpressionUtils.matchesRawInputSetPatternV2(serviceYamlV2.getUseFromStage().getExpressionValue());
-      } else {
-        return Objects.isNull(serviceYamlV2.getUseFromStage().getValue());
       }
     }
     return true;

@@ -34,12 +34,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(IndexManager.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ApplicationReadyListenerTest extends CategoryTest {
   private ApplicationReadyListener listener;
 

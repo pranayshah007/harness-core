@@ -13,6 +13,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
@@ -44,6 +45,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -155,6 +157,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
               .connectorInfoDTO(
                   cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
               .filesToVariablesMap(filesToVariablesMap)
+              .prTitle(gitOpsSpecParams.prTitle.getValue())
               .build();
 
       final TaskData taskData = TaskData.builder()
@@ -222,11 +225,18 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
         // Convert variables map from Map<String, Object> to Map<String, String>
         for (String key : cluster.getVariables().keySet()) {
           Object value = cluster.getVariables().get(key);
+          if (value instanceof String && ((String) value).startsWith("${ngSecretManager.obtain")) {
+            continue;
+          }
           if (value.getClass() == ParameterField.class) {
             ParameterField<Object> p = (ParameterField) value;
-            flattennedVariables.put(key, p.getValue().toString());
+            populateVariables(p, flattennedVariables, key, p.getValue().toString());
           } else {
-            flattennedVariables.put(key, value.toString());
+            if (value != null && !"null".equals(String.valueOf(value)) && !String.valueOf(value).isBlank()) {
+              flattennedVariables.put(key, value.toString());
+            } else {
+              log.info(format("Ignoring key %s value %s", key, value.toString()));
+            }
           }
         }
         // Convert variables from spec parameters
@@ -252,9 +262,21 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
             }
           }
 
-          ExpressionEvaluatorUtils.updateExpressions(
-              copyParameter, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
-          flattennedVariables.put(variableEntry.getKey(), copyParameter.getValue().toString());
+          ExpressionEvaluatorUtils.updateExpressions(copyParameter,
+              new CDExpressionResolveFunctor(
+                  engineExpressionService, ambiance, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+
+          if (copyParameter.getValue() != null) {
+            populateVariables(
+                copyParameter, flattennedVariables, variableEntry.getKey(), copyParameter.getValue().toString());
+          }
+
+          for (String key : flattennedVariables.keySet()) {
+            String value = flattennedVariables.get(key);
+            if (value.matches("[-+]?[0-9]*\\.0")) {
+              flattennedVariables.put(key, value.split("\\.")[0]);
+            }
+          }
         }
         filePathsToVariables.put(file, flattennedVariables);
       }
@@ -262,6 +284,20 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
       throw new InvalidRequestException("No outcome published from GitOpsCluster Step");
     }
     return filePathsToVariables;
+  }
+
+  private void populateVariables(
+      ParameterField parameter, Map<String, String> flattennedVariables, String key, String value) {
+    if (isVariableNotEmpty(parameter)) {
+      flattennedVariables.put(key, value);
+    } else {
+      log.info(format("Ignoring key %s value %s", key, value));
+    }
+  }
+
+  private boolean isVariableNotEmpty(ParameterField parameter) {
+    return parameter.getValue() != null && !String.valueOf(parameter.getValue()).isBlank()
+        && !"null".equals(String.valueOf(parameter.getValue()));
   }
 
   @Override

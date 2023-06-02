@@ -21,20 +21,25 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.fqn.FQNNode.NodeType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.serializer.JsonUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MergeHelper {
   public final Set<String> acceptAllChildrenKeys = new HashSet<>(
       Arrays.asList("service", "environment", "template", "services", "environments", "environmentGroup"));
+  public static final String PATH_SEP = "/";
 
   public String mergeInputSetFormatYamlToOriginYaml(String originYaml, String inputSetFormatYaml) {
     return mergeRuntimeInputValuesIntoOriginalYaml(originYaml, inputSetFormatYaml, false);
@@ -84,12 +90,10 @@ public class MergeHelper {
         originalYamlConfig, inputSetConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
   }
 
-  public JsonNode mergeExecutionInputIntoOriginalYamlJsonNode(
-      String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
-    YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator, true);
-
-    return mergedYamlConfig.getYamlMap();
+  public JsonNode mergeExecutionInputIntoOriginalJsonNode(
+      JsonNode originalJsonNode, JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalJsonNode, inputSetPipelineCompJsonNode, appendInputSetValidator, true, false);
   }
 
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(String originalYaml,
@@ -117,9 +121,17 @@ public class MergeHelper {
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime,
       boolean checkIfPipelineValueIsRuntime) {
-    Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
+    JsonNode mergedYamlMap = mergeRuntimeInputValuesIntoOriginalYamlInternal(originalYamlConfig.getYamlMap(),
+        inputSetConfig.getYamlMap(), appendInputSetValidator, isAtExecutionTime, checkIfPipelineValueIsRuntime);
+    return new YamlConfig(mergedYamlMap);
+  }
 
-    Map<FQN, Object> pipelineYamlFQNMap = originalYamlConfig.getFqnToValueMap();
+  private JsonNode mergeRuntimeInputValuesIntoOriginalYamlInternal(JsonNode originalYamlJsonNode,
+      JsonNode inputSetJsonNode, boolean appendInputSetValidator, boolean isAtExecutionTime,
+      boolean checkIfPipelineValueIsRuntime) {
+    Map<FQN, Object> inputSetFQNMap = FQNMapGenerator.generateFQNMap(inputSetJsonNode);
+
+    Map<FQN, Object> pipelineYamlFQNMap = FQNMapGenerator.generateFQNMap(originalYamlJsonNode);
     Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(pipelineYamlFQNMap);
     pipelineYamlFQNMap.keySet().forEach(key -> {
       if (inputSetFQNMap.containsKey(key)) {
@@ -156,23 +168,23 @@ public class MergeHelper {
           }
         }
         if (appendInputSetValidator) {
-          valueFromRuntimeInputYaml =
-              checkForRuntimeInputExpressions(valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key));
+          valueFromRuntimeInputYaml = checkForRuntimeInputExpressions(
+              valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key), key.getExpressionFqn());
         }
         mergedYamlFQNMap.put(key, valueFromRuntimeInputYaml);
       } else {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, key);
         if (!subMap.isEmpty()) {
-          mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(inputSetConfig, key));
+          mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(inputSetJsonNode, key));
         }
       }
     });
     Map<FQN, Object> nonIgnorableKeys = getNonIgnorableKeys(pipelineYamlFQNMap, inputSetFQNMap, mergedYamlFQNMap);
     mergedYamlFQNMap.putAll(nonIgnorableKeys);
-    JsonNode yamlMap = originalYamlConfig.getYamlMap();
     JsonNode modifiedOriginalMap =
-        addNonIgnorableBaseKeys(yamlMap, mergedYamlFQNMap, nonIgnorableKeys, inputSetConfig.getYamlMap());
-    return new YamlConfig(mergedYamlFQNMap, modifiedOriginalMap);
+        addNonIgnorableBaseKeys(originalYamlJsonNode, mergedYamlFQNMap, nonIgnorableKeys, inputSetJsonNode);
+    // merging mergedYamlFQNMap into modifiedOriginalMap to get merged yaml map
+    return YamlMapGenerator.generateYamlMap(mergedYamlFQNMap, modifiedOriginalMap, false);
   }
 
   private JsonNode addNonIgnorableBaseKeys(JsonNode yamlMap, Map<FQN, Object> mergedYamlFQNMap,
@@ -191,10 +203,17 @@ public class MergeHelper {
       }
     }
     for (FQN key : newKeys) {
+      // parent will have its key as one of the fields in acceptAllChildrenKeys. In case this parent itself is a runtime
+      // input, such as when "service" is an axis name, in that case we can ignore this part as all fields will be added
+      // anyway.
       FQN parent = key.getParent();
-      ObjectNode nodeForFQN = (ObjectNode) YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
-      if (!nodeForFQN.has(key.getFieldName())) {
-        nodeForFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
+      JsonNode jsonNodeForParentFQN = YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
+      if (jsonNodeForParentFQN instanceof TextNode) {
+        continue;
+      }
+      ObjectNode objectNodeForParentFQN = (ObjectNode) jsonNodeForParentFQN;
+      if (!objectNodeForParentFQN.has(key.getFieldName())) {
+        objectNodeForParentFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
         mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(runtimeInputYamlMap, key));
       }
     }
@@ -234,8 +253,9 @@ public class MergeHelper {
     return nonIgnorableKeys;
   }
 
-  private Object checkForRuntimeInputExpressions(Object inputSetValue, Object pipelineValue) {
-    String validationMsg = RuntimeInputValuesValidator.validateStaticValues(pipelineValue, inputSetValue);
+  private Object checkForRuntimeInputExpressions(Object inputSetValue, Object pipelineValue, String expressionFqn) {
+    String validationMsg =
+        RuntimeInputValuesValidator.validateStaticValues(pipelineValue, inputSetValue, expressionFqn);
     if (EmptyPredicate.isNotEmpty(validationMsg)) {
       throw new InvalidRequestException(validationMsg);
     }
@@ -300,6 +320,11 @@ public class MergeHelper {
   }
 
   public String mergeUpdatesIntoJson(String pipelineJson, Map<String, String> fqnToJsonMap) {
+    return mergeUpdatesIntoJsonParametrisedOnPathSeparator(pipelineJson, fqnToJsonMap, PATH_SEP);
+  }
+
+  public String mergeUpdatesIntoJsonParametrisedOnPathSeparator(
+      String pipelineJson, Map<String, String> fqnToJsonMap, String pathSeparator) {
     YamlNode pipelineNode;
     try {
       pipelineNode = YamlUtils.readTree(pipelineJson).getNode();
@@ -315,7 +340,8 @@ public class MergeHelper {
       String content = fqnToJsonMap.get(fqn);
       content = removeNonASCII(content);
       try {
-        pipelineNode.replacePath(fqn, YamlUtils.readTree(content).getNode().getCurrJsonNode());
+        pipelineNode.replacePathParametrisedOnPathSeparator(
+            fqn, YamlUtils.readTree(content).getNode().getCurrJsonNode(), pathSeparator);
       } catch (IOException e) {
         log.error("Could not read json provided for the fqn: " + fqn + ". Json:\n" + content, e);
         throw new YamlException("Could not read json provided for the fqn: " + fqn);
@@ -342,5 +368,26 @@ public class MergeHelper {
     }
     toBeRemovedFQNs.forEach(pipelineNode::removePath);
     return JsonUtils.asJson(pipelineNode.getCurrJsonNode());
+  }
+
+  public String mergeOptionsRuntimeInput(String pipelineYaml, String runtimeInputYaml) {
+    if (EmptyPredicate.isEmpty(runtimeInputYaml)) {
+      return pipelineYaml;
+    }
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    JsonNode pipelineNode = YamlUtils.tryReadTree(pipelineYaml).getNode().getCurrJsonNode();
+    JsonNode runtimeInputNode = YamlUtils.tryReadTree(runtimeInputYaml).getNode().getCurrJsonNode();
+    Map<String, Object> runtimeInputMap = JsonPipelineUtils.jsonNodeToMap(runtimeInputNode);
+    if (EmptyPredicate.isNotEmpty(runtimeInputMap) && runtimeInputMap.containsKey(YAMLFieldNameConstants.OPTIONS)) {
+      Map<String, Object> optionsMap = new HashMap<>();
+      optionsMap.put(YAMLFieldNameConstants.OPTIONS, runtimeInputMap.get(YAMLFieldNameConstants.OPTIONS));
+      try {
+        pipelineNode = objectMapper.readerForUpdating(pipelineNode).readValue(YamlUtils.write(optionsMap));
+        return objectMapper.writeValueAsString(pipelineNode);
+      } catch (IOException ex) {
+        throw new InvalidRequestException("Invalid yaml", ex);
+      }
+    }
+    return pipelineYaml;
   }
 }

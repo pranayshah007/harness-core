@@ -78,6 +78,7 @@ public class SecretSetupUsageBuilderRegistry {
         SettingVariableTypes.AZURE_ARTIFACTS_PAT, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(
         SettingVariableTypes.APM_VERIFICATION, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
+    registeredSecretSetupUsageBuilders.put(SettingVariableTypes.PROMETHEUS, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
 
     registeredSecretSetupUsageBuilders.put(
         SettingVariableTypes.AWS_SECRETS_MANAGER, SECRET_MANAGER_CONFIG_SETUP_USAGE_BUILDER);

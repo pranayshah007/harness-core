@@ -11,6 +11,7 @@ import static io.harness.pms.merger.helpers.RuntimeInputsValidator.areInputsVali
 import static io.harness.pms.merger.helpers.RuntimeInputsValidator.validateInputsAgainstSourceNode;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -197,6 +198,29 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
 
     assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, new HashSet<>(),
                    new HashSet<>(Collections.singletonList("artifacts.primary.sources"))))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testValidateInputsWithUseFromStage() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName");
+    String yamlToValidate = "service:\n"
+        + "  useFromStage:\n"
+        + "    stage: s1";
+
+    String sourceEntityYaml = "service:\n"
+        + "  serviceRef: \"<+input>\"\n"
+        + "  serviceInputs: \"<+input>\"";
+
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+
+    yamlToValidate = "service:\n"
+        + "  serviceRef: \"service-prod\"";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
         .isTrue();
   }
 }

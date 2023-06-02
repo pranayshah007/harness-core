@@ -7,9 +7,6 @@
 
 package software.wings.resources.views;
 
-import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.unified;
-
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
@@ -17,11 +14,8 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.rest.RestResponse;
 
-import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
-
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import javax.validation.Valid;
@@ -43,19 +37,14 @@ public class CEViewResource {
   private CEViewService ceViewService;
   private CEReportScheduleService ceReportScheduleService;
   private ViewCustomFieldService viewCustomFieldService;
-  private BigQueryService bigQueryService;
-  private CloudBillingHelper cloudBillingHelper;
   private AwsAccountFieldHelper awsAccountFieldHelper;
 
   @Inject
   public CEViewResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
-      ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService,
-      CloudBillingHelper cloudBillingHelper, AwsAccountFieldHelper awsAccountFieldHelper) {
+      ViewCustomFieldService viewCustomFieldService, AwsAccountFieldHelper awsAccountFieldHelper) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
-    this.bigQueryService = bigQueryService;
-    this.cloudBillingHelper = cloudBillingHelper;
     this.awsAccountFieldHelper = awsAccountFieldHelper;
   }
 
@@ -74,9 +63,7 @@ public class CEViewResource {
   }
 
   private CEView updateTotalCost(CEView ceView) {
-    BigQuery bigQuery = bigQueryService.get();
-    String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(ceView.getAccountId(), unified);
-    return ceViewService.updateTotalCost(ceView, bigQuery, cloudProviderTableName);
+    return ceViewService.updateTotalCost(ceView);
   }
 
   @GET

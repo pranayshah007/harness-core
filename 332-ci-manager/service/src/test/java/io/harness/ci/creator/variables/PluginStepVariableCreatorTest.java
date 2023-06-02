@@ -85,7 +85,8 @@ public class PluginStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.uses",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.timeout",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.name",
-            "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.entrypoint");
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.spec.entrypoint",
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -97,7 +98,6 @@ public class PluginStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.download_plugin_success.spec.execution.steps.download.type",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.identifier",
-            "pipeline.stages.download_plugin_success.spec.execution.steps.download.when",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.startTs",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.endTs");
 

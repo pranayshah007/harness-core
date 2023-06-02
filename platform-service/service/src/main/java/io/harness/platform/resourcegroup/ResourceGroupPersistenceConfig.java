@@ -31,16 +31,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.TypeAlias;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
-import org.springframework.data.mongodb.core.convert.DbRefResolver;
-import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
-import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @OwnedBy(PL)
@@ -87,7 +83,7 @@ public class ResourceGroupPersistenceConfig extends AbstractMongoClientConfigura
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
@@ -98,14 +94,7 @@ public class ResourceGroupPersistenceConfig extends AbstractMongoClientConfigura
 
   @Bean
   @Override
-  public MongoTemplate mongoTemplate() throws Exception {
-    DbRefResolver dbRefResolver = new DefaultDbRefResolver(this.mongoDbFactory());
-    MongoDbFactory mongoDbFactory = new SimpleMongoClientDbFactory(mongoClient(), getDatabaseName());
-    MongoMappingContext mappingContext = this.mongoMappingContext();
-    mappingContext.setAutoIndexCreation(false);
-    MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
-    converter.setCodecRegistryProvider(mongoDbFactory);
-    converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoBackendConfiguration);
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, mongoBackendConfiguration);
   }
 }

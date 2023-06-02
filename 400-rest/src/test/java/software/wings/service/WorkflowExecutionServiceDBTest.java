@@ -40,9 +40,9 @@ import static software.wings.utils.WingsTestConstants.STATE_MACHINE_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -113,6 +113,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -323,6 +324,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldAppendInfraMappingIds() {
     ExecutionArgs executionArgs = createExecutionArgs(PIPELINE);
     WorkflowExecution workflowExecution = createWorkflowExecution(executionArgs, PIPELINE, SUCCESS);
@@ -337,6 +339,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldUpdateInfraMappingIds() {
     ExecutionArgs executionArgs = createExecutionArgs(PIPELINE);
     WorkflowExecution workflowExecution = createWorkflowExecution(executionArgs, PIPELINE, SUCCESS);
@@ -352,6 +355,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldGetApprovalAuthorization() {
     user = eventTestHelper.createUser(null);
     UserThreadLocal.set(user);
@@ -450,6 +454,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldRefreshCollectedArtifacts() {
     ExecutionArgs executionArgs = createExecutionArgs(ORCHESTRATION);
     WorkflowExecution workflowExecution = createWorkflowExecution(executionArgs, ORCHESTRATION, SUCCESS);
@@ -498,6 +503,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldFetchLatestExecutionForServiceIds() {
     ExecutionArgs executionArgs = createExecutionArgs(ORCHESTRATION);
     WorkflowExecution workflowExecution = createWorkflowExecution(executionArgs, ORCHESTRATION, SUCCESS);
@@ -523,6 +529,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldFetchExecutionForVerification() {
     ExecutionArgs executionArgs = createExecutionArgs(ORCHESTRATION);
     WorkflowExecution workflowExecution = createWorkflowExecution(executionArgs, ORCHESTRATION, SUCCESS);
@@ -565,6 +572,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldFetchWorkflowExecutionList() {
     ExecutionArgs executionArgs = createExecutionArgs(ORCHESTRATION);
     WorkflowExecution workflowExecution = createWorkflowExecution(executionArgs, ORCHESTRATION, SUCCESS);
@@ -715,6 +723,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
   @Test
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void shouldListExecutionsMatchingTagsWithKeyValue() {
     final WorkflowExecutionBuilder workflowExecutionBuilder =
         WorkflowExecution.builder().appId(APP_ID).accountId(ACCOUNT_ID);

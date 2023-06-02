@@ -69,4 +69,15 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
             ExpressionEvaluateBlobRequest.newBuilder().setAmbiance(ambiance).setExpression(expression).build());
     return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class);
   }
+  @Override
+  public Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
+    ExpressionEvaluateBlobResponse expressionEvaluateBlobResponse =
+        PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::evaluateExpression,
+            ExpressionEvaluateBlobRequest.newBuilder()
+                .setAmbiance(ambiance)
+                .setExpression(expression)
+                .setExpressionMode(mode)
+                .build());
+    return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class);
+  }
 }

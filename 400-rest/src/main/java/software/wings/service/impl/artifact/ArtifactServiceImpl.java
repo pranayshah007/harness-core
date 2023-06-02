@@ -9,6 +9,7 @@ package software.wings.service.impl.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.ARTIFACT_STREAM_METADATA_ONLY;
+import static io.harness.beans.FeatureName.SPG_ALLOW_FILTER_BY_PATHS_GCS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -83,6 +84,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
+import software.wings.service.intfc.BuildSourceService;
 import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.utils.ArtifactType;
@@ -97,6 +99,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -149,6 +152,7 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
   @Inject private SettingsService settingsService;
+  @Inject private BuildSourceService buildSourceService;
   @Inject private FeatureFlagService featureFlagService;
 
   @Override
@@ -163,7 +167,13 @@ public class ArtifactServiceImpl implements ArtifactService {
             Preconditions.checkNotNull(wingsPersistence.get(ArtifactStream.class, artifactStreamEntry.getKey()),
                 "Artifact stream has been deleted");
         artifactStreamEntry.getValue().forEach(artifact -> artifact.setArtifactStreamName(artifactStream.getName()));
-        artifacts.addAll(artifactStreamEntry.getValue().stream().collect(toList()));
+        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
+            && ArtifactStreamType.GCS.name().equals(artifactStream.getArtifactStreamType())) {
+          artifacts.addAll(buildSourceService.listArtifactByArtifactStreamAndFilterPath(
+              artifactStreamEntry.getValue().stream().collect(toList()), artifactStream));
+        } else {
+          artifacts.addAll(artifactStreamEntry.getValue().stream().collect(toList()));
+        }
       }
     }
     pageResponse.setResponse(artifacts);
@@ -483,7 +493,7 @@ public class ArtifactServiceImpl implements ArtifactService {
 
   @Override
   public void updateArtifactSourceName(ArtifactStream artifactStream) {
-    Query<Artifact> query = prepareArtifactWithMetadataQuery(artifactStream);
+    Query<Artifact> query = prepareArtifactWithMetadataQuery(artifactStream, false);
     UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
     ops.set("artifactSourceName", artifactStream.getSourceName());
     wingsPersistence.update(query, ops);
@@ -926,7 +936,7 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
-  public Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream) {
+  public Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream, boolean hitSecondary) {
     // TODO: ASR: update with accountId
     Query<Artifact> artifactQuery =
         wingsPersistence.createQuery(Artifact.class, excludeAuthority)
@@ -946,6 +956,9 @@ public class ArtifactServiceImpl implements ArtifactService {
       return artifactQuery;
     }
     artifactQuery.filter(ArtifactKeys.artifactSourceName, artifactStream.getSourceName());
+    if (hitSecondary) {
+      artifactQuery.useReadPreference(ReadPreference.secondaryPreferred());
+    }
     return artifactQuery;
   }
 
@@ -1027,6 +1040,16 @@ public class ArtifactServiceImpl implements ArtifactService {
     return wingsPersistence.createQuery(Artifact.class)
         .filter(ArtifactKeys.accountId, accountId)
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .order(Sort.descending(CREATED_AT_KEY))
+        .asList();
+  }
+
+  @Override
+  public List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId, String buildNo) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.accountId, accountId)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(ArtifactKeys.metadata_buildNo, buildNo)
         .order(Sort.descending(CREATED_AT_KEY))
         .asList();
   }

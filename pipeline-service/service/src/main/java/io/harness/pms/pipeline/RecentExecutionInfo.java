@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 
 import lombok.Builder;
 import lombok.Setter;
@@ -28,4 +29,5 @@ public class RecentExecutionInfo {
   Long startTs;
   @Setter @NonFinal Long endTs;
   Integer runSequence;
+  @Setter @NonFinal PipelineStageInfo parentStageInfo;
 }

@@ -33,14 +33,14 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -58,7 +58,6 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
-import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.rule.Owner;
 
@@ -122,12 +121,13 @@ public class K8sCanaryDeployTest extends CategoryTest {
 
   private StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().displayName(STATE_NAME).build();
 
-  private ExecutionContextImpl context;
+  @InjectMocks private ExecutionContextImpl context;
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
     context = new ExecutionContextImpl(stateExecutionInstance);
+    MockitoAnnotations.initMocks(this);
+
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     k8sCanaryDeploy.setSkipDryRun(true);
@@ -310,9 +310,7 @@ public class K8sCanaryDeployTest extends CategoryTest {
             .k8sTaskResponse(K8sCanaryDeployResponse.builder().helmChartInfo(helmChartInfo).build())
             .build();
 
-    doReturn(InstanceElementListParam.builder().build())
-        .when(k8sCanaryDeploy)
-        .fetchInstanceElementListParam(anyListOf(K8sPod.class));
+    doReturn(InstanceElementListParam.builder().build()).when(k8sCanaryDeploy).fetchInstanceElementListParam(anyList());
     doReturn(false).when(k8sCanaryDeploy).shouldSaveManifest(any());
     doReturn(emptyList()).when(k8sCanaryDeploy).fetchInstanceStatusSummaries(any(), any());
     doNothing().when(k8sCanaryDeploy).saveK8sElement(any(), any());
@@ -446,10 +444,40 @@ public class K8sCanaryDeployTest extends CategoryTest {
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
+  public void testNotSaveK8sCanaryDeploy() {
+    k8sCanaryDeploy.setInheritManifests(true);
+    List<KubernetesResource> kubernetesResources = new ArrayList<>();
+    kubernetesResources.add(KubernetesResource.builder().build());
+    k8sCanaryDeploy.setExportManifests(true);
+    when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
+    when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
+        .thenReturn(aGcpKubernetesInfrastructureMapping().build());
+    doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
+    doReturn(RELEASE_NAME).when(k8sCanaryDeploy).fetchReleaseName(any(), any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(any());
+    doReturn(K8sDelegateManifestConfig.builder().build())
+        .when(k8sCanaryDeploy)
+        .createDelegateManifestConfig(any(), any());
+    doReturn(emptyList()).when(k8sCanaryDeploy).fetchRenderedValuesFiles(any(), any());
+    doReturn(ExecutionResponse.builder().build()).when(k8sCanaryDeploy).queueK8sDelegateTask(any(), any(), any());
+    ApplicationManifest applicationManifest =
+        ApplicationManifest.builder().skipVersioningForAllK8sObjects(true).storeType(Local).build();
+    Map<K8sValuesLocation, ApplicationManifest> applicationManifestMap = new HashMap<>();
+    applicationManifestMap.put(K8sValuesLocation.Service, applicationManifest);
+    doReturn(applicationManifestMap).when(k8sCanaryDeploy).fetchApplicationManifests(any());
+    doNothing().when(k8sCanaryDeploy).saveK8sCanaryDeployRun(context);
+    k8sCanaryDeploy.executeK8sTask(context, ACTIVITY_ID);
+    verify(k8sCanaryDeploy, times(0)).saveK8sCanaryDeployRun(context);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
   public void testSaveK8sCanaryDeploy() {
     k8sCanaryDeploy.setInheritManifests(true);
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
     kubernetesResources.add(KubernetesResource.builder().build());
+    k8sCanaryDeploy.setExportManifests(false);
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
         .thenReturn(aGcpKubernetesInfrastructureMapping().build());

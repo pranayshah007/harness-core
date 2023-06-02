@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -23,7 +23,7 @@ import io.swagger.annotations.ApiModel;
 import java.time.Duration;
 import java.util.List;
 
-@ApiModel(subTypes = {IACMTerraformPlanInfo.class})
+@ApiModel(subTypes = {IACMTerraformPluginInfo.class})
 @OwnedBy(IACM)
 public interface IACMStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;

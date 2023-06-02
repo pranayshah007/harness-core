@@ -86,7 +86,8 @@ public class S3RestoreCacheStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.spec.archiveFormat",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.spec.key",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.spec.endpoint",
-            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.timeout");
+            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.timeout",
+            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -98,7 +99,6 @@ public class S3RestoreCacheStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.type",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.identifier",
-            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.when",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.startTs",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.endTs");
 

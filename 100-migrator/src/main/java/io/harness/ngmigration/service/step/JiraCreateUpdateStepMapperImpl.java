@@ -7,11 +7,14 @@
 
 package io.harness.ngmigration.service.step;
 
-import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
-
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.step.JiraFunctor;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -23,20 +26,39 @@ import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.jira.update.beans.TransitionTo;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
+import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import net.rcarz.jiraclient.Field;
 import org.apache.commons.lang3.StringUtils;
 
 public class JiraCreateUpdateStepMapperImpl extends StepMapper {
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+    JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
+    List<CgEntityId> refs = new ArrayList<>();
+    if (StringUtils.isNotBlank(state.getJiraConnectorId())) {
+      refs.add(CgEntityId.builder().id(state.getJiraConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
+    }
+    refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    return refs;
+  }
+
+  @Override
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 
   @Override
@@ -61,13 +83,14 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:
-        return buildUpdate(state);
+        return buildUpdate(context, state);
       case CREATE_TICKET:
-        return buildCreate(state);
+        return buildCreate(context, state);
       default:
         throw new IllegalStateException("Unsupported Approval Type");
     }
@@ -83,11 +106,11 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     return true;
   }
 
-  private JiraCreateStepNode buildCreate(JiraCreateUpdate state) {
+  private JiraCreateStepNode buildCreate(WorkflowMigrationContext context, JiraCreateUpdate state) {
     JiraCreateStepNode stepNode = new JiraCreateStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     JiraCreateStepInfo stepInfo = JiraCreateStepInfo.builder()
-                                      .connectorRef(RUNTIME_INPUT)
+                                      .connectorRef(getConnectorRef(context, state.getJiraConnectorId()))
                                       .projectKey(ParameterField.createValueField(state.getProject()))
                                       .issueType(ParameterField.createValueField(state.getIssueType()))
                                       .fields(getFields(state))
@@ -121,18 +144,44 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     }
   }
 
-  private JiraUpdateStepNode buildUpdate(JiraCreateUpdate state) {
+  private JiraUpdateStepNode buildUpdate(WorkflowMigrationContext context, JiraCreateUpdate state) {
     JiraUpdateStepNode stepNode = new JiraUpdateStepNode();
-    baseSetup(state, stepNode);
-    JiraUpdateStepInfo stepInfo =
-        JiraUpdateStepInfo.builder()
-            .connectorRef(RUNTIME_INPUT)
-            .issueKey(ParameterField.createValueField(state.getIssueId()))
-            .transitionTo(TransitionTo.builder().status(ParameterField.createValueField(state.getStatus())).build())
-            .fields(getFields(state))
-            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
-            .build();
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
+    TransitionTo transitionTo = null;
+    if (StringUtils.isNotBlank(state.getStatus())) {
+      transitionTo = TransitionTo.builder().status(ParameterField.createValueField(state.getStatus())).build();
+    }
+    JiraUpdateStepInfo stepInfo = JiraUpdateStepInfo.builder()
+                                      .connectorRef(getConnectorRef(context, state.getJiraConnectorId()))
+                                      .issueKey(ParameterField.createValueField(state.getIssueId()))
+                                      .transitionTo(transitionTo)
+                                      .fields(getFields(state))
+                                      .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
+                                      .build();
     stepNode.setJiraUpdateStepInfo(stepInfo);
     return stepNode;
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(JiraFunctor::new)
+        .collect(Collectors.toList());
   }
 }

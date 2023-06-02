@@ -52,6 +52,7 @@ public class MongoConfig {
   public static final String DOT_REPLACEMENT = "__dot__";
   public static final String DEFAULT_URI = "mongodb://localhost:27017/wings";
   public static final String MONGODB_SCHEMA = "mongodb";
+  public static final int NO_LIMIT = Integer.MAX_VALUE;
 
   @Value
   public static class ReadPref {
@@ -111,6 +112,8 @@ public class MongoConfig {
   private AnalyticNodeMongoConfig analyticNodeConfig = AnalyticNodeMongoConfig.builder().build();
 
   @NotEmpty private int maxOperationTimeInMillis = 300000;
+
+  private int maxDocumentsToBeFetched = NO_LIMIT;
 
   @JsonIgnore
   public ReadPreference getReadPreference() {

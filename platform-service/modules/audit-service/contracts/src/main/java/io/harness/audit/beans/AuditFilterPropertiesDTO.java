@@ -14,12 +14,16 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.StaticAuditFilter;
+import io.harness.audit.remote.StaticAuditFilterV2;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AccessLevel;
@@ -53,6 +57,8 @@ public class AuditFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "List of Principals") List<Principal> principals;
 
   @Schema(description = "Pre-defined Filter") StaticAuditFilter staticFilter;
+
+  @ApiModelProperty(hidden = true) @JsonIgnore @Hidden List<StaticAuditFilterV2> staticFilters;
 
   @Schema(description =
               "Used to specify a start time for retrieving Audit events that occurred at or after the time indicated.")

@@ -21,6 +21,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -136,5 +137,32 @@ public class PMSInputSetFilterHelper {
         .is(pipelineIdentifier)
         .and(InputSetEntityKeys.identifier)
         .is(identifier);
+  }
+
+  public Criteria buildCriteriaForRepoListing(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return Criteria.where(InputSetEntityKeys.accountId)
+        .is(accountId)
+        .and(InputSetEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(InputSetEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(InputSetEntityKeys.pipelineIdentifier)
+        .is(pipelineIdentifier);
+  }
+
+  public Update getUpdateWithGitMetadata(PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Update update = new Update();
+
+    if (isNotEmpty(updateGitDetailsParams.getConnectorRef())) {
+      update.set(InputSetEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
+    }
+    if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
+      update.set(InputSetEntityKeys.repo, updateGitDetailsParams.getRepoName());
+    }
+    if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
+      update.set(InputSetEntityKeys.filePath, updateGitDetailsParams.getFilePath());
+    }
+    return update;
   }
 }

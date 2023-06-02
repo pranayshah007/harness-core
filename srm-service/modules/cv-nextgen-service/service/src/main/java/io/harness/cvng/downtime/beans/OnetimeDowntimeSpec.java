@@ -15,6 +15,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
@@ -24,6 +25,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(callSuper = true)
 public class OnetimeDowntimeSpec extends DowntimeSpec {
   @JsonProperty("type") OnetimeDowntimeType type;
   @JsonTypeInfo(
@@ -60,7 +62,8 @@ public class OnetimeDowntimeSpec extends DowntimeSpec {
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class OnetimeEndTimeBasedSpec extends OnetimeSpec {
-    @NotNull private long endTime;
+    @Deprecated private long endTime;
+    private String endDateTime;
     @Override
     public OnetimeDowntimeType getType() {
       return OnetimeDowntimeType.END_TIME;

@@ -33,6 +33,7 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -101,7 +102,9 @@ public class EC2RecommendationDAO {
             .set(EC2RecommendationKeys.currentMaxMemory, ec2Recommendation.getCurrentMaxMemory())
             .set(EC2RecommendationKeys.currentMonthlyCost, ec2Recommendation.getCurrentMonthlyCost())
             .set(EC2RecommendationKeys.currencyCode, ec2Recommendation.getCurrencyCode())
-            .set(EC2RecommendationKeys.recommendationInfo, ec2Recommendation.getRecommendationInfo())
+            .set(EC2RecommendationKeys.recommendationInfo,
+                ec2Recommendation.getRecommendationInfo() == null ? Collections.emptyList()
+                                                                  : ec2Recommendation.getRecommendationInfo())
             .set(EC2RecommendationKeys.expectedSaving, ec2Recommendation.getExpectedSaving())
             .set(EC2RecommendationKeys.rightsizingType, ec2Recommendation.getRightsizingType())
             .set(EC2RecommendationKeys.lastUpdatedTime, ec2Recommendation.getLastUpdatedTime());
@@ -136,14 +139,14 @@ public class EC2RecommendationDAO {
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
-            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 1, ChronoUnit.DAYS)))
+            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
-            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 1, ChronoUnit.DAYS)))
+            toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();
   }

@@ -14,6 +14,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -271,13 +272,14 @@ public class TerragruntClientImplTest extends CategoryTest {
                  .build())
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(request.getTimeoutInMillis()), eq(request.getEnvVars()),
-            eq(request.getWorkingDirectory()), eq(logCallback), eq(command), any(LogOutputStream.class), any());
+            eq(request.getWorkingDirectory()), eq(logCallback), eq(command), any(LogOutputStream.class), any(),
+            anyLong());
   }
 
   @SneakyThrows
   private void verifyCommandExecuted(String command, AbstractTerragruntCliRequest request) {
     verify(cliHelper).executeCliCommand(eq(command), eq(request.getTimeoutInMillis()), eq(request.getEnvVars()),
-        eq(request.getWorkingDirectory()), eq(logCallback), eq(command), any(LogOutputStream.class), any());
+        eq(request.getWorkingDirectory()), eq(logCallback), eq(command), any(LogOutputStream.class), any(), anyLong());
   }
 
   private TerragruntClient createClient() {

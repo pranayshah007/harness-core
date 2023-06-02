@@ -41,7 +41,9 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -97,8 +99,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
@@ -118,11 +120,13 @@ public class ArtifactCollectionUtilsTest extends WingsBaseTest {
 
   @Before
   public void setUp() {
-    when(artifactService.prepareArtifactWithMetadataQuery(any(ArtifactStream.class))).thenReturn(artifactQuery);
+    when(artifactService.prepareArtifactWithMetadataQuery(any(ArtifactStream.class), anyBoolean()))
+        .thenReturn(artifactQuery);
+    when(artifactQuery.limit(anyInt())).thenReturn(artifactQuery);
     when(artifactQuery.fetch()).thenReturn(artifactIterator);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(anArtifact().build());
-    when(featureFlagService.isEnabled(Matchers.eq(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE), any()))
+    when(featureFlagService.isEnabled(ArgumentMatchers.eq(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE), any()))
         .thenReturn(true);
   }
 

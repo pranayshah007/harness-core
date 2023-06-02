@@ -50,11 +50,10 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Maps.newHashMap;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -74,6 +73,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.ecs.EcsContainerDetails;
 import io.harness.exception.InvalidRequestException;
@@ -169,6 +169,7 @@ public class EcsStateHelperTest extends CategoryTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject @InjectMocks private EcsStateHelper helper;
 
@@ -877,17 +878,17 @@ public class EcsStateHelperTest extends CategoryTest {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
     doReturn(ContainerServiceElement.builder().serviceSteadyStateTimeout(10).build())
         .when(helper)
-        .getSetupElementFromSweepingOutput(anyObject(), anyBoolean());
+        .getSetupElementFromSweepingOutput(any(), anyBoolean());
     assertThat(helper.getEcsStateTimeoutFromContext(mockContext, true)).isEqualTo(900000);
 
     doReturn(ContainerServiceElement.builder().serviceSteadyStateTimeout(0).build())
         .when(helper)
-        .getSetupElementFromSweepingOutput(anyObject(), anyBoolean());
+        .getSetupElementFromSweepingOutput(any(), anyBoolean());
     assertThat(helper.getEcsStateTimeoutFromContext(mockContext, true)).isEqualTo(null);
 
     doReturn(ContainerServiceElement.builder().build())
         .when(helper)
-        .getSetupElementFromSweepingOutput(anyObject(), anyBoolean());
+        .getSetupElementFromSweepingOutput(any(), anyBoolean());
     assertThat(helper.getEcsStateTimeoutFromContext(mockContext, true)).isEqualTo(null);
   }
 

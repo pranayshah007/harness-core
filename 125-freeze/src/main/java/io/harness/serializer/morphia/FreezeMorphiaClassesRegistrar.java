@@ -8,6 +8,7 @@
 package io.harness.serializer.morphia;
 
 import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.entity.FrozenExecution;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -17,6 +18,7 @@ public class FreezeMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(FreezeConfigEntity.class);
+    set.add(FrozenExecution.class);
   }
 
   @Override

@@ -43,6 +43,14 @@ public interface AccessControlAdminClient {
       @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
       @Body RoleAssignmentFilterDTO roleAssignmentFilterDTO);
 
+  @POST(ROLE_ASSIGNMENTS_API + "/filter/internal")
+  Call<ResponseDTO<PageResponse<RoleAssignmentResponseDTO>>> getFilteredRoleAssignmentsWithInternalRoles(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
+      @Body RoleAssignmentFilterDTO roleAssignmentFilterDTO);
+
   @POST(ROLE_ASSIGNMENTS_API + "/aggregate")
   Call<ResponseDTO<RoleAssignmentAggregateResponseDTO>> getAggregatedFilteredRoleAssignments(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,

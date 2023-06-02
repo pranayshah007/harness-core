@@ -17,8 +17,8 @@ import static software.wings.beans.TaskType.AZURE_APP_SERVICE_TASK;
 import static software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupContextElement.SWEEPING_OUTPUT_APP_SERVICE;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -32,6 +32,7 @@ import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -88,6 +89,7 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
   @Mock protected AzureAppServiceManifestUtils azureAppServiceManifestUtils;
   @Mock protected ActivityService activityService;
   @Mock protected StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Spy @InjectMocks private ServiceTemplateHelper serviceTemplateHelper;
   @Spy @InjectMocks AzureWebAppSlotRollback state = new AzureWebAppSlotRollback("Web app slot rollback state");
 

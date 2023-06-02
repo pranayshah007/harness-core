@@ -60,15 +60,30 @@ public class ELKDataCollectionDSLTest extends HoverflyTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testExecute_ELK_DSL() {
-    final RuntimeParameters runtimeParameters = getRuntimeParameters("message: error", "_source.hostname", "*",
+    final RuntimeParameters runtimeParameters = getRuntimeParameters("error", "['_source'].['hostname']",
+        "integration-test", "['_source'].['@timestamp']", "['_source'].['message']", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    List<LogDataRecord> logDataRecords =
+        (List<LogDataRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
+    assertThat(logDataRecords).isNotNull();
+    assertThat(logDataRecords.size()).isEqualTo(26);
+    assertThat(logDataRecords.get(0).getHostname()).isEqualTo("qa-multiple-appd-deployment-5fff6c6c58-mqjq5");
+    assertThat(logDataRecords.get(0).getLog()).contains("Error");
+    assertThat(logDataRecords.get(0).getTimestamp()).isEqualTo(1673378985885L);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExecute_ELK_DSL_OldFormat() {
+    final RuntimeParameters runtimeParameters = getRuntimeParameters("error", "_source.hostname", "integration-test",
         "_source.@timestamp", "_source.message", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     List<LogDataRecord> logDataRecords =
         (List<LogDataRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
     assertThat(logDataRecords).isNotNull();
-    assertThat(logDataRecords.size()).isEqualTo(1);
-    assertThat(logDataRecords.get(0).getHostname()).isEqualTo("harness-nr-dummy-pipeline-deployment-84f5cdb9cb-cnksz");
+    assertThat(logDataRecords.size()).isEqualTo(26);
+    assertThat(logDataRecords.get(0).getHostname()).isEqualTo("qa-multiple-appd-deployment-5fff6c6c58-mqjq5");
     assertThat(logDataRecords.get(0).getLog()).contains("Error");
-    assertThat(logDataRecords.get(0).getTimestamp()).isEqualTo(1663503204343L);
+    assertThat(logDataRecords.get(0).getTimestamp()).isEqualTo(1673378985885L);
   }
 
   @Test
@@ -245,7 +260,7 @@ public class ELKDataCollectionDSLTest extends HoverflyTestBase {
 
   private RuntimeParameters getRuntimeParameters(String query, String serviceInstanceIdentifier, String index,
       String timeStampIdentifier, String messageIdentifier, String timeStampFormat) {
-    Instant instant = Instant.parse("2022-09-18T12:13:58.167Z");
+    Instant instant = Instant.parse("2023-01-10T19:30:38.498Z");
     ELKDataCollectionInfo dataCollectionInfo = ELKDataCollectionInfo.builder()
                                                    .query(query)
                                                    .index(index)

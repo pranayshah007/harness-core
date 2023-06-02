@@ -25,6 +25,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -106,11 +107,22 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
         StepResponse.StepOutcome stepOutcome =
             instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
 
-        stepResponse =
-            stepResponseBuilder.status(Status.SUCCEEDED)
-                .stepOutcome(StepResponse.StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).build())
-                .stepOutcome(stepOutcome)
+        AsgBlueGreenRollbackResult asgBlueGreenRollbackResult =
+            asgBlueGreenRollbackResponse.getAsgBlueGreenRollbackResult();
+
+        AsgBlueGreenRollbackOutcome asgBlueGreenRollbackOutcome =
+            AsgBlueGreenRollbackOutcome.builder()
+                .stageAsg(asgBlueGreenRollbackResult.getStageAutoScalingGroupContainer())
+                .prodAsg(asgBlueGreenRollbackResult.getProdAutoScalingGroupContainer())
                 .build();
+
+        stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
+                           .stepOutcome(StepResponse.StepOutcome.builder()
+                                            .name(OutcomeExpressionConstants.OUTPUT)
+                                            .outcome(asgBlueGreenRollbackOutcome)
+                                            .build())
+                           .stepOutcome(stepOutcome)
+                           .build();
       }
     } finally {
       String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();
@@ -137,12 +149,17 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             RefObjectUtils.getSweepingOutputRefObject(asgBlueGreenDeployStepParameters.getAsgBlueGreenDeployFnq() + "."
                 + OutcomeExpressionConstants.ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME));
 
+    if (!asgBlueGreenPrepareRollbackDataOptional.isFound()) {
+      return skipTaskRequest(
+          "Skipping rollback step as rollback data is missing, the reason could be due to not enough time to execute BlueGreen deploy step");
+    }
+
     OptionalSweepingOutput asgBlueGreenDeployOptional = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(asgBlueGreenDeployStepParameters.getAsgBlueGreenDeployFnq() + "."
             + OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME));
 
-    if (!asgBlueGreenPrepareRollbackDataOptional.isFound() || !asgBlueGreenDeployOptional.isFound()) {
-      return skipTaskRequest(ASG_BLUE_GREEN_DEPLOY_STEP_MISSING);
+    if (!asgBlueGreenDeployOptional.isFound()) {
+      return skipTaskRequest("Skipping rollback step as BlueGreen deploy step was not executed");
     }
 
     AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
@@ -185,7 +202,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
             .prodAsgManifestsDataForRollback(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgManifestDataForRollback())
-            .stageAsgName(asgBlueGreenDeployOutcome.getStageAutoScalingGroupContainer().getAutoScalingGroupName())
+            .stageAsgName(asgBlueGreenDeployOutcome.getStageAsg().getAutoScalingGroupName())
             .stageAsgManifestsDataForRollback(
                 asgBlueGreenPrepareRollbackDataOutcome.getStageAsgManifestDataForRollback())
             .servicesSwapped(trafficShifted)

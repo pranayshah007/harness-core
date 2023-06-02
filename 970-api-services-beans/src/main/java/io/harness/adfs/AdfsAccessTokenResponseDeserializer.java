@@ -9,7 +9,6 @@ package io.harness.adfs;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import io.harness.adfs.AdfsAccessTokenResponse;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.core.JsonParser;

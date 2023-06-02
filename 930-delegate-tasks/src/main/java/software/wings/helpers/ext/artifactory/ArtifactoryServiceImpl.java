@@ -51,6 +51,9 @@ import software.wings.utils.RepositoryType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
@@ -71,7 +74,7 @@ import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.jfrog.artifactory.client.ArtifactoryRequest;
 import org.jfrog.artifactory.client.ArtifactoryResponse;
-import org.jfrog.artifactory.client.ProxyConfig;
+import org.jfrog.artifactory.client.httpClient.http.ProxyConfig;
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 
@@ -89,6 +92,14 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
 
   @Inject private ArtifactCollectionCommonTaskHelper artifactCollectionCommonTaskHelper;
   @Inject private ArtifactoryClientImpl artifactoryClient;
+
+  private final Retry retry;
+
+  public ArtifactoryServiceImpl() {
+    final RetryConfig config =
+        RetryConfig.custom().maxAttempts(1).intervalFunction(IntervalFunction.ofExponentialBackoff()).build();
+    this.retry = Retry.of("ArtifactoryRetry", config);
+  }
 
   @Override
   public Map<String, String> getRepositories(ArtifactoryConfigRequest artifactoryConfig) {
@@ -290,8 +301,13 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
       ArtifactoryClientBuilder builder, ArtifactoryConfigRequest artifactoryConfig) {
     HttpHost httpProxyHost = Http.getHttpProxyHost(artifactoryConfig.getArtifactoryUrl());
     if (httpProxyHost != null && !Http.shouldUseNonProxy(artifactoryConfig.getArtifactoryUrl())) {
-      builder.setProxy(new ProxyConfig(httpProxyHost.getHostName(), httpProxyHost.getPort(), Http.getProxyScheme(),
-          Http.getProxyUserName(), Http.getProxyPassword()));
+      ProxyConfig proxy = new ProxyConfig();
+      proxy.setHost(httpProxyHost.getHostName());
+      proxy.setPort(httpProxyHost.getPort());
+      proxy.setUsername(Http.getProxyUserName());
+      proxy.setPassword(Http.getProxyPassword());
+      builder.setProxy(proxy);
+      builder.setProxy(proxy);
     }
   }
 
@@ -317,8 +333,9 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
       }
       return getHelmChartsVersionsForChartNames(artifactory, aclQuery, helmChartNames);
     } catch (Exception e) {
-      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
-          artifactoryConfig.getArtifactoryUrl(), e);
+      log.error(format("Error occurred while retrieving File Paths from Artifactory server %s",
+                    artifactoryConfig.getArtifactoryUrl()),
+          e);
       handleAndRethrow(e, USER);
     }
     return new ArrayList<>();
@@ -406,6 +423,10 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
     }
   }
 
+  private ArtifactoryResponse retryCall(ArtifactoryRequest request, Artifactory artifactory) throws Exception {
+    return Retry.decorateCallable(this.retry, () -> artifactory.restCall(request)).call();
+  }
+
   public ArtifactoryResponse getArtifactoryResponse(Artifactory artifactory, String aclQuery, String requestBody)
       throws IOException {
     ArtifactoryRequest repositoryRequest = new ArtifactoryRequestImpl()
@@ -414,7 +435,15 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
                                                .requestBody(requestBody)
                                                .requestType(TEXT)
                                                .responseType(JSON);
-    ArtifactoryResponse artifactoryResponse = artifactory.restCall(repositoryRequest);
+
+    ArtifactoryResponse artifactoryResponse;
+    try {
+      artifactoryResponse = retryCall(repositoryRequest, artifactory);
+    } catch (Exception e) {
+      log.warn("An error occurred while getting artifacts of manifests even after retries", e);
+      throw new ArtifactoryServerException("Error occurred while get artifacts of manifests in retry");
+    }
+
     if (artifactoryResponse.getStatusLine().getStatusCode() == 403
         || artifactoryResponse.getStatusLine().getStatusCode() == 400) {
       log.warn(

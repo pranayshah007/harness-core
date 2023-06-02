@@ -39,10 +39,11 @@ public class HelmChartManifestOutcome implements ManifestOutcome {
   ParameterField<String> chartName;
   ParameterField<String> chartVersion;
   ParameterField<Boolean> skipResourceVersioning;
+  ParameterField<Boolean> enableDeclarativeRollback;
   HelmVersion helmVersion;
   List<HelmManifestCommandFlag> commandFlags;
   ParameterField<List<String>> valuesPaths;
-  ParameterField<String> subChartName;
+  ParameterField<String> subChartPath;
 
   public ParameterField<List<String>> getValuesPaths() {
     if (!(getParameterFieldValue(this.valuesPaths) instanceof List)) {

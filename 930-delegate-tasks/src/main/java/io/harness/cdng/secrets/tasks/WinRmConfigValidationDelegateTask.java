@@ -60,12 +60,14 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
     WinRmAuthDTO authDTO = winRmCredentialsSpecDTO.getAuth();
     List<EncryptedDataDetail> encryptionDetails = params.getEncryptionDetails();
 
-    WinRmSessionConfigBuilder builder = WinRmSessionConfig.builder()
-                                            .workingDirectory(HOME_DIR)
-                                            .hostname(params.getHost())
-                                            .port(winRmCredentialsSpecDTO.getPort())
-                                            .environment(Collections.EMPTY_MAP)
-                                            .timeout(1800000);
+    WinRmSessionConfigBuilder builder =
+        WinRmSessionConfig.builder()
+            .workingDirectory(HOME_DIR)
+            .hostname(params.getHost())
+            .port(winRmCredentialsSpecDTO.getPort())
+            .environment(Collections.EMPTY_MAP)
+            .commandParameters(params.getSpec() != null ? params.getSpec().getParameters() : Collections.emptyList())
+            .timeout(1800000);
 
     switch (authDTO.getAuthScheme()) {
       case NTLM:
@@ -154,7 +156,10 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
       return WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build();
     } catch (Exception e) {
       log.info("Exception in WinRmSession Validation", e);
-      return WinRmConfigValidationTaskResponse.builder().connectionSuccessful(false).build();
+      return WinRmConfigValidationTaskResponse.builder()
+          .connectionSuccessful(false)
+          .errorMessage(e.getMessage())
+          .build();
     }
   }
 }

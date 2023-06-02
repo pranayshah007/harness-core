@@ -97,19 +97,22 @@ public class DefaultTempateLoader {
 
   public static TemplateConfig resolveTemplateConfig(
       ServiceDefinitionType serviceDefinitionType, ArtifactType artifactType) {
-    if (ServiceDefinitionType.SSH.equals(serviceDefinitionType) && ArtifactType.JAR.equals(artifactType)) {
+    if (ServiceDefinitionType.SSH.equals(serviceDefinitionType)
+        && (ArtifactType.JAR.equals(artifactType) || ArtifactType.RPM.equals(artifactType))) {
       return TemplateConfig.builder()
           .templateIdentifier(DEFAULT_INSTALL_JAR_BASH_IDENTIFIER)
           .templateYaml(defaultInstallJarBashTemplateYaml)
           .templateComment("Default Template for SSH service and Artifact type Jar")
           .build();
-    } else if (ServiceDefinitionType.SSH.equals(serviceDefinitionType) && ArtifactType.TAR.equals(artifactType)) {
+    } else if (ServiceDefinitionType.SSH.equals(serviceDefinitionType)
+        && (ArtifactType.TAR.equals(artifactType) || ArtifactType.ZIP.equals(artifactType))) {
       return TemplateConfig.builder()
           .templateIdentifier(DEFAULT_INSTALL_TAR_BASH_IDENTIFIER)
           .templateYaml(defaultInstallTarBashTemplateYaml)
           .templateComment("Default Template for SSH service and Artifact type Tar")
           .build();
-    } else if (ServiceDefinitionType.SSH.equals(serviceDefinitionType) && ArtifactType.WAR.equals(artifactType)) {
+    } else if (ServiceDefinitionType.SSH.equals(serviceDefinitionType)
+        && (ArtifactType.WAR.equals(artifactType) || ArtifactType.OTHER.equals(artifactType))) {
       return TemplateConfig.builder()
           .templateIdentifier(DEFAULT_INSTALL_WAR_BASH_IDENTIFIER)
           .templateYaml(defaultInstallWarBashTemplateYaml)

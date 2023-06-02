@@ -7,6 +7,7 @@
 
 package io.harness.cvng.notification.resources;
 
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
 
@@ -94,9 +95,34 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(500);
     assertThat(response.readEntity(String.class))
         .contains(
-            "\"ERROR\",\"message\":\"io.harness.exception.DuplicateFieldException: NotificationRule with identifier rule and orgIdentifier "
+            "\"ERROR\",\"message\":\"io.harness.exception.DuplicateFieldException: NotificationRule with identifier rule, accountId "
+            + builderFactory.getContext().getAccountId() + ", orgIdentifier "
             + builderFactory.getContext().getOrgIdentifier() + " and projectIdentifier "
             + builderFactory.getContext().getProjectIdentifier() + " is already present\"");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSaveNotificationRuleData_withDuplicateEntity_AccountLevel() throws IOException {
+    String notificationYaml = getYAML("notification/notification-rule-account-level.yaml");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/notification-rule/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/notification-rule/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(
+            "\"ERROR\",\"message\":\"io.harness.exception.DuplicateFieldException: NotificationRule with identifier rule, accountId "
+            + builderFactory.getContext().getAccountId() + " is already present\"");
   }
 
   @Test

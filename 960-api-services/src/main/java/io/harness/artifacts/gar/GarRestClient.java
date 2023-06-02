@@ -24,13 +24,13 @@ public interface GarRestClient {
   @GET("/v1/projects/{project}/locations/{region}/repositories/{repositories}/packages/{package}/tags")
   Call<GarPackageVersionResponse> listImageTags(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,
-      @Path(value = "repositories", encoded = true) String repositories,
-      @Path(value = "package", encoded = true) String pkg, @Query(value = "pageSize", encoded = true) int pageSize,
+      @Path(value = "repositories", encoded = true) String repositories, @Path(value = "package") String pkg,
+      @Query(value = "pageSize", encoded = true) int pageSize,
       @Query(value = "pageToken", encoded = true) String pageToken);
 
   @GET("/v1/projects/{project}/locations/{region}/repositories/{repositories}/packages/{package}/tags/{tag}")
   Call<GarTags> getversioninfo(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,
-      @Path(value = "repositories", encoded = true) String repositories,
-      @Path(value = "package", encoded = true) String pkg, @Path(value = "tag", encoded = true) String version);
+      @Path(value = "repositories", encoded = true) String repositories, @Path(value = "package") String pkg,
+      @Path(value = "tag", encoded = true) String version);
 }

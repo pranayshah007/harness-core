@@ -10,10 +10,12 @@ package io.harness.delegate.task.artifacts.artifactory;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -22,6 +24,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgServiceImpl;
 import io.harness.category.element.UnitTests;
@@ -694,5 +697,68 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
     verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
 
     verify(artifactoryArtifactTaskHandler).getSuccessTaskExecutionResponseGeneric(any());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGenericLastSuccessfulBuild_5() {
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
+
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder()
+                                                            .artifactoryUrl("url")
+                                                            .artifactRepositoryUrl("repoUrl")
+                                                            .username("username")
+                                                            .password("password".toCharArray())
+                                                            .build();
+
+    ArtifactoryGenericArtifactDelegateRequest artifactoryArtifactDelegateRequest =
+        ArtifactoryGenericArtifactDelegateRequest.builder()
+            .artifactoryConnectorDTO(
+                ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build())
+            .artifactDirectory("dir/dir1")
+            .artifactPath("path")
+            .artifactPathFilter("")
+            .connectorRef("connectorRef")
+            .repositoryFormat("repoFormat")
+            .repositoryName("repoName")
+            .build();
+
+    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(any());
+
+    BuildDetails buildDetails = new BuildDetails();
+    buildDetails.setNumber("b1");
+    buildDetails.setArtifactPath("dir/dir1/path");
+    buildDetails.setBuildUrl("url");
+    buildDetails.setStatus(BuildStatus.SUCCESS);
+
+    doReturn(buildDetails)
+        .when(artifactoryNgService)
+        .getLatestArtifact(artifactoryConfigRequest, artifactoryArtifactDelegateRequest.getRepositoryName(),
+            artifactoryArtifactDelegateRequest.getArtifactDirectory(),
+            artifactoryArtifactDelegateRequest.getArtifactPathFilter(),
+            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000);
+
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(artifactoryArtifactDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD)
+                                                        .build();
+    doCallRealMethod().when(artifactoryArtifactTaskHandler).getSuccessTaskExecutionResponseGeneric(any());
+
+    ArtifactTaskResponse artifactTaskResponse =
+        artifactoryArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+
+    assertThat(artifactTaskResponse).isNotNull();
+    assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().size())
+        .isEqualTo(1);
+    assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()
+                   .getArtifactDelegateResponses()
+                   .get(0)
+                   .getBuildDetails()
+                   .getMetadata()
+                   .get(ArtifactMetadataKeys.FILE_NAME))
+        .isEqualTo("path");
   }
 }

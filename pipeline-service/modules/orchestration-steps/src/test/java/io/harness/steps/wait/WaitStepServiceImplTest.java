@@ -10,6 +10,8 @@ package io.harness.steps.wait;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,6 +30,8 @@ import io.harness.rule.OwnerRule;
 import io.harness.wait.WaitStepInstance;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.inject.Inject;
+import io.dropwizard.util.Sets;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +43,8 @@ import org.mockito.Spy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Mock WaitNotifyEngine waitNotifyEngine;
-  @Mock WaitStepRepository waitStepRepository;
+  @Mock WaitStepRepository waitStepRepositoryMock;
+  @Inject WaitStepRepository waitStepRepository;
   @Spy @InjectMocks WaitStepServiceImpl waitStepServiceImpl;
   @Mock PlanExecutionService planExecutionService;
   String nodeExecutionId;
@@ -59,7 +64,7 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   public void testSave() {
     WaitStepInstance waitStepInstance = WaitStepInstance.builder().build();
     waitStepServiceImpl.save(waitStepInstance);
-    verify(waitStepRepository, times(1)).save(waitStepInstance);
+    verify(waitStepRepositoryMock, times(1)).save(waitStepInstance);
   }
 
   @Test
@@ -67,14 +72,14 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Category(UnitTests.class)
   public void testFindByNodeExecutionId() {
     waitStepServiceImpl.findByNodeExecutionId(nodeExecutionId);
-    verify(waitStepRepository, times(1)).findByNodeExecutionId(nodeExecutionId);
+    verify(waitStepRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
   }
 
   @Test
   @Owner(developers = OwnerRule.SHALINI)
   @Category(UnitTests.class)
   public void testMarkAsFailOrSuccess() {
-    doReturn(Optional.of(waitStepInstance)).when(waitStepRepository).findByNodeExecutionId(nodeExecutionId);
+    doReturn(Optional.of(waitStepInstance)).when(waitStepRepositoryMock).findByNodeExecutionId(nodeExecutionId);
     when(planExecutionService.calculateStatusExcluding("", nodeExecutionId)).thenReturn(Status.FAILED);
     when(planExecutionService.updateStatus("", Status.FAILED)).thenReturn(PlanExecution.builder().build());
     waitStepServiceImpl.markAsFailOrSuccess("", nodeExecutionId, WaitStepAction.MARK_AS_FAIL);
@@ -86,7 +91,7 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Owner(developers = OwnerRule.SHALINI)
   @Category(UnitTests.class)
   public void testGetWaitStepExecutionDetails() {
-    doReturn(Optional.of(waitStepInstance)).when(waitStepRepository).findByNodeExecutionId(nodeExecutionId);
+    doReturn(Optional.of(waitStepInstance)).when(waitStepRepositoryMock).findByNodeExecutionId(nodeExecutionId);
     WaitStepInstance waitStepInstance1 = waitStepServiceImpl.getWaitStepExecutionDetails(nodeExecutionId);
     assertEquals(waitStepInstance1, waitStepInstance);
   }
@@ -98,5 +103,23 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
     when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.RUNNING);
     when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.FAILED);
     verify(planExecutionService, times(0)).updateStatus("plan", Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeleteWaitStepInstances() {
+    on(waitStepServiceImpl).set("waitStepRepository", waitStepRepository);
+
+    String nodeExecutionId = generateUuid();
+    String correlationId = generateUuid();
+    WaitStepInstance waitStepInstance =
+        WaitStepInstance.builder().waitStepInstanceId(correlationId).nodeExecutionId(nodeExecutionId).build();
+
+    waitStepServiceImpl.save(waitStepInstance);
+    waitStepServiceImpl.deleteWaitStepInstancesForGivenNodeExecutionIds(Sets.of(nodeExecutionId));
+
+    Optional<WaitStepInstance> waitStepInstanceOptional = waitStepServiceImpl.findByNodeExecutionId(nodeExecutionId);
+    assertThat(waitStepInstanceOptional).isEmpty();
   }
 }

@@ -7,9 +7,9 @@
 
 package io.harness.batch.processing.config.k8s.recommendation.estimators;
 
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.cpuAmountFromCores;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.memoryAmountFromBytes;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.cpuAmountFromCores;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.makeResourceMap;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.memoryAmountFromBytes;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;

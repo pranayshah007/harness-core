@@ -62,7 +62,8 @@ public class CloudformationDeleteStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.spec.configuration.spec.roleArn",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.spec.delegateSelectors",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.description",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.timeout");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.timeout",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.when");
   }
 
   @Test
@@ -78,6 +79,7 @@ public class CloudformationDeleteStackStepVariableCreatorTest extends CategoryTe
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.spec.configuration.spec.provisionerIdentifier",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.spec.delegateSelectors",
             "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.description",
-            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.timeout");
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.timeout",
+            "pipeline.stages.foo.spec.infrastructure.infrastructureDefinition.provisioner.steps.cfdeletestack.when");
   }
 }

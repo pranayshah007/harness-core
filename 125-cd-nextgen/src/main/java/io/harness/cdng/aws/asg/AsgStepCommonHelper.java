@@ -29,6 +29,7 @@ import io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome.AsgRollingPr
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -47,6 +48,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
@@ -142,6 +144,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
+    checkRequiredManifests(manifestsOutcome);
 
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
 
@@ -184,6 +187,28 @@ public class AsgStepCommonHelper extends CDStepHelper {
                                                                .build();
 
     return chainFetchGitTaskUntilAllGitManifestsFetched(executionPassThroughData, ambiance, stepElementParameters);
+  }
+
+  private void checkRequiredManifests(ManifestsOutcome manifestsOutcome) {
+    boolean asgConfigurationPresent = false;
+    boolean launchTemplatePresent = false;
+
+    for (ManifestOutcome manifestOutcome : manifestsOutcome.values()) {
+      if (ManifestType.AsgConfiguration.equals(manifestOutcome.getType())) {
+        asgConfigurationPresent = true;
+      }
+      if (ManifestType.AsgLaunchTemplate.equals(manifestOutcome.getType())) {
+        launchTemplatePresent = true;
+      }
+    }
+
+    if (!asgConfigurationPresent) {
+      throw new InvalidRequestException("ASG Configuration manifest is required");
+    }
+
+    if (!launchTemplatePresent) {
+      throw new InvalidRequestException("Launch Template manifest is required");
+    }
   }
 
   public ManifestsOutcome resolveAsgManifestsOutcome(Ambiance ambiance) {
@@ -605,7 +630,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       String asgName = asgRollingDeployResult.getAutoScalingGroupContainer().getAutoScalingGroupName();
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
-          asgName, null);
+          asgName, true);
     }
 
     else if (asgCommandResponse instanceof AsgRollingRollbackResponse) {
@@ -617,7 +642,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       }
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgRollingRollbackResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_ROLLING,
-          asgName, null);
+          asgName, true);
     }
 
     else if (asgCommandResponse instanceof AsgCanaryDeployResponse) {
@@ -627,7 +652,11 @@ public class AsgStepCommonHelper extends CDStepHelper {
       String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 8);
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(
           asgCanaryDeployResult.getAutoScalingGroupContainer(), infrastructureKey, region, EXEC_STRATEGY_CANARY,
-          asgNameWithoutSuffix, null);
+          asgNameWithoutSuffix, true);
+    }
+
+    else if (asgCommandResponse instanceof AsgCanaryDeleteResponse) {
+      return new ArrayList<>();
     }
 
     else if (asgCommandResponse instanceof AsgBlueGreenDeployResponse) {

@@ -7,15 +7,25 @@
 
 package io.harness.plan;
 
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
+import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -35,5 +45,24 @@ public class PlanNodeTest extends CategoryTest {
       assertThat(mappedExpressionMode.name()).isEqualTo(expressionMode.name());
       assertThat(mappedExpressionMode.getIndex()).isEqualTo(expressionMode.getNumber());
     }
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildAdvisorObtainmentsForExecutionMode() {
+    AdvisorObtainmentList basicList =
+        AdvisorObtainmentList.newBuilder()
+            .addAdviserObtainments(AdviserObtainment.newBuilder().setType(AdviserType.getDefaultInstance()).build())
+            .build();
+    Map<String, AdvisorObtainmentList> advisorObtainments = new HashMap<>();
+    advisorObtainments.put(POST_EXECUTION_ROLLBACK.name(), basicList);
+    advisorObtainments.put(PIPELINE_ROLLBACK.name(), basicList);
+    Map<ExecutionMode, List<AdviserObtainment>> result =
+        PlanNode.buildAdvisorObtainmentsForExecutionMode(advisorObtainments);
+    assertThat(result).hasSize(2);
+    assertThat(result).containsKeys(POST_EXECUTION_ROLLBACK, PIPELINE_ROLLBACK);
+    assertThat(result.get(POST_EXECUTION_ROLLBACK)).hasSize(1);
+    assertThat(result.get(PIPELINE_ROLLBACK)).hasSize(1);
   }
 }

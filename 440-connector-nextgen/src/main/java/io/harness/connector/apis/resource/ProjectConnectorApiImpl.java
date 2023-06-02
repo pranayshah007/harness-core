@@ -16,6 +16,7 @@ import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissi
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -118,9 +119,10 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
   @NGAccessControlCheck(resourceType = ResourceTypes.CONNECTOR, permission = VIEW_CONNECTOR_PERMISSION)
   @Override
   public Response getProjectScopedConnectors(@OrgIdentifier String org, @ProjectIdentifier String project,
-      Boolean recursive, String searchTerm, Integer page, Integer limit, @AccountIdentifier String account) {
-    PageResponse<ConnectorResponseDTO> pageResponse = getNGPageResponse(
-        connectorService.list(page, limit, account, null, org, project, null, searchTerm, recursive, null));
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String sort, String order,
+      @AccountIdentifier String account) {
+    PageResponse<ConnectorResponseDTO> pageResponse = getNGPageResponse(connectorService.list(account, null, org,
+        project, null, searchTerm, recursive, null, getPageRequest(ApiUtils.getPageRequest(page, limit, sort, order))));
 
     List<ConnectorResponseDTO> connectorResponseDTOS = pageResponse.getContent();
 

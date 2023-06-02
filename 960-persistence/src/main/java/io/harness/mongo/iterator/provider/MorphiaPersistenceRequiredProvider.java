@@ -72,8 +72,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
-      boolean unsorted) {
+      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
+      boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
     Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
     UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
@@ -94,7 +94,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
   }
 
   @Override
-  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
+  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander,
+      boolean isDelegateTaskMigrationEnabled) {
     Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, false).project(fieldName, true);
     return resultQuery.get();
   }

@@ -13,6 +13,7 @@ import static io.harness.steps.TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PRO
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -53,6 +54,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
+
+import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -242,7 +245,9 @@ public class EcsRollingRollbackStepTest extends CategoryTest {
                                                .taskRequest(TaskRequest.newBuilder().build())
                                                .passThroughData(ecsExecutionPassThroughData)
                                                .build();
-    doReturn(taskChainResponse1).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(taskChainResponse1)
+        .when(ecsStepCommonHelper)
+        .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
 
     TaskRequest taskRequest = ecsRollingDeployStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
     assertThat(taskRequest).isEqualTo(TaskRequest.newBuilder().build());

@@ -52,8 +52,8 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
 
   @Builder(builderMethodName = "infoBuilder")
   public UpdateReleaseRepoStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, String>> stringMap, List<NGVariable> variables) {
-    super(stringMap, delegateSelectors);
+      ParameterField<Map<String, String>> stringMap, List<NGVariable> variables, ParameterField<String> prTitle) {
+    super(stringMap, delegateSelectors, prTitle);
     this.variables = variables;
   }
 
@@ -77,7 +77,14 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
     return UpdateReleaseRepoStepParams.infoBuilder()
         .stringMap(getStringMap())
         .delegateSelectors(getDelegateSelectors())
+        .prTitle(prTitle)
         .variables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(variables))
         .build();
   }
+
+  // commenting this since we manually evaluate and override expressions
+  //  @Override
+  //  public ExpressionMode getExpressionMode() {
+  //    return ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
+  //  }
 }

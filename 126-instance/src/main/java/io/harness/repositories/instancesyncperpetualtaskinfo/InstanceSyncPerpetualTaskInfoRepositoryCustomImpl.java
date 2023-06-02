@@ -15,14 +15,18 @@ import io.harness.springdata.PersistenceUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -37,6 +41,22 @@ public class InstanceSyncPerpetualTaskInfoRepositoryCustomImpl
     return mongoTemplate.findAndModify(
         query, update, FindAndModifyOptions.options().returnNew(true), InstanceSyncPerpetualTaskInfo.class);
   }
+
+  @Override
+  public List<InstanceSyncPerpetualTaskInfo> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, InstanceSyncPerpetualTaskInfo.class);
+  }
+
+  @Override
+  public Page<InstanceSyncPerpetualTaskInfo> findAllInPages(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<InstanceSyncPerpetualTaskInfo> instanceSyncPerpetualTaskInfos =
+        mongoTemplate.find(query, InstanceSyncPerpetualTaskInfo.class);
+    return PageableExecutionUtils.getPage(instanceSyncPerpetualTaskInfos, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), InstanceSyncPerpetualTaskInfo.class));
+  }
+
   @Override
   public DeleteResult delete(Criteria criteria) {
     Query query = new Query(criteria);

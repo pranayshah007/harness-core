@@ -28,8 +28,8 @@ import static software.wings.utils.WingsTestConstants.UUID;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -42,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -99,6 +100,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private CloudFormationDeleteStackState state = new CloudFormationDeleteStackState("stateName");
 

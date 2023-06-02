@@ -28,6 +28,7 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;
+import io.harness.provision.model.TfConfigInspectVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 
@@ -122,6 +123,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final AwsConfig configFilesAwsSourceConfig;
   private List<EncryptedDataDetail> configFileAWSEncryptionDetails;
   private final TfVarS3Source remoteS3BackendConfig;
+  private final TfConfigInspectVersion terraformConfigInspectVersion;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

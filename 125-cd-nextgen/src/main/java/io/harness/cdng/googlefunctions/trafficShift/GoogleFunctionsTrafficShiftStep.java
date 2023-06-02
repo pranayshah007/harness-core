@@ -16,6 +16,7 @@ import io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -40,6 +41,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,6 +62,7 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
   @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -75,9 +79,8 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
 
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
           googleFunctionTrafficShiftResponse.getUnitProgressData().getUnitProgresses());
-
       stepResponse =
-          googleFunctionsHelper.generateStepResponse(googleFunctionTrafficShiftResponse, stepResponseBuilder);
+          googleFunctionsHelper.generateStepResponse(googleFunctionTrafficShiftResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing google function traffic shift response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -136,7 +139,8 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
 
     return googleFunctionsHelper
         .queueTask(stepParameters, googleFunctionTrafficShiftRequest, ambiance,
-            GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true)
+            GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true,
+            TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK)
         .getTaskRequest();
   }
 

@@ -13,12 +13,26 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 
 @Getter
 @AllArgsConstructor
+@FieldNameConstants(innerTypeName = "Keys")
 @OwnedBy(HarnessTeam.DX)
 public class CountByServiceIdAndEnvType {
   private String serviceIdentifier;
   private EnvironmentType envType;
   private int count;
+
+  public static ProjectionOperation getProjection() {
+    return Aggregation.project()
+        .andExpression("_id." + Keys.serviceIdentifier)
+        .as(Keys.serviceIdentifier)
+        .andExpression("_id." + Keys.envType)
+        .as(Keys.envType)
+        .andExpression(Keys.count)
+        .as(Keys.count);
+  }
 }

@@ -16,7 +16,6 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorLoopModeHandler;
@@ -102,12 +101,6 @@ public class LdapGroupScheduledHandler extends IteratorLoopModeHandler implement
     iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
-  public void wakeup() {
-    if (iterator != null) {
-      iterator.wakeup();
-    }
-  }
-
   @Override
   public void handle(LdapSettings settings) {
     ldapGroupSyncJobHelper.syncJob(settings);
@@ -117,11 +110,7 @@ public class LdapGroupScheduledHandler extends IteratorLoopModeHandler implement
   }
 
   private void processForNG(LdapSettings settings) {
-    if (featureFlagService.isEnabled(FeatureName.NG_ENABLE_LDAP_CHECK, settings.getAccountId())) {
-      publishEventToNG(settings);
-    } else {
-      log.error("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account.");
-    }
+    publishEventToNG(settings);
   }
 
   private void publishEventToNG(LdapSettings settings) {

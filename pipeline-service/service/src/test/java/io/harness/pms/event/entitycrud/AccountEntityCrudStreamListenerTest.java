@@ -13,7 +13,6 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.rule.OwnerRule.ARCHIT;
 

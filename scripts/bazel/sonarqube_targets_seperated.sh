@@ -11,15 +11,32 @@ MODULES="$1"
 echo "def get_sonarqube_targets_seperated():"
 echo "    return {"
 
-if [[ "$MODULES" == "below400" ]]; then
+if [[ "$MODULES" == "401to999" ]]; then
+
   bazel query 'attr(tags, "sonarqube", //...:*)' | cut -c 3- | rev | cut -c 11- | rev |\
-    awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | sed '1,/400-rest/d'
+    awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | sed '1,/400-rest/d' | grep -v "400-rest" | grep "\/\/[4-9][0-9][0-9]-*"
+
 elif [[ "$MODULES" == "only400" ]]; then
+
   bazel query 'attr(tags, "sonarqube", //...:*)' | cut -c 3- | rev | cut -c 11- | rev |\
     awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | grep 400-rest
-elif [[ "$MODULES" == "above400" ]]; then
+
+elif [[ "$MODULES" == "000to399" ]]; then
+
   bazel query 'attr(tags, "sonarqube", //...:*)' | cut -c 3- | rev | cut -c 11- | rev |\
     awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | sed -n '/400-rest/q;p'
+
+elif [[ "$MODULES" == "Indivi" ]]; then
+
+#  bazel query 'attr(tags, "sonarqube", //...:*)' | cut -c 3- | rev | cut -c 11- | rev |\
+#      awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | sed '1,/400-rest/d' | grep "\/\/9[0-9][0-9]-*" > 900-onwards.log
+
+  bazel query 'attr(tags, "sonarqube", //...:*)' | cut -c 3- | rev | cut -c 11- | rev |\
+        awk ' { print "        \"//"$1":sonarqube\": \""$1"\"," } ' | sed '1,/400-rest/d' | grep -v "\/\/[0-9][0-9][0-9]-*" > indivi.log
+
+  modules=$(cat indivi.log)
+  echo "$modules"
+
 else
   echo "No Module Range Provided...Exiting"; exit 1
 fi

@@ -10,10 +10,10 @@ package io.harness.utils;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.experimental.UtilityClass;
 
@@ -21,7 +21,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class TimeoutUtils {
   public final String DEFAULT_TIMEOUT = "10h";
-  public Long DEFAULT_TIMEOUT_IN_MILLIS = Duration.ofHours(10).toMillis();
 
   public long getTimeoutInSeconds(Timeout timeout, long defaultTimeoutInSeconds) {
     if (timeout == null) {
@@ -52,6 +51,10 @@ public class TimeoutUtils {
 
   public ParameterField<Timeout> getTimeout(ParameterField<Timeout> timeout) {
     if (ParameterField.isNull(timeout)) {
+      return ParameterField.createValueField(Timeout.fromString(DEFAULT_TIMEOUT));
+    }
+    // If the timeout field is runtime input then use default value
+    if (timeout.isExpression() && NGExpressionUtils.matchesInputSetPattern(timeout.getExpressionValue())) {
       return ParameterField.createValueField(Timeout.fromString(DEFAULT_TIMEOUT));
     }
     return timeout;

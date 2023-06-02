@@ -33,9 +33,9 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -55,6 +55,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -110,6 +111,7 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
   @Mock private ContainerDeploymentManagerHelper mockContainerDeploymentManagerHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private EcsSteadyStateCheck check = new EcsSteadyStateCheck("stateName");

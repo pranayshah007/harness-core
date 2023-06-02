@@ -28,6 +28,7 @@ import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.Statement;
+import com.amazonaws.services.costandusagereport.model.AWSCostAndUsageReportException;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.identitymanagement.model.AmazonIdentityManagementException;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
@@ -186,6 +187,9 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .errorSummary(ex.getMessage())
           .testedAt(Instant.now().toEpochMilli())
           .build();
+    } catch (AWSCostAndUsageReportException ex) {
+      // CCM-12474: Handling error and declaring connector success temporarily, AWS CUR API 404
+      log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
     } catch (Exception ex) {
       // These are unknown errors, they should be identified over time and parsed correctly
       log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
@@ -253,6 +257,13 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       final Policy orchestratorPolicy = getRequiredCommitmentOrchestratorPolicy();
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
           CEFeatures.COMMITMENT_ORCHESTRATOR, errorList, orchestratorPolicy,
+          Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
+    }
+
+    if (featuresEnabled.contains(CEFeatures.CLUSTER_ORCHESTRATOR)) {
+      final Policy orchestratorPolicy = getRequiredClusterOrchestratorPolicy();
+      validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
+          CEFeatures.CLUSTER_ORCHESTRATOR, errorList, orchestratorPolicy,
           Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
     }
   }
@@ -395,7 +406,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       log.info("Latest .csv.gz file in {}/{} latestFileName: {} latestFileLastmodifiedTime: {}", s3BucketName,
           s3PathPrefix, latestFileName, latestFileLastmodifiedTime);
       long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
-      if (!latestFileName.isEmpty() && latestFileLastmodifiedTime.getTime() < now) {
+      if (latestFileLastmodifiedTime.getTime() < now) {
         String reason = String.format("No CUR file is found in last 24 hrs at %s/%s. ", s3BucketName, s3PathPrefix);
         errorList.add(
             ErrorDetail.builder()
@@ -515,6 +526,36 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         + "        \"ce:GetDimensionValues\","
         + "        \"ce:GetReservationUtilization\","
         + "        \"ce:GetSavingsPlansUtilizationDetails\""
+        + "      ],"
+        + "      \"Resource\": \"*\""
+        + "    }"
+        + "  ]"
+        + "}";
+
+    log.info(policyDocumentFinal);
+    return Policy.fromJson(policyDocumentFinal);
+  }
+
+  private Policy getRequiredClusterOrchestratorPolicy() {
+    final String policyDocumentFinal = "{"
+        + "  \"Version\": \"2012-10-17\","
+        + "  \"Statement\": ["
+        + "    {"
+        + "      \"Effect\": \"Allow\","
+        + "      \"Action\": ["
+        + "        \"eks:ListNodegroups\","
+        + "        \"eks:DescribeFargateProfile\","
+        + "        \"eks:UntagResource\","
+        + "        \"eks:ListTagsForResource\","
+        + "        \"eks:ListFargateProfiles\","
+        + "        \"eks:DescribeNodegroup\","
+        + "        \"eks:DescribeIdentityProviderConfig\","
+        + "        \"eks:TagResource\","
+        + "        \"eks:AccessKubernetesApi\","
+        + "        \"eks:DescribeCluster\","
+        + "        \"eks:ListClusters'\","
+        + "        \"eks:ListIdentityProviderConfigs\","
+        + "        \"eks:AssociateIdentityProviderConfig\""
         + "      ],"
         + "      \"Resource\": \"*\""
         + "    }"

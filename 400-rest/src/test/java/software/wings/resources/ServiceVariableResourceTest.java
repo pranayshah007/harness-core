@@ -22,8 +22,7 @@ import static java.util.Arrays.asList;
 import static javax.ws.rs.client.Entity.entity;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -89,8 +88,8 @@ public class ServiceVariableResourceTest extends CategoryTest {
                                                               .accountId(ACCOUNT_ID)
                                                               .build();
   static {
-    when(VARIABLE_SERVICE.save(anyObject())).then(AdditionalAnswers.returnsFirstArg());
-    when(VARIABLE_SERVICE.saveWithChecks(anyString(), anyObject())).then(AdditionalAnswers.returnsSecondArg());
+    when(VARIABLE_SERVICE.save(any())).then(AdditionalAnswers.returnsFirstArg());
+    when(VARIABLE_SERVICE.saveWithChecks(anyString(), any())).then(AdditionalAnswers.returnsSecondArg());
     when(APP_SERVICE.get(anyString())).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
     try {
       FieldUtils.writeField(VARIABLE_RESOURCE, "serviceVariablesService", VARIABLE_SERVICE, true);

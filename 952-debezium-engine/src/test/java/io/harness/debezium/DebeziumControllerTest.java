@@ -23,6 +23,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import org.junit.Test;
@@ -51,8 +52,8 @@ public class DebeziumControllerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLockName() {
     props.setProperty(DebeziumConfiguration.CONNECTOR_NAME, "conn1");
-    DebeziumController debeziumController = new DebeziumController(
-        props, eventsFrameworkChangeConsumerStreaming, persistentLocker, executorService, debeziumService);
+    DebeziumController debeziumController = new DebeziumController(props, eventsFrameworkChangeConsumerStreaming,
+        persistentLocker, executorService, debeziumService, new ArrayList<>());
     assertEquals(debeziumController.getLockName(),
         DEBEZIUM_LOCK_PREFIX + props.get(DebeziumConfiguration.CONNECTOR_NAME) + "-"
             + "coll");
@@ -62,8 +63,8 @@ public class DebeziumControllerTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testAcquireLock() throws InterruptedException {
-    DebeziumController debeziumController = new DebeziumController(
-        props, eventsFrameworkChangeConsumerStreaming, persistentLocker, executorService, debeziumService);
+    DebeziumController debeziumController = new DebeziumController(props, eventsFrameworkChangeConsumerStreaming,
+        persistentLocker, executorService, debeziumService, new ArrayList<>());
     doReturn(acquiredLock).when(persistentLocker).tryToAcquireInfiniteLockWithPeriodicRefresh(any(), any());
     assertThat(debeziumController.acquireLock(false)).isInstanceOf(AcquiredLock.class);
   }

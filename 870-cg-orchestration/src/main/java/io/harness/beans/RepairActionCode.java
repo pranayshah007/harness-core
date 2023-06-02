@@ -24,7 +24,8 @@ public enum RepairActionCode {
   RETRY,
   END_EXECUTION,
   CONTINUE_WITH_DEFAULTS,
-  ABORT_WORKFLOW_EXECUTION;
+  ABORT_WORKFLOW_EXECUTION,
+  MARK_AS_FAILURE;
 
   private static final Set<RepairActionCode> pipelineRuntimeInputsTimeoutAction =
       EnumSet.of(END_EXECUTION, CONTINUE_WITH_DEFAULTS);

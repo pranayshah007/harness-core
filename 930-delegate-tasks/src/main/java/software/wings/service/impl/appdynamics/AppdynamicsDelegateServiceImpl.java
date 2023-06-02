@@ -10,9 +10,9 @@ package software.wings.service.impl.appdynamics;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.getUnsafeHttpClient;
 import static software.wings.delegatetasks.cv.CVConstants.DURATION_TO_ASK_MINUTES;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.cvng.beans.appd.AppDynamicsApplication;
 import io.harness.cvng.beans.appd.AppDynamicsTier;
@@ -22,10 +22,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.beans.AppDynamicsConfig;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.appdynamics.AppdynamicsRestClient;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse.VerificationLoadResponse;
 import software.wings.service.impl.appdynamics.AppdynamicsMetric.AppdynamicsMetricType;

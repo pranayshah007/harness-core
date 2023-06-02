@@ -179,7 +179,7 @@ public class AsgTaskHelper {
       AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroup);
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
           asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy, asgNameWithoutSuffix,
-          null);
+          true);
     }
 
     else if (executionStrategy.equals(EXEC_STRATEGY_BLUEGREEN)) {
@@ -231,7 +231,7 @@ public class AsgTaskHelper {
       AutoScalingGroupContainer autoScalingGroupContainer = mapToAutoScalingGroupContainer(autoScalingGroup);
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
           asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy, asgNameWithoutSuffix,
-          null);
+          true);
     }
   }
 }

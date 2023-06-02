@@ -96,6 +96,7 @@ public interface HarnessResourceGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "This returns a Resource Group specific to the Identifier")
       })
+  @Deprecated
   ResponseDTO<ResourceGroupResponse>
   get(@Parameter(description = "This is the Identifier of the Entity", required = true) @NotNull @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
@@ -134,6 +135,7 @@ public interface HarnessResourceGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "This contains a list of Resource Groups")
       })
+  @Deprecated
   ResponseDTO<PageResponse<ResourceGroupResponse>>
   list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -155,6 +157,7 @@ public interface HarnessResourceGroupResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "This fetches the list of Resource Groups filtered by multiple fields.")
       })
+  @Deprecated
   ResponseDTO<PageResponse<ResourceGroupResponse>>
   list(@RequestBody(description = "Filter Resource Groups based on multiple parameters",
            required = true) @NotNull ResourceGroupFilterDTO resourceGroupFilterDTO,
@@ -170,6 +173,7 @@ public interface HarnessResourceGroupResource {
         ApiResponse(responseCode = "default", description = "Successfully created a Resource Group")
       })
   @FeatureRestrictionCheck(FeatureRestrictionName.CUSTOM_RESOURCE_GROUPS)
+  @Deprecated
   ResponseDTO<ResourceGroupResponse>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -188,6 +192,7 @@ public interface HarnessResourceGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Successfully updated a Resource Group")
       })
+  @Deprecated
   ResponseDTO<ResourceGroupResponse>
   update(@Parameter(description = "Identifier for the entity") @NotNull @PathParam(
              NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
@@ -210,6 +215,7 @@ public interface HarnessResourceGroupResource {
       })
   @Produces("application/json")
   @Consumes()
+  @Deprecated
   ResponseDTO<Boolean>
   delete(@NotNull @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(

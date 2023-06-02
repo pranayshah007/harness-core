@@ -207,19 +207,27 @@ pipelineServiceClientConfig:
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
-  connectTimeOutSeconds: 30
-  readTimeOutSeconds: 30
+  connectTimeOutSeconds: 120
+  readTimeOutSeconds: 120
 
+containerStepConfigureWithCi: ${SHOULD_CONFIGURE_WITH_CI:-false}
+ciServiceClientConfig:
+  baseUrl: http://localhost:4457/api/
+  connectTimeOutSeconds: 120
+  readTimeOutSeconds: 120
 
 queueServiceClientConfig:
-  baseUrl: http://localhost:3457/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+  httpClientConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
-queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+ciServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
 jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
 
@@ -302,6 +310,13 @@ orchestrationStepConfig:
     addonImage: harness/ci-addon:1.14.19
     liteEngineImage: harness/ci-lite-engine:1.14.22
     isLocal: false
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+    pluginConfig:
+      sscaOrchestrationConfig:
+        image: harness/ssca-plugin:latest
+        entrypoint:
+          - /bin/ssca-plugin
+
 
 shouldDeployWithGitSync: true
 
@@ -333,6 +348,8 @@ redisLockConfig:
   useScriptCache: true
   userName: ""
   password: ""
+  timeout: 6000
+  subscriptionsPerConnection: 5
 
 distributedLockImplementation: MONGO
 
@@ -400,6 +417,8 @@ pipelineEventConsumersConfig:
   initiateNode:
     threads: 1
   pollingEvent:
+    threads: 1
+  triggerExecutionEvent:
     threads: 1
 
 delegatePollingConfig:
@@ -553,3 +572,48 @@ eventsFrameworkSnapshotDebezium:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+
+cfClientConfig:
+  apiKey: ""
+  configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
+  eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
+  analyticsEnabled: true
+  connectionTimeout: 10000
+  readTimeout: 45000
+  bufferSize: 10240
+  retries: 6
+  sleepInterval: 5000
+
+featureFlagConfig:
+  featureFlagSystem: LOCAL
+  syncFeaturesToCF: false
+
+sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
+
+pipelineAsyncValidationPoolConfig:
+  corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_MAX_SIZE:-25}
+  idleTime: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+triggerAuthenticationPoolConfig:
+  corePoolSize: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_MAX_SIZE:-25}
+  idleTime: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+pipelineSetupUsageCreationExecutorServiceConfig:
+  corePoolSize: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_CORE_SIZE:-1}
+  maxPoolSize: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+expandedJsonConfig:
+  lockTimeOutInMinutes: 2

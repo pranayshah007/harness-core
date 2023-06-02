@@ -195,7 +195,7 @@ public interface HarnessResourceGroupResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update a resource group", nickname = "updateResourceGroupV2")
-  @Operation(operationId = "updateResourceGroup", summary = "Update Resource Group",
+  @Operation(operationId = "updateResourceGroupV2", summary = "Update Resource Group",
       description = "Update a resource group",
       responses =
       {

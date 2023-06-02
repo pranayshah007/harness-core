@@ -30,4 +30,5 @@ public interface CfCommandUnitConstants {
   String SwapRollback = "Swap Rollback";
   String Deploy = "Deploy";
   String Rollback = "Rollback";
+  String RouteMapping = "Route Mapping";
 }

@@ -14,8 +14,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.DelegateTaskType;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.appdynamics.AppdynamicsMetric;
 import software.wings.service.impl.appdynamics.AppdynamicsMetricData;

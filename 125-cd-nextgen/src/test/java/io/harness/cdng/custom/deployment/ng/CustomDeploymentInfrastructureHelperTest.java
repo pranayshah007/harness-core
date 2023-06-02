@@ -790,7 +790,10 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
 
     EnvironmentOutcome environmentOutcome = EnvironmentOutcome.builder().identifier(ENVIRONMENT_IDENTIFIER).build();
 
-    CustomDeploymentInfrastructure customDeploymentInfrastructure = CustomDeploymentInfrastructure.builder().build();
+    CustomDeploymentInfrastructure customDeploymentInfrastructure =
+        CustomDeploymentInfrastructure.builder()
+            .customDeploymentRef(StepTemplateRef.builder().templateRef("template").build())
+            .build();
     customDeploymentInfrastructure.setInfraName(INFRA_NAME);
     customDeploymentInfrastructure.setInfraIdentifier(CUSTOM_DEPLOYMENT_INFRA_ID);
 
@@ -807,6 +810,7 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
     assertThatThrownBy(
         () -> customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Infrastructure - [OpenStackInfra] is obsolete, please update the infrastructure");
+        .hasMessage(
+            "Infrastructure - [OpenStackInfra] is obsolete as Deployment Template with Id: [template] has been updated, please reconcile the infrastructure");
   }
 }

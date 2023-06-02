@@ -54,9 +54,9 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -73,6 +73,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.TriggeredBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -198,6 +199,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks
   private CloudFormationCreateStackState cloudFormationCreateStackState = new CloudFormationCreateStackState("name");

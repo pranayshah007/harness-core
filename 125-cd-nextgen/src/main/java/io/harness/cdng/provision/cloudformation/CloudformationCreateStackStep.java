@@ -17,6 +17,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationCreateStackPassThroughData;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -76,6 +77,7 @@ public class CloudformationCreateStackStep
   @Inject private CloudformationStepHelper cloudformationStepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private CloudformationConfigDAL cloudformationConfigDAL;
+  @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -172,14 +174,16 @@ public class CloudformationCreateStackStep
             ambiance, stepParameters, (CloudFormationCreateStackPassThroughData) passThroughData);
         cloudformationConfigDAL.saveCloudformationConfig(cloudformationConfig);
       }
+      CloudformationCreateStackOutcome cloudformationCreateStackOutcome = new CloudformationCreateStackOutcome(
+          isNotEmpty(cloudFormationCreateStackNGResponse.getCloudFormationOutputMap())
+              ? cloudFormationCreateStackNGResponse.getCloudFormationOutputMap()
+              : new HashMap<>());
+      provisionerOutputHelper.saveProvisionerOutputByStepIdentifier(ambiance, cloudformationCreateStackOutcome);
       return StepResponse.builder()
           .unitProgressList(cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses())
           .stepOutcome(StepResponse.StepOutcome.builder()
                            .name(OutcomeExpressionConstants.OUTPUT)
-                           .outcome(new CloudformationCreateStackOutcome(
-                               isNotEmpty(cloudFormationCreateStackNGResponse.getCloudFormationOutputMap())
-                                   ? cloudFormationCreateStackNGResponse.getCloudFormationOutputMap()
-                                   : new HashMap<>()))
+                           .outcome(cloudformationCreateStackOutcome)
                            .build())
           .status(Status.SUCCEEDED)
           .build();

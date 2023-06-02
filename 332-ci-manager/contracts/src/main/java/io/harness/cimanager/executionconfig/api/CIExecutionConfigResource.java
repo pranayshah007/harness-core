@@ -88,6 +88,7 @@ public interface CIExecutionConfigResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(required = true,
           description = "Details of the Update Operations") @NotNull @Valid List<Operation> operations);
+
   @POST
   @Path("/reset-config")
   @ApiOperation(value = "Reset execution config", nickname = "resetExecutionConfig")
@@ -110,6 +111,7 @@ public interface CIExecutionConfigResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   ResponseDTO<Boolean>
   deleteExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
   @GET
   @Path("/")
   @ApiOperation(value = "Get execution config", nickname = "getExecutionConfig")
@@ -119,6 +121,20 @@ public interface CIExecutionConfigResource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "List of deprecated tags for CI builds") })
   ResponseDTO<List<DeprecatedImageInfo>>
   getExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
+  @GET
+  @Path("/get-deprecated-config")
+  @ApiOperation(value = "Get deprecated config", nickname = "getDeprecatedConfig")
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  @io.swagger.v3.oas.annotations.Operation(operationId = "getDeprecatedConfig", summary = "Get deprecated tags for CI",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Get Customer's deprecated tags for CI builds")
+      })
+  ResponseDTO<CIExecutionImages>
+  getDeprecatedConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
   @GET
   @Path("/get-customer-config")
   @ApiOperation(value = "Get customer's execution config", nickname = "getCustomerConfig")
@@ -134,6 +150,7 @@ public interface CIExecutionConfigResource {
   getCustomerConfig(@NotNull @QueryParam(NGCommonEntityConstants.INFRA) Type infra,
       @NotNull @QueryParam(NGCommonEntityConstants.OVERRIDES_ONLY) @DefaultValue("true") boolean overridesOnly,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+
   @GET
   @Path("/get-default-config")
   @ApiOperation(value = "Get default execution config", nickname = "getDefaultConfig")

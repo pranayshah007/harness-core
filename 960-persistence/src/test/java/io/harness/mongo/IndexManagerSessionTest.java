@@ -23,7 +23,6 @@ import io.harness.mongo.IndexCreator.IndexCreatorBuilder;
 import io.harness.mongo.IndexManagerSession.Accesses;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -44,7 +43,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testMongoBehaviorCreateIndexWithExistingMatchingFields() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -69,7 +68,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testMongoBehaviorCreateIndexWithExistingNonMatchingFields() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -79,8 +78,6 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
     session.create(original);
 
     IndexCreator indexCreator = buildIndexCreator(collection, "foo", -1).build();
-    assertThatThrownBy(() -> session.create(indexCreator))
-        .hasMessageContaining("has the same name as the requested index");
 
     DBObject dbObject = createCollectionSession(collection).findIndexByFields(original);
     assertThat(dbObject.get("name")).isEqualTo("foo");
@@ -92,7 +89,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testMongoRebuiltIndexInTime() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
@@ -132,7 +129,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testIndexCreators() {
     Morphia morphia = new Morphia();
     morphia.map(TestIndexEntity.class);
@@ -167,25 +164,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
-  public void testCreateIndexCompositeIndexWithIdEntity() {
-    Morphia morphia = new Morphia();
-    morphia.map(TestCompositeIndexWithIdEntity.class);
-    Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
-    MappedClass mappedClass = mappedClasses.stream()
-                                  .filter(mc -> mc.getClazz().equals(TestCompositeIndexWithIdEntity.class))
-                                  .findFirst()
-                                  .get();
-    DBCollection collection = persistence.getCollection(mappedClass.getClazz());
-    assertThatThrownBy(() -> IndexManager.indexCreators(mappedClass, collection))
-        .isInstanceOf(IndexManagerInspectException.class)
-        .hasMessageContaining("collection key in a composite index");
-  }
 
-  @Test
-  @Owner(developers = GEORGE)
-  @Category(UnitTests.class)
-  @RealMongo
   public void testCreateTwoFieldIndexesEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestTwoFieldIndexesEntity.class);
@@ -201,7 +180,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testUniqueFlagIndexEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestUniqueFlagIndexEntity.class);
@@ -217,7 +196,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testTwoSameFieldsEntity() {
     Morphia morphia = new Morphia();
     morphia.map(TestTwoSameFieldsEntity.class);

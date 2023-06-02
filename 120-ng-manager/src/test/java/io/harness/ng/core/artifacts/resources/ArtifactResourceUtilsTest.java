@@ -7,11 +7,13 @@
 
 package io.harness.ng.core.artifacts.resources;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -33,15 +36,40 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
+import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryDockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
+import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
+import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
+import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
+import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
+import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
+import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
+import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
+import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
+import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
+import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
@@ -55,6 +83,7 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -68,26 +97,36 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
+@RunWith(JUnitParamsRunner.class)
 public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @InjectMocks ArtifactResourceUtils artifactResourceUtils;
   @Mock PipelineServiceClient pipelineServiceClient;
   @Mock TemplateResourceClient templateResourceClient;
   @Mock ServiceEntityService serviceEntityService;
   @Mock EnvironmentService environmentService;
+  @Mock DockerResourceService dockerResourceService;
   @Mock GARResourceService garResourceService;
+  @Mock GcrResourceService gcrResourceService;
+  @Mock EcrResourceService ecrResourceService;
+  @Mock AcrResourceService acrResourceService;
+  @Mock NexusResourceService nexusResourceService;
   @Mock ArtifactoryResourceService artifactoryResourceService;
   @Mock AccessControlClient accessControlClient;
   @Mock CustomResourceService customResourceService;
@@ -95,6 +134,33 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
   private static final String PIPELINE_ID = "image_expression_test";
+  private static final String SERVICE_REF = "serviceRef";
+  private static final String FQN = "fqn";
+  private static final String REPO_NAME = "repoName";
+  private static final String VERSION = "version";
+  private static final String VERSION_REGEX = "versionRegex";
+  private static final String REGION = "region";
+  private static final String CONNECTOR_REF = "connectorRef";
+  private static final String IMAGE = "image";
+  private static final String HOST = "host";
+  private static final String PKG = "pkg";
+  private static final String SUBSCRIPTION = "subscription";
+  private static final String REGISTRY = "registry";
+  private static final String PORT = "port";
+  private static final String PROJECT = "project";
+  private static final String URL = "url";
+  private static final String DOCKER = "docker";
+  private static final String IMAGE_2 = "image2";
+  private static final String HOST_2 = "host2";
+  private static final String TAG_2 = "tag2";
+  private static final String TAG_REGEX_2 = "tagRegex2";
+  private static final String CONNECTOR_REF_2 = "connectorRef2";
+  private static final String REGION_2 = "region2";
+  private static final String PORT_2 = "port2";
+  private static final String URL_2 = "url2";
+  private static final String PKG_2 = "pkg2";
+  private static final String PROJECT_2 = "project2";
+  private static final String REPO_NAME_2 = "repoName2";
   private static final String pipelineYamlWithoutTemplates = "pipeline:\n"
       + "    name: image expression test\n"
       + "    identifier: image_expression_test\n"
@@ -198,6 +264,58 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
       + "          type: String\n"
       + "          value: <+input>\n";
 
+  private static final GitEntityFindInfoDTO GIT_ENTITY_FIND_INFO_DTO = GitEntityFindInfoDTO.builder().build();
+  private static final DockerRequestDTO DOCKER_REQUEST_DTO = DockerRequestDTO.builder()
+                                                                 .tag(VERSION)
+                                                                 .tagRegex(VERSION_REGEX)
+                                                                 .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                                                                 .build();
+  private static final GcrRequestDTO GCR_REQUEST_DTO_2 = GcrRequestDTO.builder()
+                                                             .tag(VERSION)
+                                                             .registryHostname(HOST)
+                                                             .tagRegex(VERSION_REGEX)
+                                                             .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                                                             .build();
+  private static final EcrRequestDTO ECR_REQUEST_DTO = EcrRequestDTO.builder()
+                                                           .tag(VERSION)
+                                                           .tagRegex(VERSION_REGEX)
+                                                           .region(REGION)
+                                                           .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                                                           .build();
+  private static final AcrRequestDTO ACR_REQUEST_DTO = AcrRequestDTO.builder()
+                                                           .tag(VERSION)
+                                                           .tagRegex(VERSION_REGEX)
+                                                           .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                                                           .build();
+  private static final NexusRequestDTO NEXUS_REQUEST_DTO = NexusRequestDTO.builder()
+                                                               .tag(VERSION)
+                                                               .tagRegex(VERSION_REGEX)
+                                                               .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                                                               .build();
+  private static final ArtifactoryRequestDTO ARTIFACTORY_REQUEST_DTO =
+      ArtifactoryRequestDTO.builder()
+          .tag(VERSION)
+          .tagRegex(VERSION_REGEX)
+          .runtimeInputYaml(pipelineYamlWithoutTemplates)
+          .build();
+  private static final GarRequestDTO GAR_REQUEST_DTO_2 = GarRequestDTO.builder()
+                                                             .version(VERSION)
+                                                             .versionRegex(VERSION_REGEX)
+                                                             .runtimeInputYaml(pipelineYamlWithoutTemplates)
+                                                             .build();
+
+  private static final DockerBuildDetailsDTO DOCKER_BUILD_DETAILS_DTO = DockerBuildDetailsDTO.builder().build();
+  private static final GcrBuildDetailsDTO GCR_BUILD_DETAILS_DTO = GcrBuildDetailsDTO.builder().build();
+  private static final EcrBuildDetailsDTO ECR_BUILD_DETAILS_DTO = EcrBuildDetailsDTO.builder().build();
+  private static final AcrBuildDetailsDTO ACR_BUILD_DETAILS_DTO = AcrBuildDetailsDTO.builder().build();
+  private static final NexusBuildDetailsDTO NEXUS_BUILD_DETAILS_DTO = NexusBuildDetailsDTO.builder().build();
+  private static final ArtifactoryDockerBuildDetailsDTO ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO =
+      ArtifactoryDockerBuildDetailsDTO.builder().build();
+  private static final IdentifierRef IDENTIFIER_REF =
+      IdentifierRefHelper.getIdentifierRef(CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+  private static final GARBuildDetailsDTO GAR_BUILD_DETAILS_DTO = GARBuildDetailsDTO.builder().build();
+
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
@@ -211,7 +329,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .isErrorResponse(false)
                                                                  .completePipelineYaml(pipelineYamlWithoutTemplates)
                                                                  .build())));
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+pipeline.variables.image_path>",
         "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
@@ -223,10 +341,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() throws IOException {
+  public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() {
     assertThatThrownBy(
         ()
-            -> artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
+            -> artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
                 "<+pipeline.variables.image_path>",
                 "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
                 GitEntityFindInfoDTO.builder().build(), ""))
@@ -277,20 +395,22 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .build())));
 
     Call<ResponseDTO<TemplateMergeResponseDTO>> mergeTemplateToYamlCall = mock(Call.class);
-    when(templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any()))
+    when(
+        templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(mergeTemplateToYamlCall);
     when(mergeTemplateToYamlCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
             TemplateMergeResponseDTO.builder().mergedPipelineYaml(pipelineYamlWithoutTemplates).build())));
 
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+pipeline.variables.image_path>",
         "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("library/nginx");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
-    verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
+    verify(templateResourceClient)
+        .applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -308,7 +428,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .build())));
 
     Call<ResponseDTO<TemplateMergeResponseDTO>> mergeTemplateToYamlCall = mock(Call.class);
-    when(templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any()))
+    when(
+        templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(mergeTemplateToYamlCall);
     when(mergeTemplateToYamlCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
@@ -326,7 +447,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(paramWithoutExpression.getValue()).isEqualTo("value");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
-    verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
+    verify(templateResourceClient)
+        .applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -339,40 +461,40 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     mockEnvironmentGetCall();
 
     // resolve expressions like <+service.name> in normal stage
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve expressions like <+service.name> in parallel stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in normal stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve env expressions in normal stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
             "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
 
     // resolve env expressions in parallel stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
@@ -426,34 +548,34 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     // resolve expressions like <+service.name> in normal stage
     String imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve expressions like <+service.name> in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in normal stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>",
         "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in parallel stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>",
         "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve env expressions in normal stage
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+env.name>",
         "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
@@ -461,7 +583,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     // resolve env expressions in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
+        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
             "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
@@ -518,12 +640,12 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder().name("env1").identifier("env1").build()));
 
-    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
 
-    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
@@ -557,7 +679,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testGetBuildDetailsV2GAR() throws IOException {
+  public void testGetBuildDetailsV2GAR() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
 
@@ -596,18 +718,21 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testGetBuildDetailsV2Custom() throws IOException {
+  public void testGetBuildDetailsV2Custom() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
-    CustomArtifactConfig customArtifactConfig = CustomArtifactConfig.builder()
-                                                    .identifier("test")
-                                                    .primaryArtifact(true)
-                                                    .version(ParameterField.createValueField("build-x"))
-                                                    .build();
 
-    // Creating IdentifierRef for mock
-    IdentifierRef identifierRef =
-        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+    List<TaskSelectorYaml> delegateSelectorsValue = new ArrayList<>();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("abc");
+    delegateSelectorsValue.add(taskSelectorYaml);
+
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("build-x"))
+            .delegateSelectors(ParameterField.<List<TaskSelectorYaml>>builder().value(delegateSelectorsValue).build())
+            .build();
 
     doReturn(customArtifactConfig)
         .when(spyartifactResourceUtils)
@@ -623,7 +748,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testArtifactoryImagePaths() throws IOException {
+  public void testArtifactoryImagePaths() {
     // spy for ArtifactResourceUtils
     ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
 
@@ -816,6 +941,1034 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(artifactConfig).isNotNull();
     assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getExpressionValue()).isEqualTo("<+input>");
     assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getExpressionValue()).isEqualTo("<+input>");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  @Parameters({"library/nginx.allowedValues(library/nginx), library/nginx",
+      "library/http.regex(library.*), library/http", "http, http"})
+  public void
+  testGetResolvedImagePathWithFixed(String imagePathInput, String expectedImagePath) {
+    String resolvedImagePath =
+        artifactResourceUtils.getResolvedFieldValue("a", "o", "p", "p", "", imagePathInput, "fqn", null, null);
+    assertThat(resolvedImagePath).isEqualTo(expectedImagePath);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testFetLastSuccessfulBuildV2GAR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .project(ParameterField.<String>builder().value(PROJECT).build())
+            .pkg(ParameterField.<String>builder().value(PKG).build())
+            .repositoryName(ParameterField.<String>builder().value(REPO_NAME).build())
+            .region(ParameterField.<String>builder().value(REGION).build())
+            .version(ParameterField.<String>builder().value(VERSION).build())
+            .versionRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .build();
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GAR_BUILD_DETAILS_DTO)
+        .when(garResourceService)
+        .getLastSuccessfulBuild(eq(IDENTIFIER_REF), eq(REGION), eq(REPO_NAME), eq(PROJECT), eq(PKG),
+            eq(GAR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(
+        spyartifactResourceUtils.getLastSuccessfulBuildV2GAR(null, null, null, null, null, ACCOUNT_ID, ORG_ID,
+            PROJECT_ID, PIPELINE_ID, GarRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build(),
+            FQN, SERVICE_REF, GIT_ENTITY_FIND_INFO_DTO))
+        .isSameAs(GAR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testFetLastSuccessfulBuildV2GAR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig = GoogleArtifactRegistryConfig.builder().build();
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GAR_BUILD_DETAILS_DTO)
+        .when(garResourceService)
+        .getLastSuccessfulBuild(eq(IDENTIFIER_REF), eq(REGION), eq(REPO_NAME), eq(PROJECT), eq(PKG),
+            eq(GAR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(
+        spyartifactResourceUtils.getLastSuccessfulBuildV2GAR(CONNECTOR_REF, REGION, REPO_NAME, PROJECT, PKG, ACCOUNT_ID,
+            ORG_ID, PROJECT_ID, PIPELINE_ID, GAR_REQUEST_DTO_2, FQN, SERVICE_REF, GIT_ENTITY_FIND_INFO_DTO))
+        .isSameAs(GAR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testFetLastSuccessfulBuildV2GAR_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
+        GoogleArtifactRegistryConfig.builder()
+            .version(ParameterField.createValueField(TAG_2))
+            .versionRegex(ParameterField.createValueField(TAG_REGEX_2))
+            .build();
+
+    doReturn(googleArtifactRegistryConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(REGION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(REPO_NAME)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(PKG)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(PROJECT)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    doReturn(GAR_BUILD_DETAILS_DTO)
+        .when(garResourceService)
+        .getLastSuccessfulBuild(eq(IDENTIFIER_REF), eq(REGION), eq(REPO_NAME), eq(PROJECT), eq(PKG),
+            eq(GAR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2GAR(CONNECTOR_REF_2, REGION_2, REPO_NAME_2, PROJECT_2,
+                   PKG_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+                   GarRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build(), FQN, SERVICE_REF,
+                   GIT_ENTITY_FIND_INFO_DTO))
+        .isSameAs(GAR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2GCR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GcrArtifactConfig gcrArtifactConfig =
+        GcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .imagePath(ParameterField.<String>builder().value(IMAGE).build())
+            .registryHostname(ParameterField.<String>builder().value(HOST).build())
+            .tag(ParameterField.<String>builder().value(VERSION).build())
+            .tagRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .build();
+
+    doReturn(gcrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GCR_BUILD_DETAILS_DTO)
+        .when(gcrResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(GCR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getSuccessfulBuildV2GCR(null, null, ACCOUNT_ID, ORG_ID, PROJECT_ID, FQN,
+                   SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+                   GcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(GCR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2GCR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GcrArtifactConfig gcrArtifactConfig = GcrArtifactConfig.builder().build();
+
+    doReturn(gcrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GCR_BUILD_DETAILS_DTO)
+        .when(gcrResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(GCR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getSuccessfulBuildV2GCR(IMAGE, CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, GCR_REQUEST_DTO_2))
+        .isSameAs(GCR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2GCR_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    GcrArtifactConfig gcrArtifactConfig = GcrArtifactConfig.builder()
+                                              .tag(ParameterField.createValueField(TAG_2))
+                                              .tagRegex(ParameterField.createValueField(TAG_REGEX_2))
+                                              .registryHostname(ParameterField.createValueField(HOST_2))
+                                              .build();
+
+    doReturn(gcrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(GCR_BUILD_DETAILS_DTO)
+        .when(gcrResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(GCR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
+
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(IMAGE)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(HOST)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getSuccessfulBuildV2GCR(IMAGE_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID,
+                   PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+                   GcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(GCR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2ECR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    EcrArtifactConfig ecrArtifactConfig =
+        EcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .imagePath(ParameterField.<String>builder().value(IMAGE).build())
+            .tag(ParameterField.<String>builder().value(VERSION).build())
+            .tagRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .region(ParameterField.createValueField(REGION))
+            .build();
+
+    doReturn(ecrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ECR_BUILD_DETAILS_DTO)
+        .when(ecrResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(null, null, ACCOUNT_ID, ORG_ID, PROJECT_ID, FQN,
+                   SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+                   EcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(ECR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2ECR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder().build();
+
+    doReturn(ecrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ECR_BUILD_DETAILS_DTO)
+        .when(ecrResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(IMAGE, CONNECTOR_REF, ACCOUNT_ID, ORG_ID,
+                   PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, ECR_REQUEST_DTO))
+        .isSameAs(ECR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2ECR_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder()
+                                              .tag(ParameterField.<String>builder().value(TAG_2).build())
+                                              .tagRegex(ParameterField.<String>builder().value(TAG_REGEX_2).build())
+                                              .region(ParameterField.createValueField(REGION_2))
+                                              .build();
+
+    doReturn(ecrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ECR_BUILD_DETAILS_DTO)
+        .when(ecrResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+
+    doReturn(REGION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(IMAGE)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(IMAGE_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID,
+                   PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+                   EcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(ECR_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2ACR_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig =
+        AcrArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .tag(ParameterField.<String>builder().value(VERSION).build())
+            .tagRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .subscriptionId(ParameterField.createValueField(SUBSCRIPTION))
+            .registry(ParameterField.createValueField(REGISTRY))
+            .repository(ParameterField.createValueField(REPO_NAME))
+            .build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_BUILD_DETAILS_DTO)
+        .when(acrResourceService)
+        .getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID, ACR_REQUEST_DTO);
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ACR(null, null, null, null, ACCOUNT_ID, ORG_ID,
+                   PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+                   AcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(ACR_BUILD_DETAILS_DTO);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2ACR_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    AcrArtifactConfig acrArtifactConfig = AcrArtifactConfig.builder().build();
+
+    doReturn(acrArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doNothing()
+        .when(spyartifactResourceUtils)
+        .resolveParameterFieldValues(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), any(), eq(FQN), eq(GIT_ENTITY_FIND_INFO_DTO), eq(SERVICE_REF));
+
+    doReturn(ACR_BUILD_DETAILS_DTO)
+        .when(acrResourceService)
+        .getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID, ACR_REQUEST_DTO);
+
+    assertThat(
+        spyartifactResourceUtils.getLastSuccessfulBuildV2ACR(SUBSCRIPTION, REGISTRY, REPO_NAME, CONNECTOR_REF,
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, ACR_REQUEST_DTO))
+        .isSameAs(ACR_BUILD_DETAILS_DTO);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Nexus_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    NexusRegistryDockerConfig nexusRegistryDockerConfig = NexusRegistryDockerConfig.builder()
+                                                              .repositoryPort(ParameterField.createValueField(PORT))
+                                                              .artifactPath(ParameterField.createValueField(IMAGE))
+                                                              .repositoryUrl(ParameterField.createValueField(URL))
+                                                              .build();
+    NexusRegistryArtifactConfig nexusRegistryArtifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .tag(ParameterField.<String>builder().value(VERSION).build())
+            .tagRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .repositoryFormat(ParameterField.createValueField(NexusConstant.DOCKER))
+            .repository(ParameterField.createValueField(REPO_NAME))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+            .build();
+
+    doReturn(nexusRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(NEXUS_BUILD_DETAILS_DTO)
+        .when(nexusResourceService)
+        .getSuccessfulBuild(
+            IDENTIFIER_REF, REPO_NAME, PORT, IMAGE, NexusConstant.DOCKER, URL, NEXUS_REQUEST_DTO, ORG_ID, PROJECT_ID);
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Nexus3(null, null, null, null, null, null, ACCOUNT_ID,
+                   ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF,
+                   NexusRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(NEXUS_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Nexus_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    NexusRegistryArtifactConfig nexusRegistryArtifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .tag(ParameterField.<String>builder().value(TAG_2).build())
+            .tagRegex(ParameterField.<String>builder().value(TAG_REGEX_2).build())
+            .repositoryFormat(ParameterField.createValueField(NexusConstant.DOCKER))
+            .build();
+
+    doReturn(nexusRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(NEXUS_BUILD_DETAILS_DTO)
+        .when(nexusResourceService)
+        .getSuccessfulBuild(
+            IDENTIFIER_REF, REPO_NAME, PORT, IMAGE, NexusConstant.DOCKER, URL, NEXUS_REQUEST_DTO, ORG_ID, PROJECT_ID);
+
+    doReturn(IMAGE)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(PORT)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(URL)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(REPO_NAME)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(
+        spyartifactResourceUtils.getLastSuccessfulBuildV2Nexus3(REPO_NAME_2, PORT_2, IMAGE_2, NexusConstant.DOCKER,
+            URL_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+            SERVICE_REF, NexusRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(NEXUS_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Nexus_NonDocker() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    NexusRegistryArtifactConfig nexusRegistryArtifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .repositoryFormat(ParameterField.createValueField(NexusConstant.MAVEN))
+            .build();
+
+    doReturn(nexusRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    assertThatThrownBy(()
+                           -> spyartifactResourceUtils.getLastSuccessfulBuildV2Nexus3(null, null, null, null, null,
+                               null, ACCOUNT_ID, ORG_ID, PROJECT_ID, null, FQN, null, SERVICE_REF, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Please select a docker artifact");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Nexus_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    NexusRegistryArtifactConfig nexusRegistryArtifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .repositoryFormat(ParameterField.createValueField(NexusConstant.DOCKER))
+            .build();
+
+    doReturn(nexusRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(NEXUS_BUILD_DETAILS_DTO)
+        .when(nexusResourceService)
+        .getSuccessfulBuild(
+            IDENTIFIER_REF, REPO_NAME, PORT, IMAGE, NexusConstant.DOCKER, URL, NEXUS_REQUEST_DTO, ORG_ID, PROJECT_ID);
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Nexus3(REPO_NAME, PORT, IMAGE, NexusConstant.DOCKER,
+                   URL, CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+                   SERVICE_REF, NEXUS_REQUEST_DTO))
+        .isSameAs(NEXUS_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Artifactory_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .artifactPath(ParameterField.createValueField(IMAGE))
+            .repositoryFormat(ParameterField.createValueField(DOCKER))
+            .repository(ParameterField.createValueField(REPO_NAME))
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .tag(ParameterField.<String>builder().value(VERSION).build())
+            .tagRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .repositoryUrl(ParameterField.createValueField(URL))
+            .build();
+
+    doReturn(artifactoryRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO)
+        .when(artifactoryResourceService)
+        .getSuccessfulBuild(
+            eq(IDENTIFIER_REF), eq(REPO_NAME), eq(IMAGE), eq(DOCKER), eq(URL), any(), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Artifactory(null, null, null, null, null, ACCOUNT_ID,
+                   ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF,
+                   ArtifactoryRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Artifactory_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder().build();
+
+    doReturn(artifactoryRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO)
+        .when(artifactoryResourceService)
+        .getSuccessfulBuild(
+            eq(IDENTIFIER_REF), eq(REPO_NAME), eq(IMAGE), eq(DOCKER), eq(URL), any(), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Artifactory(REPO_NAME, IMAGE, DOCKER, URL,
+                   CONNECTOR_REF, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+                   SERVICE_REF, ARTIFACTORY_REQUEST_DTO))
+        .isSameAs(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Artifactory_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .tag(ParameterField.createValueField(TAG_2))
+            .tagRegex(ParameterField.createValueField(TAG_REGEX_2))
+            .build();
+
+    doReturn(artifactoryRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO)
+        .when(artifactoryResourceService)
+        .getSuccessfulBuild(
+            eq(IDENTIFIER_REF), eq(REPO_NAME), eq(IMAGE), eq(DOCKER), eq(URL), any(), eq(ORG_ID), eq(PROJECT_ID));
+
+    doReturn(IMAGE)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(URL)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(REPO_NAME)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Artifactory(REPO_NAME_2, IMAGE_2, DOCKER, URL_2,
+                   CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+                   SERVICE_REF, ArtifactoryRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
+        .isSameAs(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Docker_ValuesFromConfig() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    DockerHubArtifactConfig dockerHubArtifactConfig =
+        DockerHubArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value(CONNECTOR_REF).build())
+            .imagePath(ParameterField.<String>builder().value(IMAGE).build())
+            .tag(ParameterField.<String>builder().value(VERSION).build())
+            .tagRegex(ParameterField.<String>builder().value(VERSION_REGEX).build())
+            .build();
+
+    doReturn(dockerHubArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(DOCKER_BUILD_DETAILS_DTO)
+        .when(dockerResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(DOCKER_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Docker(null, null, null, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+                   DockerRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build(), SERVICE_REF))
+        .isSameAs(DOCKER_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Docker_ValuesFromParams() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    DockerHubArtifactConfig dockerHubArtifactConfig = DockerHubArtifactConfig.builder().build();
+
+    doReturn(dockerHubArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(DOCKER_BUILD_DETAILS_DTO)
+        .when(dockerResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(DOCKER_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Docker(IMAGE, CONNECTOR_REF, null, ACCOUNT_ID, ORG_ID,
+                   PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, DOCKER_REQUEST_DTO, SERVICE_REF))
+        .isSameAs(DOCKER_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuildV2Docker_ValuesFromResolvedExpression() {
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    DockerHubArtifactConfig dockerHubArtifactConfig = DockerHubArtifactConfig.builder()
+                                                          .tag(ParameterField.createValueField(TAG_2))
+                                                          .tagRegex(ParameterField.createValueField(TAG_REGEX_2))
+                                                          .build();
+
+    doReturn(dockerHubArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
+
+    doReturn(DOCKER_BUILD_DETAILS_DTO)
+        .when(dockerResourceService)
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(DOCKER_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+
+    doReturn(CONNECTOR_REF)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(IMAGE)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    doReturn(VERSION_REGEX)
+        .when(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Docker(IMAGE_2, CONNECTOR_REF_2, null, ACCOUNT_ID,
+                   ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
+                   DockerRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build(), SERVICE_REF))
+        .isSameAs(DOCKER_BUILD_DETAILS_DTO);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
+            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
+            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+    verify(spyartifactResourceUtils)
+        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
+            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
   }
 
   private void mockEnvironmentGetCall() {

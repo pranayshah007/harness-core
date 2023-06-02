@@ -12,9 +12,11 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.PageResponse;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -36,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
@@ -82,8 +85,17 @@ public class AccountResourceNG {
 
   @GET
   @Path("/list")
+  @Deprecated
   public RestResponse<List<AccountDTO>> getAllAccounts() {
     List<AccountDTO> accountList = accountService.getAllAccounts();
+    return new RestResponse<>(accountList);
+  }
+
+  @GET
+  @Path("/listV2")
+  public RestResponse<PageResponse<AccountDTO>> listAccounts(
+      @QueryParam("offset") int offset, @QueryParam("pageSize") int pageSize) {
+    PageResponse<AccountDTO> accountList = accountService.listAccounts(offset, pageSize);
     return new RestResponse<>(accountList);
   }
   @GET
@@ -176,6 +188,20 @@ public class AccountResourceNG {
   }
 
   @GET
+  @Path("session-timeout-account-level")
+  public RestResponse<Integer> getSessionTimeoutAtAccountLevel(@QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.getSessionTimeoutInMinutes(accountId));
+  }
+
+  @PUT
+  @Path("session-timeout-account-level")
+  public RestResponse<Boolean> setSessionTimeoutAtAccountLevel(@QueryParam("accountId") @NotEmpty String accountId,
+      @Valid @NotNull SessionTimeoutSettings sessionTimeoutSettings) {
+    accountService.setSessionTimeoutInMinutes(accountId, sessionTimeoutSettings);
+    return new RestResponse(Boolean.TRUE);
+  }
+
+  @GET
   @Hidden
   @Path("is-auto-invite-acceptance-enabled")
   @InternalApi
@@ -238,9 +264,18 @@ public class AccountResourceNG {
   @Path("/{accountId}/default-experience")
   public RestResponse<AccountDTO> updateDefaultExperience(
       @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
-    Account account = accountService.get(accountId);
-    account.setDefaultExperience(dto.getDefaultExperience());
-    return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
+    return new RestResponse(
+        AccountMapper.toAccountDTO(accountService.updateDefaultExperience(accountId, dto.getDefaultExperience())));
+  }
+
+  @PUT
+  @Hidden
+  @Path("/{accountId}/cross-generation-access")
+  @InternalApi
+  public RestResponse<AccountDTO> updateCrossGenerationAccessEnabled(
+      @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
+    return new RestResponse(AccountMapper.toAccountDTO(
+        accountService.updateCrossGenerationAccessEnabled(accountId, dto.isCrossGenerationAccessEnabled(), true)));
   }
 
   @GET

@@ -82,7 +82,8 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.security.spec.execution.steps.sto.timeout",
             "pipeline.stages.security.spec.execution.steps.sto.spec.privileged",
             "pipeline.stages.security.spec.execution.steps.sto.spec.runAsUser",
-            "pipeline.stages.security.spec.execution.steps.sto.spec.resources.limits.cpu");
+            "pipeline.stages.security.spec.execution.steps.sto.spec.resources.limits.cpu",
+            "pipeline.stages.security.spec.execution.steps.sto.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -95,33 +96,6 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.security.spec.execution.steps.sto.identifier",
             "pipeline.stages.security.spec.execution.steps.sto.type",
             "pipeline.stages.security.spec.execution.steps.sto.startTs",
-            "pipeline.stages.security.spec.execution.steps.sto.endTs",
-            "pipeline.stages.security.spec.execution.steps.sto.when");
-
-    // yaml extra properties
-    List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
-                                               .get(securityStepNode.getUuid()) // step uuid
-                                               .getOutputPropertiesList()
-                                               .stream()
-                                               .map(YamlProperties::getFqn)
-                                               .collect(Collectors.toList());
-    assertThat(fqnOutputPropertiesList)
-        .containsOnly("pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.hello",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.JOB_ID",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.JOB_STATUS",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.CRITICAL",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.HIGH",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.MEDIUM",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.LOW",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.INFO",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.UNASSIGNED",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.TOTAL",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_CRITICAL",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_HIGH",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_MEDIUM",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_LOW",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_INFO",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_UNASSIGNED",
-            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.NEW_TOTAL");
+            "pipeline.stages.security.spec.execution.steps.sto.endTs");
   }
 }

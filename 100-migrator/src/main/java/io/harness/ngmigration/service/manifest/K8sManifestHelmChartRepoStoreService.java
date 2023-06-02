@@ -27,6 +27,7 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -55,7 +56,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     HelmChartConfig helmChartConfig = applicationManifest.getHelmChartConfig();
     CgEntityId connectorId =
         CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build();
@@ -74,7 +75,12 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
             .get(
                 CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(applicationManifest.getServiceId()).build())
             .getEntity();
-    String identifier = MigratorUtility.generateIdentifier(name);
+    String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
+    ParameterField<String> chartVersion = MigratorUtility.RUNTIME_INPUT;
+    if (StringUtils.isNotBlank(helmChartConfig.getChartVersion())) {
+      chartVersion = ParameterField.createValueField(helmChartConfig.getChartVersion());
+    }
+
     HelmChartManifestBuilder helmChartManifest =
         HelmChartManifest.builder()
             .identifier(identifier)
@@ -82,7 +88,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
-            .chartVersion(ParameterField.createValueField("<+input>"));
+            .chartVersion(chartVersion);
 
     helmChartManifest.commandFlags(getCommandFlags(applicationManifest));
 

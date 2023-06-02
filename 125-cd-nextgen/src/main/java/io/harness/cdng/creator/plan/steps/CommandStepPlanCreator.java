@@ -8,6 +8,8 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.executions.steps.StepSpecTypeConstants.COMMAND;
+import static io.harness.pms.yaml.ParameterField.isNull;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.REPEAT;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
@@ -61,6 +63,9 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
     boolean isStepInsideRollback = YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     commandStepParameters.setRollback(isStepInsideRollback);
 
+    String commandDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), COMMAND);
+    commandStepParameters.setCommandDeployFqn(commandDeployFqn);
+
     return stepParameters;
   }
 
@@ -80,11 +85,11 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
       }
 
     } else {
-      StrategyConfig strategyConfig = stepElement.getStrategy();
-      if (strategyConfig == null) {
+      ParameterField<StrategyConfig> strategyConfig = stepElement.getStrategy();
+      if (isNull(strategyConfig) || strategyConfig.getValue() == null) {
         return false;
       }
-      if (strategyConfig.getRepeat() == null) {
+      if (strategyConfig.getValue().getRepeat() == null) {
         throw new InvalidRequestException("Only repeat looping strategy is supported for Command Step");
       }
     }

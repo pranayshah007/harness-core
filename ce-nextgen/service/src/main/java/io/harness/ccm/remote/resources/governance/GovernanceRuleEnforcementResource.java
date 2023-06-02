@@ -8,6 +8,10 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
+import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_DELETE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_UPDATED;
@@ -20,11 +24,13 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -32,12 +38,17 @@ import io.harness.ccm.views.dto.CreateRuleEnforcementDTO;
 import io.harness.ccm.views.dto.EnforcementCountDTO;
 import io.harness.ccm.views.dto.ExecutionDetailDTO;
 import io.harness.ccm.views.entities.RuleEnforcement;
+import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.helper.EnforcementCount;
 import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
+import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
+import io.harness.ccm.views.service.RuleSetService;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -66,10 +77,12 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -128,9 +141,11 @@ public class GovernanceRuleEnforcementResource {
   public static final String SCHEDULER_IS_DEBUG = "true";
   public static final String CODE_MESSAGE_BODY = "code: {}, message: {}, body: {}";
   private final RuleEnforcementService ruleEnforcementService;
-  // private final CCMRbacHelper rbacHelper
+  private final CCMRbacHelper rbacHelper;
   private final TelemetryReporter telemetryReporter;
   private final CENextGenConfiguration configuration;
+  private final RuleSetService ruleSetService;
+  private final GovernanceRuleService governanceRuleService;
   @Inject SchedulerClient schedulerClient;
   private final OutboxService outboxService;
   private final TransactionTemplate transactionTemplate;
@@ -139,13 +154,16 @@ public class GovernanceRuleEnforcementResource {
   @Inject
   public GovernanceRuleEnforcementResource(RuleEnforcementService ruleEnforcementService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      OutboxService outboxService, CENextGenConfiguration configuration) {
+      OutboxService outboxService, CENextGenConfiguration configuration, CCMRbacHelper rbacHelper,
+      RuleSetService ruleSetService, GovernanceRuleService governanceRuleService) {
     this.ruleEnforcementService = ruleEnforcementService;
-    // this.rbacHelper rbacHelper
+    this.rbacHelper = rbacHelper;
     this.telemetryReporter = telemetryReporter;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
     this.configuration = configuration;
+    this.ruleSetService = ruleSetService;
+    this.governanceRuleService = governanceRuleService;
   }
 
   @POST
@@ -163,12 +181,42 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Rule Enforcement object")
       @Valid CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    // to do rbacHelper checkRuleEnforcementEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementEditPermission(accountId, null, null);
     if (createRuleEnforcementDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleEnforcement ruleEnforcement = createRuleEnforcementDTO.getRuleEnforcement();
+    Set<String> rules = new HashSet<>();
+    if (ruleEnforcement.getRuleIds() != null && ruleEnforcement.getRuleIds().size() > 0) {
+      governanceRuleService.check(accountId, ruleEnforcement.getRuleIds());
+      rules.addAll(ruleEnforcement.getRuleIds());
+    }
+    if (ruleEnforcement.getRuleSetIDs() != null && ruleEnforcement.getRuleSetIDs().size() > 0) {
+      ruleSetService.check(accountId, ruleEnforcement.getRuleSetIDs());
+      List<RuleSet> ruleSets = ruleSetService.listPacks(accountId, ruleEnforcement.getRuleSetIDs());
+      for (RuleSet ruleSet : ruleSets) {
+        rules.addAll(ruleSet.getRulesIdentifier());
+      }
+    }
+    Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
+    if (rulesPermitted.size() != rules.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE),
+          WingsException.USER, null);
+    }
+    Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
+        accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+    Set<String> allowedAccountIds = null;
+    if (nextGenConnectorResponses != null) {
+      allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+          nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+    }
+    if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+    }
     ruleEnforcement.setAccountId(accountId);
+    ruleEnforcement.setRunCount(0);
     if (ruleEnforcement.getExecutionTimezone() == null) {
       ruleEnforcement.setExecutionTimezone("UTC");
     }
@@ -212,7 +260,7 @@ public class GovernanceRuleEnforcementResource {
                 .schedule(ruleEnforcement.getExecutionSchedule())
                 .disabled(!ruleEnforcement.getIsEnabled())
                 .name(ruleEnforcement.getUuid().toLowerCase())
-                .displayname(ruleEnforcement.getName() + "_" + ruleEnforcement.getUuid())
+                .displayname("ag_" + ruleEnforcement.getName() + "_" + ruleEnforcement.getUuid())
                 .timezone(ruleEnforcement.getExecutionTimezone())
                 .executor(SCHEDULER_EXECUTOR)
                 .metadata(metadata)
@@ -268,7 +316,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("enforcementID") @Parameter(
           required = true, description = "Unique identifier for the rule enforcement") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleEnforcementDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementDeletePermission(accountId, null, null);
 
     if (configuration.getGovernanceConfig().isUseDkron()) {
       log.info("Use dkron is enabled in config");
@@ -310,7 +358,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule enforcement object")
       @Valid CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    //  rbacHelper checkRuleEnforcementEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementEditPermission(accountId, null, null);
     if (createRuleEnforcementDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -320,29 +368,96 @@ public class GovernanceRuleEnforcementResource {
         ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
+    Set<String> rules = new HashSet<>();
+    if (ruleEnforcement.getRuleIds() != null && ruleEnforcement.getRuleIds().size() > 0) {
+      governanceRuleService.check(accountId, ruleEnforcement.getRuleIds());
+      rules.addAll(ruleEnforcement.getRuleIds());
+    }
+    if (ruleEnforcement.getRuleSetIDs() != null && ruleEnforcement.getRuleSetIDs().size() > 0) {
+      ruleSetService.check(accountId, ruleEnforcement.getRuleSetIDs());
+      List<RuleSet> ruleSets = ruleSetService.listPacks(accountId, ruleEnforcement.getRuleSetIDs());
+      for (RuleSet ruleSet : ruleSets) {
+        rules.addAll(ruleSet.getRulesIdentifier());
+      }
+    }
+    if (ruleEnforcement.getRuleIds() != null) {
+      Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
+      if (rulesPermitted.size() != rules.size()) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE),
+            WingsException.USER, null);
+      }
+    }
+    if (ruleEnforcement.getTargetAccounts() != null) {
+      Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
+          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+      Set<String> allowedAccountIds = null;
+      if (nextGenConnectorResponses != null) {
+        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+            nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+      }
+      if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+      }
+    }
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
-    // Update dkron if enforcement is toggled
-    if (configuration.getGovernanceConfig().isUseDkron()
-        && !Objects.equals(ruleEnforcementFromMongo.getIsEnabled(), ruleEnforcement.getIsEnabled())) {
+    // Update dkron if enforcement is toggled or schedule is changed or timezone is changed
+    if (configuration.getGovernanceConfig().isUseDkron()) {
       log.info("Use dkron is enabled in config.");
       try {
-        String schedulerName = ruleEnforcement.getUuid().toLowerCase();
-        okhttp3.RequestBody body = okhttp3.RequestBody.create(null, new byte[0]);
-        Response res = schedulerClient.toggleJob(body, schedulerName).execute();
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put(RULE_ENFORCEMENT_ID, ruleEnforcementFromMongo.getUuid());
+        Map<String, String> tags = new HashMap<>();
+        tags.put(configuration.getGovernanceConfig().getTagsKey(), configuration.getGovernanceConfig().getTagsValue());
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(ACCOUNT_ID, ruleEnforcement.getAccountId());
+        metadata.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+        metadata.put(ENFORCEMENT_ID, ruleEnforcement.getUuid());
+        JSONArray headers = new JSONArray();
+        headers.add(CONTENT_TYPE_APPLICATION_JSON);
+        SchedulerDTO schedulerDTO =
+            SchedulerDTO.builder()
+                .tags(tags)
+                .retries(2)
+                .schedule(ruleEnforcement.getExecutionSchedule()) // This can be updated by user
+                .disabled(!ruleEnforcement.getIsEnabled()) // This can be updated by user
+                .name(ruleEnforcementFromMongo.getUuid().toLowerCase())
+                .displayname("ag_" + ruleEnforcementFromMongo.getName() + "_" + ruleEnforcementFromMongo.getUuid())
+                .timezone(ruleEnforcement.getExecutionTimezone()) // This can be updated by user
+                .executor(SCHEDULER_EXECUTOR)
+                .metadata(metadata)
+                .executor_config(SchedulerDTO.ExecutorConfig.builder()
+                                     .method(SCHEDULER_HTTP_METHOD)
+                                     .timeout(SCHEDULER_HTTP_TIMEOUT)
+                                     .debug(SCHEDULER_IS_DEBUG)
+                                     .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
+                                     .body(jsonObject.toString())
+                                     .headers(headers.toString())
+                                     .tlsNoVerifyPeer("true") // Skip verifying certs
+                                     .build())
+                .build();
+        log.info(new Gson().toJson(schedulerDTO));
+        okhttp3.RequestBody body =
+            okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), new Gson().toJson(schedulerDTO));
+        Response res = schedulerClient.createOrUpdateJob(body).execute();
         log.info(CODE_MESSAGE_BODY, res.code(), res.message(), res.body());
       } catch (Exception e) {
-        log.error("Error in toggle'ing job from dkron", e);
+        log.error("Error in creating/updating job in dkron", e);
       }
     }
+
+    ruleEnforcementService.update(ruleEnforcement);
+    RuleEnforcement updatedRuleEnforcement = ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(
-          new RuleEnforcementUpdateEvent(accountId, ruleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
-      return ruleEnforcementService.update(ruleEnforcement);
+          new RuleEnforcementUpdateEvent(accountId, updatedRuleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
+      return updatedRuleEnforcement;
     })));
   }
   // TO DO add filter support
@@ -363,7 +478,7 @@ public class GovernanceRuleEnforcementResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing  Rule Enforcement  object") @Valid
       @NotNull CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    // rbacHelper checkRuleEnforcementViewPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ruleEnforcementService.list(accountId));
   }
   // TO DO list rule information

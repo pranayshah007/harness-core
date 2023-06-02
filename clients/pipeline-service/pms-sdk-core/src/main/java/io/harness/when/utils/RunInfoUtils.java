@@ -8,10 +8,12 @@
 package io.harness.when.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -31,46 +33,61 @@ public class RunInfoUtils {
   String PIPELINE_SUCCESS = "OnPipelineSuccess";
   String PIPELINE_FAILURE = "OnPipelineFailure";
   String ALWAYS = "Always";
+  String ROLLBACK_MODE_EXECUTION = "OnRollbackModeExecution";
 
   // adding == true here because if <+pipeline.rollback.isPipelineRollback> is null, then
   // (<+pipeline.rollback.isPipelineRollback> || <+OnStageFailure>) will equate to (null || true) and this leads to a
   // jexl error
   String IS_PIPELINE_ROLLBACK = "(<+pipeline.rollback.isPipelineRollback> == true)";
 
-  public String getRunCondition(StageWhenCondition stageWhenCondition) {
-    if (stageWhenCondition == null) {
-      return getDefaultWhenCondition(true);
+  // If when conditions configured as <+input> and no value is given, when.getValue() will still
+  // be null and handled accordingly
+  public String getRunConditionForStage(ParameterField<StageWhenCondition> stageWhenCondition) {
+    return getRunConditionForStage(stageWhenCondition, NORMAL);
+  }
+
+  public String getRunConditionForStage(
+      ParameterField<StageWhenCondition> stageWhenCondition, ExecutionMode executionMode) {
+    if (ParameterField.isNull(stageWhenCondition) || stageWhenCondition.getValue() == null) {
+      return getDefaultWhenCondition(true, executionMode);
     }
-    if (stageWhenCondition.getPipelineStatus() == null) {
+
+    if (stageWhenCondition.getValue().getPipelineStatus() == null) {
       throw new InvalidRequestException("Pipeline Status in stage when condition cannot be empty.");
     }
 
-    return combineExpressions(getStatusExpression(stageWhenCondition.getPipelineStatus(), true),
-        getGivenRunCondition(stageWhenCondition.getCondition()));
+    return combineExpressions(getStatusExpression(stageWhenCondition.getValue().getPipelineStatus(), true),
+        getGivenRunCondition(stageWhenCondition.getValue().getCondition()));
   }
 
-  public String getRunCondition(StepWhenCondition stepWhenCondition) {
-    if (stepWhenCondition == null) {
+  public String getRunConditionForStep(ParameterField<StepWhenCondition> stepWhenCondition) {
+    if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
       return getDefaultWhenCondition(false);
     }
-    if (stepWhenCondition.getStageStatus() == null) {
+
+    if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
     }
 
-    return combineExpressions(getStatusExpression(stepWhenCondition.getStageStatus(), false),
-        getGivenRunCondition(stepWhenCondition.getCondition()));
+    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus(), false),
+        getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
   }
 
-  public String getRunConditionForRollback(StepWhenCondition stepWhenCondition) {
-    if (stepWhenCondition == null) {
-      return getStatusExpression(STAGE_FAILURE);
+  public String getRunConditionForRollback(
+      ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
+    if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
+      return getStatusExpression(ROLLBACK_MODE_EXECUTION) + " || " + getStatusExpression(STAGE_FAILURE);
     }
-    if (stepWhenCondition.getStageStatus() == null) {
+    if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
     }
 
-    return combineExpressions(getStatusExpression(stepWhenCondition.getStageStatus(), false),
-        getGivenRunCondition(stepWhenCondition.getCondition()));
+    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus(), false),
+        getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
+  }
+
+  boolean isRollbackMode(ExecutionMode executionMode) {
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 
   private String getGivenRunCondition(ParameterField<String> condition) {
@@ -81,10 +98,14 @@ public class RunInfoUtils {
   }
 
   private String getDefaultWhenCondition(boolean isStage) {
+    return getDefaultWhenCondition(isStage, NORMAL);
+  }
+
+  private String getDefaultWhenCondition(boolean isStage, ExecutionMode executionMode) {
     if (!isStage) {
       return getStatusExpression(STAGE_SUCCESS);
     }
-    return getStatusExpression(PIPELINE_SUCCESS);
+    return isRollbackMode(executionMode) ? getStatusExpression(ALWAYS) : getStatusExpression(PIPELINE_SUCCESS);
   }
 
   private String combineExpressions(String statusExpression, String conditionExpression) {
@@ -119,6 +140,6 @@ public class RunInfoUtils {
         // Empty whenCondition. Default will be used.
       }
     }
-    return getRunCondition(stageWhenCondition);
+    return getRunConditionForStage(ParameterField.createValueField(stageWhenCondition));
   }
 }

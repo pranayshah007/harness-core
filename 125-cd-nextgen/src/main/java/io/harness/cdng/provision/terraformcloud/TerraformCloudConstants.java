@@ -24,7 +24,6 @@ public final class TerraformCloudConstants {
 
   static final String TFC_PLAN_NAME_PREFIX_NG = "tfcPlan_%s_%s";
   static final String TFC_DESTROY_PLAN_NAME_PREFIX_NG = "tfcDestroyPlan_%s_%s";
-  static final String TFC_OUTPUT_FORMAT = "tfcPlanOutput_%s_%s";
 
   private TerraformCloudConstants() {
     throw new UnsupportedOperationException();

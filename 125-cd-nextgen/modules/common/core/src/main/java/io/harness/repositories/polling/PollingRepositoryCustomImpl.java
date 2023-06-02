@@ -15,6 +15,7 @@ import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.PollingType;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -118,6 +119,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
     Query query = new Query().addCriteria(
         new Criteria().and(PollingDocumentKeys.accountId).is(accountId).and(PollingDocumentKeys.uuid).is(pollDocId));
     Update update = new Update().set(key, value);
+    long timeOfUpdate = System.currentTimeMillis();
+    update.set(PollingDocumentKeys.lastModifiedAt, timeOfUpdate);
     return mongoTemplate.updateFirst(query, update, PollingDocument.class);
   }
 
@@ -135,8 +138,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   }
 
   @Override
-  public List<PollingDocument> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findAllAndRemove(query, PollingDocument.class);
+    return mongoTemplate.remove(query, PollingDocument.class);
   }
 }

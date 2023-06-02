@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.AVMOHAN;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -57,6 +57,6 @@ public class SamplerTest extends CategoryTest {
     sampler.updateTime();
     Runnable runnable = mock(Runnable.class);
     sampler.sampled(runnable);
-    verifyZeroInteractions(runnable);
+    verifyNoInteractions(runnable);
   }
 }

@@ -14,6 +14,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -22,6 +23,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -33,6 +36,7 @@ import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
@@ -41,14 +45,17 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -61,6 +68,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,7 +89,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class ManifestsStepV2Test {
+public class ManifestsStepV2Test extends CategoryTest {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
   @Mock private ConnectorService connectorService;
   @Mock private CDStepHelper cdStepHelper;
@@ -88,7 +97,11 @@ public class ManifestsStepV2Test {
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
+  @Mock private ServiceStepsHelper serviceStepsHelper;
+  @Mock private NGLogCallback logCallback;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
+
   private AutoCloseable mocks;
 
   private static final String SVC_ID = "SVC_ID";
@@ -102,6 +115,7 @@ public class ManifestsStepV2Test {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
+    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any());
   }
 
   @After
@@ -379,6 +393,208 @@ public class ManifestsStepV2Test {
     List<ManifestAttributes> manifestAttributes = listArgumentCaptor.getValue();
     assertThat(manifestAttributes.size()).isEqualTo(1);
     assertThat(manifestAttributes.get(0).getStoreConfig().getConnectorReference().getValue()).isEqualTo("svcoverride");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2() {
+    ManifestConfigWrapper infraOverride = sampleManifestFile("id1", ManifestConfigType.VALUES);
+    ManifestConfigWrapper svcManifest = sampleManifestFile("id2", ManifestConfigType.VALUES);
+    ManifestConfigWrapper envOverride = sampleManifestFile("id3", ManifestConfigType.VALUES);
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcManifest))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
+    step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("manifests"), captor.capture(), eq("STAGE"));
+    ManifestsOutcome manifestsOutcome = captor.getValue();
+    assertThat(manifestsOutcome).isNotNull();
+    assertThat(manifestsOutcome.values().stream().map(ManifestOutcome::getIdentifier).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("id1", "id2", "id3");
+
+    verify(expressionResolver).updateExpressions(any(), listArgumentCaptor.capture());
+    List<ManifestAttributes> manifestAttributes = listArgumentCaptor.getValue();
+    assertThat(manifestAttributes.size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2HelmRepoOverride() {
+    ManifestConfigWrapper svcHelmChart = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper envOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
+    ManifestConfigWrapper infraOverride = sampleHelmRepoOverride("helmoverride2", "envoverride");
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcHelmChart))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("manifests"), captor.capture(), eq("STAGE"));
+    ManifestsOutcome manifestsOutcome = captor.getValue();
+    assertThat(manifestsOutcome).isNotNull();
+    assertThat(manifestsOutcome.values().stream().map(ManifestOutcome::getIdentifier).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("helm1");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2OnlySvcManifest() {
+    ManifestConfigWrapper svcManifest = sampleManifestFile("id1", ManifestConfigType.VALUES);
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcManifest))
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("manifests"), captor.capture(), eq("STAGE"));
+    ManifestsOutcome manifestsOutcome = captor.getValue();
+    assertThat(manifestsOutcome).isNotNull();
+    assertThat(manifestsOutcome.values().stream().map(ManifestOutcome::getIdentifier).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("id1");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2NotValidManifestType() {
+    ManifestConfigWrapper infraOverride = sampleManifestFile("id1", ManifestConfigType.VALUES);
+    ManifestConfigWrapper svcManifest = sampleManifestFile("id2", ManifestConfigType.VALUES);
+    ManifestConfigWrapper envOverride = sampleManifestFile("id3", ManifestConfigType.AWS_LAMBDA);
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcManifest))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    assertThatThrownBy(() -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Unsupported Manifest Types: [AwsLambdaFunctionDefinition] found for ENV_SERVICE_OVERRIDE");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2NoManifest() {
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2DuplicateIdentifier() {
+    ManifestConfigWrapper infraOverride = sampleManifestFile("id1", ManifestConfigType.VALUES);
+    ManifestConfigWrapper svcManifest = sampleManifestFile("id1", ManifestConfigType.VALUES);
+    ManifestConfigWrapper envOverride = sampleManifestFile("id3", ManifestConfigType.VALUES);
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcManifest))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    assertThatThrownBy(() -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("found duplicate identifiers [id1] in INFRA_GLOBAL_OVERRIDE");
   }
 
   private ManifestConfigWrapper sampleManifestFile(String identifier, ManifestConfigType type) {

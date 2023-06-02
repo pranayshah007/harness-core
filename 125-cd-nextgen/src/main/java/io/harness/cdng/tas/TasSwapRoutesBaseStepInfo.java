@@ -9,6 +9,7 @@ package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +21,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,10 +35,11 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "TasSwapRoutesBaseStepInfoKeys")
 @TypeAlias("TasSwapRoutesBaseStepInfo")
 public class TasSwapRoutesBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
+  @NotNull
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<Boolean> downSizeOldApplication;

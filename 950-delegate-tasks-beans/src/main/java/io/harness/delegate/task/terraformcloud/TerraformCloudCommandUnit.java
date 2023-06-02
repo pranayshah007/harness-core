@@ -11,4 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(CDP) public enum TerraformCloudCommandUnit { RUN }
+import lombok.Getter;
+@Getter
+@OwnedBy(CDP)
+public enum TerraformCloudCommandUnit {
+  FETCH_LAST_APPLIED_RUN("Fetch last applied run"),
+  PLAN("Plan"),
+  POLICY_CHECK("Policy check"),
+  APPLY("Apply");
+
+  TerraformCloudCommandUnit(String displayName) {
+    this.displayName = displayName;
+  }
+  private String displayName;
+}

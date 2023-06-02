@@ -131,16 +131,22 @@ public abstract class GenericStepVariableCreator<T extends AbstractStepNode> ext
 
   protected void addFieldToPropertiesMapUnderStep(YamlField fieldNode, Map<String, YamlProperties> yamlPropertiesMap) {
     String fqn = YamlUtils.getFullyQualifiedName(fieldNode.getNode());
-    String localName;
+    String finalFqn = fqn;
+    String localName = fqn;
     if (fqn.contains(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE)) {
       localName =
           YamlUtils.getQualifiedNameTillGivenField(fieldNode.getNode(), YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+    } else if (fqn.contains(YAMLFieldNameConstants.ENVIRONMENT) && fqn.contains(YAMLFieldNameConstants.PROVISIONER)) {
+      // remove environment. from the path
+      // provisioner path should be stage.spec.provisioner.
+      finalFqn = fqn.replace(YAMLFieldNameConstants.ENVIRONMENT + ".", "");
+      localName = finalFqn;
     } else {
       localName = YamlUtils.getQualifiedNameTillGivenField(fieldNode.getNode(), YAMLFieldNameConstants.EXECUTION);
     }
 
     yamlPropertiesMap.put(fieldNode.getNode().getCurrJsonNode().textValue(),
-        YamlProperties.newBuilder().setLocalName(localName).setFqn(fqn).build());
+        YamlProperties.newBuilder().setLocalName(localName).setFqn(finalFqn).build());
   }
 
   protected void addVariablesForVariables(YamlField variablesField, Map<String, YamlProperties> yamlPropertiesMap) {
@@ -202,18 +208,25 @@ public abstract class GenericStepVariableCreator<T extends AbstractStepNode> ext
     Map<String, YamlExtraProperties> yamlExtraPropertiesMap = new HashMap<>();
     Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
 
-    String fqnPrefix = YamlUtils.getFullyQualifiedName(ctx.getCurrentField().getNode());
+    final YamlNode fieldNode = ctx.getCurrentField().getNode();
+    String fqnPrefix = YamlUtils.getFullyQualifiedName(fieldNode);
+    String finalFqnPrefix = fqnPrefix;
     String localNamePrefix = fqnPrefix;
     if (fqnPrefix.contains(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE)) {
-      localNamePrefix = YamlUtils.getQualifiedNameTillGivenField(
-          ctx.getCurrentField().getNode(), YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
-    } else if (fqnPrefix.contains(YAMLFieldNameConstants.EXECUTION)) {
       localNamePrefix =
-          YamlUtils.getQualifiedNameTillGivenField(ctx.getCurrentField().getNode(), YAMLFieldNameConstants.EXECUTION);
+          YamlUtils.getQualifiedNameTillGivenField(fieldNode, YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+    } else if (fqnPrefix.contains(YAMLFieldNameConstants.ENVIRONMENT)
+        && fqnPrefix.contains(YAMLFieldNameConstants.PROVISIONER)) {
+      // remove environment. from the path
+      // provisioner path should be stage.spec.provisioner.
+      finalFqnPrefix = fqnPrefix.replace(YAMLFieldNameConstants.ENVIRONMENT + ".", "");
+      localNamePrefix = finalFqnPrefix;
+    } else if (fqnPrefix.contains(YAMLFieldNameConstants.EXECUTION)) {
+      localNamePrefix = YamlUtils.getQualifiedNameTillGivenField(fieldNode, YAMLFieldNameConstants.EXECUTION);
     }
 
     VariableCreatorHelper.collectVariableExpressions(
-        config, yamlPropertiesMap, yamlExtraPropertiesMap, fqnPrefix, localNamePrefix);
+        config, yamlPropertiesMap, yamlExtraPropertiesMap, finalFqnPrefix, localNamePrefix);
 
     VariableCreatorHelper.addYamlExtraPropertyToMap(
         config.getUuid(), yamlExtraPropertiesMap, getStepExtraProperties(fqnPrefix, localNamePrefix, config));

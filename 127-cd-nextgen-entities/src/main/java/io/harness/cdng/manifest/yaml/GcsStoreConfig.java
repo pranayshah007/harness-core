@@ -26,11 +26,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -42,6 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("gcsStore")
 @RecasterAlias("io.harness.cdng.manifest.yaml.GcsStoreConfig")
+@FieldNameConstants(innerTypeName = "GcsStoreConfigKeys")
 public class GcsStoreConfig implements StoreConfig, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -97,5 +101,17 @@ public class GcsStoreConfig implements StoreConfig, Visitable, WithConnectorRef 
     if (ParameterField.isNotNull(overridingConnectorRef)) {
       connectorRef = overridingConnectorRef;
     }
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkStringParameterNullOrInput(connectorRef)) {
+      invalidParameters.add(GcsStoreConfigKeys.connectorRef);
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(bucketName)) {
+      invalidParameters.add(GcsStoreConfigKeys.bucketName);
+    }
+    return invalidParameters;
   }
 }

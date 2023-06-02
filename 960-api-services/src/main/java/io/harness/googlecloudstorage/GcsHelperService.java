@@ -13,9 +13,12 @@ import static io.harness.exception.WingsException.USER;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gcp.helpers.GcpHttpTransportHelperService;
 import io.harness.network.Http;
@@ -25,13 +28,16 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.api.gax.paging.Page;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +53,9 @@ public class GcsHelperService {
 
   @Inject private GcpHttpTransportHelperService gcpHttpTransportHelperService;
   @Inject private GcpCredentialsHelper gcpCredentialsHelper;
+  private static final String INVALID_BUCKET_PROJECT__ERROR =
+      "Unable to checkout bucket: %s in Google Cloud Storage. Please "
+      + "ensure that provided project and bucket exists in GCP";
 
   /**
    * Gets a GCS Service
@@ -84,6 +93,9 @@ public class GcsHelperService {
     Storage storage = getGcsStorageService(gcsInternalConfig.getServiceAccountKeyFileContent(),
         gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
     Bucket bucket = storage.get(gcsInternalConfig.getBucket());
+    if (bucket == null) {
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+    }
     if (bucket.versioningEnabled() != null) {
       isVersioningEnabled = bucket.versioningEnabled();
     }
@@ -142,5 +154,18 @@ public class GcsHelperService {
         .withMetadata(artifactMetaDataMap)
         .withBuildUrl(blob.getSelfLink())
         .build();
+  }
+
+  public InputStream downloadObject(GcsInternalConfig gcsInternalConfig, String fileName) throws Exception {
+    Storage storage = getGcsStorageService(gcsInternalConfig.getServiceAccountKeyFileContent(),
+        gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
+    Bucket bucket = storage.get(gcsInternalConfig.getBucket());
+    if (bucket == null) {
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+    }
+
+    Blob blob = storage.get(BlobId.of(gcsInternalConfig.getBucket(), fileName));
+    InputStream inputStream = new ByteArrayInputStream(blob.getContent());
+    return inputStream;
   }
 }

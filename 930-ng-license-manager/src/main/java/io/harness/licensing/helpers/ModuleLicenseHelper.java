@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -10,22 +10,27 @@ package io.harness.licensing.helpers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ModuleType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
+import io.harness.licensing.entities.modules.CETModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
+import io.harness.licensing.entities.modules.IACMModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
+import io.harness.subscription.params.UsageKey;
 
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +39,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @Singleton
 public class ModuleLicenseHelper {
+  private final String MODULE_NOT_SUPPORTED_ERROR = "Module %s is not supported for recommendations.";
+
   public static Map<ModuleType, ModuleLicense> getLastExpiredLicenseForEachModuleType(
       List<ModuleLicense> allModuleLicenses) {
     Map<ModuleType, ModuleLicense> result = new HashMap<>();
@@ -80,6 +87,26 @@ public class ModuleLicenseHelper {
       }
     }
     return latestLicense;
+  }
+
+  public static EnumMap<UsageKey, Long> getUsageLimits(ModuleLicense moduleLicense) {
+    EnumMap<UsageKey, Long> usageLimitMap = new EnumMap<>(UsageKey.class);
+
+    switch (moduleLicense.getModuleType().name()) {
+      case "CF":
+        CFModuleLicense cfModuleLicense = (CFModuleLicense) moduleLicense;
+        usageLimitMap.put(UsageKey.NUMBER_OF_USERS, (long) cfModuleLicense.getNumberOfUsers());
+        usageLimitMap.put(UsageKey.NUMBER_OF_MAUS, cfModuleLicense.getNumberOfClientMAUs());
+        break;
+      case "CI":
+        CIModuleLicense ciModuleLicense = (CIModuleLicense) moduleLicense;
+        usageLimitMap.put(UsageKey.NUMBER_OF_COMMITTERS, (long) ciModuleLicense.getNumberOfCommitters());
+        break;
+      default:
+        throw new InvalidRequestException(String.format(MODULE_NOT_SUPPORTED_ERROR, moduleLicense.getModuleType()));
+    }
+
+    return usageLimitMap;
   }
 
   public static ModuleLicenseDTO getMostRecentUpdatedLicense(List<ModuleLicenseDTO> licenses) {
@@ -285,6 +312,22 @@ public class ModuleLicenseHelper {
         if (chaosLicense.getTotalChaosExperimentRuns() != null
             && !chaosLicense.getTotalChaosExperimentRuns().equals(currentCHAOSLicense.getTotalChaosExperimentRuns())) {
           currentCHAOSLicense.setTotalChaosExperimentRuns(chaosLicense.getTotalChaosExperimentRuns());
+        }
+        break;
+      case IACM:
+        IACMModuleLicense iacmLicense = (IACMModuleLicense) update;
+        IACMModuleLicense currentIACMLicense = (IACMModuleLicense) current;
+        if (iacmLicense.getNumberOfDevelopers() != null
+            && !iacmLicense.getNumberOfDevelopers().equals(currentIACMLicense.getNumberOfDevelopers())) {
+          currentIACMLicense.setNumberOfDevelopers(iacmLicense.getNumberOfDevelopers());
+        }
+        break;
+      case CET:
+        CETModuleLicense cetLicense = (CETModuleLicense) update;
+        CETModuleLicense currentCETLicense = (CETModuleLicense) current;
+        if (cetLicense.getNumberOfAgents() != null
+            && !cetLicense.getNumberOfAgents().equals(currentCETLicense.getNumberOfAgents())) {
+          currentCETLicense.setNumberOfAgents(cetLicense.getNumberOfAgents());
         }
         break;
       default:

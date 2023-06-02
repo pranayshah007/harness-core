@@ -10,7 +10,6 @@ package io.harness.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.servicenow.ServiceNowImportSetResponseNG;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

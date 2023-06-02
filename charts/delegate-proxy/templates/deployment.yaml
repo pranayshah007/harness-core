@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delegate-proxy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "delegate-proxy.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  selector:
+    matchLabels:
+      {{- include "delegate-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "delegate-proxy.selectorLabels" . | nindent 8 }}
+    spec:
+      {{ include "delegate-proxy.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "delegate-proxy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: delegate-proxy
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+              {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d
+              name: harness-nginx-conf
+      volumes:
+        - name: harness-nginx-conf
+          configMap:
+            name: delegate-proxy
+            items:
+              - key: proxy.conf
+                path: proxy.conf
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

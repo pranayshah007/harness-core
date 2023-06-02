@@ -7,10 +7,10 @@
 
 package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 
-import static io.harness.cvng.beans.MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
@@ -19,7 +19,6 @@ import io.harness.cvng.models.VerificationType;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -45,16 +44,15 @@ public class HealthSourceDTO {
   }
 
   public static HealthSource toHealthSource(List<CVConfig> cvConfigs,
-      Map<DataSourceType, CVConfigToHealthSourceTransformer> dataSourceTypeToHealthSourceTransformerMap) {
+      CVConfigToHealthSourceTransformer<? extends CVConfig, ? extends HealthSourceSpec>
+          cvConfigToHealthSourceTransformer) {
     Preconditions.checkState(isNotEmpty(cvConfigs), "Cannot convert to HealthSource if cvConfig list is empty");
     CVConfig baseCVConfig = cvConfigs.get(0);
-    CVConfigToHealthSourceTransformer<CVConfig, HealthSourceSpec> cvConfigToHealthSourceTransformer =
-        dataSourceTypeToHealthSourceTransformerMap.get(baseCVConfig.getType());
     Pair<String, String> nameSpaceAndIdentifier =
         HealthSourceService.getNameSpaceAndIdentifier(baseCVConfig.getFullyQualifiedIdentifier());
     return HealthSource.builder()
         .name(baseCVConfig.getMonitoringSourceName())
-        .type(dataSourceTypeMonitoredServiceDataSourceTypeMap.get(baseCVConfig.getType()))
+        .type(MonitoredServiceDataSourceType.getMonitoredServiceDataSourceType(baseCVConfig.getType()))
         .identifier(nameSpaceAndIdentifier.getValue())
         .spec(cvConfigToHealthSourceTransformer.transform(cvConfigs))
         .build();

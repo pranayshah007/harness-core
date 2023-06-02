@@ -83,15 +83,16 @@ public class InternalChangeConsumerServiceImpl implements InternalChangeConsumer
       internalChangeEventMetaDataBuilder.eventEndTime(internalChangeEventDTO.getExecutionEndTime());
     }
 
-    ChangeEventDTO changeEventDTO = ChangeEventDTO.builder()
-                                        .name(internalChangeEventDTO.getEventDetails().getName())
-                                        .accountId(internalChangeEventDTO.getAccountId())
-                                        .orgIdentifier(internalChangeEventDTO.getOrgIdentifier())
-                                        .projectIdentifier(internalChangeEventDTO.getProjectIdentifier())
-                                        .eventTime(internalChangeEventDTO.getExecutionTime())
-                                        .type(ChangeSourceType.HARNESS_FF)
-                                        .metadata(internalChangeEventMetaDataBuilder.build())
-                                        .build();
+    ChangeEventDTO changeEventDTO =
+        ChangeEventDTO.builder()
+            .name(internalChangeEventDTO.getEventDetails().getName())
+            .accountId(internalChangeEventDTO.getAccountId())
+            .orgIdentifier(internalChangeEventDTO.getOrgIdentifier())
+            .projectIdentifier(internalChangeEventDTO.getProjectIdentifier())
+            .eventTime(internalChangeEventDTO.getExecutionTime())
+            .type(ChangeSourceType.ofActivityType(ActivityType.fromString(internalChangeEventDTO.getType())))
+            .metadata(internalChangeEventMetaDataBuilder.build())
+            .build();
 
     for (int i = 0; i < internalChangeEventDTO.getEnvironmentIdentifierCount(); i++) {
       for (int j = 0; j < internalChangeEventDTO.getServiceIdentifierCount(); j++) {

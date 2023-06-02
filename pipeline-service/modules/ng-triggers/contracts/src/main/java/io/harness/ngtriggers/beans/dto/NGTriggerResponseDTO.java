@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -41,4 +42,5 @@ public class NGTriggerResponseDTO {
   boolean enabled;
   Map<String, Map<String, String>> errors;
   boolean errorResponse;
+  List<String> stagesToExecute;
 }

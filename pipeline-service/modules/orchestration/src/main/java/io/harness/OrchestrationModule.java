@@ -38,6 +38,8 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.executions.plan.PlanServiceImpl;
 import io.harness.engine.expressions.EngineExpressionServiceImpl;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
+import io.harness.engine.expressions.usages.ExpressionUsageService;
+import io.harness.engine.expressions.usages.ExpressionUsageServiceImpl;
 import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPublisher;
 import io.harness.engine.facilitation.facilitator.publisher.RedisFacilitateEventPublisher;
 import io.harness.engine.interrupts.InterruptService;
@@ -60,6 +62,8 @@ import io.harness.engine.progress.publisher.ProgressEventPublisher;
 import io.harness.engine.progress.publisher.RedisProgressEventPublisher;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.exception.exceptionmanager.ExceptionModule;
+import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.execution.expansion.PlanExpansionServiceImpl;
 import io.harness.govern.ServersModule;
 import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
@@ -146,12 +150,15 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
       bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
       bind(PipelineSettingsService.class).to(PipelineSettingsServiceImpl.class).in(Singleton.class);
     }
+    bind(PlanExpansionService.class).to(PlanExpansionServiceImpl.class).in(Singleton.class);
+
     bind(NodeExecutionService.class).to(NodeExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);
     bind(NodeExecutionMonitorService.class).to(NodeExecutionMonitorServiceImpl.class).in(Singleton.class);
     bind(PmsGraphStepDetailsService.class).to(PmsGraphStepDetailsServiceImpl.class);
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
+    bind(ExpressionUsageService.class).to(ExpressionUsageServiceImpl.class).in(Singleton.class);
 
     bind(PlanService.class).to(PlanServiceImpl.class).in(Singleton.class);
 

@@ -12,6 +12,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMP
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -83,13 +84,14 @@ public class CustomDeploymentEntitySetupHelper {
     templateEntityTypeToTemplateEntities.put(templateEntityDTO.getType().name(), templateEntityDTOS);
     EntityDetailProtoDTO infraEntityDTO =
         EntityDetailProtoDTO.newBuilder()
-            .setInfraDefRef(InfraDefinitionReferenceProtoDTO.newBuilder()
-                                .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
-                                .setAccountIdentifier(StringValue.of(infraEntity.getAccountId()))
-                                .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
-                                .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
-                                .setEnvIdentifier(StringValue.of(infraEntity.getEnvIdentifier()))
-                                .build())
+            .setInfraDefRef(
+                InfraDefinitionReferenceProtoDTO.newBuilder()
+                    .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
+                    .setAccountIdentifier(StringValue.of(infraEntity.getAccountId()))
+                    .setOrgIdentifier(StringValue.of(defaultIfBlank(infraEntity.getOrgIdentifier(), "")))
+                    .setProjectIdentifier(StringValue.of(defaultIfBlank(infraEntity.getProjectIdentifier(), "")))
+                    .setEnvIdentifier(StringValue.of(infraEntity.getEnvIdentifier()))
+                    .build())
             .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
             .setName(infraEntity.getName())
             .build();
@@ -184,8 +186,8 @@ public class CustomDeploymentEntitySetupHelper {
     InfraDefinitionReferenceProtoDTO infraDefinitionReferenceProtoDTO =
         InfraDefinitionReferenceProtoDTO.newBuilder()
             .setAccountIdentifier(StringValue.of(infraEntity.getAccountId()))
-            .setOrgIdentifier(StringValue.of(infraEntity.getOrgIdentifier()))
-            .setProjectIdentifier(StringValue.of(infraEntity.getProjectIdentifier()))
+            .setOrgIdentifier(StringValue.of(defaultIfBlank(infraEntity.getOrgIdentifier(), "")))
+            .setProjectIdentifier(StringValue.of(defaultIfBlank(infraEntity.getProjectIdentifier(), "")))
             .setIdentifier(StringValue.of(infraEntity.getIdentifier()))
             .setEnvIdentifier(StringValue.of(infraEntity.getEnvIdentifier()))
             .build();

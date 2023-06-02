@@ -8,24 +8,31 @@
 package io.harness.cvng.core.jobs;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.VerificationApplication;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.persistence.PersistentEntity;
 import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -92,6 +99,7 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
   @Test
   @Owner(developers = VUK)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProcessDeleteAction_entitiesList() {
     Set<Class<? extends PersistentEntity>> entitiesWithVerificationTaskId = new HashSet<>();
     entitiesWithVerificationTaskId.addAll(OrganizationChangeEventMessageProcessor.ENTITIES_MAP.keySet());
@@ -111,8 +119,8 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
       }
     });
     assertThat(entitiesWithVerificationTaskId)
-        .isEqualTo(withOrganisationIdentifier)
-        .withFailMessage("Entities with organisationIdentifier found which is not added to ENTITIES_MAP");
+        .withFailMessage("Entities with organisationIdentifier found which is not added to ENTITIES_MAP")
+        .isEqualTo(withOrganisationIdentifier);
   }
 
   private boolean doesClassContainField(Class<?> clazz, String fieldName) {
@@ -121,5 +129,52 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
 
   private CVConfig createCVConfig(String accountId, String orgIdentifier) {
     return builderFactory.splunkCVConfigBuilder().accountId(accountId).orgIdentifier(orgIdentifier).build();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  @HarnessAlwaysRun
+  public void testCompoudIndexForOrgDeletionIsPresent() {
+    Set<String> entitiesWithoutProperIndex = new HashSet<>();
+    Set<Class<? extends PersistentEntity>> entitiesToBeDeletedWithOrgDeletion =
+        OrganizationChangeEventMessageProcessor.ENTITIES_MAP.keySet();
+    entitiesToBeDeletedWithOrgDeletion.forEach(entity -> {
+      List<CompoundMongoIndex> mongoDbCompoundIndexes = getMongoDbCompoundIndexes(entity);
+      if (entityDoesNotHaveAccountOrgCompoundIndex(mongoDbCompoundIndexes)) {
+        entitiesWithoutProperIndex.add(entity.getCanonicalName());
+      }
+    });
+    assertThat(entitiesWithoutProperIndex)
+        .withFailMessage(
+            "The following classes do not have compound index for org deletion: " + entitiesWithoutProperIndex)
+        .isEmpty();
+  }
+
+  private boolean entityDoesNotHaveAccountOrgCompoundIndex(List<CompoundMongoIndex> mongoDbCompoundIndexes) {
+    for (CompoundMongoIndex compoundIndex : mongoDbCompoundIndexes) {
+      if (compoundIndex.getFields().size() > 1 && compoundIndex.getFields().get(0).equals("accountId")
+          && compoundIndex.getFields().get(1).equals("orgIdentifier")) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private List<CompoundMongoIndex> getMongoDbCompoundIndexes(Class<? extends PersistentEntity> entity) {
+    List<CompoundMongoIndex> mongoDbCompoundIndexes = new ArrayList<>();
+    try {
+      Method methodToFetchMongoDbCompoundIndexes = entity.getMethod("mongoIndexes");
+      List<Object> mongoDbIndexes = (List<Object>) methodToFetchMongoDbCompoundIndexes.invoke(null);
+      for (Object mongoIndex : mongoDbIndexes) {
+        try {
+          CompoundMongoIndex compoundMongoIndex = (CompoundMongoIndex) mongoIndex;
+          mongoDbCompoundIndexes.add(compoundMongoIndex);
+        } catch (ClassCastException e) {
+        }
+      }
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+    }
+    return mongoDbCompoundIndexes;
   }
 }

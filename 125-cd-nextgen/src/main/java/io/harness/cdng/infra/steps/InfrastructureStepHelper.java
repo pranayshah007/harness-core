@@ -19,7 +19,12 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails.InfraExecutionSummaryDetailsBuilder;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.common.NGExpressionUtils;
@@ -35,6 +40,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -44,12 +50,16 @@ import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
+@Slf4j
 public class InfrastructureStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StageExecutionHelper stageExecutionHelper;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
+
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance) {
@@ -154,5 +164,36 @@ public class InfrastructureStepHelper {
       skipInstances = ((InfrastructureDetailsAbstract) infrastructure).getSkipInstances();
     }
     return skipInstances;
+  }
+
+  public void saveInfraExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
+    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+        StageExecutionInfoUpdateDTO.builder()
+            .infraExecutionSummary(createInfraExecutionSummaryDetailsFromStepResponse(stepResponse))
+            .build());
+  }
+
+  public InfraExecutionSummaryDetails createInfraExecutionSummaryDetailsFromStepResponse(StepResponse stepResponse) {
+    if (stepResponse.getStepOutcomes() != null) {
+      for (StepResponse.StepOutcome stepOutcome : stepResponse.getStepOutcomes()) {
+        if (stepOutcome.getOutcome() instanceof InfrastructureOutcome) {
+          InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) stepOutcome.getOutcome();
+          InfraExecutionSummaryDetailsBuilder infraExecutionSummaryDetailsBuilder =
+              InfraExecutionSummaryDetails.builder()
+                  .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
+                  .infrastructureName(infrastructureOutcome.getInfraName())
+                  .connectorRef(infrastructureOutcome.getConnectorRef());
+          if (infrastructureOutcome.getEnvironment() != null) {
+            infraExecutionSummaryDetailsBuilder.identifier(infrastructureOutcome.getEnvironment().getIdentifier())
+                .name(infrastructureOutcome.getEnvironment().getName())
+                .type(infrastructureOutcome.getEnvironment().getType().name())
+                .envGroupId(infrastructureOutcome.getEnvironment().getEnvGroupRef())
+                .envGroupName(infrastructureOutcome.getEnvironment().getEnvGroupName());
+          }
+          return infraExecutionSummaryDetailsBuilder.build();
+        }
+      }
+    }
+    return null;
   }
 }

@@ -225,9 +225,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps) {
-    return instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps);
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact) {
+    return instanceRepository.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
   }
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
@@ -359,10 +359,10 @@ public class InstanceServiceImpl implements InstanceService {
                             .is(false);
 
     if (isNotEmpty(orgIdentifier)) {
-      criteria.and(InstanceKeys.orgIdentifier);
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
     }
     if (isNotEmpty(projectIdentifier)) {
-      criteria.and(InstanceKeys.projectIdentifier);
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
     }
 
     Update update =

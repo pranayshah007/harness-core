@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static software.wings.ngmigration.NGMigrationEntityType.USER_GROUP;
+
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 import io.harness.annotation.HarnessEntity;
@@ -35,6 +37,8 @@ import software.wings.beans.UserGroupEntityReference;
 import software.wings.beans.notification.NotificationSettings;
 import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.sso.SSOType;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -73,7 +77,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Entity(value = "userGroups", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)
-public class UserGroup extends Base implements NotificationReceiverInfo, AccountAccess, NameAccess {
+public class UserGroup extends Base implements NotificationReceiverInfo, AccountAccess, NameAccess, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -286,6 +290,24 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
   @JsonIgnore
   public List<String> getEmailAddresses() {
     return null != notificationSettings ? notificationSettings.getEmailAddresses() : Collections.emptyList();
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(USER_GROUP)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   private boolean hasMember(String userId) {

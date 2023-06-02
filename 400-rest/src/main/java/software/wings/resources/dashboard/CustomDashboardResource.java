@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.event.reconciliation.service.LookerEntityReconServiceHelper.performReconciliationViaAPI;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.CUSTOM_DASHBOARD;
@@ -40,6 +41,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rest.RestResponse.Builder;
@@ -66,10 +68,10 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
 import io.swagger.annotations.Api;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -307,14 +309,16 @@ public class CustomDashboardResource {
             .build();
       }
 
-      List<Account> accountList = accountService.getAccountsWithBasicInfo(false);
       Map<String, String> accountReconStatusMap = new HashMap<>();
-      for (Account account : accountList) {
-        ReconciliationStatus status = deploymentReconService.performReconciliation(
-            account.getUuid(), durationStartTs, durationEndTs, deploymentExecutionEntity);
-        accountReconStatusMap.put(account.getAccountName(), status.name());
-        log.info("Reconcilation completed for accountID:[{}],accountName:[{}],status:[{}]", account.getUuid(),
-            account.getAccountName(), status);
+      Query<Account> query = accountService.getBasicAccountQuery().limit(NO_LIMIT);
+      try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
+        for (Account account : iterator) {
+          ReconciliationStatus status = deploymentReconService.performReconciliation(
+              account.getUuid(), durationStartTs, durationEndTs, deploymentExecutionEntity);
+          accountReconStatusMap.put(account.getAccountName(), status.name());
+          log.info("Reconcilation completed for accountID:[{}],accountName:[{}],status:[{}]", account.getUuid(),
+              account.getAccountName(), status);
+        }
       }
       return Builder.aRestResponse()
           .withResponseMessages(accountReconStatusMap.entrySet()

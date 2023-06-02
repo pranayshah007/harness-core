@@ -10,8 +10,9 @@ package io.harness.ngmigration.service.step.elastigroup;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 
@@ -36,11 +37,12 @@ public class ElastigroupRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     SpotInstRollbackState state = (SpotInstRollbackState) getState(graphNode);
 
     ElastigroupRollbackStepNode node = new ElastigroupRollbackStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupRollbackStepInfo rollbackStepInfo = ElastigroupRollbackStepInfo.infoBuilder().build();
 
     node.setElastigroupRollbackStepInfo(rollbackStepInfo);
@@ -49,12 +51,11 @@ public class ElastigroupRollbackStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    return true;
   }
 
   @Override
-  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
-    return WorkflowStepSupportStatus.SUPPORTED;
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
   }
 }

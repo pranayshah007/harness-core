@@ -7,6 +7,7 @@
 
 package io.harness.k8s.manifest;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.k8s.model.Kind.ConfigMap;
 import static io.harness.k8s.model.Kind.CronJob;
 import static io.harness.k8s.model.Kind.DaemonSet;
@@ -17,13 +18,21 @@ import static io.harness.k8s.model.Kind.Pod;
 import static io.harness.k8s.model.Kind.Secret;
 import static io.harness.k8s.model.Kind.StatefulSet;
 
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 import io.harness.k8s.model.HarnessAnnotations;
+import io.harness.k8s.model.K8sRequestHandlerContext;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import lombok.experimental.UtilityClass;
@@ -32,6 +41,10 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 public class VersionUtils {
   private static String revisionSeparator = "-";
+  static final String CONFIGMAP_SECRET_SUFFIX_APPEND_FAILURE_MESSAGE =
+      "Unable to append suffix [%s] to configmaps/secrets. "
+      + "This could potentially lead to stage and primary resource share the same configmap/secret.";
+  static final int CONFIGMAP_SECRET_MAX_NAME_LENGTH = 253;
   private static Set<String> versionedKinds = ImmutableSet.of(ConfigMap.name(), Secret.name());
   private static Set<String> workloadKinds = ImmutableSet.of(Deployment.name(), DaemonSet.name(), StatefulSet.name(),
       Pod.name(), Job.name(), DeploymentConfig.name(), CronJob.name());
@@ -62,46 +75,110 @@ public class VersionUtils {
     }
   }
 
-  public static void addRevisionNumber(List<KubernetesResource> resources, int revision) {
+  public static void addRevisionNumber(K8sRequestHandlerContext context, int revision) {
     Set<KubernetesResourceId> versionedResources = new HashSet<>();
     UnaryOperator<Object> appendRevision = t -> t + revisionSeparator + revision;
 
-    for (KubernetesResource resource : resources) {
+    for (KubernetesResource resource : context.getResources()) {
       if (shouldVersion(resource)) {
         versionedResources.add(resource.getResourceId().cloneInternal());
-        resource.transformName(appendRevision);
+        resource.transformName(appendRevision, context);
         resource.getResourceId().setVersioned(true);
       }
     }
 
-    for (KubernetesResource resource : resources) {
+    for (KubernetesResource resource : context.getResources()) {
       if (shouldUpdateVersionedReferences(resource)) {
-        UnaryOperator<Object> updateConfigMapReference = t -> {
-          KubernetesResourceId configMapResourceId = KubernetesResourceId.builder()
-                                                         .namespace(resource.getResourceId().getNamespace())
-                                                         .kind(ConfigMap.name())
-                                                         .name((String) t)
-                                                         .build();
-          if (versionedResources.contains(configMapResourceId)) {
-            return t + revisionSeparator + revision;
-          }
-          return t;
-        };
-
-        UnaryOperator<Object> updateSecretReference = t -> {
-          KubernetesResourceId secretResourceId = KubernetesResourceId.builder()
-                                                      .namespace(resource.getResourceId().getNamespace())
-                                                      .kind(Secret.name())
-                                                      .name((String) t)
-                                                      .build();
-          if (versionedResources.contains(secretResourceId)) {
-            return t + revisionSeparator + revision;
-          }
-          return t;
-        };
-
+        UnaryOperator<Object> updateConfigMapReference =
+            createTransformationOperator(resource, ConfigMap, versionedResources, revisionSeparator + revision);
+        UnaryOperator<Object> updateSecretReference =
+            createTransformationOperator(resource, Secret, versionedResources, revisionSeparator + revision);
         resource.transformConfigMapAndSecretRef(updateConfigMapReference, updateSecretReference);
       }
     }
+  }
+
+  public static void addSuffixToConfigmapsAndSecrets(
+      K8sRequestHandlerContext context, String suffixWithoutSeparator, LogCallback logCallback) {
+    String suffix =
+        getLongestPossibleSuffix(context.getResources(), revisionSeparator + suffixWithoutSeparator, logCallback);
+
+    if (isEmpty(suffix)) {
+      return;
+    }
+
+    UnaryOperator<Object> appendSuffixOperator = t -> t + suffix;
+    Set<KubernetesResourceId> suffixedResources = new HashSet<>();
+
+    for (KubernetesResource resource : context.getResources()) {
+      if (shouldVersion(resource)) {
+        suffixedResources.add(resource.getResourceId().cloneInternal());
+        resource.transformName(appendSuffixOperator, context);
+      }
+    }
+
+    for (KubernetesResource resource : context.getResources()) {
+      if (shouldUpdateVersionedReferences(resource)) {
+        UnaryOperator<Object> updateConfigmapReference =
+            createTransformationOperator(resource, ConfigMap, suffixedResources, suffix);
+        UnaryOperator<Object> updateSecretReference =
+            createTransformationOperator(resource, Secret, suffixedResources, suffix);
+        resource.transformConfigMapAndSecretRef(updateConfigmapReference, updateSecretReference);
+      }
+    }
+  }
+
+  private static UnaryOperator<Object> createTransformationOperator(KubernetesResource resource, Kind targetObjectKind,
+      Set<KubernetesResourceId> modifiedResources, String modifier) {
+    return t -> {
+      KubernetesResourceId resourceId = KubernetesResourceId.builder()
+                                            .namespace(resource.getResourceId().getNamespace())
+                                            .kind(targetObjectKind.name())
+                                            .name((String) t)
+                                            .build();
+      if (modifiedResources.contains(resourceId)) {
+        return t + modifier;
+      }
+      return t;
+    };
+  }
+
+  private static String getLongestPossibleSuffix(
+      List<KubernetesResource> resources, String desiredSuffix, LogCallback logCallback) {
+    Optional<Integer> longestNameLengthOptional =
+        resources.stream()
+            .filter(resource -> versionedKinds.contains(resource.getResourceId().getKind()))
+            .map(res -> res.getResourceId().getName().length())
+            .reduce(Integer::max);
+
+    if (longestNameLengthOptional.isEmpty()) {
+      // not expected, but if it happens do nothing
+      return EMPTY;
+    }
+
+    int longestPossibleSuffixLength = CONFIGMAP_SECRET_MAX_NAME_LENGTH - longestNameLengthOptional.get();
+
+    if (longestPossibleSuffixLength < 0) {
+      // will eventually fail during apply anyway, don't append anything
+      return EMPTY;
+    }
+
+    return computeSuffix(desiredSuffix, longestPossibleSuffixLength, logCallback);
+  }
+
+  private static String computeSuffix(String desiredSuffix, int longestPossibleSuffixLength, LogCallback logCallback) {
+    if (longestPossibleSuffixLength == 0 || longestPossibleSuffixLength == 1) {
+      // since name is already at limit or cannot end with "-"
+      logCallback.saveExecutionLog(
+          format(CONFIGMAP_SECRET_SUFFIX_APPEND_FAILURE_MESSAGE, desiredSuffix), LogLevel.WARN);
+      return EMPTY;
+    }
+
+    if (longestPossibleSuffixLength >= desiredSuffix.length()) {
+      // apply full suffix
+      return desiredSuffix;
+    }
+
+    return desiredSuffix.substring(0, longestPossibleSuffixLength);
   }
 }

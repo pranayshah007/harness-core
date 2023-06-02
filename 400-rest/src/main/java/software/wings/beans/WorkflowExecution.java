@@ -43,6 +43,7 @@ import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.UuidAware;
 import io.harness.validation.Update;
 
+import software.wings.beans.Activity.ActivityKeys;
 import software.wings.beans.ExecutionArgs.ExecutionArgsKeys;
 import software.wings.beans.NameValuePair.NameValuePairKeys;
 import software.wings.beans.PipelineExecution.PipelineExecutionKeys;
@@ -95,15 +96,13 @@ import lombok.experimental.UtilityClass;
 public class WorkflowExecution implements PersistentRegularIterable, AccountDataRetentionEntity, UuidAware,
                                           CreatedAtAware, CreatedByAware, KeywordsAware, AccountAccess {
   public static String SEARCH2 = "search2";
-  public static String APP_PIP_EXECUTIONID_CREATEDAT = "app_pipExecutionId_createdAt";
+  public static String ACCOUNT_ID_VALID_UNTIL = "accountId_validUntil";
+  public static String ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID = "accountId_pipelineExecutionId_createdAt_appId";
   public static String SERVICE_GUARD = "service_guard";
-  public static String APPID_ENDTS = "appId_endTs";
   public static String LAST_INFRAMAPPING_SEARCH_2 = "lastInfraMappingSearch2";
   public static String WORKFLOW_EXECUTION_MONITOR = "workflowExecutionMonitor";
-  public static String ACCOUNTID_PIPEXECUTIONID_CREATEDAT = "accountId_pipExecutionId_createdAt";
   public static String SEARCH_BY_SERVICEIDS = "searchByServiceIds";
   public static String ACCOUNTID_TAGS_CREATEDAT = "accountId_tags_createdAt";
-  public static String ACCOUNTID_APPID_TAGS_CREATEDAT = "accountId_appId_tags_createdAt";
   public static String APPID_WORKFLOWID_STATUS_CREATEDAT = "appid_workflowid_status_createdat";
   public static String APPID_WORKFLOWID_INFRAMAPPINGIDS_STATUS_CREATEDAT =
       "appid_workflowid_infraMappingIds_status_createdat";
@@ -112,12 +111,9 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static String ACCOUNTID_STARTTS_STATUS_PIPELINEEXECUTIONID = "accountId_startTs_status_pipelineExecutionId";
   public static String ACCOUNTID_ENDTS_STATUS_PIPELINEEXECUTIONID = "accountId_endTs_status_pipelineExecutionId";
   public static String ACCOUNTID_STARTTS_SERVICEIDS = "accountId_startTs_serviceIds";
-  public static String ACCOUNTID_CDPAGECANDIDATE_CREATEDAT_SERVICEIDS_APPID =
-      "accountId_cdPageCandidate_createdAt_serviceIds_appId";
-  public static String ACCOUNTID_DEPLOYEDSERVICES_CREATEDAT_APPID_STATUS =
-      "accountId_1_deployedServices_1_createdAt_-1_appId_1_status_1";
   public static String APPID_CREATEDAT = "appId_createdAt";
-  public static String ACCOUNTID_CDPAGECANDIDATE_KEYWORDS_CREATEDAT = "accountId_cdPageCandidate_keywords_createdAt";
+  public static String ACCOUNTID_KEYWORDS_CREATEDAT_CDPAGECANDIDATE_APPID =
+      "accountId_1_keywords_text_createdAt_-1_cdPageCandidate_1_appId_1";
   public static String APPID_WORKFLOWID_STATUS = "appid_workflowid_status_deployedServices_createdat";
   public static String APPID_WORKFLOWID_STATUS_DEPLOYEDSERVICES_CREATEDAT =
       "appid_workflowid_status_deployedServices_createdat";
@@ -127,6 +123,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static String WFE_EXECUTIONS_SEARCH_WORKFLOWID = "wfe_executions_search_workflowId";
   public static String WFE_EXECUTIONS_SEARCH_SERVICEIDS = "wfe_executions_search_serviceIds";
   public static String WFE_EXECUTIONS_SEARCH_ENVIDS = "wfe_executions_search_envIds";
+  public static String ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS =
+      "accountId_appId_workflowId_createdAt_cdPageCandidate_status";
+  public static String ACCOUNTID_APPID_SERVICEIDS_CREATEDAT_CDPAGECANDIDATE_STATUS =
+      "accountId_appId_serviceIds_createdAt_cdPageCandidate_status";
+  public static String ACCOUNTID_APPID_ENVIDS_CREATEDAT_CDPAGECANDIDATE_STATUS =
+      "accountId_appId_envIds_createdAt_cdPageCandidate_status";
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -136,20 +138,16 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name(APP_PIP_EXECUTIONID_CREATEDAT)
-                 .field(WorkflowExecutionKeys.appId)
+                 .name(ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID)
+                 .field(WorkflowExecutionKeys.accountId)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.appId)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name(SERVICE_GUARD)
                  .field(WorkflowExecutionKeys.appId)
                  .field(WorkflowExecutionKeys.startTs)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name(APPID_ENDTS)
-                 .field(WorkflowExecutionKeys.appId)
-                 .field(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name(LAST_INFRAMAPPING_SEARCH_2)
@@ -166,12 +164,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.nextIteration)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name(ACCOUNTID_PIPEXECUTIONID_CREATEDAT)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
                  .name(SEARCH_BY_SERVICEIDS)
                  .field(WorkflowExecutionKeys.appId)
                  .field(WorkflowExecutionKeys.workflowId)
@@ -182,13 +174,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
         .add(SortCompoundMongoIndex.builder()
                  .name(ACCOUNTID_TAGS_CREATEDAT)
                  .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.tags_name)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name(ACCOUNTID_APPID_TAGS_CREATEDAT)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.appId)
                  .field(WorkflowExecutionKeys.tags_name)
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
@@ -236,32 +221,17 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.serviceIds)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name(ACCOUNTID_CDPAGECANDIDATE_CREATEDAT_SERVICEIDS_APPID)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.cdPageCandidate)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .rangeField(WorkflowExecutionKeys.serviceIds)
-                 .rangeField(WorkflowExecutionKeys.appId)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name(ACCOUNTID_DEPLOYEDSERVICES_CREATEDAT_APPID_STATUS)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.deployedServices)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .rangeField(WorkflowExecutionKeys.appId)
-                 .rangeField(WorkflowExecutionKeys.status)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
                  .name(APPID_CREATEDAT)
                  .field(WorkflowExecutionKeys.appId)
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(CompoundTextMongoIndex.builder()
-                 .name(ACCOUNTID_CDPAGECANDIDATE_KEYWORDS_CREATEDAT)
+                 .name(ACCOUNTID_KEYWORDS_CREATEDAT_CDPAGECANDIDATE_APPID)
                  .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.cdPageCandidate)
                  .textField(WorkflowExecutionKeys.keywords)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.appId)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name(APPID_WORKFLOWID_STATUS_DEPLOYEDSERVICES_CREATEDAT)
@@ -310,6 +280,38 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .rangeField(WorkflowExecutionKeys.envIds)
                  .rangeField(WorkflowExecutionKeys.cdPageCandidate)
                  .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name(ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS)
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.workflowId)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name(ACCOUNTID_APPID_SERVICEIDS_CREATEDAT_CDPAGECANDIDATE_STATUS)
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.serviceIds)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name(ACCOUNTID_APPID_ENVIDS_CREATEDAT_CDPAGECANDIDATE_STATUS)
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.envIds)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name(ACCOUNT_ID_VALID_UNTIL)
+                 .field(ActivityKeys.accountId)
+                 .field(ActivityKeys.validUntil)
                  .build())
         .build();
   }
@@ -494,7 +496,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
 
   @PrePersist
   public void onSave() {
-    this.cdPageCandidate =
-        calculateCdPageCandidate(this.pipelineExecutionId, this.pipelineResumeId, this.latestPipelineResume);
+    this.cdPageCandidate = calculateCdPageCandidate(
+        this.pipelineExecutionId, this.pipelineResumeId, this.latestPipelineResume, this.accountId);
   }
 }

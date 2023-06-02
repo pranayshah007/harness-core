@@ -36,6 +36,10 @@ public class InstanceMapper {
         .lastDeployedByName(instance.getLastDeployedByName())
         .lastPipelineExecutionId(instance.getLastPipelineExecutionId())
         .lastPipelineExecutionName(instance.getLastPipelineExecutionName())
+        .stageStatus(instance.getStageStatus())
+        .stageNodeExecutionId(instance.getStageNodeExecutionId())
+        .stageSetupId(instance.getStageSetupId())
+        .rollbackStatus(instance.getRollbackStatus())
         .orgIdentifier(instance.getOrgIdentifier())
         .projectIdentifier(instance.getProjectIdentifier())
         .primaryArtifact(instance.getPrimaryArtifact())
@@ -51,6 +55,8 @@ public class InstanceMapper {
         .infraIdentifier(instance.getInfraIdentifier())
         .infraName(instance.getInfraName())
         .podCreatedAt(instance.getPodCreatedAt())
+        .instanceKey(instance.getInstanceKey())
+        .infrastructureMappingId(instance.getInfrastructureMappingId())
         .build();
   }
 
@@ -74,6 +80,10 @@ public class InstanceMapper {
         .lastDeployedAt(instanceDTO.getLastDeployedAt())
         .lastDeployedById(instanceDTO.getLastDeployedById())
         .lastDeployedByName(instanceDTO.getLastDeployedByName())
+        .stageNodeExecutionId(instanceDTO.getStageNodeExecutionId())
+        .stageSetupId(instanceDTO.getStageSetupId())
+        .rollbackStatus(instanceDTO.getRollbackStatus())
+        .stageStatus(instanceDTO.getStageStatus())
         .lastPipelineExecutionId(instanceDTO.getLastPipelineExecutionId())
         .lastPipelineExecutionName(instanceDTO.getLastPipelineExecutionName())
         .orgIdentifier(instanceDTO.getOrgIdentifier())

@@ -9,13 +9,17 @@ package io.harness.artifacts.docker.service;
 
 import static io.harness.artifacts.docker.beans.DockerImageManifestResponse.DockerImageManifestHistoryElement;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +38,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import okhttp3.MediaType;
 import okhttp3.Protocol;
+import okhttp3.ResponseBody;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -157,6 +163,41 @@ public class DockerRegistryUtilsTest extends CategoryTest {
     assertThat(artifactMetaInfo.getShaV2()).isEqualTo("DIGEST_V2");
   }
 
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void shouldGetArtifactMetaInfoWithSHA256Digests_V1Failed() throws IOException {
+    Call<DockerImageManifestResponse> requestCallV1 = mock(Call.class);
+    when(requestCallV1.execute())
+        .thenReturn(Response.error(ResponseBody.create(MediaType.parse("application/json"), "404 related error"),
+            (new okhttp3.Response.Builder())
+                .code(404)
+                .message("OK")
+                .protocol(Protocol.HTTP_1_1)
+                .request((new okhttp3.Request.Builder()).url("http://localhost/").build())
+                .build()));
+    when(dockerRegistryRestClient.getImageManifest(any(), any(), any())).thenReturn(requestCallV1);
+    Call<DockerImageManifestResponse> requestCallV2 = mock(Call.class);
+    when(requestCallV2.execute())
+        .thenReturn(Response.success(
+            getDockerImageManifestResponse(
+                "{\"architecture\":\"amd64\",\"config\":{\"Labels\":{\"maintainer\":\"NGINX Docker Maintainers <docker-maint@nginx.com>\",\"please\":\"work\"}}}"),
+            (new okhttp3.Response.Builder())
+                .code(200)
+                .message("OK")
+                .addHeader("docker-content-digest", "DIGEST_V2")
+                .protocol(Protocol.HTTP_1_1)
+                .request((new okhttp3.Request.Builder()).url("http://localhost/").build())
+                .build()));
+    when(dockerRegistryRestClient.getImageManifestV2(any(), any(), any())).thenReturn(requestCallV2);
+
+    ArtifactMetaInfo artifactMetaInfo = dockerRegistryUtils.getArtifactMetaInfo(
+        dockerConfig, dockerRegistryRestClient, null, AUTH_HEADER, IMAGE_NAME, "tag", true);
+    assertThat(artifactMetaInfo).isInstanceOf(ArtifactMetaInfo.class);
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(null);
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo("DIGEST_V2");
+  }
+
   private DockerImageManifestResponse getDockerImageManifestResponse(String v1Compatibility) {
     DockerImageManifestResponse dockerImageManifestResponse = new DockerImageManifestResponse();
     dockerImageManifestResponse.setName("abc");
@@ -164,5 +205,21 @@ public class DockerRegistryUtilsTest extends CategoryTest {
     history.setV1Compatibility(v1Compatibility);
     dockerImageManifestResponse.setHistory(Collections.singletonList(history));
     return dockerImageManifestResponse;
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testValidateCredentialForDockerAcrDomain() {
+    boolean response = dockerRegistryUtils.isAcrContainerRegistry(dockerConfig);
+    assertFalse(response);
+    DockerInternalConfig dockerInternalConfig =
+        DockerInternalConfig.builder().dockerRegistryUrl("https://sridhartest.azurecr.io/").build();
+    response = dockerRegistryUtils.isAcrContainerRegistry(dockerInternalConfig);
+    assertTrue(response);
+
+    dockerInternalConfig = DockerInternalConfig.builder().dockerRegistryUrl("https://sridhartest.azurecr.us/").build();
+    response = dockerRegistryUtils.isAcrContainerRegistry(dockerInternalConfig);
+    assertTrue(response);
   }
 }

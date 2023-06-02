@@ -21,6 +21,8 @@ import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourc
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceService;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceServiceImpl;
+import io.harness.cdng.artifact.resources.bamboo.BambooResourceService;
+import io.harness.cdng.artifact.resources.bamboo.BambooResourceServiceImpl;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.custom.CustomResourceServiceImpl;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
@@ -66,10 +68,23 @@ import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
 import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
+import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
+import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
+import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceService;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.tas.service.TasResourceService;
@@ -90,15 +105,20 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.ServiceSequenceService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
+import io.harness.ng.core.service.services.impl.ServiceSequenceServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -155,6 +175,7 @@ public class NGModule extends AbstractModule {
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
     bind(CustomResourceService.class).to(CustomResourceServiceImpl.class);
+    bind(BambooResourceService.class).to(BambooResourceServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -171,10 +192,23 @@ public class NGModule extends AbstractModule {
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(TerraformCloudResourceService.class).to(TerraformCloudResourceServiceImpl.class);
+    bind(ServiceSequenceService.class).to(ServiceSequenceServiceImpl.class);
+    bind(TerraformCloudPlanExecutionDetailsService.class).to(TerraformCloudPlanExecutionDetailsServiceImpl.class);
+    bind(ServiceOverridesServiceV2.class).to(ServiceOverridesServiceV2Impl.class);
+    bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
+    bind(ServiceOverrideV2MigrationService.class).to(ServiceOverrideV2MigrationServiceImpl.class);
+    bind(ServiceOverrideV2SettingsUpdateService.class).to(ServiceOverrideV2SettingsUpdateServiceImpl.class);
+
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
         .to(EnvironmentGroupFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENT.toString()).to(EnvironmentFilterPropertiesMapper.class);
+
+    Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
+        Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
+    pluginInfoProviderMultibinder.addBinding().to(AwsSamDeployPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsSamBuildPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
   }
 }

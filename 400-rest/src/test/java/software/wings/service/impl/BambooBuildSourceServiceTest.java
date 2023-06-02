@@ -69,8 +69,7 @@ public class BambooBuildSourceServiceTest extends WingsBaseTest {
     accountId = UUID.randomUUID().toString();
     appId = UUID.randomUUID().toString();
     MockitoAnnotations.initMocks(this);
-    when(delegateProxyFactory.getV2(Mockito.anyObject(), Mockito.any(SyncTaskContext.class)))
-        .thenReturn(bambooBuildService);
+    when(delegateProxyFactory.getV2(Mockito.any(), Mockito.any(SyncTaskContext.class))).thenReturn(bambooBuildService);
     FieldUtils.writeField(buildSourceService, "delegateProxyFactory", delegateProxyFactory, true);
     settingAttribute =
         aSettingAttribute()

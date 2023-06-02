@@ -7,13 +7,14 @@
 
 package io.harness.delegate.pcf;
 
+import static io.harness.pcf.model.PcfConstants.PCF_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.anyListOf;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -112,10 +113,12 @@ public class TasRunPluginCommandTaskHandlerTest extends CategoryTest {
     assertThat(pcfRunPluginScriptRequestData.getWorkingDirectory()).isNotNull();
     assertThat(pcfRunPluginScriptRequestData.getFinalScriptString())
         .isEqualTo("cf create-service " + pcfRunPluginScriptRequestData.getWorkingDirectory() + "/manifest.yml");
+    assertThat(pcfRunPluginScriptRequestData.getCfRequestConfig()).isNotNull();
+    assertThat(pcfRunPluginScriptRequestData.getCfRequestConfig().getCfHomeDirPath())
+        .contains(PCF_ARTIFACT_DOWNLOAD_DIR_PATH);
 
     verify(tasRunPluginCommandTaskHandler, times(1))
-        .saveFilesInWorkingDirectoryStringContent(
-            anyListOf(FileData.class), eq(pcfRunPluginScriptRequestData.getWorkingDirectory()));
+        .saveFilesInWorkingDirectoryStringContent(anyList(), eq(pcfRunPluginScriptRequestData.getWorkingDirectory()));
   }
 
   private CfRunPluginCommandRequestNG getPcfRunPluginCommandRequest() {

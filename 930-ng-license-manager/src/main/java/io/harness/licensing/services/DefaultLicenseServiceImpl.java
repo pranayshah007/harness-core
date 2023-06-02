@@ -38,7 +38,6 @@ import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.checks.LicenseComplianceResolver;
 import io.harness.licensing.entities.modules.ModuleLicense;
-import io.harness.licensing.entities.modules.ModuleLicense.ModuleLicenseKeys;
 import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.helpers.ModuleLicenseSummaryHelper;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
@@ -80,7 +79,6 @@ import java.util.stream.Collectors;
 import javax.cache.Cache;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 public class DefaultLicenseServiceImpl implements LicenseService {
@@ -250,9 +248,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
   @Override
   public void deleteByAccount(String accountIdentifier) {
-    Criteria criteria = new Criteria();
-    criteria.and(ModuleLicenseKeys.accountIdentifier).is(accountIdentifier);
-    moduleLicenseRepository.deleteAll(moduleLicenseRepository.findAllByAccountIdentifier(accountIdentifier));
+    moduleLicenseRepository.deleteAllByAccountIdentifier(accountIdentifier);
   }
 
   @Override

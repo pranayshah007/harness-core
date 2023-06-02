@@ -22,11 +22,12 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.PlanExecution;
+import io.harness.plan.ExpressionModeMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 import io.harness.utils.AmbianceTestUtils;
 import io.harness.utils.DummyOrchestrationOutcome;
 import io.harness.utils.DummySweepingOutput;
@@ -64,7 +65,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -76,7 +77,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -88,7 +89,7 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   @Ignore("Move to PmsServiceImpl Test")
@@ -129,5 +130,20 @@ public class EngineExpressionServiceImplTest extends OrchestrationTestBase {
         .isEqualTo("{\"this\" : \"withRecastKey\", \"__recast\" : \"thisID\"}");
     verify(pmsEngineExpressionService, times(1))
         .evaluateExpression(Ambiance.getDefaultInstance(), "thisOtherExpression");
+
+    ExpressionMode expressionMode = ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+    doReturn("{\"this\" : \"withRecastKey\", \"__recast\" : \"thisID\"}")
+        .when(pmsEngineExpressionService)
+        .evaluateExpression(Ambiance.getDefaultInstance(), "expressionWithMode",
+            ExpressionModeMapper.fromExpressionModeProto(expressionMode));
+    assertThat(engineExpressionServiceImpl.evaluateExpression(
+                   Ambiance.getDefaultInstance(), "expressionWithMode", expressionMode))
+        .isEqualTo("{\"this\" : \"withRecastKey\", \"__recast\" : \"thisID\"}");
+    // Passing the expression mode, So evaluateExpression will be invoked with expressionMode parameter.
+    verify(pmsEngineExpressionService, times(0))
+        .evaluateExpression(Ambiance.getDefaultInstance(), "expressionWithMode");
+    verify(pmsEngineExpressionService, times(1))
+        .evaluateExpression(Ambiance.getDefaultInstance(), "expressionWithMode",
+            ExpressionModeMapper.fromExpressionModeProto(expressionMode));
   }
 }

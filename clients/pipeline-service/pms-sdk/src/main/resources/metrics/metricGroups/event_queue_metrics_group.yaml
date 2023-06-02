@@ -1,0 +1,4 @@
+name: Event Time in Queue Metrics Group
+identifier: event_time_queue_group
+labels:
+  - module

@@ -57,8 +57,8 @@ public class GitOpsFetchAppTask extends AbstractDelegateRunnableTask {
       GitOpsFetchAppTaskParams taskParams = (GitOpsFetchAppTaskParams) parameters;
       NGDelegateLogCallback ngDelegateLogCallback =
           new NGDelegateLogCallback(getLogStreamingTaskClient(), LOG_KEY_SUFFIX, false, null);
-      FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          taskParams.getGitFetchFilesConfig(), taskParams.getAccountId(), ngDelegateLogCallback, false);
+      FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(taskParams.getGitFetchFilesConfig(),
+          taskParams.getAccountId(), ngDelegateLogCallback, taskParams.isCloseLogStream());
       if (fetchFilesResult == null || CollectionUtils.isEmpty(fetchFilesResult.getFiles())) {
         log.error("No files found");
         return GitOpsFetchAppTaskResponse.builder()

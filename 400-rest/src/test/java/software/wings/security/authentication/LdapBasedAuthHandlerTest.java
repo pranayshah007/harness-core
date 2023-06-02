@@ -30,7 +30,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.exception.WingsException;
@@ -116,7 +115,7 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
 
     when(ldapDelegateService.authenticate(any(), any(), anyString(), any())).thenReturn(ldapResponse);
 
-    AuthenticationResponse response = ldapBasedAuthHandler.authenticate(userEmail, userPwd);
+    AuthenticationResponse response = ldapBasedAuthHandler.authenticate(userEmail, userPwd, account.getUuid());
     assertNotNull(response);
     assertThat(response.getUser().getEmail()).isEqualTo(userEmail);
   }
@@ -149,6 +148,7 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
     LdapDelegateService ldapDelegateService = mockCommonFlow(user, account);
     when(userMembershipClient.isUserInScope(anyString(), anyString(), any(), any()).execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(Boolean.TRUE)));
+    when(authenticationUtils.getAccount(account.getUuid())).thenReturn(account);
 
     String authSuccessMsg = "Authentication Success";
     LdapResponse ldapResponse =
@@ -158,7 +158,7 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
         .thenThrow(new NoAvailableDelegatesException())
         .thenReturn(ldapResponse);
 
-    AuthenticationResponse response = ldapBasedAuthHandler.authenticate(userEmail, userPwd);
+    AuthenticationResponse response = ldapBasedAuthHandler.authenticate(userEmail, userPwd, account.getUuid());
     assertNotNull(response);
     assertThat(response.getUser().getEmail()).isEqualTo(userEmail);
   }
@@ -175,7 +175,7 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
     when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
     when(ssoSettingService.getLdapSettingsByAccountId(testAccountId)).thenReturn(null);
 
-    assertThatThrownBy(() -> ldapBasedAuthHandler.authenticate(userEmail, userPwd))
+    assertThatThrownBy(() -> ldapBasedAuthHandler.authenticate(userEmail, userPwd, account.getUuid()))
         .isInstanceOf(WingsException.class)
         .hasMessage(INVALID_CREDENTIAL.name());
   }
@@ -220,7 +220,6 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
 
     EncryptedData encryptedSecret = mock(EncryptedData.class);
     doReturn(encryptedSecret).when(secretManager).encryptSecret(anyString(), any(), anyBoolean());
-    when(featureFlagService.isEnabled(FeatureName.NG_ENABLE_LDAP_CHECK, account.getUuid())).thenReturn(true);
 
     when(domainWhitelistCheckerService.isDomainWhitelisted(any())).thenReturn(true);
     when(ssoSettingService.getLdapSettingsByAccountId(testAccountId)).thenReturn(spyLdapSettings);

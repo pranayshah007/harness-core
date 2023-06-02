@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.service.impl.DelegateAuthServiceImpl;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.service.impl.AuthServiceImpl;
 import software.wings.service.intfc.AuthService;
@@ -23,5 +25,6 @@ public class AuthModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(AuthService.class).to(AuthServiceImpl.class);
+    bind(DelegateAuthService.class).to(DelegateAuthServiceImpl.class);
   }
 }
