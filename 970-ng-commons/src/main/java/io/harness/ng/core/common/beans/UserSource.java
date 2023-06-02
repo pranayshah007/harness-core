@@ -10,5 +10,6 @@ package io.harness.ng.core.common.beans;
 public enum UserSource {
   MANUAL,
   LDAP,
-  SCIM;
+  SCIM,
+  JIT;
 }
