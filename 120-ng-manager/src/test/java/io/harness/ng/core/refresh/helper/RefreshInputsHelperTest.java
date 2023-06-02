@@ -34,6 +34,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -86,6 +87,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
+  @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
 
   @Before
   public void setup() {
@@ -95,7 +97,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
-        serviceEntityService, accountClient, settingsClient, environmentEntitySetupUsageHelper));
+        serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,
+        environmentEntitySetupUsageHelper));
 
     environmentRefreshHelper =
         spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));

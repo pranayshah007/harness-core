@@ -45,6 +45,7 @@ import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.UpsertOptions;
@@ -91,6 +92,8 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private EnvironmentRepository environmentRepository;
   @Mock private EnvironmentRepository mockEnvironmentRepository;
+
+  @Mock private ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Inject private OutboxService outboxService;
   @InjectMocks private EnvironmentServiceImpl environmentService;
   @InjectMocks private EnvironmentServiceImpl environmentServiceUsingMocks;
