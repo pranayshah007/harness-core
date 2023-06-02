@@ -247,6 +247,7 @@ public class HelmDeployState extends State {
   @Getter @Setter private GitFileConfig gitFileConfig;
   @Getter @Setter private String commandFlags;
   @Getter @Setter @Attributes(title = "Ignore release hist failure") private boolean ignoreReleaseHistFailure;
+  @Getter @Setter @Attributes(title = "Skip steady state check") private boolean skipSteadyStateCheck;
 
   public static final String HELM_COMMAND_NAME = "Helm Deploy";
   private static final String DOCKER_IMAGE_TAG_PLACEHOLDER_REGEX = "\\$\\{DOCKER_IMAGE_TAG}";
@@ -497,7 +498,8 @@ public class HelmDeployState extends State {
                 featureFlagService.isEnabled(FeatureName.GIT_HOST_CONNECTIVITY, context.getAccountId()))
             .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()))
             .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
-            .ignoreReleaseHistFailStatus(this.ignoreReleaseHistFailure);
+            .ignoreReleaseHistFailStatus(this.ignoreReleaseHistFailure)
+            .skipSteadyStateCheck(this.skipSteadyStateCheck);
 
     if (gitFileConfig != null) {
       helmInstallCommandRequestBuilder.gitFileConfig(gitFileConfig);
