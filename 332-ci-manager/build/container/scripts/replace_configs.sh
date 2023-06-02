@@ -530,6 +530,7 @@ fi
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
+replace_key_value cacheConfig.resilientCacheEnabled $ENABLE_RESILIENT_CACHE
 
 replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"

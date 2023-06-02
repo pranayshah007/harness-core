@@ -199,8 +199,6 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
-  resilientCacheEnabled: ${ENABLE_RESILIENT_CACHE:-false}
-
 
 accessControlClientConfig:
   enableAccessControl: false

@@ -46,7 +46,6 @@ cacheConfig:
   cacheBackend: HAZELCAST
   cacheNamespace: ""
   disabledCaches: []
-  resilientCacheEnabled: ${ENABLE_RESILIENT_CACHE:-false}
 
 managerClientConfig:
   baseUrl: http://localhost:3457/api/

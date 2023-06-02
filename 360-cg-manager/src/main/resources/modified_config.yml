@@ -324,7 +324,6 @@ cacheConfig:
   cacheBackend: NOOP
   cacheNamespace: ""
   disabledCaches: []
-  resilientCacheEnabled: ${ENABLE_RESILIENT_CACHE:-false}
 
 gcpMarketplaceConfig:
   enabled: false

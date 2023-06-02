@@ -376,7 +376,7 @@ cacheConfig:
   cacheNamespace: ""
   disabledCaches: [ ]
   enterpriseCacheEnabled: true
-  resilientCacheEnabled: ${ENABLE_RESILIENT_CACHE:-false}
+  resilientCacheEnabled: false
 
 hostname: ${HOSTNAME:-localhost}
 
