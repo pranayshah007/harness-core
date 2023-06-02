@@ -92,16 +92,21 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 		logrus.Warnln("the bolt datastore is suitable for testing purposes only")
 	}
 
-	// create the stream server.
 	var stream stream.Stream
-	if config.Redis.Endpoint != "" {
-		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
-		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
+	if config.Redis.StorageType == "sentinel" {
+		// Create Redis Sentinel storage instance
+		stream = redis.NewSentinel(config.Redis.MasterName, config.Redis.SentinelAddrs, config.Redis.Password)
+		logrus.Infof("Configuring log stream to use Redis Sentinel")
+	} else if config.Redis.StorageType == "redis" {
+		// Create Redis storage instance
+		stream = redis.New(config.Redis.Endpoint, config.Redis.Password)
+		logrus.Infof("Configuring log stream to use Redis")
 	} else {
-		// create the in-memory stream
+		// Create in-memory storage instance
 		stream = memory.New()
-		logrus.Infoln("configuring log stream to use in-memory stream")
+		logrus.Infof("Configuring log stream to use in-memory storage")
 	}
+
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
 	// create the http server.

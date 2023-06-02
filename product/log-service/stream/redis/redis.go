@@ -49,7 +49,7 @@ const (
 )
 
 type Redis struct {
-	Client redis.Cmdable
+	Client *redis.Client
 }
 
 func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
@@ -93,6 +93,20 @@ func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathF
 		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
 		s.StartAsync()
 	}
+	return rc
+}
+
+func NewSentinel(masterName string, sentinelAddrs []string, password string) *Redis {
+	client := redis.NewFailoverClient(&redis.FailoverOptions{
+		MasterName:    masterName,
+		SentinelAddrs: sentinelAddrs,
+		Password:      password,
+	})
+
+	rc := &Redis{
+		Client: client,
+	}
+
 	return rc
 }
 
