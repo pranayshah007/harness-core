@@ -35,7 +35,6 @@ import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOverridesSpecBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
-import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -492,7 +491,7 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private String getSpecYamlForMerging(NGServiceOverridesEntity entity) throws IOException {
-    String specYaml = CDYamlUtils.getYamlString(entity.getSpec());
+    String specYaml = YamlUtils.writeYamlString(entity.getSpec());
     YamlField yamlField = YamlUtils.readTree(specYaml);
     JsonNode currJsonNode = yamlField.getNode().getCurrJsonNode();
     ObjectNode dummyObjectNode = mapper.createObjectNode();
@@ -502,7 +501,7 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private String getSpecYamlForMerging(NGServiceOverrideConfigV2 overrideConfig) throws IOException {
-    String specYaml = CDYamlUtils.getYamlString(overrideConfig.getSpec());
+    String specYaml = YamlUtils.writeYamlString(overrideConfig.getSpec());
     YamlField yamlField = YamlUtils.readTree(specYaml);
     JsonNode currJsonNode = yamlField.getNode().getCurrJsonNode();
     ObjectNode dummyObjectNode = mapper.createObjectNode();

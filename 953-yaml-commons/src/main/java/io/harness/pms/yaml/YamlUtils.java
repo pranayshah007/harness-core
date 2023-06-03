@@ -127,6 +127,10 @@ public class YamlUtils {
     }
   }
 
+  public ObjectMapper getMapper() {
+    return mapper;
+  }
+
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
   }
