@@ -93,7 +93,6 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Inject private EnvironmentRepository environmentRepository;
   @Mock private EnvironmentRepository mockEnvironmentRepository;
 
-  @Mock private ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Inject private OutboxService outboxService;
   @InjectMocks private EnvironmentServiceImpl environmentService;
   @InjectMocks private EnvironmentServiceImpl environmentServiceUsingMocks;
