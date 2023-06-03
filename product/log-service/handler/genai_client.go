@@ -25,11 +25,6 @@ const (
 	chatEndpoint       = "/chat"
 )
 
-const (
-	modelProvider = "vertexai"
-	modelName     = "text-bison"
-)
-
 type (
 	genAICompletionInput struct {
 		Prompt          string      `json:"prompt"`
@@ -47,6 +42,19 @@ type (
 		MaxOutputTokens int     `json:"max_output_tokens"`
 		TopP            float64 `json:"top_p"`
 		TopK            int     `json:"top_k"`
+	}
+
+	genAIChatInput struct {
+		Message         string      `json:"message"`
+		Provider        string      `json:"provider"`
+		ModelName       string      `json:"model_name"`
+		Examples        []string    `json:"examples"`
+		ModelParameters modelParams `json:"model_parameters"`
+	}
+
+	genAIChatResponse struct {
+		Text    string `json:"text"`
+		Blocked bool   `json:"blocked"`
 	}
 )
 
@@ -67,7 +75,7 @@ type genAIClient struct {
 }
 
 // Complete sends a request for completing prompt to the GenAI service.
-func (c *genAIClient) Complete(ctx context.Context, prompt string,
+func (c *genAIClient) Complete(ctx context.Context, modelProvider, modelName, prompt string,
 	temperature float64, topP int, topK int, maxOutputTokens int) (*genAICompletionResponse, error) {
 	path := completionEndpoint
 
@@ -83,6 +91,35 @@ func (c *genAIClient) Complete(ctx context.Context, prompt string,
 		},
 	}
 	out := new(genAICompletionResponse)
+	backoff := createBackoff(time.Minute)
+	_, err := c.retry(ctx, c.endpoint+path, "POST", in, out, backoff)
+	return out, err
+}
+
+// Chat sends a request for chat api call to the GenAI service.
+func (c *genAIClient) Chat(ctx context.Context, modelProvider, modelName, message string,
+	temperature float64, topP int, topK int, maxOutputTokens int) (*genAIChatResponse, error) {
+	path := chatEndpoint
+
+	p := modelParams{
+		Temperature:     temperature,
+		MaxOutputTokens: maxOutputTokens,
+	}
+	if topP >= 0 {
+		p.TopP = float64(topP)
+	}
+	if topK >= 0 {
+		p.TopK = topK
+	}
+
+	in := genAIChatInput{
+		Message:         message,
+		Provider:        modelProvider,
+		ModelName:       modelName,
+		Examples:        []string{},
+		ModelParameters: p,
+	}
+	out := new(genAIChatResponse)
 	backoff := createBackoff(time.Minute)
 	_, err := c.retry(ctx, c.endpoint+path, "POST", in, out, backoff)
 	return out, err

@@ -30,6 +30,9 @@ import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.idp.allowlist.resources.AllowListApiImpl;
+import io.harness.idp.allowlist.services.AllowListService;
+import io.harness.idp.allowlist.services.AllowListServiceImpl;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
@@ -111,6 +114,7 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
+import io.harness.spec.server.idp.v1.AllowListApi;
 import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.AuthInfoApi;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
@@ -311,6 +315,8 @@ public class IdpModule extends AbstractModule {
     bind(ConfigEnvVariablesService.class).to(ConfigEnvVariablesServiceImpl.class);
     bind(AuthInfoApi.class).to(AuthInfoApiImpl.class);
     bind(AuthInfoService.class).to(AuthInfoServiceImpl.class);
+    bind(AllowListApi.class).to(AllowListApiImpl.class);
+    bind(AllowListService.class).to(AllowListServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));

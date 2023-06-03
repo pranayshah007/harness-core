@@ -212,4 +212,12 @@ public class GitAwareContextHelper {
     }
     return "";
   }
+
+  public StoreType getStoreTypeFromGitContext() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.getStoreType();
+    }
+    return null;
+  }
 }

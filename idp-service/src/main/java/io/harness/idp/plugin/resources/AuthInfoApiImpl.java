@@ -38,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthInfoApiImpl implements AuthInfoApi {
   private AuthInfoService authInfoService;
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response getAuthInfoAuthId(String authId, @AccountIdentifier String harnessAccount) {
     try {
       AuthInfo authInfo = authInfoService.getAuthInfo(authId, harnessAccount);

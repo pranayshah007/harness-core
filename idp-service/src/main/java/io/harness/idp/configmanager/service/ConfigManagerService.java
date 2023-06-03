@@ -11,7 +11,6 @@ import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
-import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.IDP)
 public interface ConfigManagerService {
   Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier);
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
+  public AppConfig getAppConfig(String accountIdentifier, String configId, ConfigType configType);
 
   AppConfig saveConfigForAccount(AppConfig appConfig, String accountIdentifier, ConfigType configType) throws Exception;
 

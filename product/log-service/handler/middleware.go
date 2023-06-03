@@ -104,9 +104,8 @@ func AuthMiddleware(config config.Config, ngClient *client.HTTPClient) func(http
 				}
 			}
 
-			// Validate that a key is present in the request
-			key := r.FormValue(keyParam)
-			if key == "" {
+			// Validate that a key / keys field is present in the request
+			if r.FormValue(keyParam) == "" || r.FormValue(keysParam) != "" {
 				WriteBadRequest(w, errors.New("no key exists in the URL"))
 				return
 			}

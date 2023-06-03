@@ -753,6 +753,39 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
+  /v1/allow-list:
+    get:
+      summary: Get backend url allow list
+      tags:
+        - AllowList
+      responses:
+        '200':
+          $ref: '#/components/responses/AllowListResponse'
+      operationId: get-allow-list
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      description: Get backend url allow list
+    post:
+      summary: Save backend url allow list
+      tags:
+        - AllowList
+      operationId: save-allow-list
+      responses:
+        '201':
+          $ref: '#/components/responses/AllowListResponse'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllowListRequest'
+        description: Save backend url allow list
 components:
   schemas:
     BackstageEnvVariable:
@@ -866,6 +899,8 @@ components:
             $ref: '#/components/schemas/BackstageEnvVariable'
             x-stoplight:
               id: i9tsq5o4dan8z
+      required:
+        - env_variables
     BackstageEnvVariableResponse:
       x-stoplight:
         id: e8875709fc5b1
@@ -875,6 +910,8 @@ components:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
             id: h1ub7r23fswfs
+      required:
+        - env_variable
     BackstagePermissions:
       title: BackstagePermissions
       x-stoplight:
@@ -1671,6 +1708,8 @@ components:
       properties:
         authInfo:
           $ref: '#/components/schemas/AuthInfo'
+      required:
+        - authInfo
     AuthInfo:
       title: AuthInfo
       x-stoplight:
@@ -1687,6 +1726,57 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BackstageEnvVariable'
+      required:
+        - namespace
+        - env_variables
+    HostInfo:
+      title: HostInfo
+      x-stoplight:
+        id: ep3jvjucdina8
+      type: object
+      properties:
+        host:
+          type: string
+          x-stoplight:
+            id: ztb1a9uvhi3la
+        paths:
+          type: array
+          x-stoplight:
+            id: e9ukqgpupvls0
+          items:
+            x-stoplight:
+              id: x7pr16tq4n7ck
+            type: string
+      required:
+        - host
+    AllowListRequest:
+      title: AllowListRequest
+      x-stoplight:
+        id: xfurar7bwajs8
+      type: object
+      properties:
+        allow:
+          type: array
+          x-stoplight:
+            id: sxxcmr0vzwe89
+          items:
+            $ref: '#/components/schemas/HostInfo'
+      required:
+        - allow
+    AllowListResponse:
+      title: AllowListResponse
+      x-stoplight:
+        id: ijattu5dxrl7a
+      type: object
+      properties:
+        allow:
+          x-stoplight:
+            id: 5wy6szxaizdr9
+          type: array
+          items:
+            $ref: '#/components/schemas/HostInfo'
+      required:
+        - allow
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1918,6 +2008,14 @@ components:
           schema:
             $ref: '#/components/schemas/GenerateYamlRequest'
       description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    AllowListRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AllowListRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AllowListRequest'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -2126,6 +2224,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/AuthInfoResponse'
+    AllowListResponse:
+      description: Response containing backend url allow list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AllowListResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AllowListResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

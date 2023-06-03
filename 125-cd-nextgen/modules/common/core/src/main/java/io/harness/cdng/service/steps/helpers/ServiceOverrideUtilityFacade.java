@@ -88,7 +88,6 @@ public class ServiceOverrideUtilityFacade {
     return serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
   }
 
-  @NonNull
   public EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedServiceOverrideConfigs(String accountId,
       String orgId, String projectId, @NonNull ServiceStepV3Parameters parameters, @NonNull Environment envEntity,
       NGLogCallback logCallback) throws IOException {
@@ -197,31 +196,23 @@ public class ServiceOverrideUtilityFacade {
     Map<Scope, NGServiceOverridesEntity> envServiceOverride = serviceOverridesServiceV2.getEnvServiceOverride(accountId,
         orgId, projectId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue(), logCallback);
     if (isNotEmpty(envServiceOverride)) {
-      overridesForStep.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE,
-          new ArrayList<>(envServiceOverride.values()));
+      overridesForStep.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, new ArrayList<>(envServiceOverride.values()));
     }
 
     if (ParameterField.isNotNull(parameters.getInfraId()) && !parameters.getInfraId().isExpression()
         && isNotBlank(parameters.getInfraId().getValue())) {
-<<<<<<< HEAD
-
-      Map<Scope, NGServiceOverridesEntity> infraOverride = serviceOverridesServiceV2.getInfraOverride(
-          accountId, orgId, projectId, parameters.getEnvRef().getValue(), parameters.getInfraId().getValue());
-=======
       Map<Scope, NGServiceOverridesEntity> infraOverride = serviceOverridesServiceV2.getInfraOverride(accountId, orgId,
           projectId, parameters.getEnvRef().getValue(), parameters.getInfraId().getValue(), logCallback);
->>>>>>> d5e62c9c248 ([feat]: [CDS-58163]: pr comments improvement)
       if (isNotEmpty(infraOverride)) {
-        overridesForStep.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE,
-                new ArrayList<>(infraOverride.values()));
+        overridesForStep.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, new ArrayList<>(infraOverride.values()));
       }
 
       Map<Scope, NGServiceOverridesEntity> infraServiceOverride = serviceOverridesServiceV2.getInfraServiceOverride(
           accountId, orgId, projectId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue(),
           parameters.getInfraId().getValue(), logCallback);
       if (isNotEmpty(infraServiceOverride)) {
-        overridesForStep.put(ServiceOverridesType.INFRA_SERVICE_OVERRIDE,
-                new ArrayList<>(infraServiceOverride.values()));
+        overridesForStep.put(
+            ServiceOverridesType.INFRA_SERVICE_OVERRIDE, new ArrayList<>(infraServiceOverride.values()));
       }
     }
 

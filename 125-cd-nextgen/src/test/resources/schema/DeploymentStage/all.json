@@ -8631,6 +8631,21 @@
                   "type": "string"
                 }
               ]
+            },
+            "skipSteadyStateCheck": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldBoolean"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -8709,6 +8724,21 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "skipSteadyStateCheck": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldBoolean"
+                },
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string",

@@ -146,7 +146,7 @@ public class GovernanceServiceImplTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testEvaluateGovernancePoliciesTemplateWithInvalidYAML() throws IOException {
-    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_TEMPLATE_GOVERNANCE);
+    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
     MockedStatic<GovernanceServiceHelper> mockSettings = Mockito.mockStatic(GovernanceServiceHelper.class);
     when(GovernanceServiceHelper.createEvaluationContextTemplate("expandedJSON:")).thenThrow(new IOException());
     GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePoliciesForTemplate(
@@ -162,7 +162,7 @@ public class GovernanceServiceImplTest extends CategoryTest {
     String expandedJSON = "template:\n"
         + "  identifier: myPipe\n"
         + "  name: my pipe";
-    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_TEMPLATE_GOVERNANCE);
+    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
 
     MockedStatic<GovernanceServiceHelper> mockSettings = Mockito.mockStatic(GovernanceServiceHelper.class);
 

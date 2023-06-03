@@ -32,4 +32,6 @@ toolset
 .*.gitleaksignore$
 .*.jira-projects.txt$
 .github/
+.*.go$
+
 

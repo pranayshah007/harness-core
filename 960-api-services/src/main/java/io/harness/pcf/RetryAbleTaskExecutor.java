@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.cf.retry;
+package io.harness.pcf;
 
 import static io.harness.threading.Morpheus.sleep;
 
@@ -16,7 +16,6 @@ import static software.wings.beans.LogWeight.Bold;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
-import io.harness.pcf.PivotalClientApiException;
 
 import java.time.Duration;
 import org.slf4j.Logger;

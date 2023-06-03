@@ -13,6 +13,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -23,6 +24,14 @@ public class YamlUtils {
       return YamlPipelineUtils.writeString(obj);
     } catch (JsonProcessingException e) {
       throw new UnexpectedException("Error writing object as yaml");
+    }
+  }
+
+  public static <T> T read(String value, Class<T> cls) {
+    try {
+      return YamlPipelineUtils.read(value, cls);
+    } catch (IOException e) {
+      throw new UnexpectedException("Error reading the content", e);
     }
   }
 }

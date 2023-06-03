@@ -18,6 +18,9 @@ import retrofit2.http.Query;
 
 public interface STOServiceClient {
   @GET(STOCommonEndpointConstants.STO_SERVICE_TOKEN_ENDPOINT)
+  Call<JsonObject> generateTokenAllAccounts(@Header("X-Harness-Token") String globalToken);
+
+  @GET(STOCommonEndpointConstants.STO_SERVICE_TOKEN_ENDPOINT)
   Call<JsonObject> generateToken(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
 
   @GET(STOCommonEndpointConstants.STO_SERVICE_SCAN_RESULTS_ENDPOINT)
@@ -29,5 +32,5 @@ public interface STOServiceClient {
       @Query("executionId") String executionId, @Query("page") String page, @Query("pageSize") String pageSize);
 
   @GET(STOCommonEndpointConstants.STO_SERVICE_USAGE_ALL_ACCOUNTS_ENDPOINT)
-  Call<JsonObject> getUsageAllAccounts(@Header("Authorization") String token);
+  Call<JsonObject> getUsageAllAccounts(@Header("Authorization") String token, @Query("timestamp") String timestamp);
 }

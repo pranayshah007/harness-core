@@ -926,7 +926,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     return variablesOutcome;
   }
 
-  // Todo : confirm this behaviour with @Yogesh
   private Map<String, Object> getFinalVariablesMap(NGServiceV2InfoConfig serviceV2InfoConfig,
       Map<String, Object> envOrOverrideVariables, NGLogCallback logCallback) {
     List<NGVariable> variableList = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getVariables();

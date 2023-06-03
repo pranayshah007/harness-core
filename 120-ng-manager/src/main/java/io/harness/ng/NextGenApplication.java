@@ -62,6 +62,7 @@ import io.harness.changestreams.redisconsumers.ModuleLicensesRedisEventConsumer;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorRestrictionUsageImpl;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
@@ -1078,6 +1079,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.MULTIPLE_USER_GROUPS, UserGroupRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS, ServiceAccountRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_VARIABLES, VariableRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_CONNECTORS, ConnectorRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.SERVICES, ServiceRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.CCM_K8S_CLUSTERS, CloudCostK8sConnectorRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.DEPLOYMENTS_PER_MONTH, DeploymentsPerMonthRestrictionUsageImpl.class)

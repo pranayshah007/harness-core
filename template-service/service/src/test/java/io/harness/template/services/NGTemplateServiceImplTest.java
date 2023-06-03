@@ -252,7 +252,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(GovernanceMetadata.newBuilder()
                  .setDeny(false)
                  .setMessage(String.format(
-                     "FF: [%s] is disabled for account: [%s]", FeatureName.OPA_TEMPLATE_GOVERNANCE, ACCOUNT_ID))
+                     "FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE, ACCOUNT_ID))
                  .build())
         .when(governanceService)
         .evaluateGovernancePoliciesForTemplate(any(), any(), any(), any(), any(), any());
@@ -1365,10 +1365,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, FeatureName.OPA_TEMPLATE_GOVERNANCE);
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
     GovernanceMetadata flagOffMetadata =
         templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
     assertThat(flagOffMetadata.getDeny()).isFalse();
-    assertThat(flagOffMetadata.getMessage()).isEqualTo("FF: [OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
+    assertThat(flagOffMetadata.getMessage())
+        .isEqualTo("FF: [CDS_OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
   }
 }

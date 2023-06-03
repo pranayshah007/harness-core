@@ -17,6 +17,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
@@ -27,6 +28,7 @@ public class RancherTaskParams extends ConnectorTaskParams implements TaskParame
   private RancherConnectorDTO rancherConnectorDTO;
   private RancherTaskType rancherTaskType;
   private List<EncryptedDataDetail> encryptionDetails;
+  private Map<String, String> pageRequestParams;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
