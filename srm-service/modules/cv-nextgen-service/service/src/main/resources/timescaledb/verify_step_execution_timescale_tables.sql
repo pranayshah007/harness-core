@@ -92,7 +92,7 @@ BEGIN;
 COMMIT;
 
 BEGIN;
-ALTER TABLE verify_step_interrupt_cvng ADD COLUMN issuerType TEXT NULL;
+ALTER TABLE verify_step_interrupt_cvng ADD COLUMN if not exists issuerType TEXT NULL;
 COMMIT;
 
 -- End of table [verify_step_interrupt_cvng] commands
