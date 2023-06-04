@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.licensing.Edition;
+import io.harness.lock.PersistentLocker;
 import io.harness.ngsettings.NgSettingsTestBase;
 import io.harness.ngsettings.SettingPlanConfig;
 import io.harness.ngsettings.SettingValueType;
@@ -48,6 +49,7 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
   @Inject private SettingsService settingsService;
   @Inject private ConfigurationStateRepository configurationStateRepository;
   @Inject private SettingsCreationJob settingsCreationJob;
+  @Inject PersistentLocker persistentLocker;
   private static final String SETTINGS_CONFIG_FIELD = "settingsConfig";
   private static final String VERSION_FIELD = "version";
 
@@ -55,7 +57,8 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
   public void testSettingsValidation() {
-    SettingsCreationJob settingsCreationJob1 = new SettingsCreationJob(settingsService, configurationStateRepository);
+    SettingsCreationJob settingsCreationJob1 =
+        new SettingsCreationJob(settingsService, configurationStateRepository, persistentLocker);
     SettingsConfig settingsConfig =
         (SettingsConfig) ReflectionUtils.getFieldValue(settingsCreationJob1, SETTINGS_CONFIG_FIELD);
     assertNotNull(settingsConfig);
