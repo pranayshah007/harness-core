@@ -8179,6 +8179,43 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ReleaseWebhookEvent": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WebhookEvent"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "baseAttributes": {
+              "$ref": "#/definitions/WebhookBaseAttributes"
+            },
+            "draft": {
+              "type": "boolean"
+            },
+            "prerelease": {
+              "type": "boolean"
+            },
+            "releaseBody": {
+              "type": "string"
+            },
+            "releaseLink": {
+              "type": "string"
+            },
+            "releaseTag": {
+              "type": "string"
+            },
+            "repository": {
+              "$ref": "#/definitions/Repository"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Repository": {
       "type": "object",
       "properties": {
@@ -13086,7 +13123,8 @@
           "type": "string",
           "enum": [
             "PR",
-            "BRANCH"
+            "BRANCH",
+            "RELEASE"
           ]
         }
       },
