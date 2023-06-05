@@ -49,6 +49,7 @@ import io.harness.cvng.analysis.entities.LogAnalysisCluster.LogAnalysisClusterKe
 import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.AnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisResultKeys;
+import io.harness.cvng.analysis.entities.LogFeedbackAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
@@ -466,7 +467,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(testLogAnalysisLearningEngineTask.getControlDataUrl()).isNull();
     assertThat(testLogAnalysisLearningEngineTask.getTestDataUrl())
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
-            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000&hosts=");
+            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
   }
 
   @Test
@@ -503,7 +504,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
             + baselineVerificationTaskId + "&analysisStartTime=1595846760000&analysisEndTime=1595847660000");
     assertThat(testLogAnalysisLearningEngineTask.getTestDataUrl())
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
-            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000&hosts=");
+            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
   }
 
   @Test
@@ -601,6 +602,38 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertNotNull(taskId);
   }
 
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testScheduleDeploymentLogFeedbackTask_loadTest() {
+    // for log feedback
+    DatadogLogCVConfig dataDogCVConfig = builderFactory.datadogLogCVConfigBuilder().build();
+    String dataDogCVConfigId = dataDogCVConfig.getUuid();
+    String dataDogCVConfigAccountId = dataDogCVConfig.getAccountId();
+
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstanceLoadTest();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskIdLogFeedback = verificationTaskService.createDeploymentVerificationTask(
+        dataDogCVConfigAccountId, dataDogCVConfigId, verificationJobInstanceId, DATADOG_LOG);
+
+    AnalysisInputBuilder analysisInputBuilder = AnalysisInput.builder();
+    Instant startTime = Instant.parse("2023-03-11T10:26:00Z");
+    Instant endTime = Instant.parse("2023-03-11T10:27:00Z");
+    analysisInputBuilder.startTime(startTime)
+        .endTime(endTime)
+        .verificationTaskId(verificationTaskIdLogFeedback)
+        .controlHosts(new HashSet<>(Arrays.asList("host1", "host2")))
+        .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_LOG);
+    AnalysisInput analysisInput = analysisInputBuilder.build();
+    logAnalysisService.scheduleDeploymentLogFeedbackTask(analysisInput);
+    LogFeedbackAnalysisLearningEngineTask learningEngineTask =
+        (LogFeedbackAnalysisLearningEngineTask) learningEngineTaskService.getNextAnalysisTask();
+    String expectedTestDataUrl = String.format(
+        "/cv/api/log-analysis/test-data?verificationTaskId=%s&analysisStartTime=1678530360000&analysisEndTime=1678530420000",
+        verificationTaskIdLogFeedback);
+    assertThat(learningEngineTask.getTestDataUrl()).isEqualTo(expectedTestDataUrl);
+  }
+
   private List<ClusteredLog> createClusteredLogRecords(Instant startTime, Instant endTime) {
     List<ClusteredLog> logRecords = new ArrayList<>();
 
@@ -620,7 +653,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
 
     return logRecords;
   }
-  //
+
   private LogAnalysisDTO createAnalysisDTO(Instant endTime) {
     return createAnalysisDTO(endTime, 0.2);
   }
@@ -712,6 +745,16 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
         .startTime(instant.plus(Duration.ofMinutes(2)))
         .dataCollectionDelay(Duration.ofMinutes(5))
         .resolvedJob(newBlueGreenVerificationJob())
+        .build();
+  }
+
+  private VerificationJobInstance newVerificationJobInstanceLoadTest() {
+    return VerificationJobInstance.builder()
+        .accountId(accountId)
+        .deploymentStartTime(instant)
+        .startTime(instant.plus(Duration.ofMinutes(2)))
+        .dataCollectionDelay(Duration.ofMinutes(5))
+        .resolvedJob(newTestVerificationJob())
         .build();
   }
 

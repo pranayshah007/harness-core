@@ -7,6 +7,7 @@
 
 package io.harness.sto.beans.entities;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,5 +20,10 @@ import lombok.Value;
 public class STOServiceConfig {
   String baseUrl;
   String globalToken;
-  String internalUrl;
+
+  @Getter(AccessLevel.NONE) String internalUrl;
+
+  public String getInternalUrl() {
+    return this.internalUrl != null ? this.internalUrl : this.baseUrl;
+  }
 }

@@ -23,6 +23,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.utils.MathUtils;
 import io.harness.cvng.utils.ScopedInformation;
 
 import com.google.inject.Inject;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class MSHealthReportServiceImpl implements MSHealthReportService {
-  private final int PAST_HEALTH_SCORE_INDEX = 12;
+  final int PAST_HEALTH_SCORE_INDEX = 12;
   @Inject private Clock clock;
   @Inject ChangeEventService changeEventService;
   @Inject MonitoredServiceService monitoredServiceService;
@@ -113,17 +114,8 @@ public class MSHealthReportServiceImpl implements MSHealthReportService {
         .serviceHealthDetails(MSHealthReport.ServiceHealthDetails.builder()
                                   .currentHealthScore(currentHealthScore)
                                   .pastHealthScore(pastHealthScore)
-                                  .percentageChange(getPercentageChange(currentHealthScore, pastHealthScore))
+                                  .percentageChange(MathUtils.getPercentageChange(currentHealthScore, pastHealthScore))
                                   .build())
         .build();
-  }
-
-  private double getPercentageChange(long current, long previous) {
-    if (previous == 0 && current > 0) {
-      return 100;
-    } else if (previous == 0 && current == 0) {
-      return 0;
-    }
-    return ((double) (current - previous) * 100) / previous;
   }
 }

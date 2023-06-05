@@ -102,7 +102,8 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
     TIServiceConfig tiServiceConfig = TIServiceConfig.builder().baseUrl("endpoint").globalToken("token").build();
     when(tiServiceUtils.getTiServiceConfig()).thenReturn(tiServiceConfig);
     when(tiServiceUtils.getTIServiceToken(any())).thenReturn("token");
-    STOServiceConfig stoServiceConfig = STOServiceConfig.builder().baseUrl("endpoint").globalToken("token").build();
+    STOServiceConfig stoServiceConfig =
+        STOServiceConfig.builder().baseUrl("endpoint").internalUrl("endpoint").globalToken("token").build();
     when(stoServiceUtils.getStoServiceConfig()).thenReturn(stoServiceConfig);
     when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("token");
     when(executionSweepingOutputResolver.resolve(any(), any()))

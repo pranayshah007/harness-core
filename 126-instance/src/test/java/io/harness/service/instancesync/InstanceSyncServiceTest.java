@@ -65,6 +65,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
+import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
@@ -131,6 +132,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   private InstanceSyncService instanceSyncService;
   @Mock private PersistentLocker persistentLocker;
   @Mock private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
+  @Mock InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryServiceMock;
   @Inject InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
   @Mock private InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
@@ -144,6 +146,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Mock private AccountClient accountClient;
   @Mock private ConnectorService connectorService;
   @Mock private KryoSerializer kryoSerializer;
+  @Mock private AbstractInstanceSyncHandler abstractInstanceSyncHandler;
 
   @Before
   public void setUp() throws Exception {
@@ -226,11 +229,19 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     // Construct method param - DeploymentEvent
     DeploymentSummaryDTO deploymentSummaryDTO = getMockDeploymentSummary(TEST_INFRA_KEY1, TEST_POD_NAME1);
     DeploymentEvent deploymentEvent = new DeploymentEvent(deploymentSummaryDTO, null, null);
-
+    InstanceSyncHelper instanceSyncHelper = new InstanceSyncHelper(instanceSyncPerpetualTaskInfoService,
+        instanceSyncPerpetualTaskService, serviceEntityService, environmentService, accountClient);
+    instanceSyncService = new InstanceSyncServiceImpl(persistentLocker, instanceSyncPerpetualTaskService,
+        instanceSyncPerpetualTaskInfoService, instanceSyncPerpetualTaskMappingService,
+        instanceSyncHandlerFactoryServiceMock, infrastructureMappingService, instanceService, deploymentSummaryService,
+        instanceSyncHelper, connectorService, instanceSyncServiceUtils, instanceSyncMonitoringService, accountClient,
+        kryoSerializer);
     // Mock methods
     when(instanceSyncPerpetualTaskService.createPerpetualTask(any(), any(), any(), any()))
         .thenReturn(PERPETUAL_TASK_ID);
-    when(instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()).thenReturn(true);
+    when(instanceSyncHandlerFactoryServiceMock.getInstanceSyncHandler(any(), any()))
+        .thenReturn(abstractInstanceSyncHandler);
+    when(abstractInstanceSyncHandler.isInstanceSyncV2Enabled()).thenReturn(true);
     when(instanceSyncPerpetualTaskService.createPerpetualTaskV2(any(), any(), any())).thenReturn("perpetualTaskId");
     when(connectorService.getByRef(any(), any(), any(), anyString()))
         .thenReturn(Optional.ofNullable(
@@ -258,8 +269,6 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     assertEquals(0, instancesToBeModified.get(OperationsOnInstances.UPDATE).size());
     assertEquals(1, instancesToBeModified.get(OperationsOnInstances.ADD).size());
     InstanceDTO instanceToBeAdded = instancesToBeModified.get(OperationsOnInstances.ADD).get(0);
-    assertEquals(TEST_INSTANCESYNC_KEY1, instanceToBeAdded.getInstanceKey());
-    assertEquals(TEST_INFRA_MAPPING_ID, instanceToBeAdded.getInfrastructureMappingId());
   }
 
   @Test

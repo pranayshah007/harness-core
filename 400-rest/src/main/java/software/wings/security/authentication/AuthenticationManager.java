@@ -192,6 +192,9 @@ public class AuthenticationManager {
     try {
       user = authenticationUtils.getUser(userName, USER);
     } catch (WingsException ex) {
+      if (accountId != null && ex.getCode() == ErrorCode.USER_DOES_NOT_EXIST) {
+        return checkJitForAccount(accountId, isV2, baseResponse);
+      }
       if (ex.getCode() == ErrorCode.USER_DOES_NOT_EXIST && mainConfiguration.getDeployMode() != null
           && DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
         baseResponse.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
@@ -216,9 +219,19 @@ public class AuthenticationManager {
       baseResponse.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
       return ssoRequests;
     }
-
-    Account account = userService.getAccountByIdIfExistsElseGetDefaultAccount(
-        user, isEmpty(accountId) ? Optional.empty() : Optional.of(accountId));
+    Account account = null;
+    try {
+      account = userService.getAccountByIdIfExistsElseGetDefaultAccount(
+          user, isEmpty(accountId) ? Optional.empty() : Optional.of(accountId));
+    } catch (InvalidRequestException ex) {
+      // user is already present in harness but not part of this account
+      try {
+        return checkJitForAccount(accountId, isV2, baseResponse);
+      } catch (WingsException e) {
+        log.info("User exists but Jit is not enabled for this SSO");
+      }
+      throw ex;
+    }
     io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
     if (null == authenticationMechanism) {
       authenticationMechanism = AuthenticationMechanism.USER_PASSWORD;
@@ -249,6 +262,27 @@ public class AuthenticationManager {
     }
     baseResponse.setAuthenticationMechanism(authenticationMechanism);
     return ssoRequests;
+  }
+
+  private <T extends LoginTypeBaseResponse> List<SSORequest> checkJitForAccount(
+      String accountId, boolean isV2, T baseResponse) {
+    // check whether the accounts default auth is SSO or not
+    Account account = accountService.get(accountId);
+    List<SSORequest> ssoRequests = new ArrayList<>();
+    io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
+    if (AuthenticationMechanism.SAML == authenticationMechanism) {
+      if (isV2) {
+        // multiple IDP
+        // get all the config's which have jitEnabled and return those sso requests
+        ssoRequests.addAll(samlClientService.generateSamlRequestListFromAccountWhichHaveJitEnabled(account, false));
+      } else {
+        // get the sso config and if jitEnabled for that, return that sso request
+        ssoRequests.add(samlClientService.generateSamlRequestFromAccountWithJitEnabled(account, false));
+      }
+      baseResponse.setAuthenticationMechanism(authenticationMechanism);
+      return ssoRequests;
+    }
+    throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
   }
 
   public LoginTypeResponse getLoginTypeResponseForOnPrem() {

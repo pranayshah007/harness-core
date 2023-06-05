@@ -90,7 +90,7 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetChangeIncidentReport() {
+  public void testGetMSHealthReport() {
     Instant eventTime = clock.instant();
     List<Activity> activityList = Arrays.asList(
         builderFactory.getDeploymentActivityBuilder().eventTime(eventTime.minus(Duration.ofMinutes(60))).build(),
@@ -142,7 +142,7 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetChangeIncidentReport_NoData() {
+  public void testGetMSHealthReport_WithNoData() {
     MSHealthReport MSHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
         builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(MSHealthReport.getChangeSummary().getTotal().getCount()).isEqualTo(0);

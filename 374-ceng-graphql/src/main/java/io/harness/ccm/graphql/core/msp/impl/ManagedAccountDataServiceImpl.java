@@ -13,9 +13,8 @@ import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
+import io.harness.ccm.graphql.core.perspectives.PerspectiveService;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
-import io.harness.ccm.graphql.query.perspectives.PerspectivesQuery;
-import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.graphql.utils.RESTToGraphQLHelper;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.AmountDetails;
@@ -32,7 +31,6 @@ import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewPreferences;
 
 import com.google.inject.Inject;
-import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -41,7 +39,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 public class ManagedAccountDataServiceImpl implements ManagedAccountDataService {
-  @Inject private PerspectivesQuery perspectivesQuery;
+  @Inject private PerspectiveService perspectiveService;
   @Inject private MarginDetailsDao marginDetailsDao;
   @Inject private MspValidationService mspValidationService;
 
@@ -53,7 +51,6 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
       Integer limit, Integer offset) {
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
     try {
-      final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
       QLCEViewFieldInput entityConvertedToFieldInput = RESTToGraphQLHelper.getViewFieldInputFromCCMField(entity);
       List<QLCEViewFilterWrapper> filters = new ArrayList<>();
       filters.add(QLCEViewFilterWrapper.builder()
@@ -63,9 +60,9 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
                                     .values(Collections.singletonList("").toArray(new String[0]))
                                     .build())
                       .build());
-      return perspectivesQuery
+      return perspectiveService
           .perspectiveFilters(Collections.emptyList(), filters, Collections.emptyList(), Collections.emptyList(), limit,
-              offset, false, env)
+              offset, false, managedAccountId)
           .getValues();
     } catch (Exception e) {
       return Collections.emptyList();
@@ -126,15 +123,14 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
       return getManagedAccountStats(mspAccountId, startTime, endTime);
     }
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
 
     PerspectiveTrendStats totalSpendStats =
-        perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, env);
+        perspectiveService.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, mspAccountId);
 
     PerspectiveTrendStats markupAmountStats =
-        perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-            Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, env);
+        perspectiveService.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+            Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, mspAccountId);
 
     return ManagedAccountStats.builder()
         .totalSpendStats(AmountTrendStats.builder()
@@ -152,23 +148,22 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
   public ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(
       String mspAccountId, String managedAccountId, long startTime, long endTime) {
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
     QLCEViewPreferences qlCEViewPreferences =
         QLCEViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
     List<TimeSeriesDataPoints> totalSpendStats =
-        perspectivesQuery
+        perspectiveService
             .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getCostAggregation(),
                 RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
-                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
+                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, managedAccountId)
             .getStats();
 
     List<TimeSeriesDataPoints> totalMarkupStats =
-        perspectivesQuery
+        perspectiveService
             .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
                 RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
-                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
+                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, managedAccountId)
             .getStats();
     return ManagedAccountTimeSeriesData.builder()
         .totalSpendStats(totalSpendStats)

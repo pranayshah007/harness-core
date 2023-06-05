@@ -78,12 +78,12 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   public void testGetPipelineTemplate() {
     String pipelineStart = "pipeline:\n"
         + "  stages:\n";
-    String stage1 = "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      myField: \"<+input>\"\n";
-    String stage2 = "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      myField: \"<+input>\"\n";
+    String stage1 = "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        myField: <+input>\n";
+    String stage2 = "    - stage:\n"
+        + "        identifier: s2\n"
+        + "        myField: <+input>\n";
     String pipelineYaml = pipelineStart + stage1 + stage2;
 
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
@@ -176,10 +176,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   public void testGetInputSetTemplateResponseDTOWithDefaultValuesForVariablse() {
     String pipelineYamlWithRuntime = "pipeline:\n"
         + "  variables:\n"
-        + "  - name: \"varName\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"<+input>\"\n";
+        + "    - name: varName\n"
+        + "      type: String\n"
+        + "      default: num\n"
+        + "      value: <+input>\n";
     PipelineEntity pipelineEntityWithRuntime =
         PipelineEntity.builder().yaml(pipelineYamlWithRuntime).filters(Collections.singletonMap("pms", null)).build();
     doReturn(Optional.of(pipelineEntityWithRuntime))
@@ -249,12 +249,12 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", Collections.singletonList("cistage1"), false);
     String expectedResponse = "pipeline:\n"
-        + "  identifier: \"temppipeline\"\n"
+        + "  identifier: temppipeline\n"
         + "  properties:\n"
         + "    ci:\n"
         + "      codebase:\n"
-        + "        repoName: \"<+input>\"\n"
-        + "        build: \"<+input>\"\n";
+        + "        repoName: <+input>\n"
+        + "        build: <+input>\n";
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
     List<String> selectedStages = new ArrayList<>();
@@ -279,12 +279,12 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", Collections.singletonList("cistage1"), false);
     String expectedResponse = "pipeline:\n"
-        + "  identifier: \"temppipeline\"\n"
+        + "  identifier: temppipeline\n"
         + "  properties:\n"
         + "    ci:\n"
         + "      codebase:\n"
-        + "        repoName: \"<+input>\"\n"
-        + "        build: \"<+input>\"\n";
+        + "        repoName: <+input>\n"
+        + "        build: <+input>\n";
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
     List<String> selectedStages = new ArrayList<>();
@@ -292,7 +292,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     selectedStages.add("cistage2");
     responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", selectedStages, false);
-    expectedResponse = "pipeline:\n  identifier: \"temppipeline\"\n";
+    expectedResponse = "pipeline:\n  identifier: temppipeline\n";
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
   }
@@ -316,21 +316,21 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", Collections.singletonList("Stage1"), false);
     String expectedResponse = "pipeline:\n"
-        + "  identifier: \"temppipeline\"\n"
+        + "  identifier: temppipeline\n"
         + "  template:\n"
         + "    templateInputs:\n"
         + "      properties:\n"
         + "        ci:\n"
         + "          codebase:\n"
-        + "            repoName: \"<+input>\"\n"
-        + "            build: \"<+input>\"\n";
+        + "            repoName: <+input>\n"
+        + "            build: <+input>\n";
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
     List<String> selectedStages = new ArrayList<>();
     selectedStages.add("stage2");
     responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", selectedStages, false);
-    expectedResponse = "pipeline:\n  identifier: \"temppipeline\"\n";
+    expectedResponse = "pipeline:\n  identifier: temppipeline\n";
     assertThat(responseWithRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithRuntime.getInputSetTemplateYaml()).isEqualTo(expectedResponse);
   }
@@ -410,11 +410,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     assertThat(mergedInputSet)
         .isEqualTo("pipeline:\n"
             + "  stages:\n"
-            + "  - stage:\n"
-            + "      identifier: \"s2\"\n"
-            + "      key1: \"s2Value2FromForS2\"\n"
-            + "      key2: \"s2Value2\"\n"
-            + "      key3: \"s2Value3\"\n");
+            + "    - stage:\n"
+            + "        identifier: s2\n"
+            + "        key1: s2Value2FromForS2\n"
+            + "        key2: s2Value2\n"
+            + "        key3: s2Value3\n");
   }
 
   @Test
@@ -504,10 +504,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         accountId, orgId, projectId, pipelineId, Arrays.asList(inputSetId1, inputSetId2, overlayId), null, null, null);
     assertThat(mergedInputSets)
         .isEqualTo("inputs:\n"
-            + "  image: \"alpine\"\n"
-            + "  method: \"POST\"\n"
-            + "  url: \"google.com\"\n"
-            + "  timeout: \"10h\"\n");
+            + "  image: alpine\n"
+            + "  method: POST\n"
+            + "  url: google.com\n"
+            + "  timeout: 10h\n");
   }
   @Test
   @Owner(developers = ADITHYA)
@@ -676,36 +676,36 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         projectId, pipelineId, null, null, null, Collections.singletonList("s1"), lastRuntimeS1S2, false, false);
     String expectedMerged1 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      field1: \"lastRuntimeYaml\"\n"
-        + "      field2: \"lastRuntimeYaml\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        field1: lastRuntimeYaml\n"
+        + "        field2: lastRuntimeYaml\n";
     assertThat(merged1).isEqualTo(expectedMerged1);
 
     String lastRuntimeS2 = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      field1: \"<+input>\"\n"
-        + "      field2: \"lastRuntimeS2\"\n";
+        + "      identifier: s2\n"
+        + "      field1: <+input>\n"
+        + "      field2: lastRuntimeS2\n";
     String merged2 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
         projectId, pipelineId, null, null, null, Collections.singletonList("s2"), lastRuntimeS2, false, false);
     String expectedMerged2 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      field1: \"<+input>\"\n"
-        + "      field2: \"lastRuntimeS2\"\n";
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "        field1: <+input>\n"
+        + "        field2: lastRuntimeS2\n";
     assertThat(merged2).isEqualTo(expectedMerged2);
 
     String merged3 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
         projectId, pipelineId, null, null, null, Collections.singletonList("s3"), lastRuntimeS1S2, false, false);
     String expectedMerged3 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s3\"\n"
-        + "      field1: \"<+input>\"\n"
-        + "      field2: \"<+input>\"\n";
+        + "    - stage:\n"
+        + "        identifier: s3\n"
+        + "        field1: <+input>\n"
+        + "        field2: <+input>\n";
     assertThat(merged3).isEqualTo(expectedMerged3);
 
     doReturn(
@@ -718,10 +718,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         lastRuntimeS2, false, false);
     String expectedMerged4 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      field1: \"lastRuntimeYaml\"\n"
-        + "      field2: \"lastRuntimeS2\"\n";
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "        field1: lastRuntimeYaml\n"
+        + "        field2: lastRuntimeS2\n";
     assertThat(merged4).isEqualTo(expectedMerged4);
 
     String merged5 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
@@ -729,10 +729,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         lastRuntimeS2, false, false);
     String expectedMerged5 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      field1: \"lastRuntimeYaml\"\n"
-        + "      field2: \"lastRuntimeYaml\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        field1: lastRuntimeYaml\n"
+        + "        field2: lastRuntimeYaml\n";
     assertThat(merged5).isEqualTo(expectedMerged5);
 
     String merged6 = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId,
@@ -740,10 +740,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         lastRuntimeS2, false, false);
     String expectedMerged6 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s3\"\n"
-        + "      field1: \"<+input>\"\n"
-        + "      field2: \"<+input>\"\n";
+        + "    - stage:\n"
+        + "        identifier: s3\n"
+        + "        field1: <+input>\n"
+        + "        field2: <+input>\n";
     assertThat(merged6).isEqualTo(expectedMerged6);
   }
 
@@ -783,10 +783,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         projectId, pipelineId, null, null, null, Collections.singletonList("s1"), lastRuntimeS1S2, false, true);
     String expectedMerged1 = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      field1: \"lastRuntimeYaml\"\n"
-        + "      field2: \"lastRuntimeYaml\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        field1: lastRuntimeYaml\n"
+        + "        field2: lastRuntimeYaml\n";
     assertThat(merged1).isEqualTo(expectedMerged1);
   }
 
@@ -796,24 +796,24 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   public void testGetMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues() {
     String base = "pipeline:\n"
         + "  variables:\n"
-        + "  - name: \"v1\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"<+input>\"\n"
-        + "  - name: \"v2\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"<+input>\"\n"
-        + "  - name: \"v3\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"this one should not be in the template\"\n";
+        + "  - name: v1\n"
+        + "    type: String\n"
+        + "    default: num\n"
+        + "    value: <+input>\n"
+        + "  - name: v2\n"
+        + "    type: String\n"
+        + "    default: num\n"
+        + "    value: <+input>\n"
+        + "  - name: v3\n"
+        + "    type: String\n"
+        + "    default: num\n"
+        + "    value: this one should not be in the template\n";
     String runtime = "pipeline:\n"
         + "  variables:\n"
-        + "  - name: \"v2\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"v2val\"\n";
+        + "  - name: v2\n"
+        + "    type: String\n"
+        + "    default: num\n"
+        + "    value: v2val\n";
     doReturn(Optional.of(PipelineEntity.builder().yaml(base).build()))
         .when(pmsPipelineService)
         .getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, false);
@@ -821,14 +821,14 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         accountId, orgId, projectId, pipelineId, null, null, null, null, runtime, false);
     String expected = "pipeline:\n"
         + "  variables:\n"
-        + "  - name: \"v1\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"<+input>\"\n"
-        + "  - name: \"v2\"\n"
-        + "    type: \"String\"\n"
-        + "    default: \"num\"\n"
-        + "    value: \"v2val\"\n";
+        + "    - name: v1\n"
+        + "      type: String\n"
+        + "      default: num\n"
+        + "      value: <+input>\n"
+        + "    - name: v2\n"
+        + "      type: String\n"
+        + "      default: num\n"
+        + "      value: v2val\n";
     assertThat(merged).isEqualTo(expected);
   }
 
@@ -892,60 +892,60 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
 
   private String getRuntimeTemplate() {
     return "pipeline:\n"
-        + "  identifier: \"has_runtime\"\n"
+        + "  identifier: has_runtime\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"a1\"\n"
-        + "      type: \"Approval\"\n"
-        + "      spec:\n"
-        + "        execution:\n"
-        + "          steps:\n"
-        + "          - step:\n"
-        + "              identifier: \"approval\"\n"
-        + "              type: \"HarnessApproval\"\n"
-        + "              spec:\n"
-        + "                approvalMessage: \"<+input>\"\n";
+        + "    - stage:\n"
+        + "        identifier: a1\n"
+        + "        type: Approval\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: approval\n"
+        + "                  type: HarnessApproval\n"
+        + "                  spec:\n"
+        + "                    approvalMessage: <+input>\n";
   }
 
   private String getRuntimeTemplateWithoutProperties() {
     return "pipeline:\n"
-        + "  identifier: \"temppipeline\"\n"
+        + "  identifier: temppipeline\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"customstage\"\n"
-        + "      type: \"Custom\"\n"
-        + "      spec:\n"
-        + "        execution:\n"
-        + "          steps:\n"
-        + "          - step:\n"
-        + "              identifier: \"ShellScript_1\"\n"
-        + "              type: \"ShellScript\"\n"
-        + "              spec:\n"
-        + "                source:\n"
-        + "                  type: \"Inline\"\n"
+        + "    - stage:\n"
+        + "        identifier: customstage\n"
+        + "        type: Custom\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: ShellScript_1\n"
+        + "                  type: ShellScript\n"
         + "                  spec:\n"
-        + "                    script: \"<+input>\"\n";
+        + "                    source:\n"
+        + "                      type: Inline\n"
+        + "                      spec:\n"
+        + "                        script: <+input>\n";
   }
 
   private String getRuntimeTemplateWithProperties() {
     return "pipeline:\n"
-        + "  identifier: \"temppipeline\"\n"
+        + "  identifier: temppipeline\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"cistage1\"\n"
-        + "      type: \"CI\"\n"
-        + "      spec:\n"
-        + "        execution:\n"
-        + "          steps:\n"
-        + "          - step:\n"
-        + "              identifier: \"Run_1\"\n"
-        + "              type: \"Run\"\n"
-        + "              spec:\n"
-        + "                command: \"<+input>\"\n"
+        + "    - stage:\n"
+        + "        identifier: cistage1\n"
+        + "        type: CI\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: Run_1\n"
+        + "                  type: Run\n"
+        + "                  spec:\n"
+        + "                    command: <+input>\n"
         + "  properties:\n"
         + "    ci:\n"
         + "      codebase:\n"
-        + "        repoName: \"<+input>\"\n"
-        + "        build: \"<+input>\"\n";
+        + "        repoName: <+input>\n"
+        + "        build: <+input>\n";
   }
 }

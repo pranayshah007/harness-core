@@ -93,7 +93,7 @@ public class FavoritesValidator {
     checkIfUserExist(favoriteDTO, accountIdentifier);
     // Resource existence check
     boolean resourceExist = true;
-    switch (EnumUtils.getEnum(ResourceType.class, favoriteDTO.getResourceType())) {
+    switch (EnumUtils.getEnum(ResourceType.class, favoriteDTO.getResourceType().toString())) {
       case CONNECTOR:
         resourceExist = doesConnectorExist(favoriteDTO, accountIdentifier);
         break;

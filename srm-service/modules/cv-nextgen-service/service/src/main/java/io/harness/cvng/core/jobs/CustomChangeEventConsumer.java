@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.jobs;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.CustomChangeEvent;
 import io.harness.cvng.beans.change.CustomChangeEventMetadata;
@@ -67,6 +69,7 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
     Preconditions.checkArgument(!customChangeEventDTO.getChangeSourceIdentifier().isEmpty(),
         "ChangeSourceIdentifier is invalid for current Internal Change Event");
   }
+
   private void registerChangeEvents(CustomChangeEventDTO customChangeEventDTO) {
     ChangeSource changeSource =
         changeSourceService.get(MonitoredServiceParams.builder()
@@ -104,6 +107,11 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
             .metadata(customChangeEventMetadataBuilder.build())
             .build();
 
-    changeEventService.register(changeEventDTO);
+    if (isNotEmpty(customChangeEventDTO.getEventDetails().getChannelUrl())) {
+      changeEventService.registerWithHealthReport(
+          changeEventDTO, customChangeEventDTO.getEventDetails().getChannelUrl());
+    } else {
+      changeEventService.register(changeEventDTO);
+    }
   }
 }

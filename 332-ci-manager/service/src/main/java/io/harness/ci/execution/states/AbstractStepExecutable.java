@@ -275,17 +275,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
           .build();
     }
 
-    if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
-      if (isNotEmpty(taskResponse.getOutputVars())) {
-        StepResponse.StepOutcome stepOutcome =
-            StepResponse.StepOutcome.builder()
-                .outcome(CIStepOutcome.builder().outputVariables(taskResponse.getOutputVars()).build())
-                .name("output")
-                .build();
-        stepResponseBuilder.stepOutcome(stepOutcome);
-      }
-
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    if (shouldPublishArtifactForVm(taskResponse.getCommandExecutionStatus())) {
       ArtifactMetadata artifactMetadata = null;
       if (taskResponse.getArtifact() != null) {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -299,16 +290,26 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
       StepArtifacts stepArtifacts = handleArtifactForVm(artifactMetadata, stepParameters, ambiance);
       buildArtifacts(ambiance, stepIdentifier, stepArtifacts, stepResponseBuilder);
-      return stepResponseBuilder.build();
+    }
+
+    if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+      if (isNotEmpty(taskResponse.getOutputVars())) {
+        StepResponse.StepOutcome stepOutcome =
+            StepResponse.StepOutcome.builder()
+                .outcome(CIStepOutcome.builder().outputVariables(taskResponse.getOutputVars()).build())
+                .name("output")
+                .build();
+        stepResponseBuilder.stepOutcome(stepOutcome);
+      }
+      return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-      return StepResponse.builder().status(Status.SKIPPED).build();
+      return stepResponseBuilder.status(Status.SKIPPED).build();
     } else {
       String errMsg = "";
       if (isNotEmpty(taskResponse.getErrorMessage())) {
         errMsg = taskResponse.getErrorMessage();
       }
-      return StepResponse.builder()
-          .status(Status.FAILED)
+      return stepResponseBuilder.status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder()
                            .setErrorMessage(errMsg)
                            .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
@@ -329,6 +330,10 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   protected StepArtifacts handleArtifactForVm(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
     return handleArtifact(artifactMetadata, stepParameters);
+  }
+
+  protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {
+    return commandExecutionStatus == CommandExecutionStatus.SUCCESS;
   }
 
   @Override

@@ -36,6 +36,7 @@ java_binary(
         "//999-annotations:module",
         "//clients/access-control/sdk:module",
         "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
+        "//idp-service/src/main/java/io/harness/idp/allowlist:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager:module",
         "//idp-service/src/main/java/io/harness/idp/envvariable:module",
         "//idp-service/src/main/java/io/harness/idp/events:module",

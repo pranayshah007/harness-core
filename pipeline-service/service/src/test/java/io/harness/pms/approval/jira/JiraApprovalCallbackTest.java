@@ -37,6 +37,7 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.HarnessJiraException;
 import io.harness.jira.JiraIssueNG;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -218,6 +219,17 @@ public class JiraApprovalCallbackTest extends CategoryTest {
       verify(logCallback)
           .saveExecutionLog(
               LogHelper.color(String.format("Invalid issue key: %s", issueKey), LogColor.Red), LogLevel.ERROR);
+    }
+
+    // Case when expired, then should close log stream
+    instance.setDeadline(0);
+    doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      jiraApprovalCallback.push(response);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback)
+          .saveExecutionLog(LogHelper.color("Approval instance has expired", LogColor.Red), LogLevel.INFO,
+              CommandExecutionStatus.FAILURE);
     }
   }
 

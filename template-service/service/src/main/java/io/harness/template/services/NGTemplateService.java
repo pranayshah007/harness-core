@@ -14,6 +14,7 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -111,4 +112,5 @@ public interface NGTemplateService {
 
   void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
+  GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity);
 }

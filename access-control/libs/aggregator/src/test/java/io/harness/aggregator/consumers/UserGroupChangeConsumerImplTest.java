@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
@@ -73,6 +74,7 @@ public class UserGroupChangeConsumerImplTest extends AggregatorTestBase {
   private String scopeIdentifier;
   private Role role;
   private ResourceGroup resourceGroup;
+  private InMemoryPermissionRepository inMemoryPermissionRepository;
 
   @Before
   public void setup() {
@@ -84,8 +86,8 @@ public class UserGroupChangeConsumerImplTest extends AggregatorTestBase {
     UserGroupCRUDEventHandler userGroupCRUDEventHandler = mock(UserGroupCRUDEventHandler.class);
     RoleService roleService = mock(RoleService.class);
     scopeService = mock(ScopeService.class);
-    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(
-        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(), aclRepository);
+    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
+        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
     userGroupChangeConsumer =
         new UserGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository, userGroupRepository,
             AggregatorJobType.PRIMARY.name(), changeConsumerService, scopeService, userGroupCRUDEventHandler);

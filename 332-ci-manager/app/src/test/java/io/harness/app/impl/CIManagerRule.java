@@ -197,8 +197,11 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                 LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())
             .tiServiceConfig(
                 TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
-            .stoServiceConfig(
-                STOServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
+            .stoServiceConfig(STOServiceConfig.builder()
+                                  .baseUrl("http://localhost-inc:4000")
+                                  .internalUrl("http://localhost-inc:4000")
+                                  .globalToken("global-token")
+                                  .build())
             .iacmServiceConfig(
                 IACMServiceConfig.builder().baseUrl("http://localhost-inc:5000").globalToken("global-token").build())
             .sscaServiceConfig(

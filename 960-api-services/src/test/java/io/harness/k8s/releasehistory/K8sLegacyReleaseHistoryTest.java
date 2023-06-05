@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.fail;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
+import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.rule.Owner;
 
@@ -161,6 +162,57 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
     assertThat(release).isNull();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testSetReleaseToReleaseHistory() {
+    ReleaseHistory releaseHistory = createNewRelease(ImmutableList.of(
+        KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build()));
+
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
+    K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder().status(IK8sRelease.Status.Failed).build();
+    releaseHistory.addReleaseToReleaseHistory(k8sLegacyRelease);
+    K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    release.setBgEnvironment(HarnessLabelValues.bgStageEnv);
+    assertThat(release).isNotNull();
+    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+    assertThat(release.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
+    release.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);
+
+    assertThat(releaseHistory.getReleases().size()).isEqualTo(2);
+    assertThat(releaseHistory.getReleases().get(1)).isEqualTo(release);
+    assertThat(releaseHistory.getReleases().get(1).getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
+    assertThat(releaseHistory.getReleases().get(0)).isEqualTo(k8sLegacyRelease);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testSetReleaseToReleaseHistoryInsertionOrder() {
+    ReleaseHistory releaseHistory = createNewRelease(ImmutableList.of(
+        KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build()));
+
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
+    K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    K8sLegacyRelease newk8sLegacyRelease =
+        K8sLegacyRelease.builder()
+            .managedWorkload(
+                KubernetesResourceId.builder().kind("Deployment").name("todolist-blue").namespace("default").build())
+            .status(IK8sRelease.Status.Succeeded)
+            .build();
+    releaseHistory.addReleaseToReleaseHistory(newk8sLegacyRelease);
+    newk8sLegacyRelease.setBgEnvironment(HarnessLabelValues.bgStageEnv);
+    assertThat(newk8sLegacyRelease).isNotNull();
+    assertThat(newk8sLegacyRelease.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+    assertThat(newk8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
+    newk8sLegacyRelease.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);
+
+    assertThat(releaseHistory.getReleases().size()).isEqualTo(2);
+    assertThat(releaseHistory.getReleases().get(1)).isEqualTo(release);
+    assertThat(releaseHistory.getReleases().get(0)).isEqualTo(releaseHistory.getLatestSuccessfulBlueGreenRelease());
+    assertThat(releaseHistory.getReleases().get(0).getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
   }
 
   private ReleaseHistory createNewRelease(List<KubernetesResourceId> resources) {

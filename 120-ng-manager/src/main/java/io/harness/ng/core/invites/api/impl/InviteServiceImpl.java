@@ -24,6 +24,7 @@ import static io.harness.ng.core.invites.mapper.InviteMapper.toInviteList;
 import static io.harness.ng.core.invites.mapper.InviteMapper.writeDTO;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.sanitizeRoleBindings;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.ACCEPTED_INVITE;
+import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
 import static io.harness.springdata.PersistenceUtils.getRetryPolicy;
 
 import static java.lang.Boolean.FALSE;
@@ -835,6 +836,17 @@ public class InviteServiceImpl implements InviteService {
     markInviteApprovedAndDeleted(invite);
     // telemetry for adding user to an account
     sendInviteAcceptTelemetryEvents(user, invite);
+    ngUserService.waitForRbacSetup(scope, user.getUuid(), email);
+    return true;
+  }
+
+  @Override
+  public boolean completeUserNgSetupWithoutInvite(String email, String accountId) {
+    Optional<UserMetadataDTO> userOpt = ngUserService.getUserByEmail(email, true);
+    Preconditions.checkState(userOpt.isPresent(), "Illegal state: user doesn't exists");
+    UserMetadataDTO user = userOpt.get();
+    Scope scope = Scope.builder().accountIdentifier(accountId).orgIdentifier(null).projectIdentifier(null).build();
+    ngUserService.addUserToScope(user.getUuid(), scope, new ArrayList<>(), new ArrayList<>(), USER);
     ngUserService.waitForRbacSetup(scope, user.getUuid(), email);
     return true;
   }

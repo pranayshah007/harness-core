@@ -616,14 +616,14 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(responseDTO.getSourceIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
     assertThat(responseDTO.getSourceIdentifiers()).hasSameElementsAs(Arrays.asList("i1", "i2"));
     assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).isNotNull().isNotEmpty().hasSize(2);
-    String runForm1 = "identifier: \"i1\"\n"
-        + "type: \"DockerRegistry\"\n"
+    String runForm1 = "identifier: i1\n"
+        + "type: DockerRegistry\n"
         + "spec:\n"
-        + "  tag: \"<+input>\"\n";
-    String runForm2 = "identifier: \"i2\"\n"
-        + "type: \"DockerRegistry\"\n"
+        + "  tag: <+input>\n";
+    String runForm2 = "identifier: i2\n"
+        + "type: DockerRegistry\n"
         + "spec:\n"
-        + "  tag: \"<+input>\"\n";
+        + "  tag: <+input>\n";
     assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i1", runForm1);
     assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i2", runForm2);
   }
@@ -1121,6 +1121,47 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     String resolvedTemplateRefsInService =
         serviceEntityService.resolveArtifactSourceTemplateRefs("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", givenYaml);
     assertThat(resolvedTemplateRefsInService).isEqualTo(givenYaml);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsWithSingleArtifactSource() {
+    String serviceYaml = "service:\n"
+        + "  name: svc\n"
+        + "  identifier: svc\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: <+input>\n"
+        + "          sources:\n"
+        + "            - spec:\n"
+        + "                connectorRef: dockerpublic\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: updatedValue\n"
+        + "              type: DockerRegistry\n"
+        + "    type: Kubernetes\n";
+
+    String responseYaml =
+        serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(serviceYaml, "svc", "oldValue");
+
+    assertThat(responseYaml).isNotEmpty();
+    assertThat(responseYaml)
+        .isEqualTo("serviceInputs:\n"
+            + "  serviceDefinition:\n"
+            + "    type: Kubernetes\n"
+            + "    spec:\n"
+            + "      artifacts:\n"
+            + "        primary:\n"
+            + "          primaryArtifactRef: <+input>\n"
+            + "          sources:\n"
+            + "            - identifier: updatedValue\n"
+            + "              type: DockerRegistry\n"
+            + "              spec:\n"
+            + "                tag: <+input>\n");
   }
 
   private String readFile(String filename) {

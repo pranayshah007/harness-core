@@ -1377,13 +1377,9 @@ components:
           minLength: 1
           maxLength: 128
         module:
-          type: string
-          description: Harness module
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
-          minLength: 1
-          maxLength: 128
+          $ref: '#/components/schemas/ModuleType'
         resource_type:
-          type: string
+          $ref: '#/components/schemas/FavoritesResourceType'
           description: Type of resource
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
@@ -1545,6 +1541,14 @@ components:
         - GOVERNANCE
         - CHAOS
         - CET
+    FavoritesResourceType:
+      type: string
+      enum:
+        - CONNECTOR
+        - DELEGATE
+        - PIPELINE
+        - SECRET
+        - PROJECT
     CreateProjectRequest:
       description: Create project request
       type: object
@@ -3478,11 +3482,5 @@ components:
       in: query
       required: false
       schema:
-        type: string
-        enum:
-          - CONNECTOR
-          - DELEGATE
-          - PIPELINE
-          - SECRET
-          - PROJECT
+        $ref: '#/components/schemas/FavoritesResourceType'
       description: Determines the type of favorite entity requested.

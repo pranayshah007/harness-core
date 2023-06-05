@@ -55,9 +55,9 @@ public class StagesExecutionHelperTest extends CategoryTest {
   public void testGetStagesExecutionInfo() {
     String s2StageYaml = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "      description: \"desc\"\n";
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "        description: desc\n";
     List<String> stagesToRun = Collections.singletonList("s2");
     StagesExecutionInfo stagesExecutionInfo0 =
         StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, null);

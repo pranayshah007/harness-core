@@ -3924,6 +3924,13 @@ go_repository(
     version = "v1.5.1",
 )
 
+go_repository(
+    name = "com_github_golang_jwt_jwt_v5",
+    importpath = "github.com/golang-jwt/jwt/v5",
+    sum = "h1:1n1XNM9hk7O9mnQoNBGolZvzebBQ7p93ULHRc28XJUE=",
+    version = "v5.0.0",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",

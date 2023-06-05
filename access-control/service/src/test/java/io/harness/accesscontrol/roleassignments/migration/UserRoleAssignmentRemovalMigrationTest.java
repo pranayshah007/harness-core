@@ -15,7 +15,6 @@ import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
 import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -72,8 +71,6 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
-
-    when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
 
     when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
@@ -167,8 +164,6 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
 
-    when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-
     when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment =
@@ -190,41 +185,6 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
     Page<RoleAssignmentDBO> postMigrationRoleAssignments = roleAssignmentRepository.findAll(Pageable.unpaged());
     assertEquals(1, postMigrationRoleAssignments.getTotalElements());
     assertPostMigration(accountScopeUserGroupRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
-  }
-
-  @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void
-  testMigrateAccounts_WhenAccountScopeUserGroupRoleAssignmentExistsButAccountBasicRoleOnlyFFIsOn_ThenSkipsDeletingAccountScopeUserRoleAssignment() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-
-    when(featureFlagHelperService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(true);
-
-    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
-    String principalIdentifier = randomAlphabetic(10);
-    RoleAssignmentDBO accountScopeUserRoleAssignment =
-        createAccountScopeRoleAssignment(accountIdentifier, PrincipalType.USER, principalIdentifier);
-    roleAssignmentRepository.save(accountScopeUserRoleAssignment);
-    RoleAssignmentDBO orgScopeUserRoleAssignment =
-        createOrganizationScopeUserRoleAssignment(accountIdentifier, orgIdentifier);
-    roleAssignmentRepository.save(orgScopeUserRoleAssignment);
-    RoleAssignmentDBO projectScopeUserRoleAssignment =
-        createProjectScopeUserRoleAssignment(accountIdentifier, orgIdentifier, projectIdentifier);
-    roleAssignmentRepository.save(projectScopeUserRoleAssignment);
-
-    RoleAssignmentDBO accountScopeUserGroupRoleAssignment = createAccountScopeRoleAssignment(
-        accountIdentifier, PrincipalType.USER_GROUP, DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
-    roleAssignmentRepository.save(accountScopeUserGroupRoleAssignment);
-
-    userRoleAssignmentRemovalMigration.migrate();
-
-    Page<RoleAssignmentDBO> postMigrationRoleAssignments = roleAssignmentRepository.findAll(Pageable.unpaged());
-    assertEquals(2, postMigrationRoleAssignments.getTotalElements());
-    assertPostMigration(accountScopeUserRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
-    assertPostMigration(accountScopeUserGroupRoleAssignment, postMigrationRoleAssignments.getContent().get(1));
   }
 
   private void assertPostMigration(

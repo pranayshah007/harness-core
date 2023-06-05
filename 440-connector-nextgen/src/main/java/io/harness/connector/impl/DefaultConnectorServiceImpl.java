@@ -1206,6 +1206,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmK8sConnectors);
   }
 
+  @Override
+  public Long countConnectors(String accountIdentifier) {
+    return connectorRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
+  }
+
   private Boolean isBuiltInSMDisabled(String accountIdentifier) {
     Boolean isBuiltInSMDisabled = false;
 
