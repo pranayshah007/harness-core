@@ -231,7 +231,7 @@ public class NGTriggerElementMapper {
       return;
     }
 
-    if (newEntity.getType() == MULTI_ARTIFACT) {
+    if (newEntity.getType() == MULTI_REGION_ARTIFACT) {
       /* MultiRegionArtifact triggers need different handling here, since we can't just copy the list of BuildMetadata
       from the previously existing entity (e.g.: The number of artifacts it is listening for could have changed in
       the update). So we only copy the previously existing signatures to `ngTriggerEntity.metadata.signatures`.

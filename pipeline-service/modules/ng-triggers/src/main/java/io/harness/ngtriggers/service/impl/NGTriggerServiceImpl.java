@@ -18,7 +18,7 @@ import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
 import static io.harness.ngtriggers.Constants.MAX_MULTI_ARTIFACT_TRIGGER_SOURCES;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
-import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
@@ -249,7 +249,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     // Polling not required for other trigger types
-    if (ngTriggerEntity.getType() != ARTIFACT && ngTriggerEntity.getType() != MULTI_ARTIFACT
+    if (ngTriggerEntity.getType() != ARTIFACT && ngTriggerEntity.getType() != MULTI_REGION_ARTIFACT
         && ngTriggerEntity.getType() != MANIFEST) {
       return;
     }
@@ -258,7 +258,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
-    if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+    if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
       executePollingSubscriptionChanges(ngTriggerEntity, isUpdate);
       return;
     }
@@ -434,7 +434,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     // change pollingDocId only if request was successful. Else, we dont know what happened.
     // In next trigger upsert, we will try again
     if (statusResult == StatusResult.SUCCESS) {
-      if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+      if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
         stampPollingInfoForMultiArtifactTrigger(ngTriggerEntity, pollingDocuments);
       } else {
         String pollingDocId = isEmpty(pollingDocuments) ? null : pollingDocuments.get(0).getPollingDocId();
@@ -583,7 +583,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       boolean isWebhookGitPollingEnabled = isWebhookGitPollingEnabled(foundTriggerEntity);
       if (foundTriggerEntity.getType() == MANIFEST || foundTriggerEntity.getType() == ARTIFACT
-          || foundTriggerEntity.getType() == MULTI_ARTIFACT || isWebhookGitPollingEnabled) {
+          || foundTriggerEntity.getType() == MULTI_REGION_ARTIFACT || isWebhookGitPollingEnabled) {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
@@ -905,15 +905,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       case ARTIFACT:
         validateStageIdentifierAndBuildRef(
             (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
-        return;
-      case MULTI_ARTIFACT:
-        if (!pmsFeatureFlagService.isEnabled(
-                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)) {
-          throw new InvalidRequestException(
-              "Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-artifact triggers.");
-        }
-        validateMultiArtifactTriggerConfig(
-            (MultiArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       case MULTI_REGION_ARTIFACT:
         if (!pmsFeatureFlagService.isEnabled(
@@ -1371,7 +1362,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     switch (ngTriggerEntity.getType()) {
       case MANIFEST:
       case ARTIFACT:
-      case MULTI_ARTIFACT:
+      case MULTI_REGION_ARTIFACT:
         return ngTriggerEntity.getEnabled();
       case WEBHOOK:
         if (!ngTriggerEntity.getEnabled()) {
@@ -1392,7 +1383,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     switch (ngTriggerEntity.getType()) {
       case MANIFEST:
       case ARTIFACT:
-      case MULTI_ARTIFACT:
+      case MULTI_REGION_ARTIFACT:
         return !ngTriggerEntity.getEnabled() || isUpdate;
       case WEBHOOK:
         if (!ngTriggerEntity.getEnabled() || isUpdate) {
@@ -1408,7 +1399,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   private List<PollingItem> getPollingItemsToUnsubscribe(
       NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
-    if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+    if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
       /* MultiRegionArtifact triggers need different handling. Because the number of artifacts we are listening to
       could have changed during an update, we generate pollingItems to unsubscribe
       from the `ngTriggerEntity.metadata.signatures` list. */

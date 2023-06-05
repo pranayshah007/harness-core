@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
-import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
@@ -72,7 +72,7 @@ public class GeneratorFactory {
     NGTriggerType triggerType = ngTriggerEntity.getType();
     if (triggerType == MANIFEST) {
       return retrievePollingItemGeneratorForManifest(buildTriggerOpsData);
-    } else if (triggerType == ARTIFACT || triggerType == MULTI_ARTIFACT) {
+    } else if (triggerType == ARTIFACT || triggerType == MULTI_REGION_ARTIFACT) {
       return retrievePollingItemGeneratorForArtifact(buildTriggerOpsData);
     } else if (triggerType == WEBHOOK) {
       return retrievePollingItemGeneratorForGitPolling(buildTriggerOpsData);

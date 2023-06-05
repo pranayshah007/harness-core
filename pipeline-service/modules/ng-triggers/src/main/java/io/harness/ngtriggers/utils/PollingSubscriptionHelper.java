@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
-import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.exception.InvalidRequestException;
@@ -49,7 +49,7 @@ public class PollingSubscriptionHelper {
 
   public List<PollingItem> generatePollingItems(NGTriggerEntity ngTriggerEntity) {
     NGTriggerType triggerType = ngTriggerEntity.getType();
-    if (triggerType != ARTIFACT && triggerType != MANIFEST && triggerType != WEBHOOK && triggerType != MULTI_ARTIFACT) {
+    if (triggerType != ARTIFACT && triggerType != MANIFEST && triggerType != WEBHOOK && triggerType != MULTI_REGION_ARTIFACT) {
       throw new InvalidRequestException(
           "Polling items generation is not support for trigger type " + triggerType.toString());
     }
@@ -70,7 +70,7 @@ public class PollingSubscriptionHelper {
             buildTriggerHelper.generateBuildTriggerOpsDataForManifest(triggerDetails, pipelineYml.get()));
       } else if (triggerType == WEBHOOK) {
         buildTriggerOpsData.add(buildTriggerHelper.generateBuildTriggerOpsDataForGitPolling(triggerDetails));
-      } else if (triggerType == MULTI_ARTIFACT) {
+      } else if (triggerType == MULTI_REGION_ARTIFACT) {
         buildTriggerOpsData.addAll(buildTriggerHelper.generateBuildTriggerOpsDataForMultiArtifact(triggerDetails));
       }
 

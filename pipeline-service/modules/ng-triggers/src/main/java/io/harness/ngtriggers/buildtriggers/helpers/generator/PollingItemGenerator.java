@@ -10,7 +10,7 @@ package io.harness.ngtriggers.buildtriggers.helpers.generator;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
-import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -29,7 +29,7 @@ public interface PollingItemGenerator {
   default PollingItem.Builder getBaseInitializedPollingItem(
       NGTriggerEntity ngTriggerEntity, BuildTriggerOpsData buildTriggerOpsData) {
     if (ngTriggerEntity.getType() != MANIFEST && ngTriggerEntity.getType() != ARTIFACT
-        && ngTriggerEntity.getType() != WEBHOOK && ngTriggerEntity.getType() != MULTI_ARTIFACT) {
+        && ngTriggerEntity.getType() != WEBHOOK && ngTriggerEntity.getType() != MULTI_REGION_ARTIFACT) {
       throw new InvalidArgumentsException("Only MANIFEST, ARTIFACT and WEBHOOK trigger types are supported");
     }
 
@@ -39,7 +39,7 @@ public interface PollingItemGenerator {
     Category category = null;
     if (type == MANIFEST) {
       category = Category.MANIFEST;
-    } else if (type == ARTIFACT || type == MULTI_ARTIFACT) {
+    } else if (type == ARTIFACT || type == MULTI_REGION_ARTIFACT) {
       category = Category.ARTIFACT;
     } else if (type == WEBHOOK) {
       category = Category.GITPOLLING;
@@ -52,7 +52,7 @@ public interface PollingItemGenerator {
                                                        .build());
 
     String pollingDocId;
-    if (type == MULTI_ARTIFACT) {
+    if (type == MULTI_REGION_ARTIFACT) {
       /* For MultiRegionArtifact triggers, we need to fetch signature and pollingDocId from `buildTriggerOpsData`,
       because the trigger's metadata itself contains a list of BuildMetadata, so we don't know which element of the
       list corresponds to the pollingItem we are generating here. */
