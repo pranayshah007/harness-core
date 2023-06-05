@@ -8,6 +8,7 @@
 package io.harness.delegate.task.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -63,14 +65,7 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (serviceNowConnectorDTO != null && serviceNowConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(serviceNowConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
+    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
   }
 
   @Override

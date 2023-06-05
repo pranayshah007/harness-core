@@ -8,6 +8,7 @@
 package io.harness.delegate.task.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
@@ -23,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -59,14 +61,7 @@ public class JiraTaskNGParameters implements TaskParameters, ExecutionCapability
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (jiraConnectorDTO != null && jiraConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(jiraConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
+    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
   }
 
   @Override

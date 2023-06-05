@@ -8,6 +8,7 @@
 package io.harness.delegate.task.bamboo;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
@@ -23,6 +24,7 @@ import software.wings.sm.states.ParameterEntry;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -40,14 +42,7 @@ public class BambooBuildTaskNGParameters implements TaskParameters, ExecutionCap
   List<ParameterEntry> parameterEntries;
 
   public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (bambooConnectorDTO != null && bambooConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(bambooConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
+    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
   }
 
   @Override

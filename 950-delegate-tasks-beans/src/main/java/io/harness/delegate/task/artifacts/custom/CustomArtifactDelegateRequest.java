@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.custom;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.CUSTOM_ARTIFACT;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
@@ -28,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -64,11 +66,7 @@ public class CustomArtifactDelegateRequest
   int expressionFunctorToken;
 
   public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
+    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
   }
 
   @Override

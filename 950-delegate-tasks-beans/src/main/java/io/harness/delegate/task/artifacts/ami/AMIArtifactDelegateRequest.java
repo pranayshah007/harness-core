@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.ami;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,10 +25,10 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -92,17 +93,7 @@ public class AMIArtifactDelegateRequest implements ArtifactSourceDelegateRequest
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-
-    if (awsConnectorDTO != null && awsConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(awsConnectorDTO.getDelegateSelectors());
-    }
-
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-
-    return combinedDelegateSelectors;
+    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
@@ -23,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -44,14 +46,7 @@ public class JenkinsBuildTaskNGParameters implements TaskParameters, ExecutionCa
   boolean captureEnvironmentVariable;
 
   public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (jenkinsConnectorDTO != null && jenkinsConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(jenkinsConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
+    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
   }
 
   @Override
