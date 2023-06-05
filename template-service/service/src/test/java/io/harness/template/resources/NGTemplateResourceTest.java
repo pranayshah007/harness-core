@@ -38,6 +38,7 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitx.USER_FLOW;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -209,6 +210,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testCreateTemplate() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
     doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "", false);
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
         templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "", false);
@@ -258,6 +262,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpdateTemplate() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
     doReturn(entityWithMongoVersion).when(templateService).updateTemplateEntity(entity, ChangeType.MODIFY, false, "");
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO = templateResource.updateExistingTemplateLabel("", ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, yaml, false, "");

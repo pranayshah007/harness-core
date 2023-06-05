@@ -57,6 +57,7 @@ import io.harness.rule.Owner;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.cd.execution.filtercreator.CdSscaStepFilterJsonCreator;
 import io.harness.ssca.cd.execution.variablecreator.CdSscaStepVariableCreator;
+import io.harness.ssca.plancreator.CdSscaEnforcementStepPlanCreator;
 import io.harness.ssca.plancreator.CdSscaOrchestrationStepPlanCreator;
 import io.harness.steps.approval.ApprovalStepVariableCreator;
 import io.harness.steps.approval.step.custom.CustomApprovalStepPlanCreator;
@@ -101,7 +102,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
-  public static final int PLAN_CREATOR_NUMBER = 37;
+  public static final int PLAN_CREATOR_NUMBER = 38;
   public static final int FILTER_JSON_CREATOR_NUMBER = 13;
   public static final int VARIABLE_CREATOR_NUMBER = 25;
 
@@ -161,6 +162,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(PMSStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(CdSscaOrchestrationStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(PipelineRollbackStagePlanCreator.class)).isTrue();
+    assertThat(planCreatorClasses.contains(CdSscaEnforcementStepPlanCreator.class)).isTrue();
   }
 
   @Test

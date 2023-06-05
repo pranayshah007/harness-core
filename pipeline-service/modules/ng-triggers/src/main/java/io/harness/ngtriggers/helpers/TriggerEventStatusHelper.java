@@ -21,18 +21,18 @@ public class TriggerEventStatusHelper {
       if (finalStatus != null) {
         return TriggerEventStatus.builder()
             .status(TriggerEventStatus.FinalResponse.FAILURE)
-            .message(finalStatus.name())
+            .message(finalStatus.getMessage())
             .build();
       } else {
         return TriggerEventStatus.builder()
             .status(TriggerEventStatus.FinalResponse.FAILURE)
-            .message("UNKNOWN_STATUS")
+            .message("Unknown status")
             .build();
       }
     }
     return TriggerEventStatus.builder()
         .status(TriggerEventStatus.FinalResponse.SUCCESS)
-        .message(finalStatus.name())
+        .message(finalStatus.getMessage())
         .build();
   }
 }

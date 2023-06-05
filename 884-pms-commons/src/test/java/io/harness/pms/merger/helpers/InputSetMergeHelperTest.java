@@ -332,32 +332,32 @@ public class InputSetMergeHelperTest extends CategoryTest {
         + "                                    command: echo done\n";
     String mergedYaml = mergeInputSetIntoPipeline(pipelineYaml, runtimeInput, false);
     String expectedMergedYaml = "pipeline:\n"
-        + "  identifier: \"cipipeline2GDdkmQLfb\"\n"
-        + "  name: \"run pipeline with output variable success\"\n"
+        + "  identifier: cipipeline2GDdkmQLfb\n"
+        + "  name: run pipeline with output variable success\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"outputvar\"\n"
-        + "      type: \"CI\"\n"
-        + "      name: \"output variable\"\n"
-        + "      spec:\n"
-        + "        execution:\n"
-        + "          steps:\n"
-        + "          - step:\n"
-        + "              identifier: \"two\"\n"
-        + "              type: \"Run\"\n"
-        + "              name: \"two\"\n"
-        + "              spec:\n"
-        + "                command: \"echo done\"\n"
-        + "                shell: \"Powershell\"\n"
-        + "        infrastructure:\n"
-        + "          type: \"VM\"\n"
-        + "          spec:\n"
-        + "            type: \"Pool\"\n"
+        + "    - stage:\n"
+        + "        identifier: outputvar\n"
+        + "        type: CI\n"
+        + "        name: output variable\n"
+        + "        spec:\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: two\n"
+        + "                  type: Run\n"
+        + "                  name: two\n"
+        + "                  spec:\n"
+        + "                    command: echo done\n"
+        + "                    shell: Powershell\n"
+        + "          infrastructure:\n"
+        + "            type: VM\n"
         + "            spec:\n"
-        + "              identifier: \"windows\"\n"
-        + "        cloneCodebase: false\n"
-        + "  projectIdentifier: \"Plain_Old_Project\"\n"
-        + "  orgIdentifier: \"default\"\n";
+        + "              type: Pool\n"
+        + "              spec:\n"
+        + "                identifier: windows\n"
+        + "          cloneCodebase: false\n"
+        + "  projectIdentifier: Plain_Old_Project\n"
+        + "  orgIdentifier: default\n";
     assertThat(mergedYaml).isEqualTo(expectedMergedYaml);
   }
 
@@ -400,24 +400,24 @@ public class InputSetMergeHelperTest extends CategoryTest {
             + "  count: 1\n"
             + "  tag: \"latest\"\n",
         "inputs:\n"
-            + "  image: \"alpine\"\n"
-            + "  repo: \"harness-core\"\n"
+            + "  image: alpine\n"
+            + "  repo: harness-core\n"
             + "  count: 1\n"
-            + "  tag: \"latest\"\n"
+            + "  tag: latest\n"
             + "options:\n"
             + "  clone:\n"
             + "    ref:\n"
-            + "      type: \"tag\"\n"
-            + "      name: \"main\"\n");
+            + "      type: tag\n"
+            + "      name: main\n");
     String mergedInputSetYaml = InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
     assertThat(possibleResponses.contains(mergedInputSetYaml)).isTrue();
 
     inputSetYamlList = Arrays.asList("inputs:\n  a: a", "inputs:\n  b: b", "inputs:\n  c: c");
     assertThat(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList))
         .isEqualTo("inputs:\n"
-            + "  a: \"a\"\n"
-            + "  b: \"b\"\n"
-            + "  c: \"c\"\n");
+            + "  a: a\n"
+            + "  b: b\n"
+            + "  c: c\n");
 
     inputSetYamlList = Arrays.asList("options:\n  clone:\n    ref:\n      type: branch\n      name: harness-core",
         "options:\n  clone:\n    ref:\n      type: tag");
@@ -425,7 +425,7 @@ public class InputSetMergeHelperTest extends CategoryTest {
         .isEqualTo("options:\n"
             + "  clone:\n"
             + "    ref:\n"
-            + "      type: \"tag\"\n"
-            + "      name: \"harness-core\"\n");
+            + "      type: tag\n"
+            + "      name: harness-core\n");
   }
 }

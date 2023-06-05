@@ -58,6 +58,7 @@ import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.caching.service.GitFileCacheService;
+import io.harness.gitsync.common.dtos.GitBranchDetailsDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
@@ -221,7 +222,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, pageRequest, "");
     assertThat(gitBranchesResponseDTO.getDefaultBranch().getName()).isEqualTo(defaultBranch);
     assertThat(gitBranchesResponseDTO.getBranches().size()).isEqualTo(1);
-    assertThat(gitBranchesResponseDTO.getBranches().get(0).getName()).isEqualTo(branch);
+    assertThat(gitBranchesResponseDTO.getBranches().get(0).getName()).isEqualTo(defaultBranch);
   }
 
   @Test
@@ -238,7 +239,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     GitBranchesResponseDTO gitBranchesResponseDTO = scmFacilitatorService.listBranchesV2(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, pageRequest, "");
     assertThat(gitBranchesResponseDTO.getDefaultBranch().getName()).isEqualTo(defaultBranch);
-    assertThat(gitBranchesResponseDTO.getBranches().size()).isEqualTo(2);
+    assertThat(gitBranchesResponseDTO.getBranches().size()).isEqualTo(3);
     assertThat(gitBranchesResponseDTO.getBranches().get(0).getName()).isEqualTo(branch);
   }
   @Test
@@ -774,6 +775,44 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         UserDetailsResponseDTO.builder().userEmail("email").userName("userName").build();
     doReturn(userDetailsResponseDTO).when(scmOrchestratorService).processScmRequestUsingManager(any());
     assertEquals(userDetailsResponseDTO, scmFacilitatorService.getUserDetails(userDetailsRequestDTO));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testPrepareGitBranchListWhenDefaultBranchIsPresentInList() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder()
+            .setDefaultBranch(defaultBranch)
+            .addAllBranches(Arrays.asList(branch, "branch1", defaultBranch))
+            .build();
+    List<GitBranchDetailsDTO> gitBranches = scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse);
+    assertEquals(3, gitBranches.size());
+    assertEquals(defaultBranch, gitBranches.get(2).getName());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testPrepareGitBranchList() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder()
+            .setDefaultBranch(defaultBranch)
+            .addAllBranches(Arrays.asList(branch, "branch1"))
+            .build();
+    List<GitBranchDetailsDTO> gitBranches = scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse);
+    assertEquals(2, gitBranches.size());
+    assertEquals(defaultBranch, gitBranches.get(1).getName());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testPrepareGitBranchListWhenBranchesAreEmpty() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder().setDefaultBranch(defaultBranch).build();
+    List<GitBranchDetailsDTO> gitBranches = scmFacilitatorService.prepareGitBranchList(listBranchesWithDefaultResponse);
+    assertEquals(0, gitBranches.size());
   }
 
   private Scope getDefaultScope() {

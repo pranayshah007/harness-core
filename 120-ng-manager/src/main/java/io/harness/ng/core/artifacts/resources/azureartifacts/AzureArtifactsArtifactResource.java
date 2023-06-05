@@ -71,7 +71,7 @@ public class AzureArtifactsArtifactResource {
   public ResponseDTO<List<AzureArtifactsPackage>> listPackages(@QueryParam("connectorRef") String azureConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull @QueryParam("org") String org,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("org") String org,
       @QueryParam("project") String project, @NotNull @QueryParam("packageType") String packageType,
       @NotNull @QueryParam("feed") String feed, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
@@ -154,7 +154,7 @@ public class AzureArtifactsArtifactResource {
       @NotNull @QueryParam("connectorRef") String azureConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull @QueryParam("org") String org,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("org") String org,
       @QueryParam("project") String project, @NotNull @QueryParam("package") String packageName,
       @NotNull @QueryParam("packageType") String packageType, @QueryParam("versionRegex") String versionRegex,
       @NotNull @QueryParam("feed") String feed, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
@@ -255,7 +255,7 @@ public class AzureArtifactsArtifactResource {
   public ResponseDTO<BuildDetails> getVersionOfPackage(@NotNull @QueryParam("connectorRef") String azureConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull @QueryParam("org") String org,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("org") String org,
       @QueryParam("project") String project, @NotNull @QueryParam("package") String packageName,
       @NotNull @QueryParam("packageType") String packageType, @QueryParam("version") String version,
       @QueryParam("versionRegex") String versionRegex, @NotNull @QueryParam("feed") String feed,
@@ -365,7 +365,7 @@ public class AzureArtifactsArtifactResource {
   public ResponseDTO<List<AzureDevopsProject>> listProjects(@QueryParam("connectorRef") String azureConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull @QueryParam("org") String org,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("org") String org,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorRef, accountId, orgIdentifier, projectIdentifier);
@@ -421,7 +421,7 @@ public class AzureArtifactsArtifactResource {
   public ResponseDTO<List<AzureArtifactsFeed>> listFeeds(@QueryParam("connectorRef") String azureConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull @QueryParam("org") String org,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("org") String org,
       @QueryParam("project") String project, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorRef, accountId, orgIdentifier, projectIdentifier);

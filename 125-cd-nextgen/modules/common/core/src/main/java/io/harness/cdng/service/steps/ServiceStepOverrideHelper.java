@@ -108,7 +108,7 @@ public class ServiceStepOverrideHelper {
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
   }
 
-  // This is for overrides V2
+  // This is for overrides V2 design
   public void saveFinalManifestsToSweepingOutputV2(@NonNull NGServiceV2InfoConfig ngServiceV2InfoConfig,
       Ambiance ambiance, String manifestsSweepingOutputName,
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, String environmentRef) {

@@ -11,6 +11,7 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ACTUAL_IDLE_COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.BILLING_AMOUNT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT_AGGREGATION;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_MULTIPLIER;
 import static io.harness.ccm.views.utils.ClusterTableKeys.UNALLOCATED_COST;
 
 import io.harness.ccm.commons.entities.CCMAggregation;
@@ -139,10 +140,25 @@ public class RESTToGraphQLHelper {
                         .build());
     return timeFilters;
   }
+
   public static List<QLCEViewAggregation> getMarkupAggregation() {
     return Collections.singletonList(QLCEViewAggregation.builder()
                                          .operationType(QLCEViewAggregateOperation.SUM)
                                          .columnName(MARKUP_AMOUNT_AGGREGATION)
+                                         .build());
+  }
+
+  public static List<QLCEViewFilterWrapper> getMarkupNotNullFilter() {
+    return Collections.singletonList(QLCEViewFilterWrapper.builder()
+                                         .idFilter(QLCEViewFilter.builder()
+                                                       .values(new String[0])
+                                                       .field(QLCEViewFieldInput.builder()
+                                                                  .fieldId(MARKUP_MULTIPLIER)
+                                                                  .fieldName(MARKUP_MULTIPLIER)
+                                                                  .identifier(ViewFieldIdentifier.COMMON)
+                                                                  .build())
+                                                       .operator(QLCEViewFilterOperator.NOT_NULL)
+                                                       .build())
                                          .build());
   }
 

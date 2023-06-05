@@ -52,6 +52,8 @@ import io.harness.connector.utils.FieldValues;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
@@ -355,11 +357,12 @@ public class ConnectorResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns created Connector")
       })
+  @FeatureRestrictionCheck(FeatureRestrictionName.MULTIPLE_CONNECTORS)
   public ResponseDTO<ConnectorResponseDTO>
   create(@RequestBody(required = true,
              description = "Details of the Connector to create") @Valid @NotNull ConnectorDTO connector,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connector.getConnectorInfo().getIdentifier())) {
       throw new InvalidRequestException(

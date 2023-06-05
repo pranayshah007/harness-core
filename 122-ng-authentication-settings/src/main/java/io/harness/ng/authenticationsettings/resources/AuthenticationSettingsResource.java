@@ -300,7 +300,13 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
           "clientSecret") String clientSecret,
       @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
-          "friendlySamlName") String friendlySamlName) {
+          "friendlySamlName") String friendlySamlName,
+      @Parameter(description = "Enable Just in time user provision") @FormDataParam("jitEnabled") @DefaultValue(
+          "false") Boolean jitEnabled,
+      @Parameter(description = "Optional Key to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @Parameter(description = "Optional Value to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -310,7 +316,7 @@ public class AuthenticationSettingsResource {
           MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
       SSOConfig response = authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName,
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-          clientSecret, friendlySamlName);
+          clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while creating new SAML Config", e);
@@ -343,14 +349,20 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret) {
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Enable Just in time user provision") @FormDataParam("jitEnabled") @DefaultValue(
+          "false") Boolean jitEnabled,
+      @Parameter(description = "Optional Key to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @Parameter(description = "Optional Value to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
       MultipartBody.Part formData = getMultipartBodyFromInputStream(uploadedInputStream);
-      SSOConfig response =
-          authenticationSettingsService.updateSAMLMetadata(accountId, formData, displayName, groupMembershipAttr,
-              authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId, clientSecret);
+      SSOConfig response = authenticationSettingsService.updateSAMLMetadata(accountId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while editing saml-config", e);
@@ -387,14 +399,20 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
           "clientSecret") String clientSecret,
       @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
-          "friendlySamlName") String friendlySamlName) {
+          "friendlySamlName") String friendlySamlName,
+      @Parameter(description = "Enable Just in time user provision") @FormDataParam("jitEnabled") @DefaultValue(
+          "false") Boolean jitEnabled,
+      @Parameter(description = "Optional Key to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @Parameter(description = "Optional Value to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
       MultipartBody.Part formData = getMultipartBodyFromInputStream(uploadedInputStream);
       SSOConfig response = authenticationSettingsService.updateSAMLMetadata(accountId, samlSSOId, formData, displayName,
           groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-          clientSecret, friendlySamlName);
+          clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
     } catch (Exception e) {
       throw new GeneralException("Error while editing saml-config " + samlSSOId, e);

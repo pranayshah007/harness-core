@@ -256,7 +256,7 @@ public class PipelineStageHelperTest extends CategoryTest {
   public void testGetInputSetYaml() throws IOException {
     YamlField inputSetField = YamlUtils.readTreeWithDefaultObjectMapper("a:\n  b: c");
     String inputSetYaml = pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V0);
-    assertThat(inputSetYaml).isEqualTo("pipeline:\n  a:\n    b: \"c\"\n");
+    assertThat(inputSetYaml).isEqualTo("pipeline:\n  a:\n    b: c\n");
     verify(pipelineStageHelperV1, times(0)).getInputSet(inputSetField);
 
     pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V1);

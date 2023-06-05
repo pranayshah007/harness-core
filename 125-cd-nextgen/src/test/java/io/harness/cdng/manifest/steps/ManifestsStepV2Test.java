@@ -54,8 +54,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -70,6 +74,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,6 +93,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class ManifestsStepV2Test extends CategoryTest {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
@@ -100,6 +107,8 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private NGLogCallback logCallback;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock private NGSettingsClient ngSettingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
   private AutoCloseable mocks;
@@ -398,7 +407,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void svcAndEnvLevelOverridesV2() {
+  public void svcAndEnvLevelOverridesV2() throws IOException {
     ManifestConfigWrapper infraOverride = sampleManifestFile("id1", ManifestConfigType.VALUES);
     ManifestConfigWrapper svcManifest = sampleManifestFile("id2", ManifestConfigType.VALUES);
     ManifestConfigWrapper envOverride = sampleManifestFile("id3", ManifestConfigType.VALUES);
@@ -423,6 +432,11 @@ public class ManifestsStepV2Test extends CategoryTest {
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
@@ -442,7 +456,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void svcAndEnvLevelOverridesV2HelmRepoOverride() {
+  public void svcAndEnvLevelOverridesV2HelmRepoOverride() throws IOException {
     ManifestConfigWrapper svcHelmChart = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
     ManifestConfigWrapper envOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
     ManifestConfigWrapper infraOverride = sampleHelmRepoOverride("helmoverride2", "envoverride");
@@ -467,6 +481,11 @@ public class ManifestsStepV2Test extends CategoryTest {
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
     step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
     ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
@@ -481,7 +500,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void svcAndEnvLevelOverridesV2OnlySvcManifest() {
+  public void svcAndEnvLevelOverridesV2OnlySvcManifest() throws IOException {
     ManifestConfigWrapper svcManifest = sampleManifestFile("id1", ManifestConfigType.VALUES);
 
     doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
@@ -498,6 +517,11 @@ public class ManifestsStepV2Test extends CategoryTest {
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
     step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
 
     ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
@@ -512,7 +536,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void svcAndEnvLevelOverridesV2NotValidManifestType() {
+  public void svcAndEnvLevelOverridesV2NotValidManifestType() throws IOException {
     ManifestConfigWrapper infraOverride = sampleManifestFile("id1", ManifestConfigType.VALUES);
     ManifestConfigWrapper svcManifest = sampleManifestFile("id2", ManifestConfigType.VALUES);
     ManifestConfigWrapper envOverride = sampleManifestFile("id3", ManifestConfigType.AWS_LAMBDA);
@@ -536,6 +560,11 @@ public class ManifestsStepV2Test extends CategoryTest {
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
     assertThatThrownBy(() -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
@@ -545,7 +574,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void svcAndEnvLevelOverridesV2NoManifest() {
+  public void svcAndEnvLevelOverridesV2NoManifest() throws IOException {
     doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
 
     doReturn(OptionalSweepingOutput.builder()
@@ -560,6 +589,11 @@ public class ManifestsStepV2Test extends CategoryTest {
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
 
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
     StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
   }
@@ -567,7 +601,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void svcAndEnvLevelOverridesV2DuplicateIdentifier() {
+  public void svcAndEnvLevelOverridesV2DuplicateIdentifier() throws IOException {
     ManifestConfigWrapper infraOverride = sampleManifestFile("id1", ManifestConfigType.VALUES);
     ManifestConfigWrapper svcManifest = sampleManifestFile("id1", ManifestConfigType.VALUES);
     ManifestConfigWrapper envOverride = sampleManifestFile("id3", ManifestConfigType.VALUES);
@@ -591,6 +625,11 @@ public class ManifestsStepV2Test extends CategoryTest {
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
             eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
 
     assertThatThrownBy(() -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null))
         .isInstanceOf(InvalidRequestException.class)

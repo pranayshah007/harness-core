@@ -11,7 +11,9 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.category.element.UnitTests;
@@ -25,7 +27,9 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
+import io.harness.encryption.Scope;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -66,9 +70,11 @@ import retrofit2.Response;
 
 public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
   @Mock private ServiceOverrideService serviceOverrideService;
-  @Mock private ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock private ServiceOverridesServiceV2Impl serviceOverridesServiceV2;
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+
+  @Mock NGLogCallback ngLogCallback;
   @InjectMocks @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
 
   private AutoCloseable mocks;
@@ -187,17 +193,17 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(null)
-        .doReturn(List.of(basicOverrideEntity))
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvServiceOverride(
+            anyString(), anyString(), anyString(), anyString(), anyString(), any(NGLogCallback.class));
+
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setServiceOverrideInputs(ParameterField.createValueField(overrideInputs));
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     assertThat(mergedServiceOverrideConfigs).hasSize(1);
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
@@ -245,7 +251,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     stepParameters.setServiceOverrideInputs(ParameterField.createValueField(overrideInputs));
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
 
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     // 2 overrideConfig are coming, one is env-svc override, other is env-global override created from envEntity
@@ -290,7 +296,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
 
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     // 2 overrideConfig are coming, one is env-svc override, other is env-global override created from envEntity
@@ -325,19 +331,19 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(null)
-        .doReturn(List.of(basicOverrideEntity))
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvServiceOverride(
+            anyString(), anyString(), anyString(), anyString(), anyString(), any(NGLogCallback.class));
+
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setEnvInputs(null);
     stepParameters.setServiceOverrideInputs(null);
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
 
@@ -387,16 +393,20 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
+        .when(serviceOverridesServiceV2)
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString(), any());
     doReturn(List.of(basicOverrideEntity))
         .doReturn(null)
         .doReturn(Collections.emptyList())
         .doReturn(null)
         .when(serviceOverridesServiceV2)
         .findAll(any(Criteria.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -465,16 +475,15 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(List.of(basicOverrideEntity))
-        .doReturn(null)
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString(), any(NGLogCallback.class));
+
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -540,7 +549,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -593,18 +602,17 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(List.of(basicOverrideEntity))
-        .doReturn(null)
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString(), any(NGLogCallback.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
+
     stepParameters.setEnvInputs(null);
     stepParameters.setServiceOverrideInputs(null);
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -653,7 +661,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, ngLogCallback);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 

@@ -515,7 +515,7 @@ public interface PlanExecutionResource {
           description = NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE) @DefaultValue("") String notes);
 
   @PUT
-  @ApiOperation(value = "pause, resume or stop the pipeline executions", nickname = "handleInterrupt")
+  @ApiOperation(value = "stop the pipeline executions", nickname = "handleInterrupt")
   @Path("/interrupt/{planExecutionId}")
   @Operation(operationId = "putHandleInterrupt", description = "Executes an Interrupt on a Given Execution",
       summary = "Execute an Interrupt",
@@ -533,16 +533,15 @@ public interface PlanExecutionResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectId,
       @Parameter(
-          description =
-              "The Interrupt type needed to be applied to the execution. Choose a value from the enum list: [AbortAll, Abort, Resume, Pause].")
-      @NotNull @QueryParam("interruptType") PlanExecutionInterruptType executionInterruptType,
+          description = "The Interrupt type needed to be applied to the execution. Choose a value from the enum list.")
+      @NotNull @QueryParam("interruptType") PlanExecutionInterruptTypePipeline executionInterruptTypePipeline,
       @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE
               + " on which the Interrupt needs to be applied.") @NotNull @PathParam("planExecutionId")
       String planExecutionId);
 
   // TODO(prashant) : This is a temp route for now merge it with the above. Need be done in sync with UI changes
   @PUT
-  @ApiOperation(value = "pause, resume or stop the stage executions", nickname = "handleStageInterrupt")
+  @ApiOperation(value = "mark as failure or stop the stage executions", nickname = "handleStageInterrupt")
   @Operation(operationId = "handleStageInterrupt", summary = "Handles the interrupt for a given stage in a pipeline",
       responses =
       {
@@ -550,7 +549,6 @@ public interface PlanExecutionResource {
             description = "Takes a possible Interrupt value and applies it onto the given stage in the execution")
       })
   @Path("/interrupt/{planExecutionId}/{nodeExecutionId}")
-  @Hidden
   ResponseDTO<InterruptDTO>
   handleStageInterrupt(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE,
                            required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -560,7 +558,7 @@ public interface PlanExecutionResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectId,
       @NotNull @Parameter(
           description = "The Interrupt type needed to be applied to the execution. Choose a value from the enum list.")
-      @QueryParam("interruptType") PlanExecutionInterruptType executionInterruptType,
+      @QueryParam("interruptType") PlanExecutionInterruptTypeStage executionInterruptTypeStage,
       @NotNull @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE
               + " on which the Interrupt needs to be applied.",
           required = true) @PathParam("planExecutionId") String planExecutionId,

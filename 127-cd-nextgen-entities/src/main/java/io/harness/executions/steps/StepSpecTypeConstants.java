@@ -63,6 +63,7 @@ public interface StepSpecTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String DEPLOYMENT_STAGE = "Deployment";
   String JENKINS_BUILD = "JenkinsBuild";
+  String JENKINS_BUILD_V2 = "JenkinsBuildV2";
   String BAMBOO_BUILD = "BambooBuild";
 
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";

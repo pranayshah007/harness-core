@@ -99,4 +99,7 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final String DOCKER_REGISTRY_V2 = "https://index.docker.io/v2/";
   public static final String DOCKER_REGISTRY_V1 = "https://index.docker.io/v1/";
   public static final String WORKSPACE_ID = "HARNESS_WORKSPACE";
+
+  public static final String SOURCE_GIT = "GIT";
+  public static final String SOURCE_MANUAL = "MANUAL";
 }

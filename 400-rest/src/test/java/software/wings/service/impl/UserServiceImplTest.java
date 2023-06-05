@@ -44,6 +44,7 @@ import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -117,6 +118,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -436,6 +438,34 @@ public class UserServiceImplTest extends WingsBaseTest {
         .thenReturn(new NoOpCache<>());
     userServiceImpl.completeNGInvite(inviteDTO, false, true);
     verify(eventPublishHelper, times(1)).publishUserRegistrationCompletionEvent(anyString(), any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_completeUserCreationOrAdditionViaJitAndSignIn() throws Exception {
+    Account account = anAccount()
+                          .withAccountName("harness")
+                          .withCompanyName("harness")
+                          .withAppId(GLOBAL_APP_ID)
+                          .withUuid(UUID)
+                          .withAuthenticationMechanism(AuthenticationMechanism.SAML)
+                          .build();
+    String email = "newUser@gmail.com";
+    wingsPersistence.save(account);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    retrofit2.Call<ResponseDTO<Boolean>> req = mock(retrofit2.Call.class);
+    when(ngInviteClient.completeUserCreationForJIT(anyString(), anyString())).thenReturn(req);
+    when(req.execute()).thenReturn(Response.success(ResponseDTO.newResponse()));
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
+    User user = userServiceImpl.completeUserCreationOrAdditionViaJitAndSignIn(email, ACCOUNT_ID);
+    assertNotNull(user);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(ngInviteClient, times(1)).completeUserCreationForJIT(argumentCaptor.capture(), any());
+    assertThat(email).isEqualTo(argumentCaptor.getValue());
   }
 
   @Test

@@ -244,12 +244,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
     }
 
-    List<GitBranchDetailsDTO> gitBranches =
-        emptyIfNull(listBranchesWithDefaultResponse.getBranchesList())
-            .stream()
-            .map(branchName -> GitBranchDetailsDTO.builder().name(branchName).build())
-            .distinct()
-            .collect(Collectors.toList());
+    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse);
     return GitBranchesResponseDTO.builder()
         .branches(gitBranches)
         .defaultBranch(GitBranchDetailsDTO.builder().name(listBranchesWithDefaultResponse.getDefaultBranch()).build())
@@ -758,6 +753,19 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           .userName(userDetailsResponse.getUserName())
           .build();
     }
+  }
+
+  @VisibleForTesting
+  protected List<GitBranchDetailsDTO> prepareGitBranchList(
+      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse) {
+    List<String> branchList = new ArrayList<>(emptyIfNull(listBranchesWithDefaultResponse.getBranchesList()));
+    if (!branchList.isEmpty() && !branchList.contains(listBranchesWithDefaultResponse.getDefaultBranch())) {
+      branchList.set(branchList.size() - 1, listBranchesWithDefaultResponse.getDefaultBranch());
+    }
+    return branchList.stream()
+        .map(branchName -> GitBranchDetailsDTO.builder().name(branchName).build())
+        .distinct()
+        .collect(Collectors.toList());
   }
 
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(

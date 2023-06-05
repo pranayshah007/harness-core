@@ -74,8 +74,13 @@ public interface ApprovalInstanceService {
   void rejectPreviousExecutions(
       @NotNull String approvalInstanceId, @NotNull EmbeddedUser user, boolean unauthorized, Ambiance ambiance);
 
+  void rejectPreviousExecutionsV2(@NotNull HarnessApprovalInstance instance, @NotNull EmbeddedUser user);
+
   void updateTicketFieldsInServiceNowApprovalInstance(
       @NotNull ServiceNowApprovalInstance approvalInstance, @NotNull ServiceNowTicketNG ticketNG);
   void updateTicketFieldsInJiraApprovalInstance(
       @NotNull JiraApprovalInstance approvalInstance, @NotNull JiraIssueNG ticketNG);
+
+  HarnessApprovalInstance addHarnessApprovalActivityV2(@NotNull String approvalInstanceId, @NotNull EmbeddedUser user,
+      @NotNull @Valid HarnessApprovalActivityRequestDTO request, boolean shouldCloseStep);
 }

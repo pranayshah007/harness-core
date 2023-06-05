@@ -23,6 +23,7 @@ import io.harness.exception.ngexception.RancherClientRuntimeException;
 import io.harness.rancher.RancherListClustersResponse.RancherClusterItem;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testRancherConnectionFailure() {
-    doThrow(RuntimeException.class).when(rancherClusterClient).listClusters(any(), any());
+    doThrow(RuntimeException.class).when(rancherClusterClient).listClusters(any(), any(), any());
     ConnectorValidationResult result = rancherConnectionHelperService.testRancherConnection("some/url", "some/token");
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
   }
@@ -52,7 +53,7 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testRancherConnectionSuccess() {
-    doReturn(null).when(rancherClusterClient).listClusters(any(), any());
+    doReturn(null).when(rancherClusterClient).listClusters(any(), any(), any());
     ConnectorValidationResult result = rancherConnectionHelperService.testRancherConnection("some/url", "some/token");
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
   }
@@ -61,8 +62,8 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testListClustersFailure() {
-    doThrow(RancherClientRuntimeException.class).when(rancherClusterClient).listClusters(any(), any());
-    assertThatThrownBy(() -> rancherConnectionHelperService.listClusters("url", "token"))
+    doThrow(RancherClientRuntimeException.class).when(rancherClusterClient).listClusters(any(), any(), any());
+    assertThatThrownBy(() -> rancherConnectionHelperService.listClusters("url", "token", Collections.emptyMap()))
         .isInstanceOf(RancherClientRuntimeException.class);
   }
 
@@ -75,7 +76,8 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
                                                .data(List.of(RancherClusterItem.builder().name("c1").build(),
                                                    RancherClusterItem.builder().name("c2").build()))
                                                .build();
-    doReturn(response).when(rancherClusterClient).listClusters(any(), any());
-    assertThat(rancherConnectionHelperService.listClusters("url", "token")).contains("c1", "c2");
+    doReturn(response).when(rancherClusterClient).listClusters(any(), any(), any());
+    assertThat(rancherConnectionHelperService.listClusters("url", "token", Collections.emptyMap()))
+        .contains("c1", "c2");
   }
 }

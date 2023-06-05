@@ -10,6 +10,9 @@ package io.harness.text.resolver;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StringReplacer {
   private static final char ESCAPE_CHAR = '\\';
@@ -147,7 +150,12 @@ public class StringReplacer {
     }
     // Complete buf is expression
     if (expressionStartPos == 0 && expressionEndPos == buf.length()) {
-      return true;
+      return false;
+    }
+
+    // Check if right substring has method invocation, then return false
+    if (checkIfValueHasMethodInvocation(buf, expressionEndPos)) {
+      return false;
     }
 
     // Check on left if any first + operator found or not
@@ -162,7 +170,7 @@ public class StringReplacer {
       expressionStartPos--;
     }
 
-    // Check on left if any first + operator found or not
+    // Check on right if any first + operator found or not
     while (expressionEndPos <= buf.length() - 1) {
       char c = buf.charAt(expressionEndPos);
       if (c == '+') {
@@ -174,6 +182,14 @@ public class StringReplacer {
     }
 
     return true;
+  }
+
+  private boolean checkIfValueHasMethodInvocation(StringBuffer buf, int expressionEndPos) {
+    // Right substring
+    CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
+    Pattern pattern = Pattern.compile("\\.\\w+\\(");
+    Matcher matcher = pattern.matcher(charSequence);
+    return matcher.find();
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {

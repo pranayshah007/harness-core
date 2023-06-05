@@ -94,7 +94,9 @@ public interface AuthSettingsManagerClient {
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
       @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
-      @Part("friendlySamlName") RequestBody friendlySamlName);
+      @Part("friendlySamlName") RequestBody friendlySamlName, @Part("jitEnabled") RequestBody jitEnabled,
+      @Part("jitValidationKey") RequestBody jitValidationKey,
+      @Part("jitValidationValue") RequestBody jitValidationValue);
 
   @Multipart
   @PUT(API_PREFIX + "sso/saml-idp-metadata-upload")
@@ -103,7 +105,9 @@ public interface AuthSettingsManagerClient {
       @Part("groupMembershipAttr") RequestBody groupMembershipAttr,
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
-      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret);
+      @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
+      @Part("jitEnabled") RequestBody jitEnabled, @Part("jitValidationKey") RequestBody jitValidationKey,
+      @Part("jitValidationValue") RequestBody jitValidationValue);
 
   @Multipart
   @PUT(API_PREFIX + "sso/saml-idp-metadata-upload-sso-id")
@@ -113,7 +117,9 @@ public interface AuthSettingsManagerClient {
       @Part("authorizationEnabled") RequestBody authorizationEnabled, @Part("logoutUrl") RequestBody logoutUrl,
       @Part("entityIdentifier") RequestBody entityIdentifier, @Part("samlProviderType") RequestBody samlProviderType,
       @Part("clientId") RequestBody clientId, @Part("clientSecret") RequestBody clientSecret,
-      @Part("friendlySamlName") RequestBody friendlySamlAppName);
+      @Part("friendlySamlName") RequestBody friendlySamlAppName, @Part("jitEnabled") RequestBody jitEnabled,
+      @Part("jitValidationKey") RequestBody jitValidationKey,
+      @Part("jitValidationValue") RequestBody jitValidationValue);
 
   @DELETE(API_PREFIX + "sso/delete-saml-idp-metadata")
   Call<RestResponse<SSOConfig>> deleteSAMLMetadata(@Query("accountId") String accountIdentifier);

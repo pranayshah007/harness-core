@@ -27,6 +27,7 @@ import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.services.api.DeploymentLogAnalysisStateExecutor;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
+import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rule.Owner;
@@ -140,5 +141,36 @@ public class DeploymentLogAnalysisStateExecutorTest extends CategoryTest {
     AnalysisState analysisState = deploymentLogAnalysisStateExecutor.handleTransition(deploymentLogAnalysisState);
     assertEquals(analysisState.getType(), StateType.DEPLOYMENT_LOG_FEEDBACK_STATE);
     assertEquals(analysisState.getStatus(), AnalysisStatus.CREATED);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void handleTransition_logFeedbackFeatureFlagEnabled_baselineNull() {
+    String verificationTaskId = UUID.randomUUID().toString();
+    DeploymentLogAnalysisState deploymentLogAnalysisState = new DeploymentLogAnalysisState();
+    deploymentLogAnalysisState.setInputs(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .endTime(Instant.parse("2023-03-11T12:44:00Z"))
+                                             .build());
+    TestVerificationJobBuilder verificationJobInstanceBuilder = builderFactory.testVerificationJobBuilder();
+    verificationJobInstanceBuilder.baselineVerificationJobInstanceId(null);
+    VerificationJobInstance verificationJobInstance = VerificationJobInstance.builder()
+                                                          .deploymentStartTime(Instant.parse("2023-03-11T12:30:00Z"))
+                                                          .startTime(Instant.parse("2023-03-11T12:34:00Z"))
+                                                          .resolvedJob(verificationJobInstanceBuilder.build())
+                                                          .build();
+    String verificationJobInstanceId = UUID.randomUUID().toString();
+    when(verificationTaskService.getVerificationJobInstanceId(
+             deploymentLogAnalysisState.getInputs().getVerificationTaskId()))
+        .thenReturn(verificationJobInstanceId);
+    when(verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId))
+        .thenReturn(verificationJobInstance);
+    when(featureFlagService.isFeatureFlagEnabled(
+             verificationJobInstance.getAccountId(), FeatureName.SRM_LOG_FEEDBACK_ENABLE_UI.toString()))
+        .thenReturn(true);
+    AnalysisState analysisState = deploymentLogAnalysisStateExecutor.handleTransition(deploymentLogAnalysisState);
+    assertEquals(analysisState.getType(), StateType.DEPLOYMENT_LOG_ANALYSIS);
+    assertEquals(analysisState.getStatus(), AnalysisStatus.SUCCESS);
   }
 }

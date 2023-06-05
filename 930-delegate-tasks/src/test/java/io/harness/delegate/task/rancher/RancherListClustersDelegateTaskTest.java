@@ -72,7 +72,7 @@ public class RancherListClustersDelegateTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void runHappy() throws JoseException, IOException {
     RancherTaskParams taskParams = setupTask();
-    doReturn(List.of("c1", "c2")).when(rancherConnectionHelperService).listClusters(any(), any());
+    doReturn(List.of("c1", "c2")).when(rancherConnectionHelperService).listClusters(any(), any(), any());
     RancherListClustersTaskResponse responseData =
         (RancherListClustersTaskResponse) rancherListClustersDelegateTask.run(taskParams);
 
@@ -87,7 +87,7 @@ public class RancherListClustersDelegateTaskTest extends CategoryTest {
     RancherTaskParams taskParams = setupTask();
     doThrow(new RancherClientRuntimeException("some message"))
         .when(rancherConnectionHelperService)
-        .listClusters(any(), any());
+        .listClusters(any(), any(), any());
 
     RancherListClustersTaskResponse responseData =
         (RancherListClustersTaskResponse) rancherListClustersDelegateTask.run(taskParams);
