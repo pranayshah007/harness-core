@@ -643,6 +643,26 @@ public class AccountServiceImpl implements AccountService {
     return updatedAccount;
   }
 
+  @Override
+  public Boolean updateIsMspAccount(String accountId, boolean isMspAccount) {
+    Account account = get(accountId);
+    account.setMspAccount(isMspAccount);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
+  public Boolean isMspAccount(String accountId) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    return account.isMspAccount();
+  }
+
   private void ngAuditAccountDetailsCrossGenerationAccess(
       String accountIdentifier, boolean oldIsCrossGenerationAccessEnabled, boolean newIsCrossGenerationAccessEnabled) {
     try {

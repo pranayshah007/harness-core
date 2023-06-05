@@ -295,4 +295,8 @@ public interface AccountService {
 
   Account updateCrossGenerationAccessEnabled(
       String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
+
+  Boolean updateIsMspAccount(String accountId, boolean isMspAccount);
+
+  Boolean isMspAccount(String accountId);
 }
