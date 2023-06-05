@@ -16,10 +16,15 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.licensing.Edition;
+import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.ngsettings.NgSettingsTestBase;
 import io.harness.ngsettings.SettingPlanConfig;
@@ -70,6 +75,8 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
   public void testSave() {
     SettingsConfig settingsConfig =
         (SettingsConfig) ReflectionUtils.getFieldValue(settingsCreationJob, SETTINGS_CONFIG_FIELD);
+    when(persistentLocker.waitToAcquireLockOptional(eq("settingsConfigurationJobLock"), notNull(), notNull()))
+        .thenReturn(mock(AcquiredLock.class));
     settingsCreationJob.run();
     validate(settingsConfig);
   }
@@ -86,6 +93,8 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
     SettingsConfig currentSettingsConfig =
         SettingsConfig.builder().version(1).name(latestSettingsConfig.getName()).settings(new HashSet<>()).build();
     ReflectionUtils.setObjectField(f, settingsCreationJob, currentSettingsConfig);
+    when(persistentLocker.waitToAcquireLockOptional(eq("settingsConfigurationJobLock"), notNull(), notNull()))
+        .thenReturn(mock(AcquiredLock.class));
     settingsCreationJob.run();
     validate(currentSettingsConfig);
     ReflectionUtils.setObjectField(f, settingsCreationJob, latestSettingsConfig);
@@ -113,6 +122,8 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
     int currentVersion = settingsConfig.getVersion();
     ReflectionUtils.setObjectField(
         settingsConfig.getClass().getDeclaredField(VERSION_FIELD), settingsConfig, currentVersion + 1);
+    when(persistentLocker.waitToAcquireLockOptional(eq("settingsConfigurationJobLock"), notNull(), notNull()))
+        .thenReturn(mock(AcquiredLock.class));
     settingsCreationJob.run();
     validate(settingsConfig);
   }
@@ -136,6 +147,8 @@ public class SettingsCreationJobTest extends NgSettingsTestBase {
                                                 .valueType(SettingValueType.STRING)
                                                 .category(CI)
                                                 .build());
+    when(persistentLocker.waitToAcquireLockOptional(eq("settingsConfigurationJobLock"), notNull(), notNull()))
+        .thenReturn(mock(AcquiredLock.class));
     settingsCreationJob.run();
     validate(currentSettingsConfig);
 
