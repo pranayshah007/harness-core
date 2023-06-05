@@ -781,6 +781,9 @@ public enum FeatureName {
   CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG(
       "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for NG",
       HarnessTeam.CDP),
+  PL_FIX_INCONSISTENT_USER_DATA(
+      "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",
+      HarnessTeam.PL),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS);
 
   @Deprecated

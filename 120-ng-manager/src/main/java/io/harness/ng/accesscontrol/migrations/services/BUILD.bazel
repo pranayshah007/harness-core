@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/dao:module",
         "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/models:module",
+        "//120-ng-manager/src/main/java/io/harness/utils/featureflaghelper:module",
         "//123-ng-core-user:module",
         "//930-ng-core-clients:module",
         "//950-ng-project-n-orgs:module",

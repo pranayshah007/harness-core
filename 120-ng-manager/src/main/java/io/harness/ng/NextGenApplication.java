@@ -112,6 +112,7 @@ import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
+import io.harness.ng.accesscontrol.migrations.FixInconsistentUserDataMigrationJob;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
@@ -873,6 +874,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
+    environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     createConsumerThreadsToListenToEvents(environment, injector);
