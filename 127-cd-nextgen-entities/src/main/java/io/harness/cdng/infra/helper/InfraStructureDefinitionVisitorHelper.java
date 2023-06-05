@@ -25,10 +25,10 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
-import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -115,7 +115,7 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
 
           Map<String, Object> map = new LinkedHashMap<>();
           map.put("infrastructureDefinition", infraYaml.getInputs().getValue());
-          Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(CDYamlUtils.getMapper().valueToTree(map));
+          Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(YamlUtils.getMapper().valueToTree(map));
           Map<String, Object> fqnStringToValueMap = new HashMap<>();
           fqnToValueMap.forEach((fqn, value) -> fqnStringToValueMap.put(fqn.getExpressionFqn(), value));
 

@@ -480,11 +480,14 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     }
   }
 
-  private Query<ActivityBucket> createQueryForActivityBucket(Instant startTime, Instant endTime,
-      ProjectParams projectParams, List<String> monitoredServiceIdentifiers, String searchText,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
-      boolean isMonitoredServiceIdentifierScoped) {
+  @VisibleForTesting
+  Query<ActivityBucket> createQueryForActivityBucket(Instant startTime, Instant endTime, ProjectParams projectParams,
+      List<String> monitoredServiceIdentifiers, String searchText, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, boolean isMonitoredServiceIdentifierScoped) {
     Query<ActivityBucket> query = hPersistence.createQuery(ActivityBucket.class);
+    if (StringUtils.isNotEmpty(searchText)) {
+      query = query.search(searchText).disableValidation();
+    }
     Stream<ChangeSourceType> changeSourceTypeStream = getChangeSourceEvent(changeCategories, changeSourceTypes);
     List<Criteria> criteria = new ArrayList<>(Arrays.asList(
         query.criteria(ActivityBucketKeys.type)

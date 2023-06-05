@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.yaml.extended.CIShellType;
@@ -325,6 +326,13 @@ public class CIPlanCreatorUtils {
               return builder.type(BuildType.BRANCH)
                   .spec(BranchBuildSpec.builder()
                             .branch(ParameterField.createValueField(branchWebhookEvent.getBranchName()))
+                            .build())
+                  .build();
+            case RELEASE:
+              ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+              return builder.type(BuildType.TAG)
+                  .spec(TagBuildSpec.builder()
+                            .tag(ParameterField.createValueField(releaseWebhookEvent.getReleaseTag()))
                             .build())
                   .build();
             default:

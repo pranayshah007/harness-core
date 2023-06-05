@@ -87,6 +87,9 @@ public class YamlPipelineUtils {
     return mapper.readValue(yaml, cls);
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will replace "---\n" with "" and also handle JsonProcessingException
   public String writeString(Object value) throws JsonProcessingException {
     return mapper.writeValueAsString(value);
   }
@@ -95,8 +98,11 @@ public class YamlPipelineUtils {
     return mapper;
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will handle JsonProcessingException
   public String getYamlString(Object value) throws JsonProcessingException {
-    return writeString(value).replaceFirst("---\n", "");
+    return mapper.writeValueAsString(value).replaceFirst("---\n", "");
   }
 
   /***
@@ -105,7 +111,7 @@ public class YamlPipelineUtils {
    */
   public String writeYamlString(Object value) {
     try {
-      return writeString(value).replaceFirst("---\n", "");
+      return mapper.writeValueAsString(value).replaceFirst("---\n", "");
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml");
     }

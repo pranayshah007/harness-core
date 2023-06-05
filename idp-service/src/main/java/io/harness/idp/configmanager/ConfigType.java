@@ -14,5 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 public enum ConfigType {
   PLUGIN,
   INTEGRATION,
-  AUTH;
+  AUTH,
+  BACKEND;
 }

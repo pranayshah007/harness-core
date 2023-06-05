@@ -15,6 +15,7 @@ import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.NativeHelmRollbackOutcome.NativeHelmRollbackOutcomeBuilder;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
+import io.harness.cdng.helm.rollback.HelmRollbackBaseStepInfo.HelmRollbackBaseStepInfoKeys;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -175,6 +176,9 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     int rollbackVersion = nativeHelmDeployOutcome.getPrevReleaseVersion();
+    boolean skipSteadyStateCheck =
+        CDStepHelper.getParameterFieldBooleanValue(helmRollbackStepParams.getSkipSteadyStateCheck(),
+            HelmRollbackBaseStepInfoKeys.skipSteadyStateCheck, stepParameters);
 
     rollbackCommandRequestNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .commandName(HELM_COMMAND_NAME)
@@ -193,7 +197,8 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
         .releaseHistoryPrefix(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
         .shouldOpenFetchFilesLogStream(true)
         .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
+        .skipSteadyStateCheck(skipSteadyStateCheck);
 
     return nativeHelmStepHelper
         .queueNativeHelmTask(stepParameters, rollbackCommandRequestNGBuilder.build(), ambiance,

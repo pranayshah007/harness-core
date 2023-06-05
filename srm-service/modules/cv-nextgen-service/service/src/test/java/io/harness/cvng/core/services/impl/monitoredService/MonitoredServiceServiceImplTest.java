@@ -39,6 +39,8 @@ import io.harness.CvNextGenTestBase;
 import io.harness.ModuleType;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.activity.entities.Activity;
@@ -60,6 +62,8 @@ import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.client.FakeNotificationClient;
+import io.harness.cvng.client.NextGenService;
+import io.harness.cvng.client.NextGenServiceImpl;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
@@ -151,6 +155,7 @@ import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
@@ -180,6 +185,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.ws.rs.BadRequestException;
 import lombok.AccessLevel;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
@@ -770,6 +776,117 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(savedMonitoredServiceDTO).isEqualTo(monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
     assertCommonMonitoredService(monitoredService, monitoredServiceDTO);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_invalidServiceRef() throws IllegalAccessException {
+    NextGenService nextGenService = Mockito.mock(NextGenService.class);
+    FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    when(nextGenService.getService(any(), any(), any(), any())).thenThrow(new BadRequestException("Service Invalid"));
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    assertThatThrownBy(
+        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
+        .hasMessage("Service Invalid");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_invalidEnvRef() throws IllegalAccessException {
+    NextGenService nextGenService = Mockito.mock(NextGenService.class);
+    FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    when(nextGenService.getEnvironment(any(), any(), any(), any())).thenThrow(new BadRequestException("Env Invalid"));
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    assertThatThrownBy(
+        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
+        .hasMessage("Env Invalid");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_invalidEnvList() throws IllegalAccessException {
+    NextGenService nextGenService = Mockito.mock(NextGenService.class);
+    FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    EnvironmentResponse environmentResponse1 = EnvironmentResponse.builder()
+                                                   .environment(EnvironmentResponseDTO.builder()
+                                                                    .accountId("accountId")
+                                                                    .orgIdentifier("orgId")
+                                                                    .projectIdentifier("projectId")
+                                                                    .identifier("env")
+                                                                    .build())
+                                                   .build();
+    EnvironmentResponse environmentResponse2 = EnvironmentResponse.builder()
+                                                   .environment(EnvironmentResponseDTO.builder()
+                                                                    .accountId("accountId")
+                                                                    .orgIdentifier("orgId")
+                                                                    .identifier("env")
+                                                                    .build())
+                                                   .build();
+    when(nextGenService.listEnvironment(any(), any(), any(), any()))
+        .thenReturn(Arrays.asList(environmentResponse1, environmentResponse2));
+    List<String> envRefList = Arrays.asList("env", "org.env", "env2");
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .type(MonitoredServiceType.INFRASTRUCTURE)
+                                                  .environmentRefList(envRefList)
+                                                  .build();
+    assertThatThrownBy(
+        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
+        .hasMessage("Invalid Environment Identifiers: env2");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreate_invalidConnectorRef() throws IllegalAccessException {
+    NextGenService nextGenService = Mockito.spy(new NextGenServiceImpl());
+    FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    ConnectorResponseDTO connectorResponseDTO1 = ConnectorResponseDTO.builder()
+                                                     .connector(ConnectorInfoDTO.builder()
+                                                                    .orgIdentifier("orgId")
+                                                                    .projectIdentifier("projectId")
+                                                                    .identifier("connectorRef")
+                                                                    .build())
+                                                     .build();
+    ConnectorResponseDTO connectorResponseDTO2 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder().orgIdentifier("orgId").identifier("connectorRef").build())
+            .build();
+    EnvironmentResponse environmentResponse =
+        EnvironmentResponse.builder()
+            .environment(
+                EnvironmentResponseDTO.builder()
+                    .identifier(builderFactory.getContext().getServiceEnvironmentParams().getEnvironmentIdentifier())
+                    .build())
+            .build();
+    doReturn(null).when(nextGenService).getService(any(), any(), any(), any());
+    doReturn(null).when(nextGenService).getEnvironment(any(), any(), any(), any());
+    doReturn(Arrays.asList(environmentResponse)).when(nextGenService).listEnvironment(any(), any(), any(), any());
+    doReturn(Arrays.asList(connectorResponseDTO1, connectorResponseDTO2))
+        .when(nextGenService)
+        .listConnector(any(), any(), any(), any());
+    HealthSource healthSource1 = builderFactory.createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSource1.setIdentifier("HealthSource1");
+    healthSource1.setSpec(AppDynamicsHealthSourceSpec.builder().connectorRef("connectorRef").build());
+
+    HealthSource healthSource2 = builderFactory.createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSource2.setIdentifier("HealthSource2");
+    healthSource2.setSpec(AppDynamicsHealthSourceSpec.builder().connectorRef("org.connectorRef").build());
+
+    HealthSource healthSource3 = builderFactory.createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSource3.setIdentifier("HealthSource3");
+    healthSource3.setSpec(AppDynamicsHealthSourceSpec.builder().connectorRef("connectorRef2").build());
+    Set<HealthSource> healthSources = new HashSet<>(Arrays.asList(healthSource1, healthSource2, healthSource3));
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .sources(Sources.builder().healthSources(healthSources).build())
+                                                  .build();
+    assertThatThrownBy(
+        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
+        .hasMessage("Invalid connector refs: connectorRef2");
   }
 
   @Test

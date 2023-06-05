@@ -7,13 +7,18 @@
 
 package io.harness.ci.serializer;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.steps.stepinfo.RunStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
@@ -54,8 +59,8 @@ public class SerializerUtils {
     return entrypoint;
   }
 
-  public static String getK8sDebugCommand(
-      String accountId, int timeoutSeconds, ParameterField<CIShellType> parametrizedShellType) {
+  public static String getDebugCommand(
+      String accountId, int timeoutSeconds, ParameterField<CIShellType> parametrizedShellType, String tmatePath) {
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
     if (shellType == CIShellType.PYTHON) {
       return String.format("import atexit %n"
@@ -63,6 +68,7 @@ public class SerializerUtils {
               + "import os %n"
               + "import subprocess %n"
               + "import signal %n"
+              + "import time %n"
               + "class ExitHooks(object):%n"
               + "    def __init__(self):%n"
               + "        self.exit_code = None%n"
@@ -88,19 +94,10 @@ public class SerializerUtils {
               + "           f.write(\"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\\n\") %n"
               + "           f.write(\"set -g tmate-server-port 22\\n\") %n"
               + "           f.write(\"set -g tmate-user %s \\n\") %n"
-              + "        cmd = [\"/addon/bin/tmate\", \"-f\", \"tmate.conf\", \"-F\"] %n"
-              + "        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) %n"
-              + "        def alarm_handler(signum, frame):%n"
-              + "           proc.kill() %n"
-              + "        signal.signal(signal.SIGALRM, alarm_handler) %n"
-              + "        signal.alarm(" + Integer.toString(timeoutSeconds) + ")  %n"
-              + "        while True: %n"
-              + "           output = proc.stdout.readline().decode('utf-8')%n"
-              + "           if output == '' and proc.poll() is not None:%n"
-              + "               break%n"
-              + "           if output:%n"
-              + "               print(output.strip())%n"
-              + "        proc.communicate() %n"
+              + "        cmd = [\"" + tmatePath + "\", \"-f\", \"tmate.conf\", \"-F\"] %n"
+              + "        proc = subprocess.Popen(cmd, stdout=None, stderr=None) %n"
+              + "        time.sleep(" + timeoutSeconds + ") %n"
+              + "        proc.kill() %n"
               + "atexit.register(exit_func)%n",
           accountId);
     } else if (shellType == CIShellType.BASH || shellType == CIShellType.SH) {
@@ -111,7 +108,7 @@ public class SerializerUtils {
               + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
               + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
               + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
-              + " timeout " + Integer.toString(timeoutSeconds) + "s /addon/bin/tmate -f tmate.conf -F;  "
+              + " timeout " + Integer.toString(timeoutSeconds) + "s + " + tmatePath + " -f tmate.conf -F;  "
               + " %n fi %n } %n trap remote_debug EXIT",
           accountId);
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
@@ -121,7 +118,8 @@ public class SerializerUtils {
               + "     \"set tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\" | Out-File tmate.conf -Append %n "
               + "     \"set tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" | Out-File tmate.conf -Append %n "
               + "     \"set tmate-user %s\" | Out-File tmate.conf -Append %n "
-              + "      $process = Start-Process -FilePath /addon/bin/tmate -ArgumentList \"-f tmate.conf -F \" -NoNewWindow -PassThru %n"
+              + "      $process = Start-Process -FilePath " + tmatePath
+              + " -ArgumentList \"-f tmate.conf -F \" -NoNewWindow -PassThru %n"
               + "      Start-Sleep -Seconds " + Integer.toString(timeoutSeconds) + " %n"
               + "      if ($process.HasExited -eq $false) { %n "
               + "      Stop-Process -Id $process.Id  %n "
@@ -132,86 +130,23 @@ public class SerializerUtils {
       return String.format("");
     }
   }
-
-  public static String getVmDebugCommand(
-      String accountId, int timeoutSeconds, ParameterField<CIShellType> parametrizedShellType) {
-    CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
-    if (shellType == CIShellType.PYTHON) {
-      return String.format("import atexit %n"
-              + "import sys %n"
-              + "import os %n"
-              + "import subprocess %n"
-              + "import signal %n"
-              + "class ExitHooks(object):%n"
-              + "    def __init__(self):%n"
-              + "        self.exit_code = None%n"
-              + "        self.exception = None%n"
-              + "    def hook(self):%n"
-              + "        self._orig_exit = sys.exit %n"
-              + "        self._orig_exception = sys.excepthook%n"
-              + "        sys.exit = self.exit %n"
-              + "        sys.excepthook = self.exc_handler %n"
-              + "    def exit(self, code=0):%n"
-              + "        self.exit_code = code%n"
-              + "        self._orig_exit(code)%n"
-              + "    def exc_handler(self, exc_type, exc, *args):%n"
-              + "        self.exception = exc%n"
-              + "        self._orig_exception(exc_type, exc, *args)%n"
-              + "hooks = ExitHooks()%n"
-              + "hooks.hook()%n"
-              + "def exit_func():%n"
-              + "    if (hooks.exit_code is not None and hooks.exit_code != 0) or hooks.exception is not None: %n"
-              + "        with open(\'tmate.conf\', \'w+\') as f: %n"
-              + "           f.write(\"set -g tmate-server-host ssh.harness.io\\n \") %n"
-              + "           f.write(\"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\\n\") %n"
-              + "           f.write(\"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\\n\") %n"
-              + "           f.write(\"set -g tmate-server-port 22\\n\") %n"
-              + "           f.write(\"set -g tmate-user %s \\n\") %n"
-              + "        cmd = [\"/addon/tmate\", \"-f\", \"tmate.conf\", \"-F\"] %n"
-              + "        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) %n"
-              + "        def alarm_handler(signum, frame):%n"
-              + "           proc.kill() %n"
-              + "        signal.signal(signal.SIGALRM, alarm_handler) %n"
-              + "        signal.alarm(" + Integer.toString(timeoutSeconds) + ")  %n"
-              + "        while True: %n"
-              + "           output = proc.stdout.readline().decode('utf-8')%n"
-              + "           if output == '' and proc.poll() is not None:%n"
-              + "               break%n"
-              + "           if output:%n"
-              + "               print(output.strip())%n"
-              + "        proc.communicate() %n"
-              + "atexit.register(exit_func)%n",
-          accountId);
-    } else if (shellType == CIShellType.BASH || shellType == CIShellType.SH) {
-      return String.format("remote_debug() %n  { %n  if [ "
-              + " \"$?\" -ne \"0\" ]; then %n"
-              + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
-              + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
-              + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
-              + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
-              + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
-              + "timeout " + Integer.toString(timeoutSeconds) + "s  /addon/tmate -f tmate.conf -F; "
-              + " %n fi %n } %n trap remote_debug EXIT",
-          accountId);
-    } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
-      return String.format("function remote_debug () { %n "
-              + "     \"set tmate-server-host ssh.harness.io\" | Out-File tmate.conf -Append %n "
-              + "     \"set tmate-server-port 22\" | Out-File tmate.conf -Append %n "
-              + "     \"set tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\" | Out-File tmate.conf -Append %n "
-              + "     \"set tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" | Out-File tmate.conf -Append %n "
-              + "     \"set tmate-user %s\" | Out-File tmate.conf -Append %n "
-              + "      $process = Start-Process -FilePath /addon/tmate -ArgumentList \"-f tmate.conf -F \" -NoNewWindow -PassThru %n"
-              + "      Start-Sleep -Seconds " + Integer.toString(timeoutSeconds) + " %n"
-              + "      if ($process.HasExited -eq $false) { %n "
-              + "      Stop-Process -Id $process.Id  %n "
-              + "       } %n } %n "
-              + "      trap {remote_debug}",
-          accountId);
-    } else {
-      return String.format("");
-    }
+  public static String getK8sDebugCommand(String accountId, int timeoutSeconds, RunStepInfo runStepInfo) {
+    return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), "/addon/bin/tmate");
   }
 
+  public static String getVmDebugCommand(String accountId, int timeoutSeconds, RunStepInfo runStepInfo,
+      StageInfraDetails stageInfraDetails, String tmatePath) {
+    if (isEmpty(tmatePath)) {
+      VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
+
+      if (vmStageInfraDetails.getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
+        throw new CIStageExecutionException(
+            "TMATE_PATH is empty. When running remote debug in local, you must  specify tmate path and set it as a shared path");
+      }
+      tmatePath = "/addon/tmate";
+    }
+    return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), tmatePath);
+  }
   public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType) {
     String cmd;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
@@ -328,16 +263,16 @@ public class SerializerUtils {
   }
 
   public static Map<String, String> getPortBindingMap(List<String> ports) {
-    if (EmptyPredicate.isEmpty(ports)) {
+    if (isEmpty(ports)) {
       return Collections.emptyMap();
     }
     Map<String, String> portMapping = new HashMap<>();
     ports.forEach(p -> {
-      if (EmptyPredicate.isEmpty(p)) {
+      if (isEmpty(p)) {
         throw new CIStageExecutionException("Port value cannot be empty");
       }
       String[] portList = p.split(":");
-      if (EmptyPredicate.isEmpty(portList) || portList.length < 2) {
+      if (isEmpty(portList) || portList.length < 2) {
         throw new CIStageExecutionException(format("Port mapping is invalid: %s", p));
       }
       portMapping.put(portList[portList.length - 2], portList[portList.length - 1]);
@@ -346,7 +281,7 @@ public class SerializerUtils {
   }
 
   public static ParameterField<Boolean> getBooleanFieldFromJsonNodeMap(Map<String, JsonNode> map, String key) {
-    if (EmptyPredicate.isEmpty(map)) {
+    if (isEmpty(map)) {
       return ParameterField.ofNull();
     }
     JsonNode booleanJsonNode = map.get(key);
@@ -361,7 +296,7 @@ public class SerializerUtils {
   }
 
   public static ParameterField<String> getStringFieldFromJsonNodeMap(Map<String, JsonNode> map, String key) {
-    if (EmptyPredicate.isEmpty(map)) {
+    if (isEmpty(map)) {
       return ParameterField.ofNull();
     }
     JsonNode stringJsonNode = map.get(key);
@@ -375,7 +310,7 @@ public class SerializerUtils {
   }
 
   public static ParameterField<String> getListAsStringFromJsonNodeMap(Map<String, JsonNode> map, String key) {
-    if (EmptyPredicate.isEmpty(map)) {
+    if (isEmpty(map)) {
       return ParameterField.ofNull();
     }
     JsonNode arrayJsonNode = map.get(key);

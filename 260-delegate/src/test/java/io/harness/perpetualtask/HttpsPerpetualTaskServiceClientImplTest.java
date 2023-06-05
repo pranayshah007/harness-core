@@ -9,69 +9,73 @@ package io.harness.perpetualtask;
 
 import static io.harness.rule.OwnerRule.MARKO;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.callback.BasicAuthCredentials;
 import io.harness.callback.HttpsClientEntrypoint;
-import io.harness.category.element.UnitTests;
+import io.harness.category.element.IntegrationTests;
 import io.harness.perpetualtask.https.HttpsPerpetualTaskParams;
 import io.harness.rule.Owner;
 
-import software.wings.WingsBaseTest;
-
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.api.client.util.Base64;
+import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class HttpsPerpetualTaskServiceClientImplTest extends WingsBaseTest {
+public class HttpsPerpetualTaskServiceClientImplTest {
   private static final String USERNAME = "test@harness.io";
   private static final String PASSWORD = "test";
 
-  HttpsPerpetualTaskServiceClientImpl httpsPerpetualTaskServiceClient;
-
-  @Rule public WireMockRule wireMockRule = new WireMockRule(7777, 9999);
+  private MockWebServer server;
+  private HttpsPerpetualTaskServiceClientImpl httpsPerpetualTaskServiceClient;
 
   @Before
-  public void setUp() {
-    HttpsClientEntrypoint entrypoint =
+  public void setUp() throws Exception {
+    server = new MockWebServer();
+    server.start();
+
+    final HttpsClientEntrypoint entrypoint =
         HttpsClientEntrypoint.newBuilder()
-            .setUrl("https://localhost:9999")
+            .setUrl(server.url("/").toString())
             .setBasicAuthCredentials(
                 BasicAuthCredentials.newBuilder().setUsername(USERNAME).setPassword(PASSWORD).build())
             .build();
     httpsPerpetualTaskServiceClient = new HttpsPerpetualTaskServiceClientImpl(entrypoint);
+  }
 
-    String expectedAuthHeaderValue =
-        "Basic " + Base64.encodeBase64String(format("%s:%s", USERNAME, PASSWORD).getBytes(StandardCharsets.UTF_8));
-
-    wireMockRule.stubFor(post(urlEqualTo("/"))
-                             .withHeader("Authorization", equalTo(expectedAuthHeaderValue))
-                             .willReturn(aResponse().withStatus(200).withBody("getTaskParamsResponse".getBytes())));
+  @After
+  public void tearDown() throws Exception {
+    server.shutdown();
   }
 
   @Test
   @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void shouldInvokeGetTaskParamsSuccessfully() {
-    Map<String, String> testParamsMap = new HashMap();
-    testParamsMap.put("key", "value");
-    PerpetualTaskClientContext context = PerpetualTaskClientContext.builder().clientParams(testParamsMap).build();
+  @Category(IntegrationTests.class)
+  public void testGetTaskParams() throws Exception {
+    final String authHeader =
+        "Basic " + Base64.encodeBase64String(format("%s:%s", USERNAME, PASSWORD).getBytes(StandardCharsets.UTF_8));
 
-    HttpsPerpetualTaskParams taskParams =
+    final String url = server.url("/").toString();
+
+    server.enqueue(new MockResponse()
+                       .setResponseCode(HttpURLConnection.HTTP_OK)
+                       .addHeader("Authorization", authHeader)
+                       .setBody("getTaskParamsResponse"));
+
+    final Map<String, String> testParamsMap = Map.of("key", "value");
+    final PerpetualTaskClientContext context = PerpetualTaskClientContext.builder().clientParams(testParamsMap).build();
+    final HttpsPerpetualTaskParams actual =
         (HttpsPerpetualTaskParams) httpsPerpetualTaskServiceClient.getTaskParams(context);
-    assertThat(taskParams).isNotNull();
-    assertThat(taskParams.getTaskParams().toString(Charset.defaultCharset())).isEqualTo("getTaskParamsResponse");
+
+    assertThat(actual).isNotNull();
+    assertThat(actual.getTaskParams().toString(Charset.defaultCharset())).isEqualTo("getTaskParamsResponse");
   }
 }

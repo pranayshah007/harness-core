@@ -7,6 +7,8 @@
 
 package io.harness.cvng.cdng.beans;
 
+import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -14,6 +16,7 @@ import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.C
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.pms.yaml.ParameterField;
 
+import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -45,6 +48,7 @@ public abstract class BlueGreenCanaryVerificationJobSpec extends VerificationJob
 
   @Override
   protected void validateParams() {
+    Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(VerificationJobSpecKeys.sensitivity));
     if (getTrafficSplitPercentage() != null && getTrafficSplitPercentage().getValue() != null) {
       int trafficSplitPercentage = Integer.parseInt(getTrafficSplitPercentage().getValue());
       if (trafficSplitPercentage > 0 && trafficSplitPercentage <= 50) {

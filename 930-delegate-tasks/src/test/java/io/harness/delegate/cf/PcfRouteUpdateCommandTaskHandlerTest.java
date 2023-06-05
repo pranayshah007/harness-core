@@ -109,7 +109,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     doNothing().when(pcfCommandTaskHelper).mapRouteMaps(anyString(), anyList(), any(), any());
     doNothing().when(pcfCommandTaskHelper).unmapRouteMaps(anyString(), anyList(), any(), any());
     doReturn(null).when(cfDeploymentManager).upsizeApplicationWithSteadyStateCheck(any(), any());
-    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any(), any());
 
     // 2 Rollback True, existingApplication : available
     reset(cfDeploymentManager);
@@ -145,7 +145,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
         CfAppSetupTimeDetails.builder().applicationName("app1").initialInstanceCount(1).build()));
     cfCommandExecutionResponse =
         pcfRouteUpdateCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
     verify(cfDeploymentManager, never()).upsizeApplicationWithSteadyStateCheck(any(), any());
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
@@ -180,7 +180,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     // Existing applications are empty. No op expected
     pcfRouteUpdateCommandTaskHandler.resizeOldApplications(
         pcfCommandRequest, CfRequestConfig.builder().build(), executionLogCallback, false, "");
-    verify(cfDeploymentManager, never()).resizeApplication(any());
+    verify(cfDeploymentManager, never()).resizeApplication(any(), any());
 
     // Autoscalar is false, existing app is present
     routeUpdateRequestConfigData.setExistingApplicationDetails(appSetupTimeDetailsList);
@@ -210,12 +210,12 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
                                               .runningInstances(1)
                                               .build();
     doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
-    doReturn(applicationDetail).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetail).when(cfDeploymentManager).resizeApplication(any(), any());
 
     doReturn(true).when(pcfCommandTaskHelper).disableAutoscalar(any(), any());
     pcfRouteUpdateCommandTaskHandler.resizeOldApplications(
         pcfCommandRequest, CfRequestConfig.builder().build(), executionLogCallback, false, "");
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
     verify(pcfCommandTaskHelper, never()).disableAutoscalar(any(), any());
 
     // Autoscalar is true, existing app present
@@ -224,7 +224,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
         ArgumentCaptor.forClass(CfAppAutoscalarRequestData.class);
     pcfRouteUpdateCommandTaskHandler.resizeOldApplications(
         pcfCommandRequest, CfRequestConfig.builder().build(), executionLogCallback, false, "");
-    verify(cfDeploymentManager, times(2)).resizeApplication(any());
+    verify(cfDeploymentManager, times(2)).resizeApplication(any(), any());
     verify(pcfCommandTaskHelper, times(1)).disableAutoscalar(argumentCaptor.capture(), any());
     CfAppAutoscalarRequestData pcfAppAutoscalarRequestData = argumentCaptor.getValue();
     assertThat(pcfAppAutoscalarRequestData.getApplicationName()).isEqualTo("app1");

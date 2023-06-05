@@ -9,6 +9,8 @@ package io.harness.rancher;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectivityStatus;
@@ -20,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,7 +35,7 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
   @Override
   public ConnectorValidationResult testRancherConnection(String rancherUrl, String bearerToken) {
     try {
-      rancherClusterClient.listClusters(bearerToken, rancherUrl);
+      rancherClusterClient.listClusters(bearerToken, rancherUrl, emptyMap());
       log.info("Successfully performed listClusters action using rancher cluster {}", rancherUrl);
       return ConnectorValidationResult.builder()
           .testedAt(System.currentTimeMillis())
@@ -48,8 +51,9 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
   }
 
   @Override
-  public List<String> listClusters(String rancherUrl, String bearerToken) {
-    RancherListClustersResponse listClustersResponse = rancherClusterClient.listClusters(bearerToken, rancherUrl);
+  public List<String> listClusters(String rancherUrl, String bearerToken, Map<String, String> pageRequestParams) {
+    RancherListClustersResponse listClustersResponse =
+        rancherClusterClient.listClusters(bearerToken, rancherUrl, pageRequestParams);
     List<RancherClusterItem> clustersData = listClustersResponse.getData();
     if (isEmpty(clustersData)) {
       return Collections.emptyList();

@@ -1591,10 +1591,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity) {
-    if (!pmsFeatureFlagService.isEnabled(templateEntity.getAccountId(), FeatureName.OPA_TEMPLATE_GOVERNANCE)) {
+    if (!pmsFeatureFlagService.isEnabled(templateEntity.getAccountId(), FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE)) {
       return GovernanceMetadata.newBuilder()
           .setDeny(false)
-          .setMessage(String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_TEMPLATE_GOVERNANCE,
+          .setMessage(String.format("FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE,
               templateEntity.getAccountId()))
           .build();
     }

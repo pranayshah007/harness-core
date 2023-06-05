@@ -235,15 +235,26 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testValidNestedExpressions() {
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
-                                                                               .put("a", 5)
-                                                                               .put("b", 12)
-                                                                               .put("c", "<+a> + 2 * <+b>")
-                                                                               .put("d", "<+c> - <+a>")
-                                                                               .put("e", "<+a>")
-                                                                               .put("f", "abc")
-                                                                               .put("g", "def")
-                                                                               .build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("a", 5)
+                                             .put("b", 12)
+                                             .put("c", "<+a> + 2 * <+b>")
+                                             .put("d", "<+c> - <+a>")
+                                             .put("e", "<+a>")
+                                             .put("f", "abc")
+                                             .put("g", "def")
+                                             .put("v1", "<+v2>")
+                                             .put("v2", "<+v3>")
+                                             .put("v3", "<+lastPublished.tag>.regex()")
+                                             .build());
+
+    assertThat(evaluator.resolve("<+v1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("<+lastPublished.tag>.regex()");
+    assertThatThrownBy(() -> evaluator.resolve("<+v1>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "Expression <+lastPublished.tag>.regex() might contain some unresolved expressions which could not be evaluated.");
     assertThat(evaluator.evaluateExpression("<+a> + <+b>")).isEqualTo(17);
     assertThat(evaluator.evaluateExpression("<+a> + <+b> == 10")).isEqualTo(false);
     assertThat(evaluator.evaluateExpression("<+a> + <+b> == 17")).isEqualTo(true);

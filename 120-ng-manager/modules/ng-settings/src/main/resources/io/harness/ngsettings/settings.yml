@@ -347,7 +347,7 @@ settings :
     category: CD
     defaultValue: false
     valueType: BOOLEAN
-    allowOverrides: false
+    allowOverrides: true
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION

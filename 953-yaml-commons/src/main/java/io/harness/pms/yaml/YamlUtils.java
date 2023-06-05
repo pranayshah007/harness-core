@@ -111,6 +111,9 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will replace "---\n" with ""
   public String write(Object object) {
     try {
       return mapper.writeValueAsString(object);
@@ -125,6 +128,10 @@ public class YamlUtils {
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
+  }
+
+  public ObjectMapper getMapper() {
+    return mapper;
   }
 
   public YamlField readTree(String content) throws IOException {

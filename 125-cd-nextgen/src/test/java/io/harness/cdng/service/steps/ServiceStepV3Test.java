@@ -699,7 +699,7 @@ public class ServiceStepV3Test extends CategoryTest {
     doReturn(overridesConfigsTestData)
         .when(serviceOverrideUtilityFacade)
         .getMergedServiceOverrideConfigs(
-            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class));
+            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class), any());
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -734,7 +734,7 @@ public class ServiceStepV3Test extends CategoryTest {
     doReturn(overridesConfigsTestData)
         .when(serviceOverrideUtilityFacade)
         .getMergedServiceOverrideConfigs(
-            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class));
+            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class), any());
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -783,7 +783,7 @@ public class ServiceStepV3Test extends CategoryTest {
     doReturn(overridesConfigsTestData)
         .when(serviceOverrideUtilityFacade)
         .getMergedServiceOverrideConfigs(
-            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class));
+            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class), any());
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
         ServiceStepV3Parameters.builder()

@@ -47,6 +47,7 @@ import com.azure.core.http.HttpClient;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.PagedResponse;
 import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.exception.ManagementException;
 import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
@@ -55,6 +56,7 @@ import com.azure.resourcemanager.advisor.models.ResourceRecommendationBase;
 import com.azure.resourcemanager.compute.ComputeManager;
 import com.azure.resourcemanager.compute.fluent.VirtualMachineSizesClient;
 import com.azure.resourcemanager.compute.fluent.models.VirtualMachineSizeInner;
+import com.microsoft.aad.msal4j.MsalServiceException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,15 +87,27 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
     List<AzureRecommendation> allRecommendations = new ArrayList<>();
     HashMap<String, PagedIterable<VirtualMachineSizeInner>> vmStoredDetails = new HashMap<>();
 
-    for (PagedResponse<ResourceRecommendationBase> recommendationsInBatch :
-        advisorManager.recommendations().list().iterableByPage(BATCH_SIZE)) {
-      for (ResourceRecommendationBase recommendation : recommendationsInBatch.getValue()) {
-        AzureRecommendation azureRecommendation = createAzureRecommendation(accountId, tenantId, recommendation,
-            vmSizeClient, vmStoredDetails, request.getConnectorId(), request.getConnectorName());
-        if (azureRecommendation != null) {
-          allRecommendations.add(azureRecommendation);
+    try {
+      for (PagedResponse<ResourceRecommendationBase> recommendationsInBatch :
+          advisorManager.recommendations().list().iterableByPage(BATCH_SIZE)) {
+        for (ResourceRecommendationBase recommendation : recommendationsInBatch.getValue()) {
+          AzureRecommendation azureRecommendation = createAzureRecommendation(accountId, tenantId, recommendation,
+              vmSizeClient, vmStoredDetails, request.getConnectorId(), request.getConnectorName());
+          if (azureRecommendation != null) {
+            allRecommendations.add(azureRecommendation);
+          }
         }
       }
+    } catch (MsalServiceException msalServiceException) {
+      // This may happen if there are no tenants or active subscriptions for the tenant.
+      // Or Specified tenant identifier 'tenant_id' is neither a valid DNS name
+      // nor a valid external domain
+      log.info("Failed to get azure recommendation. MsalServiceException {}", msalServiceException);
+    } catch (ManagementException managementException) {
+      // This may happen if subscription cannot be found.
+      // Or service principal is not properly created in the tenant
+      // Or the access token is from the wrong issuer
+      log.info("Failed to get azure recommendation. ManagementException {}", managementException);
     }
     return allRecommendations;
   }
@@ -134,6 +148,9 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
       return null;
     }
     String regionName = REGION_ID_TO_REGION.get(extendedProperties.get(REGION_ID));
+    if (regionName == null) {
+      log.info("regionName null for region id: {}", extendedProperties.get(REGION_ID));
+    }
     String currentSku = extendedProperties.get(CURRENT_SKU);
     double currentSkuMonthlySavings = Double.parseDouble(extendedProperties.get(SAVINGS_AMOUNT));
     double currentSkuYearlySavings = Double.parseDouble(extendedProperties.get(ANNUAL_SAVINGS_AMOUNT));

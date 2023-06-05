@@ -273,3 +273,5 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+disableRedundantACLs: ${DISABLE_REDUNDANT_ACLS:-false}

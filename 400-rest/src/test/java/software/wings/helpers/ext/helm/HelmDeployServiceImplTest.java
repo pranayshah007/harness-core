@@ -47,6 +47,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -2000,5 +2001,46 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckAllResourcesForHelm(
             any(Kubectl.class), eq(singletonList(workloadId)), any(), any(), eq("rollback"), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetContainerInfosSteadyStateCheckDisabledK8sSteadyStateCheck() {
+    testGetContainerInfosSteadyStateCheckDisabled(false);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetContainerInfosSteadyStateCheckEnabledK8sSteadyStateCheck() {
+    testGetContainerInfosSteadyStateCheckDisabled(true);
+  }
+
+  @SneakyThrows
+  private void testGetContainerInfosSteadyStateCheckDisabled(boolean k8sSteadyStateCheckEnabled) {
+    setFakeTimeLimiter();
+    doReturn(KubernetesConfig.builder().namespace("default").build())
+        .when(containerDeploymentDelegateHelper)
+        .getKubernetesConfig(any(ContainerServiceParams.class));
+    helmInstallCommandRequest.setSkipSteadyStateCheck(true);
+    List<KubernetesResourceId> workloads = emptyList();
+    if (k8sSteadyStateCheckEnabled) {
+      workloads = asList(
+          KubernetesResourceId.builder().name("deployment-1").kind("Deployment").namespace("test-namespace-2").build(),
+          KubernetesResourceId.builder().name("statefulset-1").kind("StatefulSet").namespace("test-namespace").build());
+    }
+
+    helmDeployService.getContainerInfos(
+        helmInstallCommandRequest, workloads, k8sSteadyStateCheckEnabled, logCallback, 1000);
+
+    // for k8sSteadyStateCheckEnabled it's called per namespace of resource id
+    verify(k8sTaskHelperBase, times(k8sSteadyStateCheckEnabled ? 2 : 1))
+        .getContainerInfos(any(KubernetesConfig.class), anyString(), anyString(), eq(1000L));
+    verify(containerDeploymentDelegateBaseHelper, never())
+        .getContainerInfosWhenReadyByLabels(any(KubernetesConfig.class), any(LogCallback.class), anyMap(), anyList());
+    verify(k8sTaskHelperBase, never())
+        .doStatusCheckAllResourcesForHelm(any(Kubectl.class), anyList(), anyString(), anyString(), anyString(),
+            anyString(), any(ExecutionLogCallback.class), anyString());
   }
 }

@@ -23,9 +23,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_EMPTY)
-@Schema(name = "ServiceOverrideSettingsUpdateResponseDTO",
-    description = "This is the Service Override Settings Update Response")
-public class ServiceOverrideSettingsUpdateResponseDTO {
+@Schema(
+    name = "OverrideV2SettingsUpdateResponseDTO", description = "This is the Service Override Settings Update Response")
+public class OverrideV2SettingsUpdateResponseDTO {
   boolean isSuccessful;
   String accountId;
   AccountLevelOverrideV2SettingsUpdateResponseDTO accountLevelUpdateInfo;

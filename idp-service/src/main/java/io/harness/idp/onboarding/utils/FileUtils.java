@@ -47,7 +47,7 @@ public class FileUtils {
 
   public static void writeObjectAsYamlInFile(Object object, String filePath) {
     try {
-      String yaml = YamlPipelineUtils.writeString(object);
+      String yaml = YamlPipelineUtils.writeYamlString(object);
       Path file = Paths.get(filePath);
       Files.write(file, Collections.singletonList(yaml), StandardCharsets.UTF_8);
     } catch (IOException e) {

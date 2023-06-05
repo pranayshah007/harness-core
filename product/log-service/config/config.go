@@ -65,8 +65,10 @@ type Config struct {
 
 	GenAI struct {
 		Endpoint          string `envconfig:"LOG_SERVICE_GENAI_ENDPOINT"`
-		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET" secret:"true"`
+		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET"`
+		Provider          string `envconfig:"LOG_SERVICE_GENAI_PROVIDER" default:"azureopenai"`
 		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
+		UseJSONResponse   bool   `envconfig:"LOG_SERVICE_GENAI_USE_JSON_RESPONSE" default:"false"`
 	}
 }
 

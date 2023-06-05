@@ -53,6 +53,9 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
   private String friendlySamlName;
   private boolean configuredFromNG;
   private boolean authenticationEnabled;
+  private boolean jitEnabled;
+  private String jitValidationKey;
+  private String jitValidationValue;
 
   @JsonCreator
   @Builder
@@ -63,7 +66,9 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
       @JsonProperty("entityIdentifier") String entityIdentifier,
       @JsonProperty("providerType") SAMLProviderType samlProviderType, @JsonProperty("clientId") String clientId,
       @JsonProperty("clientSecret") final char[] clientSecret,
-      @JsonProperty("friendlySamlName") String friendlySamlName) {
+      @JsonProperty("friendlySamlName") String friendlySamlName, @JsonProperty("jitEnabled") boolean jitEnabled,
+      @JsonProperty("jitValidationKey") String jitValidationKey,
+      @JsonProperty("jitValidationValue") String jitValidationValue) {
     super(SSOType.SAML, displayName, url);
     this.metaDataFile = metaDataFile;
     this.accountId = accountId;
@@ -75,6 +80,9 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
     this.clientId = clientId;
     this.clientSecret = clientSecret == null ? null : clientSecret.clone();
     this.friendlySamlName = friendlySamlName;
+    this.jitEnabled = jitEnabled;
+    this.jitValidationKey = jitValidationKey;
+    this.jitValidationValue = jitValidationValue;
   }
 
   @Override

@@ -15,13 +15,13 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,29 +35,26 @@ public class STOTelemetryPublisher {
   String LICENSE_USAGE = "sto_license_usage";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   private static final String ACCOUNT = "Account";
-  private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
 
   public void recordTelemetry() {
     log.info("STOTelemetryPublisher recordTelemetry execute started.");
     try {
+      long timestamp = Instant.now().toEpochMilli();
       final Gson gson = new Gson();
-      STOUsageReport allUsage =
-          gson.fromJson(stoServiceUtils.getUsageAllAcounts(GLOBAL_ACCOUNT_ID), STOUsageReport.class);
+      STOUsageReport allUsage = gson.fromJson(stoServiceUtils.getUsageAllAccounts(timestamp), STOUsageReport.class);
       log.info("Size of the account list is {} ", allUsage.usage.size());
 
       for (STOUsage usage : allUsage.usage) {
-        if (EmptyPredicate.isNotEmpty(usage.accountId) && !usage.accountId.equals(GLOBAL_ACCOUNT_ID)) {
-          HashMap<String, Object> map = new HashMap<>();
-          map.put(GROUP_TYPE, ACCOUNT);
-          map.put(GROUP_ID, usage.accountId);
-          map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-          map.put(LICENSE_USAGE, max(ceil(usage.scanCount / 100.0), usage.developerCount));
-          telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
-              TelemetryOption.builder().sendForCommunity(false).build());
-          log.info("Scheduled STOTelemetryPublisher event sent! for account {}", usage.accountId);
-        }
+        HashMap<String, Object> map = new HashMap<>();
+        map.put(GROUP_TYPE, ACCOUNT);
+        map.put(GROUP_ID, usage.accountId);
+        map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
+        map.put(LICENSE_USAGE, max(ceil(usage.scanCount / 100.0), usage.developerCount));
+        telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(false).build());
+        log.info("Scheduled STOTelemetryPublisher event sent for account {}", usage.accountId);
       }
     } catch (Exception e) {
       log.error("STOTelemetryPublisher recordTelemetry execute failed.", e);

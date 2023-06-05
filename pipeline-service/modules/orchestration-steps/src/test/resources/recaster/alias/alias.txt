@@ -215,6 +215,7 @@ io.harness.steps.shellscript.ShellScriptInlineSource
 io.harness.steps.jira.update.JiraUpdateStepNode
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.execution.PRWebhookEvent
+io.harness.beans.execution.ReleaseWebhookEvent
 io.harness.beans.sweepingoutputs.K8PodDetails
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.jira.update.JiraUpdateSpecParameters
