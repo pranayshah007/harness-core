@@ -103,6 +103,7 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
     doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn(true).when(k8sStepHelper).isDeclarativeRollbackEnabled(ambiance);
   }
 
   private void setupPreConditions(Ambiance ambiance) {

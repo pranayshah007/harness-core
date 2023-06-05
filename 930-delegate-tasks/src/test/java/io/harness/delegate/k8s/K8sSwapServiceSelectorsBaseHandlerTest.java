@@ -7,28 +7,48 @@
 
 package io.harness.delegate.k8s;
 
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.PUNEET;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.K8sDeployResponse;
+import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest;
+import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.KubernetesTaskException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
+import io.harness.k8s.model.HarnessLabelValues;
+import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -44,16 +64,40 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
   @Mock private KubernetesContainerService kubernetesContainerService;
-  @Mock private LogCallback logCallback;
+  @Mock LogCallback logCallback;
+  @Mock K8sInfraDelegateConfig k8sInfraDelegateConfig;
+  @Mock K8sReleaseHandler releaseHandler;
+  @Mock K8sTaskHelperBase k8sTaskHelperBase;
+  @Mock ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
+  @Mock KubernetesConfig kubernetesConfig;
+  @Mock ILogStreamingTaskClient logStreamingTaskClient;
+  @Mock IK8sReleaseHistory releaseHistory;
 
-  @InjectMocks private K8sSwapServiceSelectorsBaseHandler k8sSwapServiceSelectorsBaseHandler;
+  @Spy @InjectMocks private K8sSwapServiceSelectorsBaseHandler k8sSwapServiceSelectorsBaseHandler;
+  @InjectMocks private K8sSwapServiceSelectorsHandler k8sSwapServiceSelectorsHandler;
+
+  K8sDelegateTaskParams k8sDelegateTaskParams;
+  CommandUnitsProgress commandUnitsProgress;
+  final String workingDirectory = "/tmp";
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+
+    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+    commandUnitsProgress = CommandUnitsProgress.builder().build();
+    doReturn(logCallback)
+        .when(k8sTaskHelperBase)
+        .getLogCallback(eq(logStreamingTaskClient), anyString(), anyBoolean(), eq(commandUnitsProgress));
+    doReturn(kubernetesConfig)
+        .when(containerDeploymentDelegateBaseHelper)
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
   }
 
   private V1Service createService(String serviceName, Map<String, String> labelSelectors) {
@@ -198,5 +242,39 @@ public class K8sSwapServiceSelectorsBaseHandlerTest extends CategoryTest {
     boolean success =
         k8sSwapServiceSelectorsBaseHandler.swapServiceSelectors(null, "service1", "service2", logCallback);
     assertThat(success).isFalse();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldSwapBgEnvironmentLabel() throws Exception {
+    V1Service service1 = createService("service1", ImmutableMap.of("label", "A"));
+    V1Service service2 = createService("service2", ImmutableMap.of("label", "B"));
+    final K8sSwapServiceSelectorsRequest k8sSwapServiceSelectorsRequest =
+        K8sSwapServiceSelectorsRequest.builder()
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .releaseName("releaseName")
+            .useDeclarativeRollback(false)
+            .service1(service1.getMetadata().getName())
+            .service2(service2.getMetadata().getName())
+            .build();
+    K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder()
+                                            .status(IK8sRelease.Status.Succeeded)
+                                            .bgEnvironment(HarnessLabelValues.bgStageEnv)
+                                            .build();
+    doReturn(k8sLegacyRelease).when(releaseHistory).getLatestSuccessfulBlueGreenRelease();
+
+    when(kubernetesContainerService.getService(any(), eq(service1.getMetadata().getName()))).thenReturn(service1);
+    when(kubernetesContainerService.getService(any(), eq(service2.getMetadata().getName()))).thenReturn(service2);
+    when(kubernetesContainerService.createOrReplaceService(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[1]);
+
+    K8sDeployResponse response = k8sSwapServiceSelectorsHandler.executeTaskInternal(
+        k8sSwapServiceSelectorsRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    verify(k8sTaskHelperBase, times(1)).saveRelease(anyBoolean(), anyBoolean(), any(), any(), any(), eq("releaseName"));
+    assertThat(k8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
   }
 }

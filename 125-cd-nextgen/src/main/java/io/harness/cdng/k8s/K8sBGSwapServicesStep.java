@@ -110,6 +110,8 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
             .taskType(K8sTaskType.SWAP_SERVICE_SELECTORS)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
+            .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
