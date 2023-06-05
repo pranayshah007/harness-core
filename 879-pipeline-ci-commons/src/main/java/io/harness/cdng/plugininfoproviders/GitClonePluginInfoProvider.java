@@ -19,6 +19,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.utils.PortFinder;
 import io.harness.plugin.service.K8sInitializeService;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginContainerResources;
@@ -48,7 +49,8 @@ public class GitClonePluginInfoProvider implements PluginInfoProvider {
   @Inject K8sInitializeService k8InitializeStepUtils;
 
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
