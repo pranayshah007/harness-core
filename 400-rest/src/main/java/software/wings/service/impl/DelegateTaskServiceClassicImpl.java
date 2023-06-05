@@ -293,7 +293,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   final Comparator<Map.Entry<String, Long>> delegateTaskCountComparator = (d1, d2) -> {
     long diff = d1.getValue() - d2.getValue();
     if (diff == 0) {
-      return (int) Math.max(random.nextLong(), 0);
+      return (int) random.nextLong();
     }
     return (int) diff;
   };
