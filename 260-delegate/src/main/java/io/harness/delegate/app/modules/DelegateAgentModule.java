@@ -16,6 +16,7 @@ import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.delegate.app.DelegateGrpcServiceModule;
+import io.harness.delegate.app.modules.client.DelegateManagerClientModule;
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;

@@ -12,6 +12,10 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//260-delegate/src/main/java/io/harness/delegate/service/common:module",
+        "//260-delegate/src/main/java/io/harness/delegate/service/handlermapping:module",
+        "//420-delegate-agent/src/main/java/io/harness/managerclient:module",
+        "//950-delegate-tasks-beans:module",
         "//970-ng-commons:module",
         "//980-commons/src/main/java/io/harness/health:module",
         "//980-commons/src/main/java/io/harness/security/annotations:module",

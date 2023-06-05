@@ -50,6 +50,7 @@ import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
+import io.harness.delegate.service.handlermapping.Context;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.UnexpectedException;
 import io.harness.grpc.util.RestartableServiceManager;
@@ -149,6 +150,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private AsyncHttpClient asyncHttpClient;
   @Inject private TokenGenerator tokenGenerator;
+  @Inject private Context context;
 
   private TimeLimiter delegateHealthTimeLimiter;
   private Client client;
@@ -429,6 +431,10 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
       log.info("Manager Authority:{}, Manager Target:{}", getDelegateConfiguration().getManagerAuthority(),
           getDelegateConfiguration().getManagerTarget());
 
+      context.set(Context.DELEGATE_ID, delegateId);
+      context.set(Context.DELEGATE_INSTANCE_ID, generateUuid());
+      context.set(Context.ACCOUNT_ID, delegateConfiguration.getAccountId());
+      context.set(Context.DELEGATE_NAME, DELEGATE_NAME);
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }

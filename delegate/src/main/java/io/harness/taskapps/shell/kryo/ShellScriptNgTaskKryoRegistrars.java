@@ -20,6 +20,9 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
+import io.harness.shell.ShellExecutionData;
+
+import software.wings.beans.TaskType;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -29,6 +32,8 @@ public class ShellScriptNgTaskKryoRegistrars implements KryoRegistrar {
     // Task Request
     // This hijacks io.harness.delegate.task.shell.ShellScriptTaskParametersNG
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
+    kryo.register(ShellExecutionData.class, 5528);
+    kryo.register(TaskType.class, 5005);
     kryo.register(ScriptType.class, 5253);
 
     // Task Response

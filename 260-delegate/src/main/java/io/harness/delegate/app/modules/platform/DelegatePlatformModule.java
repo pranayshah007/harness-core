@@ -7,6 +7,7 @@
 
 package io.harness.delegate.app.modules.platform;
 
+import io.harness.delegate.app.modules.client.DelegateManagerClientModule;
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.app.modules.platform.k8s.K8SRunnerModule;
@@ -35,6 +36,7 @@ public class DelegatePlatformModule extends AbstractModule {
 
     install(new DelegateTokensModule(configuration));
     install(new DelegateHealthModule());
+    install(new DelegateManagerClientModule());
 
     install(new MetricRegistryModule(new MetricRegistry()));
     install(new ClientModule());

@@ -1,6 +1,6 @@
 # Dropwizard config
 server:
-  allowedMethods: ["GET"]
+  allowedMethods: ["GET", "POST"]
   adminConnectors: []
   applicationConnectors:
     - type: http

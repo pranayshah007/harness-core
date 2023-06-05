@@ -14,6 +14,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.configuration.DeployMode;
 import io.harness.delegate.app.modules.platform.DelegatePlatformModule;
+import io.harness.delegate.app.resource.ExecutionResponseResource;
 import io.harness.delegate.app.resource.HealthResource;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.metrics.DelegateAgentMetricResource;
@@ -25,6 +26,8 @@ import io.harness.health.HealthService;
 import io.harness.serializer.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+
+import software.wings.jersey.KryoFeature;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.codahale.metrics.MetricRegistry;
@@ -93,6 +96,7 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
     registerHealthChecks(environment, injector);
     registerResources(environment, injector);
     initializeMetrics(environment, injector);
+    registerJerseyProviders(environment, injector);
 
     log.info("Starting Delegate Platform in {} mode", DEPLOY_MODE);
     log.info("Process: {}", ManagementFactory.getRuntimeMXBean().getName());
@@ -163,6 +167,11 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
   private void registerResources(final Environment environment, final Injector injector) {
     environment.jersey().register(injector.getInstance(HealthResource.class));
     environment.jersey().register(injector.getInstance(DelegateAgentMetricResource.class));
+    environment.jersey().register(injector.getInstance(ExecutionResponseResource.class));
     environment.jersey().register(injector.getInstance(TaskResource.class));
+  }
+
+  private void registerJerseyProviders(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(KryoFeature.class));
   }
 }

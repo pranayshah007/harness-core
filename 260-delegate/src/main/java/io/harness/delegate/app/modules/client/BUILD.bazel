@@ -11,13 +11,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//931-delegate-decryption-service/src/java/io/harness/decryption/delegate/serializer/kryo:module",
-        "//931-secret-providers/src/java/io/harness/serializer/kryo:module",
-        "//954-connector-beans:module",
-        "//980-commons/src/main/java/io/harness/serializer:module",
-        "//delegate/src/main/java/io/harness/taskapps/common/kryo:module",
-        "//delegate/src/main/java/io/harness/taskapps/shell/kryo:module",
-        "@maven//:com_google_guava_guava",
+        "//420-delegate-agent:module",
         "@maven//:com_google_inject_guice",
     ],
 )

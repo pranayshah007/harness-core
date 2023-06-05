@@ -13,6 +13,8 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.kryo.ConnectorBeansKryoRegistrar;
 import io.harness.serializer.kryo.SecretConfigKryoRegistrar;
 import io.harness.serializer.kryo.SecretManagerClientKryoRegistrar;
+import io.harness.taskapps.common.kryo.CommonTaskKryoRegistrar;
+import io.harness.taskapps.shell.kryo.ShellScriptNgTaskKryoRegistrars;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -31,6 +33,8 @@ public class SecretsKryoModule extends AbstractModule {
         .add(SecretProviderKryoRegistrar.class)
         .add(SecretManagerClientKryoRegistrar.class)
         .add(ConnectorBeansKryoRegistrar.class)
+        .add(CommonTaskKryoRegistrar.class)
+        .add(ShellScriptNgTaskKryoRegistrars.class)
         .build();
   }
 
