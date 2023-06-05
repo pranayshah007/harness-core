@@ -252,8 +252,8 @@ public class BuildTriggerHelper {
     int buildMetadataIndex = 0;
     for (JsonNode source : sources) {
       Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
-      triggerArtifactSpecMap.put("type", source.get("type"));
-      triggerArtifactSpecMap.put("spec", source);
+      triggerArtifactSpecMap.put("type", source.get("spec").get("type"));
+      triggerArtifactSpecMap.put("spec", source.get("spec"));
       List<BuildMetadata> multiBuildMetadata =
           triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
       String thisSourceSignature = multiBuildMetadata.get(buildMetadataIndex).getPollingConfig().getSignature();
