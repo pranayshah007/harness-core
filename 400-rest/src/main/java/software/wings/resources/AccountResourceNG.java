@@ -290,4 +290,20 @@ public class AccountResourceNG {
       @QueryParam("accountId") String accountId, @QueryParam("trustLevel") Integer trustLevel) {
     return new RestResponse<>(accountService.updateTrustLevel(accountId, trustLevel));
   }
+
+  @PUT
+  @Hidden
+  @Path("/msp-account")
+  @InternalApi
+  public RestResponse<Boolean> updateIsMspAccount(
+      @QueryParam("accountId") @AccountIdentifier String accountId, @QueryParam("isMspAccount") boolean isMspAccount) {
+    return new RestResponse<>(accountService.updateIsMspAccount(accountId, isMspAccount));
+  }
+
+  @GET
+  @Hidden
+  @Path("/msp-account")
+  public RestResponse<Boolean> isMspAccount(@QueryParam("accountId") @AccountIdentifier String accountId) {
+    return new RestResponse<>(accountService.isMspAccount(accountId));
+  }
 }
