@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
@@ -166,6 +167,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
+
         if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {
           String identifier = ((JsonNode) fqnToValueMap.get(key)).asText();
 
@@ -174,8 +176,12 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
           fqnList.add(FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(TEMPLATE_VERSION_LABEL).build());
           JsonNode versionLabelNode = (JsonNode) fqnToValueMap.get(FQN.builder().fqnList(fqnList).build());
           String versionLabel = versionLabelNode == null ? null : versionLabelNode.asText();
+          fqnList.remove(fqnList.size() - 1);
+          fqnList.add(FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(GIT_BRANCH).build());
+          JsonNode gitBranchNode = (JsonNode) fqnToValueMap.get(FQN.builder().fqnList(fqnList).build());
+          String gitBranch = gitBranchNode == null ? null : gitBranchNode.asText();
           TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
-              accountId, orgId, projectId, identifier, versionLabel, templateCacheMap);
+              accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, gitBranch);
           Set<String> moduleInfo = new HashSet<>();
           moduleInfo = isNotEmpty(templateEntity.getModules()) ? templateEntity.getModules() : moduleInfo;
 
