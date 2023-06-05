@@ -235,6 +235,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   }
 
   @Getter @Setter private boolean isPovAccount;
+  @Getter @Setter private boolean isMspAccount;
 
   public void setLocalEncryptionEnabled(boolean localEncryptionEnabled) {
     this.localEncryptionEnabled = localEncryptionEnabled;
