@@ -14,6 +14,7 @@ import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
 import static io.harness.constants.Constants.X_GIT_HUB_EVENT;
 import static io.harness.constants.Constants.X_GIT_LAB_EVENT;
+import static io.harness.constants.Constants.X_HARNESS_TRIGGER;
 import static io.harness.constants.Constants.X_HARNESS_TRIGGER_ID;
 import static io.harness.constants.Constants.X_VSS_HEADER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -22,6 +23,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AWS_CODECOMMIT;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
@@ -29,6 +31,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -84,6 +87,7 @@ import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -361,6 +365,21 @@ public class NGTriggerElementMapper {
                                .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
                                .build())
             .build();
+      case MULTI_REGION_ARTIFACT:
+        MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig =
+            (MultiRegionArtifactTriggerConfig) triggerSource.getSpec();
+        return NGTriggerMetadata.builder()
+            .multiBuildMetadata(
+                multiRegionArtifactTriggerConfig.getSources()
+                    .stream()
+                    .map(source
+                        -> BuildMetadata.builder()
+                               .type(ARTIFACT)
+                               .buildSourceType(source.getClass().getName())
+                               .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
+                               .build())
+                    .collect(Collectors.toList()))
+            .build();
       case MANIFEST:
         ManifestTypeSpec manifestTypeSpec = ((ManifestTriggerConfig) triggerSource.getSpec()).getSpec();
         String manifestSourceType = null;
@@ -473,6 +492,8 @@ public class NGTriggerElementMapper {
       }
     } else if (webhookEventPayloadParser.containsHeaderKey(headers, X_VSS_HEADER)) {
       webhookTriggerType = AZURE;
+    } else if (webhookEventPayloadParser.containsHeaderKey(headers, X_HARNESS_TRIGGER)) {
+      webhookTriggerType = HARNESS;
     } else {
       if (isEmpty(accountIdentifier) || isEmpty(orgIdentifier) || isEmpty(projectIdentifier)) {
         throw new InvalidRequestException(
@@ -560,7 +581,8 @@ public class NGTriggerElementMapper {
       ngTriggerDetailsResponseDTO.webhookDetails(webhookDetails.build());
       ngTriggerDetailsResponseDTO.registrationStatus(
           ngTriggerEntity.getMetadata().getWebhook().getRegistrationStatus());
-    } else if (ngTriggerEntity.getType() == MANIFEST || ngTriggerEntity.getType() == ARTIFACT) {
+    } else if (ngTriggerEntity.getType() == MANIFEST || ngTriggerEntity.getType() == ARTIFACT
+        || ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
       NGTriggerConfigV2 ngTriggerConfigV2 = toTriggerConfigV2(ngTriggerEntity.getYaml());
       NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerConfigV2.getSource().getSpec();
       if (BuildAware.class.isAssignableFrom(ngTriggerSpecV2.getClass())) {

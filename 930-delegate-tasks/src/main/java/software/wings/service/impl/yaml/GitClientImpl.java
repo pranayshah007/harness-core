@@ -1040,7 +1040,7 @@ public class GitClientImpl implements GitClient {
       Collection<Ref> refs = lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true).call();
       log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Git validation failed [{}]", e);
+      log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Git validation failed [{}]", e.getMessage());
 
       if (e instanceof InvalidRemoteException || e.getCause() instanceof NoRemoteRepositoryException) {
         return "Invalid git repo " + repoUrl;

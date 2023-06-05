@@ -33,7 +33,9 @@ import io.harness.security.dto.Principal;
 import io.harness.steps.approval.step.ApprovalInstanceResponseMapper;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalInstanceAuthorizationDTO;
@@ -57,6 +59,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -145,6 +148,16 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
     }
     UserInfo user = userOptional.get();
     return EmbeddedUser.builder().uuid(user.getUuid()).name(user.getName()).email(user.getEmail()).build();
+  }
+
+  @Override
+  public List<ApprovalInstanceResponseDTO> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
+      @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId) {
+    List<ApprovalInstance> approvalInstances = approvalInstanceService.getApprovalInstancesByExecutionId(
+        planExecutionId, approvalStatus, approvalType, nodeExecutionId);
+    return approvalInstances.stream()
+        .map(approvalInstanceResponseMapper::toApprovalInstanceResponseDTO)
+        .collect(Collectors.toList());
   }
 
   @Override

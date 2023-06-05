@@ -24,13 +24,13 @@ import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
-import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
-import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -134,17 +134,19 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
         DeploymentInfoDetailsDTO.builder()
             .deploymentInfoDTO(K8sDeploymentInfoDTO.builder().releaseName("releaseName").namespaces(namespaces).build())
             .build());
-    DeploymentReleaseDetails deploymentReleaseDetails =
-        k8sInstanceSyncHandler.getDeploymentReleaseDetails(deploymentInfoDetailsDTOList);
+    DeploymentReleaseDetails deploymentReleaseDetails = k8sInstanceSyncHandler.getDeploymentReleaseDetails(
+        InstanceSyncPerpetualTaskInfoDTO.builder()
+            .id("taskInfoId")
+            .deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOList)
+            .build());
 
     assertThat(deploymentReleaseDetails).isNotNull();
-    assertThat(deploymentReleaseDetails.getDeploymentDetailsCount()).isEqualTo(1);
-    assertThat(AnyUtils.unpack(deploymentReleaseDetails.getDeploymentDetails(0), K8sDeploymentReleaseDetails.class)
-                   .getReleaseName())
+    assertThat(deploymentReleaseDetails.getDeploymentDetails().size()).isEqualTo(1);
+    assertThat(((K8sDeploymentReleaseDetails) deploymentReleaseDetails.getDeploymentDetails().get(0)).getReleaseName())
         .isEqualTo("releaseName");
-    assertThat(AnyUtils.unpack(deploymentReleaseDetails.getDeploymentDetails(0), K8sDeploymentReleaseDetails.class)
-                   .getNamespaces(0))
-        .isEqualTo("namespace1");
+    assertThat(
+        ((K8sDeploymentReleaseDetails) deploymentReleaseDetails.getDeploymentDetails().get(0)).getNamespaces().size())
+        .isEqualTo(1);
   }
 
   private List<K8sContainer> getContainerList() {

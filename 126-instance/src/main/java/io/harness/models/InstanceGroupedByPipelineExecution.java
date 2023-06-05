@@ -8,6 +8,8 @@
 package io.harness.models;
 
 import io.harness.entities.Instance;
+import io.harness.entities.RollbackStatus;
+import io.harness.pms.contracts.execution.Status;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -19,5 +21,9 @@ public class InstanceGroupedByPipelineExecution {
   private String lastPipelineExecutionName;
   private String lastPipelineExecutionId;
   private long lastDeployedAt;
+  private String stageNodeExecutionId;
+  private Status stageStatus;
+  private String stageSetupId;
+  private RollbackStatus rollbackStatus;
   private List<Instance> instances;
 }

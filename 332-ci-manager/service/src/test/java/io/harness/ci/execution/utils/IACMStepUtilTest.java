@@ -73,10 +73,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIACMGetConnectorRef() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("init"));
+    setting.put("command", mapper.valueToTree("init"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))
@@ -105,7 +105,7 @@ public class IACMStepUtilTest extends CategoryTest {
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
 
     Map<String, String> envVariables = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
-    assertThat(envVariables).hasSize(6);
+    assertThat(envVariables).hasSize(4);
     assertThat(envVariables.get("PLUGIN_ROOT_DIR")).isEqualTo("root");
     assertThat(envVariables.get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
     ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo);
@@ -117,7 +117,7 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDifferentStepsInputs() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
@@ -146,13 +146,13 @@ public class IACMStepUtilTest extends CategoryTest {
       stepVars.put("WORKFLOW", ParameterField.createValueField("workflow"));
       Map<String, JsonNode> setting = new HashMap<>();
       ObjectMapper mapper = new ObjectMapper();
-      setting.put("operation", mapper.valueToTree(commands.get(i)));
+      setting.put("command", mapper.valueToTree(commands.get(i)));
       PluginStepInfo stepInfo = PluginStepInfo.builder()
                                     .envVariables(ParameterField.createValueField(stepVars))
                                     .settings(ParameterField.createValueField(setting))
                                     .build();
       Map<String, String> vmPluginStep = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
-      assertThat(vmPluginStep.size()).isEqualTo(6);
+      assertThat(vmPluginStep.size()).isEqualTo(4);
       assertThat(vmPluginStep.get("PLUGIN_COMMAND")).isEqualTo(commands.get(i));
     }
   }
@@ -162,10 +162,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIACMEnvVarsTransformation() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("init"));
+    setting.put("command", mapper.valueToTree("init"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))
@@ -192,14 +192,29 @@ public class IACMStepUtilTest extends CategoryTest {
     when(connectorUtils.getConnectorDetails(any(), any()))
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
 
-    String[][] expectedResults = new String[][] {
-        {"{\"keytest2\":\"keyValue2\",\"keytest1\":\"keyValue1\"}",
-            "{\"keytest4\":\"keyValue4\",\"keytest3\":\"keyValue3\"}"},
-        {"{\"keytest2\":\"keyValue2\",\"keytest1\":\"${ngSecretManager.obtain(\"keytest1\", -871314908)}\"}",
-            "{\"keytest4\":\"keyValue4\",\"keytest3\":\"${ngSecretManager.obtain(\"keytest3\", -871314908)}\"}"},
-        {"{}", "{}"},
-
+    Map<String, String> expected1 = new HashMap<String, String>() {
+      {
+        put("PLUGIN_WS_ENV_VAR_keytest1", "keyValue1");
+        put("PLUGIN_WS_ENV_VAR_keytest2", "keyValue2");
+        put("PLUGIN_WS_TF_VAR_keytest3", "keyValue3");
+        put("PLUGIN_WS_TF_VAR_keytest4", "keyValue4");
+      }
     };
+
+    Map<String, String> expected2 = new HashMap<String, String>() {
+      {
+        put("PLUGIN_WS_ENV_VAR_keytest1", "${ngSecretManager.obtain(\"keyValue1\", 0)}");
+        put("PLUGIN_WS_ENV_VAR_keytest2", "keyValue2");
+        put("PLUGIN_WS_TF_VAR_keytest3", "${ngSecretManager.obtain(\"keyValue3\", 0)}");
+        put("PLUGIN_WS_TF_VAR_keytest4", "keyValue4");
+      }
+    };
+
+    Map<String, String> expected3 = new HashMap<String, String>() {
+      {}
+    };
+
+    Map<String, String>[] expectedResults = (Map<String, String>[]) new Map[] {expected1, expected2, expected3};
 
     WorkspaceVariables[][] testCases = {
         {WorkspaceVariables.builder()
@@ -274,8 +289,9 @@ public class IACMStepUtilTest extends CategoryTest {
     for (int i = 0; i < testCases.length; i++) {
       when(iacmServiceUtils.getIacmWorkspaceEnvs(any(), any(), any(), any())).thenReturn(testCases[i]);
       Map<String, String> vmPluginStep = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
-      assertThat(vmPluginStep.get("PLUGIN_ENV_VARS")).isEqualTo(expectedResults[i][0]);
-      assertThat(vmPluginStep.get("PLUGIN_VARS")).isEqualTo(expectedResults[i][1]);
+      for (Map.Entry<String, String> entry : expectedResults[i].entrySet()) {
+        assertThat(entry.getValue()).isEqualTo(vmPluginStep.get(entry.getKey()));
+      }
     }
   }
 
@@ -284,10 +300,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsIACMStep() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("plan"));
+    setting.put("command", mapper.valueToTree("plan"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))

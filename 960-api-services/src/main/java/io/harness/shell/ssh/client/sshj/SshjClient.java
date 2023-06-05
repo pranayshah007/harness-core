@@ -255,7 +255,11 @@ public class SshjClient extends SshClient {
         if (retryCount == 6) {
           return fetchSSHSession(config, getLogCallback());
         }
-        log.error("Jschexception while SSH connection with retry count {}", retryCount, e);
+        if (e instanceof JSchException) {
+          log.error("Exception with retry count {}, message: {}", retryCount, e.getMessage());
+        } else {
+          log.error("Exception with retry count {}", retryCount, e);
+        }
       }
     }
 

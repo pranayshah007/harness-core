@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.PluginSettingUtils;
@@ -62,6 +63,16 @@ public class VmPluginCompatibleStepSerializerTest {
   private DockerStepInfo getDockerStepInfo() {
     return DockerStepInfo.builder()
         .repo(ParameterField.createValueField("harness"))
+        .tags(ParameterField.createValueField(Arrays.asList("tag1", "tag2")))
+        .dockerfile(ParameterField.createValueField("Dockerfile"))
+        .context(ParameterField.createValueField("context"))
+        .target(ParameterField.createValueField("target"))
+        .build();
+  }
+
+  private ECRStepInfo getEcrStepInfo() {
+    return ECRStepInfo.builder()
+        .imageName(ParameterField.createValueField("harness"))
         .tags(ParameterField.createValueField(Arrays.asList("tag1", "tag2")))
         .dockerfile(ParameterField.createValueField("Dockerfile"))
         .context(ParameterField.createValueField("context"))
@@ -144,6 +155,74 @@ public class VmPluginCompatibleStepSerializerTest {
 
     Set<String> secretList =
         vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier");
+    assertThat(secretList.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testPluginStepSerializerDockerDlcEnabledEcr() {
+    String accountId = "accountId";
+    Ambiance ambiance = getAmbiance();
+    ECRStepInfo ecrStepInfo = getEcrStepInfo();
+    StageInfraDetails stageInfraDetails = () -> StageInfraDetails.Type.DLITE_VM;
+    CIDockerLayerCachingConfig config = getDlcConfig();
+
+    when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
+        .thenReturn(true);
+    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
+    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(config);
+
+    Set<String> secretList =
+        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier");
+    assertThat(secretList)
+        .contains("endpoint")
+        .contains("bucket")
+        .contains("access_key")
+        .contains("secret_key")
+        .contains("region");
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testPluginStepSerializerDockerDlcDisabledEcr() {
+    String accountId = "accountId";
+    Ambiance ambiance = getAmbiance();
+    ECRStepInfo ecrStepInfo = getEcrStepInfo();
+    StageInfraDetails stageInfraDetails = () -> StageInfraDetails.Type.DLITE_VM;
+
+    when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
+        .thenReturn(true);
+    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(false);
+
+    Set<String> secretList =
+        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier");
+    assertThat(secretList.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testPluginStepSerializerDockerConfigNullEcr() {
+    String accountId = "accountId";
+    Ambiance ambiance = getAmbiance();
+    ECRStepInfo ecrStepInfo = getEcrStepInfo();
+    StageInfraDetails stageInfraDetails = () -> StageInfraDetails.Type.DLITE_VM;
+
+    when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
+        .thenReturn(true);
+    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
+    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(null);
+
+    Set<String> secretList =
+        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier");
     assertThat(secretList.size()).isEqualTo(0);
   }
 }

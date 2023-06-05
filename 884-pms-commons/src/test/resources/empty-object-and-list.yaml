@@ -1,58 +1,58 @@
 pipeline:
-  identifier: "pipelinevars1"
-  name: "pipeline-vars-1"
+  identifier: pipelinevars1
+  name: pipeline-vars-1
   variables:
-  - name: "name2"
-    type: "String"
-    value: ""
+    - name: name2
+      type: String
+      value: ""
   tags:
-    company: "harness"
+    company: harness
   stages:
-  - stage:
-      identifier: "deploy"
-      type: "Deployment"
-      name: "deploy"
-      spec:
-        serviceConfig:
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              artifacts:
-                primary:
-                  type: "Dockerhub"
-                  spec:
-                    connectorRef: "DOCKER_NEW_TEST"
-                    imagePath: "ok/ok"
-                    tag: "alpine"
-              manifests: []
-          service:
-            identifier: "svc"
-            name: "svc"
-        infrastructure:
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "account.conn"
-              namespace: "rs"
-              releaseName: "ns"
-          environment:
-            identifier: "infra"
-            type: "Production"
-            name: "infra"
-            tags:
-              company: "harness"
-        execution:
-          steps:
-          - step:
-              identifier: "rolloutDeployment"
-              type: "K8sRollingDeploy"
-              name: "Rollout Deployment"
-              timeout: "10m"
+    - stage:
+        identifier: deploy
+        type: Deployment
+        name: deploy
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
               spec:
-                skipDryRun: false
-          rollbackSteps:
-          - step:
-              identifier: "rollbackRolloutDeployment"
-              type: "K8sRollingRollback"
-              name: "Rollback Rollout Deployment"
-              spec: {}
+                artifacts:
+                  primary:
+                    type: Dockerhub
+                    spec:
+                      connectorRef: DOCKER_NEW_TEST
+                      imagePath: ok/ok
+                      tag: alpine
+                manifests: []
+            service:
+              identifier: svc
+              name: svc
+          infrastructure:
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: account.conn
+                namespace: rs
+                releaseName: ns
+            environment:
+              identifier: infra
+              type: Production
+              name: infra
+              tags:
+                company: harness
+          execution:
+            steps:
+              - step:
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  name: Rollout Deployment
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+            rollbackSteps:
+              - step:
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  name: Rollback Rollout Deployment
+                  spec: {}

@@ -79,12 +79,13 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
     if (instanceIds.isEmpty()) {
       return Collections.emptyList();
     } else {
-      return hPersistence.createQuery(InstanceData.class, excludeAuthorityCount)
-          .field(InstanceDataKeys.accountId)
-          .equal(accountId)
-          .field(InstanceDataKeys.instanceId)
-          .in(instanceIds)
-          .asList();
+      Query<InstanceData> query = hPersistence.createQuery(InstanceData.class, excludeAuthorityCount)
+                                      .field(InstanceDataKeys.accountId)
+                                      .equal(accountId)
+                                      .field(InstanceDataKeys.instanceId)
+                                      .in(instanceIds)
+                                      .useReadPreference(ReadPreference.secondaryPreferred());
+      return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
     }
   }
 
@@ -155,7 +156,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
     Query<InstanceData> query;
     if (isEmpty(clusterIds)) {
       query = getActiveInstanceQuery(accountId, startTime, endTime, singletonList(K8S_PV));
-      return query.asList();
+      return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
     } else {
       List<InstanceData> instanceDataList = new ArrayList<>();
       for (String clusterId : clusterIds) {
@@ -200,15 +201,15 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   @Override
   public List<InstanceData> fetchClusterActiveInstanceData(
       String accountId, String clusterName, List<InstanceState> instanceState, Instant startTime) {
-    return hPersistence.createQuery(InstanceData.class)
-        .filter(InstanceDataKeys.accountId, accountId)
-        .filter(InstanceDataKeys.clusterId, clusterName)
-        .field(InstanceDataKeys.instanceState)
-        .in(instanceState)
-        .field(InstanceDataKeys.usageStartTime)
-        .lessThanOrEq(startTime)
-        .useReadPreference(ReadPreference.secondaryPreferred())
-        .asList();
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class)
+                                    .filter(InstanceDataKeys.accountId, accountId)
+                                    .filter(InstanceDataKeys.clusterId, clusterName)
+                                    .field(InstanceDataKeys.instanceState)
+                                    .in(instanceState)
+                                    .field(InstanceDataKeys.usageStartTime)
+                                    .lessThanOrEq(startTime)
+                                    .useReadPreference(ReadPreference.secondaryPreferred());
+    return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -238,14 +239,14 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   @Override
   public List<InstanceData> fetchClusterActiveInstanceData(
       String accountId, String clusterName, List<InstanceType> instanceTypes, InstanceState instanceState) {
-    return hPersistence.createQuery(InstanceData.class)
-        .filter(InstanceDataKeys.accountId, accountId)
-        .filter(InstanceDataKeys.clusterId, clusterName)
-        .field(InstanceDataKeys.instanceType)
-        .in(instanceTypes)
-        .filter(InstanceDataKeys.instanceState, instanceState)
-        .useReadPreference(ReadPreference.secondaryPreferred())
-        .asList();
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class)
+                                    .filter(InstanceDataKeys.accountId, accountId)
+                                    .filter(InstanceDataKeys.clusterId, clusterName)
+                                    .field(InstanceDataKeys.instanceType)
+                                    .in(instanceTypes)
+                                    .filter(InstanceDataKeys.instanceState, instanceState)
+                                    .useReadPreference(ReadPreference.secondaryPreferred());
+    return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -265,19 +266,20 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   @Override
   public List<InstanceData> fetchInstanceDataForGivenInstances(
       String accountId, String clusterId, List<String> instanceIds) {
-    return hPersistence.createQuery(InstanceData.class)
-        .filter(InstanceDataKeys.accountId, accountId)
-        .filter(InstanceDataKeys.clusterId, clusterId)
-        .field(InstanceDataKeys.instanceId)
-        .in(instanceIds)
-        .asList();
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class)
+                                    .filter(InstanceDataKeys.accountId, accountId)
+                                    .filter(InstanceDataKeys.clusterId, clusterId)
+                                    .field(InstanceDataKeys.instanceId)
+                                    .in(instanceIds)
+                                    .useReadPreference(ReadPreference.secondaryPreferred());
+    return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
   public List<InstanceData> getInstanceDataListsOfTypes(
       String accountId, int batchSize, Instant startTime, Instant endTime, List<InstanceType> instanceTypes) {
     Query<InstanceData> query = getActiveInstanceQuery(accountId, startTime, endTime, instanceTypes);
-    return query.asList(new FindOptions().limit(batchSize));
+    return query.asList(new FindOptions().limit(batchSize).readPreference(ReadPreference.secondaryPreferred()));
   }
 
   private Query<InstanceData> getActiveInstanceQuery(
@@ -308,7 +310,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
                                         + InstanceDataKeys.activeInstanceIterator)
                                     .useReadPreference(ReadPreference.secondaryPreferred());
-    return query.asList(new FindOptions().limit(batchSize));
+    return query.asList(new FindOptions().limit(batchSize).readPreference(ReadPreference.secondaryPreferred()));
   }
 
   public List<InstanceData> getInstanceDataListsOfTypesAndClusterIdWithoutBatchSize(
@@ -325,6 +327,6 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
                                         + InstanceDataKeys.activeInstanceIterator)
                                     .useReadPreference(ReadPreference.secondaryPreferred());
-    return query.asList();
+    return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 }

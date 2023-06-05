@@ -14,11 +14,11 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//840-template-service/contracts:module",
         "//960-persistence:module",
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//template-service/contracts:module",
         "@maven//:com_google_inject_guice",
         "@maven//:com_squareup_retrofit2_retrofit",
     ],

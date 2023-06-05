@@ -135,6 +135,22 @@ public class IdentifierRefHelper {
     return getIdentifierRef(scopedIdentifierConfig, accountId, orgIdentifier, projectIdentifier, null);
   }
 
+  public Scope getScopeFromScopedRef(String scopedIdentifierRef) {
+    if (isEmpty(scopedIdentifierRef)) {
+      throw new InvalidRequestException("Scope can not be computed for empty/null ref");
+    }
+
+    String[] identifierConfigStringSplit = scopedIdentifierRef.split(IDENTIFIER_REF_DELIMITER);
+    if (identifierConfigStringSplit.length > 2) {
+      throw new InvalidRequestException("Identifier should not contain dot(.)");
+    }
+    if (identifierConfigStringSplit.length > 1) {
+      String scopeString = identifierConfigStringSplit[0];
+      return Scope.fromString(scopeString);
+    }
+    return Scope.PROJECT;
+  }
+
   public IdentifierRef getIdentifierRef(String scopedIdentifierConfig, String accountId, String orgIdentifier,
       String projectIdentifier, Map<String, String> metadata) {
     Scope scope;

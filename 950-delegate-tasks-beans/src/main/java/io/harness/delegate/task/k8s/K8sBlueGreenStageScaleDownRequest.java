@@ -36,6 +36,7 @@ public class K8sBlueGreenStageScaleDownRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean useK8sApiForSteadyStateCheck;
+  boolean useDeclarativeRollback;
 
   @Override
   public List<String> getValuesYamlList() {

@@ -2,66 +2,66 @@ pipeline:
   identifier: basichttpFail
   name: basichttpFail
   stages:
-  - stage:
-      identifier: qaStage
-      type: Deployment
-      name: qa stage
-      failureStrategies:
-      - onFailure:
-          errors:
-          - All
-          action:
-            type: StageRollback
-      spec:
-        serviceConfig:
-          service:
-            identifier: ManagerServiceLatest
-            name: ManagerService
-          serviceDefinition:
-            type: Kubernetes
-            spec:
-              manifests:
-              - manifest:
-                  identifier: baseValues
-                  type: K8sManifest
-                  spec:
-                    store:
-                      type: Git
+    - stage:
+        identifier: qaStage
+        type: Deployment
+        name: qa stage
+        failureStrategies:
+          - onFailure:
+              errors:
+                - All
+              action:
+                type: StageRollback
+        spec:
+          serviceConfig:
+            service:
+              identifier: ManagerServiceLatest
+              name: ManagerService
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifests:
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
                       spec:
-                        connectorRef: my_git_connector
-                        gitFetchType: Branch
-                        branch: master
-                        paths:
-                        - test/spec
-        infrastructure:
-          environment:
-            identifier: stagingInfra
-            type: PreProduction
-            tags:
-              cloud: GCP
-              team: cdp
-          infrastructureDefinition:
-            type: KubernetesDirect
-            spec:
-              connectorRef: myK8sConnector
-              namespace: harness
-              releaseName: testingqa
-        execution:
-          steps:
-          - step:
-              identifier: httpStep1
-              type: Http
-              name: http step 1
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: my_git_connector
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/spec
+          infrastructure:
+            environment:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                cloud: GCP
+                team: cdp
+            infrastructureDefinition:
+              type: KubernetesDirect
               spec:
-                socketTimeoutMillis: 1000
-                method: GET
-                url: http://httpstat.us/500
-          rollbackSteps:
-          - step:
-              identifier: httpStepRollback1
-              type: Http
-              name: http rollback step 1
-              spec:
-                socketTimeoutMillis: 1000
-                method: GET
-                url: https://www.google.com/
+                connectorRef: myK8sConnector
+                namespace: harness
+                releaseName: testingqa
+          execution:
+            steps:
+              - step:
+                  identifier: httpStep1
+                  type: Http
+                  name: http step 1
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: http://httpstat.us/500
+            rollbackSteps:
+              - step:
+                  identifier: httpStepRollback1
+                  type: Http
+                  name: http rollback step 1
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: https://www.google.com/

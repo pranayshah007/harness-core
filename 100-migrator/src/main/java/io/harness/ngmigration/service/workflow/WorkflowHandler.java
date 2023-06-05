@@ -23,6 +23,8 @@ import io.harness.beans.InputSetValidatorType;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -604,6 +606,27 @@ public abstract class WorkflowHandler {
     return ParameterField.createExpressionField(true, "<+input>", null, false);
   }
 
+  private static boolean requiresAdditionOfFetchInstanceStepForCustomDeployments(
+      ServiceDefinitionType serviceDefinitionType, List<ExecutionWrapperConfig> steps) {
+    if (!ServiceDefinitionType.CUSTOM_DEPLOYMENT.equals(serviceDefinitionType)) {
+      return false;
+    }
+    if (EmptyPredicate.isEmpty(steps)) {
+      return true;
+    }
+
+    boolean required = true;
+    for (ExecutionWrapperConfig step : steps) {
+      if (step.getStepGroup() != null && step.getStepGroup().toString().contains("FetchInstanceScript")) {
+        required = false;
+      }
+      if (step.getStep() != null && step.getStep().toString().contains("FetchInstanceScript")) {
+        required = false;
+      }
+    }
+    return required;
+  }
+
   DeploymentStageConfig getDeploymentStageConfig(MigrationContext migrationContext, WorkflowMigrationContext context,
       ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase, WorkflowPhase rollbackPhase) {
     List<ExecutionWrapperConfig> stepGroups = getStepGroups(migrationContext, context, phase);
@@ -617,26 +640,38 @@ public abstract class WorkflowHandler {
 
   DeploymentStageConfig getDeploymentStageConfig(ServiceDefinitionType serviceDefinitionType,
       List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps, CaseFormat caseFormat) {
+    List<ExecutionWrapperConfig> allSteps = new ArrayList<>();
     if (EmptyPredicate.isEmpty(steps)) {
       AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true, caseFormat);
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
-      steps = Collections.singletonList(waitStep);
+      allSteps.add(waitStep);
+    } else {
+      allSteps.addAll(steps);
     }
+
+    if (requiresAdditionOfFetchInstanceStepForCustomDeployments(serviceDefinitionType, steps)) {
+      FetchInstanceScriptStepNode fetchInstanceScriptStepNode = new FetchInstanceScriptStepNode();
+      fetchInstanceScriptStepNode.setName("Fetch Instances");
+      fetchInstanceScriptStepNode.setIdentifier("harnessAutoFetchInstances");
+      FetchInstanceScriptStepInfo stepInfo = new FetchInstanceScriptStepInfo();
+      stepInfo.setDelegateSelectors(ParameterField.createValueField(Collections.emptyList()));
+      fetchInstanceScriptStepNode.setFetchInstanceScriptStepInfo(stepInfo);
+      allSteps.add(
+          0, ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(fetchInstanceScriptStepNode)).build());
+    }
+
     return DeploymentStageConfig.builder()
         .deploymentType(serviceDefinitionType)
-        .service(ServiceYamlV2.builder()
-                     .serviceRef(ParameterField.createValueField("<+input>"))
-                     .serviceInputs(getRuntimeInput())
-                     .build())
+        .service(ServiceYamlV2.builder().serviceRef(RUNTIME_INPUT).serviceInputs(getRuntimeInput()).build())
         .environment(EnvironmentYamlV2.builder()
                          .deployToAll(ParameterField.createValueField(false))
-                         .environmentRef(ParameterField.createValueField("<+input>"))
+                         .environmentRef(RUNTIME_INPUT)
                          .environmentInputs(getRuntimeInput())
                          .serviceOverrideInputs(getRuntimeInput())
                          .infrastructureDefinitions(ParameterField.createExpressionField(true, "<+input>", null, false))
                          .build())
-        .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+        .execution(ExecutionElementConfig.builder().steps(allSteps).rollbackSteps(rollbackSteps).build())
         .build();
   }
 
@@ -974,25 +1009,30 @@ public abstract class WorkflowHandler {
     }
     List<WorkflowPhase> phases = getPhases(workflow);
 
-    if (isEmpty(phases)) {
+    if (isEmpty(phases) || phases.size() == 1) {
       return true;
     }
 
-    return areAllPhasesNonTemplatizedAndHaveSameSvcInfra(phases) || areAllPhasesTemplatizedAndHaveSameSvcInfra(phases);
+    return doAllPhasesUseSingleSvcAndSingleInfra(phases);
   }
 
-  private boolean areAllPhasesNonTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
+  private boolean doAllPhasesUseSingleSvcAndSingleInfra(List<WorkflowPhase> phases) {
     Set<String> serviceIds = new HashSet<>();
     Set<String> infraDefIds = new HashSet<>();
 
     for (WorkflowPhase workflowPhase : phases) {
-      if (workflowPhase.checkServiceTemplatized() || workflowPhase.checkInfraDefinitionTemplatized()) {
-        return false;
+      String serviceId = workflowPhase.checkServiceTemplatized() ? fetchTemplateExpression(workflowPhase, "serviceId")
+                                                                 : workflowPhase.getServiceId();
+      if (serviceId != null) {
+        serviceIds.add(serviceId);
       }
-      String serviceId = workflowPhase.getServiceId();
-      String infraDefinitionId = workflowPhase.getInfraDefinitionId();
-      serviceIds.add(serviceId);
-      infraDefIds.add(infraDefinitionId);
+
+      String infraDefId = workflowPhase.checkInfraDefinitionTemplatized()
+          ? fetchTemplateExpression(workflowPhase, "infraDefinitionId")
+          : workflowPhase.getInfraDefinitionId();
+      if (infraDefId != null) {
+        infraDefIds.add(infraDefId);
+      }
       if (serviceIds.size() > 1 || infraDefIds.size() > 1) {
         return false;
       }
@@ -1000,30 +1040,15 @@ public abstract class WorkflowHandler {
     return true;
   }
 
-  private boolean areAllPhasesTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
-    Set<String> serviceExpressions = new HashSet<>();
-    Set<String> infraDefExpressions = new HashSet<>();
+  private String fetchTemplateExpression(WorkflowPhase workflowPhase, String fieldName) {
+    List<TemplateExpression> templateExpressions = CollectionUtils.emptyIfNull(workflowPhase.getTemplateExpressions());
 
-    for (WorkflowPhase workflowPhase : phases) {
-      if (!workflowPhase.checkServiceTemplatized() || !workflowPhase.checkInfraDefinitionTemplatized()) {
-        return false;
-      }
-      List<TemplateExpression> templateExpressions =
-          CollectionUtils.emptyIfNull(workflowPhase.getTemplateExpressions());
-
-      for (TemplateExpression templateExpression : templateExpressions) {
-        if ("serviceId".equals(templateExpression.getFieldName())) {
-          serviceExpressions.add(templateExpression.getExpression());
-        }
-        if ("infraDefinitionId".equals(templateExpression.getFieldName())) {
-          infraDefExpressions.add(templateExpression.getExpression());
-        }
-      }
-      if (serviceExpressions.size() > 1 || infraDefExpressions.size() > 1) {
-        return false;
+    for (TemplateExpression templateExpression : templateExpressions) {
+      if (fieldName.equals(templateExpression.getFieldName())) {
+        return templateExpression.getExpression();
       }
     }
-    return true;
+    return null;
   }
 
   public List<StepExpressionFunctor> getExpressionFunctors(MigrationContext migrationContext, Workflow workflow) {
@@ -1031,25 +1056,28 @@ public abstract class WorkflowHandler {
     PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
     List<WorkflowPhase> phases = getPhases(workflow);
     PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
-    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
 
     List<StepExpressionFunctor> stepExpressionFunctors = new ArrayList<>();
 
     if (prePhaseStep != null && EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
-      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Pre Deployment").build();
       prePhaseStep.setName("Pre Deployment");
+      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase()
+                                   .name("Pre Deployment")
+                                   .phaseSteps(Collections.singletonList(prePhaseStep))
+                                   .build();
       stepExpressionFunctors.addAll(getFunctorForPhase(context, prePhase));
     }
 
     if (EmptyPredicate.isNotEmpty(phases)) {
-      phases.stream()
-          .map(phase -> getFunctorForPhase(context, phase))
-          .forEach(functors -> stepExpressionFunctors.addAll(functors));
+      phases.stream().map(phase -> getFunctorForPhase(context, phase)).forEach(stepExpressionFunctors::addAll);
     }
 
     if (postPhaseStep != null && EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
-      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Post Deployment").build();
       postPhaseStep.setName("Post Deployment");
+      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase()
+                                    .name("Post Deployment")
+                                    .phaseSteps(Collections.singletonList(postPhaseStep))
+                                    .build();
       stepExpressionFunctors.addAll(getFunctorForPhase(context, postPhase));
     }
 

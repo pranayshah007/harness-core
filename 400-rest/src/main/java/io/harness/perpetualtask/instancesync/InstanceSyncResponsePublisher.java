@@ -9,14 +9,13 @@ package io.harness.perpetualtask.instancesync;
 
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
-import static java.util.Collections.emptyList;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.instancesync.InstanceSyncResourceClient;
+import io.harness.ng.beans.PageResponse;
 import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
@@ -30,8 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 public class InstanceSyncResponsePublisher {
   @Inject private InstanceSyncResourceClient instanceSyncResourceClient;
 
-  public void publishInstanceSyncResponseToNG(String accountIdentifier, String perpetualTaskId,
-      DelegateResponseData instanceSyncPerpetualTaskResponse, boolean referenceFalseKryoSerializer) {
+  public void publishInstanceSyncResponseToNG(
+      String accountIdentifier, String perpetualTaskId, DelegateResponseData instanceSyncPerpetualTaskResponse) {
     if (instanceSyncPerpetualTaskResponse == null) {
       log.error("Instance sync perpetual task response is null for accountIdentifier : {} and perpetualTaskId : {}",
           accountIdentifier, perpetualTaskId);
@@ -40,14 +39,8 @@ public class InstanceSyncResponsePublisher {
     int retry = 0;
     while (!response && retry < 3) {
       try {
-        if (referenceFalseKryoSerializer) {
-          response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponseV2(
-              accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
-        } else {
-          response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
-              accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
-        }
-
+        response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
+            accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
       } catch (Exception exception) {
         log.error(
             "Error occured while sending instance sync perpetual task response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
@@ -86,14 +79,16 @@ public class InstanceSyncResponsePublisher {
         accountIdentifier, perpetualTaskId);
   }
 
-  public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
+  public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, int page, int size, String accountId) {
     try {
-      return getResponse(instanceSyncResourceClient.getInstanceSyncTaskDetails(accountId, perpetualTaskId));
+      return getResponse(instanceSyncResourceClient.getInstanceSyncTaskDetails(perpetualTaskId, page, size, accountId));
     } catch (Exception exception) {
       log.error(
           "Error occurred while sending fetch Task Details response from NG to CG for accountIdentifier : {} and perpetualTaskId : {}",
           accountId, perpetualTaskId, exception);
     }
-    return InstanceSyncTaskDetails.newBuilder().addAllDetails(emptyList()).build();
+    return InstanceSyncTaskDetails.builder()
+        .details(PageResponse.<DeploymentReleaseDetails>builder().empty(true).build())
+        .build();
   }
 }

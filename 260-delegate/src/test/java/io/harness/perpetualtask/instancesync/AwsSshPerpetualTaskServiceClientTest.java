@@ -74,8 +74,7 @@ public class AwsSshPerpetualTaskServiceClientTest extends WingsBaseTest {
             PerpetualTaskClientContext.builder()
                 .clientParams(ImmutableMap.of(InstanceSyncConstants.HARNESS_APPLICATION_ID, APP_ID,
                     InstanceSyncConstants.INFRASTRUCTURE_MAPPING_ID, INFRA_MAPPING_ID))
-                .build(),
-            true);
+                .build());
 
     assertThat(taskParams.getRegion()).isEqualTo("us-east-1");
     assertThat(taskParams.getAwsConfig()).isNotNull();

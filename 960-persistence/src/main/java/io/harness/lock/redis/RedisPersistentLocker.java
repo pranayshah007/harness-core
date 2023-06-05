@@ -103,11 +103,6 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
   }
 
   @Override
-  public AcquiredLock tryToAcquireEphemeralLock(Class entityClass, String entityId, Duration timeout) {
-    return tryToAcquireLock(entityClass, entityId, timeout);
-  }
-
-  @Override
   public AcquiredLock tryToAcquireLock(String name, Duration timeout) {
     try {
       return acquireLock(name, timeout);
@@ -145,8 +140,13 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
   }
 
   @Override
-  public AcquiredLock tryToAcquireEphemeralLock(String name, Duration timeout) {
-    return tryToAcquireLock(name, timeout);
+  public AcquiredLock waitToAcquireLockOptional(String name, Duration lockTimeout, Duration waitTimeout) {
+    try {
+      return waitToAcquireLock(name, lockTimeout, waitTimeout);
+    } catch (WingsException ex) {
+      log.error("Failed to acquire a Redis lock {} ", ex);
+      return null;
+    }
   }
 
   @Override

@@ -67,6 +67,7 @@ import io.harness.pms.utils.InjectorUtils;
 import io.harness.ssca.cd.CdSscaBeansRegistrar;
 import io.harness.ssca.cd.execution.filtercreator.CdSscaStepFilterJsonCreator;
 import io.harness.ssca.cd.execution.variablecreator.CdSscaStepVariableCreator;
+import io.harness.ssca.plancreator.CdSscaEnforcementStepPlanCreator;
 import io.harness.ssca.plancreator.CdSscaOrchestrationStepPlanCreator;
 import io.harness.steps.approval.ApprovalStepVariableCreator;
 import io.harness.steps.approval.step.custom.CustomApprovalStepPlanCreator;
@@ -153,6 +154,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new GroupPlanCreatorV1());
     planCreators.add(new CdSscaOrchestrationStepPlanCreator());
     planCreators.add(new StepGroupPMSPlanCreatorV2());
+    planCreators.add(new CdSscaEnforcementStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;

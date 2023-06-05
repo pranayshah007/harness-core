@@ -14,6 +14,7 @@ import static io.harness.common.ParameterFieldHelper.hasListValue;
 import static io.harness.common.ParameterFieldHelper.hasStringValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.Utils.isNotInstanceOf;
 
 import static java.lang.String.format;
 
@@ -29,16 +30,16 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
 @UtilityClass
 public class IndividualConfigFileStepValidator {
-  public static void validateConfigFileAttributes(
+  public static Set<String> validateConfigFileAttributes(
       final String configFileIdentifier, ConfigFileAttributes finalConfigFile, boolean allowExpression) {
     StoreConfig store = finalConfigFile.getStore().getValue().getSpec();
-
     if (ManifestStoreType.isInGitSubset(store.getKind())) {
       validateGitStoreConfig(configFileIdentifier, (GitStoreConfig) store, allowExpression);
     }
@@ -46,6 +47,7 @@ public class IndividualConfigFileStepValidator {
     if (HARNESS_STORE_TYPE.equals(store.getKind())) {
       validateHarnessStore(configFileIdentifier, (HarnessStore) store, allowExpression);
     }
+    return store.validateAtRuntime();
   }
 
   private static void validateGitStoreConfig(
@@ -86,31 +88,35 @@ public class IndividualConfigFileStepValidator {
 
   private static void validateFiles(
       ParameterField<List<String>> files, final String configFileIdentifier, boolean allowExpression) {
-    if (hasListValue(files, allowExpression)) {
-      List<String> filesValue = getParameterFieldValue(files);
-      if (isNotEmpty(filesValue)) {
-        filesValue.forEach(file -> {
-          if (isEmpty(file)) {
-            throw new InvalidRequestException(format(
-                "Config file reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
-          }
-        });
+    if (isNotInstanceOf(String.class, getParameterFieldValue(files))) {
+      if (hasListValue(files, allowExpression)) {
+        List<String> filesValue = getParameterFieldValue(files);
+        if (isNotEmpty(filesValue)) {
+          filesValue.forEach(file -> {
+            if (isEmpty(file)) {
+              throw new InvalidRequestException(format(
+                  "Config file reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
+            }
+          });
+        }
       }
     }
   }
 
   private static void validateSecretFiles(
       ParameterField<List<String>> secretFiles, final String configFileIdentifier, boolean allowExpression) {
-    if (hasListValue(secretFiles, allowExpression)) {
-      List<String> secretFilesValue = getParameterFieldValue(secretFiles);
-      if (isNotEmpty(secretFilesValue)) {
-        secretFilesValue.forEach(secretFileRef -> {
-          if (isEmpty(secretFileRef)) {
-            throw new InvalidRequestException(
-                format("Config file secret reference cannot be null or empty, ConfigFile identifier: %s",
-                    configFileIdentifier));
-          }
-        });
+    if (isNotInstanceOf(String.class, getParameterFieldValue(secretFiles))) {
+      if (hasListValue(secretFiles, allowExpression)) {
+        List<String> secretFilesValue = getParameterFieldValue(secretFiles);
+        if (isNotEmpty(secretFilesValue)) {
+          secretFilesValue.forEach(secretFileRef -> {
+            if (isEmpty(secretFileRef)) {
+              throw new InvalidRequestException(
+                  format("Config file secret reference cannot be null or empty, ConfigFile identifier: %s",
+                      configFileIdentifier));
+            }
+          });
+        }
       }
     }
   }

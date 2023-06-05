@@ -39,6 +39,10 @@ import org.jetbrains.annotations.NotNull;
 public class SshSessionManager {
   private static ConcurrentMap<String, Session> sessions = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, List<Session>> simplexSessions = new ConcurrentHashMap<>();
+  private static final String SESSION_FETCH_INFO_MESSAGE = "Fetching session for executionId : {}, hostName: {} ";
+  private static final String SESSION_NOT_FOUND_INFO_MESSAGE =
+      "No session found. Creating new session for executionId : {}, hostName: {}";
+  private static final String SESSION_CONNECTION_FAILURE_MESSAGE = "Session connection test failed. Reopen new session";
 
   /**
    * Gets cached session.
@@ -47,24 +51,31 @@ public class SshSessionManager {
    * @param logCallback
    * @return the cached session
    */
-  public static synchronized Session getCachedSession(SshSessionConfig config, LogCallback logCallback) {
+  public static Session getCachedSession(SshSessionConfig config, LogCallback logCallback) {
     String key = getKey(config.getExecutionId(), config.getHost());
-    log.info("Fetch session for executionId : {}, hostName: {} ", config.getExecutionId(), config.getHost());
+    return getOrCreateSession(key, config, logCallback);
+  }
 
-    Session cachedSession = sessions.computeIfAbsent(key, s -> {
-      log.info("No session found. Create new session for executionId : {}, hostName: {}", config.getExecutionId(),
-          config.getHost());
-      return getSession(config, logCallback);
+  private static Session getOrCreateSession(String key, SshSessionConfig config, LogCallback logCallback) {
+    log.info(SESSION_FETCH_INFO_MESSAGE, config.getExecutionId(), config.getHost());
+    return sessions.computeIfAbsent(key, s -> {
+      log.info(SESSION_NOT_FOUND_INFO_MESSAGE, config.getExecutionId(), config.getHost());
+      Session session = getSession(config, logCallback);
+      return testSession(key, config, session, logCallback);
     });
+  }
 
+  private static Session testSession(
+      String key, SshSessionConfig config, Session cachedSession, LogCallback logCallback) {
     // Unnecessary but required test before session reuse.
     // test channel. http://stackoverflow.com/questions/16127200/jsch-how-to-keep-the-session-alive-and-up
     try {
       testSession(config, cachedSession);
     } catch (Exception exception) {
-      log.error("Session connection test failed. Reopen new session", exception);
+      log.error(SESSION_CONNECTION_FAILURE_MESSAGE, exception);
       cachedSession = sessions.merge(key, cachedSession, (session1, session2) -> getSession(config, logCallback));
     }
+
     return cachedSession;
   }
 

@@ -12,6 +12,7 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -78,6 +79,12 @@ public class GitIntegrationUtils {
                && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE))
         ? true
         : false;
+  }
+
+  public boolean checkIfApiAccessEnabledForBitbucketConnector(ConnectorInfoDTO connectorInfoDTO) {
+    BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    BitbucketApiAccessDTO apiAccess = config.getApiAccess();
+    return (apiAccess != null) ? true : false;
   }
 
   public String replaceAccountScopeFromConnectorId(String connectorIdentifier) {

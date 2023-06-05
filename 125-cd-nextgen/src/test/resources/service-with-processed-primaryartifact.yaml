@@ -1,27 +1,27 @@
 ---
 service:
-  name: "artsource"
-  identifier: "artsource"
+  name: artsource
+  identifier: artsource
   tags: {}
   serviceDefinition:
     spec:
       artifacts:
         primary:
-          name: "fromtemp1"
+          name: fromtemp1
           template:
-            templateRef: "art_temp1"
-            versionLabel: "v1"
+            templateRef: art_temp1
+            versionLabel: v1
             templateInputs:
-              type: "DockerRegistry"
+              type: DockerRegistry
               spec:
-                tag: "latest"
+                tag: latest
         sidecars:
-        - sidecar:
-            identifier: "sidecar1"
-            type: "DockerRegistry"
-            spec:
-              connectorRef: "connector"
-              imagePath: "nginx"
-              tag: "latest"
-    type: "Kubernetes"
+          - sidecar:
+              identifier: sidecar1
+              type: DockerRegistry
+              spec:
+                connectorRef: connector
+                imagePath: nginx
+                tag: latest
+    type: Kubernetes
   gitOpsEnabled: false

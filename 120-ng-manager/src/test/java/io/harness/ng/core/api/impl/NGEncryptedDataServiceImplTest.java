@@ -46,6 +46,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.beans.SecretText;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -837,12 +838,52 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
                                                .accountIdentifier(accountIdentifier)
                                                .authToken(randomAlphabetic(10))
                                                .build();
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .name(randomAlphabetic(10))
+                                  .spec(SecretTextSpecDTO.builder()
+                                            .secretManagerIdentifier(secretManagerIdentifier)
+                                            .valueType(ValueType.Reference)
+                                            .value(secretRefPath)
+                                            .build())
+                                  .build();
     when(ngConnectorSecretManagerService.getUsingIdentifier(
              accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
         .thenReturn(secretManager);
-    when(vaultEncryptor.validateReference(anyString(), anyString(), any())).thenReturn(true);
-    boolean result = ngEncryptedDataService.validateSecretRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
+    when(vaultEncryptor.validateReference(anyString(), (SecretText) any(), any())).thenReturn(true);
+    boolean result =
+        ngEncryptedDataService.validateSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTOV2);
+    assertThat(result).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateSecretPathGCPSMSuccess() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(VAULT)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder()
+            .name(randomAlphabetic(10))
+            .spec(SecretTextSpecDTO.builder()
+                      .secretManagerIdentifier(secretManagerIdentifier)
+                      .value(secretRefPath)
+                      .valueType(ValueType.Reference)
+                      .additionalMetadata(AdditionalMetadata.builder().value("version", 1).build())
+                      .build())
+            .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManager);
+    when(vaultEncryptor.validateReference(anyString(), (SecretText) any(), any())).thenReturn(true);
+    boolean result =
+        ngEncryptedDataService.validateSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTOV2);
     assertThat(result).isEqualTo(true);
   }
 
@@ -852,6 +893,14 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   public void testValidateSecretPath_Failure() {
     String secretManagerIdentifier = randomAlphabetic(10);
     String secretRefPath = randomAlphabetic(10);
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .name(randomAlphabetic(10))
+                                  .spec(SecretTextSpecDTO.builder()
+                                            .secretManagerIdentifier(secretManagerIdentifier)
+                                            .valueType(ValueType.Reference)
+                                            .value(secretRefPath)
+                                            .build())
+                                  .build();
     SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
                                                .harnessManaged(false)
                                                .encryptionType(VAULT)
@@ -862,11 +911,11 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(
              accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
         .thenReturn(secretManager);
-    when(vaultEncryptor.validateReference(anyString(), anyString(), any()))
+    when(vaultEncryptor.validateReference(anyString(), (SecretText) any(), any()))
         .thenThrow(new SecretManagementException("not able to resolve path"));
-    boolean result = ngEncryptedDataService.validateSecretRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
-    assertThat(result).isEqualTo(false);
+    boolean result =
+        ngEncryptedDataService.validateSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTOV2);
+    assertThat(result).isFalse();
   }
 
   @Test

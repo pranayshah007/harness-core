@@ -12,7 +12,8 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,7 +27,7 @@ public class PluginInfoProviderHelper {
   @Inject private DefaultPluginInfoProvider defaultPluginInfoProvider;
   @Inject(optional = true) private Set<PluginInfoProvider> pluginInfoProviderSet;
 
-  public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseList getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
     Optional<PluginInfoProvider> pluginInfoProvider = emptyIfNull(pluginInfoProviderSet)
                                                           .stream()
                                                           .map(provider -> {
@@ -39,8 +40,16 @@ public class PluginInfoProviderHelper {
                                                           .filter(Objects::nonNull)
                                                           .findFirst();
     if (pluginInfoProvider.isPresent()) {
-      return pluginInfoProvider.get().getPluginInfo(request);
+      if (pluginInfoProvider.get().willReturnMultipleContainers()) {
+        return pluginInfoProvider.get().getPluginInfoList(request, usedPorts);
+      }
+      return convertToList(pluginInfoProvider.get().getPluginInfo(request, usedPorts));
     }
-    return defaultPluginInfoProvider.getPluginInfo(request);
+
+    return convertToList(defaultPluginInfoProvider.getPluginInfo(request, usedPorts));
+  }
+
+  private PluginCreationResponseList convertToList(PluginCreationResponseWrapper response) {
+    return PluginCreationResponseList.newBuilder().addResponse(response).build();
   }
 }

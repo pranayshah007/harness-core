@@ -18,11 +18,13 @@ import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraUtils;
+import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.jira.JiraIssueNG;
 import io.harness.timescaledb.tables.pojos.CeRecommendations;
 
@@ -46,6 +48,8 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private ECSRecommendationDAO ecsRecommendationDAO;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
+  @Autowired private RuleExecutionDAO ruleExecutionDAO;
+  @Autowired private AzureRecommendationDAO azureRecommendationDAO;
   private static final long BATCH_SIZE = 100;
   private static final HashSet<String> APPLIED_CATEGORIES = new HashSet<>(Arrays.asList("done", "complete"));
 
@@ -97,6 +101,12 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
                 break;
               case EC2_INSTANCE:
                 ec2RecommendationDAO.updateJiraInEC2Recommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case GOVERNANCE:
+                ruleExecutionDAO.updateJiraInGovernanceRecommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case AZURE_INSTANCE:
+                azureRecommendationDAO.updateJiraInAzureRecommendation(accountId, recommendation.getId(), jiraDetails);
                 break;
               default:
                 log.warn("Unknown resource type {} for recommendation id {}", recommendation.getResourcetype(),

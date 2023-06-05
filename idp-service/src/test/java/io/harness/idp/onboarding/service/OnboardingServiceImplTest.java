@@ -27,6 +27,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.idp.common.CommonUtils;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
@@ -86,6 +87,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Mock GitIntegrationService gitIntegrationService;
   @Mock CatalogConnectorRepository catalogConnectorRepository;
   @Mock StatusInfoService statusInfoService;
+  @Mock SetupUsageProducer setupUsageProducer;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
   final OnboardingModuleConfig onboardingModuleConfig =
       OnboardingModuleConfig.builder()
@@ -215,6 +217,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
                                       .path("idp")));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
+    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(delegateSelectorsCache).put(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 

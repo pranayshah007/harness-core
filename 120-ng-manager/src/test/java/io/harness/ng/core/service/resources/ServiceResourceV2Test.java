@@ -39,7 +39,6 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
-import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
@@ -52,6 +51,7 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
@@ -245,7 +245,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   public void testListTemplate() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
     ResponseDTO<ServiceResponse> serviceResponseResponseDTO =
-        serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+        serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, false);
     assertThat(serviceResponseResponseDTO.getEntityTag()).isNull();
   }
 
@@ -254,7 +254,8 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListTemplateForNotFoundException() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
-    assertThatThrownBy(() -> serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false))
+    assertThatThrownBy(
+        () -> serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, false))
         .hasMessage("Service with identifier [identifier] in project [projId], org [orgId] not found");
   }
 
@@ -526,40 +527,40 @@ public class ServiceResourceV2Test extends CategoryTest {
     }
 
     String updatedYaml = "service:\n"
-        + "  name: \"arf4\"\n"
-        + "  identifier: \"arf4\"\n"
+        + "  name: arf4\n"
+        + "  identifier: arf4\n"
         + "  tags: {}\n"
         + "  serviceDefinition:\n"
         + "    spec:\n"
         + "      artifacts:\n"
         + "        primary:\n"
-        + "          primaryArtifactRef: \"<+input>\"\n"
+        + "          primaryArtifactRef: <+input>\n"
         + "          sources:\n"
-        + "          - spec:\n"
-        + "              connectorRef: \"artifconn1\"\n"
-        + "              artifactPath: \"adoptopenjdk/openjdk8\"\n"
-        + "              tag: \"<+input>\"\n"
-        + "              repository: \"docker\"\n"
-        + "              repositoryFormat: \"docker\"\n"
-        + "              repositoryUrl: \"https://harness-docker.jfrog.io\"\n"
-        + "            identifier: \"s\"\n"
-        + "            type: \"ArtifactoryRegistry\"\n"
-        + "          - spec:\n"
-        + "              connectorRef: \"account.harnessImage\"\n"
-        + "              imagePath: \"library/nginx\"\n"
-        + "              tag: \"<+input>\"\n"
-        + "            identifier: \"sfdff\"\n"
-        + "            type: \"DockerRegistry\"\n"
-        + "          - spec:\n"
-        + "              connectorRef: \"artifconn1\"\n"
-        + "              artifactPath: \"adoptopenjdk/openjdk8\"\n"
-        + "              tag: \"<+input>\"\n"
-        + "              repository: \"docker\"\n"
-        + "              repositoryFormat: \"docker\"\n"
-        + "              repositoryUrl: \"https://harness-docker.jfrog.io\"\n"
-        + "            identifier: \"dhjjadnck\"\n"
-        + "            type: \"ArtifactoryRegistry\"\n"
-        + "    type: \"Kubernetes\"\n";
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "                repositoryUrl: https://harness-docker.jfrog.io\n"
+        + "              identifier: s\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: account.harnessImage\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: sfdff\n"
+        + "              type: DockerRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "                repositoryUrl: https://harness-docker.jfrog.io\n"
+        + "              identifier: dhjjadnck\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "    type: Kubernetes\n";
 
     assertThat(updatedYaml).isEqualTo(service.getYaml());
   }

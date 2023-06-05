@@ -282,12 +282,6 @@ public class AwsApiHelperService {
       AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePathRegex) {
     List<BuildDetails> buildDetailsList = Lists.newArrayList();
 
-    boolean isExpression = filePathRegex.contains("*") || filePathRegex.endsWith("/");
-
-    if (isExpression == false) {
-      return null;
-    }
-
     try {
       boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);
 

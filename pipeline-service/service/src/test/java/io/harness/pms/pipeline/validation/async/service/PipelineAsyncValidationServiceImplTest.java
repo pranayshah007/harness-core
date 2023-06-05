@@ -22,6 +22,7 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
+import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.repositories.pipeline.validation.async.PipelineValidationEventRepository;
 import io.harness.rule.Owner;
 
@@ -39,6 +40,7 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
   @Inject PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Inject PipelineGovernanceService pipelineGovernanceService;
   PipelineAsyncValidationServiceImpl asyncValidationService;
+  PipelineRefreshService pipelineRefreshService;
 
   PipelineEntity pipeline;
   String fqn;
@@ -54,8 +56,8 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
                    .build();
     fqn = "acc/org/proj/pipeline";
     Executor executor = Mockito.mock(Executor.class);
-    asyncValidationService = new PipelineAsyncValidationServiceImpl(
-        pipelineValidationEventRepository, executor, pipelineTemplateHelper, pipelineGovernanceService);
+    asyncValidationService = new PipelineAsyncValidationServiceImpl(pipelineValidationEventRepository, executor,
+        pipelineTemplateHelper, pipelineGovernanceService, pipelineRefreshService);
     Reflect.on(asyncValidationService).set("executor", executor);
   }
 

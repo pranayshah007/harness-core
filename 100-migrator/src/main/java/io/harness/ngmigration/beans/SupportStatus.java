@@ -17,7 +17,7 @@ public enum SupportStatus {
   // We cannot migrate this step. Workflow migration will not happen if this step exists
   UNSUPPORTED,
   // There is no equivalent step in NG. We will remove such workflows & proceed
-  IGNORE,
+  NO_LONGER_NEEDED,
   // Requires Manual intervention. We will create such steps but will require manual effort by the customers
   MANUAL_EFFORT
 }

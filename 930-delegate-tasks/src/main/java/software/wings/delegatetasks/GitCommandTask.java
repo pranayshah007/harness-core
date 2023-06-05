@@ -32,6 +32,7 @@ import io.harness.git.ExceptionSanitizer;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.shell.ssh.exception.JschClientException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -172,6 +173,15 @@ public class GitCommandTask extends AbstractDelegateRunnableTask {
               .errorMessage(GIT_YAML_LOG_PREFIX + "Git Operation not supported")
               .build();
       }
+    } catch (JschClientException ex) {
+      log.error(GIT_YAML_LOG_PREFIX + "Exception in processing GitTask {}",
+          ExceptionSanitizer.sanitizeTheMessage(ex.getMessage()));
+      GitCommandExecutionResponseBuilder builder =
+          GitCommandExecutionResponse.builder()
+              .gitCommandStatus(GitCommandStatus.FAILURE)
+              .errorMessage(ExceptionSanitizer.sanitizeTheMessage(ex.getMessage()))
+              .errorCode(getErrorCode(ex));
+      return builder.build();
     } catch (Exception ex) {
       log.error(GIT_YAML_LOG_PREFIX + "Exception in processing GitTask {}", ExceptionSanitizer.sanitizeForLogging(ex));
       GitCommandExecutionResponseBuilder builder =

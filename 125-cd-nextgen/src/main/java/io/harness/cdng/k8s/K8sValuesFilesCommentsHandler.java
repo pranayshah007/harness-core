@@ -17,22 +17,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public class K8sValuesFilesCommentsHandler {
   public List<String> removeComments(List<String> valuesFiles, String manifestType) {
     if (ManifestType.K8Manifest.equals(manifestType) || ManifestType.HelmChart.equals(manifestType)) {
-      return removeCommentsFromValuesYamlFiles(valuesFiles);
-    }
-    /*
+      /*
         ToDo: handle other manifest types like OpenShift and Kustomize
         else if (ManifestType.OpenshiftTemplate.equals(manifestType)) {}
         else if (ManifestType.Kustomize.equals(manifestType)) {}
-     */
-    return new ArrayList<>();
+      */
+      try {
+        return removeCommentsFromValuesYamlFiles(valuesFiles);
+      } catch (Exception e) {
+        // In case we hit any exception, return original files
+        log.error("Unable to remove comments, returning files as is", e);
+        return valuesFiles;
+      }
+    }
+    // if any other ManifestType - return override files as it is
+    return valuesFiles;
   }
   private List<String> removeCommentsFromValuesYamlFiles(List<String> valuesFiles) {
     List<String> modifiedValuesFiles = new ArrayList<>();

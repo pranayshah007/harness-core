@@ -597,19 +597,25 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 
 	// Install agent artifacts if not present
 	var agentPath = ""
-	if r.language == "csharp" {
-		csharpAgentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
+	if r.language == "csharp" || r.language == "python"{
+		zipAgentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
 		if err != nil {
 			return nil, err
 		}
-		r.log.Infow("agent downloaded to: " + csharpAgentPath)
+		r.log.Infow("agent downloaded to: " + zipAgentPath)
 		// Unzip everything at agentInstallDir/dotnet-agent.zip
-		err = unzipSource(filepath.Join(csharpAgentPath, "dotnet-agent.zip"), csharpAgentPath, r.log, r.fs)
+		switch r.language {
+		case "csharp":
+			err = unzipSource(filepath.Join(zipAgentPath, "dotnet-agent.zip"), zipAgentPath, r.log, r.fs)
+		default:
+			err = unzipSource(filepath.Join(zipAgentPath, fmt.Sprintf("%s-agent.zip", r.language)), zipAgentPath, r.log, r.fs)
+		}
+
 		if err != nil {
-			r.log.Errorw("could not unarchive the dotnet agent", zap.Error(err))
+			r.log.Errorw(fmt.Sprintf("could not unarchive the %s agent", r.language), zap.Error(err))
 			return nil, err
 		}
-		agentPath = csharpAgentPath
+		agentPath = zipAgentPath
 	}
 
 	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))

@@ -7,9 +7,17 @@
 
 package io.harness.azure.impl.utility;
 
+import static io.harness.azure.utility.AzureUtils.EXECUTE_REST_CALL_MAX_ATTEMPTS;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,15 +25,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
 import com.azure.core.management.AzureEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
+import okhttp3.ResponseBody;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDP)
 @PrepareForTest({AzureUtils.class})
@@ -87,5 +101,51 @@ public class AzureUtilsTest extends CategoryTest {
   public void testGetPrivateKeyFromPEMFile() throws IOException {
     byte[] pemFileInBytes = Files.readAllBytes(Paths.get(CERT_FILE_PATH));
     AzureUtils.getPrivateKeyFromPEMFile(pemFileInBytes);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testExecuteRestCall() throws IOException {
+    Map<String, String> map = Map.of("key", "value");
+
+    Call<Map<String, String>> callRequest = PowerMockito.mock(Call.class);
+    doReturn(callRequest).when(callRequest).clone();
+    doReturn(Response.success(map)).when(callRequest).execute();
+
+    Map<String, String> result = AzureUtils.executeRestCall(callRequest, null);
+    assertThat(result).isEqualTo(map);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testExecuteRestCall_FailsWithError() throws IOException {
+    Call<Map<String, String>> callRequest = PowerMockito.mock(Call.class);
+    doReturn(callRequest).when(callRequest).clone();
+    doReturn(Response.error(503, mock(ResponseBody.class))).when(callRequest).execute();
+
+    WingsException ex = WingsException.builder().message("custom exception").build();
+
+    assertThatThrownBy(() -> AzureUtils.executeRestCall(callRequest, ex))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("custom exception");
+    verify(callRequest, times(EXECUTE_REST_CALL_MAX_ATTEMPTS)).execute();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testExecuteRestCall_FailsWithException() throws IOException {
+    Call<Map<String, String>> callRequest = PowerMockito.mock(Call.class);
+    doReturn(callRequest).when(callRequest).clone();
+    doThrow(new IOException("connection error")).when(callRequest).execute();
+
+    WingsException ex = WingsException.builder().message("custom exception").build();
+
+    assertThatThrownBy(() -> AzureUtils.executeRestCall(callRequest, ex))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("custom exception");
+    verify(callRequest, times(EXECUTE_REST_CALL_MAX_ATTEMPTS)).execute();
   }
 }

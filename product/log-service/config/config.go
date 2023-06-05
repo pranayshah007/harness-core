@@ -62,6 +62,14 @@ type Config struct {
 		GcpProject  string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_PROJECT"`
 		GcpJsonPath string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_JSON_PATH"`
 	}
+
+	GenAI struct {
+		Endpoint          string `envconfig:"LOG_SERVICE_GENAI_ENDPOINT"`
+		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET"`
+		Provider          string `envconfig:"LOG_SERVICE_GENAI_PROVIDER" default:"azureopenai"`
+		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
+		UseJSONResponse   bool   `envconfig:"LOG_SERVICE_GENAI_USE_JSON_RESPONSE" default:"false"`
+	}
 }
 
 // Load loads the configuration from the environment.

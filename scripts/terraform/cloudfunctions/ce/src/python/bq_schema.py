@@ -576,6 +576,16 @@ unifiedTableTableSchema = [
     },
     {
         "mode": "NULLABLE",
+        "name": "gcpInvoiceMonth",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "gcpCostType",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
         "name": "region",
         "type": "STRING"
     },
@@ -623,6 +633,26 @@ unifiedTableTableSchema = [
         "mode": "NULLABLE",
         "name": "awsUnblendedCost",
         "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsEffectiveCost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsAmortisedCost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsNetAmortisedCost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsLineItemType",
+        "type": "STRING"
     },
     {
         "mode": "NULLABLE",

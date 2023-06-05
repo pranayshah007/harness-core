@@ -326,8 +326,8 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     Call<RestResponse<SamlSettings>> request = mock(Call.class);
     doReturn(request)
         .when(managerClient)
-        .updateSAMLMetadata(
-            anyString(), anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+        .updateSAMLMetadata(anyString(), anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+            any(), any(), any(), any());
 
     SamlSettings samlSettings = SamlSettings.builder()
                                     .accountId(ACCOUNT_ID)
@@ -345,9 +345,9 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
     doReturn(Response.success(mockSSOConfigRes)).when(request).execute();
 
-    SSOConfig responseSSOConfig =
-        authenticationSettingsServiceImpl.updateSAMLMetadata(anyString(), anyString(), any(), anyString(), anyString(),
-            anyBoolean(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+    SSOConfig responseSSOConfig = authenticationSettingsServiceImpl.updateSAMLMetadata(anyString(), anyString(), any(),
+        anyString(), anyString(), anyBoolean(), anyString(), anyString(), anyString(), anyString(), anyString(),
+        anyString(), anyBoolean(), anyString(), anyString());
 
     assertNotNull(responseSSOConfig);
     assertThat(responseSSOConfig.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);

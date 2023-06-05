@@ -8,6 +8,7 @@
 package io.harness.perpetualtask;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.network.SafeHttpCall.execute;
 
 import static java.lang.String.format;
@@ -17,14 +18,21 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.DecryptableEntity;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
+import io.harness.ng.beans.PageResponse;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncData;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncStatus;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesync.InstanceSyncV2Request;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
@@ -37,18 +45,19 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
+  private static final int PAGE_SIZE = 100;
   private static final String FAILURE_RESPONSE_MSG =
       "Failed to fetch InstanceSyncTaskDetails for perpetual task Id: [%s], accountId [%s]";
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject private SecretDecryptionService secretDecryptionService;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -61,10 +70,10 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
         InstanceSyncResponseV2.newBuilder().setPerpetualTaskId(taskId.getId()).setAccountId(accountId);
     try {
       InstanceSyncTaskDetails instanceSyncTaskDetails =
-          execute(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), accountId));
+          execute(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), 0, PAGE_SIZE, accountId));
 
-      if (Objects.isNull(instanceSyncTaskDetails)
-          || CollectionUtils.isEmpty(instanceSyncTaskDetails.getDetailsList())) {
+      if (Objects.isNull(instanceSyncTaskDetails) || Objects.isNull(instanceSyncTaskDetails.getDetails())
+          || instanceSyncTaskDetails.getDetails().isEmpty()) {
         log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
         publishInstanceSyncResult(taskId, accountId,
             InstanceSyncResponseV2.newBuilder()
@@ -75,25 +84,42 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                 .build());
         return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
       }
-      List<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetailsList();
 
-      for (DeploymentReleaseDetails deploymentReleaseDetails : deploymentReleaseDetailsList) {
-        InstanceSyncData.Builder instanceSyncData = InstanceSyncData.newBuilder();
-        List<ServerInstanceInfo> serverInstanceInfos =
-            retrieveServiceInstances(taskId, params, deploymentReleaseDetails, accountId, instanceSyncData);
+      InstanceSyncV2Request instanceSyncV2Request = createRequest(taskId.getId(), params);
 
-        createBatchAndPublish(batchInstanceCount, batchReleaseDetailsCount, responseBuilder, instanceSyncData.build(),
-            serverInstanceInfos, instanceSyncTaskDetails, taskId, accountId);
+      long totalPages = instanceSyncTaskDetails.getDetails().getTotalPages();
+
+      for (int page = 0; page < totalPages; page++) {
+        if (page != 0) {
+          instanceSyncTaskDetails = execute(
+              delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), page, PAGE_SIZE, accountId));
+        }
+
+        if (Objects.isNull(instanceSyncTaskDetails) || instanceSyncTaskDetails.getDetails().isEmpty()) {
+          log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
+          continue;
+        }
+        PageResponse<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetails();
+
+        for (DeploymentReleaseDetails deploymentReleaseDetails : deploymentReleaseDetailsList.getContent()) {
+          InstanceSyncData.Builder instanceSyncData = InstanceSyncData.newBuilder();
+          List<ServerInstanceInfo> serverInstanceInfos =
+              getServiceInstancesFromCluster(instanceSyncV2Request, deploymentReleaseDetails, instanceSyncData);
+
+          createBatchAndPublish(batchInstanceCount, batchReleaseDetailsCount, responseBuilder, instanceSyncData.build(),
+              serverInstanceInfos, instanceSyncTaskDetails, taskId, accountId);
+        }
       }
       if (batchInstanceCount.get() != 0 || batchReleaseDetailsCount.get() != 0) {
         publishInstanceSyncResult(taskId, accountId,
             responseBuilder
-                .setStatus(
-                    InstanceSyncStatus.newBuilder().setExecutionStatus(CommandExecutionStatus.SUCCESS.name()).build())
+                .setStatus(InstanceSyncStatus.newBuilder()
+                               .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                               .setIsSuccessful(true)
+                               .build())
                 .build());
       }
       return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
-
     } catch (IOException ioException) {
       log.error(format(FAILURE_RESPONSE_MSG, taskId.getId(), accountId));
       return PerpetualTaskResponse.builder()
@@ -102,22 +128,24 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
           .build();
     }
   }
-  private List<ServerInstanceInfo> retrieveServiceInstances(PerpetualTaskId taskId, PerpetualTaskExecutionParams params,
-      DeploymentReleaseDetails deploymentReleaseDetails, String accountId, InstanceSyncData.Builder instanceSyncData) {
+
+  private List<ServerInstanceInfo> getServiceInstancesFromCluster(InstanceSyncV2Request instanceSyncV2Request,
+      DeploymentReleaseDetails deploymentReleaseDetails, InstanceSyncData.Builder instanceSyncData) {
     try {
-      List<ServerInstanceInfo> serverInstanceInfos = retrieveServiceInstances(taskId, params, deploymentReleaseDetails);
+      List<ServerInstanceInfo> serverInstanceInfos =
+          retrieveServiceInstances(instanceSyncV2Request, deploymentReleaseDetails);
       instanceSyncData.setServerInstanceInfo(ByteString.copyFrom(kryoSerializer.asBytes(serverInstanceInfos)))
           .setStatus(InstanceSyncStatus.newBuilder()
                          .setIsSuccessful(true)
                          .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
                          .build())
-          .setTaskInfoId(taskId.getId())
-          .setDeploymentType(getDeploymentType(serverInstanceInfos.get(0)))
+          .setTaskInfoId(deploymentReleaseDetails.getTaskInfoId())
+          .setDeploymentType(deploymentReleaseDetails.getDeploymentType())
           .build();
       return serverInstanceInfos;
     } catch (Exception ex) {
-      log.error("Failed to fetch InstanceSyncTaskDetails for perpetual task Id: {} for accountId: {}", taskId.getId(),
-          accountId);
+      log.error("Failed to fetch InstanceSyncTaskDetails for perpetual task Id: {} for accountId: {}",
+          instanceSyncV2Request.getPerpetualTaskId(), instanceSyncV2Request.getAccountId());
       instanceSyncData
           .setStatus(
               InstanceSyncStatus.newBuilder()
@@ -126,7 +154,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                       deploymentReleaseDetails))
                   .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
                   .build())
-          .setTaskInfoId(taskId.getId())
+          .setTaskInfoId(deploymentReleaseDetails.getTaskInfoId())
           .build();
       return Collections.emptyList();
     }
@@ -155,15 +183,27 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
     }
   }
 
+  protected void decryptConnector(ConnectorInfoDTO connectorInfoDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    List<DecryptableEntity> decryptableEntities = connectorInfoDTO.getConnectorConfig().getDecryptableEntities();
+    if (isNotEmpty(decryptableEntities)) {
+      decryptableEntities.forEach(entity -> {
+        secretDecryptionService.decrypt(entity, encryptedDataDetails);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, encryptedDataDetails);
+      });
+    }
+  }
+
   @Override
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return false;
   }
 
   protected abstract String getAccountId(@NotNull PerpetualTaskExecutionParams params);
-  protected abstract String getDeploymentType(ServerInstanceInfo serverInstanceInfos);
+
+  protected abstract InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params);
+
   protected abstract List<ServerInstanceInfo> retrieveServiceInstances(
-      PerpetualTaskId taskId, PerpetualTaskExecutionParams params, DeploymentReleaseDetails details);
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details);
 
   private void publishInstanceSyncResult(PerpetualTaskId taskId, String accountId, InstanceSyncResponseV2 response) {
     try {

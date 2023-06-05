@@ -63,16 +63,16 @@ public class InstanceSyncResource {
   @DelegateAuth
   @GET
   @Path("instance-sync-ng-v2/task/{perpetualTaskId}/details")
-  @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
-  public Response fetchInstanceSyncV2TaskDetails(
-      @PathParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
+  public Response fetchInstanceSyncV2TaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
+      @QueryParam("page") int page, @QueryParam("page_size") int size, @QueryParam("accountId") String accountId) {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      InstanceSyncTaskDetails details = instanceSyncResponsePublisher.fetchTaskDetails(perpetualTask, accountId);
+      InstanceSyncTaskDetails details =
+          instanceSyncResponsePublisher.fetchTaskDetails(perpetualTask, page, size, accountId);
       return Response.ok(details).build();
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return Response.status(Response.Status.EXPECTATION_FAILED).build();
   }
@@ -86,9 +86,9 @@ public class InstanceSyncResource {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(accountId, perpetualTask, response, true);
+      instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(accountId, perpetualTask, response);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
@@ -103,9 +103,9 @@ public class InstanceSyncResource {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncServiceV2.processInstanceSyncResult(perpetualTask, response, true);
+      instanceSyncServiceV2.processInstanceSyncResult(perpetualTask, response);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
@@ -120,12 +120,11 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceHelper.processInstanceSyncResponseFromPerpetualTask(perpetualTask, response);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
 
-  //@TODO: Remove the V1 version once all delegates adopt the V2 version of this endpoint
   @DelegateAuth
   @POST
   @Path("instance-sync-ng/{perpetualTaskId}")
@@ -135,9 +134,9 @@ public class InstanceSyncResource {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(accountId, perpetualTask, response, false);
+      instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(accountId, perpetualTask, response);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
@@ -154,7 +153,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(accountId, perpetualTask, instanceSyncResponseV2);
     } catch (Exception e) {
-      log.error("Failed to process results for v2 perpetual task: [{}]", perpetualTask, e);
+      log.warn("Failed to process results for v2 perpetual task: [{}]", perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
@@ -169,9 +168,9 @@ public class InstanceSyncResource {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      instanceSyncServiceV2.processInstanceSyncResult(perpetualTask, response, false);
+      instanceSyncServiceV2.processInstanceSyncResult(perpetualTask, response);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
@@ -188,7 +187,7 @@ public class InstanceSyncResource {
       InstanceSyncTrackedDeploymentDetails details = instanceSyncServiceV2.fetchTaskDetails(perpetualTask, accountId);
       return Response.ok(details).build();
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, e);
     }
     return Response.noContent().build();
   }

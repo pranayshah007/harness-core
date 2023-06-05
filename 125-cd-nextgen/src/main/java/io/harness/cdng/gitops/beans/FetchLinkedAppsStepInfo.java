@@ -7,7 +7,7 @@
 
 package io.harness.cdng.gitops.beans;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("FetchLinkedAppsStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.beans.FetchLinkedAppsStepInfo")
 public class FetchLinkedAppsStepInfo implements CDAbstractStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @Override

@@ -18,9 +18,11 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation.AzureRecommendationKeys;
+import io.harness.ccm.commons.entities.recommendations.RecommendationAzureVmId;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -29,9 +31,11 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 
 @Slf4j
@@ -56,7 +60,7 @@ public class AzureRecommendationDAO {
                                            .field(AzureRecommendationKeys.accountId)
                                            .equal(accountIdentifier)
                                            .field(AzureRecommendationKeys.uuid)
-                                           .equal(id);
+                                           .equal(new ObjectId(id));
     return query.get();
   }
 
@@ -82,8 +86,14 @@ public class AzureRecommendationDAO {
             .set(AzureRecommendationKeys.maxMemoryP95, azureRecommendation.getMaxMemoryP95())
             .set(AzureRecommendationKeys.maxTotalNetworkP95, azureRecommendation.getMaxTotalNetworkP95())
             .set(AzureRecommendationKeys.currencyCode, azureRecommendation.getCurrencyCode())
+            .set(AzureRecommendationKeys.currencyCodeInDefaultCurrencyPref,
+                azureRecommendation.getCurrencyCodeInDefaultCurrencyPref())
             .set(AzureRecommendationKeys.expectedMonthlySavings, azureRecommendation.getExpectedMonthlySavings())
+            .set(AzureRecommendationKeys.expectedMonthlySavingsInDefaultCurrencyPref,
+                azureRecommendation.getExpectedMonthlySavingsInDefaultCurrencyPref())
             .set(AzureRecommendationKeys.expectedAnnualSavings, azureRecommendation.getExpectedAnnualSavings())
+            .set(AzureRecommendationKeys.expectedAnnualSavingsInDefaultCurrencyPref,
+                azureRecommendation.getExpectedAnnualSavingsInDefaultCurrencyPref())
             .set(AzureRecommendationKeys.currentVmDetails, azureRecommendation.getCurrentVmDetails())
             .set(AzureRecommendationKeys.targetVmDetails, azureRecommendation.getTargetVmDetails())
             .set(AzureRecommendationKeys.recommendationMessage, azureRecommendation.getRecommendationMessage())
@@ -92,7 +102,9 @@ public class AzureRecommendationDAO {
             .set(AzureRecommendationKeys.subscriptionId, azureRecommendation.getSubscriptionId())
             .set(AzureRecommendationKeys.tenantId, azureRecommendation.getTenantId())
             .set(AzureRecommendationKeys.duration, azureRecommendation.getDuration())
-            .set(AzureRecommendationKeys.vmId, azureRecommendation.getVmId());
+            .set(AzureRecommendationKeys.vmId, azureRecommendation.getVmId())
+            .set(AzureRecommendationKeys.connectorId, azureRecommendation.getConnectorId())
+            .set(AzureRecommendationKeys.connectorName, azureRecommendation.getConnectorName());
 
     return hPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
   }
@@ -115,16 +127,16 @@ public class AzureRecommendationDAO {
         .set(CE_RECOMMENDATIONS.NAMESPACE, resourceGroupId)
         .set(CE_RECOMMENDATIONS.NAME, azureRecommendation.getImpactedValue())
         .set(CE_RECOMMENDATIONS.RESOURCETYPE, ResourceType.AZURE_INSTANCE.name())
-        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavings())
-        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCost())
+        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavingsInDefaultCurrencyPref())
+        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCostInDefaultCurrencyPref())
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
-        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavings())
-        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCost())
+        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavingsInDefaultCurrencyPref())
+        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCostInDefaultCurrencyPref())
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
@@ -139,5 +151,49 @@ public class AzureRecommendationDAO {
                             .filter(AzureRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(AzureRecommendation.class)
             .set(AzureRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void ignoreAzureVmRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationAzureVmId> azureVmIds) {
+    if (azureVmIds.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.AZURE_INSTANCE.name()))
+                   .and(getAzureVmCondition(azureVmIds)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unIgnoreAzureVmRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationAzureVmId> azureVmIds) {
+    if (azureVmIds.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.AZURE_INSTANCE.name()))
+                   .and(getAzureVmCondition(azureVmIds)))
+        .execute();
+  }
+
+  private Condition getAzureVmCondition(List<RecommendationAzureVmId> azureVmIds) {
+    RecommendationAzureVmId azureVmId = azureVmIds.get(0);
+    Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(azureVmId.getSubscriptionId())
+                              .and(CE_RECOMMENDATIONS.NAMESPACE.eq(azureVmId.getResourceGroupId()))
+                              .and(CE_RECOMMENDATIONS.NAME.eq(azureVmId.getVmName()));
+    for (int i = 1; i < azureVmIds.size(); i++) {
+      azureVmId = azureVmIds.get(i);
+      condition.or(CE_RECOMMENDATIONS.CLUSTERNAME.eq(azureVmId.getSubscriptionId())
+                       .and(CE_RECOMMENDATIONS.NAMESPACE.eq(azureVmId.getResourceGroupId()))
+                       .and(CE_RECOMMENDATIONS.NAME.eq(azureVmId.getVmName())));
+    }
+    return condition;
   }
 }

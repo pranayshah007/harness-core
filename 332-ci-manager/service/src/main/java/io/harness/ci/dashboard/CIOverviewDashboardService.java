@@ -37,6 +37,8 @@ public interface CIOverviewDashboardService {
 
   long getActiveCommitterCount(String accountId);
 
+  long getHostedCreditUsage(String accountId);
+
   UsageDataDTO getActiveCommitter(String accountId, long timestamp);
 
   CIUsageResult getCIUsageResult(String accountId, long timestamp);

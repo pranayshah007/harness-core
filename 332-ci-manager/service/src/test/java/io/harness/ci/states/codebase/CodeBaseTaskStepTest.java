@@ -134,7 +134,15 @@ public class CodeBaseTaskStepTest extends CategoryTest {
             .branch("main")
             .repoUrl("http://github.com/octocat/hello-world")
             .getLatestCommitResponse(GetLatestCommitResponse.newBuilder()
-                                         .setCommit(Commit.newBuilder().setSha("commitId").build())
+                                         .setCommit(Commit.newBuilder()
+                                                        .setSha("commitId")
+                                                        .setAuthor(Signature.newBuilder()
+                                                                       .setLogin("login")
+                                                                       .setAvatar("avatar")
+                                                                       .setName("name")
+                                                                       .setEmail("email")
+                                                                       .build())
+                                                        .build())
                                          .setCommitId("commitId")
                                          .build()
                                          .toByteArray())
@@ -145,6 +153,10 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
     assertThat(codebaseSweepingOutput.getBranch()).isEqualTo("main");
     assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
+    assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("login");
+    assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("name");
+    assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("email");
+    assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("avatar");
   }
 
   @Test

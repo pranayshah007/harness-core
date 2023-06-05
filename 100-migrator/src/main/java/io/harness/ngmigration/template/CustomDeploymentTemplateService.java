@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
@@ -82,12 +83,26 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
               .build();
     }
 
+    String instanceName = PLEASE_FIX_ME;
     List<CustomDeploymentInstanceAttributes> attributes = new ArrayList<>();
-    attributes.add(CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath(PLEASE_FIX_ME).build());
     if (isNotEmpty(customDeploymentTypeTemplate.getHostAttributes())) {
-      customDeploymentTypeTemplate.getHostAttributes().forEach(
-          (k, v) -> { attributes.add(CustomDeploymentInstanceAttributes.builder().name(k).jsonPath(v).build()); });
+      customDeploymentTypeTemplate.getHostAttributes()
+          .entrySet()
+          .stream()
+          .filter(e -> StringUtils.isNoneBlank(e.getKey(), e.getValue()))
+          .forEach(e
+              -> attributes.add(
+                  CustomDeploymentInstanceAttributes.builder().name(e.getKey()).jsonPath(e.getValue()).build()));
+      instanceName = customDeploymentTypeTemplate.getHostAttributes()
+                         .entrySet()
+                         .stream()
+                         .filter(e -> StringUtils.isNoneBlank(e.getKey(), e.getValue()))
+                         .filter(e -> e.getKey().equals("hostname"))
+                         .map(Entry::getValue)
+                         .findFirst()
+                         .orElse(PLEASE_FIX_ME);
     }
+    attributes.add(CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath(instanceName).build());
 
     Builder<String, Object> infrastructureSpec =
         ImmutableMap.<String, Object>builder()

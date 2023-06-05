@@ -44,12 +44,12 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "api/proxy/jira/?"
+                "api/proxy/jira/api/?"
               ],
               "properties": {
-                "api/proxy/jira/?": {
-                  "$id": "#root/proxy//jira/api/pathRewrite/api/proxy/jira/?",
-                  "title": "Api/proxy/jira/?",
+                "api/proxy/jira/api/?": {
+                  "$id": "#root/proxy//jira/api/pathRewrite/api/proxy/jira/api/?",
+                  "title": "Api/proxy/jira/api/?",
                   "type": "string",
                   "default": "",
                   "pattern": "^.*$"

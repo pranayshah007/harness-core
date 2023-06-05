@@ -44,12 +44,12 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "api/proxy/circleci/?"
+                "api/proxy/circleci/api/?"
               ],
               "properties": {
-                "api/proxy/circleci/?": {
-                  "$id": "#root/proxy//circleci/api/pathRewrite/api/proxy/circleci/?",
-                  "title": "Api/proxy/circleci/?",
+                "api/proxy/circleci/api/?": {
+                  "$id": "#root/proxy//circleci/api/pathRewrite/api/proxy/circleci/api/?",
+                  "title": "Api/proxy/circleci/api/?",
                   "type": "string",
                   "default": "",
                   "pattern": "^.*$"

@@ -30,8 +30,11 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.SideKickExecutor;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.CVNGObjectUtils;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.persistence.HPersistence;
@@ -49,13 +52,13 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.types.ObjectId;
 
 @Singleton
 @Slf4j
@@ -71,6 +74,10 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
           HostRecord.class, LogAnalysisRecord.class, LogAnalysisResult.class, LogAnalysisCluster.class,
           TimeSeriesRiskSummary.class, TimeSeriesAnomalousPatterns.class, DataCollectionTask.class,
           TimeSeriesCumulativeSums.class, CVNGDemoDataIndex.class, SLIRecord.class, CompositeSLORecord.class);
+
+  @VisibleForTesting
+  static final Map<Class<? extends PersistentEntity>, String> ENTITIES_TO_DELETE_BY_ID_MAP =
+      Map.of(SLIRecordBucket.class, SLIRecordBucketKeys.sliId);
   @Inject private Clock clock;
   @Inject private HPersistence hPersistence;
   @Inject private VerificationTaskService verificationTaskService;
@@ -107,15 +114,18 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
 
   private void cleanUpData(String verificationTaskId) {
     for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_VERIFICATION_ID) {
-      cleanUpDataForSingleEntity(verificationTaskId, clazz);
+      cleanUpDataForSingleEntity(verificationTaskId, clazz, VerificationTask.VERIFICATION_TASK_ID_KEY);
+    }
+    for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_ID_MAP.keySet()) {
+      cleanUpDataForSingleEntity(verificationTaskId, clazz, ENTITIES_TO_DELETE_BY_ID_MAP.get(clazz));
     }
   }
 
-  private void cleanUpDataForSingleEntity(String verificationTaskId, Class<? extends PersistentEntity> entity) {
+  private void cleanUpDataForSingleEntity(
+      String verificationTaskId, Class<? extends PersistentEntity> entity, String field) {
     int numberOfRecordsDeleted;
-    Query<? extends PersistentEntity> query = hPersistence.createQuery(entity)
-                                                  .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
-                                                  .project(UuidAware.UUID_KEY, true);
+    Query<? extends PersistentEntity> query =
+        hPersistence.createQuery(entity).filter(field, verificationTaskId).project(UuidAware.UUID_KEY, true);
     FindOptions findOptions = new FindOptions().limit(RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH);
     do {
       numberOfRecordsDeleted = deleteSingleBatch(entity, query, findOptions, verificationTaskId);
@@ -130,7 +140,7 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
     if (numberOfRecordsToBeDeleted > 0) {
       Set<?> recordIdsTobeDeleted = recordsToBeDeleted.stream()
                                         .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
-                                        .map(VerificationTaskCleanupSideKickExecutor::convertToObjectIdIfRequired)
+                                        .map(CVNGObjectUtils::convertToObjectIdIfRequired)
                                         .collect(Collectors.toSet());
       Query<? extends PersistentEntity> queryToFindRecordsToBeDeleted =
           hPersistence.createQuery(entity).field(UuidAware.UUID_KEY).in(recordIdsTobeDeleted);
@@ -159,20 +169,6 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
   private void deleteMonitoringSourcePerpetualTasks(CVConfig cvConfig) {
     monitoringSourcePerpetualTaskService.deleteTask(cvConfig.getAccountId(), cvConfig.getOrgIdentifier(),
         cvConfig.getProjectIdentifier(), cvConfig.getFullyQualifiedIdentifier(), cvConfig.getConnectorIdentifier());
-  }
-
-  private static Object convertToObjectIdIfRequired(final String uuid) {
-    if (ObjectId.isValid(uuid)) {
-      ObjectId objectIdFromGivenUuid = new ObjectId(uuid);
-      String uuidFromNewObjectId = objectIdFromGivenUuid.toString();
-      if (uuidFromNewObjectId.equals(uuid)) {
-        return objectIdFromGivenUuid;
-      } else {
-        return uuid;
-      }
-    } else {
-      return uuid;
-    }
   }
 
   @VisibleForTesting

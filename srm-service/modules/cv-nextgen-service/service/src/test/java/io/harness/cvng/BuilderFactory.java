@@ -106,7 +106,6 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDe
 import io.harness.cvng.core.beans.monitoredService.RiskCategoryDTO;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.PagerDutyChangeSourceSpec;
@@ -233,6 +232,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMet
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
@@ -250,6 +250,8 @@ import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob.SimpleVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -387,7 +389,7 @@ public class BuilderFactory {
             MonitoredServiceDTO.Sources.builder()
                 .healthSources(
                     Arrays.asList(createHealthSource(CVMonitoringCategory.ERRORS)).stream().collect(Collectors.toSet()))
-                .changeSources(Sets.newHashSet(getHarnessCDChangeSourceDTOBuilder().build()))
+                .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
                 .build());
   }
 
@@ -777,58 +779,64 @@ public class BuilderFactory {
   }
 
   public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
-      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, String metricName, String identifier,
-      HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory, boolean isDeploymentEnabled,
-      boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
+      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, List<String> metricNameList,
+      String identifier, HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
     MetricResponseMapping responseMapping = MetricResponseMapping.builder()
                                                 .metricValueJsonPath(metricValueJSONPath)
                                                 .timestampJsonPath(timestampJsonPath)
                                                 .serviceInstanceJsonPath(serviceInstanceJsonPath)
                                                 .build();
-
-    CustomHealthMetricDefinition metricDefinition =
-        CustomHealthMetricDefinition.builder()
-            .groupName(groupName)
-            .metricName(metricName)
-            .queryType(queryType)
-            .metricResponseMapping(responseMapping)
-            .requestDefinition(CustomHealthRequestDefinition.builder().method(CustomHealthMethod.GET).build())
-            .identifier(identifier)
-            .analysis(
-                HealthSourceMetricDefinition.AnalysisDTO.builder()
-                    .deploymentVerification(HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
-                                                .enabled(isDeploymentEnabled)
+    List<CustomHealthMetricDefinition> metricDefinitionList = new ArrayList<>();
+    for (String metricName : metricNameList) {
+      CustomHealthMetricDefinition metricDefinition =
+          CustomHealthMetricDefinition.builder()
+              .groupName(groupName)
+              .metricName(metricName)
+              .queryType(queryType)
+              .metricResponseMapping(responseMapping)
+              .requestDefinition(CustomHealthRequestDefinition.builder().method(CustomHealthMethod.GET).build())
+              .identifier(identifier)
+              .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
+                            .deploymentVerification(
+                                HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
+                                    .enabled(isDeploymentEnabled)
+                                    .build())
+                            .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
+                                                .enabled(isLiveMonitoringEnabled)
                                                 .build())
-                    .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
-                                        .enabled(isLiveMonitoringEnabled)
-                                        .build())
-                    .build())
-            .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(isSliEnabled).build())
-            .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
-            .build();
-
-    List<CustomHealthMetricDefinition> customHealthSourceSpecs = new ArrayList<>();
-    customHealthSourceSpecs.add(metricDefinition);
-    return CustomHealthSourceMetricSpec.builder().metricDefinitions(customHealthSourceSpecs).build();
+                            .build())
+              .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(isSliEnabled).build())
+              .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
+              .build();
+      metricDefinitionList.add(metricDefinition);
+    }
+    return CustomHealthSourceMetricSpec.builder().metricDefinitions(metricDefinitionList).build();
   }
 
-  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilder(String metricName, boolean isDeploymentEnabled,
-      boolean isLiveMonitoringEnabled, boolean isSliEnabled, MetricResponseMapping responseMapping, String group,
-      HealthSourceQueryType queryType, CustomHealthMethod method, CVMonitoringCategory category, String requestBody) {
-    CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
-        CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
-            .metricName(metricName)
-            .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
-            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
-            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
-            .metricResponseMapping(responseMapping)
-            .requestDefinition(CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
-            .build();
+  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilder(List<String> metricNameList,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled,
+      MetricResponseMapping responseMapping, String group, HealthSourceQueryType queryType, CustomHealthMethod method,
+      CVMonitoringCategory category, String requestBody) {
+    List<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition> customMetricDefinitionList =
+        new ArrayList<>();
+    for (String metricName : metricNameList) {
+      CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
+          CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+              .metricName(metricName)
+              .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
+              .deploymentVerification(
+                  AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
+              .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
+              .metricResponseMapping(responseMapping)
+              .requestDefinition(
+                  CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
+              .build();
+      customMetricDefinitionList.add(metricDefinition);
+    }
 
     return CustomHealthMetricCVConfig.builder()
-        .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
-          { add(metricDefinition); }
-        })
+        .metricDefinitions(customMetricDefinitionList)
         .groupName(group)
         .queryType(queryType)
         .category(category)
@@ -1003,10 +1011,6 @@ public class BuilderFactory {
         .name(randomAlphabetic(20))
         .type(customChangeSourceType)
         .identifier("customIdentifier");
-  }
-
-  public ChangeSourceDTOBuilder getHarnessCDChangeSourceDTOBuilder() {
-    return getChangeSourceDTOBuilder(ChangeSourceType.HARNESS_CD).spec(new HarnessCDChangeSourceSpec());
   }
 
   public ChangeSourceDTOBuilder getPagerDutyChangeSourceDTOBuilder() {
@@ -1392,6 +1396,37 @@ public class BuilderFactory {
         .userJourneyRefs(Collections.singletonList("userJourney"));
   }
 
+  public ServiceLevelObjectiveV2DTOBuilder getSimpleCalendarServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.CALENDER)
+                       .sloTargetPercentage(80.0)
+                       .spec(CalenderSLOTargetSpec.builder()
+                                 .spec(CalenderSLOTargetSpec.MonthlyCalenderSpec.builder().dayOfMonth(2).build())
+                                 .build())
+                       .build())
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
+        .notificationRuleRefs(Collections.emptyList())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
   public ServiceLevelObjectiveV2DTOBuilder getSimpleRequestServiceLevelObjectiveV2DTOBuilder() {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.SIMPLE)
@@ -1625,6 +1660,19 @@ public class BuilderFactory {
         .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
         .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
         .sensitivity(RuntimeParameter.builder().value("High").build())
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+
+  public SimpleVerificationJobBuilder simpleVerificationJobBuilder() {
+    return SimpleVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
         .duration(RuntimeParameter.builder().value("10m").build());
   }
 

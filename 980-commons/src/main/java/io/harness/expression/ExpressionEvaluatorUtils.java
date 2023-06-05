@@ -22,8 +22,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -282,7 +282,8 @@ public class ExpressionEvaluatorUtils {
     if (o instanceof Map) {
       Map m = (Map) o;
       boolean useFallback = false;
-      Map<Object, Object> updatedMap = new HashMap<>(); // create an intermediate map to hold updated key-value pairs
+      Map<Object, Object> updatedMap =
+          new LinkedHashMap<>(); // create an intermediate map to hold updated key-value pairs
       for (Map.Entry<Object, Object> entry : (Set<Map.Entry<Object, Object>>) m.entrySet()) {
         try {
           Object updatedKey = entry.getKey();

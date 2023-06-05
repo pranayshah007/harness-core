@@ -28,7 +28,9 @@ public class TriggerCatalogHelper {
   public List<TriggerCatalogItem> getTriggerTypeToCategoryMapping(String accountIdentifier) {
     final Map<NGTriggerType, List<TriggerCatalogType>> triggerCategoryListMap =
         Arrays.stream(TriggerCatalogType.values())
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.CD_TRIGGER_CATALOG))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.CD_TRIGGER_V2))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_GOOGLE_CLOUD_FUNCTION))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.BAMBOO_ARTIFACT_NG))
             .collect(Collectors.groupingBy(catalogType -> TriggerCatalogType.getTriggerCategory(catalogType)));
     return triggerCategoryListMap.entrySet()
         .stream()

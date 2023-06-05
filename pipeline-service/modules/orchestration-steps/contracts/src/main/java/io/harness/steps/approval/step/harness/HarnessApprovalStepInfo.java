@@ -21,6 +21,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.harness.beans.ApproverInputInfo;
 import io.harness.steps.approval.step.harness.beans.Approvers;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalParams;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
@@ -59,6 +60,8 @@ public class HarnessApprovalStepInfo implements PMSStepInfo {
   @NotNull @VariableExpression(skipVariableExpression = true) Approvers approvers;
   @VariableExpression(skipVariableExpression = true) List<ApproverInputInfo> approverInputs;
 
+  @VariableExpression(skipVariableExpression = true) AutoApprovalParams autoApproval;
+
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   ParameterField<Boolean> isAutoRejectEnabled;
@@ -76,6 +79,7 @@ public class HarnessApprovalStepInfo implements PMSStepInfo {
   @Override
   public SpecParameters getSpecParameters() {
     return HarnessApprovalSpecParameters.builder()
+        .autoApproval(autoApproval)
         .approvalMessage(approvalMessage)
         .includePipelineExecutionHistory(includePipelineExecutionHistory)
         .approvers(approvers)

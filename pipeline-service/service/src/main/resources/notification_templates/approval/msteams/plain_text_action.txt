@@ -1,0 +1,29 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Pipeline ${status}",
+  "sections": [
+    {
+      "activityTitle": "Pipeline [${pipelineName}](${pipelineExecutionLink}) ${status}",
+      "activitySubtitle": "In Project ${projectName}",
+      "facts": [
+                 {
+                    "name": "Actions",
+                    "value": "${action}"
+                 },
+                 {
+                     "name": "Organization",
+                     "value": "${orgName}"
+                 },
+                 {
+                     "name": "TriggeredBy",
+                     "value": "${triggeredBy}"
+                 },
+                 {
+                      "name": "Timeline",
+                      "value": "Pipeline started on ${startedAt} "
+                 },
+      ],
+    }
+  ]
+}

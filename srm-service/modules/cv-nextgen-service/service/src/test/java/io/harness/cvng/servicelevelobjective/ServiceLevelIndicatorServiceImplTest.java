@@ -56,6 +56,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -469,8 +470,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     serviceLevelIndicatorDTO.setSpec(serviceLevelIndicatorSpec);
     List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList = Collections.singletonList(serviceLevelIndicatorDTO);
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    List<SLIRecord.SLIState> sliStateList = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
     String sliId =
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
@@ -549,8 +550,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
             serviceLevelObjectiveIdentifier, monitoredServiceIdentifier, healthSourceIdentifier);
-    List<SLIRecord.SLIState> sliStateList = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
     String sliId =
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
@@ -671,7 +672,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .build();
   }
 
-  private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {
+  private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states) {
     int index = 0;
     List<SLIRecord> sliRecords = new ArrayList<>();
     for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {

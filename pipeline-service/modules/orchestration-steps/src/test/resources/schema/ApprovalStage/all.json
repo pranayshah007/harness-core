@@ -16,7 +16,7 @@
         },
         {
           "type": "string",
-          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "pattern": "(<\\+.+>.*)",
           "minLength": 1
         }
       ]
@@ -533,7 +533,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -702,9 +702,6 @@
     "Attestation": {
       "type": "object",
       "properties": {
-        "privateKey": {
-          "type": "string"
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -734,6 +731,28 @@
     },
     "AttestationSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AutoApprovalParams": {
+      "type": "object",
+      "required": [
+        "action",
+        "scheduledDeadline"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "APPROVE"
+          ]
+        },
+        "comments": {
+          "type": "string"
+        },
+        "scheduledDeadline": {
+          "$ref": "#/definitions/ScheduledDeadline"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "BackgroundStepInfo": {
@@ -1283,6 +1302,41 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CdSscaEnforcementStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "infrastructure",
+            "policy",
+            "source",
+            "verifyAttestation"
+          ],
+          "properties": {
+            "infrastructure": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ContainerK8sInfra"
+                }
+              ]
+            },
+            "policy": {
+              "$ref": "#/definitions/EnforcementPolicy"
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "verifyAttestation": {
+              "$ref": "#/definitions/VerifyAttestation"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CdSscaOrchestrationStepInfo": {
       "allOf": [
         {
@@ -1369,29 +1423,6 @@
           }
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CleanupStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "infrastructure",
-            "podName"
-          ],
-          "properties": {
-            "infrastructure": {
-              "$ref": "#/definitions/Infrastructure"
-            },
-            "podName": {
-              "type": "string"
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Condition": {
@@ -1798,6 +1829,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CosignVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/VerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "publicKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CriteriaSpec": {
       "type": "object",
       "discriminator": "type",
@@ -1882,7 +1929,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1964,6 +2011,30 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "DelegateInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepGroupInfra"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "Delegate",
+                "Noop"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Distribution": {
       "type": "object",
       "required": [
@@ -2005,47 +2076,6 @@
           }
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DockerInfraSpec": {
-      "type": "object",
-      "required": [
-        "platform"
-      ],
-      "properties": {
-        "platform": {
-          "$ref": "#/definitions/ParameterFieldPlatform"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DockerInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/DockerInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -2220,6 +2250,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -2324,7 +2380,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2381,6 +2437,15 @@
         "size": {
           "type": "string",
           "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|<\\+input>$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnforcementPolicy": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/PolicyStore"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2732,6 +2797,9 @@
             "approvers": {
               "$ref": "#/definitions/Approvers"
             },
+            "autoApproval": {
+              "$ref": "#/definitions/AutoApprovalParams"
+            },
             "includePipelineExecutionHistory": {
               "oneOf": [
                 {
@@ -2887,6 +2955,22 @@
         }
       ]
     },
+    "HarnessStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HostPathYaml": {
       "allOf": [
         {
@@ -2934,47 +3018,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HostedVmInfraSpec": {
-      "type": "object",
-      "required": [
-        "platform"
-      ],
-      "properties": {
-        "platform": {
-          "$ref": "#/definitions/ParameterFieldPlatform"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "HostedVmInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/HostedVmInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "HttpHeaderConfig": {
       "type": "object",
       "properties": {
@@ -3018,7 +3061,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -3172,22 +3215,6 @@
         }
       ]
     },
-    "Infrastructure": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "KubernetesDirect",
-            "UseFromStage",
-            "VM",
-            "KubernetesHosted"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "InputSetValidator": {
       "type": "object",
       "properties": {
@@ -3278,7 +3305,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -3326,7 +3353,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -3389,7 +3416,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -3434,10 +3461,10 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "K8sDirectInfraYaml": {
+    "K8sDirectInfra": {
       "allOf": [
         {
-          "$ref": "#/definitions/Infrastructure"
+          "$ref": "#/definitions/StepGroupInfra"
         },
         {
           "type": "object",
@@ -3447,145 +3474,19 @@
           ],
           "properties": {
             "spec": {
-              "$ref": "#/definitions/K8sDirectInfraYamlSpec"
+              "$ref": "#/definitions/ContainerInfraYamlSpec"
             },
             "type": {
               "type": "string",
               "enum": [
                 "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "Delegate",
+                "Noop"
               ]
             }
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sDirectInfraYamlSpec": {
-      "type": "object",
-      "required": [
-        "connectorRef",
-        "namespace"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "automountServiceAccountToken": {
-          "type": "boolean"
-        },
-        "connectorRef": {
-          "type": "string"
-        },
-        "containerSecurityContext": {
-          "$ref": "#/definitions/SecurityContext"
-        },
-        "harnessImageConnectorRef": {
-          "type": "string"
-        },
-        "hostNames": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "initTimeout": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "namespace": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2147483647
-        },
-        "nodeSelector": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "os": {
-          "type": "string",
-          "enum": [
-            "Linux",
-            "MacOS",
-            "Windows"
-          ]
-        },
-        "priorityClassName": {
-          "type": "string"
-        },
-        "runAsUser": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "serviceAccountName": {
-          "type": "string"
-        },
-        "tolerations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Toleration"
-          }
-        },
-        "volumes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CIVolume"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sHostedInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/K8sHostedInfraYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sHostedInfraYamlSpec": {
-      "type": "object",
-      "required": [
-        "identifier"
-      ],
-      "properties": {
-        "identifier": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KeyValuesCriteriaSpec": {
@@ -4103,39 +4004,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldPlatform": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "$ref": "#/definitions/Platform"
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "$ref": "#/definitions/Platform"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldString": {
       "type": "object",
       "properties": {
@@ -4305,27 +4173,6 @@
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "Platform": {
-      "type": "object",
-      "properties": {
-        "arch": {
-          "type": "string",
-          "enum": [
-            "Amd64",
-            "Arm64"
-          ]
-        },
-        "os": {
-          "type": "string",
-          "enum": [
-            "Linux",
-            "MacOS",
-            "Windows"
-          ]
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PluginStepInfo": {
@@ -4623,6 +4470,39 @@
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PolicyStore": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "harness"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessStore"
+              }
+            }
+          }
+        }
+      ]
     },
     "ProceedWithDefaultValuesFailureActionConfig": {
       "allOf": [
@@ -5679,6 +5559,18 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ScheduledDeadline": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ScriptStepInfo": {
       "allOf": [
         {
@@ -6045,7 +5937,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6106,7 +5998,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6173,7 +6065,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6216,7 +6108,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6512,7 +6404,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -6873,6 +6765,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GCRStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CdSscaEnforcement"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CdSscaEnforcementStepInfo"
               }
             }
           }
@@ -7456,7 +7364,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -7483,6 +7391,19 @@
         "name": {
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+        },
+        "sharedPaths": {
+          "$ref": "#/definitions/ParameterFieldListString"
+        },
+        "stepGroupInfra": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/DelegateInfra"
+            },
+            {
+              "$ref": "#/definitions/K8sDirectInfra"
+            }
+          ]
         },
         "steps": {
           "type": "array",
@@ -7560,6 +7481,21 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StepGroupInfra": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "KubernetesDirect",
+            "Delegate",
+            "Noop"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StepSpecType": {
       "type": "object",
       "discriminator": "type",
@@ -7584,6 +7520,10 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StoreSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StrategyConfig": {
@@ -7718,6 +7658,9 @@
         "templateRef"
       ],
       "properties": {
+        "gitBranch": {
+          "type": "string"
+        },
         "templateInputs": {
           "$ref": "#/definitions/JsonNode"
         },
@@ -8166,25 +8109,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "UseFromStageInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "useFromStage"
-          ],
-          "properties": {
-            "useFromStage": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "VariationYamlSpec": {
       "type": "object",
       "required": [
@@ -8202,98 +8126,38 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "VmInfraSpec": {
+    "VerifyAttestation": {
       "type": "object",
-      "discriminator": "type",
       "properties": {
         "type": {
           "type": "string",
           "enum": [
-            "Pool"
+            "cosign"
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VmInfraYaml": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
         {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/VmInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignVerifyAttestation"
+              }
             }
           }
         }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      ]
     },
-    "VmPoolYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/VmInfraSpec"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/VmPoolYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "Pool"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VmPoolYamlSpec": {
+    "VerifyAttestationSpec": {
       "type": "object",
-      "properties": {
-        "harnessImageConnectorRef": {
-          "type": "string"
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "initTimeout": {
-          "type": "string"
-        },
-        "os": {
-          "type": "string",
-          "enum": [
-            "Linux",
-            "MacOS",
-            "Windows"
-          ]
-        },
-        "poolName": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "WaitStepInfo": {

@@ -28,6 +28,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
@@ -51,6 +52,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class AmbianceUtils {
+  public static final String STAGE = "STAGE";
+
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
   }
@@ -248,8 +251,10 @@ public class AmbianceUtils {
 
   public Optional<Level> getStageLevelFromAmbiance(Ambiance ambiance) {
     Optional<Level> stageLevel = Optional.empty();
+
+    // @Todo(SahilHindwani): Correct StepCategory for IdentityNodes. Currently they always have STEP as StepCategory.
     for (Level level : ambiance.getLevelsList()) {
-      if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+      if (level.getStepType().getStepCategory() == StepCategory.STAGE || Objects.equals(level.getGroup(), STAGE)) {
         stageLevel = Optional.of(level);
       }
     }
@@ -298,7 +303,7 @@ public class AmbianceUtils {
 
   public static String modifyIdentifier(Ambiance ambiance, String identifier) {
     Level level = obtainCurrentLevel(ambiance);
-    return modifyIdentifier(level, identifier, ambiance.getMetadata().getUseMatrixFieldName());
+    return modifyIdentifier(level, identifier, shouldUseMatrixFieldName(ambiance));
   }
 
   public static String modifyIdentifier(Level level, String identifier, boolean useMatrixFieldName) {
@@ -331,11 +336,15 @@ public class AmbianceUtils {
                                  .collect(Collectors.joining("_"));
 
     if (useMatrixFieldName) {
+      List<String> matrixKeysToSkipInName =
+          level.getStrategyMetadata().getMatrixMetadata().getMatrixKeysToSkipInNameList();
       levelIdentifier = level.getStrategyMetadata()
                             .getMatrixMetadata()
                             .getMatrixValuesMap()
                             .entrySet()
                             .stream()
+                            .filter(entry -> !matrixKeysToSkipInName.contains(entry.getKey()))
+                            .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
     }
@@ -461,5 +470,19 @@ public class AmbianceUtils {
       return ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
     }
     return ambiance.getPlanExecutionId();
+  }
+
+  public boolean shouldUseMatrixFieldName(Ambiance ambiance) {
+    return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName());
+  }
+
+  public boolean isNodeExecutionAuditsEnabled(Ambiance ambiance) {
+    return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName());
+  }
+
+  // This method should be used when the setting value is of type boolean.
+  public boolean checkIfSettingEnabled(Ambiance ambiance, String settingId) {
+    Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();
+    return settingToValueMap.containsKey(settingId) && "true".equals(settingToValueMap.get(settingId));
   }
 }

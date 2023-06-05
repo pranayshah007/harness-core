@@ -31,10 +31,13 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetImportRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigRequestBody;
@@ -221,5 +224,22 @@ public class InputSetsApiImpl implements InputSetsApi {
     InputSetMoveConfigResponseBody responseBody = new InputSetMoveConfigResponseBody();
     responseBody.setInputSetIdentifier(movedInputSetEntity.getIdentifier());
     return Response.ok().entity(responseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response updateInputSetGitMetadata(@ResourceIdentifier @NotNull String pipeline, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @ResourceIdentifier String inputSet, @Valid GitMetadataUpdateRequestBody body,
+      @AccountIdentifier String harnessAccount) {
+    String inputSetAfterUpdate = pmsInputSetService.updateGitMetadata(harnessAccount, org, project, pipeline, inputSet,
+        PMSUpdateGitDetailsParams.builder()
+            .connectorRef(body.getConnectorRef())
+            .repoName(body.getRepoName())
+            .filePath(body.getFilePath())
+            .build());
+
+    GitMetadataUpdateResponseBody gitMetadataUpdateResponseBody = new GitMetadataUpdateResponseBody();
+    gitMetadataUpdateResponseBody.setEntityIdentifier(inputSetAfterUpdate);
+    return Response.ok().entity(gitMetadataUpdateResponseBody).build();
   }
 }

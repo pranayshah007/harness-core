@@ -13,6 +13,7 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallback;
@@ -29,6 +30,9 @@ import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.idp.allowlist.resources.AllowListApiImpl;
+import io.harness.idp.allowlist.services.AllowListService;
+import io.harness.idp.allowlist.services.AllowListServiceImpl;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
@@ -62,7 +66,10 @@ import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
 import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.idp.onboarding.service.impl.OnboardingServiceImpl;
+import io.harness.idp.plugin.resources.AuthInfoApiImpl;
 import io.harness.idp.plugin.resources.PluginInfoApiImpl;
+import io.harness.idp.plugin.services.AuthInfoService;
+import io.harness.idp.plugin.services.AuthInfoServiceImpl;
 import io.harness.idp.plugin.services.PluginInfoService;
 import io.harness.idp.plugin.services.PluginInfoServiceImpl;
 import io.harness.idp.provision.ProvisionModuleConfig;
@@ -107,7 +114,9 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
+import io.harness.spec.server.idp.v1.AllowListApi;
 import io.harness.spec.server.idp.v1.AppConfigApi;
+import io.harness.spec.server.idp.v1.AuthInfoApi;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.ConnectorInfoApi;
@@ -242,6 +251,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getAccessControlClientConfiguration(), IDP_SERVICE.getServiceId()));
     install(
         new NgConnectorManagerClientModule(appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret()));
+    install(new AccountClientModule(
+        appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new OrganizationClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ProjectClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
@@ -254,7 +265,7 @@ public class IdpModule extends AbstractModule {
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {
-        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.MORPHIA).build();
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
     install(new DelegateServiceDriverGrpcClientModule(
@@ -302,6 +313,10 @@ public class IdpModule extends AbstractModule {
     bind(ConnectorInfoApi.class).to(ConnectorInfoApiImpl.class);
     bind(MergedPluginsConfigApi.class).to(MergedPluginsConfigApiImpl.class);
     bind(ConfigEnvVariablesService.class).to(ConfigEnvVariablesServiceImpl.class);
+    bind(AuthInfoApi.class).to(AuthInfoApiImpl.class);
+    bind(AuthInfoService.class).to(AuthInfoServiceImpl.class);
+    bind(AllowListApi.class).to(AllowListApiImpl.class);
+    bind(AllowListService.class).to(AllowListServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
@@ -323,6 +338,10 @@ public class IdpModule extends AbstractModule {
         .to(BackstageEnvConfigVariableMapper.class);
     backstageEnvVariableMapBinder.addBinding(BackstageEnvVariableType.SECRET)
         .to(BackstageEnvSecretVariableMapper.class);
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
   }
 
   @Provides

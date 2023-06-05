@@ -35,11 +35,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,7 +71,11 @@ public class YamlUtils {
       configureObjectMapperForNG(new ObjectMapper(new YAMLFactory()));
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
+    mapper.registerModule(new EdgeCaseRegexModule());
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     mapper.disable(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
@@ -84,6 +90,15 @@ public class YamlUtils {
     mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
+  // Takes stringified yaml as input and returns the JsonNode
+  public JsonNode readAsJsonNode(String yaml) {
+    try {
+      return mapper.readTree(yaml);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
+    }
+  }
+
   public <T> T read(String yaml, Class<T> cls) throws IOException {
     return mapper.readValue(yaml, cls);
   }
@@ -96,12 +111,27 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will replace "---\n" with ""
   public String write(Object object) {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml");
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
+  }
+
+  public String writeYamlString(Object object) {
+    try {
+      return mapper.writeValueAsString(object).replace("---\n", "");
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+    }
+  }
+
+  public ObjectMapper getMapper() {
+    return mapper;
   }
 
   public YamlField readTree(String content) throws IOException {
@@ -718,13 +748,18 @@ public class YamlUtils {
 
   private void removeUuidInObject(JsonNode node) {
     ObjectNode objectNode = (ObjectNode) node;
+    List<String> removalKeyList = new ArrayList<>();
     for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
       Entry<String, JsonNode> field = it.next();
       if (field.getKey().equals(YamlNode.UUID_FIELD_NAME)) {
-        objectNode.remove(field.getKey());
+        removalKeyList.add(field.getKey());
       } else {
         removeUuid(field.getValue());
       }
+    }
+
+    for (String key : removalKeyList) {
+      objectNode.remove(key);
     }
   }
 

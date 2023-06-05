@@ -90,12 +90,10 @@ public class MergeHelper {
         originalYamlConfig, inputSetConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
   }
 
-  public JsonNode mergeExecutionInputIntoOriginalYamlJsonNode(
-      String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
-    YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator, true);
-
-    return mergedYamlConfig.getYamlMap();
+  public JsonNode mergeExecutionInputIntoOriginalJsonNode(
+      JsonNode originalJsonNode, JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalJsonNode, inputSetPipelineCompJsonNode, appendInputSetValidator, true, false);
   }
 
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(String originalYaml,
@@ -123,9 +121,17 @@ public class MergeHelper {
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime,
       boolean checkIfPipelineValueIsRuntime) {
-    Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
+    JsonNode mergedYamlMap = mergeRuntimeInputValuesIntoOriginalYamlInternal(originalYamlConfig.getYamlMap(),
+        inputSetConfig.getYamlMap(), appendInputSetValidator, isAtExecutionTime, checkIfPipelineValueIsRuntime);
+    return new YamlConfig(mergedYamlMap);
+  }
 
-    Map<FQN, Object> pipelineYamlFQNMap = originalYamlConfig.getFqnToValueMap();
+  private JsonNode mergeRuntimeInputValuesIntoOriginalYamlInternal(JsonNode originalYamlJsonNode,
+      JsonNode inputSetJsonNode, boolean appendInputSetValidator, boolean isAtExecutionTime,
+      boolean checkIfPipelineValueIsRuntime) {
+    Map<FQN, Object> inputSetFQNMap = FQNMapGenerator.generateFQNMap(inputSetJsonNode);
+
+    Map<FQN, Object> pipelineYamlFQNMap = FQNMapGenerator.generateFQNMap(originalYamlJsonNode);
     Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(pipelineYamlFQNMap);
     pipelineYamlFQNMap.keySet().forEach(key -> {
       if (inputSetFQNMap.containsKey(key)) {
@@ -169,16 +175,16 @@ public class MergeHelper {
       } else {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, key);
         if (!subMap.isEmpty()) {
-          mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(inputSetConfig, key));
+          mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(inputSetJsonNode, key));
         }
       }
     });
     Map<FQN, Object> nonIgnorableKeys = getNonIgnorableKeys(pipelineYamlFQNMap, inputSetFQNMap, mergedYamlFQNMap);
     mergedYamlFQNMap.putAll(nonIgnorableKeys);
-    JsonNode yamlMap = originalYamlConfig.getYamlMap();
     JsonNode modifiedOriginalMap =
-        addNonIgnorableBaseKeys(yamlMap, mergedYamlFQNMap, nonIgnorableKeys, inputSetConfig.getYamlMap());
-    return new YamlConfig(mergedYamlFQNMap, modifiedOriginalMap);
+        addNonIgnorableBaseKeys(originalYamlJsonNode, mergedYamlFQNMap, nonIgnorableKeys, inputSetJsonNode);
+    // merging mergedYamlFQNMap into modifiedOriginalMap to get merged yaml map
+    return YamlMapGenerator.generateYamlMap(mergedYamlFQNMap, modifiedOriginalMap, false);
   }
 
   private JsonNode addNonIgnorableBaseKeys(JsonNode yamlMap, Map<FQN, Object> mergedYamlFQNMap,

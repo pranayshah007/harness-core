@@ -282,6 +282,9 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     queriedSettings.setSamlProviderType(settings.getSamlProviderType());
     queriedSettings.setClientId(settings.getClientId());
     queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
+    queriedSettings.setJitEnabled(settings.isJitEnabled());
+    queriedSettings.setJitValidationKey(settings.getJitValidationKey());
+    queriedSettings.setJitValidationValue(settings.getJitValidationValue());
   }
 
   private SamlSettings savePublishEventAndAuditSAMLSettingUploadInternal(SamlSettings settings) {
@@ -544,6 +547,16 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
+  public Iterator<SamlSettings> getSamlSettingsIteratorByAccountId(@NotNull String accountId) {
+    Query<SamlSettings> query = wingsPersistence.createQuery(SamlSettings.class, excludeAuthority)
+                                    .field("accountId")
+                                    .equal(accountId)
+                                    .field("type")
+                                    .equal(SSOType.SAML);
+    return new HIterator(query.fetch());
+  }
+
+  @Override
   @RestrictedApi(LdapFeature.class)
   public LdapSettings createLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
@@ -558,7 +571,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     }
     updateNextIterations(settings);
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, settings);
-    ldapGroupScheduledHandler.wakeup();
+    ldapGroupScheduledHandler.handle(savedSettings);
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
     log.info("Auditing creation of LDAP Settings for account={}", settings.getAccountId());
@@ -598,7 +611,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
-    ldapGroupScheduledHandler.wakeup();
+    ldapGroupScheduledHandler.handle(savedSettings);
     return savedSettings;
   }
 

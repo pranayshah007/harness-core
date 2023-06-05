@@ -9,11 +9,13 @@ package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,6 +33,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -66,6 +69,7 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import dev.morphia.mapping.Mapper;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -98,6 +102,12 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   @Mock private PlanExecutionService planExecutionService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+  private static final String planExecutionId = "planExecutionId";
+  private static final ApprovalStatus approvalStatus = ApprovalStatus.WAITING;
+  private static final ApprovalType approvalType = ApprovalType.HARNESS_APPROVAL;
+  private static final String nodeExecutionId = "nodeExecutionId";
+  private static final String ACCOUNT_ID = "account";
+  private static final String ORG_ID = "account";
   @Spy @Inject @InjectMocks private ApprovalInstanceServiceImpl approvalInstanceServiceImpl;
 
   @Test
@@ -661,5 +671,169 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     jiraApprovalInstance.setTicketFields(updatedApprovalInstanceTicketFields);
     approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
     verify(approvalInstanceRepository, times(2)).updateFirst(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetApprovalInstancesByExecutionId() {
+    assertThatThrownBy(() -> {
+      approvalInstanceServiceImpl.getApprovalInstancesByExecutionId("", null, null, null);
+    }).isInstanceOf(InvalidRequestException.class);
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(
+        planExecutionId, approvalStatus, approvalType, nodeExecutionId);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .is(approvalStatus)
+                     .and(ApprovalInstanceKeys.type)
+                     .is(approvalType)
+                     .and(ApprovalInstanceKeys.nodeExecutionId)
+                     .is(nodeExecutionId));
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(planExecutionId, approvalStatus, approvalType, null);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .is(approvalStatus)
+                     .and(ApprovalInstanceKeys.type)
+                     .is(approvalType));
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(planExecutionId, null, approvalType, nodeExecutionId);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .in(Arrays.asList(ApprovalStatus.values()))
+                     .and(ApprovalInstanceKeys.type)
+                     .is(approvalType)
+                     .and(ApprovalInstanceKeys.nodeExecutionId)
+                     .is(nodeExecutionId));
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(
+        planExecutionId, approvalStatus, null, nodeExecutionId);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .is(approvalStatus)
+                     .and(ApprovalInstanceKeys.type)
+                     .in(Arrays.asList(ApprovalType.values()))
+                     .and(ApprovalInstanceKeys.nodeExecutionId)
+                     .is(nodeExecutionId));
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testAddHarnessApprovalActivityV2() {
+    ApproversDTO approversDTO = ApproversDTO.builder().minimumCount(0).build();
+    HarnessApprovalInstance harnessApprovalInstance =
+        HarnessApprovalInstance.builder()
+            .approvers(approversDTO)
+            .approverInputs(Collections.singletonList(
+                ApproverInputInfoDTO.builder().name("NAME").defaultValue("DEFAULT_VAL").build()))
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
+    harnessApprovalInstance.setAmbiance(ambiance);
+    ApprovalInstance entity = harnessApprovalInstance;
+    entity.setDeadline(Long.MAX_VALUE);
+    entity.setType(ApprovalType.HARNESS_APPROVAL);
+    entity.setStatus(ApprovalStatus.WAITING);
+    Optional<ApprovalInstance> optional = Optional.of(entity);
+    when(approvalInstanceRepository.findById(any())).thenReturn(optional);
+    EmbeddedUser embeddedUser = EmbeddedUser.builder().name("embeddedUser").build();
+
+    HarnessApprovalActivityRequestDTO harnessApprovalActivityRequestDTO =
+        HarnessApprovalActivityRequestDTO.builder().autoApprove(true).build();
+
+    HarnessApprovalInstance instance = HarnessApprovalInstance.builder().build();
+    instance.setStatus(ApprovalStatus.APPROVED);
+
+    instance.setStatus(ApprovalStatus.APPROVED);
+    when(approvalInstanceRepository.save(any())).thenReturn(instance);
+    when(transactionTemplate.execute(any())).thenReturn(instance);
+    when(waitNotifyEngine.doneWith(any(), any())).thenReturn("");
+
+    approvalInstanceServiceImpl.addHarnessApprovalActivityV2(
+        "hello", embeddedUser, harnessApprovalActivityRequestDTO, false);
+    verify(waitNotifyEngine, times(0)).doneWith(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testRejectPreviousExecutionV2() {
+    ApproversDTO approversDTO = ApproversDTO.builder().minimumCount(0).build();
+    HarnessApprovalInstance harnessApprovalInstance =
+        HarnessApprovalInstance.builder()
+            .approvers(approversDTO)
+            .approverInputs(Collections.singletonList(
+                ApproverInputInfoDTO.builder().name("NAME").defaultValue("DEFAULT_VAL").build()))
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
+    harnessApprovalInstance.setAmbiance(ambiance);
+    ApprovalInstance entity = harnessApprovalInstance;
+    entity.setDeadline(Long.MAX_VALUE);
+    entity.setType(ApprovalType.HARNESS_APPROVAL);
+    entity.setStatus(ApprovalStatus.WAITING);
+    Optional<ApprovalInstance> optional = Optional.of(entity);
+    when(approvalInstanceRepository.findById(any())).thenReturn(optional);
+    when(approvalInstanceRepository.findAll(any())).thenReturn(Collections.emptyList());
+    EmbeddedUser embeddedUser = EmbeddedUser.builder().name("embeddedUser").build();
+
+    HarnessApprovalActivityRequestDTO harnessApprovalActivityRequestDTO =
+        HarnessApprovalActivityRequestDTO.builder().action(HarnessApprovalAction.APPROVE).autoApprove(true).build();
+
+    HarnessApprovalInstance instance = HarnessApprovalInstance.builder().build();
+    instance.setStatus(ApprovalStatus.APPROVED);
+    instance.setAccountId(ACCOUNT_ID);
+    instance.setOrgIdentifier(ORG_ID);
+
+    instance.setStatus(ApprovalStatus.APPROVED);
+    when(approvalInstanceRepository.save(any())).thenReturn(instance);
+    when(transactionTemplate.execute(any())).thenReturn(instance);
+    when(waitNotifyEngine.doneWith(any(), any())).thenReturn("");
+
+    approvalInstanceServiceImpl.addHarnessApprovalActivityV2(
+        "hello", embeddedUser, harnessApprovalActivityRequestDTO, false);
+    verify(waitNotifyEngine, times(0)).doneWith(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void addHarnessApprovalActivityInTransactionWithAutoApprove() {
+    ApproversDTO approversDTO = ApproversDTO.builder().minimumCount(0).build();
+    HarnessApprovalInstance harnessApprovalInstance = HarnessApprovalInstance.builder().approvers(approversDTO).build();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
+    harnessApprovalInstance.setAmbiance(ambiance);
+    ApprovalInstance entity = harnessApprovalInstance;
+    entity.setDeadline(Long.MAX_VALUE);
+    entity.setType(ApprovalType.HARNESS_APPROVAL);
+    entity.setStatus(ApprovalStatus.WAITING);
+    Optional<ApprovalInstance> optional = Optional.of(entity);
+    when(approvalInstanceRepository.findById(any())).thenReturn(optional);
+    when(approvalInstanceRepository.findAll(any())).thenReturn(Collections.emptyList());
+    EmbeddedUser embeddedUser = EmbeddedUser.builder().name("embeddedUser").build();
+
+    HarnessApprovalActivityRequestDTO harnessApprovalActivityRequestDTO =
+        HarnessApprovalActivityRequestDTO.builder().action(HarnessApprovalAction.APPROVE).autoApprove(true).build();
+
+    HarnessApprovalInstance instance = HarnessApprovalInstance.builder().build();
+    instance.setStatus(ApprovalStatus.APPROVED);
+    instance.setAccountId(ACCOUNT_ID);
+    instance.setOrgIdentifier(ORG_ID);
+
+    instance.setStatus(ApprovalStatus.APPROVED);
+    when(approvalInstanceRepository.save(any())).thenReturn(instance);
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      approvalInstanceServiceImpl.addHarnessApprovalActivityInTransaction(
+          "hello", embeddedUser, harnessApprovalActivityRequestDTO);
+      verify(approvalInstanceRepository, times(1)).save(any());
+    }
   }
 }

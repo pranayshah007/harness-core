@@ -24,4 +24,5 @@ public class K8sTaskExecutionResponse implements DelegateTaskNotifyResponseData 
   private K8sTaskResponse k8sTaskResponse;
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
+  private boolean isTimeoutError;
 }

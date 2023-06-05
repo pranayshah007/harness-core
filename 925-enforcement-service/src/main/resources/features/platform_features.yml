@@ -122,6 +122,23 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: MULTIPLE_CONNECTORS
+    description: Allow creating multiple connectors within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
   - name: SECRET_MANAGERS
     description: Allow creating secret managers
     restrictions:

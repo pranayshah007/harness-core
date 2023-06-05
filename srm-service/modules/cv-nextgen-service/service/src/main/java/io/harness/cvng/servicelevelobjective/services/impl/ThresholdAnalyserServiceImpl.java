@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 
 import java.util.Map;

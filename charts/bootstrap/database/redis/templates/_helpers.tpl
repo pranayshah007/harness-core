@@ -85,3 +85,24 @@ Create the name of the sentinet image to use
 {{- define "redis.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.redis.image .Values.sentinel.image .Values.initContainers.config_init.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Return  the proper Storage Class
+{{ include "redis.storage.class" ( dict "global" $) }}
+*/}}
+{{- define "redis.storage.class" -}}
+{{- $storageClass := "" -}}
+{{- if .global -}}
+    {{- if .global.storageClass -}}
+        {{- $storageClass = .global.storageClass -}}
+    {{- else }} {{- if .global.storageClassName -}}
+        {{- $storageClass = .global.storageClassName -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- if $storageClass -}}
+  {{- printf "storageClassName: %s" $storageClass -}}
+{{- end -}}
+
+{{- end -}}

@@ -400,6 +400,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("cachegcs:1.2.3");
     assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("sc:1.2.3");
     assertThat(ciExecutionImages.getSscaOrchestrationTag()).isEqualTo("sscaorchestrate:0.0.1");
+    assertThat(ciExecutionImages.getSscaEnforcementTag()).isEqualTo("sscaEnforcement:0.0.1");
   }
 
   @Test

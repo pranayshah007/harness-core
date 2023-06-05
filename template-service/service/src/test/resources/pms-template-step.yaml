@@ -1,0 +1,14 @@
+step:
+  type: ShellScript
+  spec:
+    shell: Bash
+    onDelegate: true
+    source:
+      type: Inline
+      spec:
+        script: <+input>
+    environmentVariables: []
+    outputVariables: []
+  timeout: <+input>
+  identifier: templateInputs
+  name: templateInputs

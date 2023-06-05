@@ -20,6 +20,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -87,7 +88,7 @@ public class InstanceFunctor implements SdkFunctor {
             .collect(Collectors.toList());
 
     Map<String, Object> strategyObjectMap = StrategyUtils.fetchStrategyObjectMap(
-        stepLevelsWithStrategyMetadata, ambiance.getMetadata().getUseMatrixFieldName());
+        stepLevelsWithStrategyMetadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
     if (strategyObjectMap == null) {
       throw new InvalidRequestException("Not found step level strategy");
     }

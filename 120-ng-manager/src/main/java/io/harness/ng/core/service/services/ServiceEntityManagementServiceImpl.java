@@ -34,14 +34,17 @@ import io.harness.service.instance.InstanceService;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ServiceEntityManagementServiceImpl implements ServiceEntityManagementService {
   private final InstanceService instanceService;
   private final ServiceEntityService serviceEntityService;
   private final InstanceRepository instanceRepository;
   private final AccountClient accountClient;
+  private final ServiceSequenceService serviceSequenceService;
 
   NGSettingsClient settingsClient;
 
@@ -66,6 +69,11 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
 
     if (success && forceDelete) {
       instanceService.deleteAll(instanceInfoNGList);
+    }
+    try {
+      serviceSequenceService.delete(accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+    } catch (Exception e) {
+      log.warn("Failed to delete service sequence for service {}", serviceIdentifier);
     }
 
     return success;

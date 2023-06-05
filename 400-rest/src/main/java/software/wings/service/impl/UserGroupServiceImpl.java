@@ -88,11 +88,13 @@ import software.wings.beans.security.AppPermission;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.security.UserGroupSearchTermType;
+import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.RbacFeature;
 import software.wings.features.api.UsageLimitedFeature;
+import software.wings.scheduler.LdapGroupScheduledHandler;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
@@ -172,6 +174,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Inject @Named(RbacFeature.FEATURE_NAME) private UsageLimitedFeature rbacFeature;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private LdapGroupSyncJobHelper ldapGroupSyncJobHelper;
+  @Inject private LdapGroupScheduledHandler ldapGroupScheduledHandler;
   @Inject private AppService appService;
 
   @Override
@@ -330,7 +333,8 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void loadUsersForUserGroups(List<UserGroup> userGroups, Account account) {
-    PageRequest<User> req = aPageRequest().addFilter(UserKeys.accounts, Operator.HAS, account).build();
+    PageRequest<User> req =
+        aPageRequest().addFilter(UserKeys.accounts, Operator.HAS, account).withLimit(String.valueOf(10000)).build();
     PageResponse<User> res = userService.list(req, false);
     List<User> allUsersList = res.getResponse();
     if (isEmpty(allUsersList)) {
@@ -352,7 +356,8 @@ public class UserGroupServiceImpl implements UserGroupService {
           members.add(user);
         }
       });
-      log.info("For user group: {} Members added- size: {}, members: {}", userGroup.getName(), members.size(), members);
+      log.info("For user group id: {}, name: {}, Members added- size: {}", userGroup.getUuid(), userGroup.getName(),
+          members.size());
       userGroup.setMembers(members);
     });
   }
@@ -1059,7 +1064,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, group, updatedGroup, Type.LINK_SSO);
 
     if (ssoType == SSOType.LDAP) {
-      ldapGroupSyncJobHelper.syncJob(ssoSettings);
+      LdapSettings ldapSettings = (LdapSettings) ssoSettings;
+      ldapGroupScheduledHandler.handle(ldapSettings);
     }
 
     return updatedGroup;

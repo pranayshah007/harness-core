@@ -35,6 +35,7 @@ import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.ZendeskSsoLoginResponse;
@@ -221,6 +222,8 @@ public interface UserService extends OwnedByAccount {
   boolean isTwoFactorEnabled(String accountId, String usedId);
 
   User updateUser(String userId, UpdateOperations<User> updateOperations);
+
+  void validateName(String name);
 
   /**
    * Gets the.
@@ -434,6 +437,8 @@ public interface UserService extends OwnedByAccount {
    */
   User completeNGInviteAndSignIn(UserInviteDTO userInvite);
 
+  User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId);
+
   /**
    * Complete the trial user signup. Both the trial account and the account admin user will be created
    * as part of this operation.
@@ -589,6 +594,8 @@ public interface UserService extends OwnedByAccount {
 
   boolean isUserAccountAdmin(@NotNull UserPermissionInfo userPermissionInfo, @NotNull String accountId);
 
+  boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation);
+
   boolean isUserAssignedToAccount(User user, String accountId);
 
   boolean isUserInvitedToAccount(User user, String accountId);
@@ -660,9 +667,11 @@ public interface UserService extends OwnedByAccount {
   String saveUserInvite(UserInvite userInvite);
 
   List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset, Integer pageSize,
-      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled);
+      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled,
+      boolean filterForGeneration);
 
-  long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance);
+  long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
+      boolean filterForGeneration);
 
   InviteOperationResponse checkInviteStatus(UserInvite userInvite, Generation gen);
 
@@ -696,7 +705,11 @@ public interface UserService extends OwnedByAccount {
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 
+  String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace);
+
   void removeAllUserGroupsFromUser(User user, String accountId);
 
   void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
+
+  boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged);
 }

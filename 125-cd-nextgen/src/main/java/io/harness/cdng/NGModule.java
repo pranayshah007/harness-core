@@ -70,12 +70,21 @@ import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceService;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateServiceImpl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.tas.service.TasResourceService;
@@ -185,6 +194,11 @@ public class NGModule extends AbstractModule {
     bind(TerraformCloudResourceService.class).to(TerraformCloudResourceServiceImpl.class);
     bind(ServiceSequenceService.class).to(ServiceSequenceServiceImpl.class);
     bind(TerraformCloudPlanExecutionDetailsService.class).to(TerraformCloudPlanExecutionDetailsServiceImpl.class);
+    bind(ServiceOverridesServiceV2.class).to(ServiceOverridesServiceV2Impl.class);
+    bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
+    bind(ServiceOverrideV2MigrationService.class).to(ServiceOverrideV2MigrationServiceImpl.class);
+    bind(ServiceOverrideV2SettingsUpdateService.class).to(ServiceOverrideV2SettingsUpdateServiceImpl.class);
+
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
@@ -195,5 +209,6 @@ public class NGModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
     pluginInfoProviderMultibinder.addBinding().to(AwsSamDeployPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsSamBuildPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
   }
 }

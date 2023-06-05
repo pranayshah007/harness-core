@@ -345,6 +345,9 @@ public class LdapHelper {
         return LdapResponse.builder().status(Status.FAILURE).message(LdapConstants.USER_NOT_FOUND).build();
       }
 
+      log.info("LDAP_AUTH: LDAP settings info - userConfigBaseDn: {}, bindDn: {}, searchFilter: {} ",
+          ldapUserConfig.getBaseDN(), ldapSettings.getConnectionSettings().getBindDN(),
+          ldapUserConfig.getSearchFilter());
       LdapSearch search = LdapSearch.builder()
                               .baseDN(ldapUserConfig.getBaseDN())
                               .bindCredential(ldapSettings.getConnectionSettings().getBindPassword())
@@ -356,6 +359,8 @@ public class LdapHelper {
                               .build();
 
       SearchDnResolver resolver = search.getSearchDnResolver(ldapUserConfig.getUserFilter());
+      log.info("LDAP_AUTH: search dn resolved for LDAP: {} with value: {} for userName: {}", ldapSettings.getUuid(),
+          resolver, identifier);
 
       BindAuthenticationHandler handler = new BindAuthenticationHandler(getConnectionFactory());
 

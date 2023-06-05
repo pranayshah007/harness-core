@@ -181,6 +181,7 @@ import io.harness.cvng.core.services.api.demo.ChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.AppDynamicsDataCollectionInfoMapper;
@@ -212,6 +213,8 @@ import io.harness.cvng.core.services.impl.EntityDisabledTimeServiceImpl;
 import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
+import io.harness.cvng.core.services.impl.GrafanaLokiLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.GrafanaLokiLogNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.HealthSourceOnboardingServiceImpl;
 import io.harness.cvng.core.services.impl.HostRecordServiceImpl;
 import io.harness.cvng.core.services.impl.InternalChangeConsumerServiceImpl;
@@ -259,6 +262,7 @@ import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourc
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
+import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.RiskCategoryServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
@@ -278,7 +282,6 @@ import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransfor
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.CustomChangeSourceSpecTransformer;
-import io.harness.cvng.core.transformer.changeSource.HarnessCDChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.HarnessCDCurrentGenChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.KubernetesChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.PagerDutyChangeSourceSpecTransformer;
@@ -374,6 +377,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
@@ -391,6 +395,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceI
 import io.harness.cvng.servicelevelobjective.services.impl.SLIConsecutiveMinutesProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityInstancesHandlerServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordBucketServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLODashboardServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetServiceImpl;
@@ -754,6 +759,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
+        .to(GrafanaLokiLogDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
             binder(), MonitoredServiceSpecType.class, VerifyStepMonitoredServiceResolutionService.class);
@@ -794,7 +802,7 @@ public class CVServiceModule extends AbstractModule {
     bind(DeeplinkURLService.class).to(DeeplinkURLServiceImpl.class);
     bind(RedisConfig.class)
         .annotatedWith(Names.named("lock"))
-        .toInstance(verificationConfiguration.getEventsFrameworkConfiguration().getRedisConfig());
+        .toInstance(verificationConfiguration.getRedisLockConfig());
     bind(ConsumerMessageProcessor.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.PROJECT_ENTITY))
         .to(ProjectChangeEventMessageProcessor.class);
@@ -873,7 +881,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricNextGenHealthSourceHelper.class)
         .in(Scopes.SINGLETON);
-
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
+        .to(GrafanaLokiLogNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigUpdatableEntity.class);
 
@@ -969,6 +979,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(MSHealthReportService.class).to(MSHealthReportServiceImpl.class);
     bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);
     bind(ServiceDependencyGraphService.class).to(ServiceDependencyGraphServiceImpl.class);
@@ -984,6 +995,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ChangeSourceService.class).to(ChangeSourceServiceImpl.class);
     bind(ChangeSourceEntityAndDTOTransformer.class);
     bind(SLIRecordService.class).to(SLIRecordServiceImpl.class);
+    bind(SLIRecordBucketService.class).to(SLIRecordBucketServiceImpl.class);
     bind(SLODashboardService.class).to(SLODashboardServiceImpl.class);
     bind(SLIDataProcessorService.class).to(SLIDataProcessorServiceImpl.class);
     bind(SLOHealthIndicatorService.class).to(SLOHealthIndicatorServiceImpl.class);
@@ -998,9 +1010,6 @@ public class CVServiceModule extends AbstractModule {
 
     MapBinder<ChangeSourceType, ChangeSourceSpecTransformer> changeSourceTypeChangeSourceSpecTransformerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceSpecTransformer.class);
-    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD)
-        .to(HarnessCDChangeSourceSpecTransformer.class)
-        .in(Scopes.SINGLETON);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.PAGER_DUTY)
         .to(PagerDutyChangeSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);

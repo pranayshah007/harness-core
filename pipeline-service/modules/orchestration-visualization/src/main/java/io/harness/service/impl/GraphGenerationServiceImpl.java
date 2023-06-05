@@ -110,7 +110,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public boolean updateGraphWithWaitLock(String planExecutionId) {
     String lockName = GRAPH_LOCK + planExecutionId;
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
         log.debug(String.format(
             "[PMS_GRAPH_LOCK_TEST] Not able to take lock on graph generation for lockName - %s, returning early.",
@@ -214,6 +214,12 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   @Override
+  public OrchestrationGraph getCachedOrchestrationGraphFromSecondary(String planExecutionId) {
+    return mongoStore.getFromSecondary(
+        OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId, null);
+  }
+
+  @Override
   public void cacheOrchestrationGraph(OrchestrationGraph orchestrationGraph) {
     mongoStore.upsert(orchestrationGraph, SpringCacheEntity.TTL);
   }
@@ -224,7 +230,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   @Override
   public OrchestrationGraphDTO generateOrchestrationGraphV2(String planExecutionId) {
-    OrchestrationGraph cachedOrchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
+    OrchestrationGraph cachedOrchestrationGraph = getCachedOrchestrationGraphFromSecondary(planExecutionId);
     if (cachedOrchestrationGraph == null) {
       cachedOrchestrationGraph = buildOrchestrationGraph(planExecutionId);
     } else {
@@ -239,7 +245,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   @Override
   public OrchestrationGraphDTO generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
       String startingSetupNodeId, String planExecutionId, String startingExecutionId) {
-    OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
+    OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraphFromSecondary(planExecutionId);
     if (orchestrationGraph == null) {
       orchestrationGraph = buildOrchestrationGraph(planExecutionId);
     } else {

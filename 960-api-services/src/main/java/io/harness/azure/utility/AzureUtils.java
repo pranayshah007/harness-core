@@ -15,7 +15,9 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.AzureAuthenticationException;
+import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.network.Http;
 
 import com.azure.core.credential.TokenCredential;
@@ -37,6 +39,7 @@ import com.azure.core.util.Configuration;
 import com.azure.core.util.HttpClientOptions;
 import com.azure.resourcemanager.resources.fluentcore.utils.HttpPipelineProvider;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -51,18 +54,24 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.xml.bind.DatatypeConverter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
 import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
+import okhttp3.ResponseBody;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpHost;
 import org.slf4j.Logger;
+import retrofit2.Call;
 import retrofit2.CallAdapter;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -82,6 +91,8 @@ public class AzureUtils {
   static String END_PRIVATE_KEY = "-----END PRIVATE KEY-----";
   static String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----";
   static String END_CERTIFICATE = "-----END CERTIFICATE-----";
+
+  public static int EXECUTE_REST_CALL_MAX_ATTEMPTS = 3;
 
   public String convertToScope(String endpoint) {
     if (EmptyPredicate.isNotEmpty(endpoint)) {
@@ -386,5 +397,49 @@ public class AzureUtils {
 
   public String getAuthorityHost(AzureEnvironmentType azureEnvironmentType, String tenantId) {
     return getAuthorityHost(getAzureEnvironment(azureEnvironmentType), tenantId);
+  }
+
+  public static <T> T executeRestCall(Call<T> restRequest, WingsException defaultException) {
+    net.jodah.failsafe.RetryPolicy<Response<T>> retryPolicy =
+        new net.jodah.failsafe.RetryPolicy<Response<T>>()
+            .withBackoff(1, 10, ChronoUnit.SECONDS)
+            .withMaxAttempts(EXECUTE_REST_CALL_MAX_ATTEMPTS)
+            .handle(IOException.class)
+            .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
+            .onRetry(e -> log.warn("Failure #{}. Retrying. Exception {}", e.getAttemptCount(), e.getLastFailure()))
+            .onRetriesExceeded(e -> log.warn("Failed to connect. Max retries exceeded"));
+
+    try {
+      Response<T> response = Failsafe.with(retryPolicy).get(() -> restRequest.clone().execute());
+      if (response == null) {
+        return null;
+      }
+
+      if (!response.isSuccessful()) {
+        if (defaultException != null) {
+          throw defaultException;
+        }
+
+        String error = null;
+        try (ResponseBody responseBody = response.errorBody()) {
+          if (null != responseBody) {
+            error = responseBody.string();
+          }
+        }
+
+        throw new HintException("Some problems occurred during Azure Rest API call: " + error);
+      }
+      return response.body();
+    } catch (FailsafeException | IOException ex) {
+      if (defaultException != null) {
+        throw defaultException;
+      }
+      throw new HintException("Some problems occurred during Azure Rest API call", ex.getCause());
+    }
+  }
+
+  private boolean isRetryableHttpCode(int httpCode) {
+    // https://stackoverflow.com/questions/51770071/what-are-the-http-codes-to-automatically-retry-the-request
+    return httpCode == 408 || httpCode == 502 || httpCode == 503 || httpCode == 504;
   }
 }

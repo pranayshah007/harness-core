@@ -80,11 +80,12 @@ public enum CIStepInfoType {
   SCRIPT(CI_LITE_ENGINE, "script"),
   PLUGIN_V1(CI_LITE_ENGINE, "plugin"),
   IACM(CI_LITE_ENGINE, "IACM"),
-  IACM_TERRAFORM(CI_LITE_ENGINE, "IACMTerraformPlan"),
+  IACM_TERRAFORM_PLUGIN(CI_LITE_ENGINE, "IACMTerraformPlugin"),
   BACKGROUND_V1(CI_LITE_ENGINE, "background"),
   BITRISE_V1(CI_LITE_ENGINE, "bitrise"),
   ACTION_V1(CI_LITE_ENGINE, "action"),
-  SSCA_ORCHESTRATION(CI_LITE_ENGINE, "SscaOrchestration");
+  SSCA_ORCHESTRATION(CI_LITE_ENGINE, "SscaOrchestration"),
+  SSCA_ENFORCEMENT(CI_LITE_ENGINE, "SscaEnforcement");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

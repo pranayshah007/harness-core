@@ -67,6 +67,7 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmDelegateException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
@@ -144,6 +145,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   private GitSyncConnectorHelper gitSyncConnectorHelper;
   private final String errorFormat =
       "Unexpected error occurred while doing scm operation for %s for accountId [%s], orgId [%s], projectId [%s]";
+  private final long DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS = 30;
 
   @Inject
   public ScmDelegateFacilitatorServiceImpl(@Named("connectorDecoratorService") ConnectorService connectorService,
@@ -217,9 +219,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId, false);
     final ScmGitFileTaskParams scmGitFileTaskParams = getScmGitFileTaskParams(
         connector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE_CONTENT, commitId, branchName, null);
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(
-        accountIdentifier, orgIdentifier, projectIdentifier, scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
+        projectIdentifier, scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
     try {
       return FileContent.parseFrom(gitFileTaskResponseData.getFileContent());
@@ -246,14 +248,15 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                           .build();
     final Map<String, String> ngTaskSetupAbstractionsWithOwner = getNGTaskSetupAbstractionsWithOwner(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
-    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
-                                                  .accountId(scope.getAccountIdentifier())
-                                                  .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
-                                                  .taskType(TaskType.SCM_PULL_REQUEST_TASK.name())
-                                                  .taskParameters(scmPRTaskParams)
-                                                  .executionTimeout(Duration.ofMinutes(2))
-                                                  .build();
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .accountId(scope.getAccountIdentifier())
+            .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
+            .taskType(TaskType.SCM_PULL_REQUEST_TASK.name())
+            .taskParameters(scmPRTaskParams)
+            .executionTimeout(Duration.ofMinutes(DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS))
+            .build();
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmPRTaskResponseData scmCreatePRResponse = (ScmPRTaskResponseData) delegateResponseData;
     return scmCreatePRResponse.getCreatePRResponse();
   }
@@ -677,9 +680,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                                         .encryptedDataDetails(encryptionDetails)
                                                         .pageRequest(pageRequest)
                                                         .build();
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(
-        accountIdentifier, orgIdentifier, projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
+        projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
     try {
       return GetUserReposResponse.parseFrom(scmGitRefTaskResponseData.getGetUserReposResponse());
@@ -702,9 +705,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                                         .encryptedDataDetails(encryptionDetails)
                                                         .pageRequest(pageRequest)
                                                         .build();
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(
-        accountIdentifier, orgIdentifier, projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
+        projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
     try {
       return ListBranchesWithDefaultResponse.parseFrom(
@@ -727,9 +730,9 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                                         .scmConnector(scmConnector)
                                                         .encryptedDataDetails(encryptionDetails)
                                                         .build();
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(
-        accountIdentifier, orgIdentifier, projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
+        projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
     try {
       return GetUserRepoResponse.parseFrom(scmGitRefTaskResponseData.getGetUserRepoResponse());
@@ -753,9 +756,10 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                                         .branch(newBranchName)
                                                         .baseBranch(baseBranchName)
                                                         .build();
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
     try {
       return CreateBranchResponse.parseFrom(scmGitRefTaskResponseData.getCreateBranchResponse());
@@ -784,10 +788,11 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                               .encryptedDataDetails(encryptionDetails)
                                               .build();
 
-    final DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmPushTaskParams, TaskType.SCM_PUSH_TASK);
+    final DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            scmPushTaskParams, TaskType.SCM_PUSH_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
 
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmPushTaskResponseData scmPushTaskResponseData = (ScmPushTaskResponseData) delegateResponseData;
     try {
       return CreateFileResponse.parseFrom(scmPushTaskResponseData.getCreateFileResponse());
@@ -816,10 +821,11 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                               .encryptedDataDetails(encryptionDetails)
                                               .build();
 
-    final DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmPushTaskParams, TaskType.SCM_PUSH_TASK);
+    final DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            scmPushTaskParams, TaskType.SCM_PUSH_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
 
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmPushTaskResponseData scmPushTaskResponseData = (ScmPushTaskResponseData) delegateResponseData;
     try {
       return UpdateFileResponse.parseFrom(scmPushTaskResponseData.getUpdateFileResponse());
@@ -846,10 +852,11 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                          .branch(getLatestCommitOnFileRequestDTO.getBranchName())
                                          .build();
 
-    final DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), taskParams, TaskType.SCM_GIT_REF_TASK);
+    final DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            taskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
 
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmGitRefTaskResponseData taskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
     try {
       return GetLatestCommitOnFileResponse.parseFrom(taskResponseData.getGetLatestCommitOnFileResponse());
@@ -871,9 +878,10 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final ScmGitFileTaskParams scmGitFileTaskParams =
         getScmGitFileTaskParams(scmConnector, encryptionDetails, gitFilePathDetails, GitFileTaskType.GET_FILE,
             gitFileContentRequest.getCommitId(), gitFileContentRequest.getBranch(), null);
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
     return gitFileTaskResponseData.getGitFileResponse();
   }
@@ -890,9 +898,10 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                                         .branch(branch)
                                                         .build();
 
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
 
     ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
     try {
@@ -918,10 +927,11 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
             .encryptedDataDetails(encryptionDetails)
             .filePathsList(Collections.singletonList(request.getFileDirectoryPath()))
             .build();
-    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK);
+    DelegateTaskRequest delegateTaskRequest =
+        getDelegateTaskRequest(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+            scmGitFileTaskParams, TaskType.SCM_GIT_FILE_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
 
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     GitFileTaskResponseData gitFileTaskResponseData = (GitFileTaskResponseData) delegateResponseData;
     return gitFileTaskResponseData.getListFilesInCommitResponse();
   }
@@ -932,8 +942,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     Scope eligibleDelegatesScope = getEligibleScopeOfDelegates(gitFileBatchRequest);
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(eligibleDelegatesScope.getAccountIdentifier(),
         eligibleDelegatesScope.getOrgIdentifier(), eligibleDelegatesScope.getProjectIdentifier(),
-        scmBatchGetFileTaskParams, TaskType.SCM_BATCH_GET_FILE_TASK, 5);
-    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+        scmBatchGetFileTaskParams, TaskType.SCM_BATCH_GET_FILE_TASK, 120);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
     ScmBatchGetFileTaskResponseData scmBatchGetFileTaskResponseData =
         (ScmBatchGetFileTaskResponseData) delegateResponseData;
     return GitFileBatchResponse.builder()
@@ -1000,7 +1010,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   }
 
   private DelegateTaskRequest getDelegateTaskRequest(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, TaskParameters taskParameters, TaskType taskType, long timeoutInMinutes) {
+      String projectIdentifier, TaskParameters taskParameters, TaskType taskType, long timeoutInSeconds) {
     final Map<String, String> ngTaskSetupAbstractionsWithOwner =
         getNGTaskSetupAbstractionsWithOwner(accountIdentifier, orgIdentifier, projectIdentifier);
     return DelegateTaskRequest.builder()
@@ -1008,7 +1018,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .taskParameters(taskParameters)
         .taskType(taskType.name())
-        .executionTimeout(Duration.ofMinutes(timeoutInMinutes))
+        .executionTimeout(Duration.ofSeconds(timeoutInSeconds))
         .build();
   }
 
@@ -1059,6 +1069,22 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       throw new HintException(String.format(HintException.DELEGATE_NOT_AVAILABLE_FOR_GIT_SYNC,
                                   DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
+    }
+    return delegateResponseData;
+  }
+
+  private DelegateResponseData executeDelegateSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
+    final DelegateResponseData delegateResponseData;
+    String defaultDelegateErrorMessage = "Faced issue while performing delegate task for the required git operation.";
+    try {
+      delegateResponseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      log.error("Error occurred while executing delegate task.", ex);
+      throw new ScmDelegateException(defaultDelegateErrorMessage);
+    }
+
+    if (delegateResponseData instanceof ErrorNotifyResponseData) {
+      throw new ScmDelegateException(defaultDelegateErrorMessage);
     }
     return delegateResponseData;
   }

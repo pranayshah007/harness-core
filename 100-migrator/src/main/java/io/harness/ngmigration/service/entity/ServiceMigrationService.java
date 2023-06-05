@@ -26,6 +26,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -268,6 +269,10 @@ public class ServiceMigrationService extends NgMigrationService {
       children.addAll(serviceCommandTemplates);
     }
 
+    if (isNotEmpty(service.getDeploymentTypeTemplateId())) {
+      children.add(CgEntityId.builder().id(service.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
+    }
+
     return DiscoveryNode.builder().entityNode(serviceEntityNode).children(children).build();
   }
 
@@ -397,11 +402,12 @@ public class ServiceMigrationService extends NgMigrationService {
         migrationContext, service, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
       return YamlGenerationDetails.builder()
-          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
-                                                     .reason("Unsupported Service")
-                                                     .cgBasicInfo(service.getCgBasicInfo())
-                                                     .type(entityId.getType())
-                                                     .build()))
+          .skipDetails(
+              Collections.singletonList(NGSkipDetail.builder()
+                                            .reason("Unsupported Service or some referenced entities were not migrated")
+                                            .cgBasicInfo(service.getCgBasicInfo())
+                                            .type(entityId.getType())
+                                            .build()))
           .build();
     }
 

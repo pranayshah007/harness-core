@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -46,6 +47,9 @@ import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -72,8 +76,10 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.rbac.validator.PipelineRbacService;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -82,6 +88,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -123,6 +130,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PmsFeatureFlagHelper featureFlagService;
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanService planService;
+  @Mock NGSettingsClient settingsClient;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -131,53 +139,53 @@ public class ExecutionHelperTest extends CategoryTest {
   String moduleType = "cd";
   String runtimeInputYaml = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: s1\n"
-      + "      description: desc\n"
-      + "  - stage:\n"
-      + "      identifier: s2\n"
-      + "      description: desc\n";
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: desc\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: desc\n";
   String pipelineYaml = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: s1\n"
-      + "      description: <+input>\n"
-      + "  - stage:\n"
-      + "      identifier: s2\n"
-      + "      description: <+input>\n"
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: <+input>\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: <+input>\n"
       + "  allowStageExecutions: true\n";
   String pipelineYamlWithExpressions = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s1\"\n"
-      + "      description: \"desc\"\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"<+pipeline.stages.s1.description>\"\n"
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: desc\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: <+pipeline.stages.s1.description>\n"
       + "  allowStageExecutions: true\n";
   Map<String, String> expressionValues = Collections.singletonMap("<+pipeline.stages.s1.description>", "desc");
   String mergedPipelineYaml = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s1\"\n"
-      + "      description: \"desc\"\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"desc\"\n"
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: desc\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: desc\n"
       + "  allowStageExecutions: true\n";
 
   String mergedPipelineYamlForS2 = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"desc\"\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: desc\n"
       + "  allowStageExecutions: true\n";
 
   String mergedPipelineYamlForS2WithExpression = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"<+pipeline.stages.s1.description>\"\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: <+pipeline.stages.s1.description>\n"
       + "  allowStageExecutions: true\n";
   String originalExecutionId = "originalExecutionId";
   String generatedExecutionId = "newExecId";
@@ -604,11 +612,11 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedRuntimeInputYaml = "pipeline:\n"
         + "  template:\n"
         + "    templateInputs:\n"
-        + "      serviceRef: \"svc_v2\"\n";
+        + "      serviceRef: svc_v2\n";
     String resolvedYaml = "pipeline:\n"
         + "  stage:\n"
         + "    serviceConfig:\n"
-        + "      serviceRef: \"svc_v2\"\n";
+        + "      serviceRef: svc_v2\n";
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(
@@ -633,19 +641,19 @@ public class ExecutionHelperTest extends CategoryTest {
   public void testGetPipelineYamlAndValidateForPipelineWithAllowedValues() throws IOException {
     String pipelineYamlWithAllowedValues = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"<+input>.allowedValues(a, b)\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: <+input>.allowedValues(a, b)\n";
     String runtimeInputYaml = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"a\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: a\n";
     String mergedYamlWithValidators = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"a.allowedValues(a, b)\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: \"a.allowedValues(a, b)\"\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -713,10 +721,10 @@ public class ExecutionHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPipelineYamlAndValidateWhenOPAFFisOff() throws IOException {
     String yamlWithTempRef = "pipeline:\n"
-        + "  name: \"ww\"\n"
+        + "  name: ww\n"
         + "  template:\n"
-        + "    templateRef: \"new_pipeline_template_name\"\n"
-        + "    versionLabel: \"v1\"\n"
+        + "    templateRef: new_pipeline_template_name\n"
+        + "    versionLabel: v1\n"
         + "  tags: {}\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
@@ -820,8 +828,6 @@ public class ExecutionHelperTest extends CategoryTest {
     PlanExecution createdPlanExecution = executionHelper.startExecution(
         accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, "prevId", null);
     assertThat(createdPlanExecution).isEqualTo(planExecution);
-    verify(planService, times(1)).fetchPlan(planId);
-    verify(planService, times(1)).fetchNodes(planId);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     verify(rollbackModeExecutionHelper, times(1))
         .transformPlanForRollbackMode(plan, "prevId", Collections.singletonList("n1"),
@@ -914,6 +920,37 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(processStageExecutionInfoResult.getStagesExecutionInfo().getExpressionValues()).isNull();
     assertThat(processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef())
         .isEqualTo(mergedPipelineYamlForS2);
+  }
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testUpdateSettingsInExecutionMetadataBuilder() {
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any()))
+        .thenReturn(Arrays.asList(
+            SettingResponseDTO.builder()
+                .setting(SettingDTO.builder()
+                             .identifier(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
+                             .name("setting1")
+                             .value("true")
+                             .build())
+                .build(),
+            SettingResponseDTO.builder()
+                .setting(SettingDTO.builder()
+                             .identifier(NGPipelineSettingsConstant.DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER.getName())
+                             .name("setting2")
+                             .value("true")
+                             .build())
+                .build()));
+
+    ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder();
+    executionHelper.updateSettingsInExecutionMetadataBuilder(
+        PipelineEntity.builder().accountId(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+        builder);
+    assertThat(builder.build().getSettingToValueMapCount()).isEqualTo(2);
+    assertThat(builder.build().getSettingToValueMapOrThrow(
+                   NGPipelineSettingsConstant.DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER.getName()))
+        .isEqualTo("true");
   }
 
   private String readFile(String filename) {

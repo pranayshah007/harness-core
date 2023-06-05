@@ -71,7 +71,7 @@ fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   yq -i 'del(.allowedOrigins)' $CONFIG_FILE
-  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
@@ -608,3 +608,7 @@ replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLI
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value signupDomainDenylistConfig.gcsCreds "$MINING_GCS_CREDS"
+replace_key_value signupDomainDenylistConfig.projectId "$MINING_GCS_PROJECT_ID"
+replace_key_value signupDomainDenylistConfig.bucketName "$MINING_GCS_BUCKET_NAME"

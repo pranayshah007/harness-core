@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 19
+version : 22
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -162,6 +162,7 @@ settings :
   - identifier: enable_node_execution_audit_events
     name: Enable Node Execution Audit Events
     category: PMS
+    groupIdentifier: pms_execution_settings
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: false
@@ -341,3 +342,23 @@ settings :
     allowOverrides: true
     allowedScopes:
       - ACCOUNT
+  - identifier: service_override_v2
+    name: Service Override V2 Enabled
+    category: CD
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: email_to_non_harness_users
+    name: Enable Emails to be sent to non-Harness Users
+    category: CD
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT

@@ -53,8 +53,7 @@ public class AwsSamInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetua
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
-        infrastructureMappingDTO.getAccountIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
   }
 
   private List<AwsSamDeploymentReleaseData> populateDeploymentReleaseList(

@@ -346,6 +346,16 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    return defaultConnectorService.list(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
+        version);
+  }
+
+  @Override
   public long count(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return defaultConnectorService.count(accountIdentifier, orgIdentifier, projectIdentifier);
   }
@@ -402,5 +412,10 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
     return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
+  }
+
+  @Override
+  public Long countConnectors(String accountIdentifier) {
+    return defaultConnectorService.countConnectors(accountIdentifier);
   }
 }

@@ -769,7 +769,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     ObjectNode innerMap = (ObjectNode) node.get("trigger");
     JsonNode inputYaml = innerMap.get("inputYaml");
     JsonNode pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
-    String triggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
+    String triggerPipelineYaml = YamlUtils.writeYamlString(pipelineNode);
 
     assertThat(ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, triggerPipelineYaml, ACCOUNT_ID).size())
         .isEqualTo(0);
@@ -783,7 +783,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     innerMap = (ObjectNode) node.get("trigger");
     inputYaml = innerMap.get("inputYaml");
     pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
-    String extraInputTriggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
+    String extraInputTriggerPipelineYaml = YamlUtils.writeYamlString(pipelineNode);
 
     Map<FQN, String> extraInputResult =
         ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, extraInputTriggerPipelineYaml, ACCOUNT_ID);

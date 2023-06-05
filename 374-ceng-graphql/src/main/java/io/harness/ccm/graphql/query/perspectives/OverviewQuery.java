@@ -111,4 +111,28 @@ public class OverviewQuery {
       return null;
     }
   }
+  public PerspectiveTimeSeriesData totalCostTimeSeriesStats(List<QLCEViewAggregation> aggregateFunction,
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, String accountId) {
+    List<QLCEViewTimeFilter> timeFilters = filters.stream()
+                                               .filter(filter -> filter.getTimeFilter() != null)
+                                               .map(QLCEViewFilterWrapper::getTimeFilter)
+                                               .collect(Collectors.toList());
+
+    long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
+
+    TableResult result;
+    BigQuery bigQuery = bigQueryService.get();
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
+    SelectQuery query =
+        viewsQueryBuilder.getTotalCostTimeSeriesQuery(timeFilters, groupBy, aggregateFunction, cloudProviderTableName);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    try {
+      result = bigQuery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to get totalCostTimeSeriesStats. {}", e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+    return perspectiveTimeSeriesHelper.fetch(result, timePeriod, groupBy);
+  }
 }

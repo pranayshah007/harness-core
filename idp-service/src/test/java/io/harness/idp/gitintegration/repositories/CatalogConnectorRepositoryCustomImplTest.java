@@ -12,11 +12,13 @@ import static io.harness.rule.OwnerRule.VIGNESWARA;
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.rule.Owner;
@@ -34,6 +36,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.IDP)
 public class CatalogConnectorRepositoryCustomImplTest {
   @InjectMocks private CatalogConnectorRepositoryCustomImpl catalogConnectorRepositoryCustomImpl;
+  @Mock SetupUsageProducer setupUsageProducer;
 
   @Mock private MongoTemplate mongoTemplate;
 
@@ -53,6 +56,8 @@ public class CatalogConnectorRepositoryCustomImplTest {
     CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity();
     when(mongoTemplate.findOne(any(Query.class), eq(CatalogConnectorEntity.class))).thenReturn(null);
     when(mongoTemplate.save(any(CatalogConnectorEntity.class))).thenReturn(catalogConnectorEntity);
+    doNothing().when(setupUsageProducer).publishConnectorSetupUsage(any(), any(), any());
+    doNothing().when(setupUsageProducer).deleteConnectorSetupUsage(any(), any());
     CatalogConnectorEntity entity = catalogConnectorRepositoryCustomImpl.saveOrUpdate(catalogConnectorEntity);
     assertNotNull(entity);
 

@@ -7,6 +7,9 @@
 
 package software.wings.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.notification.SmtpConfig.SmtpConfigBuilder;
+
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -41,18 +44,19 @@ public class SmtpConfigResourceNG {
     if (smtpConfig == null) {
       return null;
     }
-    io.harness.notification.SmtpConfig notificationSmtpConfig =
-        io.harness.notification.SmtpConfig.builder()
-            .host(smtpConfig.getHost())
-            .port(smtpConfig.getPort())
-            .fromAddress(smtpConfig.getFromAddress())
-            .useSSL(smtpConfig.isUseSSL())
-            .startTLS(smtpConfig.isStartTLS())
-            .username(smtpConfig.getUsername())
-            .password(smtpConfig.getPassword())
-            .encryptedPassword(smtpConfig.getEncryptedPassword())
-            .build();
+    SmtpConfigBuilder notificationSmtpConfigBuilder = io.harness.notification.SmtpConfig.builder()
+                                                          .host(smtpConfig.getHost())
+                                                          .port(smtpConfig.getPort())
+                                                          .fromAddress(smtpConfig.getFromAddress())
+                                                          .useSSL(smtpConfig.isUseSSL())
+                                                          .startTLS(smtpConfig.isStartTLS())
+                                                          .username(smtpConfig.getUsername())
+                                                          .password(smtpConfig.getPassword())
+                                                          .encryptedPassword(smtpConfig.getEncryptedPassword());
+    if (isNotEmpty(smtpConfig.getDelegateSelectors())) {
+      notificationSmtpConfigBuilder.delegateSelectors(smtpConfig.getDelegateSelectors());
+    }
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(smtpConfig);
-    return new RestResponse<>(new SmtpConfigResponse(notificationSmtpConfig, encryptionDetails));
+    return new RestResponse<>(new SmtpConfigResponse(notificationSmtpConfigBuilder.build(), encryptionDetails));
   }
 }

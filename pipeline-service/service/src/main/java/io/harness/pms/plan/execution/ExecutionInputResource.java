@@ -101,7 +101,7 @@ public class ExecutionInputResource {
   @Path("/{nodeExecutionId}")
   @ApiOperation(
       value = "Get the template for Execution time inputs for any step", nickname = "getExecutionInputTemplate")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "getExecutionInputTemplate",
       summary = "Get the template for Execution time inputs for any stage/step",
       responses =

@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: batch-processing
+  namespace: {{ .Release.Namespace }}
+data:
+  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  MEMORY: {{ .Values.java.memory | quote }}
+  REPLICA: {{ .Values.replicaCount | quote }}
+  ISOLATED_REPLICA: {{ .Values.isolatedReplica | quote }}
+  MONGO_INDEX_MANAGER_MODE: "AUTO"
+  EVEMTS_MONGO_INDEX_MANAGER_MODE: "AUTO"
+  {{- if not .Values.workloadIdentity.enabled }}
+  GOOGLE_CREDENTIALS_PATH: "/opt/harness/svc/ce_batch_gcp_credentials.json"
+  CE_GCP_CREDENTIALS_PATH: "/opt/harness/svc/ce_batch_gcp_credentials.json"
+  GOOGLE_APPLICATION_CREDENTIALS: "/opt/harness/svc/ce_gcp_home_project_creds.json"
+  {{- end }}
+  S3_SYNC_CONFIG_BUCKET_NAME: {{ .Values.cloudProviderConfig.S3_SYNC_CONFIG_BUCKET_NAME  | quote}}
+  S3_SYNC_CONFIG_REGION: {{ .Values.cloudProviderConfig.S3_SYNC_CONFIG_REGION  | quote}}
+  UI_SERVER_URL: {{.Values.global.loadbalancerURL}}
+  SEGMENT_ENABLED: "false"
+  ANOMALY_DETECTION_PYTHON_SERVICE_URL: "http://anomaly-detection.{{ .Release.Namespace }}.svc.cluster.local:8081"
+  ANOMALY_DETECTION_USE_PROPHET: "true"
+  BANZAI_CONFIG_HOST: "http://cloud-info.{{ .Release.Namespace }}.svc.cluster.local"
+  BANZAI_CONFIG_PORT: "8082"
+  METRICS_COLLECTION_DISABLED: "true"
+  BANZAI_RECOMMENDER_BASEURL: "http://telescopes.{{ .Release.Namespace }}.svc.cluster.local:9090/"
+  NG_MANAGER_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL: "http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/"
+  CE_NG_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL: "http://nextgen-ce.{{ .Release.Namespace }}.svc.cluster.local:6340/ccm/api/"
+  CONNECTOR_HEALTH_UPDATE_CRON: "0 0 10 * * ?"
+  GCP_PROJECT_ID: {{ .Values.global.ccm.gcpProjectId  | quote}}
+  CLUSTER_DATA_GCS_BUCKET: {{ .Values.cloudProviderConfig.CLUSTER_DATA_GCS_BUCKET  | quote}}
+  CLUSTER_DATA_GCS_BACKUP_BUCKET: {{ .Values.cloudProviderConfig.CLUSTER_DATA_GCS_BACKUP_BUCKET  | quote}}
+  GCP_USE_NEW_PIPELINE: "true"
+  AWS_USE_NEW_PIPELINE: "true"
+  GCP_SYNC_ENABLED: "true"
+  CONNECTOR_HEALTH_UPDATE_JOB_ENABLED: "true"
+  DATA_PIPELINE_CONFIG_GCP_PROJECT_ID: {{ .Values.global.ccm.gcpProjectId  | quote}}
+  DATA_PIPELINE_CONFIG_GCS_BASE_PATH: {{ .Values.cloudProviderConfig.DATA_PIPELINE_CONFIG_GCS_BASE_PATH  | quote}}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  NEXT_GEN_MANAGER_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  CE_NG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  CLICKHOUSE_ENABLED: {{ .Values.clickhouse.enabled | quote }}
+  {{- if .Values.clickhouse.enabled }}
+  CLICKHOUSE_URL: "jdbc:ch://clickhouse.{{ .Release.Namespace }}.svc.cluster.local:8123"
+  {{- end }}
+  USE_WORKLOAD_IDENTITY: {{ .Values.workloadIdentity.enabled | quote }}
+  AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED: {{ .Values.awsAccountTagsCollectionJobConfig.enabled | quote }}
+  GCP_BQ_UPDATE_BATCH_ENABLED: "false"
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

@@ -359,6 +359,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
+
     // For backward compatibility
     metricPackThresholds.forEach(metricPackThreshold
         -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));
@@ -538,7 +539,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       timeSeriesRecordsQuery = timeSeriesRecordsQuery.filter(TimeSeriesRecordKeys.metricName, metricName);
     }
     // TODO: filter values that are outside of given time range.
-    return timeSeriesRecordsQuery.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+    return timeSeriesRecordsQuery.asList();
   }
 
   @Override

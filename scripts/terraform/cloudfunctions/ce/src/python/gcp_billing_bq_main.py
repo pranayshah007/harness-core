@@ -1106,11 +1106,13 @@ def ingest_into_unified(jsonData):
     query = """  DELETE FROM `%s.unifiedTable` WHERE DATE(startTime) >= DATE_SUB(@run_date , INTERVAL %s DAY) AND cloudProvider = "GCP" 
                 AND gcpBillingAccountId IN (%s);
            INSERT INTO `%s.unifiedTable` (product, cost, gcpProduct,gcpSkuId,gcpSkuDescription, startTime, gcpProjectId,
-                region,zone,gcpBillingAccountId,cloudProvider, discount, labels, fxRateSrcToDest, ccmPreferredCurrency)
+                region,zone,gcpBillingAccountId,cloudProvider, discount, labels, fxRateSrcToDest, ccmPreferredCurrency,
+                gcpInvoiceMonth, gcpCostType)
                 SELECT service.description AS product, (cost %s) AS cost, service.description AS gcpProduct, sku.id AS gcpSkuId,
                      sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, project.id AS gcpProjectId,
                      location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, (SELECT SUM(c.amount %s) FROM UNNEST(credits) c) as discount, labels AS labels,
-                     %s as fxRateSrcToDest, %s as ccmPreferredCurrency 
+                     %s as fxRateSrcToDest, %s as ccmPreferredCurrency, 
+                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType
                 FROM `%s.%s`
                 WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) <= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL 1 DAY) AND
                      DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;

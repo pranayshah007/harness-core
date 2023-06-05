@@ -21,6 +21,7 @@ import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
 import static io.harness.ng.core.common.beans.Generation.CG;
 import static io.harness.ng.core.common.beans.Generation.NG;
+import static io.harness.ng.core.common.beans.UserSource.JIT;
 import static io.harness.ng.core.common.beans.UserSource.LDAP;
 import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.common.beans.UserSource.SCIM;
@@ -74,8 +75,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.ccm.license.CeLicenseInfo;
-import io.harness.ccm.license.CeLicenseType;
+import io.harness.cd.CDLicenseType;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -108,6 +108,7 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
@@ -131,7 +132,9 @@ import io.harness.ng.core.switchaccount.SamlIdentificationInfo;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
+import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -277,6 +280,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -287,6 +291,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -339,6 +345,13 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
+  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>()=\\/]*$");
+  private static final String CD = "CD";
+  private static final String CI = "CI";
+  private static final String FF = "FF";
+  private static final String CCM = "CCM";
+  private static final String STO = "STO";
+  private static final String SRM = "SRM";
 
   /**
    * The Executor service.
@@ -730,7 +743,7 @@ public class UserServiceImpl implements UserService {
   public boolean trialSignup(UserInvite userInvite) {
     final String emailAddress = userInvite.getEmail().toLowerCase();
     validateTrialSignup(emailAddress);
-    signupService.validateName(userInvite.getName());
+    validateName(userInvite.getName());
     signupService.validatePassword(userInvite.getPassword());
 
     UserInvite userInviteInDB = signupService.getUserInviteByEmail(emailAddress);
@@ -779,11 +792,11 @@ public class UserServiceImpl implements UserService {
   @Override
   public boolean accountJoinRequest(AccountJoinRequest accountJoinRequest) {
     final String emailAddress = accountJoinRequest.getEmail().toLowerCase();
-    signupService.validateName(accountJoinRequest.getName());
+    validateName(accountJoinRequest.getName());
     signupService.validateEmail(emailAddress);
     Map<String, String> params = new HashMap<>();
     params.put("email", emailAddress);
-    params.put("name", accountJoinRequest.getName());
+    params.put("name", sanitizeUserName(accountJoinRequest.getName()));
     params.put("url", "https://app.harness.io/#/login");
     params.put("companyName", accountJoinRequest.getCompanyName());
     params.put("note", accountJoinRequest.getNote());
@@ -1101,7 +1114,10 @@ public class UserServiceImpl implements UserService {
 
     } else {
       UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-      updateOperations.set(UserKeys.name, user.getName());
+      if (isNotEmpty(user.getName())) {
+        validateName(user.getName());
+        updateOperations.set(UserKeys.name, user.getName());
+      }
       updateOperations.set(UserKeys.passwordHash, hashpw(new String(user.getPassword()), BCrypt.gensalt()));
       if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
           && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
@@ -1222,17 +1238,11 @@ public class UserServiceImpl implements UserService {
             account.getUuid());
     Map<String, String> model = getTemplateModel(user.getName(), loginUrl);
     model.put("company", account.getCompanyName());
-    model.put(
-        "subject", "You have been invited to the " + account.getCompanyName().toUpperCase() + " account at Harness");
+    model.put("subject", "You have been added to the account " + account.getAccountName() + " on Harness");
     model.put("email", user.getEmail());
     model.put("name", user.getEmail());
     model.put("authenticationMechanism", account.getAuthenticationMechanism().getType());
-    model.put("message",
-        "You have been added to account " + account.getAccountName() + " on Harness Platform."
-            + " CLick below to Sign-in");
-
-    SSOSettings ssoSettings = getSSOSettings(account);
-    model.put("ssoUrl", checkGetDomainName(account, ssoSettings.getUrl()));
+    model.put("message", "You have been added to the account " + account.getAccountName() + " on Harness Platform.");
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));
@@ -1510,8 +1520,7 @@ public class UserServiceImpl implements UserService {
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
-
-    if (isUserAssignedToAccount(user, accountId)) {
+    if (isUserAssignedToAccountInGeneration(user, accountId, CG)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
     } else if (isUserInvitedToAccount(user, accountId)) {
@@ -1523,6 +1532,9 @@ public class UserServiceImpl implements UserService {
       user.getAccounts().add(account);
     } else {
       userInvite.setUuid(wingsPersistence.save(userInvite));
+      if (isUserAssignedToAccount(user, accountId)) {
+        isInviteAcceptanceRequired = false;
+      }
       if (isInviteAcceptanceRequired && !isPLNoEmailForSamlAccountInvitesEnabled) {
         user.getPendingAccounts().add(account);
       } else {
@@ -1910,7 +1922,7 @@ public class UserServiceImpl implements UserService {
     if (existingInvite.isCompleted()) {
       return FAIL;
     }
-    signupService.validateName(userInvite.getName());
+    validateName(userInvite.getName());
     if (userInvite.getPassword() == null) {
       throw new InvalidRequestException("User name/password is not provided", USER);
     }
@@ -1959,7 +1971,7 @@ public class UserServiceImpl implements UserService {
 
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("email", userEmail);
-    properties.put("name", user.getName());
+    properties.put("name", sanitizeUserName(user.getName()));
     properties.put("id", user.getUuid());
     properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
     properties.put("accountId", accountId);
@@ -2000,7 +2012,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User completeNGInviteAndSignIn(UserInviteDTO userInvite) {
-    signupService.validateName(userInvite.getName());
+    validateName(userInvite.getName());
     if (!validateNgInvite(userInvite)) {
       throw new InvalidRequestException("User invite token invalid");
     }
@@ -2124,6 +2136,29 @@ public class UserServiceImpl implements UserService {
     NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
   }
 
+  @Override
+  public User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId) {
+    User user = getUserByEmail(email);
+    if (user == null) {
+      user = anUser().build();
+      user.setEmail(email.trim().toLowerCase());
+      user.setName(email.trim().toLowerCase());
+      user.setRoles(new ArrayList<>());
+      user.setEmailVerified(true);
+      user.setAppId(GLOBAL_APP_ID);
+      user.setAccounts(new ArrayList<>());
+    }
+    user = createUser(user, accountId);
+    try {
+      NGRestUtils.getResponse(ngInviteClient.completeUserCreationForJIT(email, accountId));
+      addUserToAccount(user.getUuid(), accountId, JIT);
+    } catch (Exception ex) {
+      log.info("JIT Error: User creation call in Ng failed while provisioning user.", ex);
+      throw new WingsException("Something went wrong. Please re-try login or contact Harness Support");
+    }
+    return user;
+  }
+
   private UserSource getUserSource(boolean isScimInvite, boolean isLDAPInvite) {
     UserSource userSource = MANUAL;
     if (isScimInvite) {
@@ -2145,6 +2180,7 @@ public class UserServiceImpl implements UserService {
 
   private void marketPlaceSignup(User user, final UserInvite userInvite, MarketPlaceType marketPlaceType) {
     validateUser(user);
+    log.info("Info for user: {}", user);
 
     UserInvite existingInvite = wingsPersistence.get(UserInvite.class, userInvite.getUuid());
     if (existingInvite == null) {
@@ -2187,7 +2223,7 @@ public class UserServiceImpl implements UserService {
                         .build();
       wingsPersistence.save(GCPMarketplaceCustomer.builder()
                                 .gcpAccountId(gcpAccountId)
-                                .harnessAccountId(setupAccountForUser(user, userInvite, licenseInfo))
+                                .harnessAccountId(setupAccountForUser(user, userInvite, licenseInfo, true))
                                 .build());
       gcpProcurementService.approveAccount(gcpAccountId);
     } else {
@@ -2203,15 +2239,20 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  private String setupAccountForUser(User user, UserInvite userInvite, LicenseInfo licenseInfo) {
+  private String setupAccountForUser(User user, UserInvite userInvite, LicenseInfo licenseInfo, boolean isNG) {
     Account account = Account.Builder.anAccount()
                           .withAccountName(user.getAccountName())
                           .withCompanyName(user.getCompanyName())
                           .withLicenseInfo(licenseInfo)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
+    log.info("Info for account: {}", account);
 
-    account = setupAccount(account);
+    if (isNG) {
+      account = setupNGAccount(account);
+    } else {
+      account = setupAccount(account);
+    }
     String accountId = account.getUuid();
     List<UserGroup> accountAdminGroups = getAccountAdminGroup(accountId);
     saveUserAndUserGroups(user, account, accountAdminGroups);
@@ -2779,6 +2820,9 @@ public class UserServiceImpl implements UserService {
   @Override
   public User createUser(User user, String accountId) {
     boolean isExistingUser = user.getUuid() != null;
+    if (null != user.getName()) {
+      validateName(user.getName());
+    }
     user = wingsPersistence.saveAndGet(User.class, user);
     if (isExistingUser) {
       evictUserFromCache(user.getUuid());
@@ -2792,6 +2836,7 @@ public class UserServiceImpl implements UserService {
   public User updateUserProfile(@NotNull User user) {
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
     if (user.getName() != null) {
+      validateName(user.getName());
       updateOperations.set(UserKeys.name, user.getName());
     } else {
       updateOperations.unset(UserKeys.name);
@@ -2868,6 +2913,7 @@ public class UserServiceImpl implements UserService {
     }
 
     if (user.getName() != null) {
+      // validateName(user.getName());
       updateOperations.set(UserKeys.name, user.getName());
     } else {
       updateOperations.unset(UserKeys.name);
@@ -2981,6 +3027,9 @@ public class UserServiceImpl implements UserService {
     PageResponse<User> pageResponse = wingsPersistence.query(User.class, pageRequest);
     if (loadUserGroups) {
       loadUserGroupsForUsers(pageResponse.getResponse(), accountId);
+    }
+    if (isNotEmpty(pageResponse)) {
+      userServiceHelper.processForSCIMUsers(accountId, pageResponse.getResponse(), CG);
     }
     return pageResponse;
   }
@@ -3188,6 +3237,18 @@ public class UserServiceImpl implements UserService {
     evictUserFromCache(userId);
     publishUserEvent(oldUser, updatedUser);
     return updatedUser;
+  }
+
+  @Override
+  public void validateName(String name) {
+    if (isBlank(name)) {
+      throw new InvalidRequestException("Name cannot be empty", USER);
+    }
+
+    Matcher matcher = NAME_PATTERN.matcher(name);
+    if (!matcher.matches()) {
+      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, (, ), =, /", USER);
+    }
   }
 
   private void deleteUser(User user) {
@@ -3574,6 +3635,18 @@ public class UserServiceImpl implements UserService {
     return setupAccount(account, true);
   }
 
+  private Account setupNGAccount(Account account) {
+    account.setAppId(GLOBAL_APP_ID);
+    account.setDefaultExperience(DefaultExperience.NG);
+    account.setCreatedFromNG(true);
+    account.setProductLed(true);
+
+    Account savedAccount = accountService.save(account, false, false);
+    log.info("New account created with accountId {} and licenseType {}", account.getUuid(),
+        account.getLicenseInfo().getAccountType());
+    return savedAccount;
+  }
+
   private Account setupAccount(Account account, boolean shouldCreateSampleApp) {
     // HAR-8645: Always set default appId for account creation to pass validation
     account.setAppId(GLOBAL_APP_ID);
@@ -3715,6 +3788,18 @@ public class UserServiceImpl implements UserService {
     return permissions.contains(PermissionType.ACCOUNT_MANAGEMENT);
   }
 
+  @Override
+  public boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(generation)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return isUserAssignedToAccount(user, accountId);
+  }
   @Override
   public boolean isUserAssignedToAccount(User user, String accountId) {
     return user != null && isNotEmpty(user.getAccounts())
@@ -4049,7 +4134,8 @@ public class UserServiceImpl implements UserService {
   }
 
   public List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset,
-      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
+      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled,
+      boolean filterForGeneration) {
     Query<User> query;
     if (isNotEmpty(searchTerm)) {
       query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance);
@@ -4062,6 +4148,10 @@ public class UserServiceImpl implements UserService {
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
+    if (filterForGeneration) {
+      filterListForGeneration(accountId, userList, CG);
+      userServiceHelper.processForSCIMUsers(accountId, userList, CG);
+    }
     if (loadUserGroups) {
       loadUserGroupsForUsers(userList, accountId);
     }
@@ -4084,9 +4174,15 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance) {
+  public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
+      boolean filterForGeneration) {
     Query<User> query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
-    query.criteria(UserKeys.disabled).notEqual(true);
+    if (excludeDisabled) {
+      query.criteria(UserKeys.disabled).notEqual(true);
+    }
+    if (filterForGeneration) {
+      queryFilterOnlyCGUsers(accountId, query);
+    }
     return query.count();
   }
 
@@ -4238,12 +4334,14 @@ public class UserServiceImpl implements UserService {
 
   private void completeUserInfo(UserInvite userInvite, User existingUser) {
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    updateOperations.set(UserKeys.name, userInvite.getName().trim());
+    String userName = userInvite.getName().trim();
+    validateName(userName);
+    updateOperations.set(UserKeys.name, userName);
     updateOperations.set(UserKeys.passwordHash, hashpw(new String(userInvite.getPassword()), BCrypt.gensalt()));
     updateUser(existingUser.getUuid(), updateOperations);
   }
 
-  private String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
+  public String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
     String accountId;
     LicenseInfo licenseInfo = LicenseInfo.builder()
                                   .accountType(AccountType.PAID)
@@ -4255,42 +4353,24 @@ public class UserServiceImpl implements UserService {
     String dimension = marketPlace.getDimension();
     Edition plan = licenseService.getDimensionPlan(dimension);
     boolean premiumSupport = licenseService.hasPremierSupport(dimension);
-    LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+    LicenseType licenseType = licenseService.getModuleLicenseType(plan);
     Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
+    // dimensionModule is an internal way for us to test dimensions that belong not to the same listing
+    // because when published, prices are high
+    String dimensionModule = "";
+    if (awsMarketPlaceApiHandler.isDimensionV2Provisionable(dimension, orderQuantity)) {
+      dimensionModule = dimension.split("_")[0];
+    }
+    log.info("dimension:{}, dimensionModule, plan:{}, premiumSupport:{}, licenseType:{}, orderQuantity:{}", dimension,
+        dimensionModule, plan, premiumSupport, licenseType, orderQuantity);
 
-    log.info("dimension:{}, plan:{}, premiumSupport:{}, icenseType:{}, orderQuantity:{}", dimension, plan,
-        premiumSupport, licenseType, orderQuantity);
-
-    if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
-        licenseInfo.setAccountType(AccountType.TRIAL);
-      }
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-    } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCeProductCode())) {
-      CeLicenseType ceLicenseType = CeLicenseType.PAID;
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
-        ceLicenseType = CeLicenseType.FULL_TRIAL;
-      }
-      licenseInfo.setAccountType(AccountType.TRIAL);
-      licenseInfo.setLicenseUnits(MINIMAL_ORDER_QUANTITY);
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-      licenseService.updateCeLicense(accountId,
-          CeLicenseInfo.builder()
-              .expiryTime(marketPlace.getExpirationDate().getTime())
-              .licenseType(ceLicenseType)
-              .build());
-    } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())) {
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
-        licenseInfo.setAccountType(AccountType.TRIAL);
-      }
-
-      // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-      adminLicenseHttpClient.createAccountLicense(accountId,
+    if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())
+        || CD.equals(dimensionModule)) {
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
-              .serviceInstances(orderQuantity)
+              .workloads(orderQuantity)
+              .cdLicenseType(CDLicenseType.SERVICES)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CD)
               .edition(plan)
@@ -4299,26 +4379,17 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+      log.info("CDModuleLicense {} created. CDModuleLicense {} response.", response.getId(), response);
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
-      CeLicenseType ceLicenseType = CeLicenseType.PAID;
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
-        ceLicenseType = CeLicenseType.FULL_TRIAL;
-      }
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())
+        || CCM.equals(dimensionModule)) {
       Long spendLimit = Long.valueOf(orderQuantity);
       log.info("spendLimit:{}", spendLimit);
 
-      // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
 
-      licenseService.updateCeLicense(accountId,
-          CeLicenseInfo.builder()
-              .expiryTime(marketPlace.getExpirationDate().getTime())
-              .licenseType(ceLicenseType)
-              .build());
-
-      adminLicenseHttpClient.createAccountLicense(accountId,
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           CEModuleLicenseDTO.builder()
               .spendLimit(spendLimit)
               .accountIdentifier(accountId)
@@ -4329,18 +4400,20 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+      log.info("CEModuleLicense {} created. CEModuleLicense {} response.", response.getId(), response);
+
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())
+        || FF.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       Long numberOfClientMAUs = licenseService.getNumberOfClientMAUs(plan);
       log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
 
-      // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-      adminLicenseHttpClient.createAccountLicense(accountId,
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           CFModuleLicenseDTO.builder()
               .numberOfClientMAUs(numberOfClientMAUs)
               .numberOfUsers(orderQuantity)
@@ -4352,15 +4425,17 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+
+      log.info("CFModuleLicense {} created. CFModuleLicense {} response.", response.getId(), response);
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())
+        || CI.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-      adminLicenseHttpClient.createAccountLicense(accountId,
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           CIModuleLicenseDTO.builder()
               .numberOfCommitters(orderQuantity)
               .accountIdentifier(accountId)
@@ -4371,15 +4446,17 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+
+      log.info("CIModuleLicense {} created. CIModuleLicense {} response.", response.getId(), response);
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())
+        || SRM.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-      adminLicenseHttpClient.createAccountLicense(accountId,
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           SRMModuleLicenseDTO.builder()
               .numberOfServices(orderQuantity)
               .accountIdentifier(accountId)
@@ -4390,15 +4467,18 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+
+      log.info("SRMModuleLicense {} created. SRMModuleLicense {} response.", response.getId(), response);
+
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())
+        || STO.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
-      adminLicenseHttpClient.createAccountLicense(accountId,
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           STOModuleLicenseDTO.builder()
               .numberOfDevelopers(orderQuantity)
               .accountIdentifier(accountId)
@@ -4409,7 +4489,9 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+
+      log.info("CEModuleLicense {} created. CEModuleLicense {} response.", response.getId(), response);
     } else {
       throw new InvalidRequestException("Cannot resolve AWS marketplace order");
     }
@@ -4453,6 +4535,53 @@ public class UserServiceImpl implements UserService {
       UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
       updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
       updateUser(user.getUuid(), updateOperations);
+    }
+  }
+
+  @Override
+  public boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged) {
+    boolean updated = true;
+    if (Generation.NG.equals(generation)) {
+      try {
+        UserMetadataDTO userMetadata =
+            UserMetadataDTO.builder().uuid(userId).externallyManaged(externallyManaged).build();
+        UserMetadataDTO updatedUserMetadata =
+            NGRestUtils.getResponse(ngInviteClient.updateUserMetadata(userId, userMetadata));
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update externallyManaged status for user- {}", userId, ex);
+        updated = false;
+      }
+    } else {
+      try {
+        UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+        updateOperations.set(UserKeys.imported, externallyManaged);
+        updateUser(userId, updateOperations);
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update imported status for user- {}", userId, ex);
+        updated = false;
+      }
+    }
+    return updated;
+  }
+
+  private void queryFilterOnlyCGUsers(String accountId, Query<User> query) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      query.and(query
+                    .criteria(UserKeys.userAccountLevelDataMap + "." + accountId + "."
+                        + UserAccountLevelDataKeys.userProvisionedTo)
+                    .equal(CG.name()));
+    }
+  }
+  private void filterListForGeneration(String accountId, List<User> userList, Generation generation) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      Iterator<User> i = userList.iterator();
+      while (i.hasNext()) {
+        User user = i.next();
+        if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
+            && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
+          i.remove();
+        }
+      }
     }
   }
 }

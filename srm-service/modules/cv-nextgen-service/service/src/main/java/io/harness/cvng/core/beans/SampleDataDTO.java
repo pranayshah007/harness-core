@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.beans;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -17,9 +18,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class SampleDataDTO {
-  @NotNull String jsonResponse;
-  @NotNull String groupName;
-  @NotNull String metricValueJSONPath;
-  @NotNull String timestampJSONPath;
+  @NotEmpty @NotNull String jsonResponse;
+  @NotNull @NotEmpty String groupName;
+  @NotNull @NotEmpty String metricValueJSONPath;
+  @NotNull @NotEmpty String timestampJSONPath;
   String timestampFormat;
 }

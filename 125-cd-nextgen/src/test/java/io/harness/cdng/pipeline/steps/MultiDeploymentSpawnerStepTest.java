@@ -191,10 +191,13 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT)
-                                               .putAllMatrixValues(Maps.newHashMap("serviceRef", "svc1"))
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT)
+                                .addMatrixCombination(0)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .putAllMatrixValues(Maps.newHashMap("serviceRef", "svc1"))
+                                .build())
                         .build()))
                 .build());
     MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
@@ -237,6 +240,9 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                                 .setTotalIterations(1)
                                                 .setMatrixMetadata(
                                                     MatrixMetadata.newBuilder()
+                                                        .addMatrixCombination(0)
+                                                        .addAllMatrixKeysToSkipInName(
+                                                            MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
                                                         .setSubType(MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT)
                                                         .putAllMatrixValues(map))
                                                 .build())
@@ -278,7 +284,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(true).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(true)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -300,19 +307,25 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(0)
+                                .putAllMatrixValues(map)
+                                .build())
                         .build()))
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map2)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(1)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map2)
+                                .build())
                         .build()))
                 .setMaxConcurrency(2)
                 .build());
@@ -352,7 +365,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(false)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -374,19 +388,25 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(0)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map)
+                                .build())
                         .build()))
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map2)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .addMatrixCombination(1)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map2)
+                                .build())
                         .build()))
                 .setMaxConcurrency(1)
                 .build());
@@ -428,7 +448,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(false)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -450,19 +471,25 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .addMatrixCombination(0)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .putAllMatrixValues(map)
+                                .build())
                         .build()))
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
-                        .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
-                                               .putAllMatrixValues(map2)
-                                               .build())
+                        .setMatrixMetadata(
+                            MatrixMetadata.newBuilder()
+                                .addMatrixCombination(1)
+                                .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                .putAllMatrixValues(map2)
+                                .build())
                         .build()))
                 .setMaxConcurrency(1)
                 .build());

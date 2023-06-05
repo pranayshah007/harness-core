@@ -43,18 +43,19 @@ public class AzureARMConfigDAL {
             .filter(AzureARMConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
             .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
             .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
-            .filter(AzureARMConfigKeys.stageExecutionId, ambiance.getStageExecutionId())
+            .filter(AzureARMConfigKeys.stageExecutionId, AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
             .order(Sort.ascending(AzureARMConfigKeys.createdAt));
     return query.get();
   }
 
   public void clearAzureARMConfig(@Nonnull Ambiance ambiance, @Nonnull String provisionerIdentifier) {
-    persistence.delete(persistence.createQuery(AzureARMConfig.class)
-                           .filter(AzureARMConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
-                           .filter(AzureARMConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
-                           .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
-                           .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
-                           .filter(AzureARMConfigKeys.stageExecutionId, ambiance.getStageExecutionId()));
+    persistence.delete(
+        persistence.createQuery(AzureARMConfig.class)
+            .filter(AzureARMConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+            .filter(AzureARMConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
+            .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
+            .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
+            .filter(AzureARMConfigKeys.stageExecutionId, AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance)));
   }
 
   public void deleteForAccount(String accountId) {

@@ -35,9 +35,8 @@ import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.cdng.ssh.SshEntityHelper;
-import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
@@ -60,6 +59,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.Infrastruct
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;

@@ -165,7 +165,8 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
                            .map(variable
                                -> StringNGVariable.builder()
                                       .name(variable.getName())
-                                      .value(ParameterField.createValueField(variable.getValue()))
+                                      .value(ParameterField.createValueField(
+                                          StringUtils.isNotBlank(variable.getValue()) ? variable.getValue() : ""))
                                       .type(NGVariableType.STRING)
                                       .build())
                            .collect(Collectors.toList()));

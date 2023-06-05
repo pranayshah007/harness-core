@@ -7,7 +7,7 @@
 
 package io.harness.cdng.aws.sam;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsSamRollbackBaseStepInfo")
 @FieldNameConstants(innerTypeName = "AwsSamRollbackBaseStepInfoKeys")
 public class AwsSamRollbackBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

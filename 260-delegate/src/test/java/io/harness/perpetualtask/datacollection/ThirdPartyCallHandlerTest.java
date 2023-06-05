@@ -8,6 +8,7 @@
 package io.harness.perpetualtask.datacollection;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +30,9 @@ import software.wings.delegatetasks.DelegateLogService;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import okhttp3.MediaType;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,6 +77,38 @@ public class ThirdPartyCallHandlerTest extends DelegateTestBase {
     assertThat(apiCallLogCaptor.getValue().getAccountId()).isEqualTo(accountId);
     assertThat(apiCallLogCaptor.getValue().getStartTime()).isEqualTo(startTime.toEpochMilli());
     assertThat(apiCallLogCaptor.getValue().getEndTime()).isEqualTo(endTime.toEpochMilli());
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category({UnitTests.class})
+  public void testAccept_withDefaultRequestAndBody() {
+    ArgumentCaptor<ApiCallLogDTO> apiCallLogCaptor = ArgumentCaptor.forClass(ApiCallLogDTO.class);
+    ArgumentCaptor<String> accountIdCaptor = ArgumentCaptor.forClass(String.class);
+    ThirdPartyCallHandler thirdPartyCallHandler =
+        new ThirdPartyCallHandler(accountId, requestUuid, delegateLogService, startTime, endTime);
+    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    RequestBody body = RequestBody.create(JSON, "{\"jsonExample\":\"value\"}");
+    Request request =
+        new Request.Builder().url("http://example.com/test").post(body).addHeader("headerName", "headerValue").build();
+    Call<String> call = mock(Call.class);
+    when(call.request()).thenReturn(request);
+    String responseStr = "This is test response";
+    Response<String> response = Response.success(responseStr);
+    CallDetails callDetails =
+        CallDetails.builder().request(call).response(response).requestTime(startTime).responseTime(endTime).build();
+    thirdPartyCallHandler.accept(callDetails);
+    verify(delegateLogService, times(1)).save(accountIdCaptor.capture(), apiCallLogCaptor.capture());
+    assertThat(accountIdCaptor.getValue()).isEqualTo(accountId);
+    assertThat(apiCallLogCaptor.getValue().getAccountId()).isEqualTo(accountId);
+    assertThat(apiCallLogCaptor.getValue().getStartTime()).isEqualTo(startTime.toEpochMilli());
+    assertThat(apiCallLogCaptor.getValue().getRequests().size()).isEqualTo(4);
+    assertThat(apiCallLogCaptor.getValue().getRequests().size()).isEqualTo(4);
+    assertThat(apiCallLogCaptor.getValue().getRequests().get(0).getName()).isEqualTo("url");
+    assertThat(apiCallLogCaptor.getValue().getRequests().get(1).getName()).isEqualTo("Request Method");
+    assertThat(apiCallLogCaptor.getValue().getRequests().get(2).getName()).isEqualTo("Request Headers");
+    assertThat(apiCallLogCaptor.getValue().getRequests().get(3).getName()).isEqualTo("Request Body");
+    assertThat(apiCallLogCaptor.getValue().getResponses().size()).isEqualTo(2);
   }
 
   @Test

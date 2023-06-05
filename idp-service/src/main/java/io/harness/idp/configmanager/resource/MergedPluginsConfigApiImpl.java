@@ -8,11 +8,7 @@
 package io.harness.idp.configmanager.resource;
 
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
-import static io.harness.idp.common.Constants.IDP_PERMISSION;
-import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
-import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
@@ -60,8 +56,7 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
   private static final String OVERRIDE_CONFIG_NAME = "backstage-override-config";
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getMergedPluginsConfig(@AccountIdentifier String accountIdentifier) {
+  public Response getMergedPluginsConfig(String accountIdentifier) {
     try {
       MergedPluginConfigs mergedEnabledPluginAppConfigsForAccount =
           configManagerService.mergeEnabledPluginConfigsForAccount(accountIdentifier);
@@ -69,7 +64,7 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
       mergedPluginConfigResponse.setMergedConfig(mergedEnabledPluginAppConfigsForAccount);
       return Response.status(Response.Status.OK).entity(mergedPluginConfigResponse).build();
     } catch (Exception e) {
-      log.error(e.getMessage());
+      log.error("Error in merging configs for enabled plugins for account - {}", accountIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

@@ -67,10 +67,8 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
         SpotinstAmiInstanceSyncPerpetualTaskParamsNg.newBuilder()
             .setAccountId(infrastructure.getAccountIdentifier())
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
-            .setSpotinstConfig(
-                ByteString.copyFrom(getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(spotConnectorDTO)))
-            .setSpotinstEncryptedData(ByteString.copyFrom(
-                getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(encryptionDetails)))
+            .setSpotinstConfig(ByteString.copyFrom(kryoSerializer.asBytes(spotConnectorDTO)))
+            .setSpotinstEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails)))
             .addAllElastigroupIds(elastigroupIds)
             .build();
 
@@ -78,8 +76,7 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(spotConnectorDTO);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
-        infrastructure.getAccountIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
   }
 
   private List<ExecutionCapability> getExecutionCapabilities(SpotConnectorDTO spotConnectorDTO) {

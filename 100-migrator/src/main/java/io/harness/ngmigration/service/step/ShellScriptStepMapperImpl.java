@@ -127,9 +127,11 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     ExecutionTarget executionTarget = null;
 
     if (!state.isExecuteOnDelegate()) {
+      ParameterField<String> connectorRef = MigratorUtility.getIdentifierWithScopeDefaultsRuntime(
+          migrationContext.getMigratedEntities(), state.getSshKeyRef(), NGMigrationEntityType.CONNECTOR);
       executionTarget = ExecutionTarget.builder()
                             .host(ParameterField.createValueField(state.getHost()))
-                            .connectorRef(ParameterField.createValueField("<+input>"))
+                            .connectorRef(connectorRef)
                             .workingDirectory(ParameterField.createValueField(state.getCommandPath()))
                             .build();
     }

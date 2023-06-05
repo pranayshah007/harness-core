@@ -1,134 +1,134 @@
 pipeline:
-  identifier: "Test_Pipline11"
+  identifier: Test_Pipline11
   variables:
-  - name: "port2"
-    type: "String"
-    value: 8000
+    - name: port2
+      type: String
+      value: 8000
   stages:
-  - stage:
-      identifier: "qaStage"
-      type: "Deployment"
-      spec:
-        service:
-          identifier: "manager"
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              manifests:
-              - manifest:
-                  identifier: "baseValues"
-                  type: "K8sManifest"
-                  spec:
-                    store:
-                      type: "Git"
+    - stage:
+        identifier: qaStage
+        type: Deployment
+        spec:
+          service:
+            identifier: manager
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifests:
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
                       spec:
-                        gitFetchType: "<+input>"
-                        paths: "<+input>"
-              - manifest:
-                  identifier: "qaOverride"
-                  type: "Values"
-                  spec:
-                    store: "<+input>"
-        infrastructure:
-          environment:
-            identifier: "stagingInfra"
-            type: "PreProduction"
-            tags:
-              team: "<+input>"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "<+input>"
-              namespace: "<+input>"
-              releaseName: "<+input>"
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep1"
-              type: "Http"
-              spec:
-                url: "www.google.com"
-          - parallel:
-            - step:
-                identifier: "httpStep2"
-                type: "Http"
-                spec:
-                  method: "POST"
-          - step:
-              identifier: "httpStep11"
-              type: "Http"
-              spec:
-                socketTimeoutMillis: 60000
-  - parallel:
-    - stage:
-        identifier: "qaStage2"
-        type: "Deployment"
-        spec:
-          service:
-            identifier: "manager"
-            serviceDefinition:
-              type: "Kubernetes"
-              spec:
-                manifests:
-                - manifest:
-                    identifier: "baseValues"
-                    type: "K8sManifest"
-                    spec:
-                      store:
-                        type: "Git"
-                        spec:
-                          connectorRef: "defaultConn"
+                        store:
+                          type: Git
+                          spec:
+                            gitFetchType: <+input>
+                            paths: <+input>
+                  - manifest:
+                      identifier: qaOverride
+                      type: Values
+                      spec:
+                        store: <+input>
           infrastructure:
+            environment:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                team: <+input>
             infrastructureDefinition:
-              type: "KubernetesDirect"
+              type: KubernetesDirect
               spec:
-                namespace: "<+input>"
+                connectorRef: <+input>
+                namespace: <+input>
+                releaseName: <+input>
           execution:
             steps:
-            - step:
-                identifier: "httpStep4"
-                type: "Http"
-                spec:
-                  method: "GET"
-    - stage:
-        identifier: "qaStage3"
-        type: "Deployment"
-        spec:
-          service:
-            identifier: "manager"
-            serviceDefinition:
-              type: "Kubernetes"
-              spec:
-                manifests:
-                - manifest:
-                    identifier: "baseValues"
-                    type: "K8sManifest"
-                    spec:
-                      store:
-                        type: "Git"
-                        spec:
-                          connectorRef: "my_git_connector"
-                          gitFetchType: "Branch"
-                          branch: "master"
-                          paths:
-                          - "test/spec"
-                - manifest:
-                    identifier: "qaOverride"
-                    type: "Values"
-                    spec:
-                      store:
-                        type: "Git"
-                        spec:
-                          connectorRef: "my_git_connector"
-                          gitFetchType: "Branch"
-                          branch: "master"
-                          paths:
-                          - "test/baseValues.yaml"
-                          - "test/qa/values_1.yaml"
-          execution:
-            steps:
-            - step:
-                identifier: "httpStep5"
-                type: "Http"
-                spec:
-                  method: "<+input>"
+              - step:
+                  identifier: httpStep1
+                  type: Http
+                  spec:
+                    url: www.google.com
+              - parallel:
+                  - step:
+                      identifier: httpStep2
+                      type: Http
+                      spec:
+                        method: POST
+              - step:
+                  identifier: httpStep11
+                  type: Http
+                  spec:
+                    socketTimeoutMillis: 60000
+    - parallel:
+        - stage:
+            identifier: qaStage2
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests:
+                      - manifest:
+                          identifier: baseValues
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Git
+                              spec:
+                                connectorRef: defaultConn
+              infrastructure:
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    namespace: <+input>
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep4
+                      type: Http
+                      spec:
+                        method: GET
+        - stage:
+            identifier: qaStage3
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests:
+                      - manifest:
+                          identifier: baseValues
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Git
+                              spec:
+                                connectorRef: my_git_connector
+                                gitFetchType: Branch
+                                branch: master
+                                paths:
+                                  - test/spec
+                      - manifest:
+                          identifier: qaOverride
+                          type: Values
+                          spec:
+                            store:
+                              type: Git
+                              spec:
+                                connectorRef: my_git_connector
+                                gitFetchType: Branch
+                                branch: master
+                                paths:
+                                  - test/baseValues.yaml
+                                  - test/qa/values_1.yaml
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep5
+                      type: Http
+                      spec:
+                        method: <+input>

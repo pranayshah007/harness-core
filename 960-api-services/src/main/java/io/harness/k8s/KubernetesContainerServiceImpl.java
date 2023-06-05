@@ -85,6 +85,7 @@ import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
@@ -299,14 +300,14 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
               controller = rcOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
               allFailed = false;
             } catch (Exception e) {
-              // Ignore
+              log.info("Failed to list replication controllers with error: {}", e.getMessage());
             }
             if (controller == null) {
               try {
                 controller = deploymentOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
-                // Ignore
+                log.info("Failed to list deployment controllers with error: {}", e.getMessage());
               }
             }
             if (controller == null) {
@@ -314,7 +315,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 controller = replicaOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
-                // Ignore
+                log.info("Failed to list replicaset with error: {}", e.getMessage());
               }
             }
             if (controller == null) {
@@ -322,7 +323,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 controller = statefulOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
-                // Ignore
+                log.info("Failed to list statefulset controllers with error: {}", e.getMessage());
               }
             }
             if (controller == null) {
@@ -330,7 +331,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 controller = daemonOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
-                // Ignore
+                log.info("Failed to list daemonset controllers with error: {}", e.getMessage());
               }
             }
             if (controller == null) {
@@ -339,10 +340,13 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                     deploymentConfigOperations(kubernetesConfig, namespace, openShiftClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
-                // Ignore
+                log.info("Failed to list deploymentconfig controllers with error: {}", e.getMessage());
               }
             }
             if (allFailed) {
+              if (shouldIgnoreFabric8Failure(kubernetesClient)) {
+                return null;
+              }
               controller = deploymentOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
             } else {
               success = true;
@@ -394,7 +398,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                                .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list replication controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll(
@@ -404,7 +408,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list deployment controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll((List) replicaOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
@@ -413,7 +417,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                                .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list replicaset controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll(
@@ -423,7 +427,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list statefulset controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll((List) daemonOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
@@ -432,7 +436,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                                .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list daemonset controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll(
@@ -442,9 +446,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list deploymentconfig controllers with error: {}", e.getMessage());
       }
       if (allFailed) {
+        if (shouldIgnoreFabric8Failure(kubernetesClient)) {
+          return emptyList();
+        }
         controllers.addAll(
             (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
                 .withLabels(labels)
@@ -466,7 +473,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     if (url == null) {
       throw new UrlNotProvidedException("Url does not exist in the config");
     }
-    final boolean isHostConnectable = connectableHttpUrl(url);
+    final boolean isHostConnectable = connectableHttpUrl(url, false);
     if (!isHostConnectable) {
       throw new UrlNotReachableException("Could not connect to the master url: " + url);
     }
@@ -488,7 +495,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     final File kubeConfigDir = Files.createTempDir();
     try (ByteArrayOutputStream errStream = new ByteArrayOutputStream()) {
       persistKubernetesConfig(kubernetesConfig, kubeConfigDir.getPath());
-      final Kubectl client = getKubectlClient(useNewKubectlVersion);
+      final Kubectl client = getKubectlClient(useNewKubectlVersion, kubeConfigDir.getPath());
 
       for (final String workloadType : Arrays.asList(
                Kind.ReplicaSet.name(), Kind.StatefulSet.name(), Kind.DaemonSet.name(), Kind.Deployment.name())) {
@@ -535,9 +542,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   @VisibleForTesting
-  Kubectl getKubectlClient(boolean useNewKubectlVersion) {
-    return Kubectl.client(
-        k8sGlobalConfigService.getKubectlPath(useNewKubectlVersion), K8sConstants.KUBECONFIG_FILENAME);
+  Kubectl getKubectlClient(boolean useNewKubectlVersion, String kubeConfigPath) {
+    return KubectlFactory.getKubectlClient(
+        k8sGlobalConfigService.getKubectlPath(useNewKubectlVersion), K8sConstants.KUBECONFIG_FILENAME, kubeConfigPath);
   }
 
   private void cleanupDir(File kubeConfigDir) {
@@ -662,7 +669,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
             (List) rcOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient).list().getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list replication controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll(
@@ -671,7 +678,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list deployment controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll((List) replicaOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
@@ -679,7 +686,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                                .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list replicaset controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll(
@@ -688,7 +695,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                 .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list statefulset controllers with error: {}", e.getMessage());
       }
       try {
         controllers.addAll((List) daemonOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
@@ -696,9 +703,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
                                .getItems());
         allFailed = false;
       } catch (RuntimeException e) {
-        // Ignore
+        log.info("Failed to list daemonset controllers with error: {}", e.getMessage());
       }
       if (allFailed) {
+        if (shouldIgnoreFabric8Failure(kubernetesClient)) {
+          return emptyList();
+        }
         controllers.addAll(
             (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
                 .list()
@@ -706,6 +716,18 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       }
     }
     return controllers;
+  }
+
+  private boolean shouldIgnoreFabric8Failure(KubernetesClient kubernetesClient) {
+    try {
+      io.fabric8.kubernetes.client.VersionInfo version = kubernetesClient.getKubernetesVersion();
+      String majorMinorVersion = version.getMajor() + version.getMinor();
+      log.info("Kubernetes version : {}.{}", version.getMajor(), version.getMinor());
+      return Integer.parseInt(majorMinorVersion) >= 116;
+    } catch (Exception e) {
+      log.info("Failed to get kubernetes server version using fabric8 client. {}", e.getMessage());
+      return true;
+    }
   }
 
   @Override

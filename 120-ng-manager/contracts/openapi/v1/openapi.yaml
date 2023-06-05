@@ -1104,11 +1104,10 @@ paths:
       summary: Create a favorite at account level
       operationId: create-account-favorite
       description: Creates favorite resource of a user at account level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - $ref: '#/components/parameters/UserIdQueryParam'
-        - $ref: '#/components/parameters/ResourceType'
-        - $ref: '#/components/parameters/ResourceId'
       security:
         - x-api-key: []
       responses:
@@ -1121,8 +1120,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/UserIdPathParam'
     get:
-      summary: Retrieve a favorite resource of a user at account level
-      operationId: get-account-favorite
+      summary: Retrieve a favorite resources of a user at account level
+      operationId: get-account-favorites
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/ResourceType'
@@ -1158,11 +1157,10 @@ paths:
       summary: Create a favorite at org level
       operationId: create-org-favorite
       description: Creates favorite resource of a user at organisation level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - $ref: '#/components/parameters/UserIdQueryParam'
-        - $ref: '#/components/parameters/ResourceType'
-        - $ref: '#/components/parameters/ResourceId'
       security:
         - x-api-key: []
       responses:
@@ -1176,8 +1174,8 @@ paths:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/UserIdPathParam'
     get:
-      summary: Retrieve a favorite resource of a user at organization level
-      operationId: get-org-favorite
+      summary: Retrieve a favorite resources of a user at organization level
+      operationId: get-org-favorites
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/ResourceType'
@@ -1206,7 +1204,7 @@ paths:
       tags:
         - Org Favorites
       x-internal: true
-  '/v1/orgs/{org}/projects/{project}/Favorites':
+  '/v1/orgs/{org}/projects/{project}/favorites':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -1214,11 +1212,10 @@ paths:
       summary: Create a favorite at project level
       operationId: create-project-favorite
       description: Creates favorite resource of a user at project level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - $ref: '#/components/parameters/UserIdQueryParam'
-        - $ref: '#/components/parameters/ResourceType'
-        - $ref: '#/components/parameters/ResourceId'
       security:
         - x-api-key: []
       responses:
@@ -1227,14 +1224,14 @@ paths:
       tags:
         - Project Favorites
       x-internal: true
-  '/v1/orgs/{org}/projects/{project}/Favorites/{user-id}':
+  '/v1/orgs/{org}/projects/{project}/favorites/{user-id}':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
       - $ref: '#/components/parameters/UserIdPathParam'
     get:
-      summary: Retrieve a favorite resource of a user at project level
-      operationId: get-project-favorite
+      summary: Retrieve a favorite resources of a user at project level
+      operationId: get-project-favorites
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/ResourceType'
@@ -1348,11 +1345,10 @@ components:
       required:
         - identifier
         - name
-    Favorite:
+    FavoriteDTO:
       type: object
       x-examples:
         example-1:
-          account: sample_account
           org: sample_organization
           project: sample_project
           user_id: example_userId
@@ -1360,14 +1356,8 @@ components:
           resource_type: example_resourceType
           resource_id: example_resourceId
       description: This is the favorite entity defined in Harness
-      title: Favorite
+      title: FavoriteDTO
       properties:
-        account:
-          type: string
-          description: Account Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
-          minLength: 1
-          maxLength: 128
         org:
           type: string
           description: Organization Identifier for the Entity.
@@ -1387,13 +1377,9 @@ components:
           minLength: 1
           maxLength: 128
         module:
-          type: string
-          description: Harness module
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
-          minLength: 1
-          maxLength: 128
+          $ref: '#/components/schemas/ModuleType'
         resource_type:
-          type: string
+          $ref: '#/components/schemas/FavoritesResourceType'
           description: Type of resource
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
@@ -1408,8 +1394,7 @@ components:
       type: object
       x-examples:
         example-1:
-          Favorite:
-            account: sample_account
+          FavoriteDTO:
             user_id: example_userId
             org: sample_organization
             project: sample_project
@@ -1419,7 +1404,7 @@ components:
       title: FavoriteResponse
       properties:
         Favorite:
-          $ref: '#/components/schemas/Favorite'
+          $ref: '#/components/schemas/FavoriteDTO'
         created:
           type: integer
           format: int64
@@ -1556,6 +1541,14 @@ components:
         - GOVERNANCE
         - CHAOS
         - CET
+    FavoritesResourceType:
+      type: string
+      enum:
+        - CONNECTOR
+        - DELEGATE
+        - PIPELINE
+        - SECRET
+        - PROJECT
     CreateProjectRequest:
       description: Create project request
       type: object
@@ -1896,6 +1889,12 @@ components:
             value:
               type: string
               description: Value of the Secret
+            additional_metadata:
+              type: object
+              properties:
+                values:
+                  type: object
+              description: Additional metadata of the secret if any exist
           required:
             - type
             - secret_manager_identifier
@@ -2461,27 +2460,12 @@ components:
             example-Favorite-response-json:
               value:
                 Favorite:
-                  account: sample_account
                   org: sample_organization
                   project: sample_project
                   user_id: example_userId
                   resource_type: Example_resourceType
                   resource_id: Example_resourceId
                 created: 1234567890
-        application/yaml:
-          schema:
-            $ref: '#/components/schemas/FavoriteResponse'
-          examples:
-            example-Favorite-response-yaml:
-              value: |
-                - Favorite:
-                    account: sample_account
-                    org: sample_organization
-                    project: sample_project
-                    user_id: example_userId
-                    resource_type: Example_resourceType
-                    resource_id: Example_resourceId
-                  created: 1234567890
     FavoriteListResponse:
       description: Favorite list response
       content:
@@ -2500,22 +2484,6 @@ components:
                     user_id: example_userId
                     resource_type: Example_resourceType
                     resource_id: Example_resourceId
-                  created: 1234567890
-        application/yaml:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/FavoriteResponse'
-          examples:
-            example-project-list-response-yaml:
-              value: |
-                - Favorite:
-                    account: sample_account
-                    org: sample_organization
-                    project: sample_project
-                    user_id: example_userId
-                    resource_type: Example_resourceType
-                    resource_id: This is a example resource
                   created: 1234567890
       headers:
         X-Total-Elements:
@@ -3352,7 +3320,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SecretValidationMetadata'
+            $ref: '#/components/schemas/SecretRequest'
           examples:
             Example 1:
               value:
@@ -3364,6 +3332,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/IPAllowlistConfigRequest'
+    FavoriteRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FavoriteDTO'
+          examples:
+            ProjectFavConnector:
+              value:
+                org: org_id
+                project: project_id
+                user_id: user_id
+                module: CD
+                resource_type: CONNECTOR
+                resource_id: resource_id
   parameters:
     Page:
       name: page
@@ -3442,13 +3424,6 @@ components:
       schema:
         type: string
       description: This would be used to fetch the Favorites of the user.
-    UserIdQueryParam:
-      name: user_id
-      in: query
-      required: true
-      schema:
-        type: string
-      description: This would be used to fetch the Favorites of the user.
     PrivateSecret:
       name: private_secret
       in: query
@@ -3507,11 +3482,5 @@ components:
       in: query
       required: false
       schema:
-        type: string
-        enum:
-          - CONNECTOR
-          - DELEGATE
-          - PIPELINE
-          - SECRET
-          - PROJECT
+        $ref: '#/components/schemas/FavoritesResourceType'
       description: Determines the type of favorite entity requested.

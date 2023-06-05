@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
+import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,8 +41,9 @@ public class NGTriggerEventHistoryDTO extends NGTriggerEventHistoryBaseDTO {
   public NGTriggerEventHistoryDTO(String accountId, String eventCorrelationId, String payload, Long eventCreatedAt,
       TriggerEventResponse.FinalStatus finalStatus, String message, Boolean exceptionOccurred, Long createdAt,
       String triggerIdentifier, String orgIdentifier, String projectIdentifier, String targetIdentifier,
-      TargetExecutionSummary targetExecutionSummary, NGTriggerType type) {
-    super(accountId, eventCorrelationId, payload, eventCreatedAt, finalStatus, message, exceptionOccurred, createdAt);
+      TargetExecutionSummary targetExecutionSummary, NGTriggerType type, TriggerEventStatus triggerEventStatus) {
+    super(accountId, eventCorrelationId, payload, eventCreatedAt, finalStatus, message, exceptionOccurred, createdAt,
+        triggerEventStatus);
     this.triggerIdentifier = triggerIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;

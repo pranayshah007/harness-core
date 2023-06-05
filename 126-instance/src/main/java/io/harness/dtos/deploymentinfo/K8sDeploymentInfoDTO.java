@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.util.InstanceSyncKey;
 
@@ -30,6 +31,7 @@ public class K8sDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private LinkedHashSet<String> namespaces;
   @NotNull private String releaseName;
   private String blueGreenStageColor;
+  @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
 
   @Override
   public String getType() {

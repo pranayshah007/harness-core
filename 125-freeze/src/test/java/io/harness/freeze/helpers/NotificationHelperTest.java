@@ -34,6 +34,7 @@ import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResultWithStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
+import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
@@ -54,6 +55,7 @@ public class NotificationHelperTest extends CategoryTest {
   @InjectMocks NotificationHelper notificationHelper;
   @Mock NotificationClient notificationClient;
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock HtmlInputSanitizer htmlInputSanitizer;
 
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "oId";
@@ -119,6 +121,7 @@ public class NotificationHelperTest extends CategoryTest {
                                                                   .yaml(yaml)
                                                                   .type(FreezeType.GLOBAL)
                                                                   .build();
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("");
     notificationHelper.sendNotificationForFreezeConfigs(Collections.singletonList(manualFreezeSummaryResponseDTO),
         Collections.singletonList(globalFreezeSummaryResponseDTO), Ambiance.newBuilder().build(), "executionUrl",
         "baseUrl");
@@ -219,6 +222,7 @@ public class NotificationHelperTest extends CategoryTest {
                                              .windows(Collections.emptyList())
                                              .notifications(Collections.singletonList(freezeNotifications))
                                              .build();
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("");
     Map<String, String> templateData =
         notificationHelper.constructTemplateData(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE, freezeInfoConfig1,
             Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true, freezeNotifications);

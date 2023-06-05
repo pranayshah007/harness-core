@@ -216,6 +216,16 @@ public class NextGenServiceImpl implements NextGenService {
   }
 
   @Override
+  public boolean isProjectDeleted(String accountId, String orgIdentifier, String projectIdentifier) {
+    try {
+      getProject(accountId, orgIdentifier, projectIdentifier);
+    } catch (Exception ex) {
+      return true;
+    }
+    return false;
+  }
+
+  @Override
   public OrganizationDTO getOrganization(String accountIdentifier, String orgIdentifier) {
     try {
       return orgCache.get(EntityKey.builder().accountId(accountIdentifier).orgIdentifier(orgIdentifier).build());

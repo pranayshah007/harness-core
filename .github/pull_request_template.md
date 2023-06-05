@@ -25,10 +25,11 @@
 - Immutable delegate `trigger publish-delegate`
 </details>
 
+## [Latest PR Check Triggers](https://github.com/harness/harness-core/blob/develop/.github/pull_request_template.md)
+
 <details>
   <summary>PR Check triggers</summary>
-
-You can run multiple PR check triggers by comma separating them in a single comment. e.g. `trigger ti0, ti1`
+You can run multiple PR check triggers by comma separating them in a single comment. e.g. `trigger ut0, ut1`
 
 - Compile: `trigger compile`
 - CodeformatCheckstyle: `trigger checkstylecodeformat`
@@ -68,3 +69,4 @@ https://harness.atlassian.net/wiki/spaces/BT/pages/21106884744/PR+Checks+-+Failu
 
 
 ## [Contributor license agreement](https://github.com/harness/harness-core/blob/develop/CONTRIBUTOR_LICENSE_AGREEMENT.md)
+

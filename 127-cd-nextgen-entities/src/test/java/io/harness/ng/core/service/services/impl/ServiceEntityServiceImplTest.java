@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.service.services.impl;
 
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
@@ -52,6 +53,9 @@ import io.harness.ng.core.service.services.validators.NoOpServiceEntityValidator
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.TemplateApplyRequestDTO;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -60,6 +64,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PageUtils;
 
@@ -611,14 +616,14 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(responseDTO.getSourceIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
     assertThat(responseDTO.getSourceIdentifiers()).hasSameElementsAs(Arrays.asList("i1", "i2"));
     assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).isNotNull().isNotEmpty().hasSize(2);
-    String runForm1 = "identifier: \"i1\"\n"
-        + "type: \"DockerRegistry\"\n"
+    String runForm1 = "identifier: i1\n"
+        + "type: DockerRegistry\n"
         + "spec:\n"
-        + "  tag: \"<+input>\"\n";
-    String runForm2 = "identifier: \"i2\"\n"
-        + "type: \"DockerRegistry\"\n"
+        + "  tag: <+input>\n";
+    String runForm2 = "identifier: i2\n"
+        + "type: DockerRegistry\n"
         + "spec:\n"
-        + "  tag: \"<+input>\"\n";
+        + "  tag: <+input>\n";
     assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i1", runForm1);
     assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i2", runForm2);
   }
@@ -1074,6 +1079,89 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         serviceEntityService.validateTemplateInputs("ACCOUNT_ID", "ORG_ID", null, "IDENTIFIER_1", "false");
 
     assertThat(validateTemplateInputsResponseDTO2.isValidYaml()).isFalse();
+  }
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testTemplateResolveExceptionWithArtifactSourceTemplateInService() throws IOException {
+    String fileName = "service-with-artifact-template-ref.yaml";
+    String givenYaml = readFile(fileName);
+    Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
+            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build(),
+            false);
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder().build();
+    when(callRequest.execute())
+        .thenThrow(new NGTemplateResolveExceptionV2(
+            "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
+    assertThatThrownBy(
+        () -> serviceEntityService.resolveArtifactSourceTemplateRefs("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", givenYaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Exception in resolving template refs in given service yaml.");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testResolveRefsWithArtifactSourceTemplateInService() throws IOException {
+    String fileName = "service-with-artifact-template-ref.yaml";
+    String givenYaml = readFile(fileName);
+    Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
+            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build(),
+            false);
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
+    String resolvedTemplateRefsInService =
+        serviceEntityService.resolveArtifactSourceTemplateRefs("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", givenYaml);
+    assertThat(resolvedTemplateRefsInService).isEqualTo(givenYaml);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsWithSingleArtifactSource() {
+    String serviceYaml = "service:\n"
+        + "  name: svc\n"
+        + "  identifier: svc\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: <+input>\n"
+        + "          sources:\n"
+        + "            - spec:\n"
+        + "                connectorRef: dockerpublic\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: updatedValue\n"
+        + "              type: DockerRegistry\n"
+        + "    type: Kubernetes\n";
+
+    String responseYaml =
+        serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(serviceYaml, "svc", "oldValue");
+
+    assertThat(responseYaml).isNotEmpty();
+    assertThat(responseYaml)
+        .isEqualTo("serviceInputs:\n"
+            + "  serviceDefinition:\n"
+            + "    type: Kubernetes\n"
+            + "    spec:\n"
+            + "      artifacts:\n"
+            + "        primary:\n"
+            + "          primaryArtifactRef: <+input>\n"
+            + "          sources:\n"
+            + "            - identifier: updatedValue\n"
+            + "              type: DockerRegistry\n"
+            + "              spec:\n"
+            + "                tag: <+input>\n");
   }
 
   private String readFile(String filename) {

@@ -7,8 +7,10 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
@@ -24,18 +26,20 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -49,6 +53,7 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -56,6 +61,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.assertj.core.api.Assertions;
@@ -70,15 +76,17 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject ChangeEventServiceImpl changeEventService;
   @Inject ChangeSourceService changeSourceService;
   @Inject HPersistence hPersistence;
+  Clock clock;
 
   BuilderFactory builderFactory;
   FeatureFlagService featureFlagService;
 
-  List<String> changeSourceIdentifiers = Arrays.asList("changeSourceID");
+  List<String> changeSourceIdentifiers = List.of("changeSourceID");
 
   @Before
   public void before() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
+    clock = FIXED_TIME_FOR_TESTS;
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
     MockitoAnnotations.initMocks(this);
@@ -93,8 +101,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_insert() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
@@ -173,8 +179,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testRegister_insertWithNoMonitoredService() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO =
         builderFactory.harnessCDChangeEventDTOBuilder().monitoredServiceIdentifier(null).build();
 
@@ -205,9 +209,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_update() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
-
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
     changeEventService.register(changeEventDTO);
     Long eventTime = 123L;
@@ -266,8 +267,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_noChangeSource() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
@@ -415,6 +414,10 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
             null, null, Instant.ofEpochSecond(300), Instant.ofEpochSecond(500));
 
+    // to verify that the keys remain in the same order
+    assertThat(changeSummaryDTO.getCategoryCountMap().keySet())
+        .isEqualTo(new LinkedHashSet<>(List.of(ChangeCategory.values())));
+
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCount()).isEqualTo(3);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
         .isEqualTo(1);
@@ -468,6 +471,28 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(0);
     assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(0);
     assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(0.0, offset(0.1));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testTextSearchQueryForAggregation() {
+    // testing query as our test MongoServer doesn't support text search:
+    // https://github.com/bwaldvogel/mongo-java-server
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier("acoountId")
+                                      .orgIdentifier("org")
+                                      .projectIdentifier("project")
+                                      .build();
+    Query<ActivityBucket> activityQuery =
+        changeEventService.createQueryForActivityBucket(Instant.parse("2023-01-31T00:00:00.00Z"),
+            Instant.parse("2023-01-31T10:00:00.00Z"), projectParams, Arrays.asList("monitoredServiceIdentifier"),
+            "searchText", Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
+            Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES), false);
+
+    assertThat(activityQuery.toString())
+        .isEqualTo(
+            "{ {\"$text\": {\"$search\": \"searchText\"}, \"$and\": [{\"type\": {\"$in\": [\"DEPLOYMENT\"]}}, {\"bucketTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"bucketTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}], \"accountId\": \"acoountId\", \"orgIdentifier\": \"org\", \"projectIdentifier\": \"project\", \"monitoredServiceIdentifiers\": {\"$in\": [\"monitoredServiceIdentifier\"]}}  }");
   }
 
   @Test
@@ -718,6 +743,10 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(), null,
         null, null, false, null, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
+
+    // to verify that the keys remain in the same order
+    assertThat(changeTimeline.getCategoryTimeline().keySet())
+        .isEqualTo(new LinkedHashSet<>(List.of(ChangeCategory.values())));
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
     assertThat(deploymentChanges.size()).isEqualTo(2);

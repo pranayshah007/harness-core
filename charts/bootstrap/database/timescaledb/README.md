@@ -1,6 +1,6 @@
 # timescaledb
 
-![Version: 0.2.14](https://img.shields.io/badge/Version-0.2.14-informational?style=flat-square)
+![Version: 0.2.19](https://img.shields.io/badge/Version-0.2.19-informational?style=flat-square)
 
 TimescaleDB HA Deployment.
 
@@ -44,6 +44,7 @@ TimescaleDB HA Deployment.
 | callbacks.configMap | string | `nil` |  |
 | clusterName | string | `"timescaledb-single-chart"` |  |
 | curlImage.digest | string | `""` |  |
+| curlImage.imagePullSecrets | list | `[]` |  |
 | curlImage.pullPolicy | string | `"Always"` |  |
 | curlImage.registry | string | `"docker.io"` |  |
 | curlImage.repository | string | `"curlimages/curl"` |  |
@@ -57,11 +58,14 @@ TimescaleDB HA Deployment.
 | fullWalPrevention.thresholds.readOnlyFreePercent | int | `5` |  |
 | fullWalPrevention.thresholds.readWriteFreeMB | int | `128` |  |
 | fullWalPrevention.thresholds.readWriteFreePercent | int | `8` |  |
+| global.imagePullSecrets | list | `[]` |  |
+| global.storageClass | string | `""` |  |
 | image.digest | string | `""` |  |
+| image.imagePullSecrets | list | `[]` |  |
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"timescale/timescaledb-ha"` |  |
-| image.tag | string | `"pg13-ts2.9-oss-latest"` |  |
+| image.tag | string | `"pg13-ts2.6-oss-latest"` |  |
 | loadBalancer.annotations."service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout" | string | `"4000"` |  |
 | loadBalancer.enabled | bool | `false` |  |
 | loadBalancer.port | int | `5432` |  |

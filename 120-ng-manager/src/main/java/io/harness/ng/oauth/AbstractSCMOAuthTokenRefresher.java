@@ -13,18 +13,26 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.Scope;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.common.beans.UserSourceCodeManager;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.product.ci.scm.proto.RefreshTokenResponse;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmClient;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
@@ -38,6 +46,7 @@ public abstract class AbstractSCMOAuthTokenRefresher<T extends UserSourceCodeMan
   PersistenceIteratorFactory persistenceIteratorFactory;
   MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration configuration;
+  @Inject NgUserService ngUserService;
 
   @Override
   public void handle(T entity) {
@@ -45,7 +54,7 @@ public abstract class AbstractSCMOAuthTokenRefresher<T extends UserSourceCodeMan
              entity.getUserIdentifier(), entity.getType(), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
       try {
         log.info("Starting Token Refresh..");
-        oAuthTokenRefresherHelper.updateContext();
+        setPrincipal(entity.getUserIdentifier(), entity.getAccountIdentifier());
         OAuthRef oAuthRef = getOAuthDecrypted(entity);
 
         SecretDTOV2 tokenDTO = getSecretSecretValue(entity, oAuthRef.getTokenRef());
@@ -106,5 +115,20 @@ public abstract class AbstractSCMOAuthTokenRefresher<T extends UserSourceCodeMan
   }
 
   abstract OAuthRef getOAuthDecrypted(T entity);
+
   abstract OAuthConfig getOAuthConfig();
+
+  private void setPrincipal(String userId, String accountIdentifier) {
+    Principal principal = SecurityContextBuilder.getPrincipal();
+    boolean isUserPrincipal = principal instanceof UserPrincipal;
+    if (principal == null || !isUserPrincipal) {
+      Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+      if (userInfo.isEmpty()) {
+        log.error("Failed to get user details for user id: {}", userId);
+        throw new InvalidRequestException(String.format("Failed to get user details for user id: %s", userId));
+      }
+      principal = new UserPrincipal(userId, userInfo.get().getEmail(), userInfo.get().getName(), accountIdentifier);
+    }
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+  }
 }

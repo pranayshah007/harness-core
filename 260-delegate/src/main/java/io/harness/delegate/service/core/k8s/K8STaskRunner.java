@@ -8,9 +8,14 @@
 package io.harness.delegate.service.core.k8s;
 
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.delegate.core.beans.ExecutionEnvironment;
-import io.harness.delegate.core.beans.TaskDescriptor;
-import io.harness.delegate.core.beans.TaskSecret;
+import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
+import io.harness.delegate.core.beans.Secret;
+import io.harness.delegate.core.beans.StepRuntime;
+import io.harness.delegate.core.beans.TaskPayload;
+import io.harness.delegate.service.core.util.AnyUtils;
+import io.harness.delegate.service.core.util.K8SVolumeUtils;
 import io.harness.serializer.YamlUtils;
 
 import com.google.inject.Inject;
@@ -27,7 +32,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,34 +66,36 @@ public class K8STaskRunner {
    * @throws IOException  thrown in case of an issue serializing yaml objects
    * @throws ApiException thrown in case of an issue invoking K8S API
    */
-  public void launchTask(final TaskDescriptor task) throws IOException, ApiException {
+  public void launchTask(final TaskPayload task, final K8SStep stepInfra) throws IOException, ApiException {
     // TODO: Check how to refresh service account toke
     log.info("Creating delegate config for task {}", task.getId());
     final var delegateConfigConfMap = createDelegateConfig(task.getId());
     final var delegateConfigVol = K8SVolumeUtils.fromConfigMap(delegateConfigConfMap, "delegate-configuration");
 
     log.info("Creating task input for task {}", task.getId());
-    final var taskPackageConfMap = createTaskConfig(task.getId(), task);
+    final var taskPackageConfMap = createTaskConfig(task.getId(), task.getTaskData());
     final var taskPackageVol = K8SVolumeUtils.fromConfigMap(taskPackageConfMap, "task-package");
 
-    final var jobSpec = createTaskSpec(task.getId(), task.getRuntime(), taskPackageVol, delegateConfigVol);
-    if (!task.getInputSecretsList().isEmpty()) {
+    final var k8sInfra = AnyUtils.unpack(task.getInfraData().getProtoData(), K8SInfra.class);
+    final var jobSpec = createTaskSpec(task.getId(), stepInfra.getRuntime(), taskPackageVol, delegateConfigVol);
+    if (!stepInfra.getInputSecretsList().isEmpty()) {
       log.info("Creating secret input for task {}", task.getId());
       // At this point all secrets should be for K8SRunner, and each PluginSecret of different type (but could be same
       // image). E.g. We can have image that has several secret providers implemented
-      final var secretsByPlugin = task.getInputSecretsList().stream().collect(
-          Collectors.groupingBy(secret -> secret.getRuntime().getUses(), Collectors.toList()));
-
-      for (final var entry : secretsByPlugin.entrySet()) {
-        final var secret = createTaskSecrets(task.getId(), entry.getValue());
-        final var secretVol = K8SVolumeUtils.fromSecret(secret, "secret-input");
-        jobSpec
-            .addInitContainer("secret-decryption", entry.getKey(),
-                entry.getValue().get(0).getRuntime().getResource().getMemory(),
-                entry.getValue().get(0).getRuntime().getResource().getCpu())
-            .addVolume(secretVol, SECRETS_INPUT_MNT_PATH)
-            .addVolume(K8SVolumeUtils.emptyDir("secret-output"), SECRETS_OUT_MNT_PATH);
-      }
+      // FixMe: Secrets don't work the same any more, they are decrypted by the core/runner and mounted to tasks
+      //      final var secretsByPlugin = task.getInputSecretsList().stream().collect(
+      //          Collectors.groupingBy(secret -> secret.getRuntime().getUses(), Collectors.toList()));
+      //
+      //      for (final var entry : secretsByPlugin.entrySet()) {
+      //        final var secret = createTaskSecrets(task.getId(), entry.getValue());
+      //        final var secretVol = K8SVolumeUtils.fromSecret(secret, "secret-input");
+      //        jobSpec
+      //            .addInitContainer("secret-decryption", entry.getKey(),
+      //                entry.getValue().get(0).getRuntime().getResource().getMemory(),
+      //                entry.getValue().get(0).getRuntime().getResource().getCpu())
+      //            .addVolume(secretVol, SECRETS_INPUT_MNT_PATH)
+      //            .addVolume(K8SVolumeUtils.emptyDir("secret-output"), SECRETS_OUT_MNT_PATH);
+      //      }
     }
 
     log.debug("Creating Task Job with YAML:\n{}", Yaml.dump(jobSpec));
@@ -112,8 +118,8 @@ public class K8STaskRunner {
     log.info("Task data cleaned up for {}", taskId);
   }
 
-  private K8SJob createTaskSpec(final String taskId, final ExecutionEnvironment runtime,
-      final V1Volume taskPackageVolume, final V1Volume delegateConfigVolume) {
+  private K8SJob createTaskSpec(final String taskId, final StepRuntime runtime, final V1Volume taskPackageVolume,
+      final V1Volume delegateConfigVolume) {
     return new K8SJob(getJobName(taskId), HARNESS_DELEGATE_NG)
         .addContainer(
             "delegate-task", runtime.getUses(), runtime.getResource().getMemory(), runtime.getResource().getCpu())
@@ -126,8 +132,8 @@ public class K8STaskRunner {
         .addEnvVar("DELEGATE_NAME", "");
   }
 
-  private V1Secret createTaskSecrets(final String taskId, final List<TaskSecret> secrets) throws ApiException {
-    final var k8sSecret = new K8SSecret(getSecretName(taskId), HARNESS_DELEGATE_NG);
+  private V1Secret createTaskSecrets(final String taskId, final List<Secret> secrets) throws ApiException {
+    final var k8sSecret = K8SSecret.secret(getSecretName(taskId), HARNESS_DELEGATE_NG);
 
     for (final var secret : secrets) {
       final var secretFilename = UUID.randomUUID().toString();
@@ -139,12 +145,12 @@ public class K8STaskRunner {
             .putDataItem(secretFilename + ".bin", secret.getSecrets().getProtoData().toByteArray());
       }
     }
-    return k8sSecret.create(coreApi, HARNESS_DELEGATE_NG);
+    return k8sSecret.create(coreApi);
   }
 
-  private V1ConfigMap createTaskConfig(final String taskId, final TaskDescriptor descriptor) throws ApiException {
-    final var taskData = descriptor.getInput().hasBinaryData() ? descriptor.getInput().getBinaryData().toByteArray()
-                                                               : descriptor.getInput().getProtoData().toByteArray();
+  private V1ConfigMap createTaskConfig(final String taskId, final InputData descriptor) throws ApiException {
+    final var taskData =
+        descriptor.hasBinaryData() ? descriptor.getBinaryData().toByteArray() : descriptor.getProtoData().toByteArray();
     final var configMap =
         new K8SConfigMap(getConfigName(taskId), HARNESS_DELEGATE_NG).putBinaryDataItem(TASK_INPUT_FILE, taskData);
 

@@ -32,4 +32,5 @@ public class VerificationSpec {
   Sensitivity sensitivity;
   long durationInMinutes;
   Boolean isFailOnNoAnalysis;
+  BaselineType baselineType;
 }
