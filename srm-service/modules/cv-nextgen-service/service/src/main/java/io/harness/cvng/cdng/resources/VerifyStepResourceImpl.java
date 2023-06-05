@@ -253,6 +253,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                                    .nodes(getControlNodesForLoadTestAnalysisType(loadTestAdditionalInfo))
                                    .build();
         break;
+      case SIMPLE:
+        analysedNodeOverview = null;
+        break;
       default:
         throw new IllegalArgumentException("Unrecognised VerificationJobType " + additionalInfo.getType());
     }
@@ -299,6 +302,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                                    .nodeType(AnalysedNodeType.CURRENT_TEST)
                                    .nodes(getTestNodesForLoadTestAnalysisType(loadTestAdditionalInfo))
                                    .build();
+        break;
+      case SIMPLE:
+        analysedNodeOverview = null;
         break;
       default:
         throw new IllegalArgumentException("Unrecognised VerificationJobType " + additionalInfo.getType());

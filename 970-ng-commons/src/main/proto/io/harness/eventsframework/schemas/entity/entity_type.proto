@@ -223,4 +223,5 @@ enum EntityTypeProtoEnum {
   AWS_SAM_BUILD = 210;
   SEMGREP = 211;
   SSCA_ENFORCEMENT = 212;
+  IDP_CONNECTOR = 213;
 }

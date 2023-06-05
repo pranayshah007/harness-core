@@ -48,9 +48,13 @@ public class STOServiceUtils {
 
   @NotNull
   public String getSTOServiceToken(String accountId) {
-    log.info("Initiating token request to STO service: {}", this.stoServiceConfig.getBaseUrl());
-    JsonObject responseBody =
-        makeAPICall(stoServiceClient.generateToken(accountId, this.stoServiceConfig.getGlobalToken()));
+    log.info("Initiating token request to STO service: {}", this.stoServiceConfig.getInternalUrl());
+    JsonObject responseBody;
+    if (accountId == null) {
+      responseBody = makeAPICall(stoServiceClient.generateTokenAllAccounts(this.stoServiceConfig.getGlobalToken()));
+    } else {
+      responseBody = makeAPICall(stoServiceClient.generateToken(accountId, this.stoServiceConfig.getGlobalToken()));
+    }
 
     if (responseBody.has("token")) {
       return responseBody.get("token").getAsString();
@@ -64,7 +68,7 @@ public class STOServiceUtils {
   @NotNull
   public Map<String, String> getOutputVariables(
       String accountId, String orgId, String projectId, String executionId, String stageId, String stepId) {
-    log.info("Initiating output variables request to STO service: {}", this.stoServiceConfig.getBaseUrl());
+    log.info("Initiating output variables request to STO service: {}", this.stoServiceConfig.getInternalUrl());
 
     Map<String, String> result = new HashMap<>();
     String token = getSTOServiceToken(accountId);
@@ -150,11 +154,13 @@ public class STOServiceUtils {
   }
 
   @NotNull
-  public String getUsageAllAcounts(String accountId) {
-    String token = getSTOServiceToken(accountId);
+  public String getUsageAllAccounts(long timestamp) {
+    String token = getSTOServiceToken(null);
     String accessToken = "ApiKey " + token;
 
-    return makeAPICall(stoServiceClient.getUsageAllAccounts(accessToken)).get("usage").getAsString();
+    return makeAPICall(stoServiceClient.getUsageAllAccounts(accessToken, String.valueOf(timestamp)))
+        .get("usage")
+        .getAsString();
   }
 
   private JsonObject makeAPICall(Call<JsonObject> apiCall) {

@@ -125,6 +125,21 @@ public class SamlClientService {
     return generateSamlRequestFromAccountAndSamlId(account, samlSSOId, true);
   }
 
+  public SSORequest generateSamlRequestFromAccountWithJitEnabled(Account account, boolean isTestConnectionRequest) {
+    SSORequest ssoRequest = new SSORequest();
+    try {
+      SamlSettings setting = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
+      if (setting.isJitEnabled()) {
+        populateRedirectUriValueInSSORequest(getSamlClient(setting), isTestConnectionRequest, ssoRequest);
+      } else {
+        throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
+      }
+      return ssoRequest;
+    } catch (SamlException | URISyntaxException | IOException e) {
+      throw new WingsException(String.format("Generating Saml request failed for account: [%s]", account.getUuid()), e);
+    }
+  }
+
   /**
    * To be used generateSamlRequest and generateSamlRequest for common functionality
    * @param account account passed from previous functions
@@ -187,6 +202,33 @@ public class SamlClientService {
     return ssoRequests;
   }
 
+  public List<SSORequest> generateSamlRequestListFromAccountWhichHaveJitEnabled(
+      Account account, boolean isTestConnectionRequest) {
+    List<SSORequest> ssoRequests = new ArrayList<>();
+    try {
+      List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
+      Map<String, SamlClientFriendlyNameProviderType> samlClientMap =
+          getSamlClientListFromSamlSettingListWithJitEnabled(samlSettings);
+      if (samlClientMap.isEmpty()) {
+        throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
+      }
+      for (Map.Entry<String, SamlClientFriendlyNameProviderType> entry : samlClientMap.entrySet()) {
+        if (entry.getValue() != null && entry.getValue().getSamlClient() != null) {
+          SSORequest ssoRequest = new SSORequest();
+          populateRedirectUriValueInSSORequest(entry.getValue().getSamlClient(), isTestConnectionRequest, ssoRequest);
+          ssoRequest.setFriendlySamlName(entry.getValue().getFriendlySamlName());
+          ssoRequest.setSsoId(entry.getKey());
+          ssoRequest.setSamlProviderType(entry.getValue().getSamlProviderType());
+          ssoRequests.add(ssoRequest);
+        }
+      }
+    } catch (SamlException | URISyntaxException | IOException e) {
+      throw new WingsException(
+          String.format("Generating Saml request list failed for account: [%s]", account.getUuid()), e);
+    }
+    return ssoRequests;
+  }
+
   private void populateRedirectUriValueInSSORequest(SamlClient samlClient, boolean isTestConnectionRequest,
       SSORequest ssoRequest) throws URISyntaxException, IOException, SamlException {
     final String triggerType = isTestConnectionRequest ? "test" : "login";
@@ -203,6 +245,28 @@ public class SamlClientService {
       samlSettings.forEach(setting -> {
         try {
           if (setting != null && setting.isAuthenticationEnabled()) {
+            final String friendlyName =
+                isNotEmpty(setting.getFriendlySamlName()) ? setting.getFriendlySamlName() : setting.getDisplayName();
+            samlClientMap.put(setting.getUuid(),
+                new SamlClientFriendlyNameProviderType(
+                    getSamlClient(setting), friendlyName, setting.getSamlProviderType()));
+          }
+        } catch (SamlException se) {
+          log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),
+              setting.getAccountId(), se);
+        }
+      });
+    }
+    return samlClientMap;
+  }
+
+  private Map<String, SamlClientFriendlyNameProviderType> getSamlClientListFromSamlSettingListWithJitEnabled(
+      List<SamlSettings> samlSettings) throws SamlException {
+    Map<String, SamlClientFriendlyNameProviderType> samlClientMap = new HashMap<>();
+    if (isNotEmpty(samlSettings)) {
+      samlSettings.forEach(setting -> {
+        try {
+          if (setting != null && setting.isAuthenticationEnabled() && setting.isJitEnabled()) {
             final String friendlyName =
                 isNotEmpty(setting.getFriendlySamlName()) ? setting.getFriendlySamlName() : setting.getDisplayName();
             samlClientMap.put(setting.getUuid(),

@@ -238,4 +238,5 @@ public interface EntityTypeConstants {
   String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
+  String IDP_CONNECTOR = "IdpConnector";
 }

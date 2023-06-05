@@ -45,6 +45,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.common.GsonUtils;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
@@ -132,6 +133,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject GitIntegrationService gitIntegrationService;
   @Inject StatusInfoService statusInfoService;
+  @Inject SetupUsageProducer setupUsageProducer;
   @Inject DelegateSelectorsCache delegateSelectorsCache;
   @Inject AsyncCatalogImportRepository asyncCatalogImportRepository;
   @Inject IdpEntityCrudStreamProducer idpEntityCrudStreamProducer;
@@ -276,6 +278,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     if (!producerResult) {
       log.error("Error in producing event for async catalog import.");
     }
+
+    publishConnectorSetupUsage(accountIdentifier, connectorInfoDTO.getIdentifier(),
+        getIdpCatalogConnectorIdentifier(catalogConnectorInfo.getConnector().getIdentifier()));
 
     return new ImportEntitiesResponse().status(SUCCESS_RESPONSE_STRING);
   }
@@ -547,6 +552,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     log.info("Cleaning up directories created during IDP onboarding");
     cleanUpDirectories(sampleYamlPath);
 
+    publishConnectorSetupUsage(accountIdentifier, connectorInfoDTO.getIdentifier(),
+        getIdpCatalogConnectorIdentifier(catalogConnectorInfo.getConnector().getIdentifier()));
+
     return new ImportEntitiesResponse().status(SUCCESS_RESPONSE_STRING);
   }
 
@@ -736,7 +744,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     CatalogConnectorEntity catalogConnectorEntity = new CatalogConnectorEntity();
 
     catalogConnectorEntity.setAccountIdentifier(accountIdentifier);
-    catalogConnectorEntity.setIdentifier(Constants.IDP_PREFIX + catalogConnectorInfo.getConnector().getIdentifier());
+    catalogConnectorEntity.setIdentifier(
+        getIdpCatalogConnectorIdentifier(catalogConnectorInfo.getConnector().getIdentifier()));
     catalogConnectorEntity.setType(CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
     catalogConnectorEntity.setConnectorIdentifier(catalogConnectorInfo.getConnector().getIdentifier());
     catalogConnectorEntity.setConnectorProviderType(String.valueOf(catalogConnectorInfo.getConnector().getType()));
@@ -748,6 +757,10 @@ public class OnboardingServiceImpl implements OnboardingService {
     catalogConnectorRepository.save(catalogConnectorEntity);
     delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
     log.info("Saved catalogConnector to DB. Account = {}", accountIdentifier);
+  }
+
+  private String getIdpCatalogConnectorIdentifier(String connectorIdentifier) {
+    return Constants.IDP_PREFIX + connectorIdentifier;
   }
 
   private String getEntitiesFolderPath(CatalogConnectorInfo catalogConnectorInfo) {
@@ -831,6 +844,18 @@ public class OnboardingServiceImpl implements OnboardingService {
     statusInfo.setCurrentStatus(currentStatus);
     statusInfo.setReason(reason);
     statusInfoService.save(statusInfo, accountIdentifier, type);
+  }
+
+  private void publishConnectorSetupUsage(
+      String accountIdentifier, String harnessConnectorIdentifier, String idpConnectorIdentifier) {
+    try {
+      setupUsageProducer.publishConnectorSetupUsage(
+          accountIdentifier, harnessConnectorIdentifier, idpConnectorIdentifier);
+    } catch (Exception ex) {
+      log.error(
+          "Error in publishConnectorSetupUsage for accountIdentifier {} harnessConnectorIdentifier {} idpConnectorIdentifier {} Error {}",
+          accountIdentifier, harnessConnectorIdentifier, idpConnectorIdentifier, ex.getMessage(), ex);
+    }
   }
 
   private CatalogConnectorEntity getCatalogConnector(String accountIdentifier) {

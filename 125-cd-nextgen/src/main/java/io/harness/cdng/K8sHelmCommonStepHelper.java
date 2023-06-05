@@ -585,10 +585,7 @@ public class K8sHelmCommonStepHelper {
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
-            .subChartPath(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
-                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartPath())
-                    : "")
+            .subChartPath(getParameterFieldValue(helmChartManifestOutcome.getSubChartPath()))
             .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
                 FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
             .build();

@@ -250,6 +250,8 @@ import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob.SimpleVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -1658,6 +1660,19 @@ public class BuilderFactory {
         .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
         .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
         .sensitivity(RuntimeParameter.builder().value("High").build())
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+
+  public SimpleVerificationJobBuilder simpleVerificationJobBuilder() {
+    return SimpleVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
         .duration(RuntimeParameter.builder().value("10m").build());
   }
 

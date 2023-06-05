@@ -253,6 +253,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
         }
       });
     }
+
+    if (patchOperationIncludesUserDeletion(patchRequest)) {
+      return null;
+    }
     return getUserInternal(userId, accountId);
   }
 
@@ -321,8 +325,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
+      ScimUser updatedUser = null;
+      if (!putOperationIncludesUserDeletion(scimUser)) {
+        updatedUser = getUserInternal(userId, accountId);
+      }
+
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them
-      return Response.status(Response.Status.OK).entity(getUserInternal(userId, accountId)).build();
+      return Response.status(Response.Status.OK).entity(updatedUser).build();
     }
   }
 
@@ -531,5 +540,28 @@ public class NGScimUserServiceImpl implements ScimUserService {
       groupsNode.add(JsonUtils.asTree(userGroupMap));
     }
     return groupsNode;
+  }
+
+  private boolean patchOperationIncludesUserDeletion(PatchRequest patchRequest) {
+    for (PatchOperation patchOperation : patchRequest.getOperations()) {
+      try {
+        boolean isActiveFalse = (patchOperation.getValue(ScimUserValuedObject.class) != null
+                                    && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive())
+            || ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+                && !(patchOperation.getValue(Boolean.class)));
+
+        if (isActiveFalse) {
+          return true;
+        }
+      } catch (JsonProcessingException e) {
+        log.error("Failed to parse the SCIM request while checking for user deletion operation", e);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  private boolean putOperationIncludesUserDeletion(ScimUser userResource) {
+    return userResource.getActive() != null && !userResource.getActive();
   }
 }

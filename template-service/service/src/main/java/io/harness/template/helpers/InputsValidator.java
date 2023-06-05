@@ -34,7 +34,6 @@ import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
-import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -116,7 +115,7 @@ public class InputsValidator {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false);
-      resolvedTemplatesYaml = TemplateYamlUtils.writeYamlString(resolvedTemplatesMap);
+      resolvedTemplatesYaml = YamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
         NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,
@@ -252,7 +251,7 @@ public class InputsValidator {
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;
     try {
-      NGTemplateConfig templateConfig = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = YamlUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
     } catch (IOException e) {
       log.error("Could not read template yaml", e);

@@ -103,7 +103,7 @@ public class YamlConfig {
       return yaml;
     }
     if (!yamlMap.isEmpty()) {
-      yaml = YamlUtils.write(yamlMap).replace("---\n", "");
+      yaml = YamlUtils.writeYamlString(yamlMap);
     } else {
       yaml = null;
     }

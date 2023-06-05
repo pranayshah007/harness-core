@@ -23,6 +23,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AWS_CODECOMMIT;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
@@ -580,7 +581,8 @@ public class NGTriggerElementMapper {
       ngTriggerDetailsResponseDTO.webhookDetails(webhookDetails.build());
       ngTriggerDetailsResponseDTO.registrationStatus(
           ngTriggerEntity.getMetadata().getWebhook().getRegistrationStatus());
-    } else if (ngTriggerEntity.getType() == MANIFEST || ngTriggerEntity.getType() == ARTIFACT) {
+    } else if (ngTriggerEntity.getType() == MANIFEST || ngTriggerEntity.getType() == ARTIFACT
+        || ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
       NGTriggerConfigV2 ngTriggerConfigV2 = toTriggerConfigV2(ngTriggerEntity.getYaml());
       NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerConfigV2.getSource().getSpec();
       if (BuildAware.class.isAssignableFrom(ngTriggerSpecV2.getClass())) {

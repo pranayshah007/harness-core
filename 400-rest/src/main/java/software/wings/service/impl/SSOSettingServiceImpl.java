@@ -282,6 +282,9 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     queriedSettings.setSamlProviderType(settings.getSamlProviderType());
     queriedSettings.setClientId(settings.getClientId());
     queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
+    queriedSettings.setJitEnabled(settings.isJitEnabled());
+    queriedSettings.setJitValidationKey(settings.getJitValidationKey());
+    queriedSettings.setJitValidationValue(settings.getJitValidationValue());
   }
 
   private SamlSettings savePublishEventAndAuditSAMLSettingUploadInternal(SamlSettings settings) {

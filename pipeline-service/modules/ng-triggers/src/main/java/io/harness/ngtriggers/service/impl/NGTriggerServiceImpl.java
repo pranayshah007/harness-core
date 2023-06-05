@@ -829,7 +829,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         throw new InvalidRequestException("Invalid Trigger Yaml.");
       }
       JsonNode pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
-      return YamlUtils.write(pipelineNode).replace("---\n", "");
+      return YamlUtils.writeYamlString(pipelineNode);
     } catch (IOException e) {
       throw new InvalidYamlException("Invalid Trigger Yaml", e);
     }
