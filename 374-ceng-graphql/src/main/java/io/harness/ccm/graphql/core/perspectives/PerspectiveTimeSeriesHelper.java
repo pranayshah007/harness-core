@@ -608,6 +608,9 @@ public class PerspectiveTimeSeriesHelper {
   }
 
   private Reference getReference(String id, String name, String type) {
+    if (id == null || id.isEmpty()) {
+      id = name;
+    }
     return Reference.builder().id(id).name(name).type(type).build();
   }
 
