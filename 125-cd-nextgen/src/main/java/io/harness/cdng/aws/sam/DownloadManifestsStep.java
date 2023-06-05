@@ -91,7 +91,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
 
     if (valuesManifestOutcome != null) {
       GitCloneStepInfo valuesGitCloneStepInfo =
-          downloadManifestsStepHelper.getGitCloneStepInfoFromManifestOutcome(awsSamDirectoryManifestOutcome);
+          downloadManifestsStepHelper.getGitCloneStepInfoFromManifestOutcome(valuesManifestOutcome);
 
       StepElementParameters valuesStepElementParameters =
           downloadManifestsStepHelper.getGitStepElementParameters(valuesManifestOutcome, valuesGitCloneStepInfo);
@@ -113,9 +113,9 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
 
   public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
-    String samDirectoryPath =
+    String valuesPath =
         "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
-    return samDirectoryPath;
+    return valuesPath;
   }
 
   @Override

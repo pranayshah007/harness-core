@@ -92,7 +92,7 @@ public class AwsSamBuildStepInfo extends AwsSamBaseStepInfo implements CDAbstrac
         .image(getImage())
         .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())
-        .buildCommandOptions(this.buildCommandOptions)
+        .buildCommandOptions(this.getBuildCommandOptions())
         .samBuildDockerRegistryConnectorRef(this.getSamBuildDockerRegistryConnectorRef())
         .build();
   }
