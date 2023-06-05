@@ -782,6 +782,7 @@ public enum FeatureName {
       "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for NG",
       HarnessTeam.CDP),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
+  CDS_CONTAINER_STEP_GROUP("Support for container step group in CD", HarnessTeam.CDP),
   PIE_RETRY_STEP_GROUP(
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
