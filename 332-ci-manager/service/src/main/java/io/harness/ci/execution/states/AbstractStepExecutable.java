@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
 import static java.util.Collections.singletonList;
@@ -49,6 +50,7 @@ import io.harness.ci.utils.GithubApiTokenEvaluator;
 import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
@@ -61,6 +63,7 @@ import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.delegate.task.stepstatus.artifact.Artifact;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.encryption.Scope;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
@@ -269,9 +272,13 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     VmTaskExecutionResponse taskResponse = filterVmStepResponse(responseDataMap);
     if (taskResponse == null) {
       log.error("stepStatusTaskResponseData should not be null for step {}", stepIdentifier);
+      String errorMessage = filterVmStepErrorResponse(responseDataMap);
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder().addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE)).build())
+          .failureInfo(FailureInfo.newBuilder()
+                           .setErrorMessage(errorMessage)
+                           .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
+                           .build())
           .build();
     }
 
@@ -446,6 +453,18 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
         .findFirst()
         .map(obj -> (VmTaskExecutionResponse) obj.getValue())
         .orElse(null);
+  }
+
+  private String filterVmStepErrorResponse(Map<String, ResponseData> responseDataMap) {
+    // Filter error response from step
+    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+      ResponseData responseData = entry.getValue();
+      if (responseData instanceof ErrorNotifyResponseData) {
+        return emptyIfNull(ExceptionUtils.getMessage(
+            new CIStageExecutionException(((ErrorNotifyResponseData) responseData).getErrorMessage())));
+      }
+    }
+    return "Error while executing step, please validate the configuration or reach out to support@harness.io";
   }
 
   private void logBackgroundStepForBackwardCompatibility(
