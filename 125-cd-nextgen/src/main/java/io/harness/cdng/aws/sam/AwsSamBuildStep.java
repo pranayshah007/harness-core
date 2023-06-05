@@ -10,18 +10,13 @@ package io.harness.cdng.aws.sam;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
-import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
@@ -37,8 +32,6 @@ import java.util.function.Supplier;
 public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject AwsSamStepHelper awsSamStepHelper;
-
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_SAM_BUILD.getYamlType())
@@ -58,24 +51,14 @@ public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParamete
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // todo: add env variable and image and entrypoint
     AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
     awsSamStepHelper.verifyPluginImageIsProvider(awsSamBuildStepParameters.getImage());
 
-    OptionalSweepingOutput awsSamValuesYamlDataOptionalOutput =
-            executionSweepingOutputService.resolveOptional(ambiance,
-                    RefObjectUtils.getSweepingOutputRefObject(awsSamBuildStepParameters.getDownloadManifestsFqn() + "."
-                            + OutcomeExpressionConstants.AWS_SAM_VALUES_YAML_DATA_OUTCOME));
     Map<String, String> envVarMap = new HashMap<>();
 
-    if (awsSamValuesYamlDataOptionalOutput.isFound()) {
-      AwsSamValuesYamlDataOutcome awsSamValuesYamlDataOutcome =
-              (AwsSamValuesYamlDataOutcome) awsSamValuesYamlDataOptionalOutput.getOutput();
-      envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", awsSamValuesYamlDataOutcome.getValuesYamlContent());
-      envVarMap.put("PLUGIN_VALUES_YAML_FILE_PATH", awsSamValuesYamlDataOutcome.getValuesYamlPath());
-    }
+    awsSamStepHelper.putValuesYamlEnvVars(ambiance, awsSamBuildStepParameters, envVarMap);
 
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,

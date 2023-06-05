@@ -1335,12 +1335,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .build();
 
     StepInfo downloadManifests =
-            StepInfo.newBuilder()
-                    .setName("Download Manifests")
-                    .setType(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("DownloadManifests").setFolderPath("AWS SAM").build())
-                    .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
-                    .build();
+        StepInfo.newBuilder()
+            .setName("Download Manifests")
+            .setType(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory("DownloadManifests").setFolderPath("AWS SAM").build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
 
     StepInfo awsSamBuild =
         StepInfo.newBuilder()

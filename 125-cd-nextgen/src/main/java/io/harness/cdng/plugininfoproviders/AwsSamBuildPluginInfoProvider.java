@@ -12,8 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-
-import com.google.inject.name.Named;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -49,6 +47,7 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -167,15 +166,21 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
       }
     }
 
-    ManifestsOutcome manifestsOutcome = (ManifestsOutcome) outcomeService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS)).getOutcome();
+    ManifestsOutcome manifestsOutcome =
+        (ManifestsOutcome) outcomeService
+            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+            .getOutcome();
 
-    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome = (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
+        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
+            manifestsOutcome.values());
 
-    String samDir =  awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
+    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+        awsSamDirectoryManifestOutcome);
 
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
-    samBuildEnvironmentVariablesMap.put("PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+    samBuildEnvironmentVariablesMap.put(
+        "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
 
     if (envVariables != null && envVariables.getValue() != null) {
       samBuildEnvironmentVariablesMap.putAll(envVariables.getValue());
@@ -183,5 +188,4 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
 
     return samBuildEnvironmentVariablesMap;
   }
-
 }

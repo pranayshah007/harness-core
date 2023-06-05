@@ -9,7 +9,6 @@ package io.harness.cdng.creator.variables.aws.sam;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.sam.AwsSamDeployStepNode;
 import io.harness.cdng.aws.sam.DownloadManifestsStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;

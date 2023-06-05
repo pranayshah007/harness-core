@@ -8,7 +8,10 @@
 package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.SwaggerConstants.*;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -105,7 +108,7 @@ public class GitCloneStepInfo implements PluginCompatibleStep, WithConnectorRef 
       ContainerResource resources, ParameterField<Integer> runAsUser, ParameterField<String> repoName,
       ParameterField<Build> build, ParameterField<String> projectName, ParameterField<Integer> depth,
       ParameterField<Boolean> sslVerify, ParameterField<String> cloneDirectory,
-                          ParameterField<List<String>> outputFilePathsContent) {
+      ParameterField<List<String>> outputFilePathsContent) {
     this.identifier = identifier;
     this.name = name;
     this.retry = retry;

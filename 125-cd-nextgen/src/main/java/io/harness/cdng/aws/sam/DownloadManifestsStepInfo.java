@@ -9,35 +9,24 @@ package io.harness.cdng.aws.sam;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
-import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.aws.sam.AwsSamDeployStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.sam.DownloadManifestsStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
-import io.harness.pms.sdk.core.steps.io.EmptyStepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.extended.ci.container.ContainerResource;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import org.springframework.data.annotation.TypeAlias;
 
 import java.util.List;
-import java.util.Map;
-
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data

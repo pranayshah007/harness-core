@@ -7,30 +7,22 @@
 
 package io.harness.cdng.aws.sam;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.extended.ci.container.ContainerResource;
+
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
-
-import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Map;
-
-import static io.harness.beans.SwaggerConstants.*;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.*;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data

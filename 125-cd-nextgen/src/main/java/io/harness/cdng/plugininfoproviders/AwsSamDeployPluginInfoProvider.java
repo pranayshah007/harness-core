@@ -7,18 +7,12 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import com.google.inject.name.Named;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
-import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
@@ -36,7 +30,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
-import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -47,11 +40,9 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.execution.plugin.StepImageConfig;
@@ -59,14 +50,14 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
-import org.jooq.tools.StringUtils;
-
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
@@ -170,25 +161,32 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         if (!StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())) {
           awsAccessKey = awsManualConfigSpecDTO.getAccessKey();
         } else {
-          awsAccessKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(awsManualConfigSpecDTO.getAccessKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+          awsAccessKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+              awsManualConfigSpecDTO.getAccessKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
         }
 
-        awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(),ambiance.getExpressionFunctorToken());
+        awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+            awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
       }
-
     }
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
 
-    ManifestsOutcome manifestsOutcome = (ManifestsOutcome) outcomeService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS)).getOutcome();
+    ManifestsOutcome manifestsOutcome =
+        (ManifestsOutcome) outcomeService
+            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+            .getOutcome();
 
-    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome = (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
+        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
+            manifestsOutcome.values());
 
-    String samDir =  awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
+    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+        awsSamDirectoryManifestOutcome);
 
     samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
-    samDeployEnvironmentVariablesMap.put("PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    samDeployEnvironmentVariablesMap.put(
+        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());
 
     if (awsAccessKey != null) {
@@ -206,7 +204,6 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     if (envVariables != null && envVariables.getValue() != null) {
       samDeployEnvironmentVariablesMap.putAll(envVariables.getValue());
     }
-
 
     return samDeployEnvironmentVariablesMap;
   }
