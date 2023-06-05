@@ -316,6 +316,10 @@ orchestrationStepConfig:
         image: harness/ssca-plugin:latest
         entrypoint:
           - /bin/ssca-plugin
+      sscaEnforcementConfig:
+        image: harness/ssca-plugin:latest
+        entrypoint:
+          - /bin/ssca-plugin
 
 
 shouldDeployWithGitSync: true
