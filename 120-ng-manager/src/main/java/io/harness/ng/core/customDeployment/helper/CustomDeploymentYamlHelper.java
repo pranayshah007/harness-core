@@ -297,7 +297,7 @@ public class CustomDeploymentYamlHelper {
       }
       updatedVariableNode.addAll(updateVariablesList);
       ((ObjectNode) infraSpecNode).set(VARIABLES, updatedVariableNode);
-      return YamlUtils.write(infraYamlConfig.getYamlMap()).replace("---\n", "");
+      return YamlUtils.writeYamlString(infraYamlConfig.getYamlMap());
     } catch (Exception e) {
       throw new InvalidRequestException(
           "Error Encountered in infra updation while reading yamls for template and Infra: " + e.getMessage());

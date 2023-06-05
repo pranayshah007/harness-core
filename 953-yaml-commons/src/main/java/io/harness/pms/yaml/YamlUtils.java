@@ -111,6 +111,9 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will replace "---\n" with ""
   public String write(Object object) {
     try {
       return mapper.writeValueAsString(object);
