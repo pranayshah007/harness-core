@@ -48,7 +48,14 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
   @Inject private DownloadManifestsStepHelper downloadManifestsStepHelper;
 
   @Override
-  public PluginCreationResponseList getPluginInfoList(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
+    return null;
+  }
+
+  @Override
+  public PluginCreationResponseList getPluginInfoList(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     CdAbstractStepNode cdAbstractStepNode;
     try {
@@ -57,8 +64,6 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
       throw new ContainerPluginParseException(
           String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
     }
-
-    Ambiance ambiance = request.getAmbiance();
 
     List<PluginCreationResponseWrapper> pluginCreationResponseWrapperList = new ArrayList<>();
 
@@ -81,7 +86,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
         request.toBuilder().setStepJsonNode(YamlUtils.write(gitCloneStepNode)).build();
 
     PluginCreationResponseWrapper pluginCreationResponseWrapper = gitClonePluginInfoProvider.getPluginInfo(
-        pluginCreationRequest, new HashSet<>(pluginCreationRequest.getUsedPortDetails().getUsedPortsList()));
+        pluginCreationRequest, new HashSet<>(pluginCreationRequest.getUsedPortDetails().getUsedPortsList()), ambiance);
 
     pluginCreationResponseWrapperList.add(pluginCreationResponseWrapper);
 
@@ -103,16 +108,11 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
 
       PluginCreationResponseWrapper valuesPluginCreationResponseWrapper =
           gitClonePluginInfoProvider.getPluginInfo(valuesPluginCreationRequest,
-              new HashSet<>(valuesPluginCreationRequest.getUsedPortDetails().getUsedPortsList()));
+              new HashSet<>(valuesPluginCreationRequest.getUsedPortDetails().getUsedPortsList()), ambiance);
       pluginCreationResponseWrapperList.add(valuesPluginCreationResponseWrapper);
     }
 
     return PluginCreationResponseList.newBuilder().addAllResponse(pluginCreationResponseWrapperList).build();
-  }
-
-  @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
-    return null;
   }
 
   @Override

@@ -987,3 +987,5 @@ io.harness.cdng.k8s.K8sBlueGreenOutcome
 io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome
 io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome
 io.harness.cdng.jenkins.jenkinsstep.JenkinsStepPassThoughData
+io.harness.cdng.aws.sam.DownloadManifestsStepInfo
+io.harness.cdng.aws.sam.DownloadManifestsStepNode

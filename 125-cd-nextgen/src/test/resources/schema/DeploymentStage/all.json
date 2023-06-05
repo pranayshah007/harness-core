@@ -5755,6 +5755,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "DownloadManifestsStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ECRStepInfo": {
       "allOf": [
         {
@@ -7546,6 +7574,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "outputFilePathsContent": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "projectName": {
               "type": "string"
@@ -17388,6 +17422,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GoogleFunctionsDeployWithoutTrafficStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DownloadManifests"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DownloadManifestsStepInfo"
               }
             }
           }
