@@ -290,6 +290,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         .shortCommitSha(shortCommitSha)
         .repoUrl(scmGitRefTaskResponseData.getRepoUrl())
         .gitUserId(latestCommitResponse.getCommit().getAuthor().getLogin())
+        .gitUser(latestCommitResponse.getCommit().getAuthor().getName())
+        .gitUserEmail(latestCommitResponse.getCommit().getAuthor().getEmail())
+        .gitUserAvatar(latestCommitResponse.getCommit().getAuthor().getAvatar())
         .commitMessage(latestCommitResponse.getCommit().getMessage())
         .build();
   }

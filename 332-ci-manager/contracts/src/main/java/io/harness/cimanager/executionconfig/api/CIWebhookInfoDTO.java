@@ -31,4 +31,5 @@ public class CIWebhookInfoDTO {
   private CIBuildAuthor author;
   private CIBuildBranchHook branch;
   private CIBuildPRHook pullRequest;
+  private String userSource;
 }
