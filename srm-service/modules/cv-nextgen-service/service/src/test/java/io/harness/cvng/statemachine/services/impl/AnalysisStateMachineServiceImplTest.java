@@ -59,6 +59,7 @@ import io.harness.cvng.statemachine.entities.DeploymentMetricHostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState;
+import io.harness.cvng.statemachine.entities.TestTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.TimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
@@ -772,5 +773,39 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
         taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertEquals(stateMachine.getCurrentState().getClass(), DeploymentMetricHostSamplingState.class);
     assertThat(stateMachine).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testCreateStateMachine_forDeployment_verificationJobTypeIsSimple() {
+    String verificationTaskId = generateUuid();
+    String verificationJobInstanceId = generateUuid();
+    VerificationTask verificationTask = VerificationTask.builder()
+                                            .accountId(accountId)
+                                            .taskInfo(DeploymentInfo.builder()
+                                                          .verificationJobInstanceId(verificationJobInstanceId)
+                                                          .cvConfigId(cvConfigId)
+                                                          .build())
+                                            .build();
+    verificationTask.setUuid(verificationTaskId);
+    hPersistence.save(verificationTask);
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .deploymentStartTime(Instant.now())
+            .startTime(Instant.now().plus(Duration.ofMinutes(2)))
+            .resolvedJob(builderFactory.simpleVerificationJobBuilder().build())
+            .build();
+    verificationJobInstance.setUuid(verificationJobInstanceId);
+    hPersistence.save(verificationJobInstance);
+    AnalysisInput inputs = AnalysisInput.builder()
+                               .verificationTaskId(verificationTaskId)
+                               .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
+                               .endTime(Instant.now())
+                               .build();
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
+    assertThat(stateMachine.getCurrentState()).isInstanceOf(TestTimeSeriesAnalysisState.class);
   }
 }
