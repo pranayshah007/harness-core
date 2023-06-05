@@ -29,6 +29,7 @@ import io.harness.cache.CICacheManagementServiceImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cdng.plugininfoproviders.CIPluginInfoProvider;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.app.intfc.CIYamlSchemaService;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
