@@ -234,8 +234,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       SimpleServiceLevelObjective simpleServiceLevelObjective =
           (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-      sloTimeScaleService.upsertServiceLevelObjective(simpleServiceLevelObjective);
       sloHealthIndicatorService.upsert(simpleServiceLevelObjective);
+      sloTimeScaleService.upsertServiceLevelObjective(simpleServiceLevelObjective);
       return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
     } else {
       CompositeServiceLevelObjective compositeServiceLevelObjective =

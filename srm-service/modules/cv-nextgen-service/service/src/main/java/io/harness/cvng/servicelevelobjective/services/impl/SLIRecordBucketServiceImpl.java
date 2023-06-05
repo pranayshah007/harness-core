@@ -99,8 +99,10 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
       long runningBadCount) {
     List<SLIRecordBucket> toBeUpdatedSLIRecords = getSLIRecords(
         sliId, firstSLIRecordParam.getTimeStamp(), lastSLIRecordParam.getTimeStamp().plus(1, ChronoUnit.MINUTES));
-    Map<Instant, SLIRecordBucket> sliRecordMap = toBeUpdatedSLIRecords.stream().collect(
-        Collectors.toMap(SLIRecordBucket::getBucketStartTime, Function.identity()));
+    Map<Instant, SLIRecordBucket> sliRecordMap = toBeUpdatedSLIRecords.stream().collect(Collectors.toMap(
+        SLIRecordBucket::getBucketStartTime, Function.identity(),
+        (sliRecord1,
+            sliRecord2) -> sliRecord1.getLastUpdatedAt() > sliRecord2.getLastUpdatedAt() ? sliRecord1 : sliRecord2));
     List<SLIRecordBucket> updateOrCreateSLIRecords = new ArrayList<>();
     for (int idx = 0; idx < sliRecordParamList.size(); idx += 5) {
       List<SLIState> sliStates = new ArrayList<>();

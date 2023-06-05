@@ -14,7 +14,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.getHomeDir;
 import static io.harness.govern.Switch.noop;
 import static io.harness.k8s.KubernetesConvention.DASH;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.network.Http.joinHostPort;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
@@ -47,7 +46,6 @@ import io.harness.yaml.YamlUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
@@ -289,21 +287,6 @@ public class KubernetesHelperService {
     return System.getProperty("java.version", "").startsWith("1.8");
   }
 
-  /**
-   * This is copied version of io.fabric8.kubernetes.client.utils.HttpClientUtils.createHttpClient()
-   * with 1 addition, setting NO_PROXY flag on OkHttpClient if applicable.
-   *
-   * Once kubernetes library is updated to provide this support, we should get rid of this and
-   * use DefaultKubernetesClient(config) constructor version as it internally call
-   * super(createHttpClient(config), config)
-   */
-  @VisibleForTesting
-  public OkHttpClient createHttpClientWithProxySetting(final Config config) {
-    OkHttpClient.Builder httpClientBuilder = getOkHttpClientBuilder();
-    configureHttpClientBuilder(httpClientBuilder, config);
-    return httpClientBuilder.build();
-  }
-
   public void configureHttpClientBuilder(OkHttpClient.Builder httpClientBuilder, Config config) {
     try {
       httpClientBuilder.proxy(Http.checkAndGetNonProxyIfApplicable(config.getMasterUrl()));
@@ -366,6 +349,8 @@ public class KubernetesHelperService {
       if (reqLogger.isTraceEnabled()) {
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        loggingInterceptor.redactHeader("Authorization");
+        loggingInterceptor.redactHeader("Cookie");
         httpClientBuilder.addNetworkInterceptor(loggingInterceptor);
       }
 
