@@ -1101,15 +1101,69 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     Kubectl kubectl = Kubectl.client("kubectl", "config-path");
     ProcessResponse response =
         ProcessResponse.builder().processResult(new ProcessResult(1, new ProcessOutput("failure".getBytes()))).build();
-    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
-    final boolean success = spyK8sTaskHelperBase.checkIfResourceExists(kubectl, K8sDelegateTaskParams.builder().build(),
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    final boolean success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
         KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
         executionLogCallback);
     assertThat(success).isFalse();
     ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
-    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
     assertThat(captor.getValue().command())
-        .isEqualTo("kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default");
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidateScaleDownResourcesSuccess() throws Exception {
+    Kubectl kubectl = Kubectl.client("kubectl", "config-path");
+    ProcessResponse response =
+        ProcessResponse.builder()
+            .processResult(new ProcessResult(0, new ProcessOutput("false".getBytes(StandardCharsets.UTF_8))))
+            .build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    boolean success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isTrue();
+    ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
+    assertThat(captor.getValue().command())
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
+
+    response = ProcessResponse.builder()
+                   .processResult(new ProcessResult(0, new ProcessOutput("true".getBytes(StandardCharsets.UTF_8))))
+                   .build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isFalse();
+    captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(2)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
+    assertThat(captor.getValue().command())
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
+
+    response = ProcessResponse.builder()
+                   .processResult(new ProcessResult(0, new ProcessOutput("".getBytes(StandardCharsets.UTF_8))))
+                   .build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isTrue();
+    captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(3)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
+    assertThat(captor.getValue().command())
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
   }
 
   @Test
@@ -1117,16 +1171,19 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateExistingResourceIdsSuccess() throws Exception {
     Kubectl kubectl = Kubectl.client("kubectl", "config-path");
-    ProcessResponse response = ProcessResponse.builder().processResult(new ProcessResult(0, null)).build();
-    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
-    final boolean success = spyK8sTaskHelperBase.checkIfResourceExists(kubectl, K8sDelegateTaskParams.builder().build(),
+    ProcessResponse response =
+        ProcessResponse.builder().processResult(new ProcessResult(0, new ProcessOutput("".getBytes()))).build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    final boolean success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
         KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
         executionLogCallback);
     assertThat(success).isTrue();
     ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
-    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
     assertThat(captor.getValue().command())
-        .isEqualTo("kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default");
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
   }
 
   @Test
