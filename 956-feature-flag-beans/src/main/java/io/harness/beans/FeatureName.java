@@ -90,6 +90,8 @@ public enum FeatureName {
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
   CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED(
       "If enabled, OOTB steps will run directly on host in cloud infra", HarnessTeam.CI),
+  CI_AI_ENHANCED_REMEDIATIONS(
+      "Enables use of generative AI to provide remediation information in CI/CD step logs", HarnessTeam.CI),
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   CUSTOM_MAX_PAGE_SIZE,
