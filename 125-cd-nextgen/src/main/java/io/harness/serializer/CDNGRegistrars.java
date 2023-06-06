@@ -90,6 +90,7 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.tas.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
@@ -1247,5 +1248,17 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.SERVERLESS_PREPARE_ROLLBACK)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .availableAtAccountLevel(false)
+                      .clazz(ServerlessAwsLambdaPrepareRollbackContainerStepNode.class)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .namespace(SchemaNamespaceConstants.CD)
+                              .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .build())
           .build();
 }

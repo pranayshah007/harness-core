@@ -239,4 +239,6 @@ public interface EntityTypeConstants {
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
   String IDP_CONNECTOR = "IdpConnector";
+
+  String SERVERLESS_PREPARE_ROLLBACK = "ServerlessPrepareRollback";
 }

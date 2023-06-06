@@ -89,6 +89,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -634,5 +635,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return serverlessEntityHelper.getConnectorInfoDTO(connectorId, ngAccess);
+  }
+
+  public void verifyPluginImageIsProvider(ParameterField<String> image) {
+    if (ParameterField.isNull(image) || image.getValue() == null) {
+      throw new InvalidRequestException("Plugin Image must be provided");
+    }
   }
 }
