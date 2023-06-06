@@ -23,6 +23,8 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.MissingRequiredFieldException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -102,6 +104,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final ExceptionManager exceptionManager;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -276,23 +279,28 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId, String pipelineName,
       String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
-    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
-        projectId, orgId, accountId));
-    PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
-    PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false);
-    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
-    if (governanceMetadata.getDeny()) {
-      return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
+    try {
+      String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
+      log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
+          projectId, orgId, accountId));
+      accountId = "";
+      PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
+          accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
+      PipelineCRUDResult pipelineCRUDResult =
+          pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false);
+      GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
+      if (governanceMetadata.getDeny()) {
+        return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
+      }
+      PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
+      return ResponseDTO.newResponse(updatedEntity.getVersion().toString(),
+          PipelineSaveResponse.builder()
+              .identifier(updatedEntity.getIdentifier())
+              .governanceMetadata(governanceMetadata)
+              .build());
+    } catch (MissingRequiredFieldException ex) {
+      throw new PipelineUpdateException("Pipeline Update Failed", exceptionManager.processException(ex));
     }
-    PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
-    return ResponseDTO.newResponse(updatedEntity.getVersion().toString(),
-        PipelineSaveResponse.builder()
-            .identifier(updatedEntity.getIdentifier())
-            .governanceMetadata(governanceMetadata)
-            .build());
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)

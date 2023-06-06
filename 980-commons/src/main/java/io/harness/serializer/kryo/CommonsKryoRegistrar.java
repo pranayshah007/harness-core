@@ -62,6 +62,7 @@ import io.harness.exception.KubernetesApiTaskException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
+import io.harness.exception.MissingRequiredFieldException;
 import io.harness.exception.NexusRegistryException;
 import io.harness.exception.NexusServerException;
 import io.harness.exception.SecretNotFoundException;
@@ -207,5 +208,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(AdfsAuthException.class, 10000120);
     kryo.register(TerragruntCommandExecutionException.class, 10000262);
     kryo.register(TerraformCloudException.class, 10000305);
+    kryo.register(MissingRequiredFieldException.class, 10000306);
   }
 }

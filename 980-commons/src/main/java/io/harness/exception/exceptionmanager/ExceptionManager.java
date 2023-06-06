@@ -90,9 +90,20 @@ public class ExceptionManager {
     try {
       WingsException handledException;
       if (exception instanceof WingsException) {
-        handledException = (WingsException) exception;
-        if (handledException.getCause() != null) {
-          setExceptionCause(handledException, handleException((Exception) handledException.getCause()));
+        ExceptionHandler exceptionHandler = getExceptionHandler(exception);
+        if (exceptionHandler != null) {
+          handledException = exceptionHandler.handleException(exception);
+        } else {
+          handledException = (WingsException) exception;
+        }
+        WingsException cascadedException = handledException;
+        while (cascadedException.getCause() != null) {
+          // 3rd party exception can't be allowed as cause in already handled exception
+          cascadedException = (WingsException) cascadedException.getCause();
+        }
+        setExceptionStacktrace(cascadedException, exception.getStackTrace());
+        if (exception.getCause() != null) {
+          setExceptionCause(cascadedException, handleException((Exception) exception.getCause()));
         }
       } else {
         ExceptionHandler exceptionHandler = getExceptionHandler(exception);

@@ -25,6 +25,7 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.MissingRequiredFieldException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -74,9 +75,11 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -121,11 +124,16 @@ public class PMSPipelineServiceHelper {
     requiredFieldMap.put(PROJECT_ID, pipelineEntity.getProjectIdentifier());
     requiredFieldMap.put(PIPELINE_ID, pipelineEntity.getIdentifier());
 
+    List<String> requiredFields = Lists.newArrayList(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID);
+    List<String> missingFields = new ArrayList<>();
     requiredFieldMap.forEach((requiredField, value) -> {
       if (EmptyPredicate.isEmpty(value)) {
-        throw new InvalidRequestException(String.format("Required field [%s] is either null or empty.", requiredField));
+        missingFields.add(requiredField);
       }
     });
+    if (EmptyPredicate.isNotEmpty(missingFields)) {
+      throw new MissingRequiredFieldException(requiredFields, missingFields);
+    }
   }
 
   public static Criteria getPipelineEqualityCriteria(String accountId, String orgIdentifier, String projectIdentifier,

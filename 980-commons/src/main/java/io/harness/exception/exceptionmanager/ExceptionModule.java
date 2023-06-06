@@ -14,6 +14,7 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.GeneralExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JGitExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.MissingRequiredFieldExceptionHandler;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
@@ -43,5 +44,7 @@ public class ExceptionModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(JGitExceptionHandler.class));
     CILiteEngineExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(CILiteEngineExceptionHandler.class));
+    MissingRequiredFieldExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(MissingRequiredFieldExceptionHandler.class));
   }
 }

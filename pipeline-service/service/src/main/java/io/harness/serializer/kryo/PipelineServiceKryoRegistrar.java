@@ -14,6 +14,7 @@ import io.harness.pms.approval.jira.JiraApprovalCallback;
 import io.harness.pms.approval.servicenow.ServiceNowApprovalCallback;
 import io.harness.pms.async.plan.PartialPlanCreatorResponseData;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
+import io.harness.pms.pipeline.PipelineUpdateException;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsValue;
@@ -37,5 +38,6 @@ public class PipelineServiceKryoRegistrar implements KryoRegistrar {
     kryo.register(PartialSchemaDTOWrapperValue.class, 800008);
     kryo.register(CustomApprovalCallback.class, 800009);
     kryo.register(ApprovalProgressData.class, 10000525);
+    kryo.register(PipelineUpdateException.class, 800010);
   }
 }
