@@ -44,40 +44,41 @@ public class MspMarkupAmountTasklet implements Tasklet {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String mspAccountId = jobConstants.getAccountId();
     List<ManagedAccount> managedAccounts = managedAccountService.list(mspAccountId);
-
-    for (ManagedAccount managedAccount : managedAccounts) {
-      String managedAccountId = managedAccount.getAccountId();
-      AmountDetailsBuilder markupAmountDetailsBuilder = AmountDetails.builder();
-      AmountDetailsBuilder totalSpendDetailsBuilder = AmountDetails.builder();
-      for (Interval interval : Interval.values()) {
-        Pair<Long, Long> startAndEndTimes = getInterval(interval);
-        ManagedAccountStats stats = managedAccountDataService.getManagedAccountStats(
-            mspAccountId, managedAccountId, startAndEndTimes.getFirst(), startAndEndTimes.getSecond());
-        switch (interval) {
-          case CURRENT_MONTH:
-            markupAmountDetailsBuilder.currentMonth(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.currentMonth(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          case CURRENT_QUARTER:
-            markupAmountDetailsBuilder.currentQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.currentQuarter(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          case LAST_MONTH:
-            markupAmountDetailsBuilder.lastMonth(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.lastMonth(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          case LAST_QUARTER:
-            markupAmountDetailsBuilder.lastQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.lastQuarter(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          default:
-            throw new IllegalArgumentException("Invalid interval");
+    if (managedAccounts != null) {
+      for (ManagedAccount managedAccount : managedAccounts) {
+        String managedAccountId = managedAccount.getAccountId();
+        AmountDetailsBuilder markupAmountDetailsBuilder = AmountDetails.builder();
+        AmountDetailsBuilder totalSpendDetailsBuilder = AmountDetails.builder();
+        for (Interval interval : Interval.values()) {
+          Pair<Long, Long> startAndEndTimes = getInterval(interval);
+          ManagedAccountStats stats = managedAccountDataService.getManagedAccountStats(
+              mspAccountId, managedAccountId, startAndEndTimes.getFirst(), startAndEndTimes.getSecond());
+          switch (interval) {
+            case CURRENT_MONTH:
+              markupAmountDetailsBuilder.currentMonth(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.currentMonth(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            case CURRENT_QUARTER:
+              markupAmountDetailsBuilder.currentQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.currentQuarter(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            case LAST_MONTH:
+              markupAmountDetailsBuilder.lastMonth(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.lastMonth(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            case LAST_QUARTER:
+              markupAmountDetailsBuilder.lastQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.lastQuarter(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            default:
+              throw new IllegalArgumentException("Invalid interval");
+          }
         }
+        AmountDetails markupAmountDetails = markupAmountDetailsBuilder.build();
+        AmountDetails totalSpendDetails = totalSpendDetailsBuilder.build();
+        log.info("markupAmountDetails: {}, totalSpendDetails: {}", markupAmountDetails, totalSpendDetails);
+        marginDetailsService.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails, totalSpendDetails);
       }
-      AmountDetails markupAmountDetails = markupAmountDetailsBuilder.build();
-      AmountDetails totalSpendDetails = totalSpendDetailsBuilder.build();
-      log.info("markupAmountDetails: {}, totalSpendDetails: {}", markupAmountDetails, totalSpendDetails);
-      marginDetailsService.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails, totalSpendDetails);
     }
     return null;
   }
