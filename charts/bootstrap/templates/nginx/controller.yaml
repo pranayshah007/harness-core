@@ -223,6 +223,8 @@ spec:
             - --configmap=$(POD_NAMESPACE)/harness-ingress-controller
             - --http-port=8080
             - --https-port=8443
+            {{- if .Values.global.ingress.tls.enabled }}
             - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.ingress.tls.secretName }}
+            {{- end }}
             - --publish-service=$(POD_NAMESPACE)/harness-ingress-controller
   {{- end }}
