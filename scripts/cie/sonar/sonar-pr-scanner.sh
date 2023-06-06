@@ -61,6 +61,8 @@ JAVA_SRC_CLASS="_javac"
 PR_MODULES_JAVAC_FILE="pr_javac_list.txt"
 PR_MODULES_LIB_FILE="pr_lib_list.txt"
 PR_SRCS_FILE="pr_srcs.txt"
+BAZEL_TESTS_FILE="raw_bazel_tests.txt"
+PR_BAZEL_TESTS_FILE="pr_bazel_tests.txt"
 PR_TEST_INCLUSION_FILE="pr_test_inclusions.txt"
 PR_REGISTRAR_EXCLUSION_FILE="pr_registrar_exclusions.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
@@ -115,22 +117,23 @@ for module in $PR_MODULES
   do
      [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && BAZEL_COMPILE_MODULES+=("//${module}/...") \
-     && BAZEL_TEST_LIST+=" "$(bazel query "attr(tags, 'java_test', ${module}/...)") \
+     && echo "$(bazel query "attr(tags, 'java_test', ${module}/...)")" >> $BAZEL_TESTS_FILE \
      || echo "$module is not present in the bazel modules list"
   done
 
-echo "BAZEL_TEST_LIST: ${BAZEL_TEST_LIST[@]}"
+#echo "BAZEL_TEST_LIST: $(cat $BAZEL_TESTS_FILE)"
 
 for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
   do
     #echo "PR_FILE: $pr_file"
     pr_file=$(echo $pr_file | awk -F/ '{print $NF}' | awk -F. '{print $1}')
-    for test in ${BAZEL_TEST_LIST[@]}
+    for test in `cat $BAZEL_TESTS_FILE`
       do
-        [[ "${test}" =~ "${pr_file}" ]] && PR_TEST_LIST+=" "${test} && echo "TEST Found: $test"
+        [[ "${test}" =~ "${pr_file}" ]] && echo "${test}" >> $PR_BAZEL_TESTS_FILE && echo "TEST Found: $test"
       done
   done
 
+PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE | sort -u | tr '\r\n' ' ' | rev | cut -c2- | rev)
 echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
 
 # Running Bazel Build and Test
