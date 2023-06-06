@@ -324,6 +324,7 @@ public class GitAwareEntityHelper {
 
   public String getWorkingBranch(String repoName) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    // If there's static branch present for any template, then it takes highest precedence
     if (GitAwareContextHelper.isTransientBranchSet()) {
       return gitEntityInfo.getTransientBranch();
     }
