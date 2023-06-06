@@ -138,16 +138,32 @@ public class GcbServiceImpl implements GcbService {
   @Override
   public String fetchBuildLogs(
       GcpConfig gcpConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String fileName) {
+    Response<ResponseBody> response;
+    int count = 0;
+    int maxTries = 5;
     try {
       final String bucket = bucketName.replace("gs://", "");
       log.info("GCB_TASK - fetching logs");
       final GcsRestClient restClient = getRestClient(GcsRestClient.class, GCS_BASE_URL);
-      Response<ResponseBody> response = retry(
-          () -> restClient.fetchLogs(getBasicAuthHeader(gcpConfig, encryptionDetails), bucket, fileName).execute());
-      if (!response.isSuccessful()) {
-        log.error("GCB_TASK - failed to fetch logs due to: " + response.errorBody().string());
-        throw new GcbClientException(response.errorBody().string());
+
+      while (true) {
+        try {
+          response = retry(
+              () -> restClient.fetchLogs(getBasicAuthHeader(gcpConfig, encryptionDetails), bucket, fileName).execute());
+          if (!response.isSuccessful()) {
+            log.error("GCB_TASK - failed to fetch logs due to: " + response.errorBody().string());
+            throw new GcbClientException(response.errorBody().string());
+          }
+          break;
+        } catch (GcbClientException e) {
+          log.warn("GCB fetching logs response is unsuccessful due to error {}", e.getMessage());
+          TimeUnit.SECONDS.sleep(2);
+          if (++count == maxTries) {
+            throw e;
+          }
+        }
       }
+
       log.info("GCB_TASK - logs are fetched");
       return response.body().string();
     } catch (InterruptedIOException | InterruptedException e) {
