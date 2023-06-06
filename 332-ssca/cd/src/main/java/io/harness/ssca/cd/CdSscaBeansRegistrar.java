@@ -66,5 +66,14 @@ public class CdSscaBeansRegistrar {
                                         .build())
                    .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
                    .build())
+          .add(StepInfo.newBuilder()
+                   .setName(SscaConstants.SSCA_ENFORCEMENT)
+                   .setType(SscaConstants.CD_SSCA_ENFORCEMENT)
+                   .setStepMetaData(StepMetaData.newBuilder()
+                                        .addCategory("ssca")
+                                        .addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME)
+                                        .build())
+                   .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
+                   .build())
           .build();
 }
