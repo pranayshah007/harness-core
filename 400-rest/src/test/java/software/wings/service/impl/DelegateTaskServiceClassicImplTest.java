@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.JENNY;
 
 import static java.util.stream.Collectors.toList;
@@ -77,7 +78,7 @@ public class DelegateTaskServiceClassicImplTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = JENNY)
+  @Owner(developers = GAURAV_NANDA)
   @Category(UnitTests.class)
   public void getEligibleDelegateListOrderedNumberByTaskAssigned_allDelegateWithZeroTasks_shuffledListReturned()
       throws ExecutionException {
