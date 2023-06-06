@@ -113,12 +113,7 @@ for file in $($GIT_DIFF | tr '\r\n' ' ')
 # Running Bazel Build and creating list of all tests in the modules
 for module in $PR_MODULES
   do
-     [ -d ${module} ] && [ ${module} != 'project' ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
-     && echo "$module is present in the bazel modules list." \
-     && get_javac_path ${JAVA_CLASSES_PATH}/${module} >> $PR_MODULES_JAVAC_FILE \
-     && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
-     && echo "${module}/${JAVA_TEST_SRCS}" >> $PR_TEST_INCLUSION_FILE \
-     && echo "${module}/${EXCLUDE_REGISTRAR}" >> $PR_REGISTRAR_EXCLUSION_FILE \
+     [ -d ${module} ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
      && BAZEL_COMPILE_MODULES+=("//${module}/...") \
      && BAZEL_TEST_LIST+=" "$(bazel query "attr(tags, 'java_test', ${module}/...)") \
      || echo "$module is not present in the bazel modules list"
@@ -146,6 +141,17 @@ check_cmd_status "$?" "Failed to build harness core modules."
 echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${PR_TEST_LIST[@]}"
 bazel coverage ${BAZEL_ARGS} -- "${PR_TEST_LIST[@]}"
 check_cmd_status "$?" "Failed to run coverage."
+
+for module in $PR_MODULES
+  do
+     [ -d ${module} ] && [ ${module} != 'project' ] && [[ "${HARNESS_CORE_MODULES}" =~ "${module}" ]] \
+     && echo "$module is present in the bazel modules list." \
+     && get_javac_path ${JAVA_CLASSES_PATH}/${module} >> $PR_MODULES_JAVAC_FILE \
+     && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
+     && echo "${module}/${JAVA_TEST_SRCS}" >> $PR_TEST_INCLUSION_FILE \
+     && echo "${module}/${EXCLUDE_REGISTRAR}" >> $PR_REGISTRAR_EXCLUSION_FILE \
+     || echo "$module is not present in the bazel modules list"
+  done
 
 echo "----------PR_MODULES_JAVAC_FILE-----------"
 cat $PR_MODULES_JAVAC_FILE
