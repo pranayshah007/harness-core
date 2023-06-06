@@ -18,14 +18,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pubsub.message.BigQueryUpdateMessage;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.service.LabelFlattenedService;
+import io.harness.ff.FeatureFlagService;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.inject.Singleton;
 import com.google.pubsub.v1.PubsubMessage;
@@ -37,6 +41,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -48,7 +53,8 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
-  private static final String T_MOBILE_ACCOUNT_ID = "k9c6xngts06yosmv7hpglq";
+  private static final List<String> FLATTENED_LABELS_ENABLED_ACCOUNT_IDS =
+      ImmutableList.of("k9C6xngtS06yOSMV7hPGlQ", "JQ3KKI5yRTGe37OrCiZaTA");
 
   private final Gson gson = new Gson();
   private final BigQueryHelper bigQueryHelper;
@@ -56,15 +62,20 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private final BusinessMappingHistoryService businessMappingHistoryService;
   private final ViewsQueryBuilder viewsQueryBuilder;
   private final Set<String> accountsInCluster;
+  private final FeatureFlagService featureFlagService;
+  private final LabelFlattenedService labelFlattenedService;
 
   public BigQueryUpdateMessageReceiver(BigQueryHelper bigQueryHelper, BigQueryHelperService bigQueryHelperService,
       BusinessMappingHistoryService businessMappingHistoryService, ViewsQueryBuilder viewsQueryBuilder,
-      Set<String> accountsInCluster) {
+      Set<String> accountsInCluster, FeatureFlagService featureFlagService,
+      LabelFlattenedService labelFlattenedService) {
     this.bigQueryHelper = bigQueryHelper;
     this.bigQueryHelperService = bigQueryHelperService;
     this.businessMappingHistoryService = businessMappingHistoryService;
     this.viewsQueryBuilder = viewsQueryBuilder;
     this.accountsInCluster = accountsInCluster;
+    this.featureFlagService = featureFlagService;
+    this.labelFlattenedService = labelFlattenedService;
   }
 
   @Override
@@ -138,14 +149,19 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         currentMonth = currentMonth.plusMonths(1);
         continue;
       }
-      // TODO: Replace the condition with feature flag
-      boolean shouldUseLabelsColumn = T_MOBILE_ACCOUNT_ID.equalsIgnoreCase(message.getAccountId());
+      Map<String, String> labelsKeyAndColumnMapping =
+          labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
+      // TODO: Remove accountIds condition after testing
+      boolean shouldUseFlattenedLabelsColumn =
+          featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId())
+          || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(message.getAccountId());
       List<String> sqlCaseStatements =
           businessMappingHistories.stream()
               .map(businessMappingHistory
                   -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
                       viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
-                          BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, shouldUseLabelsColumn)))
+                          BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
+                          shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping)))
               .collect(Collectors.toList());
       String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
 
