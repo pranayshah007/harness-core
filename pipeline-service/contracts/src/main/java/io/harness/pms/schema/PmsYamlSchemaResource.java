@@ -54,6 +54,14 @@ public interface PmsYamlSchemaResource {
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
 
+  @GET
+  @Path("/v2")
+  @ApiOperation(value = "Get Static Yaml Schema", nickname = "getStaticSchemaYaml")
+  ResponseDTO<JsonNode> getStaticYamlSchema(@QueryParam("entityType") @NotNull EntityType entityType,
+      @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
+      @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
+      @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
+
   @POST
   @Path("/invalidate-cache")
   @ApiOperation(value = "Invalidate yaml schema cache", nickname = "invalidateYamlSchemaCache")
