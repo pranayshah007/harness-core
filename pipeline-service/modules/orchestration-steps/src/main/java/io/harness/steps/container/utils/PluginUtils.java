@@ -12,7 +12,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ExpressionResolverUtils;
+import io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementSpecParameters;
 import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationSpecParameters;
+import io.harness.ssca.cd.execution.enforcement.CdSscaEnforcementPluginHelper;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.ssca.SscaOrchestrationPluginHelper;
@@ -29,21 +31,28 @@ import java.util.Map;
 @Singleton
 public class PluginUtils {
   @Inject SscaOrchestrationPluginHelper sscaOrchestrationPluginHelper;
+  @Inject CdSscaEnforcementPluginHelper enforcementPluginHelper;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginStep step, String identifier, Ambiance ambiance) {
     switch (step.getType()) {
       case CD_SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginHelper.getSscaOrchestrationEnvVariables(
             (CdSscaOrchestrationSpecParameters) step, identifier, ambiance);
+      case CD_SSCA_ENFORCEMENT:
+        return enforcementPluginHelper.getSscaEnforcementStepEnvVariables(
+            (CdSscaEnforcementSpecParameters) step, identifier, ambiance);
       default:
         return new HashMap<>();
     }
   }
 
-  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginStep step) {
+  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginStep step, String identifier) {
     switch (step.getType()) {
       case CD_SSCA_ORCHESTRATION:
         return SscaOrchestrationPluginHelper.getSscaOrchestrationSecretVars((CdSscaOrchestrationSpecParameters) step);
+      case CD_SSCA_ENFORCEMENT:
+        return CdSscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
+            (CdSscaEnforcementSpecParameters) step, identifier);
       default:
         return new HashMap<>();
     }

@@ -16,6 +16,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepNode;
 import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -31,6 +32,18 @@ public class CdSscaBeansRegistrar {
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.CD_SSCA_ORCHESTRATION)
                    .clazz(CdSscaOrchestrationStepNode.class)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(ImmutableList.of(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CD_SSCA_ENFORCEMENT)
+                   .clazz(CdSscaEnforcementStepNode.class)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)

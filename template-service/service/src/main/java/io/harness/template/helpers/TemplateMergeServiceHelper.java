@@ -115,14 +115,14 @@ public class TemplateMergeServiceHelper {
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntity getLinkedTemplateEntity(String accountId, String orgId, String projectId, String identifier,
-      String versionLabel, Map<String, TemplateEntity> templateCacheMap) {
+      String versionLabel, Map<String, TemplateEntity> templateCacheMap, String branch) {
     String versionMarker = STABLE_VERSION;
     if (!EmptyPredicate.isEmpty(versionLabel)) {
       versionMarker = versionLabel;
     }
 
     return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false);
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false, branch);
   }
 
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
@@ -150,13 +150,6 @@ public class TemplateMergeServiceHelper {
     TemplateEntity template = templateEntity.get();
     templateCacheMap.put(templateUniqueIdentifier, template);
     return template;
-  }
-
-  public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
-      String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
-      boolean loadFromCache) {
-    return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, loadFromCache, null);
   }
 
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value

@@ -245,6 +245,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(211, "SEMGREP");
     entityTypeOrdinalMapping.put(212, "SSCA_ENFORCEMENT");
     entityTypeOrdinalMapping.put(213, "IDP_CONNECTOR");
+    entityTypeOrdinalMapping.put(214, "CD_SSCA_ENFORCEMENT");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
