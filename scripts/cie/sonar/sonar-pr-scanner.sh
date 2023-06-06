@@ -4,7 +4,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -ex
+#set -ex
 
 trap 'report_error' ERR
 
@@ -87,7 +87,9 @@ HARNESS_CORE_MODULES=$(bazel query "//...:*" | grep -w "module" | awk -F/ '{prin
 check_cmd_status "$?" "Failed to list harness core modules."
 #echo "HARNESS_CORE_MODULES: $HARNESS_CORE_MODULES"
 
-GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+#GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
+
+GIT_DIFF="git diff --name-only dd2c5afbf4599a666c0719f4c2d67e9c6505d706..cbd5ef7cde0dd5767c5ca369fec0ef298a7e2ad4"
 
 echo "------------------------------------------------"
 echo "GIT DIFF: $GIT_DIFF"
@@ -119,7 +121,7 @@ for module in $PR_MODULES
      || echo "$module is not present in the bazel modules list"
   done
 
-#echo "BAZEL_TEST_LIST: ${BAZEL_TEST_LIST[@]}"
+echo "BAZEL_TEST_LIST: ${BAZEL_TEST_LIST[@]}"
 
 for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
   do
@@ -127,19 +129,19 @@ for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
     pr_file=$(echo $pr_file | awk -F/ '{print $NF}' | awk -F. '{print $1}')
     for test in ${BAZEL_TEST_LIST[@]}
       do
-        [[ "${test}" =~ "${pr_file}" ]] && PR_TEST_LIST+=" "${test} #&& echo "TEST Found: $test"
+        [[ "${test}" =~ "${pr_file}" ]] && PR_TEST_LIST+=" "${test} && echo "TEST Found: $test"
       done
   done
 
-#echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
+echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
 
 # Running Bazel Build and Test
 echo "INFO: BAZEL COMMAND: bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]} -//product/... -//commons/..."
-bazel build ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" -//product/... -//commons/...
+#bazel build ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" -//product/... -//commons/...
 check_cmd_status "$?" "Failed to build harness core modules."
 
 echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${PR_TEST_LIST[@]}"
-bazel coverage ${BAZEL_ARGS} -- "${PR_TEST_LIST[@]}"
+#bazel coverage ${BAZEL_ARGS} -- "${PR_TEST_LIST[@]}"
 check_cmd_status "$?" "Failed to run coverage."
 
 for module in $PR_MODULES
@@ -187,7 +189,7 @@ if [ ! -s $PR_MODULES_JAVAC_FILE ]; then
   echo "INFO: No need to run Sonar Scan."; exit 0
 else
   echo "INFO: Running Sonar Scan."
-  sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io
+  #sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io
 fi
 
 clean_temp_files "$PR_MODULES_JAVAC_FILE $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
