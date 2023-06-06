@@ -91,6 +91,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private EnvironmentRepository environmentRepository;
   @Mock private EnvironmentRepository mockEnvironmentRepository;
+
   @Inject private OutboxService outboxService;
   @InjectMocks private EnvironmentServiceImpl environmentService;
   @InjectMocks private EnvironmentServiceImpl environmentServiceUsingMocks;

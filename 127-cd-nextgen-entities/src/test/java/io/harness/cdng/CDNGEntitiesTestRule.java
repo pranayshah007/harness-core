@@ -53,6 +53,8 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.ng.core.serviceoverridev2.service.DummyServiceOverridesServiceV2Impl;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -232,6 +234,7 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);
         bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+        bind(ServiceOverridesServiceV2.class).to(DummyServiceOverridesServiceV2Impl.class);
         bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
         bind(AccountService.class).toInstance(mock(AccountService.class));
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
