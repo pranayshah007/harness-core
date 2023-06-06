@@ -75,7 +75,7 @@ public class GitAwareEntityHelper {
     EntityType entityType = gitContextRequestParams.getEntityType();
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
 
-    log.error(String.format("Fetching Remote Entity : %s , %s , %s", repoName, branch, filePath));
+    log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
     ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
         Scope.builder()
             .accountIdentifier(scope.getAccountIdentifier())
