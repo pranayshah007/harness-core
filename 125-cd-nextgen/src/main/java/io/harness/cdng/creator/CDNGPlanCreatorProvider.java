@@ -1386,7 +1386,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                     .setName("Serverless Prepare Rollback")
                     .setType(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
                     .setStepMetaData(StepMetaData.newBuilder().addCategory("SERVERLESS_PREPARE_ROLLBACK").setFolderPath("Serverless Lambda").build())
-                    .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+                    .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
                     .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
