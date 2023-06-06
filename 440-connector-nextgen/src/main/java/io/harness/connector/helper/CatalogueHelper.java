@@ -36,6 +36,7 @@ public class CatalogueHelper {
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TAS_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TERRAFORM_CLOUD))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.BAMBOO_ARTIFACT_NG))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_RANCHER_SUPPORT_NG))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));
     return connectorCategoryListMap.entrySet()
         .stream()
