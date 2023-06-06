@@ -62,6 +62,12 @@ pmsSdkOrchestrationEventPoolConfig:
   idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+podCleanUpThreadPoolConfig:
+  corePoolSize: ${POD_CLEANUP_POOL_CORE_SIZE:-5}
+  maxPoolSize: ${{POD_CLEANUP_POOL_MAX_SIZE:-10}
+  idleTime: ${{POD_CLEANUP_POOL_IDLE_TIME:-10}
+  timeUnit: ${{POD_CLEANUP_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 mongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000

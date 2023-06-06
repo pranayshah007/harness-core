@@ -12,7 +12,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirec
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,5 +23,5 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @RecasterAlias("io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec")
 public class ContainerInfraYamlSpec extends K8sDirectInfraYamlSpec {
-  @NotNull @Valid private ContainerResource resources;
+  @Valid private ContainerResource resources;
 }
