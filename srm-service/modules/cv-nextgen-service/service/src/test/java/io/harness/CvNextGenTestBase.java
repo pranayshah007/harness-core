@@ -15,10 +15,13 @@ import com.google.common.io.Resources;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.junit.Rule;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.yaml.snakeyaml.Yaml;
 
 @Slf4j
 public abstract class CvNextGenTestBase extends CategoryTest {
@@ -51,5 +54,13 @@ public abstract class CvNextGenTestBase extends CategoryTest {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource(filePath);
     return Resources.toString(testFile, Charsets.UTF_8);
+  }
+
+  protected String convertToJson(String yamlString) {
+    Yaml yaml = new Yaml();
+    Map<String, Object> map = yaml.load(yamlString);
+
+    JSONObject jsonObject = new JSONObject(map);
+    return jsonObject.toString();
   }
 }

@@ -82,6 +82,7 @@ import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -329,9 +330,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
-    templateMergeResponseDTO =
-        templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false, false);
+    templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
+        templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+        YamlUtils.readAsJsonNodeWithCheckDuplicate(templateEntity.getYaml()), false, false, false);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);

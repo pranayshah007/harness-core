@@ -10,10 +10,14 @@ package io.harness.template.yaml;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
+import io.harness.pms.merger.helpers.FQNMapGenerator;
+import io.harness.pms.yaml.YamlUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
@@ -23,7 +27,7 @@ public class TemplateRefHelper {
   public final String TEMPLATE = "template";
   public final String CUSTOM_DEPLOYMENT_TEMPLATE = "customDeploymentRef";
 
-  public boolean hasTemplateRef(String yaml, boolean checkDuplicate) {
+  public boolean hasTemplateRefWithCheckDuplicate(String yaml) {
     // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
     // save. The below yaml is invalid and should not be allowed to save.
     /*
@@ -33,8 +37,8 @@ public class TemplateRefHelper {
       projectIdentifier: project
       orgIdentifier: org
      */
-    YamlConfig yamlConfig = new YamlConfig(yaml, checkDuplicate);
-    return hasTemplateRef(yamlConfig);
+    JsonNode jsonNode = YamlUtils.readAsJsonNodeWithCheckDuplicate(yaml);
+    return hasTemplateRef(jsonNode);
   }
 
   public boolean hasTemplateRef(String yaml) {
@@ -43,7 +47,12 @@ public class TemplateRefHelper {
   }
 
   public boolean hasTemplateRef(YamlConfig yamlConfig) {
-    Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
+    return hasTemplateRef(yamlConfig.getYamlMap());
+  }
+
+  public boolean hasTemplateRef(JsonNode jsonNode) {
+    Map<FQN, Object> fqnObjectMap = FQNMapGenerator.generateFQNMap(jsonNode);
+    Set<FQN> fqnSet = new LinkedHashSet<>(fqnObjectMap.keySet());
     for (FQN key : fqnSet) {
       if (key.getFqnList().size() >= 2) {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());

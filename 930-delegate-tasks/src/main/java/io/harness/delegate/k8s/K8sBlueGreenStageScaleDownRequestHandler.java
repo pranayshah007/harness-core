@@ -22,7 +22,6 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.configuration.KubernetesCliCommandType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -31,7 +30,6 @@ import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
@@ -146,16 +144,12 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
 
   private void scaleDownStageEnvironmentResources(
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
-    resourceIdsToScale.stream()
-        .filter(resourceId -> SCALE_DOWN_WORKLOAD_KINDS.contains(resourceId.getKind()))
-        .forEach(resourceId -> {
-          try {
-            k8sTaskHelperBase.scale(
-                client, k8sDelegateTaskParams, resourceId, TARGET_REPLICA_COUNT, executionLogCallback, true);
-          } catch (Exception ex) {
-            throw new KubernetesCliTaskRuntimeException(ex.getMessage(), KubernetesCliCommandType.SCALE);
-          }
-        });
+    for (KubernetesResourceId resourceId : resourceIdsToScale) {
+      if (SCALE_DOWN_WORKLOAD_KINDS.contains(resourceId.getKind())) {
+        k8sTaskHelperBase.scale(
+            client, k8sDelegateTaskParams, resourceId, TARGET_REPLICA_COUNT, executionLogCallback, true);
+      }
+    }
   }
 
   private List<KubernetesResourceId> getResourceIdsToScaleDownStageEnvironment(
@@ -183,7 +177,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
             -> WORKLOAD_KINDS.contains(k8sResourceId.getKind()) && k8sResourceId.getName().endsWith(primaryColor))
         .peek(k8sResourceId -> k8sResourceId.setName(k8sResourceId.getName().replaceAll(regex, stageColor)))
         .filter(k8sResourceId
-            -> k8sTaskHelperBase.checkIfResourceExists(
+            -> k8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(
                 client, k8sDelegateTaskParams, k8sResourceId, executionLogCallback))
         .distinct()
         .collect(Collectors.toList());

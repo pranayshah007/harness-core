@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.Repository;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.steps.CIAbstractStepNode;
@@ -280,6 +281,16 @@ public class IntegrationStageUtilsTest {
             WebhookExecutionSource.builder()
                 .webhookEvent(
                     PRWebhookEvent.builder()
+                        .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
+                        .build())
+                .build(),
+            "https://github.com/Devkimittal/Harness-core"))
+        .isTrue();
+    assertThat(
+        IntegrationStageUtils.isURLSame(
+            WebhookExecutionSource.builder()
+                .webhookEvent(
+                    ReleaseWebhookEvent.builder()
                         .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
                         .build())
                 .build(),

@@ -305,6 +305,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ASG = "AWS Auto Scaling Group";
   private static final String AWS_LAMBDA = "AwsLambda";
 
+  private static final String AWS_SAM = "AWS_SAM";
+
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER,
       CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
@@ -1324,17 +1326,17 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                      .build();
     StepInfo awsSamDeploy =
         StepInfo.newBuilder()
-            .setName("AWS SAM Deploy")
+            .setName("SAM Deploy")
             .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamDeploy").setFolderPath("AWS SAM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
     StepInfo awsSamBuild =
         StepInfo.newBuilder()
-            .setName("AWS SAM Build")
+            .setName("SAM Build")
             .setType(StepSpecTypeConstants.AWS_SAM_BUILD)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamBuild").setFolderPath("AWS SAM").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 

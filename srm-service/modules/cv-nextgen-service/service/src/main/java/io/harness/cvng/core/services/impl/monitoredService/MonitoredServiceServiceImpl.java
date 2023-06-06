@@ -58,6 +58,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceWithHealthSou
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceYamlDTO;
 import io.harness.cvng.core.beans.monitoredService.RiskData;
 import io.harness.cvng.core.beans.monitoredService.SloHealthIndicatorDTO;
+import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceWithConnectorSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -120,9 +121,11 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorServ
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.licensing.LicenseStatus;
@@ -131,6 +134,7 @@ import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
@@ -1270,6 +1274,17 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       Preconditions.checkState(monitoredServiceDTO.getEnvironmentRefList().size() == 1,
           "Application monitored service cannot be attached to more than one environment");
     }
+
+    nextGenService.getService(accountId, monitoredServiceDTO.getOrgIdentifier(),
+        monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getServiceRef());
+    validateEnvironmentList(accountId, monitoredServiceDTO);
+
+    List<String> connectorRefs = listConnectorRefs(monitoredServiceDTO);
+    if (connectorRefs != null && connectorRefs.size() > 0) {
+      nextGenService.validateConnectorIdList(
+          accountId, monitoredServiceDTO.getOrgIdentifier(), monitoredServiceDTO.getProjectIdentifier(), connectorRefs);
+    }
+
     if (monitoredServiceDTO.getSources() != null) {
       Set<String> identifiers = new HashSet<>();
       monitoredServiceDTO.getSources().getHealthSources().forEach(healthSource -> {
@@ -1281,6 +1296,45 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       });
     }
     notificationRuleService.validateNotification(monitoredServiceDTO.getNotificationRuleRefs(), projectParams);
+  }
+
+  private void validateEnvironmentList(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
+    nextGenService.getEnvironment(accountId, monitoredServiceDTO.getOrgIdentifier(),
+        monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getEnvironmentRef());
+    if (monitoredServiceDTO.getEnvironmentRefList() != null) {
+      List<EnvironmentResponse> environmentResponseList =
+          nextGenService.listEnvironment(accountId, monitoredServiceDTO.getOrgIdentifier(),
+              monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getEnvironmentRefList());
+      if (environmentResponseList.size() < monitoredServiceDTO.getEnvironmentRefList().size()) {
+        Set<String> environmentRefSet =
+            monitoredServiceDTO.getEnvironmentRefList().stream().collect(Collectors.toSet());
+        for (EnvironmentResponse env : environmentResponseList) {
+          EnvironmentResponseDTO environmentResponseDTO = env.getEnvironment();
+          String scopedEnvId = ScopedInformation.getScopedIdentifier(environmentResponseDTO.getAccountId(),
+              environmentResponseDTO.getOrgIdentifier(), environmentResponseDTO.getProjectIdentifier(),
+              environmentResponseDTO.getIdentifier());
+          if (environmentRefSet.contains(scopedEnvId)) {
+            environmentRefSet.remove(scopedEnvId);
+          }
+        }
+        throw new InvalidArgumentsException(
+            String.format("Invalid Environment Identifiers: %s", String.join(", ", environmentRefSet)));
+      }
+    }
+  }
+
+  @Override
+  public List<String> listConnectorRefs(MonitoredServiceDTO monitoredServiceDTO) {
+    List<String> connectorRefs = new ArrayList<>();
+    for (HealthSource healthsource : monitoredServiceDTO.getSources().getHealthSources()) {
+      connectorRefs.add(healthsource.getSpec().getConnectorRef());
+    }
+    for (ChangeSourceDTO changeSourceDTO : monitoredServiceDTO.getSources().getChangeSources()) {
+      if (changeSourceDTO.getSpec().connectorPresent()) {
+        connectorRefs.add(((ChangeSourceWithConnectorSpec) changeSourceDTO.getSpec()).getConnectorRef());
+      }
+    }
+    return connectorRefs;
   }
 
   @Override

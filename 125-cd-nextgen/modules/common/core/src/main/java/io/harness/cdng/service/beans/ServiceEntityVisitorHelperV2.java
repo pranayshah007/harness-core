@@ -20,10 +20,10 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
-import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
@@ -110,7 +110,7 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
       Map<String, Object> map = new LinkedHashMap<>();
       if (ParameterField.isNotNull(serviceYamlV2.serviceInputs) && !serviceYamlV2.getServiceInputs().isExpression()) {
         map.put("service", serviceYamlV2.getServiceInputs().getValue());
-        Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(CDYamlUtils.getMapper().valueToTree(map));
+        Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(YamlUtils.getMapper().valueToTree(map));
         Map<String, Object> fqnStringToValueMap = new HashMap<>();
         fqnToValueMap.forEach((fqn, value) -> fqnStringToValueMap.put(fqn.getExpressionFqn(), value));
 

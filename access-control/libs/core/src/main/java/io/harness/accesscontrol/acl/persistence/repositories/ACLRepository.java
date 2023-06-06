@@ -39,6 +39,8 @@ public interface ACLRepository {
 
   List<ACL> getByAclQueryStringInAndEnabled(Collection<String> aclQueryStrings, boolean enabled);
 
+  List<ACL> getByAclQueryStringIn(Collection<String> aclQueryStrings);
+
   void cleanCollection();
 
   void renameCollection(String newCollectionName);

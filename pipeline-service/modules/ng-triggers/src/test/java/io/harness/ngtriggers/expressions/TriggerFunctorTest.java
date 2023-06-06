@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataServiceImpl;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -131,6 +133,28 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.sourceType>")).isEqualTo("Github");
     assertThat(expressionEvaluator.renderExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
+
+    // When triggerJsonPayload is empty
+    when(metadataService.findByPlanExecutionId(any())).thenReturn(Optional.empty());
+    SampleEvaluator finalExpressionEvaluator = expressionEvaluator;
+    assertThatThrownBy(() -> finalExpressionEvaluator.renderExpression("<+trigger.event>"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("No Metadata present for planExecution :");
+
+    // When triggerJsonPayload is invalid
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(
+            PlanExecutionMetadata.builder()
+                .triggerJsonPayload(",")
+                .triggerPayload(TriggerPayload.newBuilder()
+                                    .setParsedPayload(ParsedPayload.newBuilder().setPr(prEvent.getPr()).build())
+                                    .setType(Type.WEBHOOK)
+                                    .setSourceType(SourceType.GITHUB_REPO)
+                                    .build())
+                .build()));
+    assertThatThrownBy(() -> finalExpressionEvaluator.renderExpression("<+trigger.event>"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Event payload could not be converted to a hashmap");
   }
 
   public static class SampleEvaluator extends EngineExpressionEvaluator {

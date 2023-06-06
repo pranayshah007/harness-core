@@ -10,6 +10,7 @@ package software.wings.service;
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
@@ -1781,5 +1782,15 @@ public class AccountServiceTest extends WingsBaseTest {
     accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings);
     assertThatExceptionOfType(AccountNotFoundException.class)
         .isThrownBy(() -> accountService.setSessionTimeoutInMinutes("dummy", sessionTimeoutSettings));
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testGetSessionTimeoutMoreThanMaxLimit() {
+    Account account = saveAccount("Harness");
+    SessionTimeoutSettings sessionTimeoutSettings = new SessionTimeoutSettings(4321);
+    assertThatExceptionOfType(ConstraintViolationException.class)
+        .isThrownBy(() -> accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings));
   }
 }

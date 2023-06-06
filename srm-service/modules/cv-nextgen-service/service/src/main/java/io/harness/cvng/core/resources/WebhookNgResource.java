@@ -25,6 +25,7 @@ import io.swagger.annotations.ApiOperation;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -38,6 +39,7 @@ import retrofit2.http.Body;
 public class WebhookNgResource {
   @Inject private WebhookService webhookService;
 
+  @POST
   @Path("custom-change")
   @Timed
   @PublicApi
@@ -45,7 +47,7 @@ public class WebhookNgResource {
   @SRMServiceAuthIfHasApiKey
   @ApiOperation(
       value = "accepts a custom change webhook request", nickname = "handleCustomChangeSourceWebhookNgRequest")
-  public boolean
+  public void
   handleCustomChangeWebhookNgRequest(@Valid @BeanParam ProjectPathParams projectPathParams,
       @NotNull @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier,
@@ -55,6 +57,5 @@ public class WebhookNgResource {
         projectParams.getProjectIdentifier(), monitoredServiceIdentifier, httpHeaders);
     webhookService.handleCustomChangeWebhook(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload);
-    return true;
   }
 }

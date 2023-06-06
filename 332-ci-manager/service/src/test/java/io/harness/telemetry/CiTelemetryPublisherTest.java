@@ -115,15 +115,15 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
-    firstAccountExpectedMap.put("ci_license_developers_used", null);
-    firstAccountExpectedMap.put("ci_credits_used", null);
+    firstAccountExpectedMap.put("ci_credits_used", 500L);
+    firstAccountExpectedMap.put("ci_license_developers_used", 0L);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
-    secondAccountExpectedMap.put("ci_license_developers_used", null);
-    secondAccountExpectedMap.put("ci_credits_used", null);
+    secondAccountExpectedMap.put("ci_credits_used", 500L);
+    secondAccountExpectedMap.put("ci_license_developers_used", 0L);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();
@@ -153,15 +153,15 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
-    firstAccountExpectedMap.put("ci_license_developers_used", null);
-    firstAccountExpectedMap.put("ci_credits_used", null);
+    firstAccountExpectedMap.put("ci_license_developers_used", 20L);
+    firstAccountExpectedMap.put("ci_credits_used", 500L);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
-    secondAccountExpectedMap.put("ci_license_developers_used", null);
-    secondAccountExpectedMap.put("ci_credits_used", null);
+    secondAccountExpectedMap.put("ci_license_developers_used", 20L);
+    secondAccountExpectedMap.put("ci_credits_used", 500L);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();

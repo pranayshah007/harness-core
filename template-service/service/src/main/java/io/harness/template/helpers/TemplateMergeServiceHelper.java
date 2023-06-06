@@ -57,7 +57,6 @@ import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.TemplateUtils;
-import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -116,14 +115,14 @@ public class TemplateMergeServiceHelper {
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntity getLinkedTemplateEntity(String accountId, String orgId, String projectId, String identifier,
-      String versionLabel, Map<String, TemplateEntity> templateCacheMap) {
+      String versionLabel, Map<String, TemplateEntity> templateCacheMap, String branch) {
     String versionMarker = STABLE_VERSION;
     if (!EmptyPredicate.isEmpty(versionLabel)) {
       versionMarker = versionLabel;
     }
 
     return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false);
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false, branch);
   }
 
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
@@ -151,13 +150,6 @@ public class TemplateMergeServiceHelper {
     TemplateEntity template = templateEntity.get();
     templateCacheMap.put(templateUniqueIdentifier, template);
     return template;
-  }
-
-  public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
-      String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
-      boolean loadFromCache) {
-    return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, loadFromCache, null);
   }
 
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value
@@ -231,7 +223,7 @@ public class TemplateMergeServiceHelper {
       }
       JsonNode templateInputsYaml =
           YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
-      return TemplateYamlUtils.writeYamlString(templateInputsYaml);
+      return YamlUtils.writeYamlString(templateInputsYaml);
     } catch (IOException e) {
       log.error("Error occurred while creating template inputs " + e);
       throw new NGTemplateException("Error occurred while creating template inputs ", e);
@@ -610,7 +602,7 @@ public class TemplateMergeServiceHelper {
 
     JsonNode templateSpec;
     try {
-      NGTemplateConfig templateConfig = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = YamlUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
@@ -631,14 +623,14 @@ public class TemplateMergeServiceHelper {
       JsonNode templateInputs, JsonNode templateSpec, boolean appendInputSetValidator) {
     Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
     dummyTemplateSpecMap.put(DUMMY_NODE, templateSpec);
-    String dummyTemplateSpecYaml = TemplateYamlUtils.writeYamlString(dummyTemplateSpecMap);
+    String dummyTemplateSpecYaml = YamlUtils.writeYamlString(dummyTemplateSpecMap);
 
     String mergedYaml = dummyTemplateSpecYaml;
     String dummyTemplateInputsYaml = "";
     if (templateInputs != null) {
       Map<String, JsonNode> dummyTemplateInputsMap = new LinkedHashMap<>();
       dummyTemplateInputsMap.put(DUMMY_NODE, templateInputs);
-      dummyTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyTemplateInputsMap);
+      dummyTemplateInputsYaml = YamlUtils.writeYamlString(dummyTemplateInputsMap);
 
       mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
           dummyTemplateSpecYaml, dummyTemplateInputsYaml, appendInputSetValidator, true);
@@ -671,7 +663,7 @@ public class TemplateMergeServiceHelper {
     if (isEmpty(templateInputsErrorMap)) {
       return null;
     }
-    String errorYaml = TemplateYamlUtils.writeYamlString(errorYamlMap);
+    String errorYaml = YamlUtils.writeYamlString(errorYamlMap);
     String errorTemplateYaml = convertUuidErrorMapToFqnErrorMap(errorYaml, templateInputsErrorMap);
     return new TemplateInputsErrorMetadataDTO(errorTemplateYaml, templateInputsErrorMap);
   }
@@ -760,7 +752,7 @@ public class TemplateMergeServiceHelper {
     try {
       Map<String, JsonNode> dummyLinkedTemplateInputsMap = new LinkedHashMap<>();
       dummyLinkedTemplateInputsMap.put(DUMMY_NODE, linkedTemplateInputs);
-      String dummyLinkedTemplateInputsYaml = TemplateYamlUtils.writeYamlString(dummyLinkedTemplateInputsMap);
+      String dummyLinkedTemplateInputsYaml = YamlUtils.writeYamlString(dummyLinkedTemplateInputsMap);
 
       Map<String, TemplateInputsErrorDTO> uuidToErrorMessageMap = new LinkedHashMap<>();
       String invalidLinkedTemplateInputsYaml;
@@ -769,9 +761,8 @@ public class TemplateMergeServiceHelper {
             YamlUtils.readTree(templateSpecInputSetFormatYaml).getNode().getCurrJsonNode();
         Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
         dummyTemplateSpecMap.put(DUMMY_NODE, templateSpecInputSetFormatNode);
-        invalidLinkedTemplateInputsYaml =
-            getInvalidInputValuesYaml(TemplateYamlUtils.writeYamlString(dummyTemplateSpecMap),
-                dummyLinkedTemplateInputsYaml, uuidToErrorMessageMap, identifier);
+        invalidLinkedTemplateInputsYaml = getInvalidInputValuesYaml(YamlUtils.writeYamlString(dummyTemplateSpecMap),
+            dummyLinkedTemplateInputsYaml, uuidToErrorMessageMap, identifier);
       } else {
         invalidLinkedTemplateInputsYaml = getInvalidInputValuesYaml(
             templateSpecInputSetFormatYaml, dummyLinkedTemplateInputsYaml, uuidToErrorMessageMap, identifier);
@@ -786,7 +777,7 @@ public class TemplateMergeServiceHelper {
 
       Map<String, Object> originalTemplateMap = JsonUtils.jsonNodeToMap(linkedTemplate);
       originalTemplateMap.put(TEMPLATE_INPUTS, invalidLinkedTemplateInputsNode);
-      return YamlUtils.readTree(TemplateYamlUtils.writeYamlString(originalTemplateMap)).getNode().getCurrJsonNode();
+      return YamlUtils.readTree(YamlUtils.writeYamlString(originalTemplateMap)).getNode().getCurrJsonNode();
     } catch (IOException e) {
       log.error("Error while validating template inputs yaml ", e);
       throw new NGTemplateException("Error while validating template inputs yaml: " + e.getMessage());

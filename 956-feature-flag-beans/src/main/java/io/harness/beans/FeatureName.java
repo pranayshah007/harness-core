@@ -90,6 +90,8 @@ public enum FeatureName {
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
   CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED(
       "If enabled, OOTB steps will run directly on host in cloud infra", HarnessTeam.CI),
+  CI_AI_ENHANCED_REMEDIATIONS(
+      "Enables use of generative AI to provide remediation information in CI/CD step logs", HarnessTeam.CI),
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   CUSTOM_MAX_PAGE_SIZE,
@@ -504,6 +506,7 @@ public enum FeatureName {
   SRM_ET_JIRA_INTEGRATION("Enable code errors JIRA integration", HarnessTeam.CV),
   SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
+  CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
   DEL_FETCH_TASK_LOG_API("FF to enable fetch delegate task logs from stackdriver", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),
@@ -788,7 +791,9 @@ public enum FeatureName {
   PIE_RETRY_STEP_GROUP(
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
-  PL_ENABLE_JIT_USER_PROVISION("Enable support for Just in time user provision", HarnessTeam.PL);
+  PL_ENABLE_JIT_USER_PROVISION("Enable support for Just in time user provision", HarnessTeam.PL),
+  AZURE_WEBAPP_LISTING_APP_NAMES_AND_SLOTS(
+      "Support for listing Azure Web App names and slots on Slot Deployment and Swap Slot steps", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

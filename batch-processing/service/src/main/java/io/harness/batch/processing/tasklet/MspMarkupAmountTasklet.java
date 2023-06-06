@@ -14,9 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
+import io.harness.ccm.msp.dto.ManagedAccount;
 import io.harness.ccm.msp.entities.AmountDetails;
 import io.harness.ccm.msp.entities.ManagedAccountStats;
-import io.harness.ccm.msp.entities.MarginDetails;
+import io.harness.ccm.msp.service.intf.ManagedAccountService;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 
 import java.util.Calendar;
@@ -33,6 +34,7 @@ import org.springframework.data.util.Pair;
 @Slf4j
 @OwnedBy(CE)
 public class MspMarkupAmountTasklet implements Tasklet {
+  @Autowired private ManagedAccountService managedAccountService;
   @Autowired private MarginDetailsService marginDetailsService;
   @Autowired private ManagedAccountDataService managedAccountDataService;
   private static final String DEFAULT_TIMEZONE = "GMT";
@@ -41,38 +43,42 @@ public class MspMarkupAmountTasklet implements Tasklet {
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String mspAccountId = jobConstants.getAccountId();
-    List<MarginDetails> marginDetailsList = marginDetailsService.list(mspAccountId);
-    for (MarginDetails marginDetails : marginDetailsList) {
-      String managedAccountId = marginDetails.getAccountId();
-      AmountDetailsBuilder markupAmountDetailsBuilder = AmountDetails.builder();
-      AmountDetailsBuilder totalSpendDetailsBuilder = AmountDetails.builder();
-      for (Interval interval : Interval.values()) {
-        Pair<Long, Long> startAndEndTimes = getInterval(interval);
-        ManagedAccountStats stats = managedAccountDataService.getManagedAccountStats(
-            mspAccountId, managedAccountId, startAndEndTimes.getFirst(), startAndEndTimes.getSecond());
-        switch (interval) {
-          case CURRENT_MONTH:
-            markupAmountDetailsBuilder.currentMonth(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.currentMonth(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          case CURRENT_QUARTER:
-            markupAmountDetailsBuilder.currentQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.currentQuarter(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          case LAST_MONTH:
-            markupAmountDetailsBuilder.lastMonth(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.lastMonth(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          case LAST_QUARTER:
-            markupAmountDetailsBuilder.lastQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
-            totalSpendDetailsBuilder.lastQuarter(stats.getTotalSpendStats().getCurrentPeriod());
-            break;
-          default:
-            throw new IllegalArgumentException("Invalid interval");
+    List<ManagedAccount> managedAccounts = managedAccountService.list(mspAccountId);
+    if (managedAccounts != null) {
+      for (ManagedAccount managedAccount : managedAccounts) {
+        String managedAccountId = managedAccount.getAccountId();
+        AmountDetailsBuilder markupAmountDetailsBuilder = AmountDetails.builder();
+        AmountDetailsBuilder totalSpendDetailsBuilder = AmountDetails.builder();
+        for (Interval interval : Interval.values()) {
+          Pair<Long, Long> startAndEndTimes = getInterval(interval);
+          ManagedAccountStats stats = managedAccountDataService.getManagedAccountStats(
+              mspAccountId, managedAccountId, startAndEndTimes.getFirst(), startAndEndTimes.getSecond());
+          switch (interval) {
+            case CURRENT_MONTH:
+              markupAmountDetailsBuilder.currentMonth(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.currentMonth(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            case CURRENT_QUARTER:
+              markupAmountDetailsBuilder.currentQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.currentQuarter(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            case LAST_MONTH:
+              markupAmountDetailsBuilder.lastMonth(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.lastMonth(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            case LAST_QUARTER:
+              markupAmountDetailsBuilder.lastQuarter(stats.getTotalMarkupStats().getCurrentPeriod());
+              totalSpendDetailsBuilder.lastQuarter(stats.getTotalSpendStats().getCurrentPeriod());
+              break;
+            default:
+              throw new IllegalArgumentException("Invalid interval");
+          }
         }
+        AmountDetails markupAmountDetails = markupAmountDetailsBuilder.build();
+        AmountDetails totalSpendDetails = totalSpendDetailsBuilder.build();
+        log.info("markupAmountDetails: {}, totalSpendDetails: {}", markupAmountDetails, totalSpendDetails);
+        marginDetailsService.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails, totalSpendDetails);
       }
-      marginDetailsService.updateMarkupAmount(
-          mspAccountId, managedAccountId, markupAmountDetailsBuilder.build(), totalSpendDetailsBuilder.build());
     }
     return null;
   }

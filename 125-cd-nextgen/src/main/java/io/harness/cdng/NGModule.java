@@ -81,7 +81,6 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.Service
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateServiceImpl;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorServiceImpl;
@@ -110,6 +109,7 @@ import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceSequenceServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;

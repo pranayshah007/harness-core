@@ -14,7 +14,6 @@ import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvir
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -35,7 +34,7 @@ import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOverridesSpecBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
-import io.harness.ng.core.yaml.CDYamlUtils;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -492,7 +491,7 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private String getSpecYamlForMerging(NGServiceOverridesEntity entity) throws IOException {
-    String specYaml = CDYamlUtils.getYamlString(entity.getSpec());
+    String specYaml = YamlUtils.writeYamlString(entity.getSpec());
     YamlField yamlField = YamlUtils.readTree(specYaml);
     JsonNode currJsonNode = yamlField.getNode().getCurrJsonNode();
     ObjectNode dummyObjectNode = mapper.createObjectNode();
@@ -502,7 +501,7 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private String getSpecYamlForMerging(NGServiceOverrideConfigV2 overrideConfig) throws IOException {
-    String specYaml = CDYamlUtils.getYamlString(overrideConfig.getSpec());
+    String specYaml = YamlUtils.writeYamlString(overrideConfig.getSpec());
     YamlField yamlField = YamlUtils.readTree(specYaml);
     JsonNode currJsonNode = yamlField.getNode().getCurrJsonNode();
     ObjectNode dummyObjectNode = mapper.createObjectNode();

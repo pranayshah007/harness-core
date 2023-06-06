@@ -39,7 +39,7 @@ public class YamlRefreshHelperTest extends CategoryTest {
     if (jsonNode == null) {
       return "";
     }
-    String yaml = YamlUtils.write(jsonNode).replaceFirst("---\n", "");
+    String yaml = YamlUtils.writeYamlString(jsonNode);
     // removing last \n from string to simplify test
     return yaml.substring(0, yaml.length() - 1);
   }

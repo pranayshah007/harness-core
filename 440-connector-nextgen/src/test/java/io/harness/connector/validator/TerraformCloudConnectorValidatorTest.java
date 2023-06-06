@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -104,14 +105,15 @@ public class TerraformCloudConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(TerraformCloudValidateTaskResponse.builder()
-                        .connectorValidationResult(
-                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx",
+            TerraformCloudValidateTaskResponse.builder()
+                .connectorValidationResult(
+                    ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                .build()));
     terraformCloudConnectorValidator.validate(
         terraformCloudConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test

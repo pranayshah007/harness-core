@@ -15,5 +15,6 @@ public interface ContainerCommandUnitConstants {
   String InitContainer = "Initialize";
   String ContainerStep = "Container Step";
   String SscaOrchestrationStep = "Ssca Orchestration Step";
+  String SscaEnforcementStep = "Ssca Enforcement Step";
   String CleanContainer = "Cleanup";
 }
