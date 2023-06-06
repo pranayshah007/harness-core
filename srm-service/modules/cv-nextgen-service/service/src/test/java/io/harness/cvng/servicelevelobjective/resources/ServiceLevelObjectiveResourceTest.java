@@ -49,18 +49,15 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.yaml.snakeyaml.Yaml;
 
 public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
@@ -357,14 +354,6 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
                                   .request(MediaType.APPLICATION_JSON_TYPE)
                                   .post(Entity.json(convertToJson(sloYaml)));
     assertThat(createResponse.getStatus()).isEqualTo(200);
-  }
-
-  private static String convertToJson(String yamlString) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> map = yaml.load(yamlString);
-
-    JSONObject jsonObject = new JSONObject(map);
-    return jsonObject.toString();
   }
 
   private String getYAML(String filePath) throws IOException {
