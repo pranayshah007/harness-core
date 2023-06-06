@@ -66,6 +66,7 @@ public class PluginUtils {
   public static Map<EnvVariableEnum, String> getConnectorSecretEnvMap(ContainerStepType containerStepType) {
     switch (containerStepType) {
       case CD_SSCA_ORCHESTRATION:
+      case CD_SSCA_ENFORCEMENT:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       default:
         throw new ContainerStepExecutionException("Unhandled connector secret for step type: " + containerStepType);
