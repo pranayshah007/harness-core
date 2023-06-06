@@ -14,5 +14,9 @@ import java.util.Map;
 
 @TargetModule(HarnessModule._884_PMS_COMMONS)
 public interface PmsCommonsBaseEventHandler<T> {
+  /*
+   * messageTimeStamp: timeStamp when the message was inserted in the redis queue.
+   * readTs: timeStamp when the message was read from the redis queue.
+   */
   void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs);
 }
