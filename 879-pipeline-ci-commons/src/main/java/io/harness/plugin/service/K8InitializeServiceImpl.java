@@ -37,7 +37,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.*;
 
 @Singleton
@@ -53,7 +52,7 @@ public class K8InitializeServiceImpl implements K8sInitializeService {
       AbstractStageNode stageNode, ExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String stepName, String stepType, long timeout, String accountId, OSType os, Ambiance ambiance,
       Integer extraMemoryPerStep, Integer extraCPUPerStep) {
-    Integer port = 20002 + new Random().nextInt(2000);
+    Integer port = portFinder.getNextPort();
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = getEnvironmentVarMap(stageNode);

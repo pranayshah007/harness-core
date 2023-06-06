@@ -86,7 +86,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        request, awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser());
+        awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 

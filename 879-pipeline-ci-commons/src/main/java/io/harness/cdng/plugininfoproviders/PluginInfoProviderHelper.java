@@ -21,7 +21,6 @@ import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.ImageInformation;
 import io.harness.pms.contracts.plan.PluginContainerResources;
-import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.yaml.ParameterField;
@@ -29,7 +28,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.protobuf.StringValue;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
@@ -62,7 +60,7 @@ public class PluginInfoProviderHelper {
    */
   protected void setPortDetails(Set<Integer> usedPorts, PluginDetails.Builder pluginDetailsBuilder) {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
-    Integer nextPort = 20002 + new Random().nextInt(2000);
+    Integer nextPort = portFinder.getNextPort();
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
 
     pluginDetailsBuilder.addPortUsed(nextPort);
@@ -75,7 +73,7 @@ public class PluginInfoProviderHelper {
   }
 
   protected PluginDetails.Builder buildPluginDetails(
-      PluginCreationRequest request, ContainerResource resources, ParameterField<Integer> runAsUser) {
+      ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
     PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
 
     PluginContainerResources pluginContainerResources = PluginContainerResources.newBuilder()
@@ -90,8 +88,7 @@ public class PluginInfoProviderHelper {
     }
 
     // Set used port and available port information
-    PluginInfoProviderHelper.setPortDetails(
-        new HashSet<>(request.getUsedPortDetails().getUsedPortsList()), pluginDetailsBuilder);
+    PluginInfoProviderHelper.setPortDetails(usedPorts, pluginDetailsBuilder);
 
     return pluginDetailsBuilder;
   }

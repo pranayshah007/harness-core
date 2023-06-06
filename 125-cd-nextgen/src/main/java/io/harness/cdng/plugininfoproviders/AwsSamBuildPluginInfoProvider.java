@@ -82,7 +82,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        request, awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser());
+        awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
