@@ -27,8 +27,11 @@ import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 import org.junit.Test;
@@ -47,13 +50,14 @@ public class DelegateTaskServiceClassicImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void sortedEligibleListTest() throws ExecutionException {
     String accountId = generateUuid();
-    Delegate delegate1 = createDelegate(accountId, "delelgate1");
+    Delegate delegate1 = createDelegate(accountId, "delegate1");
     Delegate delegate2 = createDelegate(accountId, "delegate2");
     Delegate delegate3 = createDelegate(accountId, "delegate3");
     Delegate delegate4 = createDelegate(accountId, "delegate4");
 
-    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
-    IntStream.range(2, 5).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate3.getUuid()));
+    IntStream.range(0, 2).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate1.getUuid()));
+    IntStream.range(2, 6).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate2.getUuid()));
+    IntStream.range(6, 9).forEach(i -> createDelegateTaskWithStatusStarted(accountId, delegate3.getUuid()));
 
     DelegateTask delegateTask =
         DelegateTask.builder()
@@ -68,8 +72,43 @@ public class DelegateTaskServiceClassicImplTest extends WingsBaseTest {
         delegateTaskServiceClassic.getEligibleDelegateListOrderedNumberByTaskAssigned(delegateTask,
             Arrays.asList(delegate1.getUuid(), delegate2.getUuid(), delegate3.getUuid(), delegate4.getUuid()));
     assertThat(sortedList).hasSize(4);
-    assertThat(sortedList.get(2)).isEqualTo(delegate2.getUuid());
-    assertThat(sortedList.get(3)).isEqualTo(delegate3.getUuid());
+    assertThat(sortedList)
+        .isEqualTo(Arrays.asList(delegate4.getUuid(), delegate1.getUuid(), delegate3.getUuid(), delegate2.getUuid()));
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void getEligibleDelegateListOrderedNumberByTaskAssigned_allDelegateWithZeroTasks_shuffledListReturned()
+      throws ExecutionException {
+    // Arrange.
+    String accountId = generateUuid();
+
+    // Create 10 delegates, with each having no assigned task.
+    List<Delegate> allDelegates = new ArrayList<>();
+    IntStream.range(0, 10).forEach(i -> allDelegates.add(createDelegate(accountId, "delegateId-" + i)));
+
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .status(DelegateTask.Status.QUEUED)
+            .stageId(generateUuid())
+            .taskDataV2(TaskDataV2.builder().taskType(TaskType.INITIALIZATION_PHASE.name()).build())
+            .build();
+    persistence.save(delegateTask);
+    List<String> eligibleListOfDelegates = allDelegates.stream().map(delegate -> delegate.getUuid()).collect(toList());
+
+    // Act.
+    // Run ten iterations and collect responses of all iterations
+    Set<String> allExecutions = new HashSet<>();
+    for (int i = 0; i < 10; ++i) {
+      List<String> sortedList = delegateTaskServiceClassic.getEligibleDelegateListOrderedNumberByTaskAssigned(
+          delegateTask, eligibleListOfDelegates);
+      allExecutions.add(String.join("-", sortedList));
+    }
+
+    // Assert
+    assertThat(allExecutions.size() > 8);
   }
 
   private Delegate createDelegate(String accountId, String des) {

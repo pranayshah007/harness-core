@@ -293,7 +293,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   final Comparator<Map.Entry<String, Long>> delegateTaskCountComparator = (d1, d2) -> {
     long diff = d1.getValue() - d2.getValue();
     if (diff == 0) {
-      return (int) Math.max(random.nextLong(), 0);
+      return random.nextInt();
     }
     return (int) diff;
   };
@@ -801,7 +801,48 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Map<String, Long> tasksCount =
         delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, Collectors.counting()));
     eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0L));
-    return tasksCount.entrySet().stream().sorted(delegateTaskCountComparator).map(Map.Entry::getKey).collect(toList());
+
+    return getKeysSortedByTaskCountWithEqualValuesShuffled(tasksCount);
+  }
+
+  private static List<String> getKeysSortedByTaskCountWithEqualValuesShuffled(Map<String, Long> inputMap) {
+    // Create a frequency map to store the count of each value
+    Map<Long, List<String>> frequencyMap = new HashMap<>();
+
+    // Populate the frequency map
+    for (Map.Entry<String, Long> entry : inputMap.entrySet()) {
+      String key = entry.getKey();
+      Long value = entry.getValue();
+
+      if (!frequencyMap.containsKey(value)) {
+        frequencyMap.put(value, new ArrayList<>());
+      }
+      frequencyMap.get(value).add(key);
+    }
+
+    // Sort the keys based on value count
+    List<Long> sortedValues = new ArrayList<>(frequencyMap.keySet());
+    Collections.sort(sortedValues);
+
+    // Shuffle entries with the same value count
+    List<String> sortedKeys = new ArrayList<>();
+    for (Long value : sortedValues) {
+      List<String> keys = frequencyMap.get(value);
+
+      if (keys.size() > 1) {
+        // Swap the first element with a random element before shuffling
+        //
+        // This is done on top of shuffling to increase the probability of the first element being swapped.
+        // We care about the first element, because we will use it for broadcasting.
+        // Also, this is done just within the context of the same count keys.
+        Collections.swap(keys, 0, random.nextInt(keys.size()));
+        Collections.shuffle(keys);
+      }
+
+      sortedKeys.addAll(keys);
+    }
+
+    return sortedKeys;
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
