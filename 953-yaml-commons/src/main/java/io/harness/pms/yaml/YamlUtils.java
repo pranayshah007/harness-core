@@ -99,6 +99,18 @@ public class YamlUtils {
     }
   }
 
+  // Takes stringified yaml as input and returns the JsonNode, also, throws an error if yaml contains duplicate keys
+  public JsonNode readAsJsonNodeWithCheckDuplicate(String yaml) {
+    try {
+      ObjectMapper mapperWithDuplicate = mapper;
+      mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
+      return mapperWithDuplicate.readTree(yaml);
+
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
+    }
+  }
+
   public <T> T read(String yaml, Class<T> cls) throws IOException {
     return mapper.readValue(yaml, cls);
   }
