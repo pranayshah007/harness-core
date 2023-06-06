@@ -85,8 +85,10 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
     PluginCreationRequest pluginCreationRequest =
         request.toBuilder().setStepJsonNode(YamlUtils.write(gitCloneStepNode)).build();
 
-    PluginCreationResponseWrapper pluginCreationResponseWrapper = gitClonePluginInfoProvider.getPluginInfo(
-        pluginCreationRequest, new HashSet<>(pluginCreationRequest.getUsedPortDetails().getUsedPortsList()), ambiance);
+    PluginCreationResponseWrapper pluginCreationResponseWrapper =
+        gitClonePluginInfoProvider.getPluginInfo(pluginCreationRequest, usedPorts, ambiance);
+
+    usedPorts.addAll(pluginCreationResponseWrapper.getResponse().getPluginDetails().getPortUsedList());
 
     pluginCreationResponseWrapperList.add(pluginCreationResponseWrapper);
 
@@ -107,8 +109,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
           request.toBuilder().setStepJsonNode(YamlUtils.write(valuesGitCloneStepNode)).build();
 
       PluginCreationResponseWrapper valuesPluginCreationResponseWrapper =
-          gitClonePluginInfoProvider.getPluginInfo(valuesPluginCreationRequest,
-              new HashSet<>(valuesPluginCreationRequest.getUsedPortDetails().getUsedPortsList()), ambiance);
+          gitClonePluginInfoProvider.getPluginInfo(valuesPluginCreationRequest, usedPorts, ambiance);
       pluginCreationResponseWrapperList.add(valuesPluginCreationResponseWrapper);
     }
 
