@@ -9,6 +9,7 @@ package io.harness.template.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNull;
 
 import static java.lang.String.format;
 
@@ -35,6 +36,7 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.ThreadOperationContextHelper;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -163,6 +165,15 @@ public class TemplateUtils {
     } catch (IOException e) {
       throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
     }
+    return yamlNode;
+  }
+
+  public static YamlNode validateAndGetYamlNode(JsonNode entityJsonNode) {
+    if (isNull(entityJsonNode)) {
+      throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
+    }
+    YamlNode yamlNode;
+    yamlNode = new YamlNode(entityJsonNode);
     return yamlNode;
   }
 

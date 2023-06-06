@@ -53,6 +53,7 @@ import io.harness.pms.contracts.service.VariableResponseMapValueProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -411,7 +412,8 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            YamlUtils.readAsJsonNodeWithCheckDuplicate(yaml), false, false, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -487,7 +489,8 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            YamlUtils.readAsJsonNodeWithCheckDuplicate(yaml), false, true, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -508,7 +511,8 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            YamlUtils.readAsJsonNodeWithCheckDuplicate(yaml), false, true, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,

@@ -193,6 +193,7 @@ import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.ssca.client.SSCAServiceClientModuleV2;
+import io.harness.steps.PodCleanUpModule;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -326,6 +327,7 @@ public class PipelineServiceModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
         configuration.getOrchestrationVisualizationThreadPoolConfig()));
+    install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new DelegateServiceDriverGrpcClientModule(configuration.getManagerServiceSecret(),
         configuration.getManagerTarget(), configuration.getManagerAuthority(), true));

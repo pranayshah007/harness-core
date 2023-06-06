@@ -18,4 +18,5 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.SSCA)
 public class PluginConfig {
   StepImageConfig sscaOrchestrationConfig;
+  StepImageConfig sscaEnforcementConfig;
 }

@@ -4347,8 +4347,7 @@
       "type": "object",
       "required": [
         "connectorRef",
-        "namespace",
-        "resources"
+        "namespace"
       ],
       "properties": {
         "annotations": {

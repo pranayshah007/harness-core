@@ -108,7 +108,7 @@ public class SerializerUtils {
               + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
               + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
               + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
-              + " timeout " + Integer.toString(timeoutSeconds) + "s + " + tmatePath + " -f tmate.conf -F;  "
+              + " timeout " + Integer.toString(timeoutSeconds) + "s " + tmatePath + " -f tmate.conf -F;  "
               + " %n fi %n } %n trap remote_debug EXIT",
           accountId);
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
