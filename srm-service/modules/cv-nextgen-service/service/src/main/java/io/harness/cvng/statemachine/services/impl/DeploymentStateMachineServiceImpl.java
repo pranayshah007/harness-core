@@ -84,7 +84,8 @@ public class DeploymentStateMachineServiceImpl extends AnalysisStateMachineServi
       VerificationJobInstance verificationJobInstance, CVConfig cvConfigForDeployment) {
     switch (cvConfigForDeployment.getVerificationType()) {
       case TIME_SERIES:
-        if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
+        if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST
+            || verificationJobInstance.getResolvedJob().getType() == VerificationJobType.SIMPLE) {
           TestTimeSeriesAnalysisState testTimeSeriesAnalysisState = TestTimeSeriesAnalysisState.builder().build();
           testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           testTimeSeriesAnalysisState.setInputs(inputForAnalysis);

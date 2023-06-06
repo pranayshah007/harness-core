@@ -38,6 +38,14 @@ public class HttpConnectionExecutionCapabilityGenerator {
     return buildHttpConnectionExecutionCapability(kmsUrl, maskingEvaluator);
   }
 
+  public static HttpConnectionExecutionCapability buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+      String urlString, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode) {
+    HttpConnectionExecutionCapability httpConnectionExecutionCapability =
+        buildHttpConnectionExecutionCapability(urlString, HttpCapabilityDetailsLevel.PATH, maskingEvaluator);
+    httpConnectionExecutionCapability.setIgnoreResponseCode(ignoreResponseCode);
+    return httpConnectionExecutionCapability;
+  }
+
   public static HttpConnectionExecutionCapability buildHttpConnectionExecutionCapability(
       String urlString, HttpCapabilityDetailsLevel level, ExpressionEvaluator maskingEvaluator) {
     try {

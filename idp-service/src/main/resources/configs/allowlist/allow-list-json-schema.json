@@ -1,0 +1,76 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1685611343.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "backend"
+  ],
+  "properties": {
+    "backend": {
+      "$id": "#root/backend",
+      "title": "Backend",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reading"
+      ],
+      "properties": {
+        "reading": {
+          "$id": "#root/backend/reading",
+          "title": "Reading",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allow"
+          ],
+          "properties": {
+            "allow": {
+              "$id": "#root/backend/reading/allow",
+              "title": "Allow",
+              "type": "array",
+              "default": [],
+              "items":{
+                "$id": "#root/backend/reading/allow/items",
+                "title": "Items",
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "host",
+                  "paths"
+                ],
+                "properties": {
+                  "host": {
+                    "$id": "#root/backend/reading/allow/items/host",
+                    "title": "Host",
+                    "type": "string",
+                    "default": "",
+                    "pattern": "^.*$"
+                  },
+                  "paths": {
+                    "$id": "#root/backend/reading/allow/items/paths",
+                    "title": "Paths",
+                    "type": "array",
+                    "default": [],
+                    "items":{
+                      "$id": "#root/backend/reading/allow/items/paths/items",
+                      "title": "Items",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                }
+              }
+
+            }
+          }
+        }
+
+      }
+    }
+
+  }
+}

@@ -503,6 +503,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             accountId, verificationJobInstance);
       case TEST:
         return verificationJobInstanceAnalysisService.getLoadTestAdditionalInfo(accountId, verificationJobInstance);
+      case SIMPLE:
+        return verificationJobInstanceAnalysisService.getSimpleVerificationAdditionalInfo(
+            accountId, verificationJobInstance);
       default:
         throw new IllegalStateException(
             "Failed to get additional info due to unknown type: " + verificationJobInstance.getResolvedJob().getType());

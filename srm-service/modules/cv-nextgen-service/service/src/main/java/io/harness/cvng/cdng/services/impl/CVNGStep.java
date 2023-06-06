@@ -32,6 +32,7 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -72,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -136,7 +138,13 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))
             .getStartTs());
-
+    List<VerificationType> supportedDataTypesForVerification =
+        stepParameters.getSpec().getSupportedDataTypesForVerification();
+    if (Objects.nonNull(cvConfigs)) {
+      cvConfigs = cvConfigs.stream()
+                      .filter(cvConfig -> supportedDataTypesForVerification.contains(cvConfig.getVerificationType()))
+                      .collect(Collectors.toList());
+    }
     if (CollectionUtils.isEmpty(cvConfigs)) {
       CVNGStepTaskBuilder cvngStepTaskBuilder = CVNGStepTask.builder();
       cvngStepTaskBuilder.skip(true);

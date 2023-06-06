@@ -25,6 +25,7 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseTestNode
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateRawMetricDataInMetricAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateTimestampsForNormalisedData;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.sortMetricsAnalysisResults;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.transformAnalysisResultsAndReasonsforSimpleVerification;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -68,6 +69,7 @@ import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
 import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -654,6 +656,9 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       metricsAnalyses.addAll(map.values());
     }
     sortMetricsAnalysisResults(metricsAnalyses);
+    if (verificationJobInstance.getResolvedJob() instanceof SimpleVerificationJob) {
+      transformAnalysisResultsAndReasonsforSimpleVerification(metricsAnalyses);
+    }
     return metricsAnalyses;
   }
 
@@ -754,7 +759,8 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawData(
       AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, String verificationTaskId,
       DeploymentTimeSeriesAnalysis timeSeriesAnalysis, TimeRange testDataTimeRange) {
-    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST
+        || appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.SIMPLE) {
       return getTestNodesRawDataForLoadTestAnalysis(verificationTaskId, testDataTimeRange);
     } else {
       return getTestNodesRawDataForCanaryAndRollingAnalysis(verificationTaskId, timeSeriesAnalysis, testDataTimeRange);

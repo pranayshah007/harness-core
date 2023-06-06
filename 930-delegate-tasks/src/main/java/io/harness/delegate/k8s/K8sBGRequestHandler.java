@@ -25,6 +25,7 @@ import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
+import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
 import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
@@ -474,6 +475,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         + color(managedWorkload.getResourceId().kindNameRef(), k8sBGBaseHandler.getLogColor(stageColor), Bold));
 
     release.setReleaseData(resources, isPruningEnabled);
+    release.setBgEnvironment(bgStageEnv);
     if (useDeclarativeRollback) {
       // store color in new release secret's labels
       K8sReleaseSecretHelper.putLabelsItem((K8sRelease) release, RELEASE_SECRET_RELEASE_COLOR_KEY, stageColor);

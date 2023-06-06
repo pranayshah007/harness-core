@@ -9,14 +9,14 @@ package io.harness.delegate.beans.artifactory;
 
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class ArtifactoryTaskResponse implements DelegateTaskNotifyResponseData {
+public class ArtifactoryTaskResponse implements ConnectorValidationResponseData {
   ConnectorValidationResult connectorValidationResult;
   DelegateMetaInfo delegateMetaInfo;
 }

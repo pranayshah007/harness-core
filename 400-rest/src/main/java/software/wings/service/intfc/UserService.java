@@ -437,6 +437,8 @@ public interface UserService extends OwnedByAccount {
    */
   User completeNGInviteAndSignIn(UserInviteDTO userInvite);
 
+  User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId);
+
   /**
    * Complete the trial user signup. Both the trial account and the account admin user will be created
    * as part of this operation.

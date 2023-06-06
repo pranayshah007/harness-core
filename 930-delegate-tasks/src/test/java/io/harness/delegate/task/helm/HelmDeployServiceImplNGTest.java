@@ -124,6 +124,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 
+import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.google.common.collect.ImmutableList;
@@ -1197,6 +1198,44 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     verify(k8sTaskHelperBase, never()).getReleaseHistoryFromSecret(any(KubernetesConfig.class), anyString());
     verify(k8sTaskHelperBase, never())
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetContainerInfosSteadyStateCheckDisabledK8sSteadyStateCheck() {
+    testGetContainerInfosSteadyStateCheckDisabled(false);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetContainerInfosSteadyStateCheckEnabledK8sSteadyStateCheck() {
+    testGetContainerInfosSteadyStateCheckDisabled(true);
+  }
+
+  @SneakyThrows
+  private void testGetContainerInfosSteadyStateCheckDisabled(boolean k8sSteadyStateCheckEnabled) {
+    setFakeTimeLimiter();
+    helmInstallCommandRequestNG.setSkipSteadyStateCheck(true);
+    List<KubernetesResourceId> workloads = emptyList();
+    if (k8sSteadyStateCheckEnabled) {
+      workloads = asList(
+          KubernetesResourceId.builder().name("deployment-1").kind("Deployment").namespace("test-namespace-2").build(),
+          KubernetesResourceId.builder().name("statefulset-1").kind("StatefulSet").namespace("test-namespace").build());
+    }
+
+    helmDeployService.getContainerInfos(
+        helmInstallCommandRequestNG, workloads, k8sSteadyStateCheckEnabled, logCallback, 1000);
+
+    // for k8sSteadyStateCheckEnabled it's called per namespace of resource id
+    verify(k8sTaskHelperBase, times(k8sSteadyStateCheckEnabled ? 2 : 1))
+        .getContainerInfos(any(KubernetesConfig.class), anyString(), anyString(), eq(1000L));
+    verify(containerDeploymentDelegateBaseHelper, never())
+        .getContainerInfosWhenReadyByLabels(any(KubernetesConfig.class), any(LogCallback.class), anyMap(), anyList());
+    verify(k8sTaskHelperBase, never())
+        .doStatusCheckAllResourcesForHelm(any(Kubectl.class), anyList(), anyString(), anyString(), anyString(),
+            anyString(), any(ExecutionLogCallback.class), anyString());
   }
 
   private void shouldListReleaseV3() throws Exception {

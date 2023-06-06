@@ -22,6 +22,10 @@ public abstract class AnalysisState {
     return MAX_RETRIES;
   }
 
+  public boolean orchestrateViaEvent() {
+    return true;
+  }
+
   public enum StateType {
     HOST_SAMPLING_STATE,
     CANARY_TIME_SERIES,

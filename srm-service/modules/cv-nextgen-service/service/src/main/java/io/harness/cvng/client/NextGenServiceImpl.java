@@ -14,6 +14,8 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.utils.ScopedInformation;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -186,6 +189,20 @@ public class NextGenServiceImpl implements NextGenService {
   }
 
   @Override
+  public List<ConnectorResponseDTO> listConnector(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope) {
+    List<String> fnqIdentifierList = new ArrayList<>();
+    for (String identifierWithScope : connectorIdListWithScope) {
+      fnqIdentifierList.add(ScopedInformation.getFNQFromScopedIdentifier(
+          accountId, orgIdentifier, projectIdentifier, identifierWithScope));
+    }
+    List<ConnectorResponseDTO> connectorResponse =
+        requestExecutor.execute(nextGenPrivilegedClient.listConnector(accountId, fnqIdentifierList)).getData();
+
+    return connectorResponse;
+  }
+
+  @Override
   public ProjectDTO getProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return getProject(accountIdentifier, orgIdentifier, projectIdentifier, false);
   }
@@ -300,6 +317,27 @@ public class NextGenServiceImpl implements NextGenService {
 
     return projectDTOList;
   }
+
+  @Override
+  public void validateConnectorIdList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope) {
+    List<ConnectorResponseDTO> connectorResponseDTOList =
+        listConnector(accountId, orgIdentifier, projectIdentifier, connectorIdListWithScope);
+    if (connectorResponseDTOList.size() < connectorIdListWithScope.size()) {
+      Set<String> connectorIdSetWithScope = connectorIdListWithScope.stream().collect(Collectors.toSet());
+      for (ConnectorResponseDTO connectorResponseDTO : connectorResponseDTOList) {
+        ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.getConnector();
+        String scopedConnectorId = ScopedInformation.getScopedIdentifier(accountId, connectorInfoDTO.getOrgIdentifier(),
+            connectorInfoDTO.getProjectIdentifier(), connectorInfoDTO.getIdentifier());
+        if (connectorIdSetWithScope.contains(scopedConnectorId)) {
+          connectorIdSetWithScope.remove(scopedConnectorId);
+        }
+      }
+      throw new InvalidArgumentsException(
+          String.format("Invalid connector refs: %s", String.join(", ", connectorIdSetWithScope)));
+    }
+  }
+
   @Value
   @Builder
   public static class EntityKey {

@@ -9,14 +9,14 @@ package io.harness.delegate.beans.connector.azureartifacts;
 
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class AzureArtifactsTestConnectionTaskResponse implements DelegateResponseData {
+public class AzureArtifactsTestConnectionTaskResponse implements ConnectorValidationResponseData {
   /**
    * Validation Result
    */

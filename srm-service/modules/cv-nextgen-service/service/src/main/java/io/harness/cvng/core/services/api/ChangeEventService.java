@@ -23,6 +23,7 @@ import java.util.List;
 
 public interface ChangeEventService {
   Boolean register(ChangeEventDTO changeEventDTO);
+  Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String channelUrl);
   ChangeEventDTO get(String activityId);
 
   ChangeSummaryDTO getChangeSummary(MonitoredServiceParams monitoredServiceParams, List<String> changeSourceIdentifiers,

@@ -174,12 +174,12 @@ if [[ "" != "$IDP_SERVICE_SECRET" ]]; then
   export IDP_SERVICE_SECRET; yq -i '.idpServiceSecret=env(IDP_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
-if [[ "" != "$NG_MANAGER_TARGET" ]]; then
-  export NG_MANAGER_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
+if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
+  export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
 
-if [[ "" != "$NG_MANAGER_AUTHORITY" ]]; then
-  export NG_MANAGER_AUTHORITY; yq -i '.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
+if [[ "" != "$NG_MANAGER_GITSYNC_AUTHORITY" ]]; then
+  export NG_MANAGER_GITSYNC_AUTHORITY; yq -i '.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_GITSYNC_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then

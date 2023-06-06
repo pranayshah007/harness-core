@@ -84,7 +84,7 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
   @Before
   public void setup() {
     openMocks = MockitoAnnotations.openMocks(this);
-    harnessServiceToBackstageComponent = new HarnessServiceToBackstageComponent(onboardingModuleConfig);
+    harnessServiceToBackstageComponent = new HarnessServiceToBackstageComponent(onboardingModuleConfig, "local");
 
     organizationDTO = OrganizationDTO.builder()
                           .identifier(TEST_ORG_IDENTIFIER)

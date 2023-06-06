@@ -13,13 +13,14 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.favorites.ResourceType;
 import io.harness.favorites.entities.Favorite;
+import io.harness.repositories.favorites.custom.FavoriteRepositoryCustom;
 
 import java.util.List;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(PL)
 @HarnessRepo
-public interface FavoriteRepository extends PagingAndSortingRepository<Favorite, String> {
+public interface FavoriteRepository extends PagingAndSortingRepository<Favorite, String>, FavoriteRepositoryCustom {
   List<Favorite> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userIdentifier,
       ResourceType resourceType);

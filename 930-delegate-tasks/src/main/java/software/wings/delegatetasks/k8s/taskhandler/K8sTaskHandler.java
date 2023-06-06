@@ -9,6 +9,7 @@ package software.wings.delegatetasks.k8s.taskhandler;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -18,8 +19,10 @@ import software.wings.delegatetasks.DelegateLogService;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,12 +30,19 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public abstract class K8sTaskHandler {
   @Inject protected DelegateLogService delegateLogService;
+  @Inject private TimeLimiter timeLimiter;
 
   public K8sTaskExecutionResponse executeTask(
       K8sTaskParameters k8STaskParameters, K8sDelegateTaskParams k8SDelegateTaskParams) {
     K8sTaskExecutionResponse result;
     try {
-      result = executeTaskInternal(k8STaskParameters, k8SDelegateTaskParams);
+      if (k8STaskParameters.isTimeoutSupported()) {
+        result =
+            HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(k8STaskParameters.getTimeoutIntervalInMin()),
+                () -> executeTaskInternal(k8STaskParameters, k8SDelegateTaskParams));
+      } else {
+        result = executeTaskInternal(k8STaskParameters, k8SDelegateTaskParams);
+      }
     } catch (IOException ex) {
       logError(k8STaskParameters, ex);
       result = K8sTaskExecutionResponse.builder()
@@ -43,6 +53,7 @@ public abstract class K8sTaskHandler {
       logError(k8STaskParameters, ex);
       result = K8sTaskExecutionResponse.builder()
                    .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                   .isTimeoutError(true)
                    .errorMessage("Timed out while waiting for k8s task to complete")
                    .build();
     } catch (InterruptedException ex) {

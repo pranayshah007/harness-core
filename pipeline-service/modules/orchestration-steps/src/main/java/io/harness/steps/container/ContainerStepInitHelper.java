@@ -470,6 +470,7 @@ public class ContainerStepInitHelper {
         return Collections.singletonList(
             createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os));
       case CD_SSCA_ORCHESTRATION:
+      case CD_SSCA_ENFORCEMENT:
         return Collections.singletonList(
             createPluginStepContainerDefinition((PluginStep) containerStepInfo, portFinder, accountId, os, ambiance));
       case INIT_CONTAINER_V2:
@@ -491,7 +492,7 @@ public class ContainerStepInitHelper {
     Map<String, String> envMap =
         new HashMap<>(pluginUtils.getPluginCompatibleEnvVariables(pluginStep, identifier, ambiance));
     Map<String, SecretNGVariable> secretNGVariableMap =
-        new HashMap<>(pluginUtils.getPluginCompatibleSecretVars(pluginStep));
+        new HashMap<>(pluginUtils.getPluginCompatibleSecretVars(pluginStep, identifier));
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)

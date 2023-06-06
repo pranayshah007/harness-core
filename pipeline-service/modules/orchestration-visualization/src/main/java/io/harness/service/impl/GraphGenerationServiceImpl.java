@@ -214,6 +214,12 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   @Override
+  public OrchestrationGraph getCachedOrchestrationGraphFromSecondary(String planExecutionId) {
+    return mongoStore.getFromSecondary(
+        OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId, null);
+  }
+
+  @Override
   public void cacheOrchestrationGraph(OrchestrationGraph orchestrationGraph) {
     mongoStore.upsert(orchestrationGraph, SpringCacheEntity.TTL);
   }
@@ -224,7 +230,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   @Override
   public OrchestrationGraphDTO generateOrchestrationGraphV2(String planExecutionId) {
-    OrchestrationGraph cachedOrchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
+    OrchestrationGraph cachedOrchestrationGraph = getCachedOrchestrationGraphFromSecondary(planExecutionId);
     if (cachedOrchestrationGraph == null) {
       cachedOrchestrationGraph = buildOrchestrationGraph(planExecutionId);
     } else {
@@ -239,7 +245,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   @Override
   public OrchestrationGraphDTO generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
       String startingSetupNodeId, String planExecutionId, String startingExecutionId) {
-    OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
+    OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraphFromSecondary(planExecutionId);
     if (orchestrationGraph == null) {
       orchestrationGraph = buildOrchestrationGraph(planExecutionId);
     } else {

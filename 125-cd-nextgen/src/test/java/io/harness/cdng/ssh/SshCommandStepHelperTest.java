@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileReference;
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
@@ -76,7 +77,9 @@ import io.harness.exception.SkipRollbackException;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.ng.core.models.Secret;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -95,6 +98,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.SecretType;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.ssh.FileSourceType;
@@ -145,6 +149,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private CommandStepRollbackHelper commandStepRollbackHelper;
   @Mock private NGLogCallback ngLogCallback;
   @Mock private EngineExpressionService engineExpressionService;
+  @Mock private NGSecretServiceV2 ngSecretServiceV2;
 
   @InjectMocks @Spy private SshCommandStepHelper helper;
 
@@ -633,6 +638,33 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(result.get("var3")).isEqualTo("value3p");
     assertThat(result.get("var4")).isEqualTo("value4");
     assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testEvaluateVariables() {
+    doReturn(Optional.of(Secret.builder().type(SecretType.SecretText).build()))
+        .when(ngSecretServiceV2)
+        .get(any(IdentifierRef.class));
+    doReturn("evaluated String").when(cdExpressionResolver).renderExpression(any(), anyString());
+
+    Map<String, Object> variables = Map.of("key", "value");
+    Map<String, Object> result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("value");
+
+    variables = Map.of("key", ParameterField.createValueField("value"));
+    result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("value");
+
+    variables = Map.of("key", "<+secrets.getValue(\"secret\")>");
+    result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("evaluated String");
+
+    variables =
+        Map.of("key", ParameterField.createExpressionField(true, "<+secrets.getValue(\"secret\")>", null, true));
+    result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("evaluated String");
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

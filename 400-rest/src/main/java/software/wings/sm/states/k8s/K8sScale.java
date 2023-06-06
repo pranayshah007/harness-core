@@ -10,6 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 
 import static software.wings.sm.StateType.K8S_SCALE;
 
@@ -20,6 +21,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -110,6 +112,8 @@ public class K8sScale extends AbstractK8sState {
             && context.getContextElement() instanceof RancherClusterElement)) {
       return k8sStateHelper.getInvalidInfraDefFailedResponse();
     }
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
 
     try {
       ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
@@ -134,6 +138,7 @@ public class K8sScale extends AbstractK8sState {
               .maxInstances(maxInstances)
               .skipSteadyStateCheck(this.skipSteadyStateCheck)
               .timeoutIntervalInMin(stateTimeoutInMinutes)
+              .timeoutSupported(isTimeoutFailureSupported)
               .useLatestKustomizeVersion(isUseLatestKustomizeVersion(context.getAccountId()))
               .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
               .build();
@@ -164,6 +169,15 @@ public class K8sScale extends AbstractK8sState {
       K8sStateExecutionData stateExecutionData = (K8sStateExecutionData) context.getStateExecutionData();
       stateExecutionData.setStatus(executionStatus);
       stateExecutionData.setErrorMsg(executionResponse.getErrorMessage());
+
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .failureTypes(FailureType.TIMEOUT)
+            .stateExecutionData(stateExecutionData)
+            .errorMessage("Timed out while waiting for k8s task to complete")
+            .build();
+      }
 
       if (ExecutionStatus.FAILED == executionStatus) {
         return ExecutionResponse.builder()

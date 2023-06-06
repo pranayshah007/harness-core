@@ -55,8 +55,8 @@ public class VmStepSerializer {
     String stepName = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
-        return vmRunStepSerializer.serialize(
-            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName, registries, delegateId);
+        return vmRunStepSerializer.serialize((RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout,
+            stepName, registries, delegateId, stageInfraDetails);
       case BACKGROUND:
         return vmBackgroundStepSerializer.serialize(
             (BackgroundStepInfo) stepInfo, ambiance, identifier, registries, delegateId);

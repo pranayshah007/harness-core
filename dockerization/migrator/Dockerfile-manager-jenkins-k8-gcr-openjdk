@@ -21,7 +21,6 @@ COPY --chown=65534:65534 scripts /opt/harness
 USER root
 RUN microdnf install -y yum
 RUN yum -y install fontconfig dejavu-sans-fonts wget
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.27.5/yq_linux_amd64 -O /usr/bin/yq -O /usr/bin/yq
 RUN chmod +x /usr/bin/yq
 
 RUN chmod +x /opt/harness/*.sh

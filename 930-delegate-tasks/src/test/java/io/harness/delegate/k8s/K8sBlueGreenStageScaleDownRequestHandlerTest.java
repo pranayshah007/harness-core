@@ -225,7 +225,8 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
     doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(logCallback));
     doReturn(k8sLegacyRelease).when(releaseHistory).getLatestSuccessfulBlueGreenRelease();
     when(k8sTaskHelperBase.scale(
              any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(0), eq(logCallback), eq(true)))
@@ -250,13 +251,15 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
     doReturn(k8sLegacyRelease).when(releaseHistory).getLatestSuccessfulBlueGreenRelease();
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(deploymentBlue), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(deploymentBlue), eq(logCallback));
     when(k8sTaskHelperBase.scale(
              any(Kubectl.class), eq(delegateTaskParams), eq(deploymentBlue), eq(0), eq(logCallback), eq(true)))
         .thenReturn(true);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(statefulSetBlue), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(statefulSetBlue), eq(logCallback));
     when(k8sTaskHelperBase.scale(
              any(Kubectl.class), eq(delegateTaskParams), eq(statefulSetBlue), eq(0), eq(logCallback), eq(true)))
         .thenReturn(true);
@@ -315,13 +318,16 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
     List<KubernetesResourceId> deleteResources = Arrays.asList(hpaGreen, pdbGreen);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(logCallback));
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(hpaGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(hpaGreen), eq(logCallback));
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(pdbGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(pdbGreen), eq(logCallback));
     when(k8sTaskHelperBase.scale(
              any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(0), eq(logCallback), eq(true)))
         .thenReturn(true);
@@ -357,13 +363,16 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
     List<KubernetesResourceId> deleteResources = Arrays.asList(hpaGreen, pdbGreen);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(logCallback));
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(hpaGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(hpaGreen), eq(logCallback));
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(pdbGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(pdbGreen), eq(logCallback));
     when(k8sTaskHelperBase.scale(
              any(Kubectl.class), eq(delegateTaskParams), eq(deploymentGreen), eq(0), eq(logCallback), eq(true)))
         .thenReturn(true);
@@ -405,7 +414,8 @@ public class K8sBlueGreenStageScaleDownRequestHandlerTest extends CategoryTest {
     doReturn(k8sLegacyRelease).when(releaseHistory).getLatestSuccessfulBlueGreenRelease();
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .checkIfResourceExists(any(Kubectl.class), eq(delegateTaskParams), eq(deploymentBlueGreen), eq(logCallback));
+        .checkIfResourceContainsHarnessDirectApplyAnnotation(
+            any(Kubectl.class), eq(delegateTaskParams), eq(deploymentBlueGreen), eq(logCallback));
     k8sBlueGreenStageScaleDownRequestHandler.init(
         k8sBlueGreenStageScaleDownRequest, delegateTaskParams, kubernetesConfig, logCallback);
     verify(k8sTaskHelperBase, times(1)).getResourcesIdsInTableFormat(Collections.singletonList(deploymentBlueGreen));

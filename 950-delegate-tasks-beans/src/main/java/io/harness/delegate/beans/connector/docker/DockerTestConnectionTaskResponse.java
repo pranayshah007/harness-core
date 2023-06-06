@@ -9,14 +9,14 @@ package io.harness.delegate.beans.connector.docker;
 
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class DockerTestConnectionTaskResponse implements DelegateResponseData {
+public class DockerTestConnectionTaskResponse implements ConnectorValidationResponseData {
   private ConnectorValidationResult connectorValidationResult;
   private DelegateMetaInfo delegateMetaInfo;
 }

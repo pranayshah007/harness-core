@@ -3,105 +3,105 @@ inputSet:
   orgIdentifier: orgId
   projectIdentifier: projectId
   pipeline:
-    identifier: "Test_Pipline11"
+    identifier: Test_Pipline11
     variables:
-    - name: "port2"
-      value: 8080
+      - name: port2
+        value: 8080
     stages:
-    - stage:
-        identifier: "qaStage"
-        spec:
-          execution:
-            steps:
-            - step:
-                identifier: "httpStep1"
-                spec:
-                  url: www.google.com
-            - parallel:
-              - step:
-                  identifier: "httpStep2"
-                  spec:
-                    method: POST
-            - step:
-                identifier: "httpStep11"
-                spec:
-                  socketTimeoutMillis: 60000
-          service:
-            identifier: "manager"
-            serviceDefinition:
-              spec:
-                manifests:
-                - manifest:
-                    identifier: "qaOverride"
+      - stage:
+          identifier: qaStage
+          spec:
+            execution:
+              steps:
+                - step:
+                    identifier: httpStep1
                     spec:
-                      store:
-                        connectorRef: my_git_connector
-                        gitFetchType: Branch
-                        branch: master
-                        paths:
-                        - test/baseValues.yaml
-                        - test/qa/values_1.yaml
-          infrastructure:
-            infrastructureDefinition:
+                      url: www.google.com
+                - parallel:
+                    - step:
+                        identifier: httpStep2
+                        spec:
+                          method: POST
+                - step:
+                    identifier: httpStep11
+                    spec:
+                      socketTimeoutMillis: 60000
+            service:
+              identifier: manager
+              serviceDefinition:
+                spec:
+                  manifests:
+                    - manifest:
+                        identifier: qaOverride
+                        spec:
+                          store:
+                            connectorRef: my_git_connector
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/baseValues.yaml
+                              - test/qa/values_1.yaml
+            infrastructure:
+              infrastructureDefinition:
+                spec:
+                  namespace: default
+      - parallel:
+          - stage:
+              identifier: qaStage2
               spec:
-                namespace: default
-    - parallel:
-      - stage:
-          identifier: "qaStage2"
-          spec:
-            execution:
-              steps:
-              - step:
-                  identifier: "httpStep4"
-                  spec:
-                    method: GET
-            service:
-              identifier: "manager"
-              serviceDefinition:
-                spec:
-                  manifests:
-                  - manifest:
-                      identifier: "baseValues"
-                      spec:
-                        store:
-                          spec:
-                            connectorRef: defaultConn
-      - stage:
-          identifier: "qaStage3"
-          spec:
-            execution:
-              steps:
-              - step:
-                  identifier: "httpStep5"
-                  spec:
-                    method: GET
-            service:
-              identifier: "manager"
-              serviceDefinition:
-                spec:
-                  manifests:
-                  - manifest:
-                      identifier: baseValues
-                      type: K8sManifest
-                      spec:
-                        store:
-                          type: Git
-                          spec:
-                            connectorRef: my_git_connector
-                            gitFetchType: Branch
-                            branch: master
-                            paths:
-                            - test/spec
-                  - manifest:
-                      identifier: qaOverride
-                      type: Values
-                      spec:
-                        store:
-                          type: Git
-                          spec:
-                            connectorRef: my_git_connector
-                            gitFetchType: Branch
-                            branch: master
-                            paths:
-                            - test/baseValues.yaml
-                            - test/qa/values_1.yaml
+                execution:
+                  steps:
+                    - step:
+                        identifier: httpStep4
+                        spec:
+                          method: GET
+                service:
+                  identifier: manager
+                  serviceDefinition:
+                    spec:
+                      manifests:
+                        - manifest:
+                            identifier: baseValues
+                            spec:
+                              store:
+                                spec:
+                                  connectorRef: defaultConn
+          - stage:
+              identifier: qaStage3
+              spec:
+                execution:
+                  steps:
+                    - step:
+                        identifier: httpStep5
+                        spec:
+                          method: GET
+                service:
+                  identifier: manager
+                  serviceDefinition:
+                    spec:
+                      manifests:
+                        - manifest:
+                            identifier: baseValues
+                            type: K8sManifest
+                            spec:
+                              store:
+                                type: Git
+                                spec:
+                                  connectorRef: my_git_connector
+                                  gitFetchType: Branch
+                                  branch: master
+                                  paths:
+                                    - test/spec
+                        - manifest:
+                            identifier: qaOverride
+                            type: Values
+                            spec:
+                              store:
+                                type: Git
+                                spec:
+                                  connectorRef: my_git_connector
+                                  gitFetchType: Branch
+                                  branch: master
+                                  paths:
+                                    - test/baseValues.yaml
+                                    - test/qa/values_1.yaml

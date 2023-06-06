@@ -60,11 +60,11 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
+    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-go-github/download/v0.37.0/rules_go-v0.37.0.zip",
-        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
-        #"https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+        "https://harness-artifactory.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip",
+        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
 )
 
@@ -3924,6 +3924,13 @@ go_repository(
     version = "v1.5.1",
 )
 
+go_repository(
+    name = "com_github_golang_jwt_jwt_v5",
+    importpath = "github.com/golang-jwt/jwt/v5",
+    sum = "h1:1n1XNM9hk7O9mnQoNBGolZvzebBQ7p93ULHRc28XJUE=",
+    version = "v5.0.0",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -4600,7 +4607,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.9")
+go_register_toolchains(version = "1.20.4")
 
 gazelle_dependencies()
 

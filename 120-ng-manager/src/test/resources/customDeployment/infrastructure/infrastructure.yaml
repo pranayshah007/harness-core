@@ -1,33 +1,33 @@
 infrastructureDefinition:
-  name: "sampleInfra"
-  identifier: "sampleInfra"
-  description: "sampleInfra"
+  name: sampleInfra
+  identifier: sampleInfra
+  description: sampleInfra
   tags: {}
-  orgIdentifier: "default"
-  projectIdentifier: "Custom_Deployment"
-  environmentRef: "sampleEnv"
-  deploymentType: "CustomDeployment"
-  type: "CustomDeployment"
+  orgIdentifier: default
+  projectIdentifier: Custom_Deployment
+  environmentRef: sampleEnv
+  deploymentType: CustomDeployment
+  type: CustomDeployment
   spec:
     customDeploymentRef:
-      templateRef: "account.OpenStack"
-      versionLabel: "V1"
+      templateRef: account.OpenStack
+      versionLabel: V1
     variables:
-    - name: "clusterUrl"
-      type: "String"
-      value: "<+input>"
-      description: "ClusterUrl"
-    - name: "port"
-      type: "Number"
-      value: 23
-      description: "Port"
-    - name: "pwd"
-      type: "Secret"
-      description: "Pass"
-      value: "<+input>"
-      secret: "<+input>"
-    - name: "image"
-      type: "Connector"
-      value: "account.Docker"
-      description: "image"
+      - name: clusterUrl
+        type: String
+        value: <+input>
+        description: ClusterUrl
+      - name: port
+        type: Number
+        value: 23
+        description: Port
+      - name: pwd
+        type: Secret
+        description: Pass
+        value: <+input>
+        secret: <+input>
+      - name: image
+        type: Connector
+        value: account.Docker
+        description: image
   allowSimultaneousDeployments: false

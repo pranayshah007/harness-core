@@ -49,6 +49,10 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return InfrastructureKind.KUBERNETES_DIRECT;
   } // design issue, not actually used anymore
 
+  public boolean isInstanceSyncV2Enabled() {
+    return false;
+  }
+
   @Override
   public InfrastructureDetails getInfrastructureDetails(InstanceInfoDTO instanceInfoDTO) {
     if (instanceInfoDTO instanceof NativeHelmInstanceInfoDTO) {

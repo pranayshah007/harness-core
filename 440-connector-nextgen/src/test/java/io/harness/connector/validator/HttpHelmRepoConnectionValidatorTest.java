@@ -37,6 +37,7 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Collections;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,12 +72,14 @@ public class HttpHelmRepoConnectionValidatorTest extends CategoryTest {
 
     doReturn(Collections.emptyList()).when(encryptionHelper).getEncryptionDetail(any(), any(), any(), any());
     doReturn(Collections.emptyList()).when(ngSecretService).getEncryptionDetails(any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(HttpHelmConnectivityTaskResponse.builder()
-                        .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
-                        .build());
+
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx",
+            HttpHelmConnectivityTaskResponse.builder()
+                .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
+                .build()));
     validator.validate(connectorDTO, "acc", "org", "prj", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test

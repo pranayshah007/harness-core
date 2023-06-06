@@ -38,4 +38,5 @@ public class BuildSourceExecutionResponse implements DelegateTaskNotifyResponseD
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
   private String artifactStreamId;
+  private boolean isTimeoutError;
 }
