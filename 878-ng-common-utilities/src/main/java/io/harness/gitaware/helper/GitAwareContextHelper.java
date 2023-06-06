@@ -220,4 +220,22 @@ public class GitAwareContextHelper {
     }
     return null;
   }
+
+  public boolean isTransientBranchSet() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      if (isEmpty(gitEntityInfo.getTransientBranch()) || gitEntityInfo.getTransientBranch().equals(DEFAULT)) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public void updateGitEntityContextWithTransientBranch(String transientBranch) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    gitEntityInfo.setTransientBranch(transientBranch);
+    updateGitEntityContext(gitEntityInfo);
+  }
 }

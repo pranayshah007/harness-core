@@ -137,7 +137,7 @@ public class TemplateMergeServiceHelper {
       return templateCacheMap.get(templateUniqueIdentifier);
     }
 
-    GitAwareContextHelper.updateGitEntityContextWithBranch(branch);
+    GitAwareContextHelper.updateGitEntityContextWithTransientBranch(branch);
     Optional<TemplateEntity> templateEntity =
         templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
             templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
