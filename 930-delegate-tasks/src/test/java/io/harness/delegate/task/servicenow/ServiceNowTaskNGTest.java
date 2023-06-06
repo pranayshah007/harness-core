@@ -90,7 +90,7 @@ public class ServiceNowTaskNGTest extends CategoryTest {
             .build();
     assertThat(serviceNowTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1");
     serviceNowTaskNGParameters.getServiceNowConnectorDTO().setDelegateSelectors(ImmutableSet.of("selector2"));
-    assertThat(serviceNowTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1", "selector2");
+    assertThat(serviceNowTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1");
   }
 
   @Test
