@@ -12,8 +12,8 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
-  - identifier: git_webhook_polling_for_triggers
-    name: Git Webhook Polling for Triggers
+  - identifier: github_webhook_polling
+    name: Github webhook polling
     category: PMS
     defaultValue: false
     valueType: BOOLEAN
@@ -163,7 +163,7 @@ settings :
         defaultValue: 2
         editable: false
       TEAM:
-        # 500 for now. Will make it 200 once the previous execution entries are cleared.
+# 500 for now.Will make it 200 once the previous execution entries are cleared.
         defaultValue: 500
         editable: false
       ENTERPRISE:
