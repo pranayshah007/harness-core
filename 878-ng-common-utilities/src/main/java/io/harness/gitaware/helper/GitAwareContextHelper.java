@@ -238,4 +238,8 @@ public class GitAwareContextHelper {
     gitEntityInfo.setTransientBranch(transientBranch);
     updateGitEntityContext(gitEntityInfo);
   }
+
+  public void resetTransientBranch() {
+    updateGitEntityContextWithTransientBranch(null);
+  }
 }

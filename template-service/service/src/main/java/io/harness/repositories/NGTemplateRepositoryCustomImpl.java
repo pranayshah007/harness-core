@@ -266,6 +266,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       }
     }
 
+    GitAwareContextHelper.resetTransientBranch();
     return Optional.of(savedEntity);
   }
 
