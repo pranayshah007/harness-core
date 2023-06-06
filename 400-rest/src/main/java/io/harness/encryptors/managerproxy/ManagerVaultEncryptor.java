@@ -174,11 +174,8 @@ public class ManagerVaultEncryptor implements VaultEncryptor {
   public boolean validateReference(String accountId, SecretText secretText, EncryptionConfig encryptionConfig) {
     ValidateSecretReferenceTaskParameters parameters =
         ValidateSecretReferenceTaskParameters.builder()
-            .encryptedRecord(EncryptedRecordData.builder()
-                                 .path(secretText.getPath())
-                                 .name(secretText.getName())
-                                 .additionalMetadata(secretText.getAdditionalMetadata())
-                                 .build())
+            .encryptedRecord(
+                EncryptedRecordData.builder().path(secretText.getPath()).name(secretText.getName()).build())
             .encryptionConfig(encryptionConfig)
             .build();
 
