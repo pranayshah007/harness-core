@@ -23,6 +23,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
@@ -1013,6 +1014,33 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.readEntity(String.class)).contains("\"totalItems\":2");
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListMonitoredServicePlatform_listAPIAcrossHarnessApp() {
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service1", "env1");
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service2", "env2");
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO.setType(MonitoredServiceType.INFRASTRUCTURE);
+    monitoredServiceDTO.setIdentifier("service3");
+    monitoredServiceDTO.setServiceRef("service3");
+    monitoredServiceDTO.setEnvironmentRef(null);
+    monitoredServiceDTO.setEnvironmentRefList(List.of("env1", "env2"));
+    monitoredServiceService.create(builderFactory.getProjectParams().getAccountIdentifier(), monitoredServiceDTO);
+
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/platform/list")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("offset", 0)
+                              .queryParam("pageSize", 10);
+    webTarget = webTarget.queryParam("monitoredServiceType", "Application");
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":3");
   }
 
   @Test
