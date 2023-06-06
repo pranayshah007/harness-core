@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
 
 import java.util.List;
@@ -33,19 +34,16 @@ import java.util.Map;
 @TypeAlias("serverlessAwsLambdaPrepareRollbackContainerStepParameters")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters")
 public class ServerlessAwsLambdaPrepareRollbackContainerStepParameters extends ServerlessAwsLambdaContainerBaseStepInfo implements ServerlessSpecParameters, StepParameters {
-  ParameterField<List<String>> deployCommandOptions;
-  ParameterField<String> stackName;
+  @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaPrepareRollbackContainerStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
                                                                    ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
                                                                    ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
                                                                    ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-                                                                   ParameterField<List<String>> deployCommandOptions, ParameterField<String> stackName,
-                                                                   ParameterField<String> samVersion) {
+                                                                   ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, samVersion);
-    this.deployCommandOptions = deployCommandOptions;
-    this.stackName = stackName;
+        imagePullPolicy, serverlessVersion);
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
 }

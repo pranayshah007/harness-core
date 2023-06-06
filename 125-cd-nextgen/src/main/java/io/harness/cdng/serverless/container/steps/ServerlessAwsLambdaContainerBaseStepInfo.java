@@ -71,5 +71,5 @@ public class ServerlessAwsLambdaContainerBaseStepInfo {
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> serverlessVersion;
 }

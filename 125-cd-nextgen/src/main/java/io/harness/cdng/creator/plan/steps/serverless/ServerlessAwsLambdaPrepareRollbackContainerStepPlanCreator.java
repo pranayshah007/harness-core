@@ -12,10 +12,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+
+import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_MANIFESTS;
 
 import java.util.Set;
 
@@ -38,6 +42,11 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator extends 
 
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackContainerStepNode stepNode) {
-    return super.getStepParameters(ctx, stepNode);
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
+    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_MANIFESTS);
+    ServerlessAwsLambdaPrepareRollbackContainerStepParameters serverlessAwsLambdaPrepareRollbackContainerStepParameters  = (ServerlessAwsLambdaPrepareRollbackContainerStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    serverlessAwsLambdaPrepareRollbackContainerStepParameters.setDownloadManifestsFqn(downloadManifestsFqn);
+    serverlessAwsLambdaPrepareRollbackContainerStepParameters.setDelegateSelectors(stepNode.getServerlessAwsLambdaPrepareRollbackContainerStepInfo().getDelegateSelectors());
+    return stepParameters;
   }
 }

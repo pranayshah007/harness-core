@@ -35,6 +35,8 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
@@ -96,6 +98,7 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import org.apache.commons.lang3.StringUtils;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
@@ -640,6 +643,26 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   public void verifyPluginImageIsProvider(ParameterField<String> image) {
     if (ParameterField.isNull(image) || image.getValue() == null) {
       throw new InvalidRequestException("Plugin Image must be provided");
+    }
+  }
+
+  public void putValuesYamlEnvVars(
+          Ambiance ambiance, ServerlessAwsLambdaPrepareRollbackContainerStepParameters serverlessAwsLambdaPrepareRollbackContainerStepParameters, Map<String, String> envVarMap) {
+    OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(serverlessAwsLambdaPrepareRollbackContainerStepParameters.getDownloadManifestsFqn() + "."
+                    + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
+
+    if (serverlessValuesYamlDataOptionalOutput.isFound()) {
+      ServerlessValuesYamlDataOutcome awsSamValuesYamlDataOutcome =
+              (ServerlessValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
+
+      String valuesYamlContent = awsSamValuesYamlDataOutcome.getValuesYamlContent();
+      String valuesYamlPath = awsSamValuesYamlDataOutcome.getValuesYamlPath();
+
+      if (StringUtils.isNotBlank(valuesYamlContent) && StringUtils.isNotBlank(valuesYamlPath)) {
+        envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", valuesYamlContent);
+        envVarMap.put("PLUGIN_VALUES_YAML_FILE_PATH", valuesYamlPath);
+      }
     }
   }
 }

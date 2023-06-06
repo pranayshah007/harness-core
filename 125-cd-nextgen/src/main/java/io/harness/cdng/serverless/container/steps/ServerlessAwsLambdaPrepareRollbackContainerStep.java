@@ -79,6 +79,9 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
     // Check if image exists
     serverlessStepCommonHelper.verifyPluginImageIsProvider(serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage());
 
+    Map<String, String> envVarMap = new HashMap<>();
+    serverlessStepCommonHelper.putValuesYamlEnvVars(ambiance, serverlessAwsLambdaPrepareRollbackContainerStepParameters, envVarMap);
+
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
