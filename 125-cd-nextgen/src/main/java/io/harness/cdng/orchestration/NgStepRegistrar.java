@@ -311,7 +311,8 @@ public class NgStepRegistrar {
     // Blue Green Stage Scale Down
     engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
 
-    engineSteps.put(ServerlessAwsLambdaPrepareRollbackContainerStep.STEP_TYPE, ServerlessAwsLambdaPrepareRollbackContainerStep.class);
+    engineSteps.put(ServerlessAwsLambdaPrepareRollbackContainerStep.STEP_TYPE,
+        ServerlessAwsLambdaPrepareRollbackContainerStep.class);
     return engineSteps;
   }
 }

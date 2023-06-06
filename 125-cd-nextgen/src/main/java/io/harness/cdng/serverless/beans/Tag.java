@@ -7,13 +7,12 @@
 
 package io.harness.cdng.serverless.beans;
 
-
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class Tag {
-    private final String key;
-    private final String value;
+  private final String key;
+  private final String value;
 }

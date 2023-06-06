@@ -9,7 +9,6 @@ package io.harness.cdng.creator.variables;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
@@ -18,7 +17,8 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaPrepareRollbackContainerStepVariableCreator extends GenericStepVariableCreator<ServerlessAwsLambdaPrepareRollbackContainerStepNode> {
+public class ServerlessAwsLambdaPrepareRollbackContainerStepVariableCreator
+    extends GenericStepVariableCreator<ServerlessAwsLambdaPrepareRollbackContainerStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK);

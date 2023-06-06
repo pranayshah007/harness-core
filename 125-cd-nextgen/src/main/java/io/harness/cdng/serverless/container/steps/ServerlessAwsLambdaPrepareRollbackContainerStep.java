@@ -7,10 +7,6 @@
 
 package io.harness.cdng.serverless.container.steps;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
@@ -35,24 +31,26 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
-  @Inject
-  ServerlessStepCommonHelper serverlessStepCommonHelper;
+  @Inject ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-
 
   @Inject private InstanceInfoService instanceInfoService;
 
@@ -75,24 +73,31 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
     // Todo: Add entrypoint
-    ServerlessAwsLambdaPrepareRollbackContainerStepParameters serverlessAwsLambdaPrepareRollbackContainerStepParameters =
-        (ServerlessAwsLambdaPrepareRollbackContainerStepParameters) stepElementParameters.getSpec();
+    ServerlessAwsLambdaPrepareRollbackContainerStepParameters
+        serverlessAwsLambdaPrepareRollbackContainerStepParameters =
+            (ServerlessAwsLambdaPrepareRollbackContainerStepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
-    serverlessStepCommonHelper.verifyPluginImageIsProvider(serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage());
+    serverlessStepCommonHelper.verifyPluginImageIsProvider(
+        serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage());
 
     Map<String, String> envVarMap = new HashMap<>();
-    serverlessStepCommonHelper.putValuesYamlEnvVars(ambiance, serverlessAwsLambdaPrepareRollbackContainerStepParameters, envVarMap);
+    serverlessStepCommonHelper.putValuesYamlEnvVars(
+        ambiance, serverlessAwsLambdaPrepareRollbackContainerStepParameters, envVarMap);
 
-    return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId, serverlessAwsLambdaPrepareRollbackContainerStepParameters);
+    return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId,
+        serverlessAwsLambdaPrepareRollbackContainerStepParameters);
   }
 
-  public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId, String logKey, String parkedTaskId, ServerlessAwsLambdaPrepareRollbackContainerStepParameters serverlessAwsLambdaPrepareRollbackContainerStepParameters) {
+  public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
+      String logKey, String parkedTaskId,
+      ServerlessAwsLambdaPrepareRollbackContainerStepParameters
+          serverlessAwsLambdaPrepareRollbackContainerStepParameters) {
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
-            getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
-            stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-            stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
-            serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+        getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
+        stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override
@@ -130,11 +135,11 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
 
       ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
       if (stackDetails != null) {
-
-        serverlessAwsLambdaPrepareRollbackDataOutcome = ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();
+        serverlessAwsLambdaPrepareRollbackDataOutcome =
+            ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();
         executionSweepingOutputService.consume(ambiance,
-                OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME,
-                serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
+            OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME,
+            serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
       }
     }
 

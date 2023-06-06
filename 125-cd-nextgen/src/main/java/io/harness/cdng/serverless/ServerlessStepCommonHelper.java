@@ -15,9 +15,6 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -32,7 +29,6 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.plugininfoproviders.PluginInfoProviderHelper;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome.ServerlessAwsLambdaRollbackDataOutcomeBuilder;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
@@ -41,7 +37,6 @@ import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.cdng.serverless.beans.StackDetails;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -86,8 +81,6 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.contracts.plan.PluginCreationRequest;
-import io.harness.pms.contracts.plan.PluginDetails.Builder;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
@@ -108,14 +101,14 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Collection;
@@ -123,9 +116,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
@@ -674,15 +669,19 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     }
   }
 
-  public void putValuesYamlEnvVars(
-          Ambiance ambiance, ServerlessAwsLambdaPrepareRollbackContainerStepParameters serverlessAwsLambdaPrepareRollbackContainerStepParameters, Map<String, String> envVarMap) {
-    OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(serverlessAwsLambdaPrepareRollbackContainerStepParameters.getDownloadManifestsFqn() + "."
-                    + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
+  public void putValuesYamlEnvVars(Ambiance ambiance,
+      ServerlessAwsLambdaPrepareRollbackContainerStepParameters
+          serverlessAwsLambdaPrepareRollbackContainerStepParameters,
+      Map<String, String> envVarMap) {
+    OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput =
+        executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                serverlessAwsLambdaPrepareRollbackContainerStepParameters.getDownloadManifestsFqn() + "."
+                + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {
       ServerlessValuesYamlDataOutcome awsSamValuesYamlDataOutcome =
-              (ServerlessValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
+          (ServerlessValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
 
       String valuesYamlContent = awsSamValuesYamlDataOutcome.getValuesYamlContent();
       String valuesYamlPath = awsSamValuesYamlDataOutcome.getValuesYamlPath();

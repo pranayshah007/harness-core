@@ -7,6 +7,16 @@
 
 package io.harness.cdng.serverless.container.steps;
 
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,11 +30,13 @@ import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
+
+import java.util.HashMap;
+import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -37,79 +49,81 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends CategoryTest {
-    @Rule
-    public MockitoRule mockitoRule = MockitoJUnit.rule();
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
-    @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
-    @InjectMocks @Spy private ServerlessAwsLambdaPrepareRollbackContainerStep serverlessAwsLambdaPrepareRollbackContainerStep;
+  @InjectMocks
+  @Spy
+  private ServerlessAwsLambdaPrepareRollbackContainerStep serverlessAwsLambdaPrepareRollbackContainerStep;
 
-    @Before
-    public void setup() {
-    }
+  @Before
+  public void setup() {}
 
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetAnyOutComeForStep() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-    @SneakyThrows
-    @Test
-    @Owner(developers = PIYUSH_BHUWALKA)
-    @Category(UnitTests.class)
-    public void testGetAnyOutComeForStep() {
-        String accountId = "accountId";
-        Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-        ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters = ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder().image(ParameterField.<String>builder().value("sdaf").build()).build();
-        StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    Map<String, String> resultMap = new HashMap<>();
+    String contentBase64 = "content64";
+    String content = "content";
+    resultMap.put("stackDetails", contentBase64);
+    StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(
+                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
+            .build();
+    responseDataMap.put("key", stepStatusTaskResponseData);
 
-        Map<String, ResponseData> responseDataMap = new HashMap<>();
-        Map<String, String> resultMap = new HashMap<>();
-        String contentBase64 = "content64";
-        String content = "content";
-        resultMap.put("stackDetails", contentBase64);
-        StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
-        StepStatusTaskResponseData stepStatusTaskResponseData = StepStatusTaskResponseData.builder().stepStatus(StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build()).build();
-        responseDataMap.put("key", stepStatusTaskResponseData);
+    StackDetails stackDetails = StackDetails.builder().build();
+    when(serverlessStepCommonHelper.convertByte64ToString(contentBase64)).thenReturn(content);
+    when(serverlessStepCommonHelper.getStackDetails(content)).thenReturn(stackDetails);
 
-        StackDetails stackDetails = StackDetails.builder().build();
-        when(serverlessStepCommonHelper.convertByte64ToString(contentBase64)).thenReturn(content);
-        when(serverlessStepCommonHelper.getStackDetails(content)).thenReturn(stackDetails);
+    serverlessAwsLambdaPrepareRollbackContainerStep.getAnyOutComeForStep(
+        ambiance, stepElementParameters, responseDataMap);
+    verify(executionSweepingOutputService, times(1)).consume(any(), any(), any(), any());
+  }
 
-        serverlessAwsLambdaPrepareRollbackContainerStep.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap);
-        verify(executionSweepingOutputService, times(1)).consume(any(), any(), any(), any());
-    }
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetSerialisedStep() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
-    @SneakyThrows
-    @Test
-    @Owner(developers = PIYUSH_BHUWALKA)
-    @Category(UnitTests.class)
-    public void testGetSerialisedStep() {
-        String accountId = "accountId";
-        Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    doReturn(1).when(serverlessAwsLambdaPrepareRollbackContainerStep).getPort(any(), any());
+    doReturn(122L).when(serverlessAwsLambdaPrepareRollbackContainerStep).getTimeout(any(), any());
+    doReturn(mock(UnitStep.class))
+        .when(serverlessAwsLambdaPrepareRollbackContainerStep)
+        .getUnitStep(any(), any(), any(), any(), any(), any());
 
-        doReturn(1).when(serverlessAwsLambdaPrepareRollbackContainerStep).getPort(any(), any());
-        doReturn(122L).when(serverlessAwsLambdaPrepareRollbackContainerStep).getTimeout(any(), any());
-        doReturn(mock(UnitStep.class)).when(serverlessAwsLambdaPrepareRollbackContainerStep).getUnitStep(any(), any(), any(), any(), any(), any());
+    ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-        ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters = ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder().image(ParameterField.<String>builder().value("sdaf").build()).build();
-        StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-
-        String logKey = "logKey";
-        long timeout = 1000;
-        String parkedTaskId = "parkedTaskId";
-        assertThat(serverlessAwsLambdaPrepareRollbackContainerStep.getSerialisedStep(ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId)).isInstanceOf(UnitStep.class);
-    }
+    String logKey = "logKey";
+    long timeout = 1000;
+    String parkedTaskId = "parkedTaskId";
+    assertThat(serverlessAwsLambdaPrepareRollbackContainerStep.getSerialisedStep(
+                   ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId))
+        .isInstanceOf(UnitStep.class);
+  }
 }

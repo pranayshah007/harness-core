@@ -7,15 +7,14 @@
 
 package io.harness.cdng.serverless.beans;
 
-
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class Parameter {
-    private final String parameterKey;
-    private final String parameterValue;
-    private final Boolean usePreviousValue;
-    private final String resolvedValue;
+  private final String parameterKey;
+  private final String parameterValue;
+  private final Boolean usePreviousValue;
+  private final String resolvedValue;
 }

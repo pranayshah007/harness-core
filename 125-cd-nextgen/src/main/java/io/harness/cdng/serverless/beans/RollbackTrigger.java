@@ -7,13 +7,12 @@
 
 package io.harness.cdng.serverless.beans;
 
-
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class RollbackTrigger {
-    private final String arn;
-    private final String type;
+  private final String arn;
+  private final String type;
 }

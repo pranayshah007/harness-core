@@ -7,7 +7,6 @@
 
 package io.harness.cdng.serverless.container.steps;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +16,10 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,24 +27,23 @@ import lombok.NoArgsConstructor;
 import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
 
-import java.util.List;
-import java.util.Map;
-
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("serverlessAwsLambdaPrepareRollbackContainerStepParameters")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters")
-public class ServerlessAwsLambdaPrepareRollbackContainerStepParameters extends ServerlessAwsLambdaContainerBaseStepInfo implements ServerlessSpecParameters, StepParameters {
+public class ServerlessAwsLambdaPrepareRollbackContainerStepParameters
+    extends ServerlessAwsLambdaContainerBaseStepInfo implements ServerlessSpecParameters, StepParameters {
   @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaPrepareRollbackContainerStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                                                   ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-                                                                   ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-                                                                   ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-                                                                   ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
+  public ServerlessAwsLambdaPrepareRollbackContainerStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Map<String, JsonNode>> settings,
+      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, serverlessVersion);
     this.downloadManifestsFqn = downloadManifestsFqn;

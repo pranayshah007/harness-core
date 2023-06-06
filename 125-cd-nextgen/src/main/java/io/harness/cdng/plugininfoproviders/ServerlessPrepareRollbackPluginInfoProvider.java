@@ -7,8 +7,11 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -56,19 +59,16 @@ import io.harness.steps.container.execution.plugin.StepImageConfig;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 import io.harness.yaml.utils.NGVariablesUtils;
-import org.jooq.tools.StringUtils;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
+import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfoProvider {
@@ -77,8 +77,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   @Inject private OutcomeService outcomeService;
   @Inject private ServerlessAwsLambdaStepHelper serverlessAwsLambdaStepHelper;
 
-  @Inject
-  PluginExecutionConfig pluginExecutionConfig;
+  @Inject PluginExecutionConfig pluginExecutionConfig;
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
@@ -94,10 +93,12 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
-    ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo = (ServerlessAwsLambdaPrepareRollbackContainerStepInfo) cdAbstractStepNode.getStepSpecType();
+    ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
+        (ServerlessAwsLambdaPrepareRollbackContainerStepInfo) cdAbstractStepNode.getStepSpecType();
 
-    PluginDetails.Builder pluginDetailsBuilder = getPluginDetailsBuilder(
-        request, serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(), serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser());
+    PluginDetails.Builder pluginDetailsBuilder =
+        getPluginDetailsBuilder(request, serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(),
+            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser());
 
     ImageDetails imageDetails = null;
 
@@ -112,9 +113,9 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(request.getAmbiance(), serverlessAwsLambdaPrepareRollbackContainerStepInfo));
-    PluginCreationResponse response =
-            getPluginCreationResponse(pluginDetailsBuilder);
+    pluginDetailsBuilder.putAllEnvVariables(
+        getEnvironmentVariables(request.getAmbiance(), serverlessAwsLambdaPrepareRollbackContainerStepInfo));
+    PluginCreationResponse response = getPluginCreationResponse(pluginDetailsBuilder);
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
                                       .setIdentifier(cdAbstractStepNode.getIdentifier())
                                       .setName(cdAbstractStepNode.getName())
@@ -123,7 +124,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return getPluginCreationResponseWrapper(response, stepInfoProto);
   }
 
-  public PluginCreationResponseWrapper getPluginCreationResponseWrapper(PluginCreationResponse response, StepInfoProto stepInfoProto) {
+  public PluginCreationResponseWrapper getPluginCreationResponseWrapper(
+      PluginCreationResponse response, StepInfoProto stepInfoProto) {
     return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
   }
 
@@ -131,14 +133,17 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
-  public ImageDetails getImageDetails(ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo) {
-    return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaPrepareRollbackContainerStepInfo.getConnectorRef(),
-            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImage(), serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImagePullPolicy());
+  public ImageDetails getImageDetails(
+      ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo) {
+    return PluginInfoProviderHelper.getImageDetails(
+        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getConnectorRef(),
+        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImage(),
+        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImagePullPolicy());
   }
 
-  public Builder getPluginDetailsBuilder(PluginCreationRequest request, ContainerResource resources, ParameterField<Integer> runAsUser) {
-    return PluginInfoProviderHelper.buildPluginDetails(
-            request, resources, runAsUser);
+  public Builder getPluginDetailsBuilder(
+      PluginCreationRequest request, ContainerResource resources, ParameterField<Integer> runAsUser) {
+    return PluginInfoProviderHelper.buildPluginDetails(request, resources, runAsUser);
   }
 
   @Override
@@ -149,12 +154,14 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return false;
   }
 
-  public Map<String, String> getEnvironmentVariables(Ambiance ambiance, ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo) {
-    ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaPrepareRollbackContainerStepInfo.getEnvVariables();
+  public Map<String, String> getEnvironmentVariables(Ambiance ambiance,
+      ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo) {
+    ParameterField<Map<String, String>> envVariables =
+        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = serverlessStepCommonHelper.resolveServerlessManifestsOutcome(ambiance);
-    ManifestOutcome serverlessManifestOutcome =
-            serverlessStepCommonHelper.getServerlessManifestOutcome(manifestsOutcome.values(), serverlessAwsLambdaStepHelper);
+    ManifestOutcome serverlessManifestOutcome = serverlessStepCommonHelper.getServerlessManifestOutcome(
+        manifestsOutcome.values(), serverlessAwsLambdaStepHelper);
     StoreConfig storeConfig = serverlessManifestOutcome.getStore();
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       throw new InvalidRequestException("Invalid kind of storeConfig for Serverless step", USER);
@@ -163,17 +170,20 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
     List<String> gitPaths = serverlessStepCommonHelper.getFolderPathsForManifest(gitStoreConfig);
 
-    if(isEmpty(gitPaths)) {
+    if (isEmpty(gitPaths)) {
       throw new InvalidRequestException("Atleast one git path need to be specified", USER);
     }
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = (ServerlessAwsLambdaInfraConfig) serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance);
+    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
+        (ServerlessAwsLambdaInfraConfig) serverlessStepCommonHelper.getServerlessInfraConfig(
+            infrastructureOutcome, ambiance);
     String stageName = serverlessAwsLambdaInfraConfig.getStage();
     String region = serverlessAwsLambdaInfraConfig.getRegion();
 
-    ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome = (ServerlessAwsLambdaInfrastructureOutcome) infrastructureOutcome;
+    ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome =
+        (ServerlessAwsLambdaInfrastructureOutcome) infrastructureOutcome;
 
     String awsConnectorRef = serverlessAwsLambdaInfrastructureOutcome.getConnectorRef();
 
@@ -200,8 +210,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
         if (!StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())) {
           awsAccessKey = awsManualConfigSpecDTO.getAccessKey();
         } else {
-          awsAccessKey = getKey(
-                  ambiance, awsManualConfigSpecDTO.getAccessKeyRef());
+          awsAccessKey = getKey(ambiance, awsManualConfigSpecDTO.getAccessKeyRef());
         }
 
         awsSecretKey = getKey(ambiance, awsManualConfigSpecDTO.getSecretKeyRef());
@@ -210,8 +219,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
     HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap = new HashMap<>();
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", gitPaths.get(0));
-    serverlessPrepareRollbackEnvironmentVariablesMap.put(
-        "PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
+    serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
 
     if (awsAccessKey != null) {
@@ -235,12 +243,12 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
   public String getKey(Ambiance ambiance, SecretRefData secretRefData) {
     return NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
-            secretRefData.toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+        secretRefData.toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
   }
 
   public IdentifierRef getIdentifierRef(String awsConnectorRef, NGAccess ngAccess) {
-    return IdentifierRefHelper.getIdentifierRef(awsConnectorRef,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    return IdentifierRefHelper.getIdentifierRef(
+        awsConnectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
   }
 
   public NGAccess getNgAccess(Ambiance ambiance) {

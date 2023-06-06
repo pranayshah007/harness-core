@@ -7,26 +7,24 @@
 
 package io.harness.cdng.serverless.beans;
 
-
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @Builder
 public class StackDetails {
-    private final String stackId;
-    private final String stackName;
-    private String templateBody;
-    private final List<Parameter> parameters;
-    private String stackPolicyBody;
-    private final RollbackConfiguration rollbackConfiguration;
-    private final String stackStatus;
-    private final String stackStatusReason;
-    private final Boolean disableRollback;
-    private final List<String> notificationARNs;
-    private final List<String> capabilities;
-    private final String roleARN;
-    private final List<Tag> tags;
+  private final String stackId;
+  private final String stackName;
+  private String templateBody;
+  private final List<Parameter> parameters;
+  private String stackPolicyBody;
+  private final RollbackConfiguration rollbackConfiguration;
+  private final String stackStatus;
+  private final String stackStatusReason;
+  private final Boolean disableRollback;
+  private final List<String> notificationARNs;
+  private final List<String> capabilities;
+  private final String roleARN;
+  private final List<Tag> tags;
 }
