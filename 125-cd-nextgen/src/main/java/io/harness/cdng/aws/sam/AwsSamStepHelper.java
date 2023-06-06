@@ -141,7 +141,7 @@ public class AwsSamStepHelper {
 
     StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
 
-    if (stageInfraDetails instanceof K8StageInfraDetails) {
+    if (stageInfraDetails.getType() == StageInfraDetails.Type.K8) {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
       Infrastructure infrastructure = k8StageInfraDetails.getInfrastructure();
       if (infrastructure instanceof K8sDirectInfraYaml) {
