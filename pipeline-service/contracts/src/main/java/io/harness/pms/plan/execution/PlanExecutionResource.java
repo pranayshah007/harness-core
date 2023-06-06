@@ -54,6 +54,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -663,7 +664,8 @@ public interface PlanExecutionResource {
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @NotEmpty @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("retry/{identifier}")
