@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.artifacts.azureartifacts;
 
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +22,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -109,7 +110,7 @@ public class AzureArtifactsDelegateRequest implements ArtifactSourceDelegateRequ
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {
-    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
+    return isEmpty(delegateSelectors) ? Collections.EMPTY_SET : delegateSelectors.stream().collect(Collectors.toSet());
   }
 
   @Override

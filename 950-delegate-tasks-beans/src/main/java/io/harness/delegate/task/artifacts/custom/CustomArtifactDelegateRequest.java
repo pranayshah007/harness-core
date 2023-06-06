@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.artifacts.custom;
 
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.CUSTOM_ARTIFACT;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
@@ -25,6 +25,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,7 +66,7 @@ public class CustomArtifactDelegateRequest
   int expressionFunctorToken;
 
   public Set<String> getDelegateSelectors() {
-    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
+    return isEmpty(delegateSelectors) ? Collections.EMPTY_SET : delegateSelectors.stream().collect(Collectors.toSet());
   }
 
   @Override

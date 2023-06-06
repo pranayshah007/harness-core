@@ -8,7 +8,7 @@
 package io.harness.delegate.task.bamboo;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
@@ -21,6 +21,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.sm.states.ParameterEntry;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,7 +42,7 @@ public class BambooBuildTaskNGParameters implements TaskParameters, ExecutionCap
   List<ParameterEntry> parameterEntries;
 
   public Set<String> getDelegateSelectors() {
-    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
+    return isEmpty(delegateSelectors) ? Collections.EMPTY_SET : delegateSelectors.stream().collect(Collectors.toSet());
   }
 
   @Override

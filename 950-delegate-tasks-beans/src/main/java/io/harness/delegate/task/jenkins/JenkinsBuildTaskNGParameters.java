@@ -8,7 +8,7 @@
 package io.harness.delegate.task.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
@@ -20,6 +20,7 @@ import io.harness.delegate.task.mixin.JenkinsCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +46,7 @@ public class JenkinsBuildTaskNGParameters implements TaskParameters, ExecutionCa
   boolean captureEnvironmentVariable;
 
   public Set<String> getDelegateSelectors() {
-    return emptyIfNull(delegateSelectors.stream().collect(Collectors.toSet()));
+    return isEmpty(delegateSelectors) ? Collections.EMPTY_SET : delegateSelectors.stream().collect(Collectors.toSet());
   }
 
   @Override
