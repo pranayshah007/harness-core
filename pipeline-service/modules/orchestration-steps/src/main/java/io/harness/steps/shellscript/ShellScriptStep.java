@@ -170,14 +170,14 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   }
 
   private void closeLogStream(Ambiance ambiance) {
-    try {
-      Thread.sleep(500, 0);
-    } catch (InterruptedException e) {
-      log.error("Close Log Stream was interrupted", e);
-    } finally {
-      ILogStreamingStepClient logStreamingStepClient =
-          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
-    }
+//    try {
+//      Thread.sleep(500, 0);
+//    } catch (InterruptedException e) {
+//      log.error("Close Log Stream was interrupted", e);
+//    } finally {
+//      ILogStreamingStepClient logStreamingStepClient =
+//          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+//      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
+//    }
   }
 }
