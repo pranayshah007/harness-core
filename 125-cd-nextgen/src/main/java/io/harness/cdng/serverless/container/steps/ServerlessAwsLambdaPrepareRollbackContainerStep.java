@@ -7,6 +7,7 @@
 
 package io.harness.cdng.serverless.container.steps;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -35,6 +36,7 @@ import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Base64;
 import java.util.Collections;
@@ -82,10 +84,14 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
     Map<String, String> envVarMap = new HashMap<>();
     serverlessStepCommonHelper.putValuesYamlEnvVars(ambiance, serverlessAwsLambdaPrepareRollbackContainerStepParameters, envVarMap);
 
+    return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId, serverlessAwsLambdaPrepareRollbackContainerStepParameters);
+  }
+
+  public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId, String logKey, String parkedTaskId, ServerlessAwsLambdaPrepareRollbackContainerStepParameters serverlessAwsLambdaPrepareRollbackContainerStepParameters) {
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
-        getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
-        stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+            getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
+            stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
+            stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
             serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
@@ -112,14 +118,12 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
-        stackDetailsString = new String(Base64.getDecoder().decode(stackDetailsByte64));
+        stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
       }
-
-      ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
       StackDetails stackDetails = null;
       try {
-        stackDetails = objectMapper.readValue(stackDetailsString, StackDetails.class);
+        stackDetails = serverlessStepCommonHelper.getStackDetails(stackDetailsString);
       } catch (Exception e) {
         log.error("Error while parsing Stack Details", e);
       }

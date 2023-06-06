@@ -34,6 +34,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
 
 import java.util.List;
@@ -57,25 +58,17 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepInfo extends Serverl
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> deployCommandOptions;
-
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> stackName;
+  @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaPrepareRollbackContainerStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
                                                              ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
                                                              ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
                                                              ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-                                                             ParameterField<List<String>> deployCommandOptions, ParameterField<String> stackName,
-                                                             ParameterField<String> samVersion) {
+                                                             ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, samVersion);
-    this.deployCommandOptions = deployCommandOptions;
-    this.stackName = stackName;
+        imagePullPolicy, serverlessVersion);
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
   @Override
   public StepType getStepType() {
