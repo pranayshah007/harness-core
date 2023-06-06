@@ -55,6 +55,7 @@ def run_tests(srcs = "src/test/**/*Test.java", **kwargs):
             test_class = test,
             testonly = True,
             visibility = ["//visibility:private"],
+            tags = ["java_test"],
             **kwargs
         )
     return targets
@@ -170,6 +171,7 @@ EOF""" % code,
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
+            tags = ["java_test"],
         )
 
         targets += [target_name]
@@ -241,6 +243,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpPath=heap.hprof",
         ],
+        tags = ["java_test"],
     )
     return [target_name]
 
