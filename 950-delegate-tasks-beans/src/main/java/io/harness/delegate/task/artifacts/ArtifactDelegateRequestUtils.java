@@ -309,6 +309,7 @@ public class ArtifactDelegateRequestUtils {
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .shouldFetchObjectMetadata(true)
         .build();
   }
 
