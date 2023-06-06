@@ -62,8 +62,7 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
           checkAndLogSchedulingDelays(message.getId(), readTs);
           T entity = extractEntity(message);
           Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
-          Long timeSpentInQueue = readTs - issueTimestamp;
-          processMessage(entity, message.getMessage().getMetadataMap(), timeSpentInQueue);
+          processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
         } catch (Exception ex) {
           log.error("[PMS_MESSAGE_LISTENER] Exception occurred while processing {} event with messageId: {}",
               entityClass.getSimpleName(), message.getId(), ex);
@@ -102,7 +101,7 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
   /**
    * The boolean that we are returning here is just for logging purposes we should infer nothing from the responses
    */
-  public void processMessage(T event, Map<String, String> metadataMap, Long timeSpentInQueue) {
-    handler.handleEvent(event, metadataMap, timeSpentInQueue);
+  public void processMessage(T event, Map<String, String> metadataMap, Long messageTimeStamp, Long readTs) {
+    handler.handleEvent(event, metadataMap, messageTimeStamp, readTs);
   }
 }

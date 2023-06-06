@@ -14,5 +14,5 @@ import java.util.Map;
 
 @TargetModule(HarnessModule._884_PMS_COMMONS)
 public interface PmsCommonsBaseEventHandler<T> {
-  void handleEvent(T event, Map<String, String> metadataMap, long timeSpentInQueue);
+  void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs);
 }

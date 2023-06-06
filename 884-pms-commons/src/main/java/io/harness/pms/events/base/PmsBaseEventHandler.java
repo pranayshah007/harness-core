@@ -59,13 +59,14 @@ public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommo
 
   protected abstract String getMetricPrefix(T message);
 
-  public void handleEvent(T event, Map<String, String> metadataMap, long timeSpentInRedisQueue) {
+  public void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
     try (PmsGitSyncBranchContextGuard ignore1 = gitSyncContext(event); AutoLogContext ignore2 = autoLogContext(event);
          PmsMetricContextGuard metricContext =
              new PmsMetricContextGuard(metadataMap, extractMetricContext(metadataMap, event))) {
       log.info("[PMS_MESSAGE_LISTENER] Starting to process {} event ", event.getClass().getSimpleName());
       MonitoringInfo monitoringInfo = MonitoringInfo.builder()
-                                          .timeSpentInQueue(timeSpentInRedisQueue)
+                                          .createdAt(messageTimeStamp)
+                                          .readTs(readTs)
                                           .metricPrefix(getMetricPrefix(event))
                                           .metricContext(metricContext)
                                           .accountId(AmbianceUtils.getAccountId(extractAmbiance(event)))
