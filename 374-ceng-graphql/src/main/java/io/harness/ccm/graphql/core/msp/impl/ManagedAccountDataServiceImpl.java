@@ -124,13 +124,15 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
     }
     mspValidationService.validateAccountIsManagedByMspAccount(mspAccountId, managedAccountId);
 
+    List<QLCEViewFilterWrapper> markupFilters = new ArrayList<>();
+    markupFilters.addAll(RESTToGraphQLHelper.getTimeFilters(startTime, endTime));
+    markupFilters.addAll(RESTToGraphQLHelper.getMarkupNotNullFilter());
+    PerspectiveTrendStats markupAmountStats = perspectiveService.perspectiveTrendStats(
+        markupFilters, Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, managedAccountId);
+
     PerspectiveTrendStats totalSpendStats =
         perspectiveService.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, mspAccountId);
-
-    PerspectiveTrendStats markupAmountStats =
-        perspectiveService.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-            Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, mspAccountId);
+            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, managedAccountId);
 
     return ManagedAccountStats.builder()
         .totalSpendStats(AmountTrendStats.builder()
@@ -158,10 +160,12 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
                 (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, managedAccountId)
             .getStats();
 
+    List<QLCEViewFilterWrapper> markupFilters = new ArrayList<>();
+    markupFilters.addAll(RESTToGraphQLHelper.getTimeFilters(startTime, endTime));
+    markupFilters.addAll(RESTToGraphQLHelper.getMarkupNotNullFilter());
     List<TimeSeriesDataPoints> totalMarkupStats =
         perspectiveService
-            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
-                RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(), markupFilters,
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
                 (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, managedAccountId)
             .getStats();

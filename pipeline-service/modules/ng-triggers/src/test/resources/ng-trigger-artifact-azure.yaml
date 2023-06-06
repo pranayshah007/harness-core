@@ -1,0 +1,42 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      type: AzureArtifacts
+      spec:
+        connectorRef: AzureArtifacts
+        scope: org
+        feed: automation-cdc
+        packageType: maven
+        package: package
+        eventConditions: []
+  inputYaml: |
+    pipeline:
+      identifier: AzurePipeline
+      stages:
+        - stage:
+            identifier: stg
+            type: Deployment
+            spec:
+              service:
+                serviceRef: AzureArtifacts
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: azure
+                          sources:
+                            - identifier: azure
+                              type: Acr
+                              spec:
+                                tag: 1.15.5-alpine

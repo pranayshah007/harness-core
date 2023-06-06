@@ -1199,7 +1199,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .greaterThanOrEq(fromTimestamp)
                                         .field(Instance.CREATED_AT_KEY)
                                         .lessThanOrEq(rhsCreatedAt)
-                                        .project(InstanceKeys.appId, true);
+                                        .project(InstanceKeys.appId, true)
+                                        .limit(NO_LIMIT);
 
     instanceQuery.project(InstanceKeys.uuid, false);
 

@@ -953,19 +953,20 @@ public class VerificationApplication extends Application<VerificationConfigurati
   }
 
   private void registerAnalysisOrchestratorQueueNextAnalysisHandler(Injector injector) {
-    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(3,
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(2,
         new ThreadFactoryBuilder().setNameFormat("analysis-orchestrator-queue-next-analysis-handler-iterator").build());
     AnalysisOrchestratorQueueNextAnalysisHandler analysisOrchestraorQueueNextAnalysisHandler =
         injector.getInstance(AnalysisOrchestratorQueueNextAnalysisHandler.class);
     PersistenceIterator iterator =
         MongoPersistenceIterator.<AnalysisOrchestrator, MorphiaFilterExpander<AnalysisOrchestrator>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("AnalysisOrchestraorQueueNextAnalysisIterator")
+            .iteratorName("AnalysisOrchestratorQueueNextAnalysisIterator")
             .clazz(AnalysisOrchestrator.class)
+            .fieldName(AnalysisOrchestratorKeys.analysisOrchestrationIteration)
             .targetInterval(ofMinutes(5))
-            .acceptableNoAlertDelay(ofMinutes(1))
+            .acceptableNoAlertDelay(ofHours(2))
             .executorService(dataCollectionExecutor)
-            .semaphore(new Semaphore(3))
+            .semaphore(new Semaphore(2))
             .handler(analysisOrchestraorQueueNextAnalysisHandler)
             .schedulingType(REGULAR)
             .filterExpander(query

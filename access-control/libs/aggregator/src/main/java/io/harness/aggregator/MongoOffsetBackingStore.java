@@ -37,17 +37,33 @@ public class MongoOffsetBackingStore extends MemoryOffsetBackingStore {
   private MongoTemplate mongoTemplate;
   private MongoClient mongoClient;
   private String collectionName;
+  private static final String CREDENTIALS_SEPARATOR = ":";
+  private static final String CREDENTIALS_HOST_SEPARATOR = "@";
 
   @Override
   public void configure(WorkerConfig workerConfig) {
     super.configure(workerConfig);
-    String connectionUri = workerConfig.getString("offset.storage.file.filename");
     collectionName = workerConfig.getString("offset.storage.topic");
-    MongoClientURI uri = new MongoClientURI(connectionUri);
+
+    StringBuilder connectionUri = new StringBuilder();
+    String mongodbConnectionProtocol = workerConfig.originals().get("mongodbConnectionProtocol").toString();
+    String mongodbConnectionUrl = workerConfig.originals().get("mongodbConnectionUrl").toString();
+    connectionUri.append(mongodbConnectionProtocol);
+    String userName = "";
+    String password = "";
+    try {
+      userName = workerConfig.originals().get("mongodb.user").toString();
+      password = workerConfig.originals().get("mongodb.password").toString();
+      connectionUri.append(userName).append(CREDENTIALS_SEPARATOR).append(password).append(CREDENTIALS_HOST_SEPARATOR);
+    } catch (Exception ex) {
+      // Ignore as in local user and password is not present.
+    }
+    connectionUri.append(mongodbConnectionUrl);
+    MongoClientURI uri = new MongoClientURI(connectionUri.toString());
 
     MongoClientSettings mongoClientSettings =
         MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(connectionUri))
+            .applyConnectionString(new ConnectionString(connectionUri.toString()))
             .retryWrites(true)
             .applyToSocketSettings(builder -> builder.connectTimeout(30000, TimeUnit.MILLISECONDS))
             .applyToClusterSettings(builder -> builder.serverSelectionTimeout(90000, TimeUnit.MILLISECONDS))

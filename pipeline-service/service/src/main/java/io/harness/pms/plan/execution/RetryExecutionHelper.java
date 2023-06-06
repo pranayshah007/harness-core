@@ -487,8 +487,12 @@ public class RetryExecutionHelper {
       if (strategyNodeExecution.isEmpty()) {
         processedNodes.add(node);
       } else {
-        processedNodes.add(IdentityPlanNode.mapPlanNodeToIdentityNode(
-            node, node.getStepType(), strategyNodeExecution.get(0).getUuid()));
+        // This strategyNodeExecution is at the stage level. And the execution is being retried from this strategy
+        // stage. And setting useAdviserObtainments true because we want that IdentityNodeExecutionStrategy to use the
+        // original advisorsObtainments from the node.
+        processedNodes.add(
+            IdentityPlanNode.mapPlanNodeToIdentityNode(node, node.getStepType(), strategyNodeExecution.get(0).getUuid())
+                .withUseAdviserObtainments(true));
       }
     }
     return processedNodes;

@@ -102,20 +102,23 @@ public class TriggerWebhookConfirmationHelper {
       }
     }
 
-    ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
-        DelegateTaskRequest.builder()
-            .accountId(event.getAccountId())
-            .executionTimeout(Duration.ofSeconds(30))
-            .taskType("AWS_CODECOMMIT_API_TASK")
-            .taskParameters(AwsCodeCommitApiTaskParams.builder()
-                                .requestType(CONFIRM_TRIGGER_SUBSCRIPTION)
-                                .apiParams(AwsCodeCommitApiConfirmSubParams.builder()
-                                               .topicArn(topicArn)
-                                               .subscriptionConfirmationMessage(event.getPayload())
-                                               .build())
-                                .build())
-            .build(),
-        delegateCallbackTokenSupplier.get());
+    ResponseData responseData =
+        delegateServiceGrpcClient
+            .executeSyncTaskReturningResponseDataV2(
+                DelegateTaskRequest.builder()
+                    .accountId(event.getAccountId())
+                    .executionTimeout(Duration.ofSeconds(30))
+                    .taskType("AWS_CODECOMMIT_API_TASK")
+                    .taskParameters(AwsCodeCommitApiTaskParams.builder()
+                                        .requestType(CONFIRM_TRIGGER_SUBSCRIPTION)
+                                        .apiParams(AwsCodeCommitApiConfirmSubParams.builder()
+                                                       .topicArn(topicArn)
+                                                       .subscriptionConfirmationMessage(event.getPayload())
+                                                       .build())
+                                        .build())
+                    .build(),
+                delegateCallbackTokenSupplier.get())
+            .getValue();
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;

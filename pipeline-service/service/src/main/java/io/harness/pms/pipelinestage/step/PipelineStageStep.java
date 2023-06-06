@@ -18,6 +18,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
@@ -60,6 +61,10 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(OrchestrationStepTypes.PIPELINE_STAGE).setStepCategory(StepCategory.STAGE).build();
 
+  public static String NESTED_CHAINING_HINT = "Unable to run pipeline [%s]";
+  public static String NESTED_CHAINING_ERROR =
+      "The referred pipeline [%s] invokes a child pipeline, so it cannot be included within another pipeline. Nested Pipeline Chaining is not supported";
+
   @Inject private PipelineExecutor pipelineExecutor;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
@@ -100,6 +105,11 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
   @Override
   public void validateResources(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+    if (ambiance.getMetadata().getPipelineStageInfo().getHasParentPipeline()) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(NESTED_CHAINING_HINT, ambiance.getMetadata().getPipelineStageInfo().getIdentifier()),
+          String.format(NESTED_CHAINING_ERROR, ambiance.getMetadata().getPipelineIdentifier()));
+    }
     pipelineStageHelper.validateResource(client, ambiance, stepParameters);
   }
 

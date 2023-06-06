@@ -16,7 +16,9 @@ import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Type;
 
 import com.google.inject.Inject;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class GoogleCloudStoragePollingItemGenerator implements PollingItemGenerator {
   @Inject BuildTriggerHelper buildTriggerHelper;
 

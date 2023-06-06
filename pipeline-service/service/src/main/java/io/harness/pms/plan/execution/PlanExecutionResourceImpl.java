@@ -8,7 +8,6 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
 
@@ -39,6 +38,7 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
@@ -374,12 +374,14 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<List<StageExecutionResponse>> getStagesExecutionList(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @NotNull @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
+      String loadFromCache) {
     if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
       PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false,
+            false, GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(format("Pipeline [%s] under Project[%s], Organization [%s] doesn't exist.",
           pipelineIdentifier, projectIdentifier, orgIdentifier));
@@ -389,7 +391,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       yaml = pipelineTemplateHelper
                  .resolveTemplateRefsInPipeline(
-                     accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(), BOOLEAN_FALSE_VALUE)
+                     accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(), loadFromCache)
                  .getMergedPipelineYaml();
     }
     boolean shouldAllowStageExecutions;

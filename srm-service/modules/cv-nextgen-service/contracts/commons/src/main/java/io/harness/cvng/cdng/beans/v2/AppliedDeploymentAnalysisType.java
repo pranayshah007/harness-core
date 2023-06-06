@@ -15,7 +15,8 @@ public enum AppliedDeploymentAnalysisType {
   CANARY,
   NO_ANALYSIS,
   ROLLING,
-  TEST;
+  TEST,
+  SIMPLE;
 
   public static AppliedDeploymentAnalysisType fromVerificationJobType(VerificationJobType verificationJobType) {
     AppliedDeploymentAnalysisType appliedDeploymentAnalysisType = NO_ANALYSIS;
@@ -31,6 +32,9 @@ public enum AppliedDeploymentAnalysisType {
           break;
         case TEST:
           appliedDeploymentAnalysisType = TEST;
+          break;
+        case SIMPLE:
+          appliedDeploymentAnalysisType = SIMPLE;
           break;
         default:
           throw new IllegalArgumentException("Unrecognised VerificationJobType " + verificationJobType);

@@ -1,0 +1,45 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      type: AmazonMachineImage
+      spec:
+        connectorRef: AWSSri
+        region: us-east-1
+#         Probaby a bug. https://harness.atlassian.net/browse/CDS-70545
+        tags: []
+#          - dd: ds
+        filters: []
+#          - ami-image-id: d
+        eventConditions: [ ]
+        metaDataConditions: [ ]
+
+  inputYaml: |
+    pipeline:
+      identifier: AMI
+      stages:
+        - stage:
+            identifier: AMI
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: Asg
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: AMI
+                          sources:
+                            - identifier: AMI
+                              type: AmazonMachineImage
+                              spec:
+                                version: WinRMVenkatImage

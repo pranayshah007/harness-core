@@ -171,6 +171,7 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.springdata.HMongoTemplate;
+import io.harness.steps.PodCleanupUpdateEventHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
@@ -516,6 +517,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(PipelineExecutionSummaryFailureInfoUpdateHandler.class)));
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(NodeExecutionOutboxHandler.class)));
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
+        injector.getInstance(Key.get(PodCleanupUpdateEventHandler.class)));
 
     // NodeExecutionDeleteObserver
     nodeExecutionService.getNodeDeleteObserverSubject().register(

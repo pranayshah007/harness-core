@@ -156,6 +156,7 @@ io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure
 io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollbackStepNode
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters
 io.harness.beans.execution.PRWebhookEvent
+io.harness.beans.execution.ReleaseWebhookEvent
 io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome
 io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationParameters
 io.harness.cdng.infra.beans.host.HostNamesFilter

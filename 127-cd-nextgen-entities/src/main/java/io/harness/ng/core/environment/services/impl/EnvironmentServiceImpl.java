@@ -64,6 +64,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
@@ -74,6 +75,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
+import io.harness.scope.ScopeHelper;
 import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
@@ -129,6 +131,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final InfrastructureEntityService infrastructureEntityService;
   private final ClusterService clusterService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceOverridesServiceV2 serviceOverridesServiceV2;
   private final ServiceEntityService serviceEntityService;
   private final AccountClient accountClient;
   private final NGSettingsClient settingsClient;
@@ -139,8 +142,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
       InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
-      ServiceOverrideService serviceOverrideService, ServiceEntityService serviceEntityService,
-      AccountClient accountClient, NGSettingsClient settingsClient,
+      ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
+      ServiceEntityService serviceEntityService, AccountClient accountClient, NGSettingsClient settingsClient,
       EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
@@ -150,6 +153,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.infrastructureEntityService = infrastructureEntityService;
     this.clusterService = clusterService;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceOverridesServiceV2 = serviceOverridesServiceV2;
     this.serviceEntityService = serviceEntityService;
     this.accountClient = accountClient;
     this.settingsClient = settingsClient;
@@ -751,24 +755,30 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   public EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
-      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs,
-      List<String> serviceRefs) {
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs, List<String> serviceRefs,
+      boolean isServiceOverrideV2FFEnabled) {
     List<EnvironmentInputSetYamlAndServiceOverridesMetadata> environmentInputSetYamlAndServiceOverridesMetadataList =
         new ArrayList<>();
-    for (String env : envRefs) {
+    for (String envRef : envRefs) {
       // org level entities need to have compatible ids. Eg. Stage level template will call with only org.Service type
       // refs
-      if (isNotEmpty(env) && !EngineExpressionEvaluator.hasExpressions(env)) {
+      if (isNotEmpty(envRef) && !EngineExpressionEvaluator.hasExpressions(envRef)) {
         IdentifierRef envIdentifierRef =
-            IdentifierRefHelper.getIdentifierRef(env, accountId, orgIdentifier, projectIdentifier);
+            IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgIdentifier, projectIdentifier);
         Optional<Environment> environment =
             environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
                 envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
                 envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
         if (environment.isPresent()) {
-          String inputYaml =
-              createEnvironmentInputsYaml(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-                  envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
+          boolean overridesV2Enabled =
+              isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier, isServiceOverrideV2FFEnabled);
+
+          String envInputYaml = overridesV2Enabled
+              ? createEnvironmentInputYamlFromOverride(accountId, orgIdentifier, projectIdentifier, envRef)
+              : createEnvironmentInputsYaml(envIdentifierRef.getAccountIdentifier(),
+                  envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(),
+                  envIdentifierRef.getIdentifier());
+
           List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
           for (String serviceRef : serviceRefs) {
             if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
@@ -779,15 +789,18 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                   serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
                   serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier());
               if (serviceEntity.isPresent()) {
-                // use env ref and service ref to fetch service overrides
-                // overrides will be at same level of env, this can be different from service
-                String serviceOverrides =
-                    serviceOverrideService.createServiceOverrideInputsYaml(envIdentifierRef.getAccountIdentifier(),
-                        envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(), env, serviceRef);
+                // use envRef ref and service ref to fetch service overrides
+                // overrides will be at same level of envRef, this can be different from service
+                String serviceOverridesInputsYaml = overridesV2Enabled
+                    ? serviceOverridesServiceV2.createServiceOverrideInputsYaml(
+                        accountId, orgIdentifier, projectIdentifier, envRef, serviceRef)
+                    : serviceOverrideService.createServiceOverrideInputsYaml(envIdentifierRef.getAccountIdentifier(),
+                        envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(), envRef,
+                        serviceRef);
                 serviceOverridesMetadataList.add(
                     ServiceOverridesMetadata.builder()
                         .serviceRef(serviceRef)
-                        .serviceOverridesYaml(serviceOverrides)
+                        .serviceOverridesYaml(serviceOverridesInputsYaml)
                         .serviceYaml(serviceEntity.get().getYaml())
                         .serviceRuntimeInputYaml(
                             serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml(), serviceRef))
@@ -797,8 +810,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
           }
           environmentInputSetYamlAndServiceOverridesMetadataList.add(
               EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
-                  .envRef(env)
-                  .envRuntimeInputYaml(inputYaml)
+                  .envRef(envRef)
+                  .envRuntimeInputYaml(envInputYaml)
                   .servicesOverrides(serviceOverridesMetadataList)
                   .envYaml(environment.get().fetchNonEmptyYaml())
                   .build());
@@ -808,6 +821,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
         .environmentsInputYamlAndServiceOverrides(environmentInputSetYamlAndServiceOverridesMetadataList)
         .build();
+  }
+
+  // envIdentifierRef : should be scoped ref
+  private String createEnvironmentInputYamlFromOverride(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifierRef) {
+    return serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+        accountId, orgIdentifier, projectIdentifier, envIdentifierRef);
   }
 
   @Override
@@ -852,9 +872,36 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                             .getValue());
   }
 
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+  private boolean isNgSettingsFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
+
+  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId, boolean isOverrideV2Enabled) {
+    boolean isOverrideV2SettingEnabled = false;
+    Scope scope = ScopeHelper.getScope(accountId, orgId, projectId);
+    if (Scope.PROJECT.equals(scope)) {
+      isOverrideV2SettingEnabled =
+          parseBoolean(NGRestUtils
+                           .getResponse(settingsClient.getSetting(
+                               SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, orgId, projectId))
+                           .getValue());
+
+    } else if (Scope.ORG.equals(scope)) {
+      isOverrideV2SettingEnabled = parseBoolean(
+          NGRestUtils
+              .getResponse(
+                  settingsClient.getSetting(SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, orgId, null))
+              .getValue());
+    } else {
+      isOverrideV2SettingEnabled = parseBoolean(
+          NGRestUtils
+              .getResponse(
+                  settingsClient.getSetting(SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, null, null))
+              .getValue());
+    }
+    return isNgSettingsFFEnabled(accountId) && isOverrideV2Enabled && isOverrideV2SettingEnabled;
+  }
+
   private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(Environment environment) {
     try {
       return environmentEntitySetupUsageHelper.getAllReferredEntities(environment);

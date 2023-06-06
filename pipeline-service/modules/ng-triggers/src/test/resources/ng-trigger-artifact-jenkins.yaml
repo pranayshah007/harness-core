@@ -1,0 +1,40 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      type: Jenkins
+      spec:
+        connectorRef: JenkinsHarness
+        artifactPath: ""
+        jobName: alex-freestyle-test
+        eventConditions: [ ]
+        metaDataConditions: [ ]
+  inputYaml: |
+    pipeline:
+      identifier: Jenkins_pipeline
+      stages:
+        - stage:
+            identifier: jenkins
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: Ssh
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: jenkins
+                          sources:
+                            - identifier: jenkins
+                              type: Jenkins
+                              spec:
+                                build: "1.0"

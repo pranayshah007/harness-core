@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EdgeCaseRegexModule extends SimpleModule {
   public EdgeCaseRegexModule() {
+    addSerializer(String.class, new EdgeCaseRegexStringSerializer());
     addSerializer(TextNode.class, new EdgeCaseRegexTextSerializer());
     addSerializer(ArrayNode.class, new EdgeCaseRegexArraySerializer());
     addSerializer(ObjectNode.class, new EdgeCaseRegexObjectSerializer());

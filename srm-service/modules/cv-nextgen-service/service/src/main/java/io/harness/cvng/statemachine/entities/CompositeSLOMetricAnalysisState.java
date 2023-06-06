@@ -18,4 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CompositeSLOMetricAnalysisState extends TimeSeriesAnalysisState {
   private final StateType type = StateType.COMPOSOITE_SLO_METRIC_ANALYSIS;
+
+  @Override
+  public boolean orchestrateViaEvent() {
+    return false;
+  }
 }

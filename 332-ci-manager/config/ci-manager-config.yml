@@ -120,7 +120,7 @@ sscaServiceConfig:
 
 stoServiceConfig:
   baseUrl: http://localhost:4000
-  internalUrl: http://localhost:4000
+  internalUrl: ""
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
 iacmServiceConfig:

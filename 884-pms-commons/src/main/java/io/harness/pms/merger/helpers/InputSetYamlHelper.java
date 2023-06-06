@@ -51,7 +51,7 @@ public class InputSetYamlHelper {
       innerMap.removeAll();
       innerMap.putObject("pipeline");
       innerMap.set("pipeline", pipelineNode);
-      return YamlUtils.write(innerMap).replace("---\n", "");
+      return YamlUtils.writeYamlString(innerMap);
     } catch (IOException e) {
       log.error("Input set yaml is invalid. Yaml:\n" + inputSetYaml);
       throw new InvalidYamlException("Input set yaml is invalid", e);
@@ -70,7 +70,7 @@ public class InputSetYamlHelper {
         throw new InvalidRequestException("Yaml provided is not an input set yaml.");
       }
       innerMap.set("pipeline", YamlUtils.readTree(pipelineComponent).getNode().getCurrJsonNode().get("pipeline"));
-      return YamlUtils.write(node).replace("---\n", "");
+      return YamlUtils.writeYamlString(node);
     } catch (IOException e) {
       log.error("Input set yaml is invalid. Yaml:\n" + inputSetYaml);
       throw new InvalidYamlException("Input set yaml is invalid", e);
@@ -178,7 +178,7 @@ public class InputSetYamlHelper {
     }
     ObjectNode innerJsonNode = (ObjectNode) rootLevelNode.get(EntityYamlRootNames.OVERLAY_INPUT_SET);
     innerJsonNode.set(YAMLFieldNameConstants.INPUT_SET_REFERENCES, newReferencesNode);
-    return YamlUtils.write(rootLevelNode).replace("---\n", "");
+    return YamlUtils.writeYamlString(rootLevelNode);
   }
 
   public void confirmPipelineIdentifierInInputSet(String inputSetYaml, String pipelineIdentifier) {

@@ -55,6 +55,7 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlo
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.entity.TemplateEntity;
@@ -416,10 +417,10 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,
-            templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
-            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
+        projectId, YamlUtils.readAsJsonNodeWithCheckDuplicate(templateApplyRequestDTO.getOriginalEntityYaml()),
+        templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
+        NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
     return ResponseDTO.newResponse(templateMergeResponseDTO);
