@@ -110,11 +110,11 @@ public class SettingsCreationJob {
   }
 
   public void run() {
-    String lockName = String.format("settingsConfigurationJobLock");
+    String lockName = String.format("SettingsCreationJob_settingConfigurationsLock");
     try (AcquiredLock<?> lock =
              persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
-        log.warn("Count not acquire lock- settingsConfigurationJobLock");
+        log.warn("Count not acquire the lock- SettingsCreationJob_settingConfigurationsLock");
         return;
       }
       Optional<SettingsConfigurationState> optional =
