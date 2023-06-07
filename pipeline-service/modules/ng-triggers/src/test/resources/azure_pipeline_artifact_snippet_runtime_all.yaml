@@ -1,0 +1,21 @@
+pipeline:
+  identifier: AzurePipeline
+  stages:
+    - stage:
+        identifier: stg
+        type: Deployment
+        spec:
+          service:
+            serviceRef: AzureArtifacts
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: azure
+                      sources:
+                        - identifier: azure
+                          type: Acr
+                          spec:
+                            tag: <+input>

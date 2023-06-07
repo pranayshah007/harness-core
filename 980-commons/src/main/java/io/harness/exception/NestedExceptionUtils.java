@@ -13,6 +13,10 @@ public class NestedExceptionUtils {
     return new HintException(hintMessage, new ExplanationException(explanationMessage, cause));
   }
 
+  public static WingsException hintWithExplanationException(String hintMessage, String explanationMessage) {
+    return new HintException(hintMessage, new ExplanationException(explanationMessage, null));
+  }
+
   public static WingsException hintWithExplanationAndCommandException(
       String hintMessage, String explanationMessage, String commandExecuted, Throwable cause) {
     return new HintException(

@@ -454,8 +454,8 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         new HashMap<>();
 
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      ScmConnector decryptedScmConnector = getDecryptedScmConnector(
-          decryptedConnectorMap, request.getScope(), request.getConnectorRef(), request.getScmConnector());
+      ScmConnector decryptedScmConnector = getDecryptedScmConnector(decryptedConnectorMap, request.getScope(),
+          request.getConnectorRef(), request.getScmConnector(), request.getRepo());
       getBatchFileRequestIdentifierGitFileRequestV2Map.put(identifier,
           GitFileRequestV2.builder()
               .scope(request.getScope())
@@ -477,8 +477,8 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @VisibleForTesting
   ScmConnector getDecryptedScmConnector(Map<ConnectorDetails, ScmConnector> decryptedConnectorMap, Scope scope,
-      String connectorRef, ScmConnector scmConnector) {
-    ConnectorDetails key = ConnectorDetails.builder().scope(scope).connectorRef(connectorRef).build();
+      String connectorRef, ScmConnector scmConnector, String repo) {
+    ConnectorDetails key = ConnectorDetails.builder().scope(scope).connectorRef(connectorRef).repo(repo).build();
     ScmConnector decryptedScmConnector = decryptedConnectorMap.get(key);
     if (decryptedScmConnector == null) {
       decryptedScmConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(

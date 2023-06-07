@@ -14,6 +14,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -58,4 +59,5 @@ public class AppConfigEntity implements PersistentEntity {
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
   @NotNull Long enabledDisabledAt;
+  List<ProxyHostDetail> proxy;
 }

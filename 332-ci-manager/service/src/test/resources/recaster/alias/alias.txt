@@ -366,3 +366,4 @@ io.harness.beans.yaml.extended.TIPythonVersion
 io.harness.ci.config.CICacheIntelligenceS3Config
 io.harness.ci.config.CIDockerLayerCachingGCSConfig
 io.harness.yaml.sto.variables.STOYamlBurpConfig
+io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig

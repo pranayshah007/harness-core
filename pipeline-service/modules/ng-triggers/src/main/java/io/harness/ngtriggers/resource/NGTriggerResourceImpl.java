@@ -160,10 +160,10 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       NGTriggerEntity updatedEntity;
 
       if (ignoreError) {
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), ngTriggerEntity.get());
       } else {
         ngTriggerService.validatePipelineRef(triggerDetails);
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), ngTriggerEntity.get());
       }
       return ResponseDTO.newResponse(
           updatedEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(updatedEntity));

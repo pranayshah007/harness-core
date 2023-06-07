@@ -134,17 +134,37 @@ public class PipelineStagePlanCreatorTest {
         + "  org: \"org\"\n"
         + "  project: \"project\"\n";
 
+    String pipelineYaml = "pipeline:\n"
+        + "  name: parent\n"
+        + "  identifier: parent\n"
+        + "  projectIdentifier: project\n"
+        + "  orgIdentifier: org\n"
+        + "  tags: {}\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        name: s1\n"
+        + "        identifier: s1\n"
+        + "        description: \"\"\n"
+        + "        type: Pipeline\n"
+        + "        spec:\n"
+        + "          org: org\n"
+        + "          pipeline: parent_pipeline\n"
+        + "          project: project\n"
+        + "          inputSetReferences: []\n"
+        + "          outputs: []\n";
+
     YamlField pipelineStageYamlField = YamlUtils.injectUuidInYamlField(yamlField);
 
     PlanCreationContextValue value = PlanCreationContextValue.newBuilder().setAccountIdentifier("acc").build();
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Collections.singletonMap("metadata", value))
                                   .currentField(pipelineStageYamlField)
+                                  .yaml(pipelineYaml)
                                   .build();
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
         .when(pmsGitSyncHelper)
@@ -179,15 +199,35 @@ public class PipelineStagePlanCreatorTest {
 
     YamlField pipelineStageYamlField = YamlUtils.injectUuidInYamlField(ignoreFailureYamlField);
 
+    String pipelineYaml = "pipeline:\n"
+        + "  name: parent\n"
+        + "  identifier: parent\n"
+        + "  projectIdentifier: project\n"
+        + "  orgIdentifier: org\n"
+        + "  tags: {}\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        name: s1\n"
+        + "        identifier: s1\n"
+        + "        description: \"\"\n"
+        + "        type: Pipeline\n"
+        + "        spec:\n"
+        + "          org: org\n"
+        + "          pipeline: parent_pipeline\n"
+        + "          project: project\n"
+        + "          inputSetReferences: []\n"
+        + "          outputs: []\n";
+
     PlanCreationContextValue value = PlanCreationContextValue.newBuilder().setAccountIdentifier("acc").build();
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Collections.singletonMap("metadata", value))
                                   .currentField(pipelineStageYamlField)
+                                  .yaml(pipelineYaml)
                                   .build();
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(ignoreFailureYamlField).build()))
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
         .when(pmsGitSyncHelper)

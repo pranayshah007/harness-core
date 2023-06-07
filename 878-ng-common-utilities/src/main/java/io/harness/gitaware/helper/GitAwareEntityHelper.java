@@ -39,8 +39,10 @@ import groovy.lang.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.log4j.Log4j;
 
 @OwnedBy(HarnessTeam.PL)
+@Log4j
 @Singleton
 public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
@@ -72,6 +74,8 @@ public class GitAwareEntityHelper {
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
     EntityType entityType = gitContextRequestParams.getEntityType();
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
+
+    log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
     ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
         Scope.builder()
             .accountIdentifier(scope.getAccountIdentifier())
@@ -320,6 +324,10 @@ public class GitAwareEntityHelper {
 
   public String getWorkingBranch(String repoName) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    // If there's static branch present for any template, then it takes highest precedence
+    if (GitAwareContextHelper.isTransientBranchSet()) {
+      return gitEntityInfo.getTransientBranch();
+    }
     String branchName = gitEntityInfo.getBranch();
     if (gitEntityInfo.isNewBranch()) {
       branchName = gitEntityInfo.getBaseBranch();

@@ -154,6 +154,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private AccountClient accountClient;
   @Mock private NGSettingsClient settingsClient;
 
+  @Mock TemplateAsyncSetupUsageService templateAsyncSetupUsageService;
+
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
@@ -168,6 +170,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
   @Mock private GovernanceService governanceService;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";

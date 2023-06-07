@@ -108,4 +108,16 @@ public class DebeziumConfig {
    * that should be processed during each iteration of this connector.
    */
   @JsonProperty("max.batch.size") private String maxStreamBatchSize;
+
+  /**
+   * Specifies the mongodbConnectionUrl used by MongoOffsetBackingStore to connect to Db for storing Debezium offset.
+   */
+  @JsonProperty("mongodbConnectionUrl") private String mongodbConnectionUrl;
+
+  /**
+   * Specifies the mongodbConnectionProtocol used by MongoOffsetBackingStore to connect to Db for storing Debezium
+   * offset. The protocol for connectint to Atlas is mongodb+srv: whereas for local Replica set it has to be mongodb:
+   * Refer for details https://www.mongodb.com/docs/manual/reference/connection-string
+   */
+  @JsonProperty("mongodbConnectionProtocol") private String mongodbConnectionProtocol;
 }

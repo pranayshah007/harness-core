@@ -51,6 +51,7 @@ public class GitEntityInfo {
   @Setter String parentEntityOrgIdentifier;
   @Setter String parentEntityProjectIdentifier;
   @Setter Boolean isDefaultBranch;
+  @Setter String transientBranch; // branch used when referring to static linking in yamls
 
   public boolean isNull() {
     // todo @Abhinav Maybe we should use null in place of default

@@ -89,12 +89,38 @@ public class NextStepHandler implements AdviserResponseHandler {
     if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
           prevNodeExecution.getOriginalNodeExecutionId(), NodeProjectionUtils.withNextId);
+
+      // Pass the "NextNodeId" of the original node execution as the last parameter in the mapPlanNodeToIdentityNode()
+      // function to designate it as the identity node for that NodeExecution.
+      String nextNodeId = getNextNodeId(originalNodeExecution);
       Node identityNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), nextNode,
-          nextNode.getIdentifier(), nextNode.getName(), nextNode.getStepType(), originalNodeExecution.getNextId());
+          nextNode.getIdentifier(), nextNode.getName(), nextNode.getStepType(), nextNodeId);
       planService.saveIdentityNodesForMatrix(Collections.singletonList(identityNode), prevNodeExecution.getPlanId());
       return identityNode;
     }
     return nextNode;
+  }
+
+  /*
+  In retry failure strategy, with single node id, we have multiple node execution.
+  Next node id should be equal to last retried node execution id. OriginalNodeExecution NextNodeId will be the  first
+  retried node id hence we are fetching latest retried node execution fetchNodeExecutionForPlanNodeAndRetriedId().
+   */
+  private String getNextNodeId(NodeExecution originalNodeExecution) {
+    NodeExecution nextNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        originalNodeExecution.getNextId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
+
+    // Making a db call only if nextNodeExecution was retried else return originalNodeExecution.getNextId()
+    if (nextNodeExecution.getOldRetry()) {
+      // Due to multiple combinations of planNodeId and oldRetry as false, we are adding the third parameters
+      // (retryListId) eg -> in strategy
+      NodeExecution nextNonRetriedNodeExecution = nodeExecutionService.fetchNodeExecutionForPlanNodeAndRetriedId(
+          nextNodeExecution.getNodeId(), false, Collections.singletonList(originalNodeExecution.getNextId()));
+
+      return nextNonRetriedNodeExecution != null ? nextNonRetriedNodeExecution.getUuid()
+                                                 : originalNodeExecution.getNextId();
+    }
+    return originalNodeExecution.getNextId();
   }
 
   boolean checkIfSameNodeIsRequired(Node nextNode, ExecutionMode executionMode) {

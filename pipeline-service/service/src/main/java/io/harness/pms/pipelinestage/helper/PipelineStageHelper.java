@@ -9,7 +9,8 @@ package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.pipelinestage.step.PipelineStageStep.NESTED_CHAINING_ERROR;
+import static io.harness.pms.pipelinestage.step.PipelineStageStep.NESTED_CHAINING_HINT;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -74,10 +75,9 @@ public class PipelineStageHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private final PipelineStageHelperV1 pipelineStageHelperV1;
 
-  private static String NESTED_ERROR_EXCEPTION_HINT =
-      "Check if the Chained Pipeline at stage [%s] is not a Parent Pipeline";
+  private static String NESTED_ERROR_EXCEPTION_HINT = "Pipeline setup configuration issue for pipeline stage";
   private static String NESTED_ERROR_EXCEPTION =
-      "Chained Stage [%s] is a parent pipeline. Nested chaining is not supported";
+      "The referred pipeline [%s] invokes a child pipeline, so it cannot be included within another pipeline. Nested Pipeline Chaining is not supported";
   private final List<String> actionTypeNotSupported = Arrays.asList(NGFailureActionTypeConstants.RETRY,
       NGFailureActionTypeConstants.PIPELINE_ROLLBACK, NGFailureActionTypeConstants.MANUAL_INTERVENTION);
 
@@ -90,9 +90,22 @@ public class PipelineStageHelper {
           String.format(NESTED_ERROR_EXCEPTION, stageName), null);
     }
   }
+
+  public void validateNestedChainedPipeline(
+      PipelineEntity pipelineEntity, String stageName, String parentPipelineIdentifier) {
+    try {
+      validateNestedChainedPipeline(pipelineEntity);
+    } catch (Exception e) {
+      log.error("Error during nested chaining validation ", e);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(NESTED_CHAINING_HINT, parentPipelineIdentifier),
+          String.format(NESTED_CHAINING_ERROR, pipelineEntity.getIdentifier()));
+    }
+  }
+
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
+        pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, "true");
     String pipelineVersion = entity.getHarnessVersion();
     switch (pipelineVersion) {
       case PipelineVersion.V0:

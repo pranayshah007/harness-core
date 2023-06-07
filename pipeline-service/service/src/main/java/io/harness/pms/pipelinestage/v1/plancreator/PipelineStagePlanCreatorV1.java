@@ -118,13 +118,16 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     // Principal is added to fetch Git Entity
     setSourcePrincipal(ctx.getMetadata());
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(ctx.getAccountIdentifier(),
-        configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false);
+        configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false, false, true);
 
     if (childPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", configNode.getPipeline()));
     }
 
-    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
+    String parentPipelineIdentifier = ctx.getPipelineIdentifier();
+
+    pipelineStageHelper.validateNestedChainedPipeline(
+        childPipelineEntity.get(), stageNode.getName(), parentPipelineIdentifier);
     // Validate the failure-strategies once failure-strategies are supported with simplified YAML.
     //    pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
 

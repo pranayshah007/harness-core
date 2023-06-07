@@ -8,15 +8,12 @@
 package io.harness.cvng.migration;
 
 import io.harness.cvng.migration.beans.CVNGSchema;
-import io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus;
-import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import dev.morphia.query.UpdateOperations;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -27,13 +24,6 @@ public class CVNGSchemaHandler implements Handler<CVNGSchema> {
 
   @Override
   public void handle(CVNGSchema entity) {
-    UpdateOperations<CVNGSchema> updateOperations =
-        hPersistence.createUpdateOperations(CVNGSchema.class)
-            .set(CVNGSchemaKeys.cvngMigrationStatus, CVNGMigrationStatus.RUNNING);
-
-    hPersistence.update(entity, updateOperations);
-
-    log.info("Enqueuing CVNGSchema {}", entity.getUuid());
     cvngMigrationService.runMigrations();
   }
 }

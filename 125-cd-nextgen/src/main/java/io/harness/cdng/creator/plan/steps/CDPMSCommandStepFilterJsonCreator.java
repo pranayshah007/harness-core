@@ -14,6 +14,7 @@ import static io.harness.pms.yaml.ParameterField.isNotNull;
 import static java.lang.String.format;
 
 import io.harness.beans.FileReference;
+import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.ssh.CommandUnitSourceType;
 import io.harness.cdng.ssh.CommandUnitSpecType;
@@ -33,6 +34,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptBaseSource;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
 
 import software.wings.api.DeploymentType;
 
@@ -59,6 +62,7 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
     validateStrategy(yamlField.getStrategy());
     validateCommandUnitsExist(yamlField);
     validateCommandUnits(filterCreationContext, yamlField);
+    validateCommandStepOutputVariables(yamlField);
     return response;
   }
 
@@ -173,6 +177,20 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
       return deploymentType;
     } else {
       return findDeploymentTypeInHierarchy(node.getParentNode());
+    }
+  }
+
+  private void validateCommandStepOutputVariables(AbstractStepNode stepNode) {
+    if (CommandStepNode.class.isAssignableFrom(stepNode.getClass())
+        && ((CommandStepNode) stepNode).getCommandStepInfo() != null) {
+      CommandStepInfo commandStepInfo = ((CommandStepNode) stepNode).getCommandStepInfo();
+      List<NGVariable> outputVariables = commandStepInfo.getOutputVariables();
+      outputVariables.forEach(ngVariable -> {
+        if (ngVariable != null && NGVariableType.NUMBER == ngVariable.getType()) {
+          throw new InvalidYamlException(
+              "Number output variables are not supported as Bash/PowerShell variable names. Please use String or Secret output variables instead.");
+        }
+      });
     }
   }
 }

@@ -116,14 +116,17 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
 
     try (AutoLogContext ignore = GitAwareContextHelper.autoLogContext()) {
       log.info("Retrieving nested pipeline for pipeline stage");
-      Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(
-          ctx.getAccountIdentifier(), config.getOrg(), config.getProject(), config.getPipeline(), false, false);
+      Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(ctx.getAccountIdentifier(),
+          config.getOrg(), config.getProject(), config.getPipeline(), false, false, false, true);
 
       if (!childPipelineEntity.isPresent()) {
         throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", config.getPipeline()));
       }
 
-      pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
+      String parentPipelineIdentifier = ctx.getPipelineIdentifier();
+
+      pipelineStageHelper.validateNestedChainedPipeline(
+          childPipelineEntity.get(), stageNode.getName(), parentPipelineIdentifier);
       pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
 
       // TODO: remove this to enable Strategy support for Pipeline Stage

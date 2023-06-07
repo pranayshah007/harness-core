@@ -100,3 +100,7 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 
 **/contracts/openapi/v1/ mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io deepak.bolangady@harness.io rashmi.nandasahoo@harness.io
 /scripts/api mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io
+
+/953-yaml-commons/src/main/java/io/harness/pms/yaml/YamlUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
+/970-ng-commons/src/main/java/io/harness/utils/yaml/YamlPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
+/953-yaml-commons/src/main/java/io/harness/yaml/utils/JsonPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io

@@ -35,7 +35,7 @@ public interface NGTriggerService {
   Optional<NGTriggerEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String targetIdentifier, String identifier, boolean deleted);
 
-  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity);
+  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity);
 
   boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
 

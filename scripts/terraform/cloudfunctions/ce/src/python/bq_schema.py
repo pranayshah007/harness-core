@@ -137,6 +137,11 @@ aws_cur_table_schema = [
         "type": "STRING"
     },
     {
+        "mode": "NULLABLE",
+        "name": "mspMarkupMultiplier",
+        "type": "FLOAT64"
+    },
+    {
         "fields": [
             {
                 "mode": "NULLABLE",
@@ -216,6 +221,11 @@ preAggreagtedTableSchema = [
         "mode": "NULLABLE",
         "name": "ccmPreferredCurrency",
         "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "mspMarkupMultiplier",
+        "type": "FLOAT64"
     },
     {
         "mode": "NULLABLE",
@@ -613,6 +623,11 @@ unifiedTableTableSchema = [
         "mode": "NULLABLE",
         "name": "ccmPreferredCurrency",
         "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "mspMarkupMultiplier",
+        "type": "FLOAT64"
     },
     {
         "mode": "NULLABLE",
@@ -1365,10 +1380,10 @@ clusterDataAggregatedFields = [{'mode': 'REQUIRED', 'name': 'starttime', 'type':
                                }] # Added manually
 
 costAggregatedSchema = [{'mode': 'REQUIRED', 'name': 'accountId', 'type': 'STRING'},
-                  {'mode': 'REQUIRED', 'name': 'cloudProvider', 'type': 'STRING'},
-                  {'mode': 'REQUIRED', 'name': 'cost', 'type': 'FLOAT'},
-                  {'mode': 'REQUIRED', 'name': 'day', 'type': 'TIMESTAMP'}
-                  ]
+                        {'mode': 'REQUIRED', 'name': 'cloudProvider', 'type': 'STRING'},
+                        {'mode': 'REQUIRED', 'name': 'cost', 'type': 'FLOAT'},
+                        {'mode': 'REQUIRED', 'name': 'day', 'type': 'TIMESTAMP'}
+                        ]
 
 gcp_cost_export_table_schema = [
     {

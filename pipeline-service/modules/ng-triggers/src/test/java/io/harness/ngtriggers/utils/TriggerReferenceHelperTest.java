@@ -22,6 +22,7 @@ import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
+import io.harness.ngtriggers.beans.source.webhook.v2.custom.CustomTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPushSpec;
 import io.harness.rule.Owner;
@@ -113,5 +114,65 @@ public class TriggerReferenceHelperTest extends CategoryTest {
     entityDetailProtoDTOList.add(inputSetDetails);
     entityDetailProtoDTOList.add(connectorDetails);
     assertThat(triggerReferenceHelper.getReferences(accountId, ngTriggerConfigV2)).isEqualTo(entityDetailProtoDTOList);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetReferencesForCustomTrigger() {
+    NGTriggerConfigV2 ngTriggerConfigV2 =
+        NGTriggerConfigV2.builder()
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .identifier(identifier)
+            .pipelineIdentifier(pipelineId)
+            .encryptedWebhookSecretIdentifier(secretId)
+            .inputSetRefs(Collections.singletonList(inputSetId))
+            .source(NGTriggerSourceV2.builder()
+                        .type(NGTriggerType.WEBHOOK)
+                        .spec(WebhookTriggerConfigV2.builder().spec(CustomTriggerSpec.builder().build()).build())
+                        .build())
+            .build();
+    List<EntityDetailProtoDTO> entityDetailProtoDTOList = new ArrayList<>();
+    EntityDetailProtoDTO secretDetail = EntityDetailProtoDTO.newBuilder()
+                                            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                                                  .setIdentifier(StringValue.of(secretId))
+                                                                  .setProjectIdentifier(StringValue.of(projectId))
+                                                                  .setOrgIdentifier(StringValue.of(orgId))
+                                                                  .setAccountIdentifier(StringValue.of(accountId))
+                                                                  .setScope(ScopeProtoEnum.PROJECT)
+                                                                  .build())
+                                            .setType(EntityTypeProtoEnum.SECRETS)
+                                            .build();
+
+    EntityDetailProtoDTO inputSetDetails = EntityDetailProtoDTO.newBuilder()
+                                               .setInputSetRef(InputSetReferenceProtoDTO.newBuilder()
+                                                                   .setAccountIdentifier(StringValue.of(accountId))
+                                                                   .setOrgIdentifier(StringValue.of(orgId))
+                                                                   .setProjectIdentifier(StringValue.of(projectId))
+                                                                   .setPipelineIdentifier(StringValue.of(pipelineId))
+                                                                   .setIdentifier(StringValue.of(inputSetId))
+                                                                   .build())
+                                               .setType(EntityTypeProtoEnum.INPUT_SETS)
+                                               .build();
+
+    EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
+                                                .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                                                      .setAccountIdentifier(StringValue.of(accountId))
+                                                                      .setOrgIdentifier(StringValue.of(orgId))
+                                                                      .setProjectIdentifier(StringValue.of(projectId))
+                                                                      .setIdentifier(StringValue.of(connectorId))
+                                                                      .setScope(ScopeProtoEnum.PROJECT)
+                                                                      .build())
+                                                .setType(EntityTypeProtoEnum.CONNECTORS)
+                                                .build();
+    entityDetailProtoDTOList.add(secretDetail);
+    entityDetailProtoDTOList.add(inputSetDetails);
+    entityDetailProtoDTOList.add(connectorDetails);
+    List<EntityDetailProtoDTO> resultRntityDetailProtoDTOList =
+        triggerReferenceHelper.getReferences(accountId, ngTriggerConfigV2);
+    assertThat(resultRntityDetailProtoDTOList.size()).isEqualTo(2);
+    assertThat(resultRntityDetailProtoDTOList.get(0).getType()).isNotEqualTo(EntityTypeProtoEnum.CONNECTORS);
+    assertThat(resultRntityDetailProtoDTOList.get(1).getType()).isNotEqualTo(EntityTypeProtoEnum.CONNECTORS);
   }
 }

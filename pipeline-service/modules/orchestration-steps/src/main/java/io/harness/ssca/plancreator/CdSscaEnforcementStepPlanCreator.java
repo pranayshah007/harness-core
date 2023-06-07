@@ -16,11 +16,11 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.ssca.beans.SscaConstants;
-import io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepInfo;
 import io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepNode;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
 
@@ -44,7 +44,6 @@ public class CdSscaEnforcementStepPlanCreator extends AbstractContainerStepPlanC
   @Override
   public PlanNode createPlanForStep(
       String stepNodeId, StepParameters stepParameters, List<AdviserObtainment> adviserObtainments) {
-    CdSscaEnforcementStepInfo stepInfo = (CdSscaEnforcementStepInfo) stepParameters;
     return PlanNode.builder()
         .uuid(stepNodeId)
         .name(ContainerCommandUnitConstants.SscaEnforcementStep)
@@ -52,9 +51,10 @@ public class CdSscaEnforcementStepPlanCreator extends AbstractContainerStepPlanC
         .stepType(SscaConstants.CD_SSCA_ENFORCEMENT_STEP_TYPE)
         .group(StepOutcomeGroup.STEP.name())
         .stepParameters(stepParameters)
-        .facilitatorObtainment(FacilitatorObtainment.newBuilder()
-                                   .setType(FacilitatorType.newBuilder().setType(stepInfo.getFacilitatorType()).build())
-                                   .build())
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                .build())
         .skipExpressionChain(false)
         .skipGraphType(SkipType.NOOP)
         .build();

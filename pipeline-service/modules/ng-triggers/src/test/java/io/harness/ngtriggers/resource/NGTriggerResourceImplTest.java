@@ -454,7 +454,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdate() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -483,7 +483,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateAccess() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -517,7 +517,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateNotPresent() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.empty())
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -543,7 +543,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateInvalidYamlError() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -570,7 +570,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateException() throws Exception {
-    doThrow(new EntityNotFoundException("exception")).when(ngTriggerService).update(any());
+    doThrow(new EntityNotFoundException("exception")).when(ngTriggerService).update(any(), any());
     doReturn(Optional.empty())
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -596,7 +596,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdateWithGitSync() throws Exception {
-    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntityGitSync))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);

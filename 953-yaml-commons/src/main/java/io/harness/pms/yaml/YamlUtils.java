@@ -76,6 +76,7 @@ public class YamlUtils {
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
                                   .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     mapper.registerModule(new EdgeCaseRegexModule());
+    mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     mapper.disable(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
@@ -94,18 +95,6 @@ public class YamlUtils {
   public JsonNode readAsJsonNode(String yaml) {
     try {
       return mapper.readTree(yaml);
-    } catch (IOException ex) {
-      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
-    }
-  }
-
-  // Takes stringified yaml as input and returns the JsonNode, also, throws an error if yaml contains duplicate keys
-  public JsonNode readAsJsonNodeWithCheckDuplicate(String yaml) {
-    try {
-      ObjectMapper mapperWithDuplicate = mapper;
-      mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
-      return mapperWithDuplicate.readTree(yaml);
-
     } catch (IOException ex) {
       throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
     }
@@ -142,27 +131,8 @@ public class YamlUtils {
     }
   }
 
-  public ObjectMapper getMapper() {
-    return mapper;
-  }
-
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
-  }
-
-  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
-  // save. The below yaml is invalid and should not be allowed to save.
-  /*
-  pipeline:
-    name: pipeline
-    orgIdentifier: org
-    projectIdentifier: project
-    orgIdentifier: org
-   */
-  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
-    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
-    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
-    return readTreeInternal(content, mapperWithDuplicate);
   }
 
   public YamlField tryReadTree(String content) {

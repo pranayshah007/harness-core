@@ -51,6 +51,10 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
 
     log.info("[Migration] - Checking for new backgroundMigrations");
     if (cvngSchemaVersion < maxBackgroundVersion) {
+      hPersistence.update(hPersistence.createQuery(CVNGSchema.class),
+          hPersistence.createUpdateOperations(CVNGSchema.class)
+              .set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.RUNNING));
+      log.info("Enqueuing CVNGSchema");
       executorService.submit(() -> {
         try {
           callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
@@ -81,7 +85,6 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
         }
       });
     }
-    onCompletion();
   }
 
   private void onCompletion() {
