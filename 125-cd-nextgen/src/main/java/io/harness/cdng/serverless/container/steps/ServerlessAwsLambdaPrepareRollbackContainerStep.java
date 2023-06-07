@@ -32,17 +32,12 @@ import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j

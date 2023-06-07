@@ -989,4 +989,6 @@ io.harness.cdng.jenkins.jenkinsstep.JenkinsStepPassThoughData
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome
+io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome
 
