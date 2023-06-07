@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("serverlessValuesYamlDataOutcome")
 @JsonTypeName("serverlessValuesYamlDataOutcome")
-@RecasterAlias("io.harness.cdng.aws.sam.beans.ServerlessValuesYamlDataOutcome")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome")
 public class ServerlessValuesYamlDataOutcome implements Outcome, ExecutionSweepingOutput {
   String valuesYamlContent;
   String valuesYamlPath;
