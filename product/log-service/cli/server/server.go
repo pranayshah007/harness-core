@@ -93,6 +93,10 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	}
 
 	var stream stream.Stream
+	if config.Redis.Endpoint != "" {
+		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
+		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
+	}
 	if config.Redis.StorageType == "sentinel" {
 		// Create Redis Sentinel storage instance
 		stream = redis.NewSentinel(config.Redis.MasterName, config.Redis.SentinelAddrs, config.Redis.Password)
