@@ -10134,6 +10134,18 @@
                 }
               ]
             },
+            "skipDeploymentIfSameManifest": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
             "skipDryRun": {
               "oneOf": [
                 {

@@ -799,8 +799,10 @@ public enum FeatureName {
   PL_ENABLE_JIT_USER_PROVISION("Enable support for Just in time user provision", HarnessTeam.PL),
   AZURE_WEBAPP_LISTING_APP_NAMES_AND_SLOTS(
       "Support for listing Azure Web App names and slots on Slot Deployment and Swap Slot steps", HarnessTeam.CDP),
-  CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC);
-
+  CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC),
+  CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
+      "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
+      HarnessTeam.CDP);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
