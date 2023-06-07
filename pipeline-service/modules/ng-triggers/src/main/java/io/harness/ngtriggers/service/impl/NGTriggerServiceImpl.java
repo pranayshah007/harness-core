@@ -393,7 +393,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity) {
+  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity) {
     ngTriggerEntity.setYmlVersion(TRIGGER_CURRENT_YML_VERSION);
     if (pmsFeatureFlagService.isEnabled(
             ngTriggerEntity.getAccountId(), FeatureName.CDS_ENABLE_TRIGGER_YAML_VALIDATION)) {
@@ -403,7 +403,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
     NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), updatedTriggerEntity, ngTriggerEntity));
+        ngTriggerEntity.getProjectIdentifier(), oldNgTriggerEntity, updatedTriggerEntity));
     try {
       List<EntityDetailProtoDTO> referredEntities = triggerReferenceHelper.getReferences(
           updatedTriggerEntity.getAccountId(), ngTriggerElementMapper.toTriggerConfigV2(updatedTriggerEntity));

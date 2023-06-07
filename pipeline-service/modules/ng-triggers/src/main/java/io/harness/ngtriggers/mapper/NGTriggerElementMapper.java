@@ -788,7 +788,7 @@ public class NGTriggerElementMapper {
       YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
       ((ObjectNode) triggerNode.getCurrJsonNode()).put("enabled", ngTriggerEntity.getEnabled());
       String updateYml = YamlUtils.writeYamlString(yamlField);
-      ngTriggerEntity.setYaml(updateYml);
+      ngTriggerEntity.setYaml(updateYml.replace("---\n", ""));
     } catch (Exception e) {
       log.error(new StringBuilder("Failed to update enable attribute to ")
                     .append(ngTriggerEntity.getEnabled())
