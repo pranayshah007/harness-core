@@ -28,7 +28,6 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome.ServerlessAwsLambdaRollbackDataOutcomeBuilder;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
@@ -94,7 +93,6 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -109,7 +107,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.io.IOException;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
@@ -156,10 +153,6 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
           ambiance, stepElementParameters, infrastructureOutcome, serverlessManifestOutcome, serverlessStepHelper);
     }
     return taskChainResponse;
-  }
-
-  public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {
-    return YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
   }
 
   @NotNull

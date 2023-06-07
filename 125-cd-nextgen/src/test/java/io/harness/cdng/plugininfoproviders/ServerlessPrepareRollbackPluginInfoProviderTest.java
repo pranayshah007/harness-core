@@ -28,8 +28,7 @@ import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.serverless.ServerlessAwsLambdaStepHelper;
-import io.harness.cdng.serverless.ServerlessStepCommonHelper;
+import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -81,8 +80,7 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private CDStepHelper cdStepHelper;
-  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
-  @Mock private ServerlessAwsLambdaStepHelper serverlessAwsLambdaStepHelper;
+  @Mock private ServerlessEntityHelper serverlessEntityHelper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
   @InjectMocks @Spy private ServerlessPrepareRollbackPluginInfoProvider serverlessPrepareRollbackPluginInfoProvider;
@@ -119,7 +117,7 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
     doReturn(pluginBuilder)
         .when(serverlessPrepareRollbackPluginInfoProvider)
         .getPluginDetailsBuilder(any(), any(), any());
-    doReturn(cdAbstractStepNode).when(serverlessStepCommonHelper).getRead(jsonNode);
+    doReturn(cdAbstractStepNode).when(serverlessPrepareRollbackPluginInfoProvider).getRead(jsonNode);
 
     assertThat(serverlessPrepareRollbackPluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet()))
         .isEqualTo(pluginCreationResponseWrapper);
@@ -142,15 +140,17 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
         ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();
-    doReturn(manifestsOutcome).when(serverlessStepCommonHelper).resolveServerlessManifestsOutcome(any());
+    doReturn(manifestsOutcome)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .resolveServerlessManifestsOutcome(any());
     doReturn(serverlessAwsLambdaManifestOutcome)
-        .when(serverlessStepCommonHelper)
-        .getServerlessManifestOutcome(any(), any());
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getServerlessManifestOutcome(any());
 
     String configOverridePath = "config";
-    doReturn(configOverridePath).when(serverlessAwsLambdaStepHelper).getConfigOverridePath(any());
+    doReturn(configOverridePath).when(serverlessPrepareRollbackPluginInfoProvider).getConfigOverridePath(any());
 
-    doReturn(paths).when(serverlessStepCommonHelper).getFolderPathsForManifest(any());
+    doReturn(paths).when(serverlessPrepareRollbackPluginInfoProvider).getFolderPathsForManifest(any());
 
     ServerlessAwsLambdaInfrastructureOutcome infrastructureOutcome =
         ServerlessAwsLambdaInfrastructureOutcome.builder().connectorRef("connector").build();
@@ -158,7 +158,9 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
     doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
 
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = mock(ServerlessAwsLambdaInfraConfig.class);
-    doReturn(serverlessAwsLambdaInfraConfig).when(serverlessStepCommonHelper).getServerlessInfraConfig(any(), any());
+    doReturn(serverlessAwsLambdaInfraConfig)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getServerlessInfraConfig(any(), any());
 
     String stage = "stage";
     String region = "region";

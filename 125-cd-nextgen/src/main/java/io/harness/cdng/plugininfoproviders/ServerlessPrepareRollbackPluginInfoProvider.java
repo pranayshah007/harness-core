@@ -7,10 +7,14 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.k8s.manifest.ManifestHelper.normalizeFolderPath;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,14 +23,15 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.serverless.ServerlessAwsLambdaStepHelper;
-import io.harness.cdng.serverless.ServerlessStepCommonHelper;
+import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -38,11 +43,14 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
+import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
@@ -50,11 +58,14 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PluginDetails.Builder;
 import io.harness.pms.contracts.plan.StepInfoProto;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.execution.plugin.StepImageConfig;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.extended.ci.container.ContainerResource;
@@ -63,19 +74,22 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
-  @Inject private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Inject private OutcomeService outcomeService;
-  @Inject private ServerlessAwsLambdaStepHelper serverlessAwsLambdaStepHelper;
+  @Inject private ServerlessEntityHelper serverlessEntityHelper;
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
@@ -87,7 +101,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     CdAbstractStepNode cdAbstractStepNode;
 
     try {
-      cdAbstractStepNode = serverlessStepCommonHelper.getRead(stepJsonNode);
+      cdAbstractStepNode = getRead(stepJsonNode);
     } catch (IOException e) {
       throw new ContainerPluginParseException(
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
@@ -146,6 +160,10 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return PluginInfoProviderHelper.buildPluginDetails(request, resources, runAsUser);
   }
 
+  public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {
+    return YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
+  }
+
   @Override
   public boolean isSupported(String stepType) {
     if (stepType.equals(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)) {
@@ -159,16 +177,15 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     ParameterField<Map<String, String>> envVariables =
         serverlessAwsLambdaPrepareRollbackContainerStepInfo.getEnvVariables();
 
-    ManifestsOutcome manifestsOutcome = serverlessStepCommonHelper.resolveServerlessManifestsOutcome(ambiance);
-    ManifestOutcome serverlessManifestOutcome = serverlessStepCommonHelper.getServerlessManifestOutcome(
-        manifestsOutcome.values(), serverlessAwsLambdaStepHelper);
+    ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
+    ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());
     StoreConfig storeConfig = serverlessManifestOutcome.getStore();
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       throw new InvalidRequestException("Invalid kind of storeConfig for Serverless step", USER);
     }
-    String configOverridePath = serverlessAwsLambdaStepHelper.getConfigOverridePath(serverlessManifestOutcome);
+    String configOverridePath = getConfigOverridePath(serverlessManifestOutcome);
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
-    List<String> gitPaths = serverlessStepCommonHelper.getFolderPathsForManifest(gitStoreConfig);
+    List<String> gitPaths = getFolderPathsForManifest(gitStoreConfig);
 
     if (isEmpty(gitPaths)) {
       throw new InvalidRequestException("Atleast one git path need to be specified", USER);
@@ -177,8 +194,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessStepCommonHelper.getServerlessInfraConfig(
-            infrastructureOutcome, ambiance);
+        (ServerlessAwsLambdaInfraConfig) getServerlessInfraConfig(infrastructureOutcome, ambiance);
     String stageName = serverlessAwsLambdaInfraConfig.getStage();
     String region = serverlessAwsLambdaInfraConfig.getRegion();
 
@@ -241,9 +257,67 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return serverlessPrepareRollbackEnvironmentVariablesMap;
   }
 
+  public String getConfigOverridePath(ManifestOutcome manifestOutcome) {
+    if (manifestOutcome instanceof ServerlessAwsLambdaManifestOutcome) {
+      ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
+          (ServerlessAwsLambdaManifestOutcome) manifestOutcome;
+      return getParameterFieldValue(serverlessAwsLambdaManifestOutcome.getConfigOverridePath());
+    }
+    throw new UnsupportedOperationException(
+        format("Unsupported serverless manifest type: [%s]", manifestOutcome.getType()));
+  }
+
+  public ServerlessInfraConfig getServerlessInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return serverlessEntityHelper.getServerlessInfraConfig(infrastructure, ngAccess);
+  }
+
+  public List<String> getFolderPathsForManifest(GitStoreConfig gitStoreConfig) {
+    List<String> folderPaths = new ArrayList<>();
+
+    List<String> paths = getParameterFieldValue(gitStoreConfig.getPaths());
+    if ((paths != null) && (!paths.isEmpty())) {
+      folderPaths.add(normalizeFolderPath(paths.get(0)));
+    } else {
+      folderPaths.add(normalizeFolderPath(getParameterFieldValue(gitStoreConfig.getFolderPath())));
+    }
+    return folderPaths;
+    // todo: add error handling
+  }
+
+  public ManifestsOutcome resolveServerlessManifestsOutcome(Ambiance ambiance) {
+    OptionalOutcome manifestsOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
+
+    if (!manifestsOutcome.isFound()) {
+      String stageName =
+          AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
+      String stepType =
+          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Serverless");
+      throw new GeneralException(
+          format("No manifests found in stage %s. %s step requires a manifest defined in stage service definition",
+              stageName, stepType));
+    }
+    return (ManifestsOutcome) manifestsOutcome.getOutcome();
+  }
+
   public String getKey(Ambiance ambiance, SecretRefData secretRefData) {
     return NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
         secretRefData.toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+  }
+
+  public ManifestOutcome getServerlessManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
+    List<ManifestOutcome> serverlessManifests =
+        manifestOutcomes.stream()
+            .filter(manifestOutcome -> ManifestType.ServerlessAwsLambda.equals(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+    if (isEmpty(serverlessManifests)) {
+      throw new InvalidRequestException("Manifests are mandatory for Serverless Aws Lambda step", USER);
+    }
+    if (serverlessManifests.size() > 1) {
+      throw new InvalidRequestException("There can be only a single manifest for Serverless Aws Lambda step", USER);
+    }
+    return serverlessManifests.get(0);
   }
 
   public IdentifierRef getIdentifierRef(String awsConnectorRef, NGAccess ngAccess) {
