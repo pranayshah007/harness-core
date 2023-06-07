@@ -88,6 +88,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
+import io.harness.template.async.beans.SetupUsageParams;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -155,6 +156,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Inject private TemplateGitXService templateGitXService;
+
+  @Inject private TemplateAsyncSetupUsageService templateAsyncSetupUsageService;
+
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
@@ -277,7 +281,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
       GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
       if (doPublishSetupUsages(template)) {
-        templateReferenceHelper.populateTemplateReferences(template);
+        templateReferenceHelper.populateTemplateReferences(
+            SetupUsageParams.builder().templateEntity(templateEntity).build());
       }
 
       return template;
@@ -377,7 +382,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(template);
+      templateReferenceHelper.populateTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build());
     }
 
     return template;
@@ -420,7 +426,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(template);
+      templateReferenceHelper.populateTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build());
     }
 
     return template;
@@ -831,7 +838,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
               StringValueUtils.getStringFromStringValue(templateRef.getIdentifier()),
               StringValueUtils.getStringFromStringValue(templateRef.getVersionLabel()));
 
-      unSyncedTemplate.ifPresent(templateEntity -> templateReferenceHelper.populateTemplateReferences(templateEntity));
+      unSyncedTemplate.ifPresent(templateEntity
+          -> templateReferenceHelper.populateTemplateReferences(
+              SetupUsageParams.builder().templateEntity(templateEntity).build()));
       return templateServiceHelper.makeTemplateUpdateCall(unSyncedTemplate.get(), unSyncedTemplate.get(),
           ChangeType.ADD, "", TemplateUpdateEventType.OTHERS_EVENT, true);
     } catch (DuplicateKeyException ex) {
@@ -1458,6 +1467,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       throw new EntityNotFoundException(
           String.format("Template not found for template identifier [%s] and version label [%s] in %s",
               templateIdentifier, versionLabel, scope));
+    }
+  }
+
+  @Override
+  public void populateSetupUsageAsync(TemplateEntity templateEntity) {
+    if (templateEntity.getStoreType() == StoreType.REMOTE) {
+      SetupUsageParams setupUsageParams = SetupUsageParams.builder().templateEntity(templateEntity).build();
+      templateAsyncSetupUsageService.populateAsyncSetupUsage(setupUsageParams);
     }
   }
 

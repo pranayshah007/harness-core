@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -144,7 +145,17 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
             -> new NotFoundException(String.format(
                 "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
+
+    if (isDefaultRemoteTemplate(templateEntity)) {
+      templateService.populateSetupUsageAsync(templateEntity.get());
+    }
+
     return ResponseDTO.newResponse(version, templateResponseDTO);
+  }
+
+  private boolean isDefaultRemoteTemplate(Optional<TemplateEntity> templateEntity) {
+    return templateEntity.get().getStoreType() == StoreType.REMOTE
+        && GitAwareContextHelper.getIsDefaultBranchFromGitEntityInfo();
   }
 
   @Override
