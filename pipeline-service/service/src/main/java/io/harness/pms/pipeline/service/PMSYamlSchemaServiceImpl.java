@@ -555,7 +555,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
   supported env branch will be master
    */
-  private String calculateFileURL(EntityType entityType, String env, String version) {
+  public String calculateFileURL(EntityType entityType, String env, String version) {
     String branch = env.equals("stress") || env.equals("qa") ? QA_ENV_BRANCH : PROD_ENV_BRANCH;
 
     String entityTypeJson = "";

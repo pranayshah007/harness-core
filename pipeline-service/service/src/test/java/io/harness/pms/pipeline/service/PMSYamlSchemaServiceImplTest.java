@@ -11,6 +11,7 @@ import static io.harness.pms.pipeline.service.PMSYamlSchemaServiceImpl.STAGE_ELE
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.STEP_ELEMENT_CONFIG;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.FERNANDOD;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
 
@@ -172,6 +173,25 @@ public class PMSYamlSchemaServiceImplTest {
 
     // AFTER REMOVE WE SHOULD HAVE ONLY "#/definitions/CustomStageConfig"
     assertThat(jsonNode.get("oneOf").get(1).get("allOf").size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testCalculateFileURL() {
+    String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "qa", "v0");
+    assertThat(fileUrL).isEqualTo(
+        "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v0/pipeline.json");
+
+    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "stress", "v0");
+    assertThat(fileUrL).isEqualTo(
+        "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v0/pipeline.json");
+
+    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "stage", "v1");
+    assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v1/pipeline.json");
+
+    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "stage", "v1");
+    assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v1/template.json");
   }
 
   @Test
