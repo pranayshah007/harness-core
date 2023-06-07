@@ -7,9 +7,10 @@
 
 package io.harness.ngsettings.remote;
 
+import static io.harness.ngsettings.SettingPermissions.ACCOUNT;
+import static io.harness.ngsettings.SettingPermissions.ACCOUNT_VIEW_PERMISSION;
 import static io.harness.ngsettings.SettingPermissions.SETTING_EDIT_PERMISSION;
 import static io.harness.ngsettings.SettingPermissions.SETTING_RESOURCE_TYPE;
-import static io.harness.ngsettings.SettingPermissions.SETTING_VIEW_PERMISSION;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -38,7 +39,7 @@ public class SettingsResourceImpl implements SettingsResource {
   FeatureFlagHelper featureFlagHelper;
   private final AccessControlClient accessControlClient;
   @Override
-  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
+  @NGAccessControlCheck(resourceType = ACCOUNT, permission = ACCOUNT_VIEW_PERMISSION)
   public ResponseDTO<SettingValueResponseDTO> get(String identifier, @AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(
@@ -46,7 +47,7 @@ public class SettingsResourceImpl implements SettingsResource {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
+  @NGAccessControlCheck(resourceType = ACCOUNT, permission = ACCOUNT_VIEW_PERMISSION)
   public ResponseDTO<List<SettingResponseDTO>> list(@AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, SettingCategory category,
       String groupIdentifier) {
