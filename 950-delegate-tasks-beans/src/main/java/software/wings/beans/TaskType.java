@@ -492,7 +492,7 @@ public enum TaskType {
   COMMAND_TASK_NG_WITH_GIT_CONFIGS(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK(TaskGroup.K8S_NG, "K8s Task with Blue Green Stage Scale down step", false),
   RANCHER_TEST_CONNECTION_TASK_NG(TaskGroup.K8S_NG, "Rancher connector test connection task for NG"),
-  RANCHER_LIST_CLUSTERS_TASK_NG(TaskGroup.K8S_NG, "Rancher list clusters task for NG", true);
+  RANCHER_LIST_CLUSTERS_TASK_NG(TaskGroup.K8S_NG, "Rancher list clusters task for NG");
 
   private final TaskGroup taskGroup;
   private final String displayName;
