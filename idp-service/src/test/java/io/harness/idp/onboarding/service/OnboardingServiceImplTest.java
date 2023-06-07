@@ -115,7 +115,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
         onboardingServiceImpl, "harnessProjectToBackstageSystem", harnessProjectToBackstageSystem, true);
 
     HarnessServiceToBackstageComponent harnessServiceToBackstageComponent =
-        new HarnessServiceToBackstageComponent(onboardingModuleConfig, "local");
+        new HarnessServiceToBackstageComponent(onboardingModuleConfig);
     FieldUtils.writeField(
         onboardingServiceImpl, "harnessServiceToBackstageComponent", harnessServiceToBackstageComponent, true);
 
