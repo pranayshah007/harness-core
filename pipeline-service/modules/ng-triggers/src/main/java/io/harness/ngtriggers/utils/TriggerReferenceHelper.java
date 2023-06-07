@@ -112,7 +112,9 @@ public class TriggerReferenceHelper {
     Set<String> connectorRefs = new HashSet<>();
     if (ngTriggerConfigV2.getSource().getType() == WEBHOOK) {
       WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerConfigV2.getSource().getSpec();
-      connectorRefs.add(webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef());
+      if (webhookTriggerConfigV2.getSpec().fetchGitAware() != null) {
+        connectorRefs.add(webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef());
+      }
     } else if (ngTriggerConfigV2.getSource().getType() == ARTIFACT) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
       connectorRefs.add(artifactTriggerConfig.getSpec().fetchConnectorRef());

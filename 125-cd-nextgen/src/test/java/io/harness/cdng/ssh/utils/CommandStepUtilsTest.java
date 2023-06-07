@@ -9,6 +9,7 @@ package io.harness.cdng.ssh.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,7 +25,9 @@ import io.harness.shell.ScriptType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -73,5 +76,64 @@ public class CommandStepUtilsTest extends CategoryTest {
     assertThat(environmentVariables).hasSize(2);
     assertThat(environmentVariables.get("var2")).isEqualTo("val2");
     assertThat(environmentVariables.get("var3")).isEqualTo("val3");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetOutputVariableValuesWithoutSecrets() {
+    Map<String, Object> outputVariables = new HashMap<>();
+    outputVariables.put("str-var-name", ParameterField.createValueField("str-var"));
+    outputVariables.put("number-var-name", ParameterField.createValueField(10.0));
+    outputVariables.put("secret-var-name", ParameterField.createValueField("secret-var"));
+    outputVariables.put("plain-str-var-name", "plain-str-var");
+
+    List<String> outputVariableValuesWithoutSecrets =
+        CommandStepUtils.getOutputVariableValuesWithoutSecrets(outputVariables, Set.of("secret-var-name"));
+    assertThat(outputVariableValuesWithoutSecrets).size().isEqualTo(2);
+    assertThat(outputVariableValuesWithoutSecrets).contains("10.0", "str-var");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetSecretOutputVariableValuesAndNames() {
+    Map<String, Object> outputVariables = new HashMap<>();
+    outputVariables.put("str-var-name", ParameterField.createValueField("str-var"));
+    outputVariables.put("number-var-name", ParameterField.createValueField(10.0));
+    outputVariables.put("secret-var-name-1", ParameterField.createValueField("secret-var-1"));
+    outputVariables.put("secret-var-name-2", ParameterField.createValueField("secret-var-2"));
+    outputVariables.put("plain-str-var-name", "plain-str-var");
+
+    List<String> secretOutputVariables = CommandStepUtils.getSecretOutputVariableValues(
+        outputVariables, Set.of("secret-var-name-1", "secret-var-name-2"));
+
+    assertThat(secretOutputVariables).size().isEqualTo(2);
+    assertThat(secretOutputVariables).contains("secret-var-1", "secret-var-2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testPrepareOutputVariables() {
+    Map<String, Object> outputVariables = new HashMap<>();
+    outputVariables.put("str-var-name", ParameterField.createValueField("str-var"));
+    outputVariables.put("number-var-name", ParameterField.createValueField(10.0));
+    outputVariables.put("secret-var-name", ParameterField.createValueField("secret-var"));
+    outputVariables.put("plain-str-var-name", "plain-str-var");
+
+    Map<String, String> sweepingOutputEnvVariables = new HashMap<>();
+    sweepingOutputEnvVariables.put("str-var", "resolved-str-var");
+    sweepingOutputEnvVariables.put("secret-var", "resolved-secret-var");
+    sweepingOutputEnvVariables.put("plain-str-var", "resolved-plain-str-var");
+
+    Map<String, String> secretOutputVariables =
+        CommandStepUtils.prepareOutputVariables(sweepingOutputEnvVariables, outputVariables, Set.of("secret-var-name"));
+
+    assertThat(secretOutputVariables).size().isEqualTo(3);
+    assertThat(secretOutputVariables.get("str-var-name")).isEqualTo("resolved-str-var");
+    assertThat(secretOutputVariables.get("secret-var-name"))
+        .contains("${sweepingOutputSecrets.obtain(\"secret-var-name\"");
+    assertThat(secretOutputVariables.get("number-var-name")).isNull();
   }
 }

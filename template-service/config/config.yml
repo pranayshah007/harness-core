@@ -100,6 +100,12 @@ accessControlClientConfig:
     readTimeOutSeconds: 15
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
+templateAsyncSetupUsagePoolConfig:
+  corePoolSize: ${TEMPLATE_ASYNC_SETUP_USAGE_EXECUTOR_POOL_CORE_SIZE:-1}
+  maxPoolSize: ${TEMPLATE_ASYNC_SETUP_USAGE_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${TEMPLATE_ASYNC_SETUP_USAGE_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${TEMPLATE_ASYNC_SETUP_USAGE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 enableAudit: false
 
 enableAuth: true

@@ -81,6 +81,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Monitored
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Sources;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServicePlatformResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceWithHealthSources;
 import io.harness.cvng.core.beans.monitoredService.RiskData;
@@ -1269,7 +1270,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
@@ -1304,7 +1305,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummary = ChangeSummaryDTO.builder().build();
     when(changeSourceServiceMock.getChangeSummary(any(), any(), any(), any())).thenReturn(changeSummary);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
@@ -1319,9 +1320,106 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
 
     monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, Collections.emptyList(), 0, 10, null, false);
+        monitoredServiceService.list(projectParams, Collections.emptyList(), 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSPlatformList_withServiceTypeFilter() {
+    MonitoredServiceDTO monitoredServiceOneDTO =
+        createMonitoredServiceDTOWithCustomDependencies("service_1_local", "service_1", Sets.newHashSet());
+    MonitoredServiceDTO monitoredServiceTwoDTO =
+        createMonitoredServiceDTOWithCustomDependencies("service_2_local", "service_2", Sets.newHashSet());
+    MonitoredServiceDTO monitoredServiceThreeDTO = createMonitoredServiceDTOBuilder("service_3", "service_3", null)
+                                                       .type(MonitoredServiceType.INFRASTRUCTURE)
+                                                       .environmentRefList(Arrays.asList("local", "testing"))
+                                                       .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceThreeDTO);
+
+    PageResponse<MonitoredServicePlatformResponse> monitoredServiceListItemPageResponse =
+        monitoredServiceService.getMSPlatformList(
+            projectParams, null, 0, 10, null, MonitoredServiceType.APPLICATION, false);
+    assertThat(monitoredServiceListItemPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListItemPageResponse.getTotalItems()).isEqualTo(2);
+    MonitoredServicePlatformResponse monitoredServicePlatformResponse =
+        monitoredServiceListItemPageResponse.getContent().get(0);
+    assertThat(monitoredServicePlatformResponse.getName()).isEqualTo("service_2_local");
+    assertThat(monitoredServicePlatformResponse.getIdentifier()).isEqualTo("service_2_local");
+    assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_2");
+    assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(List.of(environmentIdentifier));
+    assertThat(monitoredServicePlatformResponse.getServiceName()).isEqualTo("Mocked service name");
+    assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+
+    monitoredServiceListItemPageResponse = monitoredServiceService.getMSPlatformList(
+        projectParams, null, 0, 10, null, MonitoredServiceType.INFRASTRUCTURE, false);
+    assertThat(monitoredServiceListItemPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListItemPageResponse.getTotalItems()).isEqualTo(1);
+    monitoredServicePlatformResponse = monitoredServiceListItemPageResponse.getContent().get(0);
+    assertThat(monitoredServicePlatformResponse.getIdentifier()).isEqualTo("service_3");
+    assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_3");
+    assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(Arrays.asList("local", "testing"));
+    assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.INFRASTRUCTURE);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSPlatformList_withHiddenNotConfiguredServices() {
+    MonitoredServiceDTO monitoredServiceOneDTO =
+        createMonitoredServiceDTOWithCustomDependencies("service_1_local", "service_1", Sets.newHashSet());
+    MonitoredServiceDTO monitoredServiceTwoDTO =
+        createMonitoredServiceDTOWithCustomDependencies("service_2_local", "service_2", Sets.newHashSet());
+    monitoredServiceTwoDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    MonitoredServiceDTO monitoredServiceThreeDTO = createMonitoredServiceDTOBuilder("service_3", "service_3", null)
+                                                       .type(MonitoredServiceType.INFRASTRUCTURE)
+                                                       .environmentRefList(Arrays.asList("local", "testing"))
+                                                       .build();
+    MonitoredServiceDTO monitoredServiceFourDTO =
+        createMonitoredServiceDTOBuilder("service_4_env", "service_4", "env").build();
+
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceThreeDTO);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceFourDTO);
+
+    PageResponse<MonitoredServicePlatformResponse> monitoredServiceListItemPageResponse =
+        monitoredServiceService.getMSPlatformList(projectParams, null, 0, 10, null, null, false);
+    assertThat(monitoredServiceListItemPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListItemPageResponse.getTotalItems()).isEqualTo(4);
+
+    monitoredServiceListItemPageResponse =
+        monitoredServiceService.getMSPlatformList(projectParams, null, 0, 10, null, null, true);
+    assertThat(monitoredServiceListItemPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListItemPageResponse.getTotalItems()).isEqualTo(3);
+
+    MonitoredServicePlatformResponse monitoredServicePlatformResponse =
+        monitoredServiceListItemPageResponse.getContent().get(0);
+    assertThat(monitoredServicePlatformResponse.getIdentifier()).isEqualTo("service_4_env");
+    assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_4");
+    assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(List.of("env"));
+    assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+    assertThat(monitoredServicePlatformResponse.getConfiguredChangeSources()).isEqualTo(1);
+    assertThat(monitoredServicePlatformResponse.getConfiguredHealthSources()).isEqualTo(1);
+
+    monitoredServicePlatformResponse = monitoredServiceListItemPageResponse.getContent().get(1);
+    assertThat(monitoredServicePlatformResponse.getIdentifier()).isEqualTo("service_3");
+    assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_3");
+    assertThat(monitoredServicePlatformResponse.getEnvironmentRefs()).isEqualTo(Arrays.asList("local", "testing"));
+    assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.INFRASTRUCTURE);
+    assertThat(monitoredServicePlatformResponse.getConfiguredChangeSources()).isEqualTo(1);
+    assertThat(monitoredServicePlatformResponse.getConfiguredHealthSources()).isEqualTo(1);
+
+    monitoredServicePlatformResponse = monitoredServiceListItemPageResponse.getContent().get(2);
+    assertThat(monitoredServicePlatformResponse.getIdentifier()).isEqualTo("service_1_local");
+    assertThat(monitoredServicePlatformResponse.getServiceRef()).isEqualTo("service_1");
+    assertThat(monitoredServicePlatformResponse.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+    assertThat(monitoredServicePlatformResponse.getConfiguredChangeSources()).isEqualTo(0);
+    assertThat(monitoredServicePlatformResponse.getConfiguredHealthSources()).isEqualTo(1);
   }
 
   @Test
@@ -1346,7 +1444,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummary = ChangeSummaryDTO.builder().build();
     when(changeSourceServiceMock.getChangeSummary(any(), any(), any(), any())).thenReturn(changeSummary);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, Collections.singletonList("env2"), 0, 10, null, false);
+        monitoredServiceService.list(projectParams, Collections.singletonList("env2"), 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
@@ -1374,7 +1472,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         monitoredServiceIdentifier, environmentParams.getServiceIdentifier(), Sets.newHashSet("service_2_local"));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS =
@@ -1409,7 +1507,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
@@ -1438,7 +1536,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(4);
     List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
@@ -2146,7 +2244,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testList_withNoMonitoredService() {
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(0);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(0);
     assertThat(monitoredServiceListDTOPageResponse.getPageItemCount()).isEqualTo(0);
@@ -2164,7 +2262,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
     monitoredServiceListDTOPageResponse.getContent().sort(
         Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier));
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
@@ -2217,7 +2315,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(msTwoHeatMap);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, true);
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, true);
 
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
@@ -2289,7 +2387,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(msFiveHeatMap);
 
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+        monitoredServiceService.list(projectParams, null, 0, 10, null, null, false);
 
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(5);
@@ -2443,7 +2541,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                                                 .build();
     hPersistence.save(sloHealthIndicator);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListItemDTOPageResponse = monitoredServiceService.list(
-        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, null, false);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO =
         monitoredServiceListItemDTOPageResponse.getContent().get(0);
     assertThat(monitoredServiceListItemDTO.getSloHealthIndicators().size()).isEqualTo(1);
@@ -2608,11 +2706,10 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .identifier(identifier)
         .name(identifier)
         .serviceRef(serviceIdentifier)
-        .sources(MonitoredServiceDTO.Sources.builder()
-                     .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
-                                        .stream()
-                                        .collect(Collectors.toSet()))
-                     .build())
+        .sources(
+            MonitoredServiceDTO.Sources.builder()
+                .healthSources(new HashSet<>(List.of(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))))
+                .build())
         .dependencies(
             Sets.newHashSet(dependentServiceIdentifiers.stream()
                                 .map(id -> ServiceDependencyDTO.builder().monitoredServiceIdentifier(id).build())
@@ -2622,37 +2719,31 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
   MonitoredServiceDTO createMonitoredServiceDTO() {
     return createMonitoredServiceDTOBuilder()
-        .sources(MonitoredServiceDTO.Sources.builder()
-                     .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
-                                        .stream()
-                                        .collect(Collectors.toSet()))
-                     .changeSources(Arrays.asList(builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build())
-                                        .stream()
-                                        .collect(Collectors.toSet()))
-                     .build())
+        .sources(
+            MonitoredServiceDTO.Sources.builder()
+                .healthSources(new HashSet<>(List.of(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))))
+                .changeSources(
+                    new HashSet<>(List.of(builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build())))
+                .build())
         .build();
   }
 
   MonitoredServiceDTO createMonitoredServiceDTOWithPagerDutyChangeSource() {
     return createMonitoredServiceDTOBuilder()
-        .sources(MonitoredServiceDTO.Sources.builder()
-                     .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
-                                        .stream()
-                                        .collect(Collectors.toSet()))
-                     .changeSources(Arrays.asList(builderFactory.getPagerDutyChangeSourceDTOBuilder().build())
-                                        .stream()
-                                        .collect(Collectors.toSet()))
-                     .build())
+        .sources(
+            MonitoredServiceDTO.Sources.builder()
+                .healthSources(new HashSet<>(List.of(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))))
+                .changeSources(new HashSet<>(List.of(builderFactory.getPagerDutyChangeSourceDTOBuilder().build())))
+                .build())
         .build();
   }
 
   MonitoredServiceDTO createMonitoredServiceDTOWithDependencies() {
     return createMonitoredServiceDTOBuilder()
-        .sources(MonitoredServiceDTO.Sources.builder()
-                     .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
-                                        .stream()
-                                        .collect(Collectors.toSet()))
-                     .build())
+        .sources(
+            MonitoredServiceDTO.Sources.builder()
+                .healthSources(new HashSet<>(List.of(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))))
+                .build())
         .dependencies(
             Sets.newHashSet(ServiceDependencyDTO.builder().monitoredServiceIdentifier(randomAlphanumeric(20)).build(),
                 ServiceDependencyDTO.builder().monitoredServiceIdentifier(randomAlphanumeric(20)).build()))

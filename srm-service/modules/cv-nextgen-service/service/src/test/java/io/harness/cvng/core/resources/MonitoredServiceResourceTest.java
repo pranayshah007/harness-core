@@ -23,6 +23,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
@@ -1016,6 +1017,33 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListMonitoredServicePlatform_listAPIAcrossHarnessApp() {
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service1", "env1");
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service2", "env2");
+    monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceDTO.setType(MonitoredServiceType.INFRASTRUCTURE);
+    monitoredServiceDTO.setIdentifier("service3");
+    monitoredServiceDTO.setServiceRef("service3");
+    monitoredServiceDTO.setEnvironmentRef(null);
+    monitoredServiceDTO.setEnvironmentRefList(List.of("env1", "env2"));
+    monitoredServiceService.create(builderFactory.getProjectParams().getAccountIdentifier(), monitoredServiceDTO);
+
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/platform/list")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("offset", 0)
+                              .queryParam("pageSize", 10);
+    webTarget = webTarget.queryParam("monitoredServiceType", "Application");
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":3");
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testListMonitoredService_dependenciesList() {
@@ -1278,6 +1306,27 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreate_allHealthSources() throws IOException {
     String[] healthSources = {"monitoredservice/healthsources/app-dynamics.yaml"};
+    for (String file : healthSources) {
+      String monitoredServiceYaml = getResource(file);
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+      monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.json(convertToJson(monitoredServiceYaml)));
+      assertThat(response.getStatus()).isEqualTo(200);
+    }
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_WithDefaultChangeSource() throws IOException {
+    String[] healthSources = {"monitoredservice/healthsources/app-dynamics-with-default-change-source.yaml"};
     for (String file : healthSources) {
       String monitoredServiceYaml = getResource(file);
       monitoredServiceYaml =

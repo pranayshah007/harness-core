@@ -7151,7 +7151,8 @@
             "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValues",
-            "MarkAsFailure"
+            "MarkAsFailure",
+            "RetryStepGroup"
           ]
         }
       },
@@ -13932,6 +13933,33 @@
           "minItems": 1
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetrySGFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "readOnly": true,
+              "$ref": "#/definitions/RetryFailureSpecConfig"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "RetryStepGroup"
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {

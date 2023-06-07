@@ -48,6 +48,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -94,12 +95,15 @@ import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceImpl;
+import io.harness.template.services.TemplateAsyncSetupUsageService;
+import io.harness.template.services.TemplateAsyncSetupUsageServiceImpl;
 import io.harness.template.services.TemplateGitXService;
 import io.harness.template.services.TemplateGitXServiceImpl;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateMergeServiceImpl;
 import io.harness.template.services.TemplateRefreshService;
 import io.harness.template.services.TemplateRefreshServiceImpl;
+import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -117,6 +121,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
@@ -130,6 +135,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import javax.validation.Validation;
@@ -241,6 +247,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(TemplateGitXService.class).to(TemplateGitXServiceImpl.class).in(Singleton.class);
     bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
+    bind(TemplateAsyncSetupUsageService.class).to(TemplateAsyncSetupUsageServiceImpl.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -391,6 +398,18 @@ public class TemplateServiceModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  @Provides
+  @Singleton
+  @Named("TemplateAsyncSetupUsageExecutorService")
+  public Executor templateAsyncSetupUsageExecutorService() {
+    return new ManagedExecutorService(
+        ThreadPool.create(templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getCorePoolSize(),
+            templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getMaxPoolSize(),
+            templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getIdleTime(),
+            templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("TemplateAsyncSetupUsageExecutorService-%d").build()));
   }
 
   private ValidatorFactory getValidatorFactory() {

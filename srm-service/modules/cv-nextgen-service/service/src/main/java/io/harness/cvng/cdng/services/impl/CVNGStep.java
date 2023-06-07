@@ -143,6 +143,11 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     if (Objects.nonNull(cvConfigs)) {
       cvConfigs = cvConfigs.stream()
                       .filter(cvConfig -> supportedDataTypesForVerification.contains(cvConfig.getVerificationType()))
+                      .peek(cvConfig -> {
+                        if (Objects.isNull(cvConfig.getDataSourceName())) {
+                          cvConfig.setDataSourceName(cvConfig.getType());
+                        }
+                      })
                       .collect(Collectors.toList());
     }
     if (CollectionUtils.isEmpty(cvConfigs)) {
