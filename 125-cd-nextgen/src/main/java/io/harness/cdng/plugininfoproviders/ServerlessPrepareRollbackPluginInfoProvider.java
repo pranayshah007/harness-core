@@ -96,7 +96,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     CdAbstractStepNode cdAbstractStepNode;
 
@@ -128,7 +129,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
     pluginDetailsBuilder.putAllEnvVariables(
-        getEnvironmentVariables(request.getAmbiance(), serverlessAwsLambdaPrepareRollbackContainerStepInfo));
+        getEnvironmentVariables(ambiance, serverlessAwsLambdaPrepareRollbackContainerStepInfo));
     PluginCreationResponse response = getPluginCreationResponse(pluginDetailsBuilder);
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
                                       .setIdentifier(cdAbstractStepNode.getIdentifier())

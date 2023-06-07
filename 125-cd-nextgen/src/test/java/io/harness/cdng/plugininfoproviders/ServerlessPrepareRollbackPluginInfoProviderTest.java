@@ -89,6 +89,9 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetPluginInfo() throws IOException {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+
     String jsonNode = "jsonNdod";
     PluginCreationRequest pluginCreationRequest = PluginCreationRequest.newBuilder().setStepJsonNode(jsonNode).build();
     CdAbstractStepNode cdAbstractStepNode = mock(CdAbstractStepNode.class);
@@ -119,7 +122,8 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
         .getPluginDetailsBuilder(any(), any(), any());
     doReturn(cdAbstractStepNode).when(serverlessPrepareRollbackPluginInfoProvider).getRead(jsonNode);
 
-    assertThat(serverlessPrepareRollbackPluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet()))
+    assertThat(serverlessPrepareRollbackPluginInfoProvider.getPluginInfo(
+                   pluginCreationRequest, Collections.emptySet(), ambiance))
         .isEqualTo(pluginCreationResponseWrapper);
   }
 
