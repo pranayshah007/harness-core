@@ -39,8 +39,14 @@ import io.harness.rule.Owner;
 import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptBaseSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.NumberNGVariable;
+import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
 
 import java.util.Collections;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -67,10 +73,7 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testHandleNodeWithEmptyScriptFromHarnessFileStore() {
-    FilterCreationContext context =
-        FilterCreationContext.builder().currentField(new YamlField("Command", new YamlNode(null))).build();
-    context.setSetupMetadata(
-        SetupMetadata.newBuilder().setAccountId(ACCOUNT_ID).setOrgId(ORG_ID).setProjectId(PROJECT_ID).build());
+    FilterCreationContext context = getFilterCreationContext();
     String scopedFilePath = "account:/folder1/folder2/emptyScript";
     ShellScriptSourceWrapper shellScriptSourceWrapper =
         ShellScriptSourceWrapper.builder()
@@ -100,10 +103,7 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testHandleNodeFailsValidationStrategy() {
     String errMsg = "Command step support repeat strategy with items syntax.";
-    FilterCreationContext context =
-        FilterCreationContext.builder().currentField(new YamlField("Command", new YamlNode(null))).build();
-    context.setSetupMetadata(
-        SetupMetadata.newBuilder().setAccountId(ACCOUNT_ID).setOrgId(ORG_ID).setProjectId(PROJECT_ID).build());
+    FilterCreationContext context = getFilterCreationContext();
     CommandUnitWrapper commandUnitWrapper = CommandUnitWrapper.builder().build();
 
     CommandStepNode commandStepNode = new CommandStepNode();
@@ -137,5 +137,41 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
     assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage(errMsg);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateCommandStepOutputVariables() {
+    FilterCreationContext context = getFilterCreationContext();
+
+    CommandStepNode commandStepNode = new CommandStepNode();
+    commandStepNode.setCommandStepInfo(
+        CommandStepInfo.infoBuilder()
+            .commandUnits(Collections.singletonList(CommandUnitWrapper.builder().build()))
+            .outputVariables(List.of(StringNGVariable.builder().name("str-var").type(NGVariableType.STRING).build(),
+                SecretNGVariable.builder().name("secret-var").type(NGVariableType.SECRET).build(),
+                NumberNGVariable.builder().name("number-var").type(NGVariableType.NUMBER).build()))
+            .build());
+
+    ParameterField<StrategyConfig> strategy = ParameterField.createValueField(
+        StrategyConfig.builder()
+            .repeat(HarnessForConfig.builder().items(ParameterField.createValueField(List.of("host1"))).build())
+            .build());
+    commandStepNode.setStrategy(strategy);
+
+    assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage(
+            "Number output variables are not supported as Bash/PowerShell variable names. Please use String or Secret output variables instead.");
+  }
+
+  @NotNull
+  private FilterCreationContext getFilterCreationContext() {
+    FilterCreationContext context =
+        FilterCreationContext.builder().currentField(new YamlField("Command", new YamlNode(null))).build();
+    context.setSetupMetadata(
+        SetupMetadata.newBuilder().setAccountId(ACCOUNT_ID).setOrgId(ORG_ID).setProjectId(PROJECT_ID).build());
+    return context;
   }
 }

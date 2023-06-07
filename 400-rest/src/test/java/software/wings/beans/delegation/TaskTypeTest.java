@@ -484,6 +484,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(444, "K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK");
     taskTypeOrdinalMapping.put(445, "RANCHER_TEST_CONNECTION_TASK_NG");
     taskTypeOrdinalMapping.put(446, "RANCHER_LIST_CLUSTERS_TASK_NG");
+    taskTypeOrdinalMapping.put(447, "COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
