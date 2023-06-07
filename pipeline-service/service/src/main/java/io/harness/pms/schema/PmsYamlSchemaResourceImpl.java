@@ -7,8 +7,11 @@
 
 package io.harness.pms.schema;
 
-import static io.harness.EntityType.*;
+import static io.harness.EntityType.PIPELINES;
+import static io.harness.EntityType.TEMPLATE;
+import static io.harness.EntityType.TRIGGERS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,34 +23,17 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.yaml.SchemaErrorResponse;
 import io.harness.pms.yaml.YamlSchemaResponse;
+import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaResource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotSupportedException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.errors.AmbiguousObjectException;
-import org.eclipse.jgit.errors.IncorrectObjectTypeException;
-import org.eclipse.jgit.errors.MissingObjectException;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.json.JSONObject;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -57,12 +43,22 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   private final PMSYamlSchemaService pmsYamlSchemaService;
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 
+  private final YamlSchemaProvider yamlSchemaProvider;
+
+  private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/v0/%s";
+  private final String PIPELINE_JSON = "pipeline.json";
+  private final String TEMPLATE_JSON = "template.json";
+
+  private final String QA_ENV_BRANCH = "quality-assurance";
+
+  private final String PROD_ENV_BRANCH = "main";
+
   public ResponseDTO<JsonNode> getYamlSchema(@NotNull EntityType entityType, String projectIdentifier,
       String orgIdentifier, Scope scope, String identifier, @NotNull String accountIdentifier) {
     JsonNode schema = null;
     if (entityType == PIPELINES) {
       schema = pmsYamlSchemaService.getPipelineYamlSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope);
-    } else if (entityType == TEMPLATE) {
+    } else if (entityType == TRIGGERS) {
       schema = ngTriggerYamlSchemaService.getTriggerYamlSchema(projectIdentifier, orgIdentifier, identifier, scope);
     } else {
       throw new NotSupportedException(String.format("Entity type %s is not supported", entityType.getYamlName()));
@@ -76,13 +72,12 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
       String orgIdentifier, Scope scope, String identifier, String accountIdentifier) {
     JsonNode schema = null;
     String fileUrl = "";
-    if (entityType == PIPELINES) {
-      fileUrl = "https://raw.githubusercontent.com/harness/harness-schema/main/v0/pipeline.json";
-    } else if (entityType == TEMPLATE) {
-      fileUrl = "https://raw.githubusercontent.com/harness/harness-schema/main/v0/template.json";
-    } else {
-      throw new NotSupportedException(String.format("Entity type %s is not supported", entityType.getYamlName()));
+
+    String env = System.getenv("ENV");
+    if (!validateIfStaticSchemaRequired(entityType, env)) {
+      return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
     }
+    fileUrl = calculateFileURL(entityType, env);
 
     try {
       ObjectMapper objectMapper = new ObjectMapper();
@@ -95,6 +90,34 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
       log.error(String.format("Not able to read file from %s path", fileUrl));
     }
     return null;
+  }
+
+  private String calculateFileURL(EntityType entityType, String env) {
+    String branch = env.equals("stress") || env.equals("qa") ? QA_ENV_BRANCH : PROD_ENV_BRANCH;
+
+    String entityTypeJson = "";
+    switch (entityType) {
+      case PIPELINES:
+        entityTypeJson = PIPELINE_JSON;
+        break;
+      case TEMPLATE:
+        entityTypeJson = TEMPLATE_JSON;
+        break;
+      default:
+        entityTypeJson = PIPELINE_JSON;
+        log.error("Code should never reach here");
+    }
+
+    return String.format(STATIC_SCHEMA_FILE_URL, branch, entityTypeJson);
+  }
+
+  private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {
+    // static schema is not supported for empty env or on-prem env. In entity type currently its supported only for
+    // Pipelines or Template
+    if (isEmpty(env) || env.equals("on-prem") || (entityType != PIPELINES && entityType != TEMPLATE)) {
+      return false;
+    }
+    return true;
   }
 
   public ResponseDTO<Boolean> invalidateYamlSchemaCache() {
