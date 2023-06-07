@@ -9,21 +9,19 @@ package io.harness.cvng.core.beans.monitoredService.changeSourceSpec;
 
 import io.harness.cvng.beans.change.ChangeSourceType;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModel;
-import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
-@Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ApiModel(description = "This is the change Source entity defined in Harness",
-    subTypes = {HarnessCDCurrentGenChangeSourceSpec.class, HarnessCDChangeSourceSpec.class,
-        PagerDutyChangeSourceSpec.class, KubernetesChangeSourceSpec.class, CustomChangeSourceSpec.class})
-public abstract class ChangeSourceSpec {
-  @JsonIgnore public abstract ChangeSourceType getType();
-  @JsonIgnore public abstract boolean connectorPresent();
+public class HarnessCDChangeSourceSpec extends ChangeSourceSpec {
+  @Override
+  public ChangeSourceType getType() {
+    return ChangeSourceType.HARNESS_CD;
+  }
+
+  @Override
+  public boolean connectorPresent() {
+    return false;
+  }
 }
