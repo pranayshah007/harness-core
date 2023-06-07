@@ -29,8 +29,7 @@ public class AwsSamPluginInfoProviderHelper {
   public String getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
       AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) awsSamDirectoryManifestOutcome.getStore();
-    String samDirectoryPath =
-        awsSamDirectoryManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
-    return samDirectoryPath;
+
+    return awsSamDirectoryManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
   }
 }

@@ -36,11 +36,9 @@ public class DownloadManifestsStepHelper {
   @Inject private OutcomeService outcomeService;
 
   public ManifestsOutcome fetchManifestsOutcome(Ambiance ambiance) {
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService
+    return (ManifestsOutcome) outcomeService
             .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
             .getOutcome();
-    return manifestsOutcome;
   }
   public ManifestOutcome getAwsSamDirectoryManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
     List<ManifestOutcome> manifestOutcomeList =
@@ -77,8 +75,7 @@ public class DownloadManifestsStepHelper {
                       .type(BuildType.BRANCH)
                       .build();
 
-    GitCloneStepInfo gitCloneStepInfo =
-        GitCloneStepInfo.builder()
+    return GitCloneStepInfo.builder()
             .cloneDirectory(ParameterField.<String>builder().value(gitManifestOutcome.getIdentifier()).build())
             .identifier(gitManifestOutcome.getIdentifier())
             .name(gitManifestOutcome.getIdentifier())
@@ -87,22 +84,20 @@ public class DownloadManifestsStepHelper {
             .build(ParameterField.<Build>builder().value(build).build())
             .build();
 
-    return gitCloneStepInfo;
   }
 
   public StepElementParameters getGitStepElementParameters(
       ManifestOutcome gitManifestOutcome, GitCloneStepInfo gitCloneStepInfo) {
-    StepElementParameters stepElementParameters = StepElementParameters.builder()
+    return StepElementParameters.builder()
                                                       .name(gitManifestOutcome.getIdentifier())
                                                       .spec(gitCloneStepInfo)
                                                       .identifier(getGitCloneStepIdentifier(gitManifestOutcome))
                                                       .build();
-    return stepElementParameters;
   }
 
   public GitCloneStepNode getGitCloneStepNode(
       ManifestOutcome gitManifestOutcome, GitCloneStepInfo gitCloneStepInfo, CdAbstractStepNode cdAbstractStepNode) {
-    GitCloneStepNode gitCloneStepNode = GitCloneStepNode.builder()
+    return GitCloneStepNode.builder()
                                             .gitCloneStepInfo(gitCloneStepInfo)
                                             .failureStrategies(cdAbstractStepNode.getFailureStrategies())
                                             .timeout(cdAbstractStepNode.getTimeout())
@@ -111,7 +106,6 @@ public class DownloadManifestsStepHelper {
                                             .name(gitManifestOutcome.getIdentifier())
                                             .uuid(gitManifestOutcome.getIdentifier())
                                             .build();
-    return gitCloneStepNode;
   }
 
   public String getGitCloneStepIdentifier(ManifestOutcome gitManifestOutcome) {

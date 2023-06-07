@@ -118,9 +118,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
 
   public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
-    String valuesPath =
-        "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
-    return valuesPath;
+    return "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
   }
 
   @Override
