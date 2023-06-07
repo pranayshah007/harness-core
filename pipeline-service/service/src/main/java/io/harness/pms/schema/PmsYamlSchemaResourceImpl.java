@@ -25,13 +25,10 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.yaml.SchemaErrorResponse;
 import io.harness.pms.yaml.YamlSchemaResponse;
-import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaResource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.net.URL;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotSupportedException;
 import lombok.AllArgsConstructor;
@@ -87,12 +84,14 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
 
   private boolean validateOnPremOrCommunityEdition() {
     // On Prem Env check.
-    if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode))
+    if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)) {
       return true;
+    }
 
     // Validating if current deployment is of community edition
-    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION)))
+    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
       return true;
+    }
 
     return false;
   }
