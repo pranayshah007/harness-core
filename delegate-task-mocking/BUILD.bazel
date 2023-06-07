@@ -5,23 +5,61 @@
 
 load("@rules_java//java:defs.bzl", "java_library")
 load("@rules_java//java:defs.bzl", "java_binary")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
 java_library(
     name = "library",
-    srcs = glob(["*.java"]),
+    srcs = glob([
+            "src/main/java/**/*.java",
+        ]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_atmosphere_wasync",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "//920-delegate-agent-beans:module",
+        "//930-delegate-tasks:module",
     ],
 )
 
 java_binary(
     name = "module",
-    data = ["//:resource"],
-    main_class = "io.harness.app.DelegateApp",
+     data = ["//:resource"],
+        resources = [
+            "//delegate-task-mocking/src/main/resources:resource",
+        ],
+    main_class = "io.harness.app.DelegateMockApp",
     visibility = ["//visibility:public"],
-    runtime_deps = [":library"],
+    runtime_deps = [":library", "//delegate-task-mocking/src/main/resources",],
     deps = [],
 )
 
+java_binary(
+    name = "execute",
+    main_class = "io.harness.app.DelegateMockApp",
+    runtime_deps = [":module"],
+)
+
 run_analysis_per_module()
+
+pkg_tar(
+    name = "delegate_task_mocking_jar",
+    srcs = [
+        "local-storage/delegateTaskMocking delegate_task_mocking.jar",
+    ],
+    files = {
+        "//delegate-task-mocking:module_deploy.jar": "delegateTaskMocking/delegate_task_mocking.jar",
+    },
+    mode = "0644",
+    package_dir = "/local-storage/delegateTaskMocking",
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+        "oss",
+    ],
+    visibility = ["//visibility:public"],
+)
