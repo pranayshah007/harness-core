@@ -34,7 +34,7 @@ function create_empty_files() {
 }
 
 function clean_temp_files() {
-  for file in ${1[@]}
+  for file in ${1}
    do
       [ -f $file ] && rm -f $file
    done
