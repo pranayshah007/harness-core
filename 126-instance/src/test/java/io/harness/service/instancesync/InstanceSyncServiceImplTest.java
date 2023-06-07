@@ -568,7 +568,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
 
     instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
     ArgumentCaptor<Map<OperationsOnInstances, List<InstanceDTO>>> captor = ArgumentCaptor.forClass(Map.class);
-    verify(instanceSyncPerpetualTaskInfoService, times(1)).updatePerpetualTaskIdV2(any());
+    verify(instanceSyncPerpetualTaskInfoService, times(1)).updatePerpetualTaskIdV1OrV2(any());
   }
 
   @Test
@@ -773,11 +773,15 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                                  .setDeploymentType(ServiceSpecType.KUBERNETES)
                                  .build())
             .build();
-    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
-        Arrays.asList(InstanceSyncPerpetualTaskInfoDTO.builder()
-                          .id("taskInfoId")
-                          .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
-                          .build());
+    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList = Arrays.asList(
+        InstanceSyncPerpetualTaskInfoDTO.builder()
+            .id("taskInfoId")
+            .deploymentInfoDetailsDTOList(
+                Arrays.asList(DeploymentInfoDetailsDTO.builder()
+                                  .deploymentInfoDTO(K8sDeploymentInfoDTO.builder().releaseName("releaseName").build())
+                                  .build()))
+            .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+            .build());
     when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
         .thenReturn(instanceSyncPerpetualTaskInfoDTOList);
     when(infrastructureMappingService.getByInfrastructureMappingId(INFRASTRUCTURE_MAPPING_ID))

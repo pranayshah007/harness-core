@@ -8,6 +8,7 @@
 package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,7 +31,6 @@ import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.helper.K8sInfrastructureUtility;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
@@ -66,7 +66,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   @Override
   public String getInfrastructureKind() {
-    return InfrastructureKind.KUBERNETES_DIRECT;
+    return KUBERNETES_DIRECT;
   }
 
   public boolean isInstanceSyncV2Enabled() {
@@ -155,6 +155,12 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .blueGreenStageColor(k8sServerInstanceInfo.getBlueGreenColor())
         .cloudConfigMetadata(k8sCloudConfigMetadata)
         .build();
+  }
+
+  @Override
+  public InfrastructureOutcome getInfrastructureOutcome(
+      String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    return K8sInfrastructureUtility.getInfrastructureOutcome(infrastructureKind, deploymentInfoDTO, connectorRef);
   }
 
   private LinkedHashSet<String> getNamespaces(@NotNull List<ServerInstanceInfo> serverInstanceInfoList) {
