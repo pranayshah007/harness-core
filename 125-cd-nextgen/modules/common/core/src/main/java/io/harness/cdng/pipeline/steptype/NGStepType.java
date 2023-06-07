@@ -311,7 +311,11 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
   SERVERLESS_PREPARE_ROLLBACK("Serverless Prepare Rollback",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
-      StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK);
+      StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_ROLLBACK)
+  SERVERLESS_ROLLBACK("Serverless Rollback",
+          Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+          StepSpecTypeConstants.SERVERLESS_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

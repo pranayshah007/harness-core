@@ -599,7 +599,10 @@ public enum EntityType {
   CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
   SERVERLESS_PREPARE_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.SERVERLESS_PREPARE_ROLLBACK);
+      EntityYamlRootNames.SERVERLESS_PREPARE_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_ROLLBACK)
+  SERVERLESS_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_ROLLBACK, IdentifierRef.class,
+          EntityYamlRootNames.SERVERLESS_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -35,7 +35,7 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
-import io.harness.cdng.serverless.beans.StackDetails;
+import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -283,6 +283,30 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .chainEnd(isChainEnd)
         .passThroughData(passThroughData)
         .build();
+  }
+
+  public TaskChainResponse queueServerlessTaskWithTaskType(StepElementParameters stepElementParameters,
+                                               ServerlessCommandRequest serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
+                                               boolean isChainEnd, TaskType taskType) {
+    TaskData taskData = TaskData.builder()
+            .parameters(new Object[] {serverlessCommandRequest})
+            .taskType(taskType.name())
+            .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+            .async(true)
+            .build();
+    String taskName =
+            TaskType.SERVERLESS_COMMAND_TASK.getDisplayName();
+    ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+            referenceFalseKryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+            TaskSelectorYaml.toTaskSelector(
+                    emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+            stepHelper.getEnvironmentType(ambiance));
+    return TaskChainResponse.builder()
+            .taskRequest(taskRequest)
+            .chainEnd(isChainEnd)
+            .passThroughData(passThroughData)
+            .build();
   }
 
   private TaskChainResponse handleServerlessGitFetchFilesResponse(ServerlessGitFetchResponse serverlessGitFetchResponse,

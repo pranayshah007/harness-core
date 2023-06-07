@@ -5,14 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.serverless.beans;
+package io.harness.delegate.beans.serverless;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class Tag {
-  private final String key;
-  private final String value;
+public class Parameter {
+  private final String parameterKey;
+  private final String parameterValue;
+  private final Boolean usePreviousValue;
+  private final String resolvedValue;
 }

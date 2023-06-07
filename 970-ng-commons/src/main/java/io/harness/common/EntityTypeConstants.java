@@ -242,4 +242,5 @@ public interface EntityTypeConstants {
   String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
 
   String SERVERLESS_PREPARE_ROLLBACK = "ServerlessPrepareRollback";
+  String SERVERLESS_ROLLBACK = "ServerlessRollback";
 }

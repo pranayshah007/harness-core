@@ -10,7 +10,7 @@ package io.harness.cdng.serverless.container.steps;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.serverless.beans.StackDetails;
+import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
@@ -27,4 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome")
 public class ServerlessAwsLambdaPrepareRollbackDataOutcome implements Outcome, ExecutionSweepingOutput {
   StackDetails stackDetails;
+  boolean firstDeployment;
 }
