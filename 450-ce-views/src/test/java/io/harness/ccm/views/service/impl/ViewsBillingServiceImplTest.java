@@ -158,16 +158,19 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap());
+        .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap(), anyBoolean());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean(), anyBoolean());
