@@ -11,10 +11,12 @@ import static io.harness.EntityType.PIPELINES;
 import static io.harness.EntityType.TEMPLATE;
 import static io.harness.EntityType.TRIGGERS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.configuration.DeployVariant;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
@@ -45,13 +47,16 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
 
   private final YamlSchemaProvider yamlSchemaProvider;
 
-  private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/v0/%s";
+  // %s/%s/%s represents branch name, version number, file name
+  private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/%s/%s";
   private final String PIPELINE_JSON = "pipeline.json";
   private final String TEMPLATE_JSON = "template.json";
 
   private final String QA_ENV_BRANCH = "quality-assurance";
 
   private final String PROD_ENV_BRANCH = "main";
+
+  private final String deployMode = System.getenv().get("DEPLOY_MODE");
 
   public ResponseDTO<JsonNode> getYamlSchema(@NotNull EntityType entityType, String projectIdentifier,
       String orgIdentifier, Scope scope, String identifier, @NotNull String accountIdentifier) {
@@ -69,20 +74,25 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
 
   @Override
   public ResponseDTO<JsonNode> getStaticYamlSchema(EntityType entityType, String projectIdentifier,
-      String orgIdentifier, Scope scope, String identifier, String accountIdentifier) {
-    JsonNode schema = null;
+      String orgIdentifier, Scope scope, String identifier, String version, String accountIdentifier) {
     String fileUrl = "";
 
     String env = System.getenv("ENV");
+    /*
+    Currently static schema is not supported for community and onPrem env.
+     */
     if (!validateIfStaticSchemaRequired(entityType, env)) {
       return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
     }
-    fileUrl = calculateFileURL(entityType, env);
+
+    // Appending branch and json in url
+    fileUrl = calculateFileURL(entityType, env, version);
 
     try {
       ObjectMapper objectMapper = new ObjectMapper();
 
       // Read the JSON file as JsonNode
+      log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
       JsonNode jsonNode = objectMapper.readTree(new URL(fileUrl));
 
       return ResponseDTO.newResponse(jsonNode);
@@ -92,7 +102,11 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     return null;
   }
 
-  private String calculateFileURL(EntityType entityType, String env) {
+  /*
+  Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
+  supported env branch will be master
+   */
+  private String calculateFileURL(EntityType entityType, String env, String version) {
     String branch = env.equals("stress") || env.equals("qa") ? QA_ENV_BRANCH : PROD_ENV_BRANCH;
 
     String entityTypeJson = "";
@@ -108,16 +122,28 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
         log.error("Code should never reach here");
     }
 
-    return String.format(STATIC_SCHEMA_FILE_URL, branch, entityTypeJson);
+    return String.format(STATIC_SCHEMA_FILE_URL, branch, version, entityTypeJson);
   }
 
   private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {
     // static schema is not supported for empty env or on-prem env. In entity type currently its supported only for
     // Pipelines or Template
-    if (isEmpty(env) || env.equals("on-prem") || (entityType != PIPELINES && entityType != TEMPLATE)) {
+    if (isEmpty(env) || validateOnPremOrCommunityEdition() || (entityType != PIPELINES && entityType != TEMPLATE)) {
       return false;
     }
     return true;
+  }
+
+  private boolean validateOnPremOrCommunityEdition() {
+    // On Prem Env check.
+    if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode))
+      return true;
+
+    // Validating if current deployment is of community edition
+    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION)))
+      return true;
+
+    return false;
   }
 
   public ResponseDTO<Boolean> invalidateYamlSchemaCache() {

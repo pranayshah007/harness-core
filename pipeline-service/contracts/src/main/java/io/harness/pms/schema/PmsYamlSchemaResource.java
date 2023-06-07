@@ -11,6 +11,7 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
+import static io.harness.NGCommonEntityConstants.VERSION_FIELD;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.EntityType;
@@ -28,13 +29,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import javax.enterprise.inject.Default;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 
 @Api("/yaml-schema")
 @Path("/yaml-schema")
@@ -60,6 +57,7 @@ public interface PmsYamlSchemaResource {
   ResponseDTO<JsonNode> getStaticYamlSchema(@QueryParam("entityType") @NotNull EntityType entityType,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
+      @QueryParam(VERSION_FIELD) @DefaultValue("v0") String version,
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
 
   @POST
