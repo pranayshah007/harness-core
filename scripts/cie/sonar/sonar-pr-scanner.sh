@@ -54,7 +54,7 @@ function get_javac_path(){
 
 JAVA_CLASSES_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 JAVA_SRCS="src"
-JAVA_TEST_SRCS='src/test/**/*.java'
+JAVA_TEST_SRCS='test/**/*.java'
 EXCLUDE_REGISTRAR='src/**/*Registrar.java'
 JAVA_LIBS="**/*.jar"
 JAVA_SRC_CLASS="_javac"
@@ -118,8 +118,12 @@ echo "PR_MODULES: $PR_MODULES"
 
 for file in $($GIT_DIFF | tr '\r\n' ' ')
   do
-    grep -w 'src' <<< $file | sed 's|src|:|' | awk -F: '{print $1}' | sed 's|$|src|' >> $PR_SRCS_FILE
+     grep -w 'src' <<< $file | sed 's|src|:|' | awk -F: '{print $1}' | sed 's|$|src|' >> $PR_SRCS_FILE
   done
+
+while IFS= read -r line; do
+    echo "$line/$JAVA_TEST_SRCS"
+done < "$PR_SRCS_FILE" > "$PR_TEST_INCLUSION_FILE"
 
 # Running Bazel Build and creating list of all tests in the modules
 for module in $PR_MODULES
@@ -160,7 +164,6 @@ for module in $PR_MODULES
      && echo "$module is present in the bazel modules list." \
      && get_javac_path ${JAVA_CLASSES_PATH}/${module} >> $PR_MODULES_JAVAC_FILE \
      && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
-     && echo "${module}/${JAVA_TEST_SRCS}" >> $PR_TEST_INCLUSION_FILE \
      && echo "${module}/${EXCLUDE_REGISTRAR}" >> $PR_REGISTRAR_EXCLUSION_FILE \
      || echo "$module is not present in the bazel modules list"
   done
