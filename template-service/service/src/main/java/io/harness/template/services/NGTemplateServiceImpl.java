@@ -636,23 +636,43 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       List<TemplateEntity> templateToDeleteList, Long version, String comments, boolean canDeleteStableTemplate,
       TemplateEntity stableTemplate, boolean forceDelete) {
     boolean lastUpdatedTemplateDeleted = false;
+    boolean foundStableTemplate = false;
     for (TemplateEntity templateEntity : templateToDeleteList) {
       try (TemplateGitSyncBranchContextGuard ignored = templateServiceHelper.getTemplateGitContextForGivenTemplate(
                templateEntity, GitContextHelper.getGitEntityInfo(),
                format("Deleting template with identifier [%s] and versionLabel [%s].", templateEntity.getIdentifier(),
                    templateEntity.getVersionLabel()))) {
-        if (templateEntity.isLastUpdatedTemplate()) {
-          lastUpdatedTemplateDeleted = true;
+        // If it is stable template then we will delete it at the last
+        if (templateEntity.isStableTemplate()) {
+          foundStableTemplate = true;
+          continue;
         }
         deleteSingleTemplateHelper(accountId, orgIdentifier, projectIdentifier, templateEntity.getIdentifier(),
             templateEntity, version, canDeleteStableTemplate, comments, forceDelete);
-      } catch (ReferencedEntityException referencedEntityException) {
-        if (!canDeleteStableTemplate && lastUpdatedTemplateDeleted) {
+        if (templateEntity.isLastUpdatedTemplate()) {
+          lastUpdatedTemplateDeleted = true;
+        }
+      } catch (Exception exception) {
+        // if template to delete contains stable template along with all other versions with one template having
+        // references, therefore removed !canDeleteStableTemplate from if condition.
+        if (lastUpdatedTemplateDeleted) {
           makeGivenTemplateLastUpdatedTemplateTrue(stableTemplate);
         }
-        throw referencedEntityException;
+        throw exception;
       }
     }
+
+    // Update stable Template as last updated template if the earlier lastUpdatedTemplate is Deleted.
+    if (lastUpdatedTemplateDeleted) {
+      makeGivenTemplateLastUpdatedTemplateTrue(stableTemplate);
+    }
+
+    // Delete Stable Template
+    if (canDeleteStableTemplate && foundStableTemplate) {
+      deleteSingleTemplateHelper(accountId, orgIdentifier, projectIdentifier, stableTemplate.getIdentifier(),
+          stableTemplate, version, canDeleteStableTemplate, comments, forceDelete);
+    }
+
     return true;
   }
 

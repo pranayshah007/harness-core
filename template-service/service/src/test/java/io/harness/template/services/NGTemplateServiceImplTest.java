@@ -501,7 +501,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     Page<TemplateEntity> templateEntities =
         templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+    assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting a non last update template version
     delete =
@@ -509,7 +509,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+    assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting complete templateIdentifier
     delete = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
