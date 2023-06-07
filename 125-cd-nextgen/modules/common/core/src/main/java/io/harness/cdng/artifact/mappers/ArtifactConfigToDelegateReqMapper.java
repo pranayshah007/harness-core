@@ -536,10 +536,14 @@ public class ArtifactConfigToDelegateReqMapper {
         && tagHasInputValidator(ecrArtifactConfig.getTag().getInputSetValidator(), tag)) {
       tagRegex = ecrArtifactConfig.getTag().getInputSetValidator().getParameters();
     }
+    String registryId = null;
+    if (ParameterField.isNotNull(ecrArtifactConfig.getRegistryId())) {
+      registryId = ecrArtifactConfig.getRegistryId().getValue();
+    }
 
-    return ArtifactDelegateRequestUtils.getEcrDelegateRequest(ecrArtifactConfig.getImagePath().getValue(), tag,
-        tagRegex, null, ecrArtifactConfig.getRegion().getValue(), connectorRef, awsConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.ECR);
+    return ArtifactDelegateRequestUtils.getEcrDelegateRequest(registryId, ecrArtifactConfig.getImagePath().getValue(),
+        tag, tagRegex, null, ecrArtifactConfig.getRegion().getValue(), connectorRef, awsConnectorDTO,
+        encryptedDataDetails, ArtifactSourceType.ECR);
   }
 
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(NexusRegistryArtifactConfig artifactConfig,

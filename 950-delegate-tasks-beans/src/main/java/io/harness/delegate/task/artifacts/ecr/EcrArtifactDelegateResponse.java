@@ -21,7 +21,10 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
-  /** Images in repos need to be referenced via a path */
+  String registryId;
+  /**
+   * Images in repos need to be referenced via a path
+   */
   String imagePath;
   /** Tag refers to exact tag number */
   String tag;
@@ -33,8 +36,9 @@ public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
 
   @Builder
   public EcrArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String imagePath, String tag, String imageUrl, String authToken, Map<String, String> label) {
+      String registryId, String imagePath, String tag, String imageUrl, String authToken, Map<String, String> label) {
     super(buildDetails, sourceType);
+    this.registryId = registryId;
     this.imagePath = imagePath;
     this.tag = tag;
     this.imageUrl = imageUrl;

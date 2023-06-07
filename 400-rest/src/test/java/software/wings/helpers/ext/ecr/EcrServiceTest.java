@@ -69,6 +69,7 @@ public class EcrServiceTest extends WingsBaseTest {
   private AwsConfig awsConfig = AwsConfig.builder().build();
   private static final String SHA = "sha256:12132342";
   private static final Map<String, String> LABEL = ImmutableMap.<String, String>builder().put("key1", "val1").build();
+  private static final String REGISTRY_ID = "registryId";
   private static final String IMAGE_NAME = "imageName";
   private static final String LATEST = "latest";
   private static final String IMAGE = "image";
@@ -78,10 +79,10 @@ public class EcrServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldGetLabels() {
-    when(awsApiHelperService.fetchLabels(eq(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig)), eq(IMAGE_NAME),
-             eq(Regions.US_EAST_1.getName()), anyList()))
+    when(awsApiHelperService.fetchLabels(eq(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig)), eq(REGISTRY_ID),
+             eq(IMAGE_NAME), eq(Regions.US_EAST_1.getName()), anyList()))
         .thenReturn(ImmutableMap.<String, String>builder().put("key1", "val1").build());
-    assertThat(ecrService.getLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), IMAGE_NAME,
+    assertThat(ecrService.getLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, IMAGE_NAME,
                    Regions.US_EAST_1.getName(), Lists.newArrayList("tag1")))
         .hasSize(1)
         .isEqualTo(Collections.singletonList(ImmutableMap.<String, String>builder().put("key1", "val1").build()));
@@ -101,13 +102,14 @@ public class EcrServiceTest extends WingsBaseTest {
             buildImageDetails(Arrays.asList("stable"), "2022-11-22T04:18:35-08:00"),
             buildImageDetails(Arrays.asList("v1", "v2", "v3"), "2023-02-02T16:45:50-08:00")));
     when(awsApiHelperService.describeEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
-             new DescribeImagesRequest().withRepositoryName(IMAGE_NAME)))
+             new DescribeImagesRequest().withRepositoryName(IMAGE_NAME).withRegistryId(REGISTRY_ID)))
         .thenReturn(imagesResult);
-    assertThat(
-        ecrService.getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, IMAGE_NAME, 10)
-            .stream()
-            .map(ArtifactConfigMapper::toBuildDetails)
-            .collect(Collectors.toList()))
+    assertThat(ecrService
+                   .getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, null, region,
+                       IMAGE_NAME, 10)
+                   .stream()
+                   .map(ArtifactConfigMapper::toBuildDetails)
+                   .collect(Collectors.toList()))
         .hasSize(6)
         .isEqualTo(Lists.newArrayList(buildBuildDetails(LATEST), buildBuildDetails("stable-perl"),
             buildBuildDetails("stable"), buildBuildDetails("v1"), buildBuildDetails("v2"), buildBuildDetails("v3")));
@@ -124,14 +126,14 @@ public class EcrServiceTest extends WingsBaseTest {
     imagesResult.setImageIds(Lists.newArrayList(null, buildImageIdentifier(null), buildImageIdentifier(LATEST),
         buildImageIdentifier("v2"), buildImageIdentifier("v1")));
     when(awsApiHelperService.listEcrImages(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region,
-             new ListImagesRequest().withRepositoryName(IMAGE_NAME)))
+             new ListImagesRequest().withRepositoryName(IMAGE_NAME).withRegistryId(REGISTRY_ID)))
         .thenReturn(imagesResult);
-    assertThat(
-        ecrServiceImpl
-            .getBuildsFallback(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, IMAGE_NAME, 10)
-            .stream()
-            .map(ArtifactConfigMapper::toBuildDetails)
-            .collect(Collectors.toList()))
+    assertThat(ecrServiceImpl
+                   .getBuildsFallback(
+                       AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), REGISTRY_ID, null, region, IMAGE_NAME)
+                   .stream()
+                   .map(ArtifactConfigMapper::toBuildDetails)
+                   .collect(Collectors.toList()))
         .hasSize(3)
         .isEqualTo(Lists.newArrayList(buildBuildDetails(LATEST), buildBuildDetails("v1"), buildBuildDetails("v2")));
   }
@@ -154,7 +156,8 @@ public class EcrServiceTest extends WingsBaseTest {
              new ListImagesRequest().withRepositoryName(IMAGE_NAME)))
         .thenReturn(imagesResult);
     assertThat(
-        ecrService.getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, IMAGE_NAME, 10)
+        ecrService
+            .getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, null, region, IMAGE_NAME, 10)
             .stream()
             .map(ArtifactConfigMapper::toBuildDetails)
             .collect(Collectors.toList()))
@@ -179,10 +182,10 @@ public class EcrServiceTest extends WingsBaseTest {
                                                    .collect(Collectors.toList()));
     describeRepositoriesResult.setNextToken(null);
     when(awsApiHelperService.listRepositories(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig),
-             new DescribeRepositoriesRequest(), Regions.US_EAST_1.getName()))
+             new DescribeRepositoriesRequest().withRegistryId(REGISTRY_ID), Regions.US_EAST_1.getName()))
         .thenReturn(describeRepositoriesResult);
     assertThat(ecrService.listEcrRegistry(
-                   AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), Regions.US_EAST_1.getName()))
+                   AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), Regions.US_EAST_1.getName(), REGISTRY_ID))
         .containsExactly("repo1", "repo2");
   }
 
@@ -201,10 +204,10 @@ public class EcrServiceTest extends WingsBaseTest {
                                                    .collect(Collectors.toList()));
     describeRepositoriesResult.setNextToken(null);
     when(awsApiHelperService.listRepositories(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig),
-             new DescribeRepositoriesRequest(), Regions.US_EAST_1.getName()))
+             new DescribeRepositoriesRequest().withRegistryId(REGISTRY_ID), Regions.US_EAST_1.getName()))
         .thenReturn(describeRepositoriesResult);
-    assertThat(ecrService.verifyRepository(
-                   AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), Regions.US_EAST_1.getName(), "repo1"))
+    assertThat(ecrService.verifyRepository(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig),
+                   Regions.US_EAST_1.getName(), REGISTRY_ID, "repo1"))
         .isTrue();
   }
 
@@ -220,16 +223,17 @@ public class EcrServiceTest extends WingsBaseTest {
     describeImagesResult.setImageDetails(Collections.singletonList(imageDetail));
     AwsInternalConfig awsInternalConfig = AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig);
     DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest()
+                                                      .withRegistryId(REGISTRY_ID)
                                                       .withRepositoryName(IMAGE_NAME)
                                                       .withImageIds(new ImageIdentifier().withImageTag(LATEST));
     when(awsApiHelperService.describeEcrImages(
              eq(awsInternalConfig), eq(Regions.US_EAST_1.getName()), eq(describeImagesRequest)))
         .thenReturn(describeImagesResult);
     when(awsApiHelperService.fetchLabels(
-             eq(awsInternalConfig), eq(IMAGE_NAME), eq(Regions.US_EAST_1.getName()), anyList()))
+             eq(awsInternalConfig), eq(REGISTRY_ID), eq(IMAGE_NAME), eq(Regions.US_EAST_1.getName()), anyList()))
         .thenReturn(LABEL);
-    BuildDetailsInternal buildDetailsInternal =
-        ecrService.verifyBuildNumber(awsInternalConfig, IMAGE_NAME, Regions.US_EAST_1.getName(), IMAGE_NAME, LATEST);
+    BuildDetailsInternal buildDetailsInternal = ecrService.verifyBuildNumber(
+        awsInternalConfig, REGISTRY_ID, IMAGE_NAME, Regions.US_EAST_1.getName(), IMAGE_NAME, LATEST);
     assertThat(buildDetailsInternal.getNumber()).isEqualTo(LATEST);
     ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA).labels(LABEL).build();
     assertThat(buildDetailsInternal.getArtifactMetaInfo()).isEqualTo(artifactMetaInfo);
@@ -251,16 +255,17 @@ public class EcrServiceTest extends WingsBaseTest {
     describeImagesResult.setImageDetails(Collections.singletonList(imageDetail));
     AwsInternalConfig awsInternalConfig = AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig);
     DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest()
+                                                      .withRegistryId(REGISTRY_ID)
                                                       .withRepositoryName(IMAGE_NAME)
                                                       .withImageIds(new ImageIdentifier().withImageDigest(SHA));
     when(awsApiHelperService.describeEcrImages(
              eq(awsInternalConfig), eq(Regions.US_EAST_1.getName()), eq(describeImagesRequest)))
         .thenReturn(describeImagesResult);
     when(awsApiHelperService.fetchLabels(
-             eq(awsInternalConfig), eq(IMAGE_NAME), eq(Regions.US_EAST_1.getName()), anyList()))
+             eq(awsInternalConfig), eq(REGISTRY_ID), eq(IMAGE_NAME), eq(Regions.US_EAST_1.getName()), anyList()))
         .thenReturn(LABEL);
-    BuildDetailsInternal buildDetailsInternal =
-        ecrService.verifyBuildNumber(awsInternalConfig, IMAGE_NAME, Regions.US_EAST_1.getName(), IMAGE_NAME, SHA);
+    BuildDetailsInternal buildDetailsInternal = ecrService.verifyBuildNumber(
+        awsInternalConfig, REGISTRY_ID, IMAGE_NAME, Regions.US_EAST_1.getName(), IMAGE_NAME, SHA);
     assertThat(buildDetailsInternal.getNumber()).isEqualTo(SHA);
     ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA).labels(LABEL).build();
     assertThat(buildDetailsInternal.getArtifactMetaInfo()).isEqualTo(artifactMetaInfo);

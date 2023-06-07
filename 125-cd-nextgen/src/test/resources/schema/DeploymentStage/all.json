@@ -5928,6 +5928,9 @@
             "region": {
               "type": "string"
             },
+            "registryId": {
+              "type": "string"
+            },
             "tag": {
               "type": "string"
             },

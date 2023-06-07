@@ -1051,9 +1051,10 @@ public class ArtifactResourceUtils {
         connectorRef, imagePath, gcrRequestDTO, orgIdentifier, projectIdentifier);
   }
 
-  public EcrBuildDetailsDTO getLastSuccessfulBuildV2ECR(String imagePath, String ecrConnectorIdentifier,
-      String accountId, String orgIdentifier, String projectIdentifier, String fqnPath, String serviceRef,
-      String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo, EcrRequestDTO ecrRequestDTO) {
+  public EcrBuildDetailsDTO getLastSuccessfulBuildV2ECR(String registryId, String imagePath,
+      String ecrConnectorIdentifier, String accountId, String orgIdentifier, String projectIdentifier, String fqnPath,
+      String serviceRef, String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
+      EcrRequestDTO ecrRequestDTO) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService =
           locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -1075,6 +1076,10 @@ public class ArtifactResourceUtils {
         imagePath = (String) ecrArtifactConfig.getImagePath().fetchFinalValue();
       }
 
+      if (isEmpty(registryId) && ParameterField.isNotNull(ecrArtifactConfig.getRegistryId())) {
+        registryId = (String) ecrArtifactConfig.getRegistryId().fetchFinalValue();
+      }
+
       if (isEmpty(ecrRequestDTO.getTagRegex())) {
         ecrRequestDTO.setTagRegex((String) ecrArtifactConfig.getTagRegex().fetchFinalValue());
       }
@@ -1092,6 +1097,9 @@ public class ArtifactResourceUtils {
     imagePath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         ecrRequestDTO.getRuntimeInputYaml(), imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
 
+    registryId = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        ecrRequestDTO.getRuntimeInputYaml(), registryId, fqnPath, gitEntityBasicInfo, serviceRef);
+
     ecrRequestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         ecrRequestDTO.getRuntimeInputYaml(), ecrRequestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
 
@@ -1099,7 +1107,7 @@ public class ArtifactResourceUtils {
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     return ecrResourceService.getSuccessfulBuild(
-        connectorRef, imagePath, ecrRequestDTO, orgIdentifier, projectIdentifier);
+        connectorRef, registryId, imagePath, ecrRequestDTO, orgIdentifier, projectIdentifier);
   }
 
   public AcrBuildDetailsDTO getLastSuccessfulBuildV2ACR(String subscriptionId, String registry, String repository,
