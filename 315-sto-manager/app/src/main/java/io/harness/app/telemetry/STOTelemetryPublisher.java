@@ -19,8 +19,10 @@ import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,21 +39,23 @@ public class STOTelemetryPublisher {
   private static final String ACCOUNT = "Account";
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
+  private static final Double SCAN_COUNT_PER_DEVELOPER = 100.0;
 
   public void recordTelemetry() {
     log.info("STOTelemetryPublisher recordTelemetry execute started.");
     try {
       long timestamp = Instant.now().toEpochMilli();
       final Gson gson = new Gson();
-      STOUsageReport allUsage = gson.fromJson(stoServiceUtils.getUsageAllAccounts(timestamp), STOUsageReport.class);
-      log.info("Size of the account list is {} ", allUsage.usage.size());
+      Type type = new TypeToken<List<STOUsage>>() {}.getType();
+      List<STOUsage> allUsage = gson.fromJson(stoServiceUtils.getUsageAllAccounts(timestamp), type);
+      log.info("Size of the account list is {} ", allUsage.size());
 
-      for (STOUsage usage : allUsage.usage) {
+      for (STOUsage usage : allUsage) {
         HashMap<String, Object> map = new HashMap<>();
         map.put(GROUP_TYPE, ACCOUNT);
         map.put(GROUP_ID, usage.accountId);
         map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-        map.put(LICENSE_USAGE, max(ceil(usage.scanCount / 100.0), usage.developerCount));
+        map.put(LICENSE_USAGE, max((int) ceil(usage.scanCount / SCAN_COUNT_PER_DEVELOPER), usage.developerCount));
         telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
             TelemetryOption.builder().sendForCommunity(false).build());
         log.info("Scheduled STOTelemetryPublisher event sent for account {}", usage.accountId);
@@ -64,10 +68,6 @@ public class STOTelemetryPublisher {
   }
 }
 
-class STOUsageReport {
-  int timestamp;
-  List<STOUsage> usage;
-}
 class STOUsage {
   String accountId;
   int developerCount;
