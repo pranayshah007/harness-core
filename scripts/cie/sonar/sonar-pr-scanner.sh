@@ -34,7 +34,7 @@ function create_empty_files() {
 }
 
 function clean_temp_files() {
-  for file in $1
+  for file in ${1[@]}
    do
       [ -f $file ] && rm -f $file
    done
@@ -58,6 +58,7 @@ JAVA_TEST_SRCS='src/test/**/*.java'
 EXCLUDE_REGISTRAR='src/**/*Registrar.java'
 JAVA_LIBS="**/*.jar"
 JAVA_SRC_CLASS="_javac"
+MODULES_FILE="modules.txt"
 PR_MODULES_JAVAC_FILE="pr_javac_list.txt"
 PR_MODULES_LIB_FILE="pr_lib_list.txt"
 PR_SRCS_FILE="pr_srcs.txt"
@@ -92,18 +93,26 @@ check_cmd_status "$?" "Failed to list harness core modules."
 GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
 
 echo "------------------------------------------------"
-echo "GIT DIFF: $GIT_DIFF"
+echo "GIT DIFF: `$GIT_DIFF`"
 echo "------------------------------------------------"
 
 for FILE in `$GIT_DIFF`;
   do
-    [ -f "${FILE}" ] && PR_FILES+=("${FILE}") || echo "${FILE} not found....."
+    extension=${FILE##*.}
+    if [ -f "${FILE}" ] && [ "${extension}" = "java" ]; then
+      FILES+=("${FILE}")
+      echo "$(echo ${FILE} | awk -F/ '{print $1}')" >> $MODULES_FILE
+    else
+      echo "${FILE} not found....."
+    fi
   done
-PR_FILES=$(echo ${PR_FILES[@]} | tr ' ' ',')
+
+PR_FILES=$(echo ${FILES[@]} | sort -u | tr ' ' ',')
 check_cmd_status "$?" "Failed to get diff between commits."
 echo "PR_FILES: ${PR_FILES}"
 
-PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | grep -v '^product\|^commons' | tr '\r\n' ' ')
+#PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | grep -v '^product\|^commons' | tr '\r\n' ' ')
+PR_MODULES=$(cat $MODULES_FILE | sort -u | tr '\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
 echo "PR_MODULES: $PR_MODULES"
 
@@ -133,7 +142,7 @@ for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
       done
   done
 
-PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE)
+PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE | sort -u)
 echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
 
 # Running Bazel Build and Test
@@ -199,4 +208,5 @@ echo "PR_FILES: ${PR_FILES}"
 echo "PR_TEST_FILES: ${PR_TEST_LIST[@]}"
 echo "---------------------------------------------------------------------"
 
-clean_temp_files "$PR_MODULES_JAVAC_FILE $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
+clean_temp_files "$PR_BAZEL_TESTS_FILE $BAZEL_TESTS_FILE $MODULES_FILE $PR_MODULES_JAVAC_FILE \
+$PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
