@@ -282,6 +282,7 @@ import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransfor
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.CustomChangeSourceSpecTransformer;
+import io.harness.cvng.core.transformer.changeSource.HarnessCDChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.HarnessCDCurrentGenChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.KubernetesChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.PagerDutyChangeSourceSpecTransformer;
@@ -1010,6 +1011,9 @@ public class CVServiceModule extends AbstractModule {
 
     MapBinder<ChangeSourceType, ChangeSourceSpecTransformer> changeSourceTypeChangeSourceSpecTransformerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceSpecTransformer.class);
+    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD)
+        .to(HarnessCDChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.PAGER_DUTY)
         .to(PagerDutyChangeSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);

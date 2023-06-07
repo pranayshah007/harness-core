@@ -1322,6 +1322,27 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     }
   }
 
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_WithDefaultChangeSource() throws IOException {
+    String[] healthSources = {"monitoredservice/healthsources/app-dynamics-with-default-change-source.yaml"};
+    for (String file : healthSources) {
+      String monitoredServiceYaml = getResource(file);
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+      monitoredServiceYaml =
+          monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+      monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
+      Response response = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .request(MediaType.APPLICATION_JSON_TYPE)
+                              .post(Entity.json(convertToJson(monitoredServiceYaml)));
+      assertThat(response.getStatus()).isEqualTo(200);
+    }
+  }
+
   private static String convertToYaml(String jsonString) throws JsonProcessingException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
     String jsonAsYaml = new YAMLMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
