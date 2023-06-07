@@ -11,6 +11,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
+import io.harness.ng.core.dto.ResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -29,4 +30,7 @@ public interface PMSYamlSchemaService {
 
   JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
       EntityType entityType, String yamlGroup);
+
+  ResponseDTO<JsonNode> getStaticSchema(EntityType entityType, String projectIdentifier, String orgIdentifier,
+      Scope scope, String identifier, String version, String accountIdentifier);
 }

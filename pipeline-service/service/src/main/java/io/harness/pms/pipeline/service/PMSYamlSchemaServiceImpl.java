@@ -35,6 +35,7 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.manage.ManagedExecutorService;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -62,6 +63,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -100,6 +102,14 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   private ExecutorService yamlSchemaExecutor;
   Integer allowedParallelStages;
+
+  private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/%s/%s";
+  private final String PIPELINE_JSON = "pipeline.json";
+  private final String TEMPLATE_JSON = "template.json";
+
+  private final String QA_ENV_BRANCH = "quality-assurance";
+
+  private final String PROD_ENV_BRANCH = "main";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -517,6 +527,51 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       return stepGroupSchema;
     }
     return jsonNode;
+  }
+
+  @Override
+  public ResponseDTO<JsonNode> getStaticSchema(EntityType entityType, String projectIdentifier, String orgIdentifier,
+      Scope scope, String identifier, String version, String accountIdentifier) {
+    String env = System.getenv("ENV");
+
+    // Appending branch and json in url
+    String fileUrl = calculateFileURL(entityType, env, version);
+
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+
+      // Read the JSON file as JsonNode
+      log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
+      JsonNode jsonNode = objectMapper.readTree(new URL(fileUrl));
+
+      return ResponseDTO.newResponse(jsonNode);
+    } catch (Exception ex) {
+      log.error(String.format("Not able to read file from %s path", fileUrl));
+    }
+    return null;
+  }
+
+  /*
+  Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
+  supported env branch will be master
+   */
+  private String calculateFileURL(EntityType entityType, String env, String version) {
+    String branch = env.equals("stress") || env.equals("qa") ? QA_ENV_BRANCH : PROD_ENV_BRANCH;
+
+    String entityTypeJson = "";
+    switch (entityType) {
+      case PIPELINES:
+        entityTypeJson = PIPELINE_JSON;
+        break;
+      case TEMPLATE:
+        entityTypeJson = TEMPLATE_JSON;
+        break;
+      default:
+        entityTypeJson = PIPELINE_JSON;
+        log.error("Code should never reach here");
+    }
+
+    return String.format(STATIC_SCHEMA_FILE_URL, branch, version, entityTypeJson);
   }
 
   private String getYamlGroup(String yamlGroup) {

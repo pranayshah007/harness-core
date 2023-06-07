@@ -45,17 +45,6 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   private final PMSYamlSchemaService pmsYamlSchemaService;
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 
-  private final YamlSchemaProvider yamlSchemaProvider;
-
-  // %s/%s/%s represents branch name, version number, file name
-  private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/%s/%s";
-  private final String PIPELINE_JSON = "pipeline.json";
-  private final String TEMPLATE_JSON = "template.json";
-
-  private final String QA_ENV_BRANCH = "quality-assurance";
-
-  private final String PROD_ENV_BRANCH = "main";
-
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
 
   public ResponseDTO<JsonNode> getYamlSchema(@NotNull EntityType entityType, String projectIdentifier,
@@ -75,8 +64,6 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   @Override
   public ResponseDTO<JsonNode> getStaticYamlSchema(EntityType entityType, String projectIdentifier,
       String orgIdentifier, Scope scope, String identifier, String version, String accountIdentifier) {
-    String fileUrl = "";
-
     String env = System.getenv("ENV");
     /*
     Currently static schema is not supported for community and onPrem env.
@@ -85,44 +72,8 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
       return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
     }
 
-    // Appending branch and json in url
-    fileUrl = calculateFileURL(entityType, env, version);
-
-    try {
-      ObjectMapper objectMapper = new ObjectMapper();
-
-      // Read the JSON file as JsonNode
-      log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
-      JsonNode jsonNode = objectMapper.readTree(new URL(fileUrl));
-
-      return ResponseDTO.newResponse(jsonNode);
-    } catch (Exception ex) {
-      log.error(String.format("Not able to read file from %s path", fileUrl));
-    }
-    return null;
-  }
-
-  /*
-  Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
-  supported env branch will be master
-   */
-  private String calculateFileURL(EntityType entityType, String env, String version) {
-    String branch = env.equals("stress") || env.equals("qa") ? QA_ENV_BRANCH : PROD_ENV_BRANCH;
-
-    String entityTypeJson = "";
-    switch (entityType) {
-      case PIPELINES:
-        entityTypeJson = PIPELINE_JSON;
-        break;
-      case TEMPLATE:
-        entityTypeJson = TEMPLATE_JSON;
-        break;
-      default:
-        entityTypeJson = PIPELINE_JSON;
-        log.error("Code should never reach here");
-    }
-
-    return String.format(STATIC_SCHEMA_FILE_URL, branch, version, entityTypeJson);
+    return pmsYamlSchemaService.getStaticSchema(
+        entityType, projectIdentifier, orgIdentifier, scope, identifier, version, accountIdentifier);
   }
 
   private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {
