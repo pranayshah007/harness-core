@@ -91,7 +91,7 @@ public enum FeatureName {
   CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED(
       "If enabled, OOTB steps will run directly on host in cloud infra", HarnessTeam.CI),
   CI_AI_ENHANCED_REMEDIATIONS(
-      "Enables use of generative AI to provide remediation information in CI/CD step logs", HarnessTeam.CI),
+      "Enables use of generative AI to provide remediation information in CI step logs", HarnessTeam.CI),
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   CUSTOM_MAX_PAGE_SIZE,
@@ -437,6 +437,8 @@ public enum FeatureName {
       HarnessTeam.CI),
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   CD_TRIGGER_V2("Enable support for nexus3, nexus2, azure, ami trigger", HarnessTeam.CDC),
+  CD_AI_ENHANCED_REMEDIATIONS(
+      "Enables use of generative AI to provide remediation information in CD step logs", HarnessTeam.CDP),
   NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
