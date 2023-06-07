@@ -1280,6 +1280,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       });
     }
     notificationRuleService.validateNotification(monitoredServiceDTO.getNotificationRuleRefs(), projectParams);
+    filterOutHarnessCDChangeSource(monitoredServiceDTO);
   }
 
   @Override
@@ -2193,6 +2194,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         notificationRuleRefs.stream().map(NotificationRuleRef::getNotificationRuleRef).collect(Collectors.toList());
     notificationRuleService.deleteNotificationRuleRefs(
         projectParams, existingNotificationRuleRefs, updatedNotificationRuleRefs);
+  }
+
+  private void filterOutHarnessCDChangeSource(MonitoredServiceDTO monitoredServiceDTO) {
+    Sources sources = monitoredServiceDTO.getSources();
+    Set<ChangeSourceDTO> changeSourceDTOList = monitoredServiceDTO.getSources().getChangeSources();
+    sources.setChangeSources(changeSourceDTOList.stream()
+                                 .filter(changeSourceDTO -> changeSourceDTO.getType() != ChangeSourceType.HARNESS_CD)
+                                 .collect(Collectors.toSet()));
+    monitoredServiceDTO.setSources(sources);
   }
 
   @Value
