@@ -133,7 +133,7 @@ for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
       done
   done
 
-PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE | sort -u | tr '\r\n' ' ' | rev | cut -c2- | rev)
+PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE)
 echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
 
 # Running Bazel Build and Test
@@ -142,7 +142,7 @@ bazel build ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" -//product/... -//com
 check_cmd_status "$?" "Failed to build harness core modules."
 
 echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${PR_TEST_LIST[@]}"
-bazel coverage ${BAZEL_ARGS} -- "${PR_TEST_LIST[@]}"
+bazel coverage ${BAZEL_ARGS} -- `cat $PR_BAZEL_TESTS_FILE`
 check_cmd_status "$?" "Failed to run coverage."
 
 for module in $PR_MODULES
@@ -192,5 +192,11 @@ else
   echo "INFO: Running Sonar Scan."
   sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io
 fi
+
+echo "SUMMARY"
+echo "---------------------------------------------------------------------"
+echo "PR_FILES: ${PR_FILES}"
+echo "PR_TEST_FILES: ${PR_TEST_LIST[@]}"
+echo "---------------------------------------------------------------------"
 
 clean_temp_files "$PR_MODULES_JAVAC_FILE $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
