@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -108,6 +109,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
                             .setRunSequence(3)
                             .setModuleType("cd")
                             .setPipelineIdentifier("pipelineId")
+                            .setHarnessVersion("0")
                             .build();
     pipelineYamlV1 = readFile("pipeline-v1.yaml");
   }
@@ -285,6 +287,32 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     verify(planCreationValidator, times(1)).validate(any(), any());
     verify(planCreatorMergeServiceMock, times(1))
         .createPlanForDependenciesRecursive(any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testCreatePlanVersionedWithException() {
+    PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder()
+                                                      .processedYaml(processedYaml)
+                                                      .triggerPayload(TriggerPayload.newBuilder().build())
+                                                      .build();
+    Set<String> supportedTypesForPipeline = new HashSet<>();
+    supportedTypesForPipeline.add("[__any__]");
+    Map<String, Set<String>> supportedTypes = new HashMap<>();
+    supportedTypes.put("pipeline", supportedTypesForPipeline);
+    Map<String, PlanCreatorServiceInfo> services = new HashMap<>();
+
+    PlanCreatorServiceInfo planCreatorServiceInfo = new PlanCreatorServiceInfo(supportedTypes, null);
+    services.put("pms", planCreatorServiceInfo);
+
+    doReturn(services).when(pmsSdkHelper).getServices();
+    doReturn(true).when(pmsFeatureFlagServiceMock).isEnabled(any(), (FeatureName) any());
+    assertThatThrownBy(()
+                           -> planCreatorMergeServiceMock.createPlanVersioned(
+                               accountId, orgId, projId, PipelineVersion.V1, executionMetadata, planExecutionMetadata))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Following yaml paths could not be parsed: ");
   }
 
   private class NoOpPmsFeatureFlagService implements PmsFeatureFlagService {
