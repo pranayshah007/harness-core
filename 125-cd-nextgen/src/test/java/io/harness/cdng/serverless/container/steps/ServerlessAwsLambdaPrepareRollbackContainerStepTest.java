@@ -105,11 +105,23 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
   @Category(UnitTests.class)
   public void testGetSerialisedStep() {
     String accountId = "accountId";
+    int port = 1;
+    String callbackToken = "token";
+    String displayName = "name";
+    String id = "id";
+    String logKey = "logKey";
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
     doReturn(1).when(serverlessAwsLambdaPrepareRollbackContainerStep).getPort(any(), any());
     doReturn(122L).when(serverlessAwsLambdaPrepareRollbackContainerStep).getTimeout(any(), any());
-    doReturn(mock(UnitStep.class))
+    UnitStep unitStep = mock(UnitStep.class);
+    doReturn(accountId).when(unitStep).getAccountId();
+    doReturn(port).when(unitStep).getContainerPort();
+    doReturn(callbackToken).when(unitStep).getCallbackToken();
+    doReturn(displayName).when(unitStep).getDisplayName();
+    doReturn(id).when(unitStep).getId();
+    doReturn(logKey).when(unitStep).getLogKey();
+    doReturn(unitStep)
         .when(serverlessAwsLambdaPrepareRollbackContainerStep)
         .getUnitStep(any(), any(), any(), any(), any(), any());
 
@@ -119,11 +131,15 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-    String logKey = "logKey";
     long timeout = 1000;
     String parkedTaskId = "parkedTaskId";
-    assertThat(serverlessAwsLambdaPrepareRollbackContainerStep.getSerialisedStep(
-                   ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId))
-        .isInstanceOf(UnitStep.class);
+    UnitStep unit = serverlessAwsLambdaPrepareRollbackContainerStep.getSerialisedStep(
+        ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId);
+    assertThat(unit.getContainerPort()).isEqualTo(port);
+    assertThat(unit.getAccountId()).isEqualTo(accountId);
+    assertThat(unit.getCallbackToken()).isEqualTo(callbackToken);
+    assertThat(unit.getDisplayName()).isEqualTo(displayName);
+    assertThat(unit.getId()).isEqualTo(id);
+    assertThat(unit.getLogKey()).isEqualTo(logKey);
   }
 }

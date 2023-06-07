@@ -22,8 +22,8 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("serverlessAwsLambdaRollbackDataOutcome")
-@JsonTypeName("serverlessAwsLambdaRollbackDataOutcome")
+@TypeAlias("serverlessAwsLambdaPrepareRollbackDataOutcome")
+@JsonTypeName("serverlessAwsLambdaPrepareRollbackDataOutcome")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome")
 public class ServerlessAwsLambdaPrepareRollbackDataOutcome implements Outcome, ExecutionSweepingOutput {
   StackDetails stackDetails;
