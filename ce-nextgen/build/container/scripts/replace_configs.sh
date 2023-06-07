@@ -166,3 +166,6 @@ replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
 
 replace_key_value deployMode "$DEPLOY_MODE"
 replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
+
+replace_key_value aiEngineConfig.genAIService.genAIServiceSecret "$GENAI_SERVICE_SECRET"
+replace_key_value aiEngineConfig.genAIService.apiEndpoint "$GENAI_SERVICE_ENDPOINT"

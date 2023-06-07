@@ -327,7 +327,6 @@ public class GovernanceRuleResource {
         GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
   }
 
-  // Internal API for OOTB rule creation
   @NextGenManagerAuth
   @POST
   @Hidden
@@ -661,6 +660,7 @@ public class GovernanceRuleResource {
     }
     return connectorResponse;
   }
+
   @NextGenManagerAuth
   @POST
   @Path("enqueueAdhoc")
