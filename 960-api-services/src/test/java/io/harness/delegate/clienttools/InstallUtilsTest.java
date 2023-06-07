@@ -23,7 +23,6 @@ import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
 import static io.harness.rule.OwnerRule.MARKO;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 
@@ -106,9 +105,7 @@ public class InstallUtilsTest extends CategoryTest {
     assertThat(getPath(KUBECTL, KubectlVersion.V1_13)).isEqualTo(kubectlPath);
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(kubectlPath);
     assertThat(getPath(OC, OcVersion.V4_2)).isEqualTo(ocPath);
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(helmPath);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(helm3Path);
     assertThat(getLatestVersionPath(KUSTOMIZE)).isEqualTo(kustomizePath);
     assertThat(getPath(KUSTOMIZE, KustomizeVersion.V3)).isEqualTo(kustomizePath);
@@ -129,9 +126,7 @@ public class InstallUtilsTest extends CategoryTest {
 
     setupClientTools(customConfig);
 
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(helmPath);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(helm3Path);
   }
 
@@ -164,9 +159,7 @@ public class InstallUtilsTest extends CategoryTest {
 
     setupClientTools(customConfig);
 
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(customHelm2Path);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(DEFAULT_HELM_3_PATH);
   }
 
@@ -184,9 +177,7 @@ public class InstallUtilsTest extends CategoryTest {
     setupClientTools(customConfig);
 
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(customHelm3Path);
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(DEFAULT_HELM_2_PATH);
   }
 
   @Test
@@ -207,9 +198,7 @@ public class InstallUtilsTest extends CategoryTest {
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(KUBECTL.getBinaryName());
     assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_3)).isEqualTo(GO_TEMPLATE.getBinaryName());
     assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(HARNESS_PYWINRM.getBinaryName());
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(HELM.getBinaryName());
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(HELM.getBinaryName());
     assertThat(getPath(HELM, HelmVersion.V3_8)).isEqualTo(HELM.getBinaryName());
     assertThat(getLatestVersionPath(CHARTMUSEUM)).isEqualTo(CHARTMUSEUM.getBinaryName());
@@ -242,9 +231,7 @@ public class InstallUtilsTest extends CategoryTest {
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(DEFAULT_KUBECTL_1_19_PATH);
     assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_3)).isEqualTo(DEFAULT_GOTEMPLATE_PATH);
     assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(DEFAULT_PYWINRM_PATH);
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(DEFAULT_HELM_2_PATH);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(DEFAULT_HELM_3_PATH);
     assertThat(getPath(HELM, HelmVersion.V3_8)).isEqualTo(DEFAULT_HELM_38_PATH);
     assertThat(getLatestVersionPath(CHARTMUSEUM)).isEqualTo(DEFAULT_CHARTMUSEUM_0_12_PATH);
@@ -278,9 +265,7 @@ public class InstallUtilsTest extends CategoryTest {
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(DEFAULT_KUBECTL_1_19_PATH);
     assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_3)).isEqualTo(DEFAULT_GOTEMPLATE_PATH);
     assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(DEFAULT_PYWINRM_PATH);
-    assertThatThrownBy(() -> getPath(HELM, HelmVersion.V2))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("helm is not installed for version V2. Available versions are: [V3, V3_8]");
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(DEFAULT_HELM_2_PATH);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(DEFAULT_HELM_3_PATH);
     assertThat(getPath(HELM, HelmVersion.V3_8)).isEqualTo(DEFAULT_HELM_38_PATH);
     assertThat(getLatestVersionPath(CHARTMUSEUM)).isEqualTo(DEFAULT_CHARTMUSEUM_0_12_PATH);
