@@ -8,6 +8,7 @@
 package io.harness.plugin.service;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
@@ -115,7 +116,7 @@ public class PluginServiceImpl implements PluginService {
     map.putAll(getBuildEnvVars(ambiance, gitConnector, stepInfo));
     map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
     map.putAll(getPluginDepthEnvVars(stepInfo.getDepth()));
-    map.putAll(getPluginOutputFilePathsContent(stepInfo.getOutputFilePathsContent()));
+    map.putAll(getPluginOutputFilePathsContent(stepInfo.getOutputFilePathsContent(), stepInfo.getIdentifier()));
 
     return map;
   }
@@ -263,11 +264,14 @@ public class PluginServiceImpl implements PluginService {
     return map;
   }
 
-  private static Map<String, String> getPluginOutputFilePathsContent(ParameterField<List<String>> outputFilePathsContent) {
+  static Map<String, String> getPluginOutputFilePathsContent(
+      ParameterField<List<String>> outputFilePathsContent, String stepIdentifier) {
     Map<String, String> map = new HashMap<>();
+    List<String> outputFilePathsContentList =
+        resolveListParameter("outputFilePathsContent", "GitClone", stepIdentifier, outputFilePathsContent, false);
 
-    if (outputFilePathsContent != null && outputFilePathsContent.getValue() != null  && !CollectionUtils.isEmpty(outputFilePathsContent.getValue())) {
-      map.put(PLUGIN_OUTPUT_FILE_PATHS_CONTENT, String.join(",", outputFilePathsContent.getValue()));
+    if (outputFilePathsContentList != null && !CollectionUtils.isEmpty(outputFilePathsContentList)) {
+      map.put(PLUGIN_OUTPUT_FILE_PATHS_CONTENT, String.join(",", outputFilePathsContentList));
     }
     return map;
   }

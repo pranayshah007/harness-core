@@ -62,7 +62,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
       cdAbstractStepNode = YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
     } catch (IOException e) {
       throw new ContainerPluginParseException(
-          String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
+          String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
     List<PluginCreationResponseWrapper> pluginCreationResponseWrapperList = new ArrayList<>();

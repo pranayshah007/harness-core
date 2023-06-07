@@ -27,7 +27,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.protobuf.StringValue;
-import java.util.HashSet;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
@@ -61,16 +60,9 @@ public class PluginInfoProviderHelper {
   protected void setPortDetails(Set<Integer> usedPorts, PluginDetails.Builder pluginDetailsBuilder) {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     Integer nextPort = portFinder.getNextPort();
-    HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
-
     pluginDetailsBuilder.addPortUsed(nextPort);
 
-    //Todo Sainath
-    HashSet<Integer> newUsedPorts = new HashSet<>();
-    newUsedPorts.addAll(ports);
-    newUsedPorts.add(nextPort);
-
-    pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(newUsedPorts).build());
+    pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build());
   }
 
   protected PluginDetails.Builder buildPluginDetails(

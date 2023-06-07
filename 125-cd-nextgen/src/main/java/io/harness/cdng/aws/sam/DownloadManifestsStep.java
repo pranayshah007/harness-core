@@ -41,8 +41,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElementParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.DOWNLOAD_MANIFESTS.getYamlType())
@@ -72,6 +74,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
             manifestsOutcome.values());
 
     List<String> callbackIds = new ArrayList<>();
+    List<String> logKeys = new ArrayList<>();
 
     GitCloneStepInfo gitCloneStepInfo =
         downloadManifestsStepHelper.getGitCloneStepInfoFromManifestOutcome(awsSamDirectoryManifestOutcome);
@@ -85,6 +88,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
         gitCloneStep.executeAsyncAfterRbac(ambiance1, stepElementParameters, inputPackage);
 
     callbackIds.addAll(samDirectoryAsyncExecutableResponse.getCallbackIdsList());
+    logKeys.addAll(samDirectoryAsyncExecutableResponse.getLogKeysList());
 
     ValuesManifestOutcome valuesManifestOutcome =
         (ValuesManifestOutcome) downloadManifestsStepHelper.getAwsSamValuesManifestOutcome(manifestsOutcome.values());
@@ -102,12 +106,13 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
       AsyncExecutableResponse valuesAsyncExecutableResponse =
           gitCloneStep.executeAsyncAfterRbac(ambiance2, valuesStepElementParameters, inputPackage);
       callbackIds.addAll(valuesAsyncExecutableResponse.getCallbackIdsList());
+      logKeys.addAll(valuesAsyncExecutableResponse.getLogKeysList());
     }
 
     return AsyncExecutableResponse.newBuilder()
         .addAllCallbackIds(callbackIds)
         .setStatus(samDirectoryAsyncExecutableResponse.getStatus())
-        .addAllLogKeys(samDirectoryAsyncExecutableResponse.getLogKeysList())
+        .addAllLogKeys(logKeys)
         .build();
   }
 
