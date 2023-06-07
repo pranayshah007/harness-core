@@ -59,6 +59,7 @@ public class LabelFlattenedServiceImpl implements LabelFlattenedService {
     final SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(tableName);
     selectQuery.addAllColumns();
+    log.info("Label's key and column mapping query: {}", selectQuery);
     return selectQuery;
   }
 
@@ -103,7 +104,7 @@ public class LabelFlattenedServiceImpl implements LabelFlattenedService {
     if (Objects.nonNull(labelKey) && Objects.nonNull(columnName)) {
       labelsKeyAndColumnMapping.put(labelKey, columnName);
     } else {
-      log.warn("Null value is present in {} table", tableName);
+      log.warn("Null value is present in {} table for label's column mapping", tableName);
     }
   }
 

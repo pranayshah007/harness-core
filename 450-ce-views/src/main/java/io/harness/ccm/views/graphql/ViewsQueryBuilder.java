@@ -152,8 +152,6 @@ public class ViewsQueryBuilder {
   private static final String CLICKHOUSE_LABEL_KEYS = "arrayJoin(labels.keys)";
   private static final String CLICKHOUSE_LABEL_VALUES = "arrayJoin(labels.values)";
   private static final Double DEFAULT_MARKUP = 1.0;
-  private static final List<String> FLATTENED_LABELS_ENABLED_ACCOUNT_IDS =
-      ImmutableList.of("k9C6xngtS06yOSMV7hPGlQ", "JQ3KKI5yRTGe37OrCiZaTA");
 
   @Inject private ViewCustomFieldDao viewCustomFieldDao;
   @Inject private BusinessMappingService businessMappingService;
@@ -200,10 +198,8 @@ public class ViewsQueryBuilder {
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);
 
-    // TODO: Remove accountIds condition after testing
     boolean shouldUseFlattenedLabelsColumn =
-        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId())
-        || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(queryParams.getAccountId());
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
 
     List<ViewField> customFields =
         collectFieldListByIdentifier(rules, filters, groupByEntity, ViewFieldIdentifier.CUSTOM);
@@ -408,10 +404,8 @@ public class ViewsQueryBuilder {
     final SelectQuery outerQuery = new SelectQuery();
     final SelectQuery query = new SelectQuery();
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    // TODO: Remove accountIds condition after testing
     boolean shouldUseFlattenedLabelsColumn =
-        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId())
-        || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(queryParams.getAccountId());
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
     if (!Lists.isNullOrEmpty(groupBy)) {
       decorateQueryWithGroupBy(
           query, getGroupByEntity(groupBy), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
@@ -453,10 +447,8 @@ public class ViewsQueryBuilder {
       final ViewQueryParams queryParams, final Map<String, String> labelsKeyAndColumnMapping) {
     final SelectQuery query = new SelectQuery();
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    // TODO: Remove accountIds condition after testing
     boolean shouldUseFlattenedLabelsColumn =
-        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId())
-        || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(queryParams.getAccountId());
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
     decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, query, tableIdentifier,
         shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
     if (!Lists.isNullOrEmpty(aggregateFunction)) {
@@ -476,10 +468,8 @@ public class ViewsQueryBuilder {
       final Map<String, String> labelsKeyAndColumnMapping) {
     SelectQuery selectQuery = null;
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    // TODO: Remove accountIds condition after testing
     boolean shouldUseFlattenedLabelsColumn =
-        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId())
-        || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(queryParams.getAccountId());
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
     switch (sharedCost.getStrategy()) {
       case PROPORTIONAL:
         if (Double.compare(totalCost, 0.0D) != 0) {
@@ -628,10 +618,8 @@ public class ViewsQueryBuilder {
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
     QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
-    // TODO: Remove accountIds condition after testing
     boolean shouldUseFlattenedLabelsColumn =
-        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId())
-        || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(queryParams.getAccountId());
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
 
     selectQueryInner.addCustomColumns(Converter.toCustomColumnSqlObject(COUNT, COUNT_INNER));
 
@@ -1879,8 +1867,9 @@ public class ViewsQueryBuilder {
       if (labelsKeyAndColumnMapping.containsKey(labelKey) && Objects.nonNull(labelsKeyAndColumnMapping.get(labelKey))) {
         labelSubQuery = labelsKeyAndColumnMapping.get(labelKey);
       } else {
-        log.warn("Getting null value for labels key and column mapping. Label Key: {}, Column mapping: {}", labelKey,
-            labelsKeyAndColumnMapping);
+        log.warn("Getting null value for labels key and column mapping or label doesn't exist. "
+                + "Label Key: {}, Column mapping: {}",
+            labelKey, labelsKeyAndColumnMapping);
       }
     }
     return labelSubQuery;

@@ -53,8 +53,6 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
-  private static final List<String> FLATTENED_LABELS_ENABLED_ACCOUNT_IDS =
-      ImmutableList.of("k9C6xngtS06yOSMV7hPGlQ", "JQ3KKI5yRTGe37OrCiZaTA");
 
   private final Gson gson = new Gson();
   private final BigQueryHelper bigQueryHelper;
@@ -153,8 +151,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
           labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
       // TODO: Remove accountIds condition after testing
       boolean shouldUseFlattenedLabelsColumn =
-          featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId())
-          || FLATTENED_LABELS_ENABLED_ACCOUNT_IDS.contains(message.getAccountId());
+          featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId());
       List<String> sqlCaseStatements =
           businessMappingHistories.stream()
               .map(businessMappingHistory
