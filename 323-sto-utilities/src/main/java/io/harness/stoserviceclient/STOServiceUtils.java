@@ -160,7 +160,7 @@ public class STOServiceUtils {
 
     return makeAPICall(stoServiceClient.getUsageAllAccounts(accessToken, String.valueOf(timestamp)))
         .get("usage")
-        .getAsString();
+        .toString();
   }
 
   private JsonObject makeAPICall(Call<JsonObject> apiCall) {

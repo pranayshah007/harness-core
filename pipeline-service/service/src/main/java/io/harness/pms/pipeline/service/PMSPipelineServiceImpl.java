@@ -361,7 +361,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   // call of inline Pipeline
   public void validateStoredYaml(PipelineEntity pipelineEntity) {
     try {
-      YamlUtils.readTree(pipelineEntity.getYaml(), true);
+      YamlUtils.readTree(pipelineEntity.getYaml());
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =
           YamlSchemaErrorWrapperDTO.builder()

@@ -1512,7 +1512,7 @@ public class AwsHelperService {
 
   public Map<String, String> fetchLabels(
       AwsConfig awsConfig, ArtifactStreamAttributes artifactStreamAttributes, List<String> tags) {
-    return awsApiHelperService.fetchLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig),
+    return awsApiHelperService.fetchLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null,
         artifactStreamAttributes.getImageName(), artifactStreamAttributes.getRegion(), tags);
   }
 

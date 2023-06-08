@@ -879,13 +879,11 @@ public class YamlUtilsTest extends CategoryTest {
         + "  name: pipeline\n"
         + "  project: project\n"
         + "  project: identifier\n";
-    assertThatThrownBy(() -> YamlUtils.readTree(invalidYaml, true)).isInstanceOf(MismatchedInputException.class);
-    assertThatCode(() -> YamlUtils.readTree(invalidYaml)).doesNotThrowAnyException();
+    assertThatThrownBy(() -> YamlUtils.readTree(invalidYaml)).isInstanceOf(MismatchedInputException.class);
     // valid yaml
     String valid = "pipeline:\n"
         + "  name: pipeline\n"
         + "  project: project\n";
-    assertThatCode(() -> YamlUtils.readTree(valid, true)).doesNotThrowAnyException();
     assertThatCode(() -> YamlUtils.readTree(valid)).doesNotThrowAnyException();
   }
 

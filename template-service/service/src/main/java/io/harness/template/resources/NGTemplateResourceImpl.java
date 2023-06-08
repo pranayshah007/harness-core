@@ -429,7 +429,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
-        projectId, YamlUtils.readAsJsonNodeWithCheckDuplicate(templateApplyRequestDTO.getOriginalEntityYaml()),
+        projectId, YamlUtils.readAsJsonNode(templateApplyRequestDTO.getOriginalEntityYaml()),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
         NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);

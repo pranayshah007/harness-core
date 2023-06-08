@@ -399,8 +399,8 @@ public class ImagePullSecretUtils {
     List<EncryptedDataDetail> encryptionDetails =
         ecrImagePullSecretHelper.getEncryptionDetails(connectorDTO, baseNGAccess);
     EcrArtifactDelegateRequest ecrRequest = ArtifactDelegateRequestUtils.getEcrDelegateRequest(
-        ecrArtifactOutcome.getImagePath(), ecrArtifactOutcome.getTag(), null, null, ecrArtifactOutcome.getRegion(),
-        connectorRef, connectorDTO, encryptionDetails, ArtifactSourceType.ECR);
+        ecrArtifactOutcome.getRegistryId(), ecrArtifactOutcome.getImagePath(), ecrArtifactOutcome.getTag(), null, null,
+        ecrArtifactOutcome.getRegion(), connectorRef, connectorDTO, encryptionDetails, ArtifactSourceType.ECR);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponseForImageUrl = ecrImagePullSecretHelper.executeSyncTask(
         ecrRequest, ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "Ecr Get image URL failure due to error");
     String imageUrl =

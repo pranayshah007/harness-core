@@ -5928,6 +5928,9 @@
             "region": {
               "type": "string"
             },
+            "registryId": {
+              "type": "string"
+            },
             "tag": {
               "type": "string"
             },
@@ -10128,6 +10131,18 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "skipDeploymentIfSameManifest": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             },

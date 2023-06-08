@@ -79,10 +79,11 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
-  public EcrArtifactDelegateRequest getEcrDelegateRequest(String imagePath, String tag, String tagRegex,
-      List<String> tagsList, String region, String connectorRef, AwsConnectorDTO awsConnectorDTO,
+  public EcrArtifactDelegateRequest getEcrDelegateRequest(String registryId, String imagePath, String tag,
+      String tagRegex, List<String> tagsList, String region, String connectorRef, AwsConnectorDTO awsConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return EcrArtifactDelegateRequest.builder()
+        .registryId(registryId)
         .imagePath(trim(imagePath))
         .tag(trim(tag))
         .tagRegex(trim(tagRegex))

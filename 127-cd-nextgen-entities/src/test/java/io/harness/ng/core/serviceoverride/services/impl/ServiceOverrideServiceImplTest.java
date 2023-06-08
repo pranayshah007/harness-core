@@ -22,6 +22,8 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
@@ -128,6 +130,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     // list
     Criteria criteriaFromFilter =
         CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    criteriaFromFilter.and(NGServiceOverridesEntityKeys.type).is(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
     Pageable pageRequest = PageUtils.getPageRequest(0, 100, null);
     Page<NGServiceOverridesEntity> list = serviceOverrideService.list(criteriaFromFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -410,6 +413,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     serviceOverrideService.upsert(serviceOverridesEntity2);
     // list
     Criteria criteriaFromFilter = CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, ORG_IDENTIFIER, null);
+    criteriaFromFilter.and(NGServiceOverridesEntityKeys.type).is(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
     Pageable pageRequest = PageUtils.getPageRequest(0, 100, null);
     Page<NGServiceOverridesEntity> list = serviceOverrideService.list(criteriaFromFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();

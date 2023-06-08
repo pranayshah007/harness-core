@@ -8,7 +8,7 @@
 package io.harness.yaml.core.failurestrategy;
 
 import static com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXISTING_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.validation.constraints.NotNull;
 
-@JsonTypeInfo(use = NAME, property = "type", include = PROPERTY, visible = true)
+@JsonTypeInfo(use = NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
 @JsonSubTypes({
   @Type(value = AbortFailureActionConfig.class, name = NGFailureActionTypeConstants.ABORT)
   , @Type(value = IgnoreFailureActionConfig.class, name = NGFailureActionTypeConstants.IGNORE),
