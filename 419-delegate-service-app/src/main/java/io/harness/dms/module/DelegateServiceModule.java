@@ -8,8 +8,6 @@
 package io.harness.dms.module;
 
 import static io.harness.authorization.AuthorizationServiceHeader.DMS;
-import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
-import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 
 import io.harness.account.AccountClientModule;
 import io.harness.cache.CacheModule;
@@ -17,7 +15,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.dms.client.DelegateSecretManagerClientModule;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
-import io.harness.dms.service.DelegateServiceDelegateSecretManagerImpl;
+import io.harness.dms.service.DMSSecretManagerImpl;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -53,7 +51,7 @@ public class DelegateServiceModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
     install(new DelegateSecretManagerClientModule(
-        config.getManagerClientConfig(), config.getManagerConfigSecret(), NG_MANAGER.getServiceId()));
-    bind(DelegateSecretManager.class).to(DelegateServiceDelegateSecretManagerImpl.class);
+        config.getManagerClientConfig(), config.getManagerConfigSecret(), DMS.getServiceId()));
+    bind(DelegateSecretManager.class).to(DMSSecretManagerImpl.class);
   }
 }

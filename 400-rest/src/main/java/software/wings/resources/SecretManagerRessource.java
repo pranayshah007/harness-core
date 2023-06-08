@@ -37,7 +37,7 @@ public class SecretManagerRessource {
   @Timed
   @ExceptionMetered
   @InternalApi
-  public RestResponse<String> getDelegateImageTag(@QueryParam("accountIdentifier") @NotEmpty String accountId,
+  public RestResponse<String> fetchSecret(@QueryParam("accountIdentifier") @NotEmpty String accountId,
       @QueryParam("secretRecordId") @NotEmpty String secretRecordId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(secretManager.fetchSecretValue(accountId, secretRecordId));

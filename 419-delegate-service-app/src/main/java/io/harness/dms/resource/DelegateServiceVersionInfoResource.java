@@ -9,10 +9,6 @@ package io.harness.dms.resource;
 
 import static java.util.Collections.emptyList;
 
-import io.harness.beans.FeatureName;
-import io.harness.dms.client.DelegateSecretManagerClient;
-import io.harness.ff.FeatureFlagService;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 import io.harness.service.intfc.DelegateRingService;
@@ -41,10 +37,6 @@ Pending: Move apis using api-key auth
 public class DelegateServiceVersionInfoResource {
   private final DelegateRingService delegateRingService;
 
-  private final FeatureFlagService featureFlagService;
-
-  private final DelegateSecretManagerClient delegateSecretManagerClient;
-
   @GET
   @Path("/delegate/{ring}")
   @Timed
@@ -55,7 +47,6 @@ public class DelegateServiceVersionInfoResource {
     if (!CollectionUtils.isEmpty(ringVersion)) {
       return new RestResponse<>(ringVersion);
     }
-
     return new RestResponse<>(emptyList());
   }
 
@@ -65,11 +56,6 @@ public class DelegateServiceVersionInfoResource {
   @ExceptionMetered
   @PublicApi
   public RestResponse<Map<String, List<String>>> getDelegateVersionsFromAllRings() {
-    boolean ffValue = featureFlagService.isEnabled(FeatureName.USE_IMMUTABLE_DELEGATE, "kmpySmUISimoRrJL6NL73w");
-    System.out.print("Value of FF is" + ffValue);
-    System.out.println("checking value of string"
-        + CGRestUtils.getResponse(
-            delegateSecretManagerClient.fetchSecretValue("kmpySmUISimoRrJL6NL73w", "ogQyM9_kRguLaVmUERhioA")));
     return new RestResponse<>(delegateRingService.getDelegateVersionsForAllRings(false));
   }
 

@@ -203,7 +203,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     }
     String tokenNameSanitized = StringUtils.replaceAll(tokenIdentifier, TOKEN_NAME_ILLEGAL_CHARACTERS, "_");
     updateOperations.set(DelegateTokenKeys.encryptedTokenId,
-        delegateTokenEncryptDecrypt.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
+        delegateSecretManager.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     log.info("Default Delegate NG Token inserted/updated for account {}, organization {} and project {}", accountId,

@@ -15,13 +15,10 @@ import io.harness.delegate.beans.DelegateToken;
 import io.harness.ff.FeatureFlagService;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 public abstract class DelegateSecretManager {
-  FeatureFlagService featureFlagService;
+  @Inject FeatureFlagService featureFlagService;
 
   public String getDelegateTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {

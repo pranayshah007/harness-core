@@ -7,12 +7,10 @@ import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
-public class DelegateServiceDelegateSecretManagerImpl extends DelegateSecretManager {
-  DelegateSecretManagerClient delegateSecretManagerClient;
+public class DMSSecretManagerImpl extends DelegateSecretManager {
+  @Inject DelegateSecretManagerClient delegateSecretManagerClient;
 
   @Override
   public String fetchSecretValue(String accountId, String secretRecordId) {

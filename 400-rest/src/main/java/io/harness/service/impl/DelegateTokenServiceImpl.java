@@ -88,7 +88,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
             .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
             .set(DelegateTokenKeys.value, tokenValue)
             .set(DelegateTokenKeys.encryptedTokenId,
-                delegateTokenEncryptDecrypt.encrypt(accountId, tokenValue, DEFAULT_TOKEN_NAME));
+                delegateSecretManager.encrypt(accountId, tokenValue, DEFAULT_TOKEN_NAME));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
 
