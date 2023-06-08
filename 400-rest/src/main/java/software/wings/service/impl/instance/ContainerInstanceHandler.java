@@ -937,8 +937,8 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
     } else if (responseData instanceof ContainerSyncResponse) {
       ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) responseData;
       if (containerSyncResponse.getCommandExecutionStatus().equals(FAILURE)) {
-        log.warn(format("Failed to fetch PodList Msg: %s. Status: %s", containerSyncResponse.getErrorMessage(),
-            containerSyncResponse.getCommandExecutionStatus()));
+        throw new K8sPodSyncException(format("Failed to fetch PodList Msg: %s. Status: %s",
+            containerSyncResponse.getErrorMessage(), containerSyncResponse.getCommandExecutionStatus()));
       }
       if (containerSyncResponse.isEcs()) {
         return null;
