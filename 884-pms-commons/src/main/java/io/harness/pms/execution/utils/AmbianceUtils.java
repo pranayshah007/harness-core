@@ -485,4 +485,10 @@ public class AmbianceUtils {
     Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();
     return settingToValueMap.containsKey(settingId) && "true".equals(settingToValueMap.get(settingId));
   }
+
+  // This method should be used when the setting value is of type String.
+  public String getSettingValue(Ambiance ambiance, String settingId) {
+    Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();
+    return settingToValueMap.get(settingId);
+  }
 }
