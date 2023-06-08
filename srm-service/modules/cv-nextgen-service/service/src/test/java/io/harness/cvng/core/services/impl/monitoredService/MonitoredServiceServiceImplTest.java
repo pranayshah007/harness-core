@@ -786,7 +786,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     NextGenService nextGenService = Mockito.mock(NextGenService.class);
     FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
     when(nextGenService.getService(any(), any(), any(), any())).thenThrow(new BadRequestException("Service Invalid"));
-
+    when(featureFlagService.isFeatureFlagEnabled(any(), any())).thenReturn(true);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     assertThatThrownBy(
         () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
@@ -800,7 +800,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     NextGenService nextGenService = Mockito.mock(NextGenService.class);
     FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
     when(nextGenService.getEnvironment(any(), any(), any(), any())).thenThrow(new BadRequestException("Env Invalid"));
-
+    when(featureFlagService.isFeatureFlagEnabled(any(), any())).thenReturn(true);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     assertThatThrownBy(
         () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
@@ -813,6 +813,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   public void testCreate_invalidEnvList() throws IllegalAccessException {
     NextGenService nextGenService = Mockito.mock(NextGenService.class);
     FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    when(featureFlagService.isFeatureFlagEnabled(any(), any())).thenReturn(true);
     EnvironmentResponse environmentResponse1 = EnvironmentResponse.builder()
                                                    .environment(EnvironmentResponseDTO.builder()
                                                                     .accountId("accountId")
@@ -846,6 +847,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   public void testCreate_invalidConnectorRef() throws IllegalAccessException {
     NextGenService nextGenService = Mockito.spy(new NextGenServiceImpl());
     FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    when(featureFlagService.isFeatureFlagEnabled(any(), any())).thenReturn(true);
     ConnectorResponseDTO connectorResponseDTO1 = ConnectorResponseDTO.builder()
                                                      .connector(ConnectorInfoDTO.builder()
                                                                     .orgIdentifier("orgId")

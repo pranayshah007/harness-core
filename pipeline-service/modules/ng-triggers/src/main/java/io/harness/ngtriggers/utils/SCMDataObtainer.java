@@ -111,7 +111,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
     }
   }
 
-  private String getGitURL(GitConnectionType connectionType, String url, String repoName) {
+  public String getGitURL(GitConnectionType connectionType, String url, String repoName) {
     String gitUrl = retrieveGenericGitConnectorURL(repoName, connectionType, url);
 
     if (!url.endsWith(GIT_URL_SUFFIX) && !url.contains(AZURE_REPO_BASE_URL)) {
@@ -120,7 +120,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
     return gitUrl;
   }
 
-  private String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
+  public String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
     String gitUrl = "";
     if (connectionType == GitConnectionType.REPO) {
       gitUrl = url;
@@ -145,7 +145,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
     return gitUrl;
   }
 
-  private void acquirePullRequestCommits(FilterRequestData filterRequestData, List<TriggerDetails> triggers) {
+  public void acquirePullRequestCommits(FilterRequestData filterRequestData, List<TriggerDetails> triggers) {
     WebhookPayloadData webhookPayloadData = filterRequestData.getWebhookPayloadData();
     ParseWebhookResponse parseWebhookResponse = webhookPayloadData.getParseWebhookResponse();
     PullRequestHook pullRequestHook = parseWebhookResponse.getPr();

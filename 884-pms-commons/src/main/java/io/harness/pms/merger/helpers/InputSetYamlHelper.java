@@ -80,7 +80,7 @@ public class InputSetYamlHelper {
   public String getStringField(String yaml, String fieldName, String rootNode) {
     YamlConfig config;
     try {
-      config = new YamlConfig(yaml, true);
+      config = new YamlConfig(yaml);
     } catch (Exception e) {
       log.error("Input set yaml is invalid. Yaml:\n" + yaml);
       throw new InvalidRequestException("Input set yaml is invalid", e);

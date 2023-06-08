@@ -60,7 +60,7 @@ public class TriggerReferenceHelper {
     return entityDetailProtoDTOList;
   }
 
-  private List<EntityDetailProtoDTO> getReferredInputSetRefsDetails(
+  public List<EntityDetailProtoDTO> getReferredInputSetRefsDetails(
       NGTriggerConfigV2 ngTriggerConfigV2, String accountId) {
     List<EntityDetailProtoDTO> entityDetailProtoDTOList = new ArrayList<>();
     for (String inputSetRef : ngTriggerConfigV2.getInputSetRefs()) {
@@ -80,7 +80,7 @@ public class TriggerReferenceHelper {
     return entityDetailProtoDTOList;
   }
 
-  private EntityDetailProtoDTO getReferredSecretDetails(NGTriggerConfigV2 ngTriggerConfigV2, String accountId) {
+  public EntityDetailProtoDTO getReferredSecretDetails(NGTriggerConfigV2 ngTriggerConfigV2, String accountId) {
     IdentifierRef secretIdentifierRef =
         IdentifierRefHelper.getIdentifierRef(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier(), accountId,
             ngTriggerConfigV2.getOrgIdentifier(), ngTriggerConfigV2.getProjectIdentifier());
@@ -94,7 +94,7 @@ public class TriggerReferenceHelper {
         .build();
   }
 
-  private EntityDetailProtoDTO getReferredConnectorDetails(
+  public EntityDetailProtoDTO getReferredConnectorDetails(
       NGTriggerConfigV2 ngTriggerConfigV2, String accountId, String connectorRef) {
     IdentifierRef connectorIdentifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorRef, accountId, ngTriggerConfigV2.getOrgIdentifier(), ngTriggerConfigV2.getProjectIdentifier());
@@ -108,7 +108,7 @@ public class TriggerReferenceHelper {
         .build();
   }
 
-  private Set<String> getConnectorRefs(NGTriggerConfigV2 ngTriggerConfigV2) {
+  public Set<String> getConnectorRefs(NGTriggerConfigV2 ngTriggerConfigV2) {
     Set<String> connectorRefs = new HashSet<>();
     if (ngTriggerConfigV2.getSource().getType() == WEBHOOK) {
       WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerConfigV2.getSource().getSpec();

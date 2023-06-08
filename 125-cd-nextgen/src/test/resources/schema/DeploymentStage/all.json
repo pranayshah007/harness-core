@@ -5928,6 +5928,9 @@
             "region": {
               "type": "string"
             },
+            "registryId": {
+              "type": "string"
+            },
             "tag": {
               "type": "string"
             },
@@ -7777,11 +7780,20 @@
             "packageType"
           ],
           "properties": {
+            "artifactId": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string",
               "minLength": 1
             },
             "digest": {
+              "type": "string"
+            },
+            "extension": {
+              "type": "string"
+            },
+            "groupId": {
               "type": "string"
             },
             "org": {
@@ -7800,6 +7812,12 @@
                 "nuget",
                 "container"
               ]
+            },
+            "repository": {
+              "type": "string"
+            },
+            "user": {
+              "type": "string"
             },
             "version": {
               "type": "string"
@@ -10128,6 +10146,18 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "skipDeploymentIfSameManifest": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             },

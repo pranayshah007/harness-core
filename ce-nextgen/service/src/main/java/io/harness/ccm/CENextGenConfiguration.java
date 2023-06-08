@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toSet;
 import io.harness.AccessControlClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.beans.config.AiEngineConfig;
 import io.harness.ccm.commons.beans.config.AwsConfig;
 import io.harness.ccm.commons.beans.config.AwsGovCloudConfig;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
@@ -143,6 +144,7 @@ public class CENextGenConfiguration extends Configuration {
 
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
+  @JsonProperty("aiEngineConfig") private AiEngineConfig aiEngineConfig;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

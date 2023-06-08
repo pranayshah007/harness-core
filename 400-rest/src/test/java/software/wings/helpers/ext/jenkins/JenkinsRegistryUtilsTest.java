@@ -79,17 +79,23 @@ import org.powermock.api.mockito.PowerMockito;
 @OwnedBy(CDC)
 public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   private static final String JENKINS_URL = "http://localhost:%s/";
+  private static final String JENKINS_URL2 = "http://localhost:%s";
   private static final String USERNAME = "wingsbuild";
   private static String PASSWORD = "password";
-
   @Inject ScmSecret scmSecret;
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig()
                                                           .usingFilesUnderClasspath("400-rest/src/test/resources")
                                                           .disableRequestJournal()
                                                           .port(8089));
+  @Rule
+  public WireMockRule wireMockRule2 = new WireMockRule(WireMockConfiguration.wireMockConfig()
+                                                           .usingFilesUnderClasspath("400-rest/src/test/resources")
+                                                           .disableRequestJournal()
+                                                           .dynamicPort());
 
   private String rootUrl;
+  private String rootUrl2;
   private JenkinsInternalConfig jenkinsInternalConfig;
   @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
   private Jenkins jenkins;
@@ -97,6 +103,7 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
   @Before
   public void setup() throws URISyntaxException {
     rootUrl = String.format(JENKINS_URL, wireMockRule.port());
+    rootUrl2 = String.format(JENKINS_URL2, wireMockRule2.port());
     PASSWORD = scmSecret.decryptToString(new SecretName("jenkins_password"));
     LoggingInitializer.initializeLogging();
     jenkinsInternalConfig = JenkinsInternalConfig.builder()
@@ -166,6 +173,153 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
     assertThat(jobs.size() == 2).isTrue();
     assertThat(jobs.get(0).getJobName().equals("parentJob/parentJob_war_copy")).isTrue();
     assertThat(jobs.get(1).getJobName().equals("parentJob/abcd")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldGetJobsFromJenkinsForDifferentHost2() throws IOException {
+    wireMockRule2.stubFor(get(urlEqualTo("/job/Puthraya/job/Puthraya/api/json"))
+                              .willReturn(aResponse().withStatus(401).withHeader("Content-Type", "application/json")));
+    wireMockRule2.stubFor(get(urlEqualTo("/job/Puthraya/job/Venkat-Jar/api/json"))
+                              .willReturn(aResponse().withStatus(401).withHeader("Content-Type", "application/json")));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/job/Puthraya/job/Puthraya/api/json"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody(String.format("{\n"
+                            + "    \"_class\": \"org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject\",\n"
+                            + "    \"actions\": [\n"
+                            + "        {\n"
+                            + "            \"_class\": \"hudson.plugins.jobConfigHistory.JobConfigHistoryProjectAction\"\n"
+                            + "        },\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {\n"
+                            + "            \"_class\": \"com.cloudbees.plugins.credentials.ViewCredentialsAction\"\n"
+                            + "        }\n"
+                            + "    ],\n"
+                            + "    \"description\": null,\n"
+                            + "    \"displayName\": \"Puthraya\",\n"
+                            + "    \"displayNameOrNull\": null,\n"
+                            + "    \"fullDisplayName\": \"Puthraya » Puthraya\",\n"
+                            + "    \"fullName\": \"Puthraya/Puthraya\",\n"
+                            + "    \"name\": \"Puthraya\",\n"
+                            + "    \"url\": \"https://jenkins.dev.harness.io/job/Puthraya/job/Puthraya/\",\n"
+                            + "    \"healthReport\": [],\n"
+                            + "    \"jobs\": [\n"
+                            + "        {\n"
+                            + "            \"_class\": \"org.jenkinsci.plugins.workflow.job.WorkflowJob\",\n"
+                            + "            \"name\": \"develop\",\n"
+                            + "            \"url\": \"%s/job/Puthraya/job/Puthraya/job/develop/\",\n"
+                            + "            \"color\": \"blue\"\n"
+                            + "        },\n"
+                            + "        {\n"
+                            + "            \"_class\": \"org.jenkinsci.plugins.workflow.job.WorkflowJob\",\n"
+                            + "            \"name\": \"master\",\n"
+                            + "            \"url\": \"%s/job/Puthraya/job/Puthraya/job/master/\",\n"
+                            + "            \"color\": \"blue\"\n"
+                            + "        },\n"
+                            + "        {\n"
+                            + "            \"_class\": \"org.jenkinsci.plugins.workflow.job.WorkflowJob\",\n"
+                            + "            \"name\": \"patch-1\",\n"
+                            + "            \"url\": \"%s/job/Puthraya/job/Puthraya/job/patch-1/\",\n"
+                            + "            \"color\": \"blue\"\n"
+                            + "        },\n"
+                            + "        {\n"
+                            + "            \"_class\": \"org.jenkinsci.plugins.workflow.job.WorkflowJob\",\n"
+                            + "            \"name\": \"venkat50-patch-1\",\n"
+                            + "            \"url\": \"%s/job/Puthraya/job/Puthraya/job/venkat50-patch-1/\",\n"
+                            + "            \"color\": \"blue\"\n"
+                            + "        }\n"
+                            + "    ],\n"
+                            + "    \"primaryView\": {\n"
+                            + "        \"_class\": \"jenkins.branch.MultiBranchProjectViewHolder$ViewImpl\",\n"
+                            + "        \"name\": \"default\",\n"
+                            + "        \"url\": \"https://jenkins.dev.harness.io/job/Puthraya/job/Puthraya/\"\n"
+                            + "    },\n"
+                            + "    \"views\": [\n"
+                            + "        {\n"
+                            + "            \"_class\": \"jenkins.branch.MultiBranchProjectViewHolder$ViewImpl\",\n"
+                            + "            \"name\": \"default\",\n"
+                            + "            \"url\": \"https://jenkins.dev.harness.io/job/Puthraya/job/Puthraya/\"\n"
+                            + "        }\n"
+                            + "    ],\n"
+                            + "    \"sources\": [\n"
+                            + "        {}\n"
+                            + "    ]\n"
+                            + "}",
+                        rootUrl2, rootUrl2, rootUrl2, rootUrl2))
+                    .withHeader("Content-Type", "application/json")));
+    wireMockRule.stubFor(get(urlEqualTo("/job/Puthraya/job/Venkat-Jar/api/json"))
+                             .willReturn(aResponse().withStatus(401).withHeader("Content-Type", "application/json")));
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/job/Puthraya/api/json"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withBody(String.format("{\n"
+                            + "    \"_class\": \"jenkins.branch.OrganizationFolder\",\n"
+                            + "    \"actions\": [\n"
+                            + "        {},\n"
+                            + "        {\n"
+                            + "            \"_class\": \"hudson.plugins.jobConfigHistory.JobConfigHistoryProjectAction\"\n"
+                            + "        },\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {},\n"
+                            + "        {\n"
+                            + "            \"_class\": \"com.cloudbees.plugins.credentials.ViewCredentialsAction\"\n"
+                            + "        }\n"
+                            + "    ],\n"
+                            + "    \"description\": \"\",\n"
+                            + "    \"displayName\": \"Puthraya\",\n"
+                            + "    \"displayNameOrNull\": null,\n"
+                            + "    \"fullDisplayName\": \"Puthraya\",\n"
+                            + "    \"fullName\": \"Puthraya\",\n"
+                            + "    \"name\": \"Puthraya\",\n"
+                            + "    \"url\": \"https://jenkins.dev.harness.io/job/Puthraya/\",\n"
+                            + "    \"healthReport\": [],\n"
+                            + "    \"jobs\": [\n"
+                            + "        {\n"
+                            + "            \"_class\": \"org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject\",\n"
+                            + "            \"name\": \"Puthraya\",\n"
+                            + "            \"url\": \"%s/job/Puthraya/job/Puthraya/\"\n"
+                            + "        },\n"
+                            + "        {\n"
+                            + "            \"_class\": \"org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject\",\n"
+                            + "            \"name\": \"Venkat-Jar\",\n"
+                            + "            \"url\": \"%s/job/Puthraya/job/Venkat-Jar/\"\n"
+                            + "        }\n"
+                            + "    ],\n"
+                            + "    \"primaryView\": {\n"
+                            + "        \"_class\": \"jenkins.branch.OrganizationFolderViewHolder$ViewImpl\",\n"
+                            + "        \"name\": \"default\",\n"
+                            + "        \"url\": \"https://jenkins.dev.harness.io/job/Puthraya/\"\n"
+                            + "    },\n"
+                            + "    \"views\": [\n"
+                            + "        {\n"
+                            + "            \"_class\": \"jenkins.branch.OrganizationFolderViewHolder$ViewImpl\",\n"
+                            + "            \"name\": \"default\",\n"
+                            + "            \"url\": \"https://jenkins.dev.harness.io/job/Puthraya/\"\n"
+                            + "        }\n"
+                            + "    ]\n"
+                            + "}",
+                        rootUrl2, rootUrl2))
+                    .withHeader("Content-Type", "application/json")));
+
+    List<JobDetails> jobs = jenkinsRegistryUtils.getJobs(jenkinsInternalConfig, "Puthraya");
+    assertThat(jobs.size() == 4).isTrue();
+    assertThat(jobs.get(0).getJobName().equals("Puthraya/Puthraya/venkat50-patch-1")).isTrue();
+    assertThat(jobs.get(1).getJobName().equals("Puthraya/Puthraya/patch-1")).isTrue();
+    assertThat(jobs.get(2).getJobName().equals("Puthraya/Puthraya/master")).isTrue();
+    assertThat(jobs.get(3).getJobName().equals("Puthraya/Puthraya/develop")).isTrue();
   }
 
   /**
