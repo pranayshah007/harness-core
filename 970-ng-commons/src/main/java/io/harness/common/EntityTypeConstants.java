@@ -240,4 +240,6 @@ public interface EntityTypeConstants {
   String SSCA_ENFORCEMENT = "SscaEnforcement";
   String IDP_CONNECTOR = "IdpConnector";
   String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
+
+  String SERVERLESS_PREPARE_ROLLBACK = "ServerlessPrepareRollback";
 }
