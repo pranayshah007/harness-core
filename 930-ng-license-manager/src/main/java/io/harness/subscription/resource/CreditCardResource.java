@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -74,5 +75,14 @@ public class CreditCardResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Valid @RequestBody(description = "Non-sensitive credit card information") @NotNull CreditCardDTO creditCardDTO) {
     return ResponseDTO.newResponse(creditCardService.saveCreditCard(creditCardDTO));
+  }
+
+  @GET
+  @Path("/has-valid-card")
+  @ApiOperation(value = "Checks for a valid credit card", nickname = "has a valid card")
+  @Operation(operationId = "hasValidCard", summary = "Checks if the account has a valid credit card")
+  public ResponseDTO<Boolean> validateCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE)
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(creditCardService.hasValidCard(accountIdentifier));
   }
 }
