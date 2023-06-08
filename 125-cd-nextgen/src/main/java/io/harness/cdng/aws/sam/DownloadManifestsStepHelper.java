@@ -77,10 +77,7 @@ public class DownloadManifestsStepHelper {
   public GitCloneStepInfo getGitCloneStepInfoFromManifestOutcome(ManifestOutcome gitManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) gitManifestOutcome.getStore();
 
-    Build build = Build.builder()
-                      .spec(BranchBuildSpec.builder().branch(gitStoreConfig.getBranch()).build())
-                      .type(BuildType.BRANCH)
-                      .build();
+    Build build = new Build(BuildType.BRANCH, BranchBuildSpec.builder().branch(gitStoreConfig.getBranch()).build());
 
     return GitCloneStepInfo.builder()
         .cloneDirectory(ParameterField.<String>builder().value(gitManifestOutcome.getIdentifier()).build())
