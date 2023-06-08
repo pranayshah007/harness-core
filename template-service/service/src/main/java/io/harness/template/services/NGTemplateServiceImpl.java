@@ -1447,6 +1447,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
 
     if (templateEntityOptional.isPresent()) {
+      if (!templateEntityOptional.get().getTemplateEntityType().isGitEntity()) {
+        throw new InvalidRequestException(String.format(
+            "Template with the given Identifier: %s and versionLabel %s cannot be moved to Git as it is not a Git Supported Template Type",
+            templateIdentifier, versionLabel));
+      }
+
       TemplateEntity movedTemplateEntity = moveTemplateEntity(accountIdentifier, orgIdentifier, projectIdentifier,
           templateIdentifier, versionLabel, moveConfigOperationDTO, templateEntityOptional.get());
 
