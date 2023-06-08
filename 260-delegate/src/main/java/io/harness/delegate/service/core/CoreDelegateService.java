@@ -38,10 +38,9 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   }
 
   @Override
-  protected void executeTask(final String groupId, final List<TaskPayload> tasks) {
+  protected void executeTask(final String groupId, final TaskPayload task) {
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
-    final var task = tasks.stream().findFirst().get(); // For now just take first
     if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {
       taskRunner.init(groupId, task.getInfraData());
     } else if (hasTaskType(task.getTaskData(), CI_EXECUTE_STEP)) {
