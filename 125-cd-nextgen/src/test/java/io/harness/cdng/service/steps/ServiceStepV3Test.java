@@ -59,6 +59,7 @@ import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -73,6 +74,9 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -119,6 +123,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class ServiceStepV3Test extends CategoryTest {
   @Mock private ServiceEntityService serviceEntityService;
@@ -140,6 +146,9 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
 
   @Mock private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
+
+  @Mock private NGSettingsClient ngSettingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
 
@@ -693,7 +702,10 @@ public class ServiceStepV3Test extends CategoryTest {
     mockService(serviceEntity);
     mockEnv(environment);
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
-
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesConfigsTestData =
         getOverridesConfigsV2MapTestData(serviceEntity, environment);
     doReturn(overridesConfigsTestData)
@@ -729,6 +741,10 @@ public class ServiceStepV3Test extends CategoryTest {
     mockEnv(environment);
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
 
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesConfigsTestData =
         getOverridesConfigsV2MapTestData(serviceEntity, environment);
     doReturn(overridesConfigsTestData)
@@ -777,7 +793,10 @@ public class ServiceStepV3Test extends CategoryTest {
     mockService(serviceEntity);
     mockEnv(environment);
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
-
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesConfigsTestData =
         getOverridesConfigsV2MapTestData(serviceEntity, environment);
     doReturn(overridesConfigsTestData)

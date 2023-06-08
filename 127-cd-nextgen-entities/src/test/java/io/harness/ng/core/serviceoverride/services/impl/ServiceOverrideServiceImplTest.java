@@ -52,6 +52,9 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
   private final String ACCOUNT_ENV_REF = "account.envIdentifier";
   private final String ACCOUNT_SERVICE_REF = "account.serviceIdentifier";
 
+  private final String OVERRIDE_YAML =
+      "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variables: \n    - name: op1\n      value: var1\n      type: String";
+
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
@@ -197,6 +200,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
                                       .accountId(ACCOUNT_ID)
@@ -204,6 +208,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
@@ -212,6 +217,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env2)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     serviceOverrideService.upsert(e1);
     serviceOverrideService.upsert(e2);
@@ -242,6 +248,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj1)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
                                       .accountId(ACCOUNT_ID)
@@ -249,6 +256,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj1)
                                       .environmentRef(env2)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
@@ -257,6 +265,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj2)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     NGServiceOverridesEntity e4 = NGServiceOverridesEntity.builder()
                                       .accountId(ACCOUNT_ID)
@@ -264,6 +273,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj1)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e5 = NGServiceOverridesEntity.builder()
@@ -272,6 +282,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj2)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     serviceOverrideService.upsert(e1);
@@ -314,6 +325,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env1)
                                       .serviceRef(svc1)
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
                                       .accountId(ACCOUNT_ID)
@@ -321,6 +333,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env1)
                                       .serviceRef(svc1)
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
@@ -329,6 +342,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env2)
                                       .serviceRef(svc1)
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e4 = NGServiceOverridesEntity.builder()
@@ -337,6 +351,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .projectIdentifier(proj)
                                       .environmentRef(env1)
                                       .serviceRef(svc2)
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     serviceOverrideService.upsert(e1);
@@ -483,12 +498,14 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .orgIdentifier(org1)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
                                       .accountId(ACCOUNT_ID)
                                       .orgIdentifier(org1)
                                       .environmentRef(env2)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
@@ -496,12 +513,14 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .orgIdentifier(org2)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
     NGServiceOverridesEntity e4 = NGServiceOverridesEntity.builder()
                                       .accountId(ACCOUNT_ID)
                                       .orgIdentifier(org2)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     NGServiceOverridesEntity e5 = NGServiceOverridesEntity.builder()
@@ -509,6 +528,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
                                       .orgIdentifier(org2)
                                       .environmentRef(env1)
                                       .serviceRef(UUIDGenerator.generateUuid())
+                                      .yaml(OVERRIDE_YAML)
                                       .build();
 
     serviceOverrideService.upsert(e1);
