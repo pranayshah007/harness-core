@@ -112,8 +112,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
         (ServerlessAwsLambdaPrepareRollbackContainerStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder =
-        getPluginDetailsBuilder(request, serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(),
-            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser());
+        getPluginDetailsBuilder(serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(),
+            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
@@ -157,8 +157,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   }
 
   public Builder getPluginDetailsBuilder(
-      PluginCreationRequest request, ContainerResource resources, ParameterField<Integer> runAsUser) {
-    return PluginInfoProviderHelper.buildPluginDetails(request, resources, runAsUser);
+      ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
+    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts);
   }
 
   public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {
