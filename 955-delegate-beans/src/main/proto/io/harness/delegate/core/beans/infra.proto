@@ -75,7 +75,6 @@ message PluginInit {
   Defines security context for running a task. Note these values would always be there (unless entire context is
   omitted) with their defaults. E.g.
     privileged = false; runAsUser = 0 (root); runAsNonRoot = false; allowPrivilegeEscalation = false;
-
  */
 message SecurityContext {
   bool allowPrivilegeEscalation = 1;
