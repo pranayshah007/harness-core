@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.PipelineServiceConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -85,6 +86,8 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock YamlSchemaValidator yamlSchemaValidator;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
+
+  PipelineServiceConfiguration pipelineServiceConfiguration;
 
   private static final String ACC_ID = "accountId";
   private static final String ORG_ID = "orgId";
@@ -179,19 +182,20 @@ public class PMSYamlSchemaServiceImplTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testCalculateFileURL() {
-    String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "qa", "v0");
-    assertThat(fileUrL).isEqualTo(
-        "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v0/pipeline.json");
+    pipelineServiceConfiguration = mock(PipelineServiceConfiguration.class);
+    pmsYamlSchemaService.pipelineServiceConfiguration = pipelineServiceConfiguration;
 
-    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "stress", "v0");
-    assertThat(fileUrL).isEqualTo(
-        "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v0/pipeline.json");
+    doReturn("main").when(pipelineServiceConfiguration).getStaticSchemaBranch();
+    String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "v0");
+    assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/pipeline.json");
 
-    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "stage", "v1");
-    assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v1/pipeline.json");
-
-    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "stage", "v1");
+    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "v1");
     assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v1/template.json");
+
+    doReturn("quality-assurance").when(pipelineServiceConfiguration).getStaticSchemaBranch();
+    fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "v1");
+    assertThat(fileUrL).isEqualTo(
+        "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v1/template.json");
   }
 
   @Test

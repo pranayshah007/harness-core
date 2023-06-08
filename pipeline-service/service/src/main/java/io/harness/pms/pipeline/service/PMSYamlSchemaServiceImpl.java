@@ -23,6 +23,7 @@ import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.PipelineServiceConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -45,6 +46,7 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
@@ -101,6 +103,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final SchemaFetcher schemaFetcher;
 
   private ExecutorService yamlSchemaExecutor;
+
+  @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
   Integer allowedParallelStages;
 
   private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/%s/%s";
@@ -532,10 +536,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   @Override
   public ResponseDTO<JsonNode> getStaticSchema(EntityType entityType, String projectIdentifier, String orgIdentifier,
       Scope scope, String identifier, String version, String accountIdentifier) {
-    String env = System.getenv("ENV");
-
     // Appending branch and json in url
-    String fileUrl = calculateFileURL(entityType, env, version);
+    String fileUrl = calculateFileURL(entityType, version);
 
     try {
       ObjectMapper objectMapper = new ObjectMapper();
@@ -555,8 +557,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
   supported env branch will be master
    */
-  public String calculateFileURL(EntityType entityType, String env, String version) {
-    String branch = env.equals("stress") || env.equals("qa") ? QA_ENV_BRANCH : PROD_ENV_BRANCH;
+  public String calculateFileURL(EntityType entityType, String version) {
+    String branch = pipelineServiceConfiguration.getStaticSchemaBranch();
 
     String entityTypeJson = "";
     switch (entityType) {
@@ -568,7 +570,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         break;
       default:
         entityTypeJson = PIPELINE_JSON;
-        log.error("Code should never reach here");
+        log.error("Code should never reach here {}", entityType);
     }
 
     return String.format(STATIC_SCHEMA_FILE_URL, branch, version, entityTypeJson);

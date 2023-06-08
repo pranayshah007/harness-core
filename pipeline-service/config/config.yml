@@ -627,3 +627,5 @@ pipelineSetupUsageCreationExecutorServiceConfig:
 
 expandedJsonConfig:
   lockTimeOutInMinutes: 2
+
+staticSchemaBranch: ${STATIC_SCHEMA_BRANCH:-"main"}
