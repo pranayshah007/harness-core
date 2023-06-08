@@ -361,11 +361,18 @@ public class ArtifactDelegateRequestUtils {
   private String trim(String str) {
     return str == null ? null : str.trim();
   }
-
   public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
       String packageType, String version, String versionRegex, String org, String connectorRef,
       GithubConnectorDTO githubConnector, List<EncryptedDataDetail> encryptionDetails,
       ArtifactSourceType artifactSourceType) {
+    return getGithubPackagesDelegateRequest(packageName, packageType, version, versionRegex, org, connectorRef,
+        githubConnector, encryptionDetails, artifactSourceType, null, null, null, null, null);
+  }
+  public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
+      String packageType, String version, String versionRegex, String org, String connectorRef,
+      GithubConnectorDTO githubConnector, List<EncryptedDataDetail> encryptionDetails,
+      ArtifactSourceType artifactSourceType, String artifactId, String repository, String user, String extension,
+      String groupId) {
     return GithubPackagesArtifactDelegateRequest.builder()
         .packageName(packageName)
         .githubConnectorDTO(githubConnector)
@@ -375,7 +382,12 @@ public class ArtifactDelegateRequestUtils {
         .encryptedDataDetails(encryptionDetails)
         .sourceType(artifactSourceType)
         .packageType(packageType)
+        .artifactId(artifactId)
+        .repository(repository)
+        .user(user)
         .org(org)
+        .groupId(groupId)
+        .extension(extension)
         .build();
   }
 

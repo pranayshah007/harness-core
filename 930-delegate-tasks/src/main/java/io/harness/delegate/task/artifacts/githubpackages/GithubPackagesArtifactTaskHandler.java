@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.githubpackages;
 
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
@@ -70,6 +71,17 @@ public class GithubPackagesArtifactTaskHandler
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
           attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersion(),
           attributesRequest.getOrg());
+    }
+
+    if (attributesRequest.getPackageType().equals("maven")) {
+      String url = githubPackagesRegistryService.fetchDownloadUrl(
+          GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
+          attributesRequest.getPackageType(), attributesRequest.getOrg(), attributesRequest.getArtifactId(),
+          attributesRequest.getUser(), attributesRequest.getExtension(), attributesRequest.getRepository(),
+          attributesRequest.getPackageName(), lastSuccessfulBuild.getNumber(), attributesRequest.getGroupId());
+      Map<String, String> metaData = lastSuccessfulBuild.getMetadata();
+      metaData.put(ArtifactMetadataKeys.url, url);
+      lastSuccessfulBuild.setMetadata(metaData);
     }
 
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =

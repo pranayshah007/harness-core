@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -822,6 +823,36 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(githubPackagesArtifactDelegateRequest.getPackageType()).isEqualTo("type");
     assertThat(githubPackagesArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(githubPackagesArtifactDelegateRequest.getVersionRegex()).isEqualTo("*");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetGitHubDelegateRequestForMavenType() {
+    GithubPackagesArtifactConfig githubPackagesArtifactConfig =
+        GithubPackagesArtifactConfig.builder()
+            .version(ParameterField.createValueField(ACCEPT_ALL_REGEX))
+            .packageName(ParameterField.createValueField("PACKAGE"))
+            .groupId(ParameterField.createValueField("GroupId"))
+            .artifactId(ParameterField.createValueField("ArtifactId"))
+            .extension(ParameterField.createValueField("jar"))
+            .packageType(ParameterField.createValueField("maven"))
+            .org(ParameterField.createValueField("org"))
+            .repository(ParameterField.createValueField("repository"))
+            .build();
+    GithubConnectorDTO connectorDTO = GithubConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(
+            githubPackagesArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(githubPackagesArtifactDelegateRequest.getGithubConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(githubPackagesArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(githubPackagesArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GITHUB_PACKAGES);
+    assertThat(githubPackagesArtifactDelegateRequest.getPackageName()).isNotNull();
+    assertThat(githubPackagesArtifactDelegateRequest.getPackageType()).isEqualTo("maven");
+    assertThat(githubPackagesArtifactDelegateRequest.getGroupId()).isEqualTo("GroupId");
+    assertThat(githubPackagesArtifactDelegateRequest.getExtension()).isEqualTo("jar");
   }
 
   @Test
