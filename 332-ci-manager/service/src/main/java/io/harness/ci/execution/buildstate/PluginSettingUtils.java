@@ -858,6 +858,37 @@ public class PluginSettingUtils extends PluginServiceImpl {
     return BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgsCopy);
   }
 
+  public boolean buildxRequired(PluginCompatibleStep stepInfo) {
+    if (stepInfo == null) {
+      return false;
+    }
+    boolean caching;
+    List<String> cacheFrom;
+    String cacheTo;
+
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+        caching = resolveBooleanParameter(dockerStepInfo.getCaching(), false);
+        cacheFrom =
+            resolveListParameter("cacheFrom", "BuildAndPushDockerRegistry", "", dockerStepInfo.getCacheFrom(), false);
+        cacheTo =
+            resolveStringParameter("cacheTo", "BuildAndPushDockerRegistry", "", dockerStepInfo.getCacheTo(), false);
+        break;
+      case ECR:
+        ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(ecrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushECR", "", ecrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushECR", "", ecrStepInfo.getCacheTo(), false);
+        break;
+      case ACR:
+      case GCR:
+      default:
+        return false;
+    }
+    return caching || !isEmpty(cacheFrom) || !isEmpty(cacheTo);
+  }
+
   public boolean dlcSetupRequired(PluginCompatibleStep stepInfo) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:

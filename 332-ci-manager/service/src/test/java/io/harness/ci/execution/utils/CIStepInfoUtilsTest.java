@@ -8,12 +8,21 @@
 package io.harness.ci.execution.utils;
 
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.steps.CIRegistry;
+import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
+import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.rule.Owner;
@@ -25,11 +34,14 @@ import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CIStepInfoUtilsTest extends CIExecutionTestBase {
   @Inject private CIStepInfoUtils ciStepInfoUtils;
+  @Mock private CIExecutionConfigService ciExecutionConfigService;
+  @Mock private CIFeatureFlagService ciFeatureFlagService;
 
   @Test
   @Owner(developers = RAGHAV_GUPTA)
@@ -59,5 +71,47 @@ public class CIStepInfoUtilsTest extends CIExecutionTestBase {
     connector = ciStepInfoUtils.resolveConnectorFromRegistries(registries, "myregistry.azurecr.io/samples/nginx");
     assertThat(connector).isPresent();
     assertThat(connector.get()).isEqualTo("id4");
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testCanRunVmStepOnHostDliteStage() {
+    String accountId = "accountId";
+    DliteVmStageInfraDetails stageInfraDetails = DliteVmStageInfraDetails.builder().build();
+    DockerStepInfo dockerStepInfo = DockerStepInfo.builder().build();
+    when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
+        .thenReturn(true);
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(CIStepInfoType.DOCKER, dockerStepInfo))
+        .thenReturn("pluginName");
+    boolean result = CIStepInfoUtils.canRunVmStepOnHost(CIStepInfoType.DOCKER, stageInfraDetails, accountId,
+        ciExecutionConfigService, ciFeatureFlagService, dockerStepInfo);
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testCanRunVmStepOnHostDliteStageFfDisabled() {
+    String accountId = "accountId";
+    DliteVmStageInfraDetails stageInfraDetails = DliteVmStageInfraDetails.builder().build();
+    DockerStepInfo dockerStepInfo = DockerStepInfo.builder().build();
+    when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
+        .thenReturn(false);
+    boolean result = CIStepInfoUtils.canRunVmStepOnHost(CIStepInfoType.DOCKER, stageInfraDetails, accountId,
+        ciExecutionConfigService, ciFeatureFlagService, dockerStepInfo);
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testCanRunVmStepOnHostVmStage() {
+    String accountId = "accountId";
+    VmStageInfraDetails stageInfraDetails = VmStageInfraDetails.builder().build();
+    DockerStepInfo dockerStepInfo = DockerStepInfo.builder().build();
+    boolean result = CIStepInfoUtils.canRunVmStepOnHost(CIStepInfoType.DOCKER, stageInfraDetails, accountId,
+        ciExecutionConfigService, ciFeatureFlagService, dockerStepInfo);
+    assertThat(result).isFalse();
   }
 }
