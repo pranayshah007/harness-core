@@ -38,6 +38,7 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
+import io.harness.delegate.task.serverless.request.ServerlessCloudFormationRollbackRequest;
 import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
@@ -214,8 +215,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
             .isFirstDeployment(serverlessAwsLambdaRollbackDataOutcome.isFirstDeployment())
             .build();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
-    ServerlessRollbackRequest serverlessRollbackRequest =
-        ServerlessRollbackRequest.builder()
+    ServerlessCloudFormationRollbackRequest serverlessRollbackRequest =
+            ServerlessCloudFormationRollbackRequest.builder()
             .accountId(accountId)
             .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK)
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))

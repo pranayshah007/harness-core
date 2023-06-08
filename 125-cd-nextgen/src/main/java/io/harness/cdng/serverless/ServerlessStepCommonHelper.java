@@ -56,6 +56,7 @@ import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig;
+import io.harness.delegate.task.serverless.request.ServerlessCloudFormationRollbackRequest;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
@@ -286,8 +287,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public TaskChainResponse queueServerlessTaskWithTaskType(StepElementParameters stepElementParameters,
-                                               ServerlessCommandRequest serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
-                                               boolean isChainEnd, TaskType taskType) {
+                                                           ServerlessCloudFormationRollbackRequest serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
+                                                           boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
             .parameters(new Object[] {serverlessCommandRequest})
             .taskType(taskType.name())
