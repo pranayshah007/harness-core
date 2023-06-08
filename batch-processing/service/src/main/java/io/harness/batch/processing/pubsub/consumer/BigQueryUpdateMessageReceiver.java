@@ -29,7 +29,6 @@ import io.harness.ff.FeatureFlagService;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.inject.Singleton;
 import com.google.pubsub.v1.PubsubMessage;
@@ -149,7 +148,6 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       }
       Map<String, String> labelsKeyAndColumnMapping =
           labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
-      // TODO: Remove accountIds condition after testing
       boolean shouldUseFlattenedLabelsColumn =
           featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId());
       List<String> sqlCaseStatements =
