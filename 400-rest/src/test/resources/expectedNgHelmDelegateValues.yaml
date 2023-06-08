@@ -22,6 +22,7 @@ accountId: ACCOUNT_ID
 delegateToken: ACCOUNT_KEY
 
 delegateName: harness-delegate
+deployMode: KUBERNETES
 delegateDockerImage: harness/delegate:latest
 managerEndpoint: https://localhost:9090
 
