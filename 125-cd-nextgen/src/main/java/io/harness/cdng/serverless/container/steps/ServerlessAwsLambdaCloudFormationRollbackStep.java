@@ -7,7 +7,6 @@
 
 package io.harness.cdng.serverless.container.steps;
 
-import com.google.inject.Inject;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,25 +14,15 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
-import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepParameters;
 import io.harness.cdng.serverless.ServerlessAwsLambdaStepHelper;
-import io.harness.cdng.serverless.ServerlessFetchFileOutcome;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.serverless.ServerlessAwsLambdaRollbackResult;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaCloudFormationRollbackConfig;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
-import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCloudFormationRollbackRequest;
-import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
 import io.harness.exception.ExceptionUtils;
@@ -49,7 +38,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -58,11 +46,11 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
-import lombok.extern.slf4j.Slf4j;
+
 import software.wings.beans.TaskType;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -94,9 +82,10 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
         (ServerlessAwsLambdaCloudFormationRollbackStepParameters) stepElementParameters.getSpec();
     if (EmptyPredicate.isEmpty(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq())) {
       return TaskRequest.newBuilder()
-          .setSkipTaskRequest(SkipTaskRequest.newBuilder()
-                                  .setMessage("Serverless Aws Lambda Prepare Rollback step was not executed. Skipping rollback.")
-                                  .build())
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder()
+                  .setMessage("Serverless Aws Lambda Prepare Rollback step was not executed. Skipping rollback.")
+                  .build())
           .build();
     }
     OptionalSweepingOutput serverlessRollbackDataOptionalOutput =
@@ -105,9 +94,10 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
                 + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
     if (!serverlessRollbackDataOptionalOutput.isFound()) {
       return TaskRequest.newBuilder()
-          .setSkipTaskRequest(SkipTaskRequest.newBuilder()
-                                  .setMessage("Serverless Aws Lambda Prepare Rollback step was not executed. Skipping rollback.")
-                                  .build())
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder()
+                  .setMessage("Serverless Aws Lambda Prepare Rollback step was not executed. Skipping rollback.")
+                  .build())
           .build();
     }
     ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome =
@@ -116,13 +106,13 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     ServerlessAwsLambdaCloudFormationRollbackConfig serverlessAwsLambdaRollbackConfig =
-            ServerlessAwsLambdaCloudFormationRollbackConfig.builder()
+        ServerlessAwsLambdaCloudFormationRollbackConfig.builder()
             .stackDetails(serverlessAwsLambdaPrepareRollbackDataOutcome.getStackDetails())
             .isFirstDeployment(serverlessAwsLambdaPrepareRollbackDataOutcome.isFirstDeployment())
             .build();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessCloudFormationRollbackRequest serverlessRollbackRequest =
-            ServerlessCloudFormationRollbackRequest.builder()
+        ServerlessCloudFormationRollbackRequest.builder()
             .accountId(accountId)
             .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK)
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
@@ -133,7 +123,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
             .build();
     return serverlessStepCommonHelper
         .queueServerlessTaskWithTaskType(stepElementParameters, serverlessRollbackRequest, ambiance,
-            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true, TaskType.SERVERLESS_CLOUDFORMATION_ROLLBACK_TASK)
+            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.SERVERLESS_CLOUDFORMATION_ROLLBACK_TASK)
         .getTaskRequest();
   }
 
@@ -169,8 +160,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
                                           .build())
                          .build();
     } else {
-      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
-                         .build();
+      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED).build();
     }
     return stepResponse;
   }

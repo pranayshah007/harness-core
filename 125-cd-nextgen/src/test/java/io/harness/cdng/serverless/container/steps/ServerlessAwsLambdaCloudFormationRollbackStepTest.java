@@ -7,6 +7,11 @@
 
 package io.harness.cdng.serverless.container.steps;
 
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,8 +24,6 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackOutcome;
 import io.harness.cdng.serverless.ServerlessAwsLambdaStepHelper;
 import io.harness.cdng.serverless.ServerlessFetchFileOutcome;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
@@ -34,12 +37,8 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaRollbackResult;
 import io.harness.delegate.beans.serverless.ServerlessRollbackResult;
 import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaCloudFormationRollbackConfig;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
-import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCloudFormationRollbackRequest;
-import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
 import io.harness.logging.CommandExecutionStatus;
@@ -61,6 +60,11 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
+
+import software.wings.beans.TaskType;
+
+import java.util.Arrays;
+import java.util.List;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Rule;
@@ -70,14 +74,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.wings.beans.TaskType;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
@@ -89,8 +85,9 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
 
-  private final SpecParameters specParameters =
-          ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder().serverlessAwsLambdaRollbackFnq("sadf").build();
+  private final SpecParameters specParameters = ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder()
+                                                    .serverlessAwsLambdaRollbackFnq("sadf")
+                                                    .build();
   private final StepElementParameters stepElementParameters =
       StepElementParameters.builder().spec(specParameters).build();
 
@@ -104,8 +101,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
   private final StackDetails stackDetails = StackDetails.builder().build();
   private final ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaRollbackDataOutcome =
-          ServerlessAwsLambdaPrepareRollbackDataOutcome.builder()
-                  .stackDetails(stackDetails)
+      ServerlessAwsLambdaPrepareRollbackDataOutcome.builder()
+          .stackDetails(stackDetails)
           .firstDeployment(isFirstDeployment)
           .build();
   private final String manifestFileOverrideContent = "asfdasfd";
@@ -162,7 +159,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void obtainTaskAfterRbacIfNoRollbackFunctionSpecifiedTest() {
-    SpecParameters specParametersWithNoRollbackFn = ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder().build();
+    SpecParameters specParametersWithNoRollbackFn =
+        ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder().build();
     StepElementParameters stepElementParametersWithNoRollbackFnSpec =
         StepElementParameters.builder().spec(specParametersWithNoRollbackFn).build();
     SkipTaskRequest skipTaskRequest =
@@ -184,8 +182,9 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
-                + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
+                ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) specParameters)
+                    .getServerlessAwsLambdaRollbackFnq()
+                + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
     TaskRequest taskRequest =
         serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     SkipTaskRequest skipTaskRequest =
@@ -203,20 +202,21 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
-                + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
+                ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) specParameters)
+                    .getServerlessAwsLambdaRollbackFnq()
+                + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
     doReturn(infrastructureOutcome)
         .when(outcomeService)
         .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     ServerlessAwsLambdaCloudFormationRollbackConfig serverlessAwsLambdaRollbackConfig =
-            ServerlessAwsLambdaCloudFormationRollbackConfig.builder()
-                    .stackDetails(serverlessAwsLambdaRollbackDataOutcome.getStackDetails())
+        ServerlessAwsLambdaCloudFormationRollbackConfig.builder()
+            .stackDetails(serverlessAwsLambdaRollbackDataOutcome.getStackDetails())
             .isFirstDeployment(serverlessAwsLambdaRollbackDataOutcome.isFirstDeployment())
             .build();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessCloudFormationRollbackRequest serverlessRollbackRequest =
-            ServerlessCloudFormationRollbackRequest.builder()
+        ServerlessCloudFormationRollbackRequest.builder()
             .accountId(accountId)
             .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK)
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
@@ -232,7 +232,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
     doReturn(taskChainResponse)
         .when(serverlessStepCommonHelper)
         .queueServerlessTaskWithTaskType(stepElementParameters, serverlessRollbackRequest, ambiance,
-            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true, TaskType.SERVERLESS_CLOUDFORMATION_ROLLBACK_TASK);
+            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.SERVERLESS_CLOUDFORMATION_ROLLBACK_TASK);
     TaskRequest taskRequest =
         serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isEqualTo(expectedTaskRequest);

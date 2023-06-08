@@ -314,8 +314,8 @@ public class NgStepRegistrar {
 
     engineSteps.put(ServerlessAwsLambdaPrepareRollbackContainerStep.STEP_TYPE,
         ServerlessAwsLambdaPrepareRollbackContainerStep.class);
-    engineSteps.put(ServerlessAwsLambdaCloudFormationRollbackStep.STEP_TYPE,
-            ServerlessAwsLambdaCloudFormationRollbackStep.class);
+    engineSteps.put(
+        ServerlessAwsLambdaCloudFormationRollbackStep.STEP_TYPE, ServerlessAwsLambdaCloudFormationRollbackStep.class);
     return engineSteps;
   }
 }

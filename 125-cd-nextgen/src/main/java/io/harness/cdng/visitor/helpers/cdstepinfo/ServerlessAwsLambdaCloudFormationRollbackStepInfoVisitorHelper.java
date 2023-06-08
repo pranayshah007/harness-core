@@ -9,7 +9,6 @@ package io.harness.cdng.visitor.helpers.cdstepinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;

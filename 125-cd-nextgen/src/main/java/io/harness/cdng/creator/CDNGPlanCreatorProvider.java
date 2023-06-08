@@ -162,10 +162,10 @@ import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneD
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaCloudFormationRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaCloudFormationRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRunStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
@@ -1397,13 +1397,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                              .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
                                              .build();
 
-    StepInfo serverlessCloudFormationRollback = StepInfo.newBuilder()
+    StepInfo serverlessCloudFormationRollback =
+        StepInfo.newBuilder()
             .setName("Serverless Rollback")
             .setType(StepSpecTypeConstants.SERVERLESS_ROLLBACK)
-            .setStepMetaData(StepMetaData.newBuilder()
-                    .addCategory("SERVERLESS_ROLLBACK")
-                    .setFolderPath("Serverless Lambda")
-                    .build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory("SERVERLESS_ROLLBACK").setFolderPath("Serverless Lambda").build())
             .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
             .build();
 

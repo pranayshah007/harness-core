@@ -7,51 +7,39 @@
 
 package io.harness.delegate.task.serverless.request;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
-import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
-import io.harness.delegate.beans.executioncapability.ServerlessInstallationCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
-import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaCloudFormationRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
-import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
-import io.harness.delegate.task.serverless.ServerlessManifestConfig;
-import io.harness.delegate.task.serverless.ServerlessRollbackConfig;
-import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
+
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static io.harness.expression.Expression.ALLOW_SECRETS;
-
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessCloudFormationRollbackRequest implements NestedAnnotationResolver, ExecutionCapabilityDemander, TaskParameters {
+public class ServerlessCloudFormationRollbackRequest
+    implements NestedAnnotationResolver, ExecutionCapabilityDemander, TaskParameters {
   String accountId;
   ServerlessCommandType serverlessCommandType;
   String commandName;
@@ -65,8 +53,8 @@ public class ServerlessCloudFormationRollbackRequest implements NestedAnnotation
     ServerlessInfraConfig serverlessInfra = getServerlessInfraConfig();
     List<EncryptedDataDetail> cloudProviderEncryptionDetails = serverlessInfra.getEncryptionDataDetails();
     List<ExecutionCapability> capabilities =
-            new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-                    cloudProviderEncryptionDetails, maskingEvaluator));
+        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+            cloudProviderEncryptionDetails, maskingEvaluator));
     if (serverlessInfra instanceof ServerlessAwsLambdaInfraConfig) {
       AwsConnectorDTO awsConnectorDTO = ((ServerlessAwsLambdaInfraConfig) serverlessInfra).getAwsConnectorDTO();
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));

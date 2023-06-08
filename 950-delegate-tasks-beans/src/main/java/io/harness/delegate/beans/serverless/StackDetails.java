@@ -8,7 +8,6 @@
 package io.harness.delegate.beans.serverless;
 
 import java.util.List;
-
 import lombok.Builder;
 import lombok.Data;
 

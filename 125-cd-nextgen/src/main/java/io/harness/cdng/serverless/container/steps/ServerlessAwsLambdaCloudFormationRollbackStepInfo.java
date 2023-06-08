@@ -7,17 +7,11 @@
 
 package io.harness.cdng.serverless.container.steps;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackBaseStepInfo;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepParameters;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaCloudFormationRollbackStepInfoVisitorHelper;
-import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -27,15 +21,17 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data

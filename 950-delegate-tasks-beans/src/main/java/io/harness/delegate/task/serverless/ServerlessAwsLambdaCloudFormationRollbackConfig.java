@@ -7,12 +7,13 @@
 
 package io.harness.delegate.task.serverless;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.serverless.StackDetails;
+
 import lombok.Builder;
 import lombok.Value;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 @Value

@@ -602,7 +602,7 @@ public enum EntityType {
       EntityYamlRootNames.SERVERLESS_PREPARE_ROLLBACK),
   @JsonProperty(EntityTypeConstants.SERVERLESS_ROLLBACK)
   SERVERLESS_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_ROLLBACK, IdentifierRef.class,
-          EntityYamlRootNames.SERVERLESS_ROLLBACK);
+      EntityYamlRootNames.SERVERLESS_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;
