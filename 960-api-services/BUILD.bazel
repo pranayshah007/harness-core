@@ -220,6 +220,7 @@ java_library(
         "@maven//:com_squareup_okhttp3_mockwebserver",
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:com_squareup_okio_okio",
+        "@maven//:com_squareup_retrofit2_converter_jaxb",
         "@maven//:com_squareup_retrofit2_retrofit",
         "@maven//:commons_codec_commons_codec",
         "@maven//:commons_io_commons_io",

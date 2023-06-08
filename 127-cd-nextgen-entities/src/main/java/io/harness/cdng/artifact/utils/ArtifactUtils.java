@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import static software.wings.utils.RepositoryFormat.generic;
+import static software.wings.utils.RepositoryFormat.maven;
 
 import io.harness.NGConstants;
 import io.harness.annotations.dev.HarnessTeam;
@@ -194,6 +195,19 @@ public class ArtifactUtils {
             jenkinsArtifactConfig.getBuild().getValue(), jenkinsArtifactConfig.getConnectorRef().getValue());
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        if (maven.name().equals(githubPackagesArtifactConfig.getPackageType().getValue())) {
+          return String.format(
+              "\ntype: %s \nconnectorRef: %s \norg: %s \npackageName: %s \npackageType: %s \nartifactId: %s \ngroupId: %s \nrepository: %s \nversion: %s \nversionRegex: %s\n",
+              sourceType, githubPackagesArtifactConfig.getConnectorRef().getValue(),
+              githubPackagesArtifactConfig.getOrg().getValue(),
+              githubPackagesArtifactConfig.getPackageName().getValue(),
+              githubPackagesArtifactConfig.getPackageType().getValue(),
+              githubPackagesArtifactConfig.getArtifactId().getValue(),
+              githubPackagesArtifactConfig.getGroupId().getValue(),
+              githubPackagesArtifactConfig.getRepository().getValue(),
+              githubPackagesArtifactConfig.getVersion().getValue(),
+              githubPackagesArtifactConfig.getVersionRegex().getValue());
+        }
         return String.format(
             "\ntype: %s \nconnectorRef: %s \norg: %s \npackageName: %s \npackageType: %s \nversion: %s \nversionRegex: %s\n",
             sourceType, githubPackagesArtifactConfig.getConnectorRef().getValue(),

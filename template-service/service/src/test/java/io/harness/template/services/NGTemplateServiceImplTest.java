@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -1374,5 +1375,37 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(flagOffMetadata.getDeny()).isFalse();
     assertThat(flagOffMetadata.getMessage())
         .isEqualTo("FF: [CDS_OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testFailOnMoveConfigForNotSupportedTemplates() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
+                                        .yaml(yaml)
+                                        .build();
+    ngTemplateService.create(templateEntity, true, "", false);
+    doReturn(templateEntity)
+        .when(ngTemplateService)
+        .moveTemplateEntity(any(), any(), any(), any(), any(), any(TemplateMoveConfigOperationDTO.class), any());
+    TemplateMoveConfigRequestDTO moveConfigOperationDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    assertThatThrownBy(()
+                           -> ngTemplateService.moveTemplateStoreTypeConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit", moveConfigOperationDTO))
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

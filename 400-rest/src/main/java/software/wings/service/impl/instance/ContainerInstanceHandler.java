@@ -152,7 +152,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
 
     if (!(infrastructureMapping instanceof ContainerInfrastructureMapping)) {
       String msg = "Incompatible infrastructure mapping type found:" + infrastructureMapping.getInfraMappingType();
-      log.error(msg);
       throw new GeneralException(msg);
     }
 
@@ -938,8 +937,8 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
     } else if (responseData instanceof ContainerSyncResponse) {
       ContainerSyncResponse containerSyncResponse = (ContainerSyncResponse) responseData;
       if (containerSyncResponse.getCommandExecutionStatus().equals(FAILURE)) {
-        throw new K8sPodSyncException(format("Failed to fetch PodList Msg: %s. Status: %s",
-            containerSyncResponse.getErrorMessage(), containerSyncResponse.getCommandExecutionStatus()));
+        log.warn(format("Failed to fetch PodList Msg: %s. Status: %s", containerSyncResponse.getErrorMessage(),
+            containerSyncResponse.getCommandExecutionStatus()));
       }
       if (containerSyncResponse.isEcs()) {
         return null;
@@ -1376,7 +1375,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       containerInstanceKey = ContainerInstanceKey.builder().containerId(ecsContainerInfo.getTaskArn()).build();
     } else {
       String msg = "Unsupported container instance type:" + containerInfo;
-      log.error(msg);
       throw new GeneralException(msg);
     }
 
@@ -1410,7 +1408,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       return containerSync.getInstances(instanceSyncRequest);
     } else {
       String msg = "Unsupported container instance type:" + instanceType;
-      log.error(msg);
       throw new GeneralException(msg);
     }
   }
@@ -1521,7 +1518,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       delimiter = "-";
     } else {
       String msg = "Unsupported container instance type:" + instanceType;
-      log.error(msg);
       throw new GeneralException(msg);
     }
 
@@ -1591,7 +1587,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       InfrastructureMapping infrastructureMapping, DelegateResponseData response) {
     if (!(infrastructureMapping instanceof ContainerInfrastructureMapping)) {
       String msg = "Incompatible infrastructure mapping type found:" + infrastructureMapping.getInfraMappingType();
-      log.error(msg);
       throw new GeneralException(msg);
     }
 
