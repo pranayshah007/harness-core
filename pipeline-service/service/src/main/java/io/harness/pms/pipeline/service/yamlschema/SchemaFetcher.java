@@ -32,7 +32,6 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import javax.cache.Cache;
-import javax.json.Json;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
@@ -129,25 +128,25 @@ public class SchemaFetcher {
 
   @Nullable
   public JsonNode fetchOldStaticSchema(String accountId) {
-    log.info("[PMS] Fetching schema");
+    log.info("[PMS] Fetching old static schema");
     long startTs = System.currentTimeMillis();
     try {
-      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().accountIdentifier(accountId).build();
+      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().build();
 
       if (oldStaticSchemaCache.containsKey(schemaCacheKey)) {
-        log.info("[PMS_SCHEMA] Fetching schema from cache for account {}", accountId);
+        log.info("[PMS_SCHEMA] Fetching old static schema from cache for account {}", accountId);
         return JsonUtils.asTree(oldStaticSchemaCache.get(schemaCacheKey));
       }
 
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(OLD_STATIC_SCHEMA_FILE_URL));
       oldStaticSchemaCache.put(schemaCacheKey, jsonNode);
 
-      log.info("[PMS] Successfully fetched schema in {} ms for for account {}", System.currentTimeMillis() - startTs,
-          accountId);
+      log.info("[PMS] Successfully fetched old static schema in {} ms for for account {}",
+          System.currentTimeMillis() - startTs, accountId);
 
       return jsonNode;
     } catch (Exception e) {
-      log.warn(format("[PMS] Unable to get schema"), e);
+      log.warn(format("[PMS] Unable to get old static schema"), e);
       return null;
     }
   }
