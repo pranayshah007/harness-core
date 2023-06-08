@@ -159,7 +159,7 @@ for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
 
 PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE | sort -u)
 echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
-if [ ! -f $PR_BAZEL_TESTS_FILE ] && echo "NO TEST CLASS FOUND FOR JAVA SOURCE FILES... PLEASE ADD SOME TEST CLASSES."
+[ ! -f $PR_BAZEL_TESTS_FILE ] && echo "NO TEST CLASS FOUND FOR JAVA SOURCE FILES... PLEASE ADD SOME TEST CLASSES."
 
 # Running Bazel Covergae
 echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${PR_TEST_LIST[@]}"
