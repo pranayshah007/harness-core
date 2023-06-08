@@ -18,17 +18,21 @@ import io.harness.encryption.Scope;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.SchemaCacheUtils;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import javax.cache.Cache;
+import javax.json.Json;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +43,12 @@ public class SchemaFetcher {
   private static final Duration THRESHOLD_PROCESS_DURATION = Duration.ofSeconds(5);
   @Inject @Named("schemaDetailsCache") Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache;
   @Inject @Named("partialSchemaCache") Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
+
+  @Inject @Named("oldStaticSchemaCache") Cache<SchemaCacheKey, JsonNode> oldStaticSchemaCache;
   @Inject private SchemaGetterFactory schemaGetterFactory;
+
+  private final String OLD_STATIC_SCHEMA_FILE_URL =
+      "https://raw.githubusercontent.com/harness/harness-schema/main/v0/old-static-pipeline.json";
 
   /**
    * Schema is taken from cache, so every modification will affect cache value.
@@ -116,5 +125,30 @@ public class SchemaFetcher {
     SchemaGetter schemaGetter = schemaGetterFactory.obtainGetter(accountId, entityType.getEntityProduct());
     return schemaGetter.fetchStepYamlSchema(
         orgIdentifier, projectIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
+  }
+
+  @Nullable
+  public JsonNode fetchOldStaticSchema(String accountId) {
+    log.info("[PMS] Fetching schema");
+    long startTs = System.currentTimeMillis();
+    try {
+      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().accountIdentifier(accountId).build();
+
+      if (oldStaticSchemaCache.containsKey(schemaCacheKey)) {
+        log.info("[PMS_SCHEMA] Fetching schema from cache for account {}", accountId);
+        return JsonUtils.asTree(oldStaticSchemaCache.get(schemaCacheKey));
+      }
+
+      JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(OLD_STATIC_SCHEMA_FILE_URL));
+      oldStaticSchemaCache.put(schemaCacheKey, jsonNode);
+
+      log.info("[PMS] Successfully fetched schema in {} ms for for account {}", System.currentTimeMillis() - startTs,
+          accountId);
+
+      return jsonNode;
+    } catch (Exception e) {
+      log.warn(format("[PMS] Unable to get schema"), e);
+      return null;
+    }
   }
 }

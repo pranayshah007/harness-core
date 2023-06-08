@@ -26,6 +26,7 @@ public class NGCommonEntityConstants {
 
   public static final String UUID = "uuid";
   public static final String SEARCH_KEY = "searchKey";
+  public static final String OLD_STATIC_SCHEMA = "oldStaticSchema";
   public static final String SORT_TYPE = "sortType";
   public static final String SORT_ORDER = "sortOrder";
   public static final String LIMIT = "limit";

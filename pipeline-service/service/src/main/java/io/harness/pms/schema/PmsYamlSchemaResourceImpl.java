@@ -39,10 +39,12 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 
   public ResponseDTO<JsonNode> getYamlSchema(@NotNull EntityType entityType, String projectIdentifier,
-      String orgIdentifier, Scope scope, String identifier, @NotNull String accountIdentifier) {
+      String orgIdentifier, Scope scope, String identifier, Boolean oldStaticSchema,
+      @NotNull String accountIdentifier) {
     JsonNode schema = null;
     if (entityType == PIPELINES) {
-      schema = pmsYamlSchemaService.getPipelineYamlSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+      schema = pmsYamlSchemaService.getPipelineYamlSchema(
+          accountIdentifier, projectIdentifier, orgIdentifier, scope, oldStaticSchema);
     } else if (entityType == TRIGGERS) {
       schema = ngTriggerYamlSchemaService.getTriggerYamlSchema(projectIdentifier, orgIdentifier, identifier, scope);
     } else {

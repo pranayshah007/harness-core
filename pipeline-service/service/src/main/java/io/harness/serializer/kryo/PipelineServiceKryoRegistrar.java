@@ -22,6 +22,12 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.steps.approval.step.ApprovalProgressData;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineServiceKryoRegistrar implements KryoRegistrar {
@@ -37,5 +43,12 @@ public class PipelineServiceKryoRegistrar implements KryoRegistrar {
     kryo.register(PartialSchemaDTOWrapperValue.class, 800008);
     kryo.register(CustomApprovalCallback.class, 800009);
     kryo.register(ApprovalProgressData.class, 10000525);
+
+    kryo.register(ObjectNode.class, 10000601);
+    kryo.register(JsonNodeFactory.class, 10000602);
+    kryo.register(TextNode.class, 10000603);
+    kryo.register(ArrayNode.class, 10000604);
+    kryo.register(IntNode.class, 10000605);
+    kryo.register(BooleanNode.class, 10000606);
   }
 }

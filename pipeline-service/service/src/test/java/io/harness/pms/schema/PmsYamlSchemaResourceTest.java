@@ -50,22 +50,22 @@ public class PmsYamlSchemaResourceTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testGetYamlSchema() {
     JsonNode textNode1 = new TextNode("placeholder1");
-    doReturn(textNode1).when(pmsYamlSchemaService).getPipelineYamlSchema(acc, project, org, Scope.PROJECT);
+    doReturn(textNode1).when(pmsYamlSchemaService).getPipelineYamlSchema(acc, project, org, Scope.PROJECT, false);
     ResponseDTO<JsonNode> yamlSchema1 =
-        pmsYamlSchemaResource.getYamlSchema(PIPELINES, project, org, Scope.PROJECT, id, acc);
+        pmsYamlSchemaResource.getYamlSchema(PIPELINES, project, org, Scope.PROJECT, id, false, acc);
     assertThat(yamlSchema1.getData()).isEqualTo(textNode1);
 
     JsonNode textNode2 = new TextNode("placeholder2");
     doReturn(textNode2).when(ngTriggerYamlSchemaService).getTriggerYamlSchema(project, org, id, Scope.PROJECT);
     ResponseDTO<JsonNode> yamlSchema2 =
-        pmsYamlSchemaResource.getYamlSchema(TRIGGERS, project, org, Scope.PROJECT, id, acc);
+        pmsYamlSchemaResource.getYamlSchema(TRIGGERS, project, org, Scope.PROJECT, id, false, acc);
     assertThat(yamlSchema2.getData()).isEqualTo(textNode2);
 
     for (EntityType value : EntityType.values()) {
       if (value.equals(PIPELINES) || value.equals(TRIGGERS)) {
         continue;
       }
-      assertThatThrownBy(() -> pmsYamlSchemaResource.getYamlSchema(value, project, org, Scope.PROJECT, id, acc))
+      assertThatThrownBy(() -> pmsYamlSchemaResource.getYamlSchema(value, project, org, Scope.PROJECT, id, false, acc))
           .isInstanceOf(NotSupportedException.class);
     }
   }

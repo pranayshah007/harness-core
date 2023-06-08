@@ -16,7 +16,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PMSYamlSchemaService {
-  JsonNode getPipelineYamlSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope);
+  JsonNode getPipelineYamlSchema(
+      String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope, Boolean oldStaticSchema);
 
   boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml);
 

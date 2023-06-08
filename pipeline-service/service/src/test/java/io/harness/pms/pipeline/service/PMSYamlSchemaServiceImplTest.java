@@ -180,7 +180,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void verifyGetPipelineYamlSchema() throws Throwable {
     final Scope scope = Scope.ORG;
     prepareAndAssertGetPipelineYamlSchemaInternal(
-        scope, () -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, PRJ_ID, ORG_ID, scope));
+        scope, () -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, PRJ_ID, ORG_ID, scope, false));
   }
 
   @Test

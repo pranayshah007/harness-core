@@ -117,8 +117,12 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @Override
   public JsonNode getPipelineYamlSchema(
-      String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
+      String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope, Boolean oldStaticSchema) {
     try {
+      // Have added this check temporarily
+      if (oldStaticSchema) {
+        return schemaFetcher.fetchOldStaticSchema(accountIdentifier);
+      }
       return getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
     } catch (Exception e) {
       log.error("[PMS] Failed to get pipeline yaml schema");
@@ -159,7 +163,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
     long start = System.currentTimeMillis();
     try {
-      JsonNode schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
+      JsonNode schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT, false);
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
       yamlSchemaValidator.validate(yaml, schemaString,
           pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),

@@ -9,6 +9,7 @@ package io.harness.pms.schema;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
+import static io.harness.NGCommonEntityConstants.OLD_STATIC_SCHEMA;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -30,6 +31,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -52,6 +54,7 @@ public interface PmsYamlSchemaResource {
   ResponseDTO<JsonNode> getYamlSchema(@QueryParam("entityType") @NotNull EntityType entityType,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
+      @DefaultValue("false") @QueryParam(OLD_STATIC_SCHEMA) Boolean oldStaticSchema,
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
 
   @POST

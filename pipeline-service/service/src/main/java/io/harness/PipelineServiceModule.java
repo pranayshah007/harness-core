@@ -226,6 +226,7 @@ import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.schema.client.YamlSchemaClientModule;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -821,6 +822,16 @@ public class PipelineServiceModule extends AbstractModule {
   public Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> partialSchemaCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("partialSchemaCache", SchemaCacheKey.class, PartialSchemaDTOWrapperValue.class,
+        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named("oldStaticSchemaCache")
+  public Cache<SchemaCacheKey, JsonNode> oldStaticSchemaCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("oldStaticSchemaCache", SchemaCacheKey.class, JsonNode.class,
         CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
