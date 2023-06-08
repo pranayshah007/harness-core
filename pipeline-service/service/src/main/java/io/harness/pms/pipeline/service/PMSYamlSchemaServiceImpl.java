@@ -46,7 +46,6 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
