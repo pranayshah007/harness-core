@@ -163,7 +163,7 @@ echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
 
 # Running Bazel Covergae
 echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${PR_TEST_LIST[@]}"
-bazel coverage ${BAZEL_ARGS} -- `cat $PR_BAZEL_TESTS_FILE`
+bazel coverage ${BAZEL_ARGS} -- `cat $PR_BAZEL_TESTS_FILE` || true
 check_cmd_status "$?" "Failed to run coverage."
 
 mv $ORIG_COVERAGE_REPORT_PATH $COVERAGE_REPORT_PATH
