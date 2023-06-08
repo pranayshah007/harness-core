@@ -150,19 +150,33 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
           labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
       boolean shouldUseFlattenedLabelsColumn =
           featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId());
-      List<String> sqlCaseStatements =
-          businessMappingHistories.stream()
-              .map(businessMappingHistory
-                  -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                      viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
-                          BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
-                          shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping)))
-              .collect(Collectors.toList());
-      String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
+      if (!shouldUseFlattenedLabelsColumn) {
+        List<String> sqlCaseStatements =
+            businessMappingHistories.stream()
+                .map(businessMappingHistory
+                    -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
+                        viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                            BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
+                            shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping)))
+                .collect(Collectors.toList());
+        String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
 
-      bigQueryHelperService.addCostCategory(tableName, costCategoriesStatement,
-          formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)), message.getCloudProvider(),
-          message.getCloudProviderAccountIds());
+        bigQueryHelperService.insertCostCategories(tableName, costCategoriesStatement,
+            formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)),
+            message.getCloudProvider(), message.getCloudProviderAccountIds());
+      } else {
+        // Accounts for which a single update query for all cost categories is too much to handle
+        bigQueryHelperService.removeAllCostCategories(tableName, formattedTime(Date.from(queryStartTime)),
+            formattedTime(Date.from(queryEndTime)), message.getCloudProvider(), message.getCloudProviderAccountIds());
+        for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
+          String costCategoriesStatement = "[" + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
+              viewsQueryBuilder.getSQLCaseStatementBusinessMapping(BusinessMapping.fromHistory(businessMappingHistory),
+                  UNIFIED_TABLE, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping)) + "]";
+          bigQueryHelperService.addCostCategory(tableName, costCategoriesStatement,
+              formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)),
+              message.getCloudProvider(), message.getCloudProviderAccountIds());
+        }
+      }
 
       currentMonth = currentMonth.plusMonths(1);
 
