@@ -1332,7 +1332,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
                                                           .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
                                                           .build())
-                                     .setFeatureFlag(FeatureName.CDS_TERRAFORM_CLOUD.name())
                                      .build();
     StepInfo awsSamDeploy =
         StepInfo.newBuilder()
@@ -1367,7 +1366,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
                                  .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.CDS_TERRAFORM_CLOUD.name())
             .build();
 
     StepInfo awsLambdaRollback =

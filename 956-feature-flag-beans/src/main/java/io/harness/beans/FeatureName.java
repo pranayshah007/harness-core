@@ -609,7 +609,6 @@ public enum FeatureName {
   PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS(
       "Enable Basic Role assignment  Default User Group in Orgs and Projects", HarnessTeam.PL),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
-  CDS_TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
   CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
           + "This flag only works with Service and Environments v2",

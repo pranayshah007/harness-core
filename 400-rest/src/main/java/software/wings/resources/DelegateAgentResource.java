@@ -517,7 +517,7 @@ public class DelegateAgentResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceHelper.processInstanceSyncResponseFromPerpetualTask(perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
-      log.error(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -533,7 +533,7 @@ public class DelegateAgentResource {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(
           accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
-      log.error(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -549,7 +549,7 @@ public class DelegateAgentResource {
       instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(
           accountId, perpetualTaskId.replaceAll("[\r\n]", ""), instanceSyncResponseV2);
     } catch (Exception e) {
-      log.error(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }

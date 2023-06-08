@@ -18,7 +18,6 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.RunDetails;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
@@ -52,8 +51,6 @@ import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndDes
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanOnlyTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRefreshTaskResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -115,13 +112,6 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD)) {
-      throw new AccessDeniedException(
-          format("Step is not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.",
-              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD.name()),
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
-
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);

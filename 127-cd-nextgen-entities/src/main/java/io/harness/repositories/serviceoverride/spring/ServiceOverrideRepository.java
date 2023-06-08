@@ -15,13 +15,17 @@ import io.harness.repositories.serviceoverride.custom.ServiceOverrideRepositoryC
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 public interface ServiceOverrideRepository
     extends PagingAndSortingRepository<NGServiceOverridesEntity, String>, ServiceOverrideRepositoryCustom {
+  @Query(
+      value =
+          "{ 'accountId': ?0, 'orgIdentifier': ?1, 'projectIdentifier': ?2, 'environmentRef': ?3, 'serviceRef': ?4, 'type': ?5, 'yaml': { '$exists': true, '$ne': null } }")
   Optional<NGServiceOverridesEntity>
-  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndType(@NotEmpty String accountId,
-      String orgIdentifier, String projectIdentifier, @NotNull String environmentRef, String serviceRef,
-      ServiceOverridesType type);
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
+      @NotEmpty String accountId, String orgIdentifier, String projectIdentifier, @NotNull String environmentRef,
+      String serviceRef, ServiceOverridesType type);
 }
