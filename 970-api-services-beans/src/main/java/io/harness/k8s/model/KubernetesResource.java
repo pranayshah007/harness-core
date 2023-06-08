@@ -32,6 +32,7 @@ import io.harness.k8s.model.harnesscrds.RollingDeploymentStrategyParams;
 import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.k8s.utils.ResourceUtils;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -61,6 +62,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeProjection;
+import io.kubernetes.client.openapi.models.V2HorizontalPodAutoscaler;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
 import java.util.HashMap;
@@ -416,7 +418,7 @@ public class KubernetesResource {
         break;
 
       case HorizontalPodAutoscaler:
-        V1HorizontalPodAutoscaler horizontalPodAutoscaler = (V1HorizontalPodAutoscaler) k8sResource;
+        KubernetesObject horizontalPodAutoscaler = (KubernetesObject) k8sResource;
         notNullCheck("Horizontal Pod Autoscaler does not have metadata", horizontalPodAutoscaler.getMetadata());
         newName = (String) transformer.apply(horizontalPodAutoscaler.getMetadata().getName());
         horizontalPodAutoscaler.getMetadata().setName(newName);
@@ -601,6 +603,9 @@ public class KubernetesResource {
         case CronJob:
           return Yaml.loadAs(this.spec, V1CronJob.class);
         case HorizontalPodAutoscaler:
+          if (isHPAV2()) {
+            return Yaml.loadAs(this.spec, V2HorizontalPodAutoscaler.class);
+          }
           return Yaml.loadAs(this.spec, V1HorizontalPodAutoscaler.class);
         case PodDisruptionBudget:
           return Yaml.loadAs(this.spec, V1PodDisruptionBudget.class);
@@ -617,6 +622,15 @@ public class KubernetesResource {
           this.resourceId.getKind(), this.resourceId.getName());
       throw new KubernetesYamlException(exceptionMessage + yamlConstructionExceptionMessage);
     }
+  }
+
+  private boolean isHPAV2() {
+    if (this.getField("apiVersion") != null
+        && String.valueOf(this.getField("apiVersion")).startsWith("autoscaling/v1")) {
+      return false;
+    }
+
+    return true;
   }
 
   private String extractMessageHeaderWithProblemMarks(Exception ex) {
