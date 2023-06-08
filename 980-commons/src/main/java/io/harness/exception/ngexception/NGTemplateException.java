@@ -15,10 +15,13 @@ import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
 
 import java.util.EnumSet;
+import lombok.Getter;
 
 @OwnedBy(HarnessTeam.CDC)
 public class NGTemplateException extends WingsException {
   private static final String MESSAGE_ARG = "message";
+
+  @Getter NGTemplateArgs templateArgs;
 
   public NGTemplateException(String message, EnumSet<ReportTarget> reportTarget, ErrorMetadataDTO metadata) {
     super(message, null, TEMPLATE_EXCEPTION, Level.ERROR, reportTarget, null, metadata);
@@ -33,5 +36,17 @@ public class NGTemplateException extends WingsException {
   public NGTemplateException(String message, Throwable cause) {
     super(message, cause, TEMPLATE_EXCEPTION, Level.ERROR, null, null);
     super.param(MESSAGE_ARG, message);
+  }
+
+  public NGTemplateException(String message, Throwable cause, NGTemplateArgs ngTemplateArgs) {
+    super(message, cause, TEMPLATE_EXCEPTION, Level.ERROR, null, null);
+    super.param(MESSAGE_ARG, message);
+    this.templateArgs = ngTemplateArgs;
+  }
+
+  public NGTemplateException(String message, NGTemplateArgs ngTemplateArgs) {
+    super(message, null, TEMPLATE_EXCEPTION, Level.ERROR, null, null);
+    super.param(MESSAGE_ARG, message);
+    this.templateArgs = ngTemplateArgs;
   }
 }

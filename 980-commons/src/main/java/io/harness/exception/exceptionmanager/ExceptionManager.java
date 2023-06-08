@@ -103,7 +103,7 @@ public class ExceptionManager {
         }
         setExceptionStacktrace(cascadedException, exception.getStackTrace());
         if (exception.getCause() != null) {
-          setExceptionCause(cascadedException, handleException((Exception) exception.getCause()));
+          setExceptionCause(handledException, handleException((Exception) exception.getCause()));
         }
       } else {
         ExceptionHandler exceptionHandler = getExceptionHandler(exception);

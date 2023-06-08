@@ -79,6 +79,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.AzureARMTaskException;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
 import io.harness.exception.ngexception.AzureBPTaskException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.exception.runtime.SshCommandExecutionException;
@@ -209,5 +210,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntCommandExecutionException.class, 10000262);
     kryo.register(TerraformCloudException.class, 10000305);
     kryo.register(MissingRequiredFieldException.class, 10000306);
+    kryo.register(NGTemplateException.class, 10000307);
   }
 }

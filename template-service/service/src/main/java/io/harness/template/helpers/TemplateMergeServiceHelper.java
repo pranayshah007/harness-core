@@ -30,6 +30,8 @@ import io.harness.beans.Scope;
 import io.harness.common.EntityReferenceHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.TemplateExceptionHandler;
+import io.harness.exception.ngexception.NGTemplateArgs;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
@@ -75,7 +77,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import javax.ws.rs.InternalServerErrorException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -143,9 +144,14 @@ public class TemplateMergeServiceHelper {
             templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
             templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
     if (!templateEntity.isPresent()) {
-      throw new NGTemplateException(String.format(
-          "The template identifier %s and version label %s does not exist. Could not replace this template",
-          templateIdentifierRef.getIdentifier(), versionLabel));
+      throw new NGTemplateException(TemplateExceptionHandler.TEMPLATE_NOT_FOUND,
+          NGTemplateArgs.builder()
+              .accountId(templateIdentifierRef.getAccountIdentifier())
+              .orgId(templateIdentifierRef.getOrgIdentifier())
+              .projectId(templateIdentifierRef.getProjectIdentifier())
+              .templateId(templateIdentifierRef.getIdentifier())
+              .version(versionLabel)
+              .build());
     }
     TemplateEntity template = templateEntity.get();
     templateCacheMap.put(templateUniqueIdentifier, template);
@@ -387,11 +393,9 @@ public class TemplateMergeServiceHelper {
     try {
       getBatchTemplateResponseMap =
           templateServiceHelper.getBatchRemoteTemplates(accountIdentifier, getBatchRemoteTemplatesRequestList);
-    } catch (NGTemplateException e) {
-      throw new NGTemplateException(e.getMessage(), e);
     } catch (Exception e) {
       log.error("Error while getting batch templates ", e);
-      throw new InvalidRequestException(String.format("Error while getting templates: %s", e.getMessage()));
+      throw new NGTemplateException(TemplateExceptionHandler.ERROR_WHILE_GETTING_BATCH_TEMPLATES, e);
     }
 
     for (String requestIdentifier : getBatchRemoteTemplatesRequestList.keySet()) {
@@ -399,7 +403,8 @@ public class TemplateMergeServiceHelper {
         templateCacheMap.put(requestIdentifier, getBatchTemplateResponseMap.get(requestIdentifier));
       } else {
         log.error(String.format("Template key %s not found in the getBatchTemplate", requestIdentifier));
-        throw new InternalServerErrorException("Error while retrieving templates");
+        throw new NGTemplateException(TemplateExceptionHandler.TEMPLATE_NOT_FOUND,
+            NGTemplateArgs.builder().templateId(requestIdentifier).accountId(accountIdentifier).build());
       }
     }
     return templateCacheMap;

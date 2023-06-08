@@ -21,11 +21,12 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
+import io.harness.exception.TemplateExceptionHandler;
+import io.harness.exception.ngexception.NGTemplateArgs;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -52,7 +53,6 @@ import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
 import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
-import io.harness.template.utils.TemplateUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -110,21 +110,15 @@ public class NGTemplateServiceHelper {
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
       }
       return optionalTemplate;
-    } catch (NGTemplateException e) {
-      throw new NGTemplateException(e.getMessage(), e);
     } catch (Exception e) {
-      log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
-                    templateIdentifier, versionLabel),
-          e);
-      ScmException exception = TemplateUtils.getScmException(e);
-      if (null != exception) {
-        throw new InvalidRequestException("Error while retrieving template with identifier " + templateIdentifier
-            + " and versionLabel " + versionLabel + " due to " + ExceptionUtils.getMessage(e));
-      } else {
-        throw new InvalidRequestException(
-            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-                templateIdentifier, versionLabel, e.getMessage()));
-      }
+      throw new NGTemplateException(TemplateExceptionHandler.TEMPLATE_NOT_FOUND, e,
+          NGTemplateArgs.builder()
+              .templateId(templateIdentifier)
+              .version(versionLabel)
+              .accountId(accountId)
+              .orgId(orgIdentifier)
+              .projectId(projectIdentifier)
+              .build());
     }
   }
 

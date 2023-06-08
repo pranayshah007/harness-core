@@ -28,6 +28,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.MissingRequiredFieldException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.filter.FilterType;
@@ -307,6 +308,8 @@ public class PMSPipelineServiceHelper {
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
+      throw ex;
+    } catch (NGTemplateException ex) {
       throw ex;
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =

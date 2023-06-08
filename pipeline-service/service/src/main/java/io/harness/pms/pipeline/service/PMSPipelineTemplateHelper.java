@@ -98,9 +98,9 @@ public class PMSPipelineTemplateHelper {
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
-          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
-              accountId, orgId, projectId, loadFromCache,
+          return NGRestUtils.getResponseV2(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
+              projectId, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(),
+              getRepoName(), accountId, orgId, projectId, loadFromCache,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
@@ -112,8 +112,8 @@ public class PMSPipelineTemplateHelper {
         GitSyncBranchContext gitSyncBranchContext =
             GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-              null, null, null, null, null, null, null, null, loadFromCache,
+          return NGRestUtils.getResponseV2(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
+              projectId, null, null, null, null, null, null, null, null, loadFromCache,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
@@ -124,7 +124,7 @@ public class PMSPipelineTemplateHelper {
         }
       }
       // TODO: use nested exceptions to add explanations and hints to the error messages
-      catch (InvalidRequestException e) {
+      catch (InvalidRequestException | NGTemplateException e) {
         throw e;
       } catch (UnexpectedException e) {
         log.error("Error connecting to Template Service", e);

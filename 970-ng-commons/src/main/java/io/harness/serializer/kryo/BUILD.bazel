@@ -32,6 +32,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/harness/request:module",
         "//970-ng-commons/src/main/java/io/harness/serviceaccount:module",
         "//970-ng-commons/src/main/java/io/harness/yaml/core/timeout:module",
+                "//970-ng-commons/src/main/java/io/harness/remote/client:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_esotericsoftware_kryo",

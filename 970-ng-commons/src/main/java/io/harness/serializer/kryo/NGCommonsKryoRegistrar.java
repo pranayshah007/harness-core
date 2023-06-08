@@ -42,6 +42,7 @@ import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
+import io.harness.remote.client.HarnessServiceCallException;
 import io.harness.request.HttpRequestInfo;
 import io.harness.request.RequestContext;
 import io.harness.request.RequestContextData;
@@ -102,5 +103,6 @@ public class NGCommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(PageRequestDTO.class, 5216);
     kryo.register(Timeout.class, 9300122);
     kryo.register(WebhookEncryptedSecretDTO.class, 9300123);
+    kryo.register(HarnessServiceCallException.class, 9300124);
   }
 }

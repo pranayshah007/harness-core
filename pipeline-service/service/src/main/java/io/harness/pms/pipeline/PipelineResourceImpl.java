@@ -283,7 +283,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
       log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
           projectId, orgId, accountId));
-      accountId = "";
       PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
           accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
       PipelineCRUDResult pipelineCRUDResult =
@@ -298,7 +297,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .identifier(updatedEntity.getIdentifier())
               .governanceMetadata(governanceMetadata)
               .build());
-    } catch (MissingRequiredFieldException ex) {
+    } catch (Exception ex) {
+      // Only for POC
       throw new PipelineUpdateException("Pipeline Update Failed", exceptionManager.processException(ex));
     }
   }

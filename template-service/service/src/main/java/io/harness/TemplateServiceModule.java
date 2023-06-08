@@ -38,7 +38,9 @@ import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.GovernanceServiceImpl;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.exception.TemplateExceptionHandler;
 import io.harness.exception.exceptionmanager.ExceptionModule;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.filter.FilterType;
@@ -121,6 +123,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -241,6 +244,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(TemplateGitXService.class).to(TemplateGitXServiceImpl.class).in(Singleton.class);
     bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
+    bindExceptionHandlers();
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -398,5 +402,12 @@ public class TemplateServiceModule extends AbstractModule {
         .configure()
         .parameterNameProvider(new ReflectionParameterNameProvider())
         .buildValidatorFactory();
+  }
+
+  private void bindExceptionHandlers() {
+    MapBinder<Class<? extends Exception>, ExceptionHandler> exceptionHandlerMapBinder = MapBinder.newMapBinder(
+        binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
+    TemplateExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(TemplateExceptionHandler.class));
   }
 }

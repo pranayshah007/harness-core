@@ -24,6 +24,8 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
@@ -119,6 +121,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
   private final TemplateReferenceHelper templateReferenceHelper;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
   @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
+  @Inject ExceptionManager exceptionManager;
 
   @Override
   public ResponseDTO<TemplateResponseDTO> get(@NotNull @AccountIdentifier String accountId, @OrgIdentifier String orgId,
@@ -397,14 +400,19 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    long start = System.currentTimeMillis();
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId,
-            templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
-            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
-    checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
-    log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
-    return ResponseDTO.newResponse(templateMergeResponseDTO);
+    try {
+      long start = System.currentTimeMillis();
+      TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYaml(accountId, orgId,
+          projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
+          templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
+          NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
+      checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
+      log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
+      return ResponseDTO.newResponse(templateMergeResponseDTO);
+    } catch (NGTemplateException ex) {
+      // Currently we are doing this for poc but ideally there will be a mapper for all resource apis
+      throw exceptionManager.processException(ex);
+    }
   }
 
   @Override
@@ -416,13 +424,19 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,
-            templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
-            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
-    checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
-    log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
-    return ResponseDTO.newResponse(templateMergeResponseDTO);
+    try {
+      TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
+          projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
+          templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
+          NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
+      checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
+      log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
+      return ResponseDTO.newResponse(templateMergeResponseDTO);
+    } catch (NGTemplateException ex) {
+      // Currently we are doing this for poc but ideally there will be a mapper for all resource apis
+
+      throw exceptionManager.processException(ex);
+    }
   }
 
   private void checkLinkedTemplateAccess(String accountId, String orgId, String projectId,

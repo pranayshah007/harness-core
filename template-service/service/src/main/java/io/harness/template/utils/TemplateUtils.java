@@ -17,6 +17,8 @@ import io.harness.beans.Scope;
 import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
+import io.harness.exception.TemplateExceptionHandler;
+import io.harness.exception.ngexception.NGTemplateArgs;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -141,14 +143,15 @@ public class TemplateUtils {
 
   public static YamlNode validateAndGetYamlNode(String yaml, String templateIdentifier) {
     if (isEmpty(yaml)) {
-      throw new NGTemplateException(String.format("Template with path %s not found.", templateIdentifier));
+      throw new NGTemplateException(
+          TemplateExceptionHandler.TEMPLATE_NOT_FOUND, NGTemplateArgs.builder().templateId(templateIdentifier).build());
     }
     YamlNode yamlNode;
     try {
       yamlNode = YamlUtils.readTree(yaml).getNode();
     } catch (IOException e) {
       throw new NGTemplateException(
-          String.format("Could not convert %s template yaml to JsonNode: ", templateIdentifier) + e.getMessage());
+          TemplateExceptionHandler.INVALID_YAML, NGTemplateArgs.builder().templateId(templateIdentifier).build());
     }
     return yamlNode;
   }

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.sdk.PmsSdkModuleUtils;
+import io.harness.pms.sdk.core.exception.HarnessServiceExceptionHandler;
 import io.harness.pms.sdk.core.exception.InvalidYamlExceptionHandler;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataServiceImpl;
@@ -74,6 +75,8 @@ public class PmsSdkCoreModule extends AbstractModule {
         binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
     InvalidYamlExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(InvalidYamlExceptionHandler.class));
+    HarnessServiceExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(HarnessServiceExceptionHandler.class));
   }
 
   @Provides

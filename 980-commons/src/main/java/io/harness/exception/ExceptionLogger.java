@@ -75,6 +75,15 @@ public class ExceptionLogger {
       if (list.stream().noneMatch(msg -> StringUtils.equals(finalResponseMessage.getMessage(), msg.getMessage()))) {
         list.add(responseMessage);
       }
+
+      // For inter-service communication, this will ensure that all the response messages from the corresponding service
+      // will be added to the response message for this service.
+      if (((WingsException) ex).getMetadata() != null
+          && ((WingsException) ex).getMetadata() instanceof HarnessServiceErrorMetadata) {
+        HarnessServiceErrorMetadata serviceErrorMetadata =
+            (HarnessServiceErrorMetadata) ((WingsException) ex).getMetadata();
+        list.addAll(serviceErrorMetadata.getResponseMessages());
+      }
     }
 
     return list;

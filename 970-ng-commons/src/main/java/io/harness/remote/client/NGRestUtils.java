@@ -9,6 +9,7 @@ package io.harness.remote.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -19,6 +20,7 @@ import io.harness.serializer.JsonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,17 @@ public class NGRestUtils {
     try {
       Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
       return handleResponse(response, "");
+    } catch (FailsafeException ex) {
+      throw new UnexpectedException(DEFAULT_ERROR_MESSAGE, ex.getCause());
+    }
+  }
+
+  // The only change in this function is calling of handleResponseV2
+  public static <T> T getResponseV2(Call<ResponseDTO<T>> request) {
+    RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy("Request failed");
+    try {
+      Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
+      return handleResponseV2(response, "");
     } catch (FailsafeException ex) {
       throw new UnexpectedException(DEFAULT_ERROR_MESSAGE, ex.getCause());
     }
@@ -185,5 +198,41 @@ public class NGRestUtils {
   private static boolean isRetryableHttpCode(int httpCode) {
     // https://stackoverflow.com/questions/51770071/what-are-the-http-codes-to-automatically-retry-the-request
     return httpCode == 408 || httpCode == 502 || httpCode == 503 || httpCode == 504;
+  }
+
+  /**
+   * Implementation for handleResponse was not proper as for any error it was just using message and not utilising stack
+   * trace. This will now throw an exception which we know for sure how to resolve.
+   * @param response
+   * @param defaultErrorMessage
+   * @return
+   * @param <T>
+   */
+  private static <T> T handleResponseV2(Response<ResponseDTO<T>> response, String defaultErrorMessage) {
+    if (response.isSuccessful()) {
+      return response.body().getData();
+    }
+
+    log.error("Error response received: {}", response);
+    try {
+      ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
+      throw new HarnessServiceCallException("", null, restResponse);
+    } catch (InvalidRequestException e) {
+      throw e;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      if (!response.isSuccessful() && response.errorBody() != null) {
+        response.errorBody().close();
+      }
+    }
+  }
+
+  private void tryParsingErrorFromRestResponse(ErrorDTO errorDTO) {
+    // Try to parse manager response format - io.harness.cvng.exception.GenericExceptionMapper
+    // If resource has annotation @ExposeInternalException(withStackTrace = true) we will also get
+    // stacktrace from manager.
+    // Add @ExposeInternalException(withStackTrace = true) if you want to get stacktrace of failure.
+    List<ResponseMessage> responseMessages = errorDTO.getResponseMessages();
   }
 }
