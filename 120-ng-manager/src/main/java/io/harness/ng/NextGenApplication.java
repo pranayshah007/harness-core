@@ -127,7 +127,6 @@ import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapp
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
-import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
 import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
@@ -652,7 +651,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(BitbucketSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
-    injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
   }
