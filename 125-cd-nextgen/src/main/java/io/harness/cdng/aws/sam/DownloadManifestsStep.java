@@ -9,6 +9,7 @@ package io.harness.cdng.aws.sam;
 
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
+import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome.AwsSamValuesYamlDataOutcomeBuilder;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -141,8 +142,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
         (ValuesManifestOutcome) downloadManifestsStepHelper.getAwsSamValuesManifestOutcome(manifestsOutcome.values());
 
     if (valuesManifestOutcome != null) {
-      AwsSamValuesYamlDataOutcome.AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder =
-          AwsSamValuesYamlDataOutcome.builder();
+      AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder = AwsSamValuesYamlDataOutcome.builder();
 
       for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
         ResponseData responseData = entry.getValue();

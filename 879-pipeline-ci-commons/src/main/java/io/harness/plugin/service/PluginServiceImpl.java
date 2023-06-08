@@ -23,7 +23,9 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUA
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.*;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_OUTPUT_FILE_PATHS_CONTENT;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
