@@ -6,12 +6,29 @@
 
 #set -ex
 
+trap 'clean_up_files' EXIT
+
 trap 'report_error' ERR
+
+function clean_temp_files() {
+  local_files=( $1 )
+  for file in ${local_files[@]}
+   do
+      [ -f $file ] && rm -f $file
+   done
+}
 
 function report_error(){
     echo 'please re-trigger this stage after resolving the issue.'
     echo 'to trigger this specific stage comment "trigger ss" in your github PR'
+    clean_temp_files "$PR_BAZEL_TESTS_FILE $BAZEL_TESTS_FILE $MODULES_FILE $PR_MODULES_JAVAC_FILE \
+    $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE $PR_REGISTRAR_EXCLUSION_FILE"
     exit 1
+}
+
+function clean_up_files(){
+    clean_temp_files "$PR_BAZEL_TESTS_FILE $BAZEL_TESTS_FILE $MODULES_FILE $PR_MODULES_JAVAC_FILE \
+    $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE $PR_REGISTRAR_EXCLUSION_FILE"
 }
 
 function usage() {
@@ -30,13 +47,6 @@ function create_empty_files() {
   for file in $1
    do
       [ -f $file ] && >$file || >$file
-   done
-}
-
-function clean_temp_files() {
-  for file in ${1}
-   do
-      [ -f $file ] && rm -f $file
    done
 }
 
@@ -67,7 +77,8 @@ PR_BAZEL_TESTS_FILE="pr_bazel_tests.txt"
 PR_TEST_INCLUSION_FILE="pr_test_inclusions.txt"
 PR_REGISTRAR_EXCLUSION_FILE="pr_registrar_exclusions.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
-COVERAGE_REPORT_PATH='/tmp/execroot/harness_monorepo/bazel-out/_coverage/_coverage_report.dat'
+ORIG_COVERAGE_REPORT_PATH='/tmp/execroot/harness_monorepo/bazel-out/_coverage/_coverage_report.dat'
+COVERAGE_REPORT_PATH='/tmp/coverage_report.dat'
 
 BAZEL_ARGS="--announce_rc --keep_going --show_timestamps --verbose_failures --remote_max_connections=1000 --remote_retries=1"
 
@@ -122,7 +133,7 @@ for file in $($GIT_DIFF | tr '\r\n' ' ')
   done
 
 while IFS= read -r line; do
-    echo "$line/$JAVA_TEST_SRCS"
+    [ -d "$line/test" ] && echo "$line/$JAVA_TEST_SRCS"
 done < "$PR_SRCS_FILE" > "$PR_TEST_INCLUSION_FILE"
 
 # Running Bazel Build and creating list of all tests in the modules
@@ -149,14 +160,18 @@ for pr_file in $(echo $PR_FILES | sed "s/,/ /g")
 PR_TEST_LIST=$(cat $PR_BAZEL_TESTS_FILE | sort -u)
 echo "PR_TEST_LIST: ${PR_TEST_LIST[@]}"
 
-# Running Bazel Build and Test
-echo "INFO: BAZEL COMMAND: bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]} -//product/... -//commons/..."
-bazel build ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" -//product/... -//commons/...
-check_cmd_status "$?" "Failed to build harness core modules."
-
+# Running Bazel Covergae
 echo "INFO: BAZEL COMMAND: bazel coverage ${BAZEL_ARGS} -- ${PR_TEST_LIST[@]}"
 bazel coverage ${BAZEL_ARGS} -- `cat $PR_BAZEL_TESTS_FILE`
 check_cmd_status "$?" "Failed to run coverage."
+
+mv $ORIG_COVERAGE_REPORT_PATH $COVERAGE_REPORT_PATH
+[ -f $COVERAGE_REPORT_PATH ] && echo "Coverage Report Found."
+
+# Running Bazel Build
+echo "INFO: BAZEL COMMAND: bazel build ${BAZEL_ARGS} -- ${BAZEL_COMPILE_MODULES[@]} -//product/... -//commons/..."
+bazel build ${BAZEL_ARGS} -- "${BAZEL_COMPILE_MODULES[@]}" -//product/... -//commons/...
+check_cmd_status "$?" "Failed to build harness core modules."
 
 for module in $PR_MODULES
   do
@@ -210,6 +225,3 @@ echo "---------------------------------------------------------------------"
 echo "PR_FILES: ${PR_FILES}"
 echo "PR_TEST_FILES: ${PR_TEST_LIST[@]}"
 echo "---------------------------------------------------------------------"
-
-clean_temp_files "$PR_BAZEL_TESTS_FILE $BAZEL_TESTS_FILE $MODULES_FILE $PR_MODULES_JAVAC_FILE \
-$PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
