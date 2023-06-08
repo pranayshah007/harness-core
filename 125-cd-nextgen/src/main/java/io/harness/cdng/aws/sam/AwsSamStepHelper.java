@@ -9,6 +9,8 @@ package io.harness.cdng.aws.sam;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 
+import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
@@ -35,7 +37,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.tasks.ResponseData;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -50,6 +51,8 @@ import org.apache.commons.lang3.StringUtils;
 public class AwsSamStepHelper {
   @Inject protected OutcomeService outcomeService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
 
   public void verifyPluginImageIsProvider(ParameterField<String> image) {
     if (ParameterField.isNull(image) || image.getValue() == null) {
@@ -118,8 +121,6 @@ public class AwsSamStepHelper {
         String instancesByte64 = stepMapOutput.getMap().get("instances");
         instances = new String(Base64.getDecoder().decode(instancesByte64));
       }
-
-      ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
       try {
         serverInstanceInfoList = Arrays.asList(objectMapper.readValue(instances, AwsSamServerInstanceInfo[].class));
