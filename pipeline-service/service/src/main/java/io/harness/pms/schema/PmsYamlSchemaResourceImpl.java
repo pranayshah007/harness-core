@@ -59,8 +59,8 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   }
 
   @Override
-  public ResponseDTO<JsonNode> getStaticYamlSchema(EntityType entityType, String projectIdentifier,
-      String orgIdentifier, Scope scope, String identifier, String version, String accountIdentifier) {
+  public ResponseDTO<JsonNode> getStaticYamlSchema(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String identifier, EntityType entityType, Scope scope, String version) {
     String env = System.getenv("ENV");
     /*
     Currently static schema is not supported for community and onPrem env.
