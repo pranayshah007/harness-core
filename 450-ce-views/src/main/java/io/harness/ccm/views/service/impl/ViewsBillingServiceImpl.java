@@ -97,6 +97,8 @@ import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.FieldValue;
 import com.google.cloud.bigquery.FieldValueList;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
@@ -294,7 +296,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     log.info("Query for grid (with limit as {}): {}", limit, query);
     TableResult result;
     try {
-      result = bigQuery.query(queryConfig);
+      Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id {} for grid query (with limit as {}): {}", job.getJobId(), limit, query);
+      result = job.getQueryResults();
     } catch (InterruptedException e) {
       log.error("Failed to getEntityStatsDataPoints for query {}", query, e);
       Thread.currentThread().interrupt();
@@ -545,7 +549,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     log.info("Query for cost trend (with limit as {}): {}", limit, query);
     TableResult result;
     try {
-      result = bigQuery.query(queryConfig);
+      Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id {} for cost trend query (with limit as {}): {}", job.getJobId(), limit, query);
+      result = job.getQueryResults();
     } catch (InterruptedException e) {
       log.error("Failed to getEntityStatsDataForCostTrend for account {}", queryParams.getAccountId(), e);
       Thread.currentThread().interrupt();
@@ -662,7 +668,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     try {
-      return bigQuery.query(queryConfig);
+      Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id {} for timeSeriesStats query (with limit as {}): {}", job.getJobId(), limit, query);
+      return job.getQueryResults();
     } catch (InterruptedException e) {
       log.error("Failed to getTimeSeriesStats for query: {}", query, e);
       Thread.currentThread().interrupt();
@@ -1065,7 +1073,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     TableResult result;
     try {
-      result = bigQuery.query(queryConfig);
+      Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id {} for trend stats cost data query: {}", job.getJobId(), query);
+      result = job.getQueryResults();
     } catch (InterruptedException e) {
       log.error("Failed to getTrendStatsData.", e);
       Thread.currentThread().interrupt();
@@ -1264,7 +1274,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
       TableResult result;
       try {
-        result = bigQuery.query(queryConfig);
+        Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
+        log.info("Job id {} for sharedCost per timestamp query: {}", job.getJobId(), query);
+        result = job.getQueryResults();
       } catch (InterruptedException e) {
         log.error("Failed to getSharedCostFromFilters.", e);
         Thread.currentThread().interrupt();
@@ -1486,7 +1498,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     log.info("Query for shared cost (with limit as {}): {}", limit, query);
     TableResult result = null;
     try {
-      result = bigQuery.query(queryConfig);
+      Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Job id {} for shared cost query (with limit as {}): {}", job.getJobId(), limit, query);
+      result = job.getQueryResults();
     } catch (final InterruptedException e) {
       log.error("Failed to get query result", e);
       Thread.currentThread().interrupt();
