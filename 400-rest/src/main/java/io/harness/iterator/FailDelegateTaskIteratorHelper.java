@@ -14,7 +14,6 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_EXPIRED;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -31,7 +30,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
-import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
@@ -39,7 +38,6 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateTaskService;
 
-import software.wings.beans.TaskType;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
@@ -205,10 +203,7 @@ public class FailDelegateTaskIteratorHelper {
       if (delegateTask.getValidationCompleteDelegateIds().containsAll(delegateTask.getEligibleToExecuteDelegateIds())) {
         log.info("Found delegate task {} with validation completed by all delegates but not assigned",
             delegateTask.getUuid());
-        String taskType = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().getTaskType()
-                                                               : delegateTask.getData().getTaskType();
-        try (AutoLogContext ignore = new TaskLogContext(
-                 delegateTask.getUuid(), taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
+        try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(delegateTask)) {
           // Check whether a whitelisted delegate is connected
           List<String> whitelistedDelegates = assignDelegateService.connectedWhitelistedDelegates(delegateTask);
           if (isNotEmpty(whitelistedDelegates)) {
