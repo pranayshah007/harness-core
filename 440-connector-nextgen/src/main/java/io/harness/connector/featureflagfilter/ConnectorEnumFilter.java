@@ -9,6 +9,7 @@ package io.harness.connector.featureflagfilter;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.BAMBOO_ARTIFACT_NG;
+import static io.harness.beans.FeatureName.CDS_RANCHER_SUPPORT_NG;
 import static io.harness.beans.FeatureName.CDS_TAS_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLOUD;
 import static io.harness.remote.client.CGRestUtils.getResponse;
@@ -32,6 +33,7 @@ public class ConnectorEnumFilter extends EnumFeatureFlagFilter {
     put(CDS_TAS_NG, Sets.newHashSet(ConnectorType.TAS));
     put(CDS_TERRAFORM_CLOUD, Sets.newHashSet(ConnectorType.TERRAFORM_CLOUD));
     put(BAMBOO_ARTIFACT_NG, Sets.newHashSet(ConnectorType.BAMBOO));
+    put(CDS_RANCHER_SUPPORT_NG, Sets.newHashSet(ConnectorType.RANCHER));
   }
 
   @Override

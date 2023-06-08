@@ -287,6 +287,7 @@ public enum FeatureName {
   CCM_CURRENCY_PREFERENCES("Currency Preferences", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
   CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
+  CCM_LABELS_FLATTENING("Use label's columns in BigQuery", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
@@ -769,8 +770,10 @@ public enum FeatureName {
   CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC),
   PL_DISCOVERY_ENABLE(
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
+  PL_FIX_INCONSISTENT_USER_DATA(
+      "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",
+      HarnessTeam.PL),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS);
-
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

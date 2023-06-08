@@ -173,7 +173,7 @@ public class NGVariablesUtils {
       }
       return null;
     }
-    if (variable.isRequired() && ObjectUtils.isEmpty(value.getValue())) {
+    if (variable.isRequired() && !value.isExpression() && ObjectUtils.isEmpty(value.getValue())) {
       throw new InvalidRequestException(
           String.format("Value not provided for required variable: %s", variable.getName()));
     }

@@ -9,6 +9,8 @@ package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.KubernetesHelperService.toDisplayYaml;
+import static io.harness.k8s.model.HarnessLabelValues.bgPrimaryEnv;
+import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
 
 import static java.lang.String.format;
 
@@ -20,6 +22,7 @@ import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -102,5 +105,13 @@ public class K8sSwapServiceSelectorsBaseHandler {
           new KubernetesTaskException(message));
     }
     return false;
+  }
+
+  public void updateReleaseHistory(IK8sRelease release) {
+    if (release != null && bgStageEnv.equals(release.getBgEnvironment())) {
+      release.setBgEnvironment(bgPrimaryEnv);
+    } else if (release != null && bgPrimaryEnv.equals(release.getBgEnvironment())) {
+      release.setBgEnvironment(bgStageEnv);
+    }
   }
 }

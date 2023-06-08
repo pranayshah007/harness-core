@@ -72,6 +72,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -136,7 +137,15 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))
             .getStartTs());
-
+    if (Objects.nonNull(cvConfigs)) {
+      cvConfigs = cvConfigs.stream()
+                      .peek(cvConfig -> {
+                        if (Objects.isNull(cvConfig.getDataSourceName())) {
+                          cvConfig.setDataSourceName(cvConfig.getType());
+                        }
+                      })
+                      .collect(Collectors.toList());
+    }
     if (CollectionUtils.isEmpty(cvConfigs)) {
       CVNGStepTaskBuilder cvngStepTaskBuilder = CVNGStepTask.builder();
       cvngStepTaskBuilder.skip(true);
