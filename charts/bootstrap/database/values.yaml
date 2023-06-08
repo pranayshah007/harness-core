@@ -29,7 +29,7 @@ mongodb:
     registry: docker.io
     repository: harness/mongo
     tag: 4.4.19
-  replicaCount: 2
+  replicaCount: 1
   arbiter:
     enabled: true
   service:
