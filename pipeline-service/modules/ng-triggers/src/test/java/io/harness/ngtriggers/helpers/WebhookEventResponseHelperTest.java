@@ -11,16 +11,22 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.INVALID_PAYLOAD;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.INVALID_RUNTIME_INPUT_YAML;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_ARTIFACT_EVENT_PROCESSED;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_MANIFEST_EVENT_PROCESSED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_ENABLED_TRIGGER_FOR_PROJECT;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_ENABLED_TRIGGER_FOR_SOURCEREPO_TYPE;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_EVENT_ACTION;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_REPO;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.POLLING_EVENT_WITH_NO_VERSIONS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.SCM_SERVICE_CONNECTION_FAILED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_DID_NOT_EXECUTE;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_CONFIRMATION_SUCCESSFUL;
 import static io.harness.ngtriggers.beans.target.TargetType.PIPELINE;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static io.grpc.Status.UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,15 +34,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecution;
+import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus;
+import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 import io.harness.ngtriggers.beans.scm.ParsePayloadResponse;
 import io.harness.ngtriggers.beans.scm.ParsePayloadResponse.ParsePayloadResponseBuilder;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.ngtriggers.dtos.NGPipelineExecutionResponseDTO;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
 
 import io.grpc.StatusRuntimeException;
@@ -134,39 +144,81 @@ public class WebhookEventResponseHelperTest extends CategoryTest {
     assertThat(webhookEventResponse.getPayload()).isEqualTo("payload");
   }
 
-  //  @Test
-  //  @Owner(developers = ADWAIT)
-  //  @Category(UnitTests.class)
-  //  public void testPrepareTargetExecutionSummary() {
-  //    TriggerDetails triggerDetails = TriggerDetails.builder()
-  //                                        .ngTriggerEntity(NGTriggerEntity.builder()
-  //                                                             .accountId("accountId")
-  //                                                             .projectIdentifier("projectId")
-  //                                                             .orgIdentifier("orgId")
-  //                                                             .identifier("triggerId")
-  //                                                             .targetIdentifier("targetId")
-  //                                                             .targetType(PIPELINE)
-  //                                                             .build())
-  //                                        .build();
-  //
-  //    String runtimeInputYaml = "runtime";
-  //
-  //    TargetExecutionSummary targetExecutionSummary =
-  //        WebhookEventResponseHelper.prepareTargetExecutionSummary(null, triggerDetails, runtimeInputYaml);
-  //    assertThat(targetExecutionSummary).isNotNull();
-  //    assertThat(targetExecutionSummary.getTriggerId()).isEqualTo("triggerId");
-  //    assertThat(targetExecutionSummary.getTargetId()).isEqualTo("targetId");
-  //
-  //    targetExecutionSummary = WebhookEventResponseHelper.prepareTargetExecutionSummary(
-  //        NGPipelineExecutionResponseDTO.builder()
-  //            .planExecution(PlanExecution.builder().uuid("planUuid").startTs(123l).status(RUNNING).build())
-  //            .build(),
-  //        triggerDetails, runtimeInputYaml);
-  //    assertThat(targetExecutionSummary).isNotNull();
-  //    assertThat(targetExecutionSummary.getTriggerId()).isEqualTo("triggerId");
-  //    assertThat(targetExecutionSummary.getTargetId()).isEqualTo("targetId");
-  //    assertThat(targetExecutionSummary.getPlanExecutionId()).isEqualTo("planUuid");
-  //    assertThat(targetExecutionSummary.getExecutionStatus()).isEqualTo(RUNNING.name());
-  //    assertThat(targetExecutionSummary.getStartTs()).isEqualTo(123l);
-  //  }
+  @Test
+  @Owner(developers = ADWAIT)
+  @Category(UnitTests.class)
+  public void testPrepareTargetExecutionSummary() {
+    TriggerDetails triggerDetails = TriggerDetails.builder()
+                                        .ngTriggerEntity(NGTriggerEntity.builder()
+                                                             .accountId("accountId")
+                                                             .projectIdentifier("projectId")
+                                                             .orgIdentifier("orgId")
+                                                             .identifier("triggerId")
+                                                             .targetIdentifier("targetId")
+                                                             .targetType(PIPELINE)
+                                                             .build())
+                                        .build();
+
+    String runtimeInputYaml = "runtime";
+
+    TargetExecutionSummary targetExecutionSummary = TriggerEventResponseHelper.prepareTargetExecutionSummary(
+        (NGPipelineExecutionResponseDTO) null, triggerDetails, runtimeInputYaml);
+    assertThat(targetExecutionSummary).isNotNull();
+    assertThat(targetExecutionSummary.getTriggerId()).isEqualTo("triggerId");
+    assertThat(targetExecutionSummary.getTargetId()).isEqualTo("targetId");
+
+    targetExecutionSummary = TriggerEventResponseHelper.prepareTargetExecutionSummary(
+        NGPipelineExecutionResponseDTO.builder()
+            .planExecution(PlanExecution.builder()
+                               .uuid("planUuid")
+                               .startTs(123l)
+                               .status(RUNNING)
+                               .metadata(ExecutionMetadata.newBuilder().setRunSequence(1).build())
+                               .build())
+            .build(),
+        triggerDetails, runtimeInputYaml);
+    assertThat(targetExecutionSummary).isNotNull();
+    assertThat(targetExecutionSummary.getTriggerId()).isEqualTo("triggerId");
+    assertThat(targetExecutionSummary.getTargetId()).isEqualTo("targetId");
+    assertThat(targetExecutionSummary.getPlanExecutionId()).isEqualTo("planUuid");
+    assertThat(targetExecutionSummary.getExecutionStatus()).isEqualTo(RUNNING.name());
+    assertThat(targetExecutionSummary.getStartTs()).isEqualTo(123l);
+    assertThat(targetExecutionSummary.getRunSequence()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testTriggerEventStatusHelper() {
+    assertThat(TriggerEventStatusHelper.toStatus(NEW_ARTIFACT_EVENT_PROCESSED))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SUCCESS)
+                       .message(NEW_ARTIFACT_EVENT_PROCESSED.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(NEW_MANIFEST_EVENT_PROCESSED))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SUCCESS)
+                       .message(NEW_MANIFEST_EVENT_PROCESSED.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(TRIGGER_CONFIRMATION_SUCCESSFUL))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SUCCESS)
+                       .message(TRIGGER_CONFIRMATION_SUCCESSFUL.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(TARGET_EXECUTION_REQUESTED))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SUCCESS)
+                       .message(TARGET_EXECUTION_REQUESTED.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(POLLING_EVENT_WITH_NO_VERSIONS))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.FAILURE)
+                       .message(POLLING_EVENT_WITH_NO_VERSIONS.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(null))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.FAILURE)
+                       .message("Unknown status")
+                       .build());
+  }
 }

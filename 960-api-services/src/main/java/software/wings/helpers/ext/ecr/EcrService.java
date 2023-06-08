@@ -26,13 +26,14 @@ public interface EcrService {
    * Gets builds.
    *
    * @param awsConfig         the aws cloud provider config
+   * @param registryId
    * @param region            the region name
    * @param imageName         the image name
    * @param maxNumberOfBuilds the max number of builds
    * @return the builds
    */
-  List<BuildDetailsInternal> getBuilds(
-      AwsInternalConfig awsConfig, String imageUrl, String region, String imageName, int maxNumberOfBuilds);
+  List<BuildDetailsInternal> getBuilds(AwsInternalConfig awsConfig, String registryId, String imageUrl, String region,
+      String imageName, int maxNumberOfBuilds);
 
   /**
    * Gets last successful build.
@@ -46,12 +47,13 @@ public interface EcrService {
   /**
    * Validates the Image
    *
-   * @param awsConfig the ecr config
-   * @param region    the aws region
-   * @param imageName the image name
+   * @param awsConfig  the ecr config
+   * @param region     the aws region
+   * @param registryId
+   * @param imageName  the image name
    * @return the boolean
    */
-  boolean verifyRepository(AwsInternalConfig awsConfig, String region, String imageName);
+  boolean verifyRepository(AwsInternalConfig awsConfig, String region, String registryId, String imageName);
 
   /**
    * Lists aws regions
@@ -64,24 +66,30 @@ public interface EcrService {
   /**
    * List ecr registry list.
    *
-   * @param awsConfig the ecr config
+   * @param awsConfig  the ecr config
+   * @param registryId
    * @return the list
    */
-  List<String> listEcrRegistry(AwsInternalConfig awsConfig, String region);
+  List<String> listEcrRegistry(AwsInternalConfig awsConfig, String region, String registryId);
+
   /**
    * Validates the Image
    *
    * @param awsConfig
+   * @param registryId
    */
-  boolean verifyImageName(AwsInternalConfig awsConfig, String imageUrl, String region, String imageName);
+  boolean verifyImageName(
+      AwsInternalConfig awsConfig, String registryId, String imageUrl, String region, String imageName);
 
-  List<Map<String, String>> getLabels(AwsInternalConfig awsConfig, String imageName, String region, List<String> tags);
+  List<Map<String, String>> getLabels(
+      AwsInternalConfig awsConfig, String registryId, String imageName, String region, List<String> tags);
 
-  boolean validateCredentials(AwsInternalConfig awsConfig, String imageUrl, String region, String imageName);
+  boolean validateCredentials(
+      AwsInternalConfig awsConfig, String registryId, String imageUrl, String region, String imageName);
 
-  BuildDetailsInternal verifyBuildNumber(
-      AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tag);
+  BuildDetailsInternal verifyBuildNumber(AwsInternalConfig awsInternalConfig, String registryId, String imageUrl,
+      String region, String imageName, String tag);
 
-  BuildDetailsInternal getLastSuccessfulBuildFromRegex(
-      AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tagRegex);
+  BuildDetailsInternal getLastSuccessfulBuildFromRegex(AwsInternalConfig awsInternalConfig, String registryId,
+      String imageUrl, String region, String imageName, String tagRegex);
 }

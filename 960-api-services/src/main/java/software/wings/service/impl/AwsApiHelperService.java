@@ -530,12 +530,13 @@ public class AwsApiHelperService {
   }
 
   public Map<String, String> fetchLabels(
-      AwsInternalConfig awsConfig, String imageName, String region, List<String> tags) {
+      AwsInternalConfig awsConfig, String registryId, String imageName, String region, List<String> tags) {
     AmazonECRClient ecrClient = getAmazonEcrClient(awsConfig, region);
     return tags.stream()
         .map(tag
             -> ecrClient.batchGetImage(
                 new BatchGetImageRequest()
+                    .withRegistryId(registryId)
                     .withRepositoryName(imageName)
                     .withImageIds(new ImageIdentifier().withImageTag(tag))
                     .withAcceptedMediaTypes("application/vnd.docker.distribution.manifest.v1+json")))
