@@ -8,11 +8,8 @@
 package io.harness.idp.events.eventlisteners.factory;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ASYNC_CATALOG_IMPORT_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_GROUP;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.*;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,11 +19,14 @@ import io.harness.idp.events.eventlisteners.messagehandler.EventMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.SecretMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.UserGroupMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.UserMembershipMessageHandler;
+import io.harness.idp.events.eventlisteners.utility.EventListenerLogger;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
 @OwnedBy(HarnessTeam.IDP)
+@Slf4j
 public class EventMessageHandlerFactory {
   SecretMessageHandler secretMessageHandler;
   ConnectorMessageHandler gitIntegrationConnectorMessageHandler;
@@ -47,6 +47,7 @@ public class EventMessageHandlerFactory {
       case ASYNC_CATALOG_IMPORT_ENTITY:
         return asyncCatalogImportMessageHandler;
       default:
+        log.info("Ignoring received event. Entity type : {}", entity);
         return null;
     }
   }
