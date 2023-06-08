@@ -62,7 +62,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepInfo
 
   @Override
   public StepType getStepType() {
-    return ServerlessAwsLambdaRollbackStep.STEP_TYPE;
+    return ServerlessAwsLambdaCloudFormationRollbackStep.STEP_TYPE;
   }
 
   @Override
@@ -72,7 +72,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ServerlessAwsLambdaRollbackStepParameters.infoBuilder()
+    return ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }
