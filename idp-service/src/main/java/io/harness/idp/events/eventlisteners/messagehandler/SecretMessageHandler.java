@@ -13,10 +13,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.events.eventlisteners.utility.EventListenerLogger;
 
 import com.google.inject.Inject;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,16 +30,23 @@ public class SecretMessageHandler implements EventMessageHandler {
   private BackstageEnvVariableService backstageEnvVariableService;
 
   @Override
-  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
+  public void handleMessage(Message message, String action) {
+    EntityChangeDTO entityChangeDTO;
+    try {
+      entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for id %s", message.getId()), e);
+    }
     EventListenerLogger.logForEventReceived(message);
-    String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
-    String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
-    switch (action) {
-      case UPDATE_ACTION:
-        backstageEnvVariableService.processSecretUpdate(entityChangeDTO);
-        break;
-      default:
-        log.warn("ACTION - {} is not to be handled by IDP secret event handler", action);
+    if (entityChangeDTO != null) {
+      switch (action) {
+        case UPDATE_ACTION:
+          backstageEnvVariableService.processSecretUpdate(entityChangeDTO);
+          break;
+        default:
+          log.warn("ACTION - {} is not to be handled by IDP secret event handler", action);
+      }
     }
   }
 }

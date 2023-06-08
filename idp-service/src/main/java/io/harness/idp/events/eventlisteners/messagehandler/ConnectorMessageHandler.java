@@ -13,10 +13,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.events.eventlisteners.utility.EventListenerLogger;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 
 import com.google.inject.Inject;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,18 +26,26 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
 public class ConnectorMessageHandler implements EventMessageHandler {
-  private static final String ACCOUNT_ID = "accountId";
   private GitIntegrationService gitIntegrationService;
 
   @Override
-  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws Exception {
-    EventListenerLogger.logForEventReceived(message);
-    switch (action) {
-      case UPDATE_ACTION:
-        gitIntegrationService.processConnectorUpdate(message, entityChangeDTO);
-        break;
-      default:
-        log.warn("ACTION - {} is not to be handled by IDP connector event handler", action);
+  public void handleMessage(Message message, String action) throws Exception {
+    EntityChangeDTO entityChangeDTO;
+    try {
+      entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for id %s", message.getId()), e);
+    }
+    if (entityChangeDTO != null) {
+      EventListenerLogger.logForEventReceived(message);
+      switch (action) {
+        case UPDATE_ACTION:
+          gitIntegrationService.processConnectorUpdate(message, entityChangeDTO);
+          break;
+        default:
+          log.warn("ACTION - {} is not to be handled by IDP connector event handler", action);
+      }
     }
   }
 }

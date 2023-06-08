@@ -8,7 +8,6 @@
 package io.harness.idp.user.service;
 
 import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.user.beans.entity.UserEventEntity;
 import io.harness.idp.user.repositories.UserEventRepository;
@@ -21,8 +20,7 @@ public class UserRefreshServiceImpl implements UserRefreshService {
   NamespaceService namespaceService;
 
   @Override
-  public void processEntityUpdate(Message message, EntityChangeDTO entityChangeDTO) {
-    String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
+  public void processEntityUpdate(Message message, String accountIdentifier) {
     if (namespaceService.getAccountIdpStatus(accountIdentifier)) {
       UserEventEntity userEventEntity =
           UserEventEntity.builder().accountIdentifier(accountIdentifier).hasEvent(true).build();

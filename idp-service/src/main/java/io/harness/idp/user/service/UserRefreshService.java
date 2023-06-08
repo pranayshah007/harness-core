@@ -9,9 +9,8 @@ package io.harness.idp.user.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface UserRefreshService {
-  void processEntityUpdate(Message message, EntityChangeDTO entityChangeDTO);
+  void processEntityUpdate(Message message, String accountIdentifier);
 }

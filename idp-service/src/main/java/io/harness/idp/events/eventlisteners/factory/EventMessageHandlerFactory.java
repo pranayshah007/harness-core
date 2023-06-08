@@ -7,6 +7,7 @@
 
 package io.harness.idp.events.eventlisteners.factory;
 
+import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ASYNC_CATALOG_IMPORT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
@@ -19,7 +20,8 @@ import io.harness.idp.events.eventlisteners.messagehandler.AsyncCatalogImportMes
 import io.harness.idp.events.eventlisteners.messagehandler.ConnectorMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.EventMessageHandler;
 import io.harness.idp.events.eventlisteners.messagehandler.SecretMessageHandler;
-import io.harness.idp.events.eventlisteners.messagehandler.UserMessageHandler;
+import io.harness.idp.events.eventlisteners.messagehandler.UserGroupMessageHandler;
+import io.harness.idp.events.eventlisteners.messagehandler.UserMembershipMessageHandler;
 
 import lombok.AllArgsConstructor;
 
@@ -28,7 +30,8 @@ import lombok.AllArgsConstructor;
 public class EventMessageHandlerFactory {
   SecretMessageHandler secretMessageHandler;
   ConnectorMessageHandler gitIntegrationConnectorMessageHandler;
-  UserMessageHandler userMessageHandler;
+  UserMembershipMessageHandler userMembershipMessageHandler;
+  UserGroupMessageHandler userGroupMessageHandler;
   AsyncCatalogImportMessageHandler asyncCatalogImportMessageHandler;
 
   public EventMessageHandler getEventMessageHandler(String entity) {
@@ -37,9 +40,10 @@ public class EventMessageHandlerFactory {
         return secretMessageHandler;
       case CONNECTOR_ENTITY:
         return gitIntegrationConnectorMessageHandler;
-      case USER_ENTITY:
+      case USERMEMBERSHIP:
+        return userMembershipMessageHandler;
       case USER_GROUP:
-        return userMessageHandler;
+        return userGroupMessageHandler;
       case ASYNC_CATALOG_IMPORT_ENTITY:
         return asyncCatalogImportMessageHandler;
       default:
