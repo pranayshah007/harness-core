@@ -89,8 +89,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-    ServerlessAwsLambdaRollbackStepParameters rollbackStepParameters =
-        (ServerlessAwsLambdaRollbackStepParameters) stepElementParameters.getSpec();
+    ServerlessAwsLambdaCloudFormationRollbackStepParameters rollbackStepParameters =
+        (ServerlessAwsLambdaCloudFormationRollbackStepParameters) stepElementParameters.getSpec();
     if (EmptyPredicate.isEmpty(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq())) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
