@@ -48,6 +48,7 @@ import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -291,12 +292,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
 
-  final Comparator<Map.Entry<String, Long>> delegateTaskCountComparator = (d1, d2) -> {
-    long diff = d1.getValue() - d2.getValue();
-    if (diff == 0) {
-      return (int) Math.max(random.nextLong(), 0);
-    }
-    return (int) diff;
+  final Comparator<Map.Entry<String, Integer>> delegateTaskCountComparator = (d1, d2) -> {
+    return d1.getValue() - d2.getValue();
   };
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
@@ -799,10 +796,45 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                            .project(DelegateTaskKeys.uuid, true)
                                            .project(DelegateTaskKeys.delegateId, true)
                                            .asList();
-    Map<String, Long> tasksCount =
-        delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, Collectors.counting()));
-    eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0L));
-    return tasksCount.entrySet().stream().sorted(delegateTaskCountComparator).map(Map.Entry::getKey).collect(toList());
+    Map<String, Integer> tasksCount =
+        delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, summingInt(delegateTaskCount -> 1)));
+    eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0));
+    // find entry with minimum count and used that to split into 2 maps
+    Optional<Map.Entry<String, Integer>> minCount = tasksCount.entrySet().stream().min(delegateTaskCountComparator);
+    int minVal = minCount.isPresent() ? minCount.get().getValue() : 0;
+
+    // first map with min value entries only to apply shuffling. Note we only care about shuffling min values to pick
+    // first broadcast
+    Map<String, Integer> minValues = tasksCount.entrySet()
+                                         .stream()
+                                         .filter(entry -> entry.getValue() <= minVal)
+                                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    // if there are only one entry with minValue, then we dont need extra shuffling. Return sorted list.
+    if (minValues.size() <= 1) {
+      return tasksCount.entrySet()
+          .stream()
+          .sorted(delegateTaskCountComparator)
+          .map(Map.Entry::getKey)
+          .collect(toList());
+    }
+    // if present more than one min value, then do extra shuffle/swapping for entries with minVal
+    List<String> delegateIds = new ArrayList<>(minValues.keySet());
+    Collections.swap(delegateIds, 0, random.nextInt(delegateIds.size()));
+    // if list is very large then above swap should be sufficient, as shuffle on large list can cause slowness
+    if (delegateIds.size() < 100) {
+      Collections.shuffle(delegateIds);
+    }
+
+    // Add sorted second half of delegateIds to the above list.
+    // Note adding sorting is not necessary here, it helps rebroadcast in sorted order.
+    List<String> secondHalfDelegateIds = tasksCount.entrySet()
+                                             .stream()
+                                             .filter(entry -> entry.getValue() > minVal)
+                                             .sorted(delegateTaskCountComparator)
+                                             .map(Map.Entry::getKey)
+                                             .collect(toList());
+    delegateIds.addAll(secondHalfDelegateIds);
+    return delegateIds;
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
