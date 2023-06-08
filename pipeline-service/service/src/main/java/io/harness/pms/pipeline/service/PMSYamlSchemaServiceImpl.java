@@ -539,11 +539,9 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     String fileUrl = calculateFileURL(entityType, version);
 
     try {
-      ObjectMapper objectMapper = new ObjectMapper();
-
       // Read the JSON file as JsonNode
       log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
-      JsonNode jsonNode = objectMapper.readTree(new URL(fileUrl));
+      JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(fileUrl));
 
       return ResponseDTO.newResponse(jsonNode);
     } catch (Exception ex) {

@@ -29,6 +29,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -59,6 +60,7 @@ public interface PmsYamlSchemaResource {
   @GET
   @Path("/static")
   @ApiOperation(value = "Get Static Yaml Schema", nickname = "getStaticSchemaYaml")
+  @Hidden
   ResponseDTO<JsonNode> getStaticYamlSchema(@NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(ORG_KEY) String orgIdentifier, @QueryParam(PROJECT_KEY) String projectIdentifier,
       @QueryParam(IDENTIFIER_KEY) String identifier, @QueryParam("entityType") @NotNull EntityType entityType,
