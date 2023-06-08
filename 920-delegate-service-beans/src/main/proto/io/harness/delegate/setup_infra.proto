@@ -1,0 +1,79 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+import "google/protobuf/duration.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/resource.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/secrets.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/log_config.proto";
+option go_package = "920_delegate_service_beans";
+
+option java_multiple_files = true;
+
+message ExecutionInfrastructure {
+  LogConfig log_config = 1;
+  repeated Secret secret = 2;
+  oneof {
+      K8sInfraSpec k8Infraspec = 3;
+      // VMInfraSpec vmInfraSpec = 4;
+  }
+}
+
+message K8sInfraSpec {
+  repeated K8SStep steps = 1;
+  repeated Secret infra_secrets = 2;     // Secret needed to setup execution environment (e.g. imagePullSecrets)
+  ResourceRequirements resource = 3;     // Global resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  map<string, string> env = 4;           // Any global env variables
+  SecurityContext security_context = 5;  // Startup user id for the execution infra
+  string working_dir = 6;                // Working dir that all tasks have read/write access to
+  repeated Resource resources = 7;       // Any global resources like shared volumes
+}
+
+message K8SStep {
+  string id = 1;           // Id for the step
+  StepRuntime runtime = 2;           // Environment in which the task should run
+}
+
+/*
+  Defines the environment under which the step needs to be executed.
+ */
+message StepRuntime {
+  string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
+  // can be left out if plugin can execute a single type of task
+  PluginSource source = 2;
+  ImagePull uses = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
+  ResourceRequirements resource = 6;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  map<string, string> env = 8;
+  repeated string command = 9;
+  repeated string arg = 10;
+  SecurityContext security_context = 11;  // Startup user id for the execution infra
+  string working_dir = 12;                // Working dir that all tasks have read/write access to
+}
+
+/*
+  Defines security context for running a task. Note these values would always be there (unless entire context is
+  omitted) with their defaults. E.g.
+    privileged = false; runAsUser = 0 (root); runAsNonRoot = false; allowPrivilegeEscalation = false;
+ */
+message SecurityContext {
+  bool allowPrivilegeEscalation = 1;
+  bool privileged = 2;
+  string procMount = 3;
+  bool readOnlyRootFilesystem = 4;
+  bool runAsNonRoot = 5;
+  int64 runAsGroup = 6;
+  int64 runAsUser = 7;
+  repeated string add_capability = 8;
+  repeated string drop_capability = 9;
+}
+
+message ScheduleTaskRequest {
+  //    ExecutionRequest execution = 1;
+  string infraRef = 1;
+  SchedulingConfig config = 2;
+}

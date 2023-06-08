@@ -1,0 +1,29 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+import "google/protobuf/duration.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/resource.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/secrets.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/log_config.proto";
+
+option java_multiple_files = true;
+option go_package = "920_delegate_service_beans";
+
+message Execute {
+  map<string, string> env = 1;
+  RunConfig taskData = 2;
+  ImagePull image = 3;
+  LogConfig logConfig = 4;
+}
+
+message RunConfig {
+  repeated string command = 1;
+  repeated string entrypoint = 2;
+  bytes data = 3;
+}

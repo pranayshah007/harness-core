@@ -15,6 +15,11 @@ proto_library(
         "delegate_task_apis.proto",
         "progress.proto",
         "task.proto",
+        "setup_infra.proto",
+        "execute.proto",
+        "log_config.proto",
+        "resource.proto",
+        "secrets.proto"
     ],
     visibility = ["//visibility:public"],
     deps = [
