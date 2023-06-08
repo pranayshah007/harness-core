@@ -1,4 +1,4 @@
-BUILD_SCRIPT_PATH: 110-change-data-capture/build/feature_build.sh
+BUILD_SCRIPT_PATH: build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/dist/change-data-capture/Dockerfile-cie-jdk
 CONTEXT_PATH: /harness/harness-core/dist/change-data-capture
 ARTIFACT_REPO: harness/feature-change-data-capture-openjdk-8u242
