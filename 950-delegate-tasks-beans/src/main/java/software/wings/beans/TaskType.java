@@ -12,14 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
-import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -318,7 +311,7 @@ public enum TaskType {
   HELM_COLLECT_CHART(TaskGroup.HELM),
   SLACK(TaskGroup.SLACK),
   INITIALIZATION_PHASE(TaskGroup.CI),
-  CI_LE_STATUS(TaskGroup.CI, null, StepStatusTaskResponseData.class, false),
+  CI_LE_STATUS(TaskGroup.CI, false),
   EXECUTE_COMMAND(TaskGroup.CI),
   CI_CLEANUP(TaskGroup.CI),
   CI_EXECUTE_STEP(TaskGroup.CI),
@@ -381,9 +374,9 @@ public enum TaskType {
   RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
   NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
-  DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
-  DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
-  DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
+  DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, true),
+  DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, true),
+  DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, true),
   NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
   AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
@@ -497,8 +490,6 @@ public enum TaskType {
 
   private final TaskGroup taskGroup;
   private final String displayName;
-  private final Class<? extends TaskParameters> request;
-  private final Class<? extends DelegateResponseData> response;
   // Flag to denote whether the java based delegate supports this task or not
   // All unsupported tasks will be removed from the supported task types on initialization
   // of the java delegate.
@@ -507,31 +498,22 @@ public enum TaskType {
   TaskType(TaskGroup taskGroup) {
     this.taskGroup = taskGroup;
     this.displayName = null;
-    this.request = null;
-    this.response = null;
     this.unsupported = false;
   }
   TaskType(TaskGroup taskGroup, String displayName) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
-    this.request = null;
-    this.response = null;
     this.unsupported = false;
   }
 
   TaskType(TaskGroup taskGroup, String displayName, boolean unsupported) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
-    this.request = null;
-    this.response = null;
     this.unsupported = unsupported;
   }
 
-  TaskType(TaskGroup taskGroup, Class<? extends TaskParameters> request, Class<? extends DelegateResponseData> response,
-      boolean unsupported) {
+  TaskType(TaskGroup taskGroup, boolean unsupported) {
     this.taskGroup = taskGroup;
-    this.request = request;
-    this.response = response;
     this.displayName = null;
     this.unsupported = unsupported;
   }
@@ -541,12 +523,6 @@ public enum TaskType {
   }
   public String getDisplayName() {
     return displayName != null ? displayName : name();
-  }
-  public Class<? extends TaskParameters> getRequest() {
-    return this.request;
-  }
-  public Class<? extends DelegateResponseData> getResponse() {
-    return this.response;
   }
   public boolean isUnsupported() {
     return this.unsupported;

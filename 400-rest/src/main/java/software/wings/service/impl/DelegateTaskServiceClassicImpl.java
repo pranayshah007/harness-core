@@ -137,6 +137,7 @@ import io.harness.service.intfc.DelegateTaskService;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
+import software.wings.TaskTypeToRequestResponseMapper;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.ExecutionCredential;
@@ -1225,7 +1226,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         TaskType type = TaskType.valueOf(delegateTask.getData().getTaskType());
         TaskParameters taskParameters;
         try {
-          taskParameters = objectMapper.readValue(delegateTask.getData().getData(), type.getRequest());
+          taskParameters = objectMapper.readValue(
+              delegateTask.getData().getData(), TaskTypeToRequestResponseMapper.getTaskRequestClass(type).orElse(null));
         } catch (IOException e) {
           throw new InvalidRequestException("could not parse bytes from delegate task data", e);
         }
