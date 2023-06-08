@@ -7,12 +7,9 @@
 
 package io.harness.delegate.task.k8s;
 
-import static io.harness.expression.Expression.DISALLOW_SECRETS;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.expression.Expression;
 
 import software.wings.beans.ServiceHookDelegateConfig;
 
@@ -36,8 +33,6 @@ public class K8sSwapServiceSelectorsRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
-  @Expression(DISALLOW_SECRETS) String releaseName;
-  boolean useDeclarativeRollback;
 
   @Override
   public List<String> getValuesYamlList() {
@@ -52,6 +47,11 @@ public class K8sSwapServiceSelectorsRequest implements K8sDeployRequest {
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public String getReleaseName() {
+    return null;
   }
 
   @Override

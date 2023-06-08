@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
-import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.BLUE_GREEN_COLORS;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -99,7 +98,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
     if (isNotEmpty(resourceIdsToScale)) {
       stageScaleDown(k8sDelegateTaskParams, scaleLogCallback);
     } else {
-      scaleLogCallback.saveExecutionLog("\nSkipping the Blue Green Stage Scale Down Step", INFO, SUCCESS);
+      scaleLogCallback.saveExecutionLog("\nSkipping the Blue Green Stage Scale Down Step", INFO);
     }
     return K8sDeployResponse.builder().commandExecutionStatus(SUCCESS).build();
   }
@@ -116,7 +115,9 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
 
     resourceIdsToScale = getResourceIdsToScaleDownStageEnvironment(
         releaseHistory.getLatestSuccessfulBlueGreenRelease(), k8sDelegateTaskParams, executionLogCallback);
-    if (isNotEmpty(resourceIdsToScale)) {
+    if (isEmpty(resourceIdsToScale)) {
+      executionLogCallback.saveExecutionLog("\nNo Stage environment found to scale down", INFO);
+    } else {
       executionLogCallback.saveExecutionLog(
           "Found following resources from stage release which are eligible for scale down: \n"
           + k8sTaskHelperBase.getResourcesIdsInTableFormat(resourceIdsToScale));
@@ -161,18 +162,10 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
   private List<KubernetesResourceId> getResourceIdsToScaleDownStageEnvironment(
       IK8sRelease release, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) {
     if (release == null) {
-      executionLogCallback.saveExecutionLog("\nNo Stage environment found to scale down", INFO);
-      return Collections.emptyList();
-    }
-    if (bgStageEnv.equals(release.getBgEnvironment())) {
-      executionLogCallback.saveExecutionLog(
-          "\nSkipping scaling down the stage environment as no primary deployment found", INFO);
       return Collections.emptyList();
     }
     String stageColor = getStageColor(release);
     if (isEmpty(stageColor)) {
-      executionLogCallback.saveExecutionLog(
-          "\nSkipping scaling down the stage environment as the release has invalid BG color", INFO);
       return Collections.emptyList();
     }
     String primaryColor = k8sBGBaseHandler.getInverseColor(stageColor);
