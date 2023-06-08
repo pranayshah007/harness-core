@@ -169,22 +169,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
                                           .build())
                          .build();
     } else {
-      ServerlessAwsLambdaRollbackResult serverlessAwsLambdaRollbackResult =
-          (ServerlessAwsLambdaRollbackResult) rollbackResponse.getServerlessRollbackResult();
-      ServerlessAwsLambdaRollbackOutcome serverlessAwsLambdaRollbackOutcome =
-          ServerlessAwsLambdaRollbackOutcome.builder()
-              .stage(serverlessAwsLambdaRollbackResult.getStage())
-              .region(serverlessAwsLambdaRollbackResult.getRegion())
-              .service(serverlessAwsLambdaRollbackResult.getService())
-              .build();
-      executionSweepingOutputService.consume(ambiance,
-          OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME, serverlessAwsLambdaRollbackOutcome,
-          StepOutcomeGroup.STEP.name());
       stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
-                         .stepOutcome(StepResponse.StepOutcome.builder()
-                                          .name(OutcomeExpressionConstants.OUTPUT)
-                                          .outcome(serverlessAwsLambdaRollbackOutcome)
-                                          .build())
                          .build();
     }
     return stepResponse;

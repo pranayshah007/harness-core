@@ -245,17 +245,9 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
   public void handleTaskResultWithSecurityContextTest() {
     AccountDTO accountDTO = AccountDTO.builder().name("sfd").build();
 
-    ServerlessAwsLambdaRollbackOutcome serverlessAwsLambdaRollbackOutcome = ServerlessAwsLambdaRollbackOutcome.builder()
-                                                                                .stage(stage)
-                                                                                .region(region)
-                                                                                .service(service)
-                                                                                .build();
-
     doReturn(accountDTO).when(accountService).getAccount(AmbianceUtils.getAccountId(ambiance));
     StepResponse stepResponse = serverlessAwsLambdaRollbackStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> serverlessCommandResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome())
-        .isEqualTo(serverlessAwsLambdaRollbackOutcome);
   }
 }
