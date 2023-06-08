@@ -22,6 +22,7 @@ import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import io.fabric8.utils.Strings;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +49,12 @@ public class SecurityStep extends AbstractStepExecutable {
     Optional<Level> stageLevelOpt = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
 
     String stepId = AmbianceUtils.obtainStepIdentifier(ambiance);
+
+    String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
+    if (Strings.isNotBlank(stepGroupIdentifier)) {
+      stepId = stepGroupIdentifier + "_" + stepId;
+    }
+
     String stageId = "unknown";
 
     if (stageLevelOpt.isPresent()) {
