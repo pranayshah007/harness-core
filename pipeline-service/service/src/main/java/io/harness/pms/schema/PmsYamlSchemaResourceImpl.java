@@ -70,7 +70,7 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     }
 
     return pmsYamlSchemaService.getStaticSchema(
-        entityType, projectIdentifier, orgIdentifier, scope, identifier, version, accountIdentifier);
+        accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope, version);
   }
 
   private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {

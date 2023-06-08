@@ -533,8 +533,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public ResponseDTO<JsonNode> getStaticSchema(EntityType entityType, String projectIdentifier, String orgIdentifier,
-      Scope scope, String identifier, String version, String accountIdentifier) {
+  public ResponseDTO<JsonNode> getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier,
+      String identifier, EntityType entityType, Scope scope, String version) {
     // Appending branch and json in url
     String fileUrl = calculateFileURL(entityType, version);
 
