@@ -10,6 +10,7 @@ package io.harness.perpetualtask;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -18,6 +19,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -35,7 +39,10 @@ import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
 
+import com.google.inject.Inject;
 import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -54,7 +62,7 @@ import org.mockito.Mockito;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
 public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
-  @Mock private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
   @InjectMocks private K8sInstanceSyncPerpetualTaskV2Executor k8sInstanceSyncPerpetualTaskV2Executor;
@@ -69,21 +77,34 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
   private final String PROJECT_IDENTIFIER = "proj";
   private final String ORG_IDENTIFIER = "org";
 
+  @Before
+  public void setUp() throws IOException {
+    on(k8sInstanceSyncPerpetualTaskV2Executor).set("kryoSerializer", kryoSerializer);
+  }
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void runOnceTest() {
     MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK).build();
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
     PerpetualTaskExecutionParams params =
-        PerpetualTaskExecutionParams.newBuilder()
-            .setCustomizedParams(Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
-                                              .setAccountId(ACCOUNT_IDENTIFIER)
-                                              .setOrgId(ORG_IDENTIFIER)
-                                              .setProjectId(PROJECT_IDENTIFIER)
-                                              .build()))
-            .build();
 
+        PerpetualTaskExecutionParams.newBuilder()
+            .setCustomizedParams(
+                Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
+                             .setAccountId(ACCOUNT_IDENTIFIER)
+                             .setOrgId(ORG_IDENTIFIER)
+                             .setProjectId(PROJECT_IDENTIFIER)
+                             .setEncryptedData(encryptionDetailsBytes)
+                             .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(
+                                 ConnectorInfoDTO.builder()
+                                     .connectorConfig(KubernetesClusterConfigDTO.builder()
+                                                          .credential(KubernetesCredentialDTO.builder().build())
+                                                          .build())
+                                     .build())))
+                             .build()))
+            .build();
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add("namespace1");
     List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();

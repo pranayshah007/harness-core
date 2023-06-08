@@ -36,6 +36,7 @@ message ParsedPayload {
   oneof payload {
     product.ci.scm.proto.PullRequestHook pr = 1;
     product.ci.scm.proto.PushHook push = 2;
+    product.ci.scm.proto.ReleaseHook release = 3;
   }
 }
 

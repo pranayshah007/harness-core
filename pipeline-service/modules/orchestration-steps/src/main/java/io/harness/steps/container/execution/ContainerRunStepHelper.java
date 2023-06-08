@@ -69,6 +69,7 @@ public class ContainerRunStepHelper {
         return serializeStepWithStepParameters((ContainerStepInfo) containerStepInfo, port, parkedTaskId, logKey,
             identifier, accountId, containerStepInfo.getName(), timeout);
       case CD_SSCA_ORCHESTRATION:
+      case CD_SSCA_ENFORCEMENT:
         return pluginStepSerializer.serializeStepWithStepParameters((PluginStep) containerStepInfo, port, parkedTaskId,
             logKey, identifier, timeout, accountId, containerStepInfo.getName(), delegateCallbackTokenSupplier,
             ambiance);

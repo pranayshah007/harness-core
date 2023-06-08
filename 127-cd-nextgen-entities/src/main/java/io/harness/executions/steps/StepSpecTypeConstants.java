@@ -63,6 +63,7 @@ public interface StepSpecTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String DEPLOYMENT_STAGE = "Deployment";
   String JENKINS_BUILD = "JenkinsBuild";
+  String JENKINS_BUILD_V2 = "JenkinsBuildV2";
   String BAMBOO_BUILD = "BambooBuild";
 
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
@@ -125,8 +126,11 @@ public interface StepSpecTypeConstants {
   String AWS_SAM_DEPLOY = "AwsSamDeploy";
   String AWS_SAM_BUILD = "AwsSamBuild";
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
+  String DOWNLOAD_SERVERLESS_MANIFESTS = "DownloadServerlessManifests";
 
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+
+  String SERVERLESS_PREPARE_ROLLBACK = "ServerlessPrepareRollback";
 }

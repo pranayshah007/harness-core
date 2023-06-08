@@ -9,6 +9,7 @@ package io.harness.delegate.service;
 
 import static io.harness.filesystem.FileIo.acquireLock;
 import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
@@ -27,7 +28,9 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.UnexpectedException;
 import io.harness.managerclient.DelegateAgentManagerClient;
+import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptionConfig;
@@ -57,6 +60,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<DelegateTaskPackage> delegatePackageCall;
   @Mock private DelegateDecryptionService delegateDecryptionService;
+  @Mock private HarnessMetricRegistry metricRegistry;
 
   @InjectMocks @Inject DelegateAgentServiceImpl delegateService;
   private final AtomicBoolean executingProfile = Mockito.mock(AtomicBoolean.class);
@@ -153,6 +157,45 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> delegateService.applyDelegateSecretFunctor(delegateTaskPackage))
         .isInstanceOf(NullPointerException.class)
+        .hasStackTraceContaining("applyDelegateSecretFunctor");
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void applyDelegateFunctorForSecretsThrowsUnexpectedException() {
+    String delegateTaskId = UUIDGenerator.generateUuid();
+    String accountId = UUIDGenerator.generateUuid();
+
+    Map<String, EncryptionConfig> encryptionConfigMap = new HashMap<>();
+    KmsConfig kmsConfig = KmsConfig.builder().build();
+    kmsConfig.setUuid("KMS_CONFIG_UUID");
+    encryptionConfigMap.put("KMS_CONFIG_UUID", kmsConfig);
+
+    Map<String, SecretDetail> secretDetails = new HashMap<>();
+    SecretDetail secretDetail =
+        SecretDetail.builder()
+            .configUuid("KMS_CONFIG_UUID")
+            .encryptedRecord(EncryptedData.builder().uuid("ENC_UUID").name("ENC").accountId("ACCOUNT_ID").build())
+            .build();
+
+    secretDetails.put("SECRET_UUID", secretDetail);
+
+    DelegateTaskPackage delegateTaskPackage = DelegateTaskPackage.builder()
+                                                  .accountId(accountId)
+                                                  .delegateTaskId(delegateTaskId)
+                                                  .data(TaskData.builder().async(true).taskType("HTTP").build())
+                                                  .encryptionConfigs(encryptionConfigMap)
+                                                  .secretDetails(secretDetails)
+                                                  .build();
+
+    Map<String, char[]> decryptedRecords = new HashMap<>();
+    decryptedRecords.put("ENC_UUID", null);
+    when(delegateDecryptionService.decrypt(any())).thenReturn(decryptedRecords);
+
+    assertThatThrownBy(() -> delegateService.applyDelegateSecretFunctor(delegateTaskPackage))
+        .isInstanceOf(UnexpectedException.class)
+        .hasMessage("Value for secret [ENC] (uuid: [ENC_UUID]) found null.")
         .hasStackTraceContaining("applyDelegateSecretFunctor");
   }
 

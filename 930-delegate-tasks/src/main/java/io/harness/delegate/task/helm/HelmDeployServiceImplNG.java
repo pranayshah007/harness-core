@@ -94,6 +94,7 @@ import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -437,34 +438,56 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private List<ContainerInfo> getFabric8ContainerInfos(
       HelmCommandRequestNG commandRequest, LogCallback logCallback, long timeoutInMillis) throws Exception {
     List<ContainerInfo> containerInfos = new ArrayList<>();
-    LogCallback finalExecutionLogCallback = logCallback;
-    HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutInMillis),
-        () -> containerInfos.addAll(fetchContainerInfo(commandRequest, finalExecutionLogCallback, new ArrayList<>())));
+
+    if (commandRequest.isSkipSteadyStateCheck()) {
+      logCallback.saveExecutionLog(color("Skipping steady state check...", White, Bold));
+      // if skip steady state check is enabled, due to that we're fetching only running pods this may result in not
+      // picking all the pods correctly. Overall correct number of pods would be handled by instance sync
+      containerInfos.addAll(k8sTaskHelperBase.getContainerInfos(
+          kubernetesConfig, commandRequest.getReleaseName(), commandRequest.getNamespace(), timeoutInMillis));
+      logCallback.saveExecutionLog(format("Currently running %d container(s) for release %s and namespace %s%n%n",
+          containerInfos.size(), commandRequest.getReleaseName(), commandRequest.getNamespace()));
+    } else {
+      HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutInMillis),
+          () -> containerInfos.addAll(fetchContainerInfo(commandRequest, logCallback, new ArrayList<>())));
+    }
+
     return containerInfos;
   }
 
   private List<ContainerInfo> getKubectlContainerInfos(HelmCommandRequestNG commandRequest,
       List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis) throws Exception {
-    Kubectl client = Kubectl.client(k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
-        commandRequest.getKubeConfigLocation());
+    Kubectl client = KubectlFactory.getKubectlClient(
+        k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
+        commandRequest.getKubeConfigLocation(), commandRequest.getWorkingDir());
     List<ContainerInfo> containerInfoList = new ArrayList<>();
     final Map<String, List<KubernetesResourceId>> namespacewiseResources =
         workloads.stream().collect(Collectors.groupingBy(KubernetesResourceId::getNamespace));
+
+    if (commandRequest.isSkipSteadyStateCheck()) {
+      logCallback.saveExecutionLog(format("Skipping status check for resources: [%s]",
+          workloads.stream().map(KubernetesResourceId::namespaceKindNameRef).collect(Collectors.toList())));
+    }
+
     boolean success = true;
     for (Map.Entry<String, List<KubernetesResourceId>> entry : namespacewiseResources.entrySet()) {
       if (success) {
         final String namespace = entry.getKey();
-        Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
-        if (ocPath.isPresent()) {
-          commandRequest.setOcPath(ocPath.get());
+
+        if (!commandRequest.isSkipSteadyStateCheck()) {
+          Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
+          ocPath.ifPresent(commandRequest::setOcPath);
+          success = success
+              && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
+                  commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback,
+                  commandRequest.getGcpKeyPath());
+          logCallback.saveExecutionLog(
+              format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
         }
-        success = success
-            && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
-                commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback,
-                commandRequest.getGcpKeyPath());
-        logCallback.saveExecutionLog(
-            format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
+
         String releaseName = commandRequest.getReleaseName();
+        // if skip steady state check is enabled, due to that we're fetching only running pods this may result in not
+        // picking all the pods correctly. Overall correct number of pods would be handled by instance sync
         List<ContainerInfo> containerInfos =
             k8sTaskHelperBase.getContainerInfos(kubernetesConfig, releaseName, namespace, timeoutInMillis);
         containerInfoList.addAll(containerInfos);

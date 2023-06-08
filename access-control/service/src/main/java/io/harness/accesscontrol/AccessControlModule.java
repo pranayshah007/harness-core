@@ -409,5 +409,7 @@ public class AccessControlModule extends AbstractModule {
     bind(AccountRoleAssignmentsApi.class).to(AccountRoleAssignmentsApiImpl.class);
     bind(OrgRoleAssignmentsApi.class).to(OrgRoleAssignmentsApiImpl.class);
     bind(ProjectRoleAssignmentsApi.class).to(ProjectRoleAssignmentsApiImpl.class);
+
+    bind(boolean.class).annotatedWith(Names.named("disableRedundantACLs")).toInstance(config.isDisableRedundantACLs());
   }
 }

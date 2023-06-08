@@ -29,6 +29,7 @@ AWSEBSINVENTORY = "awsEbsInventory"
 AWSRDSINVENTORY = "awsRdsInventory"
 UNIFIED = "unifiedTable"
 CURRENCYCONVERSIONFACTORUSERINPUT = "currencyConversionFactorUserInput"
+MSPMARKUP = 'mspMarkup'
 AWSCURPREFIX = "awscur"
 COSTAGGREGATED = "costAggregated"
 CEINTERNALDATASET = "CE_INTERNAL"
@@ -278,6 +279,20 @@ def add_currency_preferences_columns_to_schema(client, table_ids):
         else:
             print_(f"Finished Altering {table_id} Table")
 
+def add_msp_markup_column_to_schema(client, table_ids):
+    for table_id in table_ids:
+        print_(f"Altering {table_id} Table to add msp markup column")
+        query = f"ALTER TABLE `{table_id}` " \
+                f"ADD COLUMN IF NOT EXISTS mspMarkupMultiplier FLOAT64;"
+        try:
+            print_(query)
+            query_job = client.query(query)
+            query_job.result()
+        except Exception as e:
+            # Error Running Alter Query
+            print_(e)
+        else:
+            print_(f"Finished Altering {table_id} Table")
 
 def run_batch_query(client, query, job_config, timeout=180):
     """
@@ -325,7 +340,7 @@ def update_connector_data_sync_status(jsonData, PROJECTID, client):
                 VALUES ('%s', '%s', '%s', '%s', '%s')
             """ % ( PROJECTID, CEINTERNALDATASET, CONNECTORDATASYNCSTATUSTABLE,
                     jsonData["accountId"], jsonData["connectorId"], datetime.datetime.utcnow(), 'cloudfunction', jsonData['cloudProvider']
-    )
+                    )
 
     try:
         print_(query)

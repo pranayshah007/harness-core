@@ -19,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildSpecParameters;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorDTO;
@@ -31,9 +32,11 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -72,10 +75,17 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
                             .putSetupAbstractions("orgIdentifier", "orgIdentifier")
                             .putSetupAbstractions("projectIdentifier", "projectIdentifier")
                             .build();
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .timeout(ParameterField.createValueField("10m"))
+            .spec(JenkinsBuildSpecParameters.builder()
+                      .connectorRef(ParameterField.createValueField("connectorref"))
+                      .build())
+            .build();
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.empty());
     assertThatCode(()
-                       -> jenkinsBuildStepHelperService.prepareTaskRequest(
-                           JenkinsArtifactDelegateRequest.builder(), ambiance, "connectorref", "time", "task"))
+                       -> jenkinsBuildStepHelperService.queueJenkinsBuildTask(
+                           JenkinsArtifactDelegateRequest.builder(), ambiance, stepElementParameters))
         .isInstanceOf(InvalidRequestException.class);
     aStatic.when(() -> NGRestUtils.getResponse(any()))
         .thenReturn(Optional.of(
@@ -83,8 +93,8 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
                 .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(DockerConnectorDTO.builder().build()).build())
                 .build()));
     assertThatCode(()
-                       -> jenkinsBuildStepHelperService.prepareTaskRequest(
-                           JenkinsArtifactDelegateRequest.builder(), ambiance, "connectorref", "time", "task"))
+                       -> jenkinsBuildStepHelperService.queueJenkinsBuildTask(
+                           JenkinsArtifactDelegateRequest.builder(), ambiance, stepElementParameters))
         .isInstanceOf(InvalidRequestException.class);
     aStatic.when(() -> NGRestUtils.getResponse(any()))
         .thenReturn(Optional.of(
@@ -95,8 +105,8 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
     // when(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getQueuedBuildUrl()).thenReturn(any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = mock(ArtifactTaskExecutionResponse.class);
     assertThatCode(()
-                       -> jenkinsBuildStepHelperService.prepareTaskRequest(
-                           JenkinsArtifactDelegateRequest.builder(), ambiance, "connectorref", "time", "task"))
+                       -> jenkinsBuildStepHelperService.queueJenkinsBuildTask(
+                           JenkinsArtifactDelegateRequest.builder(), ambiance, stepElementParameters))
         .isInstanceOf(RuntimeException.class);
   }
 

@@ -11,6 +11,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
@@ -79,6 +80,7 @@ public class PluginServiceImpl implements PluginService {
     map.put(DRONE_COMMIT_BRANCH, "");
     map.put(DRONE_REMOTE_URL, "");
     map.put(DRONE_COMMIT_SHA, "");
+    map.put(DRONE_COMMIT_REF, "");
     return map;
   }
 

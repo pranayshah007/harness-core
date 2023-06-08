@@ -38,6 +38,7 @@ import io.harness.capability.TestingCapability;
 import io.harness.ccm.config.CCMConfig;
 import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
+import io.harness.delegate.InitializeExecutionInfraResponse;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
@@ -254,6 +255,7 @@ import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskPara
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorValidationParams;
 import io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse;
+import io.harness.delegate.beans.connector.rancher.RancherListClustersTaskResponse;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTaskType;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
@@ -1521,6 +1523,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(DockerInfraInfo.class, 25002);
     kryo.register(VmInfraInfo.class, 25003);
     kryo.register(DliteVmInfraInfo.class, 25004);
+    kryo.register(InitializeExecutionInfraResponse.class, 25005);
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
@@ -2490,6 +2493,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(RancherTestConnectionTaskParams.class, 20000503);
     kryo.register(RancherTestConnectionTaskResponse.class, 20000504);
     kryo.register(RancherTaskType.class, 20000505);
+    kryo.register(RancherListClustersTaskResponse.class, 20000507);
 
     kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
     kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);

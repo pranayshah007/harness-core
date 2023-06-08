@@ -1,120 +1,120 @@
 pipeline:
-  identifier: "Test_Pipline11"
+  identifier: Test_Pipline11
   variables:
-  - name: "port2"
-    type: "String"
-    value: "<+input>"
+    - name: port2
+      type: String
+      value: <+input>
   stages:
-  - stage:
-      identifier: "qaStage"
-      type: "Deployment"
-      spec:
-        service:
-          identifier: "manager"
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              manifests:
-              - manifest:
-                  identifier: "baseValues"
-                  type: "K8sManifest"
-                  spec:
-                    store:
-                      type: "Git"
-                      spec:
-                        gitFetchType: "<+input>"
-                        paths: "<+input>"
-              - manifest:
-                  identifier: "qaOverride"
-                  type: "Values"
-                  spec:
-                    store: "<+input>"
-        infrastructure:
-          environment:
-            identifier: "stagingInfra"
-            type: "PreProduction"
-            tags:
-              team: "<+input>"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "<+input>"
-              namespace: "<+input>"
-              releaseName: "<+input>"
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep1"
-              type: "Http"
-              spec:
-                url: "<+input>"
-          - parallel:
-            - step:
-                identifier: "httpStep2"
-                type: "Http"
-                spec:
-                  method: "<+input>"
-          - step:
-              identifier: "httpStep11"
-              type: "Http"
-              spec:
-                socketTimeoutMillis: "<+input>"
-  - parallel:
     - stage:
-        identifier: "qaStage2"
-        type: "Deployment"
+        identifier: qaStage
+        type: Deployment
         spec:
           service:
-            identifier: "manager"
+            identifier: manager
             serviceDefinition:
-              type: "Kubernetes"
+              type: Kubernetes
               spec:
                 manifests:
-                - manifest:
-                    identifier: "baseValues"
-                    type: "K8sManifest"
-                    spec:
-                      store:
-                        type: "Git"
-                        spec:
-                          connectorRef: "<+input>"
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Git
+                          spec:
+                            gitFetchType: <+input>
+                            paths: <+input>
+                  - manifest:
+                      identifier: qaOverride
+                      type: Values
+                      spec:
+                        store: <+input>
           infrastructure:
+            environment:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                team: <+input>
             infrastructureDefinition:
-              type: "KubernetesDirect"
+              type: KubernetesDirect
               spec:
-                namespace: "<+input>"
+                connectorRef: <+input>
+                namespace: <+input>
+                releaseName: <+input>
           execution:
             steps:
-            - step:
-                identifier: "httpStep4"
-                type: "Http"
-                spec:
-                  method: "<+input>"
+              - step:
+                  identifier: httpStep1
+                  type: Http
+                  spec:
+                    url: <+input>
+              - parallel:
+                  - step:
+                      identifier: httpStep2
+                      type: Http
+                      spec:
+                        method: <+input>
+              - step:
+                  identifier: httpStep11
+                  type: Http
+                  spec:
+                    socketTimeoutMillis: <+input>
+    - parallel:
+        - stage:
+            identifier: qaStage2
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests:
+                      - manifest:
+                          identifier: baseValues
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Git
+                              spec:
+                                connectorRef: <+input>
+              infrastructure:
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    namespace: <+input>
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep4
+                      type: Http
+                      spec:
+                        method: <+input>
+        - stage:
+            identifier: qaStage3
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests: <+input>
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep5
+                      type: Http
+                      spec:
+                        method: <+input>
     - stage:
-        identifier: "qaStage3"
-        type: "Deployment"
+        identifier: qaStage4
+        type: Deployment
         spec:
-          service:
-            identifier: "manager"
-            serviceDefinition:
-              type: "Kubernetes"
-              spec:
-                manifests: "<+input>"
           execution:
             steps:
-            - step:
-                identifier: "httpStep5"
-                type: "Http"
-                spec:
-                  method: "<+input>"
-  - stage:
-      identifier: "qaStage4"
-      type: "Deployment"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep9"
-              type: "Http"
-              spec:
-                url: "<+input>.executionInput()"
+              - step:
+                  identifier: httpStep9
+                  type: Http
+                  spec:
+                    url: <+input>.executionInput()

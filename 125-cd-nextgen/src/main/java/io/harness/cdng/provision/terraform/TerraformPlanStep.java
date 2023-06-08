@@ -270,11 +270,11 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         boolean exportHumanReadablePlan = !ParameterField.isNull(exportTfHumanReadablePlanField)
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfHumanReadablePlanField);
 
+        helper.saveTerraformPlanExecutionDetails(
+            ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
+
         if (exportHumanReadablePlan || exportTfPlanJson) {
           // First we save the terraform plan execution detail
-
-          helper.saveTerraformPlanExecutionDetails(
-              ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
 
           String stepFqn = AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList());
           if (exportHumanReadablePlan) {

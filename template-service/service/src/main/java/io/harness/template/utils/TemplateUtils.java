@@ -9,6 +9,7 @@ package io.harness.template.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNull;
 
 import static java.lang.String.format;
 
@@ -35,6 +36,7 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.ThreadOperationContextHelper;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -166,13 +168,21 @@ public class TemplateUtils {
     return yamlNode;
   }
 
-  public static IdentifierRef getIdentifierRef(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    return IdentifierRefHelper.getIdentifierRefOrThrowException(
-        identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
+  public static YamlNode validateAndGetYamlNode(JsonNode entityJsonNode) {
+    if (isNull(entityJsonNode)) {
+      throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
+    }
+    YamlNode yamlNode;
+    yamlNode = new YamlNode(entityJsonNode);
+    return yamlNode;
   }
 
-  public static IdentifierRef getGitBranchAwareIdentifierRef(
+  public static IdentifierRef getIdentifierRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    return getIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null);
+  }
+
+  public static IdentifierRef getIdentifierRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String gitBranch) {
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);

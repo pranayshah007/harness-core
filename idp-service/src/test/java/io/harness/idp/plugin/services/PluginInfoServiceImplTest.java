@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.FileUtils;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.plugin.beans.ExportsData;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
@@ -104,7 +105,7 @@ public class PluginInfoServiceImplTest {
   public void testGetPluginDetailedInfo() {
     when(pluginInfoRepository.findByIdentifier(PAGER_DUTY_ID))
         .thenReturn(Optional.ofNullable(getPagerDutyInfoEntity()));
-    when(configManagerService.getPluginConfig(ACCOUNT_ID, PAGER_DUTY_ID)).thenReturn(null);
+    when(configManagerService.getAppConfig(ACCOUNT_ID, PAGER_DUTY_ID, ConfigType.PLUGIN)).thenReturn(null);
     PluginDetailedInfo pluginDetailedInfo = pluginInfoServiceImpl.getPluginDetailedInfo(PAGER_DUTY_ID, ACCOUNT_ID);
     assertNotNull(pluginDetailedInfo);
     assertFalse(pluginDetailedInfo.getPluginDetails().isEnabled());

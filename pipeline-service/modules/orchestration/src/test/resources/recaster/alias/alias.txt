@@ -65,3 +65,4 @@ io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.advisers.pipelinerollback.OnFailPipelineRollbackOutput
 io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.pms.sdk.core.steps.io.EmptyStepParameters
+io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig

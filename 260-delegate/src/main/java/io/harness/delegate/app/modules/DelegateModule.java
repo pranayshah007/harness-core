@@ -379,6 +379,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.rancher.RancherListClustersDelegateTask;
 import io.harness.delegate.task.rancher.RancherTestConnectionDelegateTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
@@ -2088,6 +2089,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
         .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK).toInstance(K8sTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS).toInstance(CommandTaskNG.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -2246,6 +2248,7 @@ public class DelegateModule extends AbstractModule {
 
     // RANCHER NG
     mapBinder.addBinding(TaskType.RANCHER_TEST_CONNECTION_TASK_NG).toInstance(RancherTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.RANCHER_LIST_CLUSTERS_TASK_NG).toInstance(RancherListClustersDelegateTask.class);
   }
 
   private void registerSecretManagementBindings() {

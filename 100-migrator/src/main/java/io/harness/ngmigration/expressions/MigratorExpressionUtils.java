@@ -144,8 +144,7 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.key", "<+artifact.metadata.key>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.bucketName", "<+ARTIFACT_PLACEHOLDER.metadata.bucketName>");
-    artifactExpressions.put(
-        "ARTIFACT_PLACEHOLDER.source.repositoryName", "<+ARTIFACT_PLACEHOLDER.metadata.repositoryName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.repositoryName", "<+ARTIFACT_PLACEHOLDER.imagePath>");
 
     artifactExpressions.forEach((k, v) -> {
       // Artifact Expressions
@@ -164,6 +163,7 @@ public class MigratorExpressionUtils {
     context.put("app.description", "<+project.description>");
     context.put("app.accountId", "<+account.identifier>");
     context.put("pipeline.name", "<+pipeline.name>");
+    context.put("pipeline.description", "<+pipeline.description>");
     context.put("workflow.name", "<+stage.name>");
     context.put("workflow.description", "<+stage.description>");
     context.put("workflow.releaseNo", "<+pipeline.sequenceId>");
@@ -222,6 +222,11 @@ public class MigratorExpressionUtils {
 
     if (overrides != null && EmptyPredicate.isNotEmpty(overrides.getCustomExpressions())) {
       context.putAll(overrides.getCustomExpressions());
+    }
+
+    if (migrationContext.getInputDTO() != null
+        && EmptyPredicate.isNotEmpty(migrationContext.getInputDTO().getCustomExpressions())) {
+      context.putAll(migrationContext.getInputDTO().getCustomExpressions());
     }
 
     return context;

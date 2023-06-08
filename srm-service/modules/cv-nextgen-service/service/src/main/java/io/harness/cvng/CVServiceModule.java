@@ -181,6 +181,7 @@ import io.harness.cvng.core.services.api.demo.ChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.AppDynamicsDataCollectionInfoMapper;
@@ -261,6 +262,7 @@ import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourc
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
+import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.RiskCategoryServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
@@ -280,6 +282,7 @@ import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransfor
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.CustomChangeSourceSpecTransformer;
+import io.harness.cvng.core.transformer.changeSource.HarnessCDChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.HarnessCDCurrentGenChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.KubernetesChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.PagerDutyChangeSourceSpecTransformer;
@@ -977,6 +980,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(MSHealthReportService.class).to(MSHealthReportServiceImpl.class);
     bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);
     bind(ServiceDependencyGraphService.class).to(ServiceDependencyGraphServiceImpl.class);
@@ -1007,6 +1011,9 @@ public class CVServiceModule extends AbstractModule {
 
     MapBinder<ChangeSourceType, ChangeSourceSpecTransformer> changeSourceTypeChangeSourceSpecTransformerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceSpecTransformer.class);
+    changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD)
+        .to(HarnessCDChangeSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.PAGER_DUTY)
         .to(PagerDutyChangeSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);

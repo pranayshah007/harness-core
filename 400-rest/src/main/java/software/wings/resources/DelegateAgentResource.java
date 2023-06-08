@@ -43,6 +43,7 @@ import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
@@ -118,6 +119,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(DEL)
 @BreakDependencyOn("software.wings.service.impl.instance.InstanceHelper")
 public class DelegateAgentResource {
+  private static final String PT_LOG_ERROR_TEMPLATE = "Failed to process results for perpetual task: [{}] due to [{}]";
   private DelegateService delegateService;
   private AccountService accountService;
   private HPersistence persistence;
@@ -541,7 +543,7 @@ public class DelegateAgentResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceHelper.processInstanceSyncResponseFromPerpetualTask(perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
-      log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -557,7 +559,7 @@ public class DelegateAgentResource {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(
           accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response, false);
     } catch (Exception e) {
-      log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -573,7 +575,7 @@ public class DelegateAgentResource {
       instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(
           accountId, perpetualTaskId.replaceAll("[\r\n]", ""), instanceSyncResponseV2);
     } catch (Exception e) {
-      log.error("Failed to process results for v2 perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }

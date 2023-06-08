@@ -31,6 +31,10 @@ public interface CVNGMetricsUtils {
   String RECALCULATION_FAILURE = "recalculation_failure";
   String CALCULATION_FAILURE = "calculation_failure";
 
+  String ORCHESTRATION_TIME = "orchestration_time";
+
+  String STATE_MACHINE_EXECUTION_TIME = "state_machine_execution_time";
+
   static String getApiCallLogResponseCodeMetricName(String responseCode) {
     return String.format("api_call_response_code_%sxx", responseCode.charAt(0));
   }

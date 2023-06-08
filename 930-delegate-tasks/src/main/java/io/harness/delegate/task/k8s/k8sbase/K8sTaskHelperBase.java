@@ -146,11 +146,11 @@ import io.harness.k8s.kubectl.DescribeCommand;
 import io.harness.k8s.kubectl.GetCommand;
 import io.harness.k8s.kubectl.GetJobCommand;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.RolloutStatusCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
 import io.harness.k8s.kubectl.Utils;
-import io.harness.k8s.kubectl.VersionCommand;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.manifest.VersionUtils;
 import io.harness.k8s.model.HarnessAnnotations;
@@ -285,6 +285,8 @@ public class K8sTaskHelperBase {
   public static final String kustomizePatchesDirPrefix = "kustomizePatches-";
   public static final String VALUE_MISSING_REPLACEMENT = "<no value>";
   public static final String NOT_FOUND = "not found";
+  private static final String GET_DIRECT_APPLY_ANNOTATION =
+      "jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'";
 
   @Inject private TimeLimiter timeLimiter;
   @Inject private KubernetesContainerService kubernetesContainerService;
@@ -363,11 +365,11 @@ public class K8sTaskHelperBase {
   }
 
   public static ProcessResponse executeCommand(AbstractExecutable command, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback) throws Exception {
-    try (
-        LogOutputStream logOutputStream = getExecutionLogOutputStream(executionLogCallback, INFO);
-        ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
-        LogOutputStream logErrorStream = getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
+      LogCallback executionLogCallback, LogLevel errorLogLevel) throws Exception {
+    try (LogOutputStream logOutputStream = getExecutionLogOutputStream(executionLogCallback, INFO);
+         ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
+         LogOutputStream logErrorStream =
+             getExecutionLogOutputStream(executionLogCallback, errorLogLevel, errorCaptureStream)) {
       return ProcessResponse.builder()
           .processResult(command.execute(k8sDelegateTaskParams.getWorkingDirectory(), logOutputStream, logErrorStream,
               true, Collections.emptyMap()))
@@ -874,13 +876,18 @@ public class K8sTaskHelperBase {
       return client;
     }
 
-    return Kubectl.client(getLatestVersionOcPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    return KubectlFactory.getOpenShiftClient(getLatestVersionOcPath(), k8sDelegateTaskParams.getKubeconfigPath(),
+        k8sDelegateTaskParams.getWorkingDirectory());
   }
 
-  @VisibleForTesting
   public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
       AbstractExecutable executable) throws Exception {
-    return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback);
+    return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback, ERROR);
+  }
+
+  public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
+      AbstractExecutable executable, LogLevel logLevel) throws Exception {
+    return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback, logLevel);
   }
 
   public boolean applyManifests(Kubectl client, List<KubernetesResource> resources,
@@ -1061,13 +1068,17 @@ public class K8sTaskHelperBase {
     return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, deleteCommand).getProcessResult();
   }
 
-  public boolean checkIfResourceExists(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
-      KubernetesResourceId kubernetesResourceId, LogCallback executionLogCallback) {
+  public boolean checkIfResourceContainsHarnessDirectApplyAnnotation(Kubectl client,
+      K8sDelegateTaskParams k8sDelegateTaskParams, KubernetesResourceId kubernetesResourceId,
+      LogCallback executionLogCallback) {
     try {
-      ProcessResult result =
-          executeGetWorkloadCommand(client, k8sDelegateTaskParams, executionLogCallback, kubernetesResourceId);
+      ProcessResult result = executeGetWorkloadCommand(
+          client, k8sDelegateTaskParams, executionLogCallback, kubernetesResourceId, GET_DIRECT_APPLY_ANNOTATION);
       if (result.getExitValue() == 0) {
-        return true;
+        if (result.hasOutput() && isEmpty(result.outputUTF8())) {
+          return true;
+        }
+        return !Boolean.parseBoolean(result.outputUTF8().replaceAll("'", ""));
       }
     } catch (Exception ex) {
       log.warn("Resource {} not found in cluster. Error {}", kubernetesResourceId.kindNameRef(), ex);
@@ -1076,9 +1087,10 @@ public class K8sTaskHelperBase {
   }
 
   private ProcessResult executeGetWorkloadCommand(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback, KubernetesResourceId resourceId) throws Exception {
-    GetCommand getCommand = client.get().resources(resourceId.kindNameRef()).namespace(resourceId.getNamespace());
-    return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, getCommand).getProcessResult();
+      LogCallback executionLogCallback, KubernetesResourceId resourceId, String output) throws Exception {
+    GetCommand getCommand =
+        client.get().resources(resourceId.kindNameRef()).namespace(resourceId.getNamespace()).output(output);
+    return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, getCommand, WARN).getProcessResult();
   }
 
   public void describe(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback)
@@ -1200,10 +1212,9 @@ public class K8sTaskHelperBase {
   }
 
   public boolean dryRunManifests(Kubectl client, List<KubernetesResource> resources,
-      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean useKubectlNewVersion) {
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) {
     try {
-      return dryRunManifests(
-          client, resources, k8sDelegateTaskParams, executionLogCallback, false, useKubectlNewVersion);
+      return dryRunManifests(client, resources, k8sDelegateTaskParams, executionLogCallback, false);
     } catch (Exception ignore) {
       // Not expected if error framework is not enabled. Make the compiler happy until will not adopt error framework
       // for all steps
@@ -1211,8 +1222,8 @@ public class K8sTaskHelperBase {
     }
   }
   public boolean dryRunManifests(Kubectl client, List<KubernetesResource> resources,
-      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean isErrorFrameworkEnabled,
-      boolean useKubectlNewVersion) throws Exception {
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean isErrorFrameworkEnabled)
+      throws Exception {
     try {
       executionLogCallback.saveExecutionLog(color("\nValidating manifests with Dry Run", White, Bold), INFO);
 
@@ -1221,13 +1232,9 @@ public class K8sTaskHelperBase {
 
       Kubectl overriddenClient = getOverriddenClient(client, resources, k8sDelegateTaskParams);
 
-      final ApplyCommand dryrun = useKubectlNewVersion
-          ? overriddenClient.apply().filename("manifests-dry-run.yaml").dryRunClient(true)
-          : overriddenClient.apply().filename("manifests-dry-run.yaml").dryrun(true);
+      final ApplyCommand dryrun = overriddenClient.apply().filename("manifests-dry-run.yaml").dryrun(true);
       ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();
-      // Getting Version for the kubectl
-      String kubernetesVersion = getKubernetesVersion(k8sDelegateTaskParams, client);
       String resultOutput;
       try {
         resultOutput = result.outputUTF8();
@@ -1245,8 +1252,8 @@ public class K8sTaskHelperBase {
       if (result.getExitValue() != 0) {
         logExecutableFailed(result, executionLogCallback);
         if (isErrorFrameworkEnabled) {
-          throw new KubernetesCliTaskRuntimeException(
-              response, KubernetesCliCommandType.DRY_RUN, kubernetesVersion, resourcesNotCreatedBuilder.toString());
+          throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN,
+              client.getVersion() != null ? client.getVersion().toString() : "", resourcesNotCreatedBuilder.toString());
         }
         return false;
       }
@@ -3383,20 +3390,6 @@ public class K8sTaskHelperBase {
           new InvalidArgumentsException("Invalid path to openshift template file"));
     }
     return openshiftTemplatePath;
-  }
-  @VisibleForTesting
-  public String getKubernetesVersion(K8sDelegateTaskParams k8sDelegateTaskParams, Kubectl client) {
-    VersionCommand versionCommand = client.version().jsonVersion();
-    ProcessResult kubernetesVersion;
-    try {
-      kubernetesVersion = runK8sExecutableSilent(k8sDelegateTaskParams, versionCommand);
-      if (!kubernetesVersion.hasOutput()) {
-        return EMPTY;
-      }
-      return kubernetesVersion.outputUTF8();
-    } catch (Exception ex) {
-      return EMPTY;
-    }
   }
 
   private String getFileName(String path) {

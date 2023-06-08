@@ -73,6 +73,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       "Invalid schema for merged app-config.yaml for account - %s";
 
   private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+  private static final String HARNESS_CI_CD_PLUGIN_IDENTIFIER = "harness-ci-cd";
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
@@ -83,13 +84,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
-    Optional<AppConfigEntity> pluginConfig = appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
-        accountIdentifier, pluginId, ConfigType.PLUGIN);
-    if (pluginConfig.isEmpty()) {
+  public AppConfig getAppConfig(String accountIdentifier, String configId, ConfigType configType) {
+    Optional<AppConfigEntity> config =
+        appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(accountIdentifier, configId, configType);
+    if (config.isEmpty()) {
       return null;
     }
-    return pluginConfig.map(AppConfigMapper::toDTO).get();
+    return config.map(AppConfigMapper::toDTO).get();
   }
 
   @Override
@@ -101,6 +102,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
+    if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
+      appConfigEntity.setEnabled(true);
+    }
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
     AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);

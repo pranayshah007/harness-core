@@ -4347,8 +4347,7 @@
       "type": "object",
       "required": [
         "connectorRef",
-        "namespace",
-        "resources"
+        "namespace"
       ],
       "properties": {
         "annotations": {
@@ -5929,6 +5928,9 @@
             "region": {
               "type": "string"
             },
+            "registryId": {
+              "type": "string"
+            },
             "tag": {
               "type": "string"
             },
@@ -7152,7 +7154,8 @@
             "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValues",
-            "MarkAsFailure"
+            "MarkAsFailure",
+            "RetryStepGroup"
           ]
         }
       },
@@ -7777,11 +7780,20 @@
             "packageType"
           ],
           "properties": {
+            "artifactId": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string",
               "minLength": 1
             },
             "digest": {
+              "type": "string"
+            },
+            "extension": {
+              "type": "string"
+            },
+            "groupId": {
               "type": "string"
             },
             "org": {
@@ -7800,6 +7812,12 @@
                 "nuget",
                 "container"
               ]
+            },
+            "repository": {
+              "type": "string"
+            },
+            "user": {
+              "type": "string"
             },
             "version": {
               "type": "string"
@@ -8631,6 +8649,21 @@
                   "type": "string"
                 }
               ]
+            },
+            "skipSteadyStateCheck": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldBoolean"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -8709,6 +8742,21 @@
                   "items": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "skipSteadyStateCheck": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldBoolean"
+                },
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string",
@@ -10098,6 +10146,18 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "skipDeploymentIfSameManifest": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             },
@@ -13905,6 +13965,33 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RetrySGFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "readOnly": true,
+              "$ref": "#/definitions/RetryFailureSpecConfig"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "RetryStepGroup"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RunStepInfo": {
       "allOf": [
         {
@@ -15034,6 +15121,111 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaPrepareRollbackContainerStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "settings"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downloadManifestsFqn": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "serverlessVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "settings": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaRollbackStepInfo": {
       "allOf": [
         {
@@ -15837,7 +16029,14 @@
       "type": "object",
       "properties": {
         "parallel": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -18119,6 +18318,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ServerlessPrepareRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaPrepareRollbackContainerStepInfo"
               }
             }
           }

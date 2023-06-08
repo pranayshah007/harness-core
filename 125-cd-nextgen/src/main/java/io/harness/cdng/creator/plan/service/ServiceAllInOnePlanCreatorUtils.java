@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.service;
 
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_OVERRIDE_INPUTS_EXPRESSION;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -102,10 +103,18 @@ public class ServiceAllInOnePlanCreatorUtils {
       serviceOverrideInputs =
           ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
     }
+
+    ParameterField<String> infraRef = ParameterField.createValueField(null);
+    if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
+    } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+    }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
                                                               .inputs(finalServiceYaml.getServiceInputs())
-
+                                                              .infraId(infraRef)
                                                               .childrenNodeIds(childrenNodeIds)
                                                               .serviceOverrideInputs(serviceOverrideInputs)
                                                               .deploymentType(serviceType)

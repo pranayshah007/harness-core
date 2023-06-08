@@ -307,7 +307,11 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
   BLUE_GREEN_STAGE_SCALE_DOWN("Blue Green Stage Scale Down",
       Collections.singletonList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
-      StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN);
+      StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN),
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
+  SERVERLESS_PREPARE_ROLLBACK("Serverless Prepare Rollback",
+      Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+      StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

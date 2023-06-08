@@ -28,9 +28,9 @@ public class SpotInstDeployTaskParameters extends SpotInstTaskParameters {
   public SpotInstDeployTaskParameters(String accountId, String appId, String commandName, String activityId,
       Integer timeoutIntervalInMin, ElastiGroup newElastiGroupWithUpdatedCapacity,
       ElastiGroup oldElastiGroupWithUpdatedCapacity, String workflowExecutionId, String awsRegion,
-      boolean resizeNewFirst, boolean blueGreen, boolean rollback) {
+      boolean resizeNewFirst, boolean blueGreen, boolean rollback, boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin, SPOT_INST_DEPLOY,
-        awsRegion);
+        awsRegion, timeoutSupported);
     this.newElastiGroupWithUpdatedCapacity = newElastiGroupWithUpdatedCapacity;
     this.oldElastiGroupWithUpdatedCapacity = oldElastiGroupWithUpdatedCapacity;
     this.resizeNewFirst = resizeNewFirst;

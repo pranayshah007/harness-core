@@ -104,6 +104,18 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 		return sr
 	}())
 
+	// Log intelligence endpoints
+	// Format: /rca?accountID=&key=
+	r.Mount("/rca", func() http.Handler {
+		sr := chi.NewRouter()
+		if !config.Auth.DisableAuth {
+			sr.Use(AuthMiddleware(config, ngClient))
+		}
+
+		sr.Post("/", HandleRCA(store, config))
+		return sr
+	}())
+
 	// Liveness check
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "OK")

@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -47,6 +48,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -60,6 +62,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -109,6 +112,9 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   private static final String REGION = "region";
   private static final String REPO_NAME = "repoName";
   private static final String TYPE = "type";
+  private static final String FEED = "feed";
+  private static final String PACKAGE_URL = "packageUrl";
+  private static final String REGISTRY_ID = "registryId";
   private static final String MESSAGE = String.format(
       "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: %s\nAvailable digests:\n%s (V1)\n%s (V2)",
       "sha", SHA, SHA_V2);
@@ -631,6 +637,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         EcrArtifactDelegateResponse.builder()
+            .registryId(REGISTRY_ID)
             .tag(VERSION)
             .label(LABEL)
             .buildDetails(ArtifactBuildDetailsNG.builder().metadata(METADATA).build())
@@ -638,6 +645,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
         ecrArtifactConfig, ecrArtifactDelegateResponse, true);
     assertThat(ecrArtifactOutcome.getTag()).isEqualTo(VERSION);
+    assertThat(ecrArtifactOutcome.getRegistryId()).isEqualTo(REGISTRY_ID);
     assertThat(ecrArtifactOutcome.getRegion()).isEqualTo(REGION);
     assertThat(ecrArtifactOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
     assertThat(ecrArtifactOutcome.getTagRegex()).isEqualTo(VERSION_REGEX);
@@ -910,6 +918,36 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     }
   }
 
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getAzureArtifactOutcomeTest() {
+    AzureArtifactsConfig azureArtifactsConfig = getSampleAzureArtifactConfig();
+
+    AzureArtifactsDelegateResponse azureArtifactsDelegateResponse = AzureArtifactsDelegateResponse.builder()
+                                                                        .packageUrl(PACKAGE_URL)
+                                                                        .version(VERSION)
+                                                                        .buildDetails(ARTIFACT_BUILD_DETAILS_NG)
+                                                                        .build();
+    AzureArtifactsOutcome azureArtifactsOutcome =
+        (AzureArtifactsOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+            azureArtifactsConfig, azureArtifactsDelegateResponse, true);
+    assertThat(azureArtifactsOutcome.getVersion()).isEqualTo(VERSION);
+    assertThat(azureArtifactsOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(azureArtifactsOutcome.getVersionRegex()).isEqualTo(VERSION_REGEX);
+    assertThat(azureArtifactsOutcome.getType()).isEqualTo(ArtifactSourceType.AZURE_ARTIFACTS.getDisplayName());
+    assertThat(azureArtifactsOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(azureArtifactsOutcome.isPrimaryArtifact()).isEqualTo(true);
+    assertThat(azureArtifactsOutcome.getMetadata()).isEqualTo(METADATA);
+    assertThat(azureArtifactsOutcome.getPackageName()).isEqualTo(IMAGE_PATH);
+    assertThat(azureArtifactsOutcome.getImage()).isEqualTo(PACKAGE_URL);
+    assertThat(azureArtifactsOutcome.getFeed()).isEqualTo(FEED);
+    assertThat(azureArtifactsOutcome.getProject()).isEqualTo(PROJECT);
+    assertThat(azureArtifactsOutcome.getPackageType()).isEqualTo(RepositoryFormat.docker.name());
+    assertThat(azureArtifactsOutcome.getScope()).isEqualTo(PROJECT);
+    assertThat(azureArtifactsOutcome.getImagePullSecret()).isEqualTo("<+imagePullSecret.identifier>");
+  }
+
   private void checkThrowsWhenDigestMismatch(
       ArtifactConfig artifactConfig, ArtifactDelegateResponse artifactDelegateResponse) {
     assertThatThrownBy(
@@ -1014,6 +1052,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
   private EcrArtifactConfig getSampleEcrArtifactConfig(ParameterField<String> digest) {
     return EcrArtifactConfig.builder()
+        .registryId(ParameterField.createValueField(REGISTRY_ID))
         .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
         .identifier(IDENTIFIER)
         .tagRegex(ParameterField.createValueField(VERSION_REGEX))
@@ -1033,6 +1072,20 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         .packageName(ParameterField.createValueField(IMAGE_PATH))
         .packageType(DOCKER)
         .digest(digest)
+        .build();
+  }
+
+  private AzureArtifactsConfig getSampleAzureArtifactConfig() {
+    return AzureArtifactsConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .versionRegex(ParameterField.createValueField(VERSION_REGEX))
+        .primaryArtifact(true)
+        .packageName(ParameterField.createValueField(IMAGE_PATH))
+        .packageType(DOCKER)
+        .feed(ParameterField.createValueField(FEED))
+        .project(ParameterField.createValueField(PROJECT))
+        .scope(ParameterField.createValueField(PROJECT))
         .build();
   }
 }

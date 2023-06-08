@@ -334,7 +334,7 @@ public class PipelineMigrationService extends NgMigrationService {
                 migrationContext, stageElement, serviceToStageMap, envToStageMap, infraToStageMap, allFunctors);
           }
         } else {
-          stage = buildApprovalStage(migrationContext, stageElement);
+          stage = buildApprovalStage(migrationContext, stageElement, stageIdentifier, allFunctors);
           allFunctors.addAll(getApprovalStageFunctors(migrationContext, stageIdentifier, stageElement));
         }
         // If the stage cannot be migrated then we skip building the pipeline.
@@ -412,20 +412,8 @@ public class PipelineMigrationService extends NgMigrationService {
     return "SERIAL";
   }
 
-  private boolean isPartOfParallelStage(List<PipelineStage> stages, int index) {
-    PipelineStage currentStage = stages.get(index);
-    if (currentStage.isParallel()) {
-      return true;
-    }
-    if (index + 1 < stages.size()) {
-      PipelineStage nextStage = stages.get(index + 1);
-      return nextStage.isParallel();
-    }
-    return false;
-  }
-
-  private StageElementWrapperConfig buildApprovalStage(
-      MigrationContext migrationContext, PipelineStageElement stageElement) {
+  private StageElementWrapperConfig buildApprovalStage(MigrationContext migrationContext,
+      PipelineStageElement stageElement, String stageIdentifier, List<StepExpressionFunctor> functors) {
     CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     AbstractStepNode stepNode = approvalStepMapper.getSpec(migrationContext, stageElement);
     ExecutionWrapperConfig stepWrapper =
@@ -439,16 +427,12 @@ public class PipelineMigrationService extends NgMigrationService {
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(stepWrapper)).build())
             .build());
     approvalStageNode.setFailureStrategies(WorkflowHandler.getDefaultFailureStrategy());
-
-    Map<String, Object> properties = MapUtils.emptyIfNull(stageElement.getProperties());
-    String assertion = (String) properties.get("disableAssertion");
-    if (StringUtils.isNotBlank(assertion)) {
-      assertion = (String) MigratorExpressionUtils.render(migrationContext, assertion, new HashMap<>());
-      approvalStageNode.setWhen(ParameterField.createValueField(StageWhenCondition.builder()
-                                                                    .pipelineStatus(WhenConditionStatus.SUCCESS)
-                                                                    .condition(WorkflowHandler.wrapNot(assertion))
-                                                                    .build()));
-    }
+    approvalStageNode.setWhen(
+        ParameterField.createValueField(StageWhenCondition.builder()
+                                            .pipelineStatus(WhenConditionStatus.SUCCESS)
+                                            .condition(ParameterField.createValueField(getWhenCondition(
+                                                migrationContext, stageElement, stageIdentifier, functors)))
+                                            .build()));
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }
 
@@ -601,7 +585,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
     // Case where CG workflow is being migrated as Pipeline in NG. Chained Pipeline scenario
     if (migratedWorkflow.getYaml() instanceof PipelineConfig) {
-      return getChainedPipeline(migrationContext, stageElement, caseFormat, migratedWorkflow);
+      return getChainedPipeline(migrationContext, stageElement, migratedWorkflow, stageIdentifier, allExpFunctors);
     }
 
     String stageServiceRef = RUNTIME_INPUT;
@@ -659,7 +643,7 @@ public class PipelineMigrationService extends NgMigrationService {
     if (templateInputs != null) {
       String whenInput = templateInputs.at("/when/condition").asText();
       if (RUNTIME_INPUT.equals(whenInput)) {
-        String when = getWhenCondition(migrationContext, stageElement);
+        String when = getWhenCondition(migrationContext, stageElement, stageIdentifier, allExpFunctors);
         ObjectNode whenNode = (ObjectNode) templateInputs.get("when");
         whenNode.put("condition", when);
       }
@@ -791,7 +775,8 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig getChainedPipeline(MigrationContext migrationContext,
-      PipelineStageElement stageElement, CaseFormat caseFormat, NGYamlFile migratedWorkflow) {
+      PipelineStageElement stageElement, NGYamlFile migratedWorkflow, String stageIdentifier,
+      List<StepExpressionFunctor> functors) {
     PipelineInfoConfig pipelineConfig = ((PipelineConfig) migratedWorkflow.getYaml()).getPipelineInfoConfig();
     PipelineStageConfig pipelineStageConfig = PipelineStageConfig.builder()
                                                   .pipeline(pipelineConfig.getIdentifier())
@@ -800,19 +785,22 @@ public class PipelineMigrationService extends NgMigrationService {
                                                   .build();
     PipelineStageNode stageNode = new PipelineStageNode();
     stageNode.setName(MigratorUtility.generateName(stageElement.getName()));
-    stageNode.setIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat));
+    stageNode.setIdentifier(MigratorUtility.generateIdentifier(
+        stageElement.getName(), migrationContext.getInputDTO().getIdentifierCaseFormat()));
     stageNode.setDescription(ParameterField.createValueField(""));
     stageNode.setPipelineStageConfig(pipelineStageConfig);
     stageNode.setFailureStrategies(WorkflowHandler.getDefaultFailureStrategy());
-    stageNode.setWhen(ParameterField.createValueField(
-        StageWhenCondition.builder()
-            .condition(ParameterField.createValueField(getWhenCondition(migrationContext, stageElement)))
-            .pipelineStatus(WhenConditionStatus.SUCCESS)
-            .build()));
+    stageNode.setWhen(
+        ParameterField.createValueField(StageWhenCondition.builder()
+                                            .condition(ParameterField.createValueField(getWhenCondition(
+                                                migrationContext, stageElement, stageIdentifier, functors)))
+                                            .pipelineStatus(WhenConditionStatus.SUCCESS)
+                                            .build()));
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 
-  private static String getWhenCondition(MigrationContext migrationContext, PipelineStageElement stageElement) {
+  private static String getWhenCondition(MigrationContext migrationContext, PipelineStageElement stageElement,
+      String stageIdentifier, List<StepExpressionFunctor> functors) {
     String when = "true";
     Map<String, Object> properties = stageElement.getProperties();
     if (EmptyPredicate.isNotEmpty(properties) && properties.containsKey("disabled")) {
@@ -824,7 +812,8 @@ public class PipelineMigrationService extends NgMigrationService {
     if (EmptyPredicate.isNotEmpty(properties) && properties.containsKey("disableAssertion")) {
       String assertion = (String) properties.get("disableAssertion");
       if (StringUtils.isNotBlank(assertion)) {
-        assertion = (String) MigratorExpressionUtils.render(migrationContext, assertion, new HashMap<>());
+        assertion = (String) MigratorExpressionUtils.render(
+            migrationContext, assertion, MigratorUtility.getExpressions(stageIdentifier, functors));
         when = WorkflowHandler.wrapNot(assertion).getValue();
       }
     }

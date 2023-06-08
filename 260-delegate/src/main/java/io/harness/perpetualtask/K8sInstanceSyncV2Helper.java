@@ -37,9 +37,10 @@ import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
-import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -53,19 +54,18 @@ public class K8sInstanceSyncV2Helper {
   public static final String CLASS_CAST_EXCEPTION_ERROR = "Unsupported Connector provided is of type: [%s]";
   private static final int DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT = 5;
 
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
 
-  public KubernetesConfig getKubernetesConfig(ConnectorInfoDTO connectorDTO, K8sDeploymentReleaseDetails releaseDetails,
-      String namespace, List<EncryptedDataDetail> encryptedDataDetails) {
-    K8sInfraDelegateConfig k8sInfraDelegateConfig =
-        getK8sInfraDelegateConfig(connectorDTO, releaseDetails, namespace, encryptedDataDetails);
-    containerBaseHelper.decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
+  public KubernetesConfig getKubernetesConfig(
+      ConnectorInfoDTO connectorDTO, K8sDeploymentReleaseDetails releaseDetails, String namespace) {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = getK8sInfraDelegateConfig(connectorDTO, releaseDetails, namespace);
     return containerBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null);
   }
 
-  private K8sInfraDelegateConfig getK8sInfraDelegateConfig(ConnectorInfoDTO connectorDTO,
-      K8sDeploymentReleaseDetails releaseDetails, String namespace, List<EncryptedDataDetail> encryptedDataDetails) {
+  private K8sInfraDelegateConfig getK8sInfraDelegateConfig(
+      ConnectorInfoDTO connectorDTO, K8sDeploymentReleaseDetails releaseDetails, String namespace) {
     try {
       switch (connectorDTO.getConnectorType()) {
         case KUBERNETES_CLUSTER:
@@ -73,7 +73,6 @@ public class K8sInstanceSyncV2Helper {
           return DirectK8sInfraDelegateConfig.builder()
               .namespace(namespace)
               .kubernetesClusterConfigDTO((KubernetesClusterConfigDTO) connectorDTO.getConnectorConfig())
-              .encryptionDataDetails(encryptedDataDetails)
               .useSocketCapability(true)
               .build();
 
@@ -84,7 +83,6 @@ public class K8sInstanceSyncV2Helper {
               .namespace(namespace)
               .cluster(releaseDetails.getK8sCloudClusterConfig().getClusterName())
               .gcpConnectorDTO((GcpConnectorDTO) connectorDTO.getConnectorConfig())
-              .encryptionDataDetails(encryptedDataDetails)
               .build();
 
         case AZURE:
@@ -98,7 +96,6 @@ public class K8sInstanceSyncV2Helper {
               .subscription(releaseDetails.getK8sCloudClusterConfig().getSubscriptionId())
               .resourceGroup(releaseDetails.getK8sCloudClusterConfig().getResourceGroup())
               .azureConnectorDTO((AzureConnectorDTO) connectorDTO.getConnectorConfig())
-              .encryptionDataDetails(encryptedDataDetails)
               .useClusterAdminCredentials(releaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials())
               .build();
 
@@ -109,7 +106,6 @@ public class K8sInstanceSyncV2Helper {
               .namespace(namespace)
               .cluster(releaseDetails.getK8sCloudClusterConfig().getClusterName())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
-              .encryptionDataDetails(encryptedDataDetails)
               .build();
 
         default:

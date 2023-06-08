@@ -327,6 +327,7 @@ public class MigratorUtility {
     }
     String name = variable.getName();
     name = name.replace('-', '_');
+    name = name.replaceAll("\\W", "");
     return StringNGVariable.builder()
         .type(NGVariableType.STRING)
         .name(name)
@@ -439,6 +440,9 @@ public class MigratorUtility {
 
   public static ParameterField<String> getIdentifierWithScopeDefaultsRuntime(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    if (StringUtils.isBlank(entityId) || entityType == null) {
+      return RUNTIME_INPUT;
+    }
     NGYamlFile ngYamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (ngYamlFile == null) {
       return RUNTIME_INPUT;

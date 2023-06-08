@@ -14,6 +14,7 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.k8s.KubernetesApiRetryUtils;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
@@ -99,7 +100,8 @@ public class K8sClientHelper {
   }
 
   Kubectl createKubernetesCliClient(K8sDelegateTaskParams k8sDelegateTaskParams) {
-    return Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    return KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
   }
 
   Set<String> getNamespacesToMonitor(List<KubernetesResourceId> resourceIds, String namespace) {

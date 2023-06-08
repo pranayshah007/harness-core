@@ -614,20 +614,16 @@ public class UserResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     if ((ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier)))
         && isUserExternallyManaged(userId, accountIdentifier)) {
-      // throw error when an externally managed user is being removed from account
-      log.error("User is externally managed, cannot delete user - userId: {}", userId);
-      throw new InvalidRequestException(
-          "User is externally managed by your Identity Provider and cannot be deleted via UI / API. To delete the user from Harness, delete it from your Identity Provider.");
-    } else {
-      ResponseDTO<Boolean> userRemovalResponse = removeUserInternal(
-          userId, accountIdentifier, orgIdentifier, projectIdentifier, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
-      if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USER_DELETION_V2)
-          && !ngUserService.isUserAtScope(userId, Scope.builder().accountIdentifier(accountIdentifier).build())) {
-        ngUserService.removeUser(userId, accountIdentifier);
-      }
-
-      return userRemovalResponse;
+      log.warn("Externally managed user with userId: {} is being deleted from account: {}", userId, accountIdentifier);
     }
+    ResponseDTO<Boolean> userRemovalResponse = removeUserInternal(
+        userId, accountIdentifier, orgIdentifier, projectIdentifier, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USER_DELETION_V2)
+        && !ngUserService.isUserAtScope(userId, Scope.builder().accountIdentifier(accountIdentifier).build())) {
+      ngUserService.removeUser(userId, accountIdentifier);
+    }
+
+    return userRemovalResponse;
   }
 
   @DELETE

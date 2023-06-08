@@ -54,7 +54,8 @@ public class STOServiceUtilsTest extends CategoryTest implements MockableTestMix
     Call<JsonObject> stoServiceTokenCall = mock(Call.class);
     when(stoServiceTokenCall.execute()).thenReturn(Response.success(stoServiceTokenResponse));
     when(stoServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(stoServiceTokenCall);
-    STOServiceConfig stoServiceConfig = STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
+    STOServiceConfig stoServiceConfig =
+        STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).internalUrl(baseUrl).build();
     STOServiceUtils stoServiceUtils = new STOServiceUtils(stoServiceClient, stoServiceConfig);
 
     String token = stoServiceUtils.getSTOServiceToken(accountID);
@@ -73,7 +74,8 @@ public class STOServiceUtilsTest extends CategoryTest implements MockableTestMix
     Call<JsonObject> stoServiceTokenCall = mock(Call.class);
     when(stoServiceTokenCall.execute()).thenThrow(new IOException("Got error while trying to process!"));
     when(stoServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(stoServiceTokenCall);
-    STOServiceConfig stoServiceConfig = STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
+    STOServiceConfig stoServiceConfig =
+        STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).internalUrl(baseUrl).build();
     STOServiceUtils stoServiceUtils = new STOServiceUtils(stoServiceClient, stoServiceConfig);
     assertThatThrownBy(() -> stoServiceUtils.getSTOServiceToken(accountID)).isInstanceOf(GeneralException.class);
     verify(stoServiceTokenCall, times(1)).execute();

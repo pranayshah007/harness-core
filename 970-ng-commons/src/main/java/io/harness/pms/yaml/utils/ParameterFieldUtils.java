@@ -35,4 +35,29 @@ public class ParameterFieldUtils {
       }
     }
   }
+
+  /**
+   * @param p Parameter field whose value is either a boolean or a string
+   * @return return a boolean derived from the above value
+   * @throws InvalidRequestException if the parameter field value cannot be converted to a boolean value
+   */
+  public static boolean getBooleanValue(ParameterField<?> p) {
+    if (ParameterField.isNull(p)) {
+      throw new InvalidRequestException("Value for field is null");
+    }
+
+    if (p.isExpression()) {
+      throw new InvalidRequestException("Value for field is an expression");
+    }
+
+    final Object o = p.fetchFinalValue();
+
+    if (o instanceof Boolean) {
+      return (boolean) o;
+    } else if (o instanceof String) {
+      return Boolean.parseBoolean((String) o);
+    } else {
+      throw new InvalidRequestException(String.format("Value for field [%s] is not a boolean", o));
+    }
+  }
 }

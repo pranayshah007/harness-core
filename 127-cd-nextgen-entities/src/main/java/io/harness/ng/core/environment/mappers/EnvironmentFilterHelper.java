@@ -329,6 +329,8 @@ public class EnvironmentFilterHelper {
       qualifiedEnvironmentRef = environmentRef;
       environmentIdentifier = envIdentifierRef.getIdentifier();
     }
+    // to exclude other type of overrides present in V2
+    baseCriteria.and(NGServiceOverridesEntityKeys.type).is(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
     baseCriteria.andOperator(
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(environmentIdentifier),
             Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(qualifiedEnvironmentRef)));

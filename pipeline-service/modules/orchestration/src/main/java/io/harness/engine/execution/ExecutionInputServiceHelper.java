@@ -14,6 +14,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.FQNMapGenerator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
@@ -26,18 +27,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class ExecutionInputServiceHelper {
-  public Map<String, Object> getExecutionInputMap(String inputTemplate, JsonNode userInput) {
-    YamlConfig templateConfig = new YamlConfig(inputTemplate);
-    Map<FQN, Object> fullTemplateMap = templateConfig.getFqnToValueMap();
-
+  public Map<String, Object> getExecutionInputMap(JsonNode inputTemplate, JsonNode userInput) {
+    Map<FQN, Object> templateFqnToValueMap = FQNMapGenerator.generateFQNMap(inputTemplate);
     YamlConfig inputConfig = new YamlConfig(userInput);
     Map<FQN, Object> fullUserInputMap = inputConfig.getFqnToValueMap();
 
     Map<String, Object> inputMap = new LinkedHashMap<>();
     // Iterating over all values in template and checking if it was an executionInput. if yes then add the corresponding
     // fqn expression to the inputMap.
-    fullTemplateMap.keySet().forEach(key -> {
-      String value = fullTemplateMap.get(key).toString().replace("\\\"", "").replace("\"", "");
+    templateFqnToValueMap.keySet().forEach(key -> {
+      String value = templateFqnToValueMap.get(key).toString().replace("\\\"", "").replace("\"", "");
       if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
         Object rawInputValue = fullUserInputMap.get(key);
         Object inputValue = JsonNodeUtils.getValueFromJsonNode(rawInputValue);

@@ -35,8 +35,12 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
+import io.harness.engine.GovernanceService;
+import io.harness.engine.GovernanceServiceImpl;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
+import io.harness.ff.FeatureFlagService;
+import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -44,6 +48,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -51,6 +56,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -89,14 +95,19 @@ import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceImpl;
+import io.harness.template.services.TemplateAsyncSetupUsageService;
+import io.harness.template.services.TemplateAsyncSetupUsageServiceImpl;
 import io.harness.template.services.TemplateGitXService;
 import io.harness.template.services.TemplateGitXServiceImpl;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateMergeServiceImpl;
 import io.harness.template.services.TemplateRefreshService;
 import io.harness.template.services.TemplateRefreshServiceImpl;
+import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
+import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
@@ -110,6 +121,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
@@ -123,6 +135,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import javax.validation.Validation;
@@ -211,6 +224,8 @@ public class TemplateServiceModule extends AbstractModule {
     install(YamlSchemaClientModule.getInstance(
         YamlSchemaClientConfig.builder().yamlSchemaHttpClientMap(yamlSchemaHttpClientConfigMap).build(),
         TEMPLATE_SERVICE.getServiceId()));
+    install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
+        templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -221,6 +236,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(OutboxEventHandler.class).to(TemplateOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(NGTemplateService.class).to(NGTemplateServiceImpl.class);
+    bind(GovernanceService.class).to(GovernanceServiceImpl.class);
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(NGTemplateResource.class).to(NGTemplateResourceImpl.class);
@@ -229,6 +245,9 @@ public class TemplateServiceModule extends AbstractModule {
     bind(HealthResource.class).to(HealthResourceImpl.class);
     bind(TemplateMergeService.class).to(TemplateMergeServiceImpl.class).in(Singleton.class);
     bind(TemplateGitXService.class).to(TemplateGitXServiceImpl.class).in(Singleton.class);
+    bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
+    bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
+    bind(TemplateAsyncSetupUsageService.class).to(TemplateAsyncSetupUsageServiceImpl.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -379,6 +398,18 @@ public class TemplateServiceModule extends AbstractModule {
             .build());
     log.info("delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  @Provides
+  @Singleton
+  @Named("TemplateAsyncSetupUsageExecutorService")
+  public Executor templateAsyncSetupUsageExecutorService() {
+    return new ManagedExecutorService(
+        ThreadPool.create(templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getCorePoolSize(),
+            templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getMaxPoolSize(),
+            templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getIdleTime(),
+            templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("TemplateAsyncSetupUsageExecutorService-%d").build()));
   }
 
   private ValidatorFactory getValidatorFactory() {

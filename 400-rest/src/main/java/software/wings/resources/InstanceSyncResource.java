@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.exception.ExceptionUtils;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
@@ -55,7 +56,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(DEL)
 @BreakDependencyOn("software.wings.service.impl.instance.InstanceHelper")
 public class InstanceSyncResource {
-  private static final String LOG_ERROR_TEMPLATE = "Failed to process results for perpetual task: [{}]";
+  private static final String LOG_ERROR_TEMPLATE = "Failed to process results for perpetual task: [{}] due to [{}]";
   @Inject private InstanceHelper instanceHelper;
   @Inject private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
   @Inject private CgInstanceSyncServiceV2 instanceSyncServiceV2;
@@ -72,7 +73,7 @@ public class InstanceSyncResource {
           instanceSyncResponsePublisher.fetchTaskDetails(perpetualTask, page, size, accountId);
       return Response.ok(details).build();
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return Response.status(Response.Status.EXPECTATION_FAILED).build();
   }
@@ -88,7 +89,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(accountId, perpetualTask, response, true);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -105,7 +106,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncServiceV2.processInstanceSyncResult(perpetualTask, response, true);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -120,7 +121,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceHelper.processInstanceSyncResponseFromPerpetualTask(perpetualTask, response);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -137,7 +138,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(accountId, perpetualTask, response, false);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -154,7 +155,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(accountId, perpetualTask, instanceSyncResponseV2);
     } catch (Exception e) {
-      log.error("Failed to process results for v2 perpetual task: [{}]", perpetualTask, e);
+      log.warn("Failed to process results for v2 perpetual task: [{}]", perpetualTask, e);
     }
     return new RestResponse<>(true);
   }
@@ -171,7 +172,7 @@ public class InstanceSyncResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceSyncServiceV2.processInstanceSyncResult(perpetualTask, response, false);
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -188,7 +189,7 @@ public class InstanceSyncResource {
       InstanceSyncTrackedDeploymentDetails details = instanceSyncServiceV2.fetchTaskDetails(perpetualTask, accountId);
       return Response.ok(details).build();
     } catch (Exception e) {
-      log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);
+      log.warn(LOG_ERROR_TEMPLATE, perpetualTask, ExceptionUtils.getMessage(e));
     }
     return Response.noContent().build();
   }

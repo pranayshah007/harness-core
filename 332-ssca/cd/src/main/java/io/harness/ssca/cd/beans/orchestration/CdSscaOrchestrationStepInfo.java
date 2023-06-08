@@ -14,6 +14,7 @@ import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.SscaConstants;
@@ -58,7 +59,7 @@ public class CdSscaOrchestrationStepInfo
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return null;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override

@@ -58,7 +58,8 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     CdAbstractStepNode cdAbstractStepNode;
 
@@ -88,7 +89,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(request.getAmbiance(), awsSamBuildStepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(ambiance, awsSamBuildStepInfo));
 
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();

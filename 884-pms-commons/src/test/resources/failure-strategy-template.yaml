@@ -1,38 +1,38 @@
 pipeline:
   identifier: basichttpFail
   stages:
-  - stage:
-      identifier: qaStage
-      type: Deployment
-      spec:
-        serviceConfig:
-          serviceDefinition:
-            type: Kubernetes
-            spec:
-              manifests:
-              - manifest:
-                  identifier: baseValues
-                  type: K8sManifest
-                  spec:
-                    store:
-                      type: Git
+    - stage:
+        identifier: qaStage
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                manifests:
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
                       spec:
-                        branch: <+input>
-        infrastructure:
-          infrastructureDefinition:
-            type: KubernetesDirect
-            spec:
-              namespace: <+input>
-        execution:
-          steps:
-          - step:
-              identifier: httpStep1
-              type: Http
+                        store:
+                          type: Git
+                          spec:
+                            branch: <+input>
+          infrastructure:
+            infrastructureDefinition:
+              type: KubernetesDirect
               spec:
-                url: <+input>
-          rollbackSteps:
-          - step:
-              identifier: httpStepRollback1
-              type: Http
-              spec:
-                url: <+input>
+                namespace: <+input>
+          execution:
+            steps:
+              - step:
+                  identifier: httpStep1
+                  type: Http
+                  spec:
+                    url: <+input>
+            rollbackSteps:
+              - step:
+                  identifier: httpStepRollback1
+                  type: Http
+                  spec:
+                    url: <+input>

@@ -10,10 +10,12 @@ package io.harness.cvng.utils;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ResourceParams;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.cronutils.utils.Preconditions;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class ScopedInformation {
   private ScopedInformation() {}
@@ -81,5 +83,46 @@ public class ScopedInformation {
     } else {
       throw new InvalidArgumentsException("Invalid Scoped Identifier");
     }
+  }
+
+  public static String getFNQFromScopedIdentifier(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifierWithScope) {
+    Pair<String, String> scopeIdentifierPair = getScopeAndIdentifierPair(identifierWithScope);
+    switch (scopeIdentifierPair.getLeft()) {
+      case "account":
+        return FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+            accountId, null, null, scopeIdentifierPair.getRight());
+      case "org":
+        return FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+            accountId, orgIdentifier, null, scopeIdentifierPair.getRight());
+      case "project":
+        return FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+            accountId, orgIdentifier, projectIdentifier, scopeIdentifierPair.getRight());
+      default:
+        throw new IllegalArgumentException(String.format(
+            "Invalid Scope: %s for connector Identifier: %s", scopeIdentifierPair.getLeft(), identifierWithScope));
+    }
+  }
+
+  public static Pair<String, String> getScopeAndIdentifierPair(String identifierWithScope) {
+    String[] parts = identifierWithScope.split("[.]", 2);
+    if (parts.length > 0 && (parts[0].equals("account") || parts[0].equals("org"))) {
+      return Pair.of(parts[0], parts[1]);
+    } else {
+      return Pair.of("project", identifierWithScope);
+    }
+  }
+
+  public static String getScopedIdentifier(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
+    String scope = getLowerCaseScope(ProjectParams.builder()
+                                         .accountIdentifier(accountId)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .build());
+    if (scope.equals("account") || scope.equals("org")) {
+      return scope + "." + identifier;
+    }
+    return identifier;
   }
 }

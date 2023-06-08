@@ -187,7 +187,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
-
+      // TODO: As part of this ticket https://harness.atlassian.net/browse/CDS-70970, we should publish the setup usages
+      // after the entity has been created
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       PipelineEntity createdEntity;
@@ -319,6 +320,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
+    if (pipelineEntity.isPresent() && StoreType.REMOTE.equals(pipelineEntity.get().getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
 
@@ -357,7 +361,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   // call of inline Pipeline
   public void validateStoredYaml(PipelineEntity pipelineEntity) {
     try {
-      YamlUtils.readTree(pipelineEntity.getYaml(), true);
+      YamlUtils.readTree(pipelineEntity.getYaml());
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =
           YamlSchemaErrorWrapperDTO.builder()
@@ -743,7 +747,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier,
         pipelineImportRequest.getPipelineName(), importedPipelineYAML, false, pipelineVersion);
     pipelineEntity.setRepoURL(repoUrl);
-
+    pipelineEntity.setStoreType(StoreType.REMOTE);
     try {
       PipelineEntity entityWithUpdatedInfo =
           pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineVersion);

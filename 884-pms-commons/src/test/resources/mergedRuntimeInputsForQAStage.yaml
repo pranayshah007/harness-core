@@ -1,37 +1,37 @@
 pipeline:
-  identifier: "Test_Pipline11"
+  identifier: Test_Pipline11
   stages:
-  - stage:
-      identifier: "qaStage"
-      type: "Deployment"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep1"
-              type: "Http"
-              spec:
-                url: "www.google.com"
-  - stage:
-      identifier: "app"
-      type: "Approval"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "httpStep7"
-              type: "Http"
-              spec:
-                url: "<+input>"
-  - parallel:
     - stage:
-        identifier: "pq2"
-        type: "Approval"
+        identifier: qaStage
+        type: Deployment
         spec:
           execution:
             steps:
-            - step:
-                identifier: "httpStep7"
-                type: "Http"
-                spec:
-                  url: "<+input>"
+              - step:
+                  identifier: httpStep1
+                  type: Http
+                  spec:
+                    url: www.google.com
+    - stage:
+        identifier: app
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: httpStep7
+                  type: Http
+                  spec:
+                    url: <+input>
+    - parallel:
+        - stage:
+            identifier: pq2
+            type: Approval
+            spec:
+              execution:
+                steps:
+                  - step:
+                      identifier: httpStep7
+                      type: Http
+                      spec:
+                        url: <+input>

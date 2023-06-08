@@ -18,12 +18,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -111,6 +114,58 @@ public class SscaOrchestrationStepTest extends CIExecutionTestBase {
     });
     assertThat(stepOutcomeList).hasSize(1);
     stepOutcomeList.forEach(stepOutcome -> {
+      assertThat(stepOutcome.getOutcome()).isInstanceOf(CIStepArtifactOutcome.class);
+      CIStepArtifactOutcome outcome = (CIStepArtifactOutcome) stepOutcome.getOutcome();
+      assertThat(outcome).isNotNull();
+      assertThat(outcome.getStepArtifacts()).isNotNull();
+      assertThat(outcome.getStepArtifacts().getPublishedSbomArtifacts()).isNotNull().hasSize(1);
+      assertThat(outcome.getStepArtifacts().getPublishedSbomArtifacts().get(0)).isEqualTo(publishedSbomArtifact);
+      assertThat(stepOutcome.getName()).isEqualTo("artifact_identifierId");
+    });
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testHandleVmAsyncResponse() {
+    Ambiance ambiance = SscaTestsUtility.getAmbiance();
+    SscaOrchestrationStepInfo stepInfo =
+        SscaOrchestrationStepInfo.builder().identifier(SscaTestsUtility.STEP_IDENTIFIER).build();
+    StepElementParameters stepElementParameters = SscaTestsUtility.getStepElementParameters(stepInfo);
+
+    ResponseData responseData =
+        VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    responseDataMap.put("response", responseData);
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
+
+    when(sscaServiceUtils.getSbomArtifact(SscaTestsUtility.STEP_EXECUTION_ID, SscaTestsUtility.ACCOUNT_ID,
+             SscaTestsUtility.ORG_ID, SscaTestsUtility.PROJECT_ID))
+        .thenReturn(
+            SBOMArtifactResponse.builder()
+                .artifact(Artifact.builder().type("image").name("library/nginx").tag("latest").id("someId").build())
+                .attestation(AttestationDetails.builder().isAttested(true).build())
+                .sbom(SbomDetails.builder().url("https://someurl.com").name("blah_sbom").build())
+                .stepExecutionId(SscaTestsUtility.STEP_EXECUTION_ID)
+                .build());
+
+    PublishedSbomArtifact publishedSbomArtifact = PublishedSbomArtifact.builder()
+                                                      .stepExecutionId(SscaTestsUtility.STEP_EXECUTION_ID)
+                                                      .imageName("library/nginx")
+                                                      .id("someId")
+                                                      .isSbomAttested(true)
+                                                      .sbomName("blah_sbom")
+                                                      .sbomUrl("https://someurl.com")
+                                                      .build();
+    StepResponse stepResponse =
+        sscaOrchestrationStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    stepResponse.getStepOutcomes().forEach(stepOutcome -> {
       assertThat(stepOutcome.getOutcome()).isInstanceOf(CIStepArtifactOutcome.class);
       CIStepArtifactOutcome outcome = (CIStepArtifactOutcome) stepOutcome.getOutcome();
       assertThat(outcome).isNotNull();

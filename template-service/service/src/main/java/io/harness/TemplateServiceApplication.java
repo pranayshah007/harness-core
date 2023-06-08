@@ -19,8 +19,12 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.exception.GeneralException;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.gitsync.GitSyncEntitiesConfiguration;
@@ -181,6 +185,22 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       @Named("dbAliases")
       public List<String> getDbAliases() {
         return templateServiceConfiguration.getDbAliases();
+      }
+    });
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return templateServiceConfiguration.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return templateServiceConfiguration.getFeatureFlagConfig();
       }
     });
     modules.add(TemplateServiceModule.getInstance(templateServiceConfiguration));

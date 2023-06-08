@@ -56,7 +56,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
-import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabels;
@@ -267,8 +267,8 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
         k8sBlueGreenDeployTaskParameters.getK8sClusterConfig(), false);
     k8sBlueGreenHandlerConfig.setKubernetesConfig(kubernetesConfig);
 
-    k8sBlueGreenHandlerConfig.setClient(
-        Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    k8sBlueGreenHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
 
     try {
       k8sTaskHelperBase.deleteSkippedManifestFiles(
@@ -302,8 +302,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
     }
 
     return k8sTaskHelperBase.dryRunManifests(k8sBlueGreenHandlerConfig.getClient(),
-        k8sBlueGreenHandlerConfig.getResources(), k8sDelegateTaskParams, executionLogCallback,
-        k8sBlueGreenDeployTaskParameters.isUseNewKubectlVersion());
+        k8sBlueGreenHandlerConfig.getResources(), k8sDelegateTaskParams, executionLogCallback);
   }
 
   @VisibleForTesting

@@ -13,7 +13,6 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooAuthCredentialsDTO;
-import io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams;
 import io.harness.delegate.task.TaskParameters;
@@ -45,8 +44,8 @@ public class BambooConnectionValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO bambooConnector, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    BambooConnectionTaskResponse responseData = (BambooConnectionTaskResponse) super.validateConnector(
-        bambooConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseData =
+        super.validateConnector(bambooConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 

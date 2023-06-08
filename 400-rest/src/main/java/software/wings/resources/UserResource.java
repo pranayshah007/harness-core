@@ -421,15 +421,14 @@ public class UserResource {
   @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
   public RestResponse delete(@QueryParam("accountId") @NotEmpty String accountId, @PathParam("userId") String userId) {
     User user = userService.get(userId);
-    // If user doesn't exists, userService.get throws exception, so we don't have to handle it.
     InvalidRequestException exception = new InvalidRequestException("Can not delete user added via SCIM", USER);
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
         && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
       if (userServiceHelper.isSCIMManagedUser(accountId, user, CG)) {
-        throw exception;
+        log.warn("Externally managed user with userId: {} is being deleted from account: {}", userId, accountId);
       }
     } else if (user.isImported()) {
-      throw exception;
+      log.warn("Externally managed user with userId: {} is being deleted from account: {}", userId, accountId);
     }
     userService.delete(accountId, userId);
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {

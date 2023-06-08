@@ -128,7 +128,7 @@ public class PipelineStagePlanCreatorV1Test {
                                   .build();
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     assertThat(SecurityContextBuilder.getPrincipal()).isNull();
 
@@ -139,7 +139,7 @@ public class PipelineStagePlanCreatorV1Test {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     PlanCreationResponse response =
         pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.readTreeWithDefaultObjectMapper(yamlField));

@@ -61,6 +61,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.utils.ParameterFieldUtils;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
@@ -204,9 +205,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int totalIterations = servicesMap.size();
       int maxConcurrency = 0;
       if (stepParameters.getServices().getServicesMetadata() != null
-          && stepParameters.getServices().getServicesMetadata().getParallel() != null
-          && !stepParameters.getServices().getServicesMetadata().getParallel()) {
-        maxConcurrency = 1;
+          && ParameterField.isNotNull(stepParameters.getServices().getServicesMetadata().getParallel())) {
+        if (stepParameters.getServices().getServicesMetadata().getParallel().isExpression()) {
+          throw new InvalidYamlException("services parallel value could not be resolved: "
+              + stepParameters.getServices().getServicesMetadata().getParallel().getExpressionValue());
+        }
+        if (!ParameterFieldUtils.getBooleanValue(stepParameters.getServices().getServicesMetadata().getParallel())) {
+          maxConcurrency = 1;
+        }
       }
       for (Map<String, String> serviceMap : servicesMap) {
         String serviceRef = MultiDeploymentSpawnerUtils.getServiceRef(serviceMap);
@@ -349,8 +355,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     int maxConcurrency = 0;
     // If Both service and env are non-parallel
     if (stepParameters.getServices() != null && stepParameters.getServices().getServicesMetadata() != null
-        && stepParameters.getServices().getServicesMetadata().getParallel() != null
-        && !stepParameters.getServices().getServicesMetadata().getParallel()
+        && ParameterField.isNotNull(stepParameters.getServices().getServicesMetadata().getParallel())
+        && !stepParameters.getServices().getServicesMetadata().getParallel().getValue()
         && ((stepParameters.getEnvironments() != null
                 && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
                 && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
@@ -485,7 +491,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   private boolean shouldDeployInParallel(ServicesMetadata metadata) {
     // If metadata is not provided, we assume parallel by default.
-    return metadata == null || Boolean.TRUE == metadata.getParallel();
+    return metadata == null || ParameterFieldUtils.getBooleanValue(metadata.getParallel());
   }
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,

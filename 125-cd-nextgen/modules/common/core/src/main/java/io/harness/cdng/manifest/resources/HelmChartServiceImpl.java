@@ -174,6 +174,8 @@ public class HelmChartServiceImpl implements HelmChartService {
               .checkIncorrectChartVersion(true)
               .useRepoFlags(helmVersion != HelmVersion.V2)
               .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
+              .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(
+                  accountId, FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
               .build();
 
       HelmFetchChartVersionRequestNG helmFetchChartVersionRequestNG =

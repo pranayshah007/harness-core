@@ -81,6 +81,7 @@ import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStep;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepV2;
 import io.harness.cdng.k8s.K8sApplyStep;
 import io.harness.cdng.k8s.K8sBGStageScaleDownStep;
 import io.harness.cdng.k8s.K8sBGSwapServicesStep;
@@ -123,6 +124,7 @@ import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStep;
 import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
@@ -230,6 +232,7 @@ public class NgStepRegistrar {
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     engineSteps.put(GitopsClustersStep.STEP_TYPE, GitopsClustersStep.class);
     engineSteps.put(JenkinsBuildStep.STEP_TYPE, JenkinsBuildStep.class);
+    engineSteps.put(JenkinsBuildStepV2.STEP_TYPE, JenkinsBuildStepV2.class);
     // ECS
     engineSteps.put(EcsRollingDeployStep.STEP_TYPE, EcsRollingDeployStep.class);
     engineSteps.put(EcsRollingRollbackStep.STEP_TYPE, EcsRollingRollbackStep.class);
@@ -307,6 +310,9 @@ public class NgStepRegistrar {
 
     // Blue Green Stage Scale Down
     engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
+
+    engineSteps.put(ServerlessAwsLambdaPrepareRollbackContainerStep.STEP_TYPE,
+        ServerlessAwsLambdaPrepareRollbackContainerStep.class);
     return engineSteps;
   }
 }

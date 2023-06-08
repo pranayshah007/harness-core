@@ -2737,6 +2737,7 @@ public class DelegateServiceImpl implements DelegateService {
         .project(DelegateKeys.lastHeartBeat, true)
         .project(DelegateKeys.delegateGroupName, true)
         .project(DelegateKeys.description, true)
+        .project(DelegateKeys.immutable, true)
         .get();
   }
 
@@ -2938,9 +2939,13 @@ public class DelegateServiceImpl implements DelegateService {
 
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
 
-    if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
-      log.warn("Delegate was not found or is not enabled while checking for profile. Delegate status {}",
-          delegate.getStatus());
+    if (delegate == null) {
+      log.warn("Delegate was not found, while checking for profile.");
+      return null;
+    }
+
+    if (DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
+      log.warn("Delegate not enabled state while checking for profile. Delegate status {}", delegate.getStatus());
       return null;
     }
 

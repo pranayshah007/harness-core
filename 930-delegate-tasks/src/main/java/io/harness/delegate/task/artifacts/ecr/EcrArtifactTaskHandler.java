@@ -54,10 +54,10 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   public ArtifactTaskExecutionResponse getBuilds(EcrArtifactDelegateRequest attributesRequest) {
     List<BuildDetailsInternal> builds;
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
-    builds = ecrService.getBuilds(awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(),
-        attributesRequest.getImagePath(), MAX_NO_OF_TAGS_PER_IMAGE);
+    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
+        attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
+    builds = ecrService.getBuilds(awsInternalConfig, attributesRequest.getRegistryId(), ecrimageUrl,
+        attributesRequest.getRegion(), attributesRequest.getImagePath(), MAX_NO_OF_TAGS_PER_IMAGE);
     List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDateDescending()) // Sort by latest timestamp.
@@ -78,10 +78,10 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   @Override
   public ArtifactTaskExecutionResponse validateArtifactServer(EcrArtifactDelegateRequest attributesRequest) {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
-    boolean validateCredentials = ecrService.validateCredentials(
-        awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(), attributesRequest.getImagePath());
+    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
+        attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
+    boolean validateCredentials = ecrService.validateCredentials(awsInternalConfig, attributesRequest.getRegistryId(),
+        ecrimageUrl, attributesRequest.getRegion(), attributesRequest.getImagePath());
     return ArtifactTaskExecutionResponse.builder()
         .isArtifactServerValid(validateCredentials)
         .artifactDelegateResponse(EcrArtifactDelegateResponse.builder().imageUrl(ecrimageUrl).build())
@@ -91,10 +91,10 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   @Override
   public ArtifactTaskExecutionResponse validateArtifactImage(EcrArtifactDelegateRequest attributesRequest) {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
-    boolean verifyImageName = ecrService.verifyImageName(
-        awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(), attributesRequest.getImagePath());
+    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
+        attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
+    boolean verifyImageName = ecrService.verifyImageName(awsInternalConfig, attributesRequest.getRegistryId(),
+        ecrimageUrl, attributesRequest.getRegion(), attributesRequest.getImagePath());
     return ArtifactTaskExecutionResponse.builder().isArtifactSourceValid(verifyImageName).build();
   }
 
@@ -111,14 +111,15 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(EcrArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
+    String ecrimageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
+        attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
     if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())) {
-      lastSuccessfulBuild = ecrService.getLastSuccessfulBuildFromRegex(awsInternalConfig, ecrimageUrl,
-          attributesRequest.getRegion(), attributesRequest.getImagePath(), attributesRequest.getTagRegex());
+      lastSuccessfulBuild =
+          ecrService.getLastSuccessfulBuildFromRegex(awsInternalConfig, attributesRequest.getRegistryId(), ecrimageUrl,
+              attributesRequest.getRegion(), attributesRequest.getImagePath(), attributesRequest.getTagRegex());
     } else {
-      lastSuccessfulBuild = ecrService.verifyBuildNumber(awsInternalConfig, ecrimageUrl, attributesRequest.getRegion(),
-          attributesRequest.getImagePath(), attributesRequest.getTag());
+      lastSuccessfulBuild = ecrService.verifyBuildNumber(awsInternalConfig, attributesRequest.getRegistryId(),
+          ecrimageUrl, attributesRequest.getRegion(), attributesRequest.getImagePath(), attributesRequest.getTag());
     }
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         EcrRequestResponseMapper.toEcrResponse(lastSuccessfulBuild, attributesRequest);
@@ -127,29 +128,35 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
 
   public ArtifactTaskExecutionResponse getEcrImageUrl(EcrArtifactDelegateRequest attributesRequest) {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    String ecrImageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
+    String ecrImageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
+        attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
 
-    return getSuccessTaskExecutionResponse(
-        Collections.singletonList(EcrArtifactDelegateResponse.builder().imageUrl(ecrImageUrl).build()));
+    return getSuccessTaskExecutionResponse(Collections.singletonList(EcrArtifactDelegateResponse.builder()
+                                                                         .registryId(attributesRequest.getRegistryId())
+                                                                         .imageUrl(ecrImageUrl)
+                                                                         .build()));
   }
 
   public ArtifactTaskExecutionResponse getAmazonEcrAuthToken(EcrArtifactDelegateRequest attributesRequest) {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    String ecrImageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(
-        awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getImagePath());
+    String ecrImageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
+        attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
     String authToken = awsEcrApiHelperServiceDelegate.getAmazonEcrAuthToken(
         awsInternalConfig, ecrImageUrl.substring(0, ecrImageUrl.indexOf('.')), attributesRequest.getRegion());
 
     List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList = new ArrayList<>();
-    ecrArtifactDelegateResponseList.add(EcrArtifactDelegateResponse.builder().authToken(authToken).build());
+    ecrArtifactDelegateResponseList.add(EcrArtifactDelegateResponse.builder()
+                                            .registryId(attributesRequest.getRegistryId())
+                                            .authToken(authToken)
+                                            .build());
     return getSuccessTaskExecutionResponse(ecrArtifactDelegateResponseList);
   }
 
   @Override
   public ArtifactTaskExecutionResponse getImages(EcrArtifactDelegateRequest attributesRequest) {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
-    List<String> repoNames = ecrService.listEcrRegistry(awsInternalConfig, attributesRequest.getRegion());
+    List<String> repoNames =
+        ecrService.listEcrRegistry(awsInternalConfig, attributesRequest.getRegion(), attributesRequest.getRegistryId());
     return ArtifactTaskExecutionResponse.builder().artifactImages(repoNames).build();
   }
 
@@ -159,9 +166,5 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
     awsInternalConfig.setDefaultRegion(attributesRequest.getRegion());
     return awsInternalConfig;
-  }
-
-  boolean isRegex(EcrArtifactDelegateRequest artifactDelegateRequest) {
-    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getTagRegex());
   }
 }

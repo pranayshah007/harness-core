@@ -180,10 +180,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, gitConnector, identifier);
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
-            (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance);
+            (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance, infraType);
       case SSCA_ENFORCEMENT:
         return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
-            (SscaEnforcementStepInfo) stepInfo, identifier, ambiance);
+            (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
@@ -856,6 +856,37 @@ public class PluginSettingUtils extends PluginServiceImpl {
       ciExecutionArgsCopy = CIExecutionArgs.builder().runSequence(ciExecutionArgs.getRunSequence()).build();
     }
     return BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgsCopy);
+  }
+
+  public boolean buildxRequired(PluginCompatibleStep stepInfo) {
+    if (stepInfo == null) {
+      return false;
+    }
+    boolean caching;
+    List<String> cacheFrom;
+    String cacheTo;
+
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+        caching = resolveBooleanParameter(dockerStepInfo.getCaching(), false);
+        cacheFrom =
+            resolveListParameter("cacheFrom", "BuildAndPushDockerRegistry", "", dockerStepInfo.getCacheFrom(), false);
+        cacheTo =
+            resolveStringParameter("cacheTo", "BuildAndPushDockerRegistry", "", dockerStepInfo.getCacheTo(), false);
+        break;
+      case ECR:
+        ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(ecrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushECR", "", ecrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushECR", "", ecrStepInfo.getCacheTo(), false);
+        break;
+      case ACR:
+      case GCR:
+      default:
+        return false;
+    }
+    return caching || !isEmpty(cacheFrom) || !isEmpty(cacheTo);
   }
 
   public boolean dlcSetupRequired(PluginCompatibleStep stepInfo) {

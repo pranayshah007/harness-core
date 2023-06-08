@@ -512,6 +512,18 @@ public class InviteServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void completeUserNgSetup() {
+    UserMetadataDTO user = UserMetadataDTO.builder().name(randomAlphabetic(7)).email(emailId).uuid(userId).build();
+    when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
+    doNothing().when(ngUserService).waitForRbacSetup(any(), anyString(), anyString());
+    inviteService.completeUserNgSetupWithoutInvite(emailId, accountIdentifier);
+    verify(ngUserService, times(1)).waitForRbacSetup(any(), anyString(), anyString());
+    verify(ngUserService, times(1)).addUserToScope(any(), any(), any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testCreate_withSsoEnabled_withAutoInviteAcceptanceEnabled() throws IOException {

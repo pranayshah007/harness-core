@@ -215,6 +215,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AutoApprovalParams": {
+      "type": "object",
+      "required": [
+        "action",
+        "scheduledDeadline"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "APPROVE"
+          ]
+        },
+        "comments": {
+          "type": "string"
+        },
+        "scheduledDeadline": {
+          "$ref": "#/definitions/ScheduledDeadline"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BarrierStepInfo": {
       "allOf": [
         {
@@ -369,8 +391,7 @@
       "type": "object",
       "required": [
         "connectorRef",
-        "namespace",
-        "resources"
+        "namespace"
       ],
       "properties": {
         "annotations": {
@@ -1099,6 +1120,9 @@
             },
             "approvers": {
               "$ref": "#/definitions/Approvers"
+            },
+            "autoApproval": {
+              "$ref": "#/definitions/AutoApprovalParams"
             },
             "includePipelineExecutionHistory": {
               "oneOf": [
@@ -2048,6 +2072,18 @@
           }
         },
         "variation": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ScheduledDeadline": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
+        },
+        "timeZone": {
           "type": "string"
         }
       },

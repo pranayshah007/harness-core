@@ -197,7 +197,7 @@ public class PlanCreatorMergeService {
     return planCreationContextMap;
   }
 
-  private PlanCreationBlobResponse createPlanForDependenciesRecursive(String accountId, String orgIdentifier,
+  PlanCreationBlobResponse createPlanForDependenciesRecursive(String accountId, String orgIdentifier,
       String projectIdentifier, Map<String, PlanCreatorServiceInfo> services, Dependencies initialDependencies,
       ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
     PlanCreationBlobResponse.Builder finalResponseBuilder =

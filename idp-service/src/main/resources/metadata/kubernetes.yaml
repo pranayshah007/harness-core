@@ -1,0 +1,36 @@
+identifier: kubernetes
+name: Kubernetes
+description: Monitor all your service's deployments at a glance, even across clusters.
+createdBy: Spotify
+category: Core Feature
+source: https://backstage.io/docs/features/kubernetes/
+iconUrl: https://avatars.githubusercontent.com/u/13629408
+imageUrl: ''
+config: |-
+  kubernetes:
+    serviceLocatorMethod:
+      type: 'multiTenant'
+    clusterLocatorMethods:
+      - type: 'config'
+        clusters:
+          - url: '<your-base-url>'
+            name: '<your-cluster-name>'
+            authProvider: 'serviceAccount' 
+            skipTLSVerify: true
+            skipMetricsLookup: false
+            serviceAccountToken: ${K8S_SA_TOKEN}
+environmentVariables:
+  - K8S_SA_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityKubernetesContent
+      addByDefault: true
+      defaultRoute: /kubernetes
+      layoutSchemaSpecs:
+        name: EntityKubernetesContent
+        title: Kubernetes
+        contents:
+          - component: EntityKubernetesContent

@@ -115,6 +115,8 @@ public interface YamlTypes {
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
+  String OVERRIDE = "overrides";
+  String VARIABLES = "variables";
   String SERVICE_INPUTS = "serviceInputs";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
@@ -218,6 +220,11 @@ public interface YamlTypes {
   String AWS_SAM_BUILD = StepSpecTypeConstants.AWS_SAM_BUILD;
   String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
 
+  String DOWNLOAD_SERVERLESS_MANIFESTS = StepSpecTypeConstants.DOWNLOAD_SERVERLESS_MANIFESTS;
+
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
   String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;
+
+  // SERVERLESS CONTAINER STEPS
+  String SERVERLESS_PREPARE_ROLLBACK = StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK;
 }

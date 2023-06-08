@@ -21,6 +21,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -117,10 +118,8 @@ public class NGTemplateServiceHelper {
           e);
       ScmException exception = TemplateUtils.getScmException(e);
       if (null != exception) {
-        throw new InvalidRequestException(
-            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
-                templateIdentifier, versionLabel),
-            e);
+        throw new InvalidRequestException("Error while retrieving template with identifier " + templateIdentifier
+            + " and versionLabel " + versionLabel + " due to " + ExceptionUtils.getMessage(e));
       } else {
         throw new InvalidRequestException(
             String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",

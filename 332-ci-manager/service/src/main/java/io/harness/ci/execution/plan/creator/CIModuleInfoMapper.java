@@ -15,6 +15,7 @@ import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.execution.WebhookGitUser;
@@ -22,6 +23,7 @@ import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.pipeline.executions.beans.CIBuildPRHook;
+import io.harness.ci.pipeline.executions.beans.CIBuildReleaseHook;
 import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ public class CIModuleInfoMapper {
   private static final String PR_MERGED = "merged";
   private static final String PR = "pullRequest";
   private static final String BRANCH = "branch";
+  private static final String RELEASE = "release";
 
   public static CIWebhookInfoDTO getCIBuildResponseDTO(ExecutionSource executionSource) throws InternalError {
     CIWebhookInfoDTO ciWebhookInfoDTO = CIWebhookInfoDTO.builder().build();
@@ -42,7 +45,11 @@ public class CIModuleInfoMapper {
       if (executionSource.getType() == ExecutionSource.Type.WEBHOOK) {
         WebhookExecutionSource webhookExecutionSource = (WebhookExecutionSource) executionSource;
         ciWebhookInfoDTO.setAuthor(convertGitAuthor(webhookExecutionSource.getUser()));
-        if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.PR) {
+        if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.RELEASE) {
+          ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+          ciWebhookInfoDTO.setRelease(convertRelease(releaseWebhookEvent));
+          ciWebhookInfoDTO.setEvent(RELEASE);
+        } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.PR) {
           PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
           ciWebhookInfoDTO.setPullRequest(convertPR(prWebhookEvent));
           ciWebhookInfoDTO.setEvent(PR);
@@ -85,6 +92,15 @@ public class CIModuleInfoMapper {
     List<CIBuildCommit> commitList = new ArrayList<>();
     branch.getCommitDetailsList().forEach(commit -> commitList.add(convertCommit(commit)));
     return CIBuildBranchHook.builder().name(branch.getBranchName()).link(branch.getLink()).commits(commitList).build();
+  }
+
+  private static CIBuildReleaseHook convertRelease(ReleaseWebhookEvent release) {
+    return CIBuildReleaseHook.builder()
+        .tag(release.getReleaseTag())
+        .link(release.getReleaseLink())
+        .body(release.getReleaseBody())
+        .title(release.getReleaseBody())
+        .build();
   }
 
   private static CIBuildAuthor convertGitAuthor(WebhookGitUser user) {

@@ -999,6 +999,78 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   @Override
+  public List<String> getEligibleDelegatesToTask(DelegateTask task) throws WingsException {
+    // If task comes with eligibleToExecuteDelegateIds then no need to do assignment logic.
+    if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
+      log.info(
+          "Task {} has eligibleToExecuteDelegateIds:  {} ", task.getUuid(), task.getEligibleToExecuteDelegateIds());
+      return task.getEligibleToExecuteDelegateIds();
+    }
+    List<String> eligibleDelegateIds = new ArrayList<>();
+    task.setNonAssignableDelegates(new HashMap<>());
+    try {
+      List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
+      // NG only for new APIs
+      accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == true).collect(toList());
+      if (isEmpty(accountDelegates)) {
+        task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
+        delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);
+        return List.of();
+      }
+
+      List<Delegate> delegates = getDelegatesWithOwnerShipCriteriaMatch(task, accountDelegates);
+      if (isEmpty(delegates)) {
+        task.getNonAssignableDelegates().put(CAN_NOT_ASSIGN_OWNER, Collections.emptyList());
+        delegateTaskServiceClassic.addToTaskActivityLog(task, CAN_NOT_ASSIGN_OWNER);
+        return List.of();
+      }
+
+      eligibleDelegateIds = delegates.stream()
+                                .filter(delegate
+                                    -> delegate.getStatus() != DelegateInstanceStatus.DELETED
+                                        && canAssignDelegateBySelectors(delegate.getUuid(), task))
+                                .map(Delegate::getUuid)
+                                .collect(Collectors.toList());
+      delegateSelectionLogsService.logNonSelectedDelegates(task, task.getNonAssignableDelegates());
+      List<String> nonAssignables =
+          task.getNonAssignableDelegates()
+              .keySet()
+              .stream()
+              .map(errorMessage
+                  -> errorMessage + " : " + String.join(",", task.getNonAssignableDelegates().get(errorMessage)))
+              .collect(Collectors.toList());
+      nonAssignables.forEach(message -> delegateTaskServiceClassic.addToTaskActivityLog(task, message));
+    } catch (Exception e) {
+      log.error("Error checking for eligible or whitelisted delegates", e);
+    }
+    return eligibleDelegateIds;
+  }
+
+  private boolean canAssignDelegateBySelectors(String delegateId, DelegateTask task) {
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    if (delegate == null) {
+      return false;
+    }
+    String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
+    boolean canAssignSelectors = canAssignSelectors(delegate, task.getExecutionCapabilities());
+    if (!canAssignSelectors) {
+      final Set<String> selectors =
+          delegateTaskServiceClassic.fetchTaskSelectorCapabilities(task.getExecutionCapabilities())
+              .stream()
+              .map(selectorCapability -> selectorCapability.getSelectors())
+              .flatMap(Collection::stream)
+              .collect(Collectors.toSet());
+      final String noMatchingSelectorsMessage = CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP + " " + selectors;
+
+      task.getNonAssignableDelegates().putIfAbsent(noMatchingSelectorsMessage, new ArrayList<>());
+      task.getNonAssignableDelegates().get(noMatchingSelectorsMessage).add(delegateName);
+      log.debug("can not assign canAssignSelectors {}", canAssignSelectors);
+      return false;
+    }
+    return true;
+  }
+
+  @Override
   public boolean canAssignTask(String delegateId, DelegateTask task) {
     Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
     if (delegate == null) {

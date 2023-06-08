@@ -81,6 +81,9 @@ lastReceivedPublishedMessage {"name": "no_dup", "unique": true} {"accountId": 1,
 managedAccount {"name": "accountId_mspAccountId", "unique": true} {"accountId": 1, "mspAccountId": 1}
 managedAccount {"name": "mspAccountId_1", "background": true} {"mspAccountId": 1}
 managedAccount {"name": "unique_accountId", "unique": true} {"accountId": 1}
+marginDetails {"name": "accountId_mspAccountId", "unique": true} {"accountId": 1, "mspAccountId": 1}
+marginDetails {"name": "mspAccountId_1", "background": true} {"mspAccountId": 1}
+marginDetails {"name": "unique_accountId", "unique": true} {"accountId": 1}
 notificationSetting {"name": "accountId_1", "background": true} {"accountId": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 notifyQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}

@@ -116,21 +116,46 @@ public class NGVariableUtilsTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Value not provided for required variable: var1");
     Map<String, Object> variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var3));
-    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.size()).isEqualTo(2);
     assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createValueField(""));
 
     assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariables(List.of(var2, var3, var1), 0L))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Value not provided for required variable: var1");
     variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var3), 0L);
-    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.size()).isEqualTo(2);
     assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createValueField(""));
 
     assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(List.of(var2, var3, var1)))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Value not provided for required variable: var1");
     variableMap = NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(List.of(var2, var3));
-    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.size()).isEqualTo(2);
     assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createValueField(""));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetMapOfVariablesWithExpressions() {
+    StringNGVariable var1 = StringNGVariable.builder()
+                                .name("var1")
+                                .uuid("uuid1")
+                                .value(ParameterField.createExpressionField(true, "<+xyz>", null, false))
+                                .required(true)
+                                .build();
+    StringNGVariable var2 = StringNGVariable.builder()
+                                .name("var2")
+                                .uuid("uuid2")
+                                .value(ParameterField.createExpressionField(true, "<+abc>", null, false))
+                                .required(false)
+                                .build();
+    Map<String, Object> variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var1));
+    assertThat(variableMap.size()).isEqualTo(2);
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createExpressionField(true, "<+abc>", null, false));
+    assertThat(variableMap.get("var1")).isEqualTo(ParameterField.createExpressionField(true, "<+xyz>", null, false));
   }
 }

@@ -61,6 +61,10 @@ public class TestVerificationJob extends VerificationJob {
         sensitivity == null ? null : RuntimeParameter.builder().isRuntimeParam(false).value(sensitivity.name()).build();
   }
 
+  public String getBaselineVerificationJobInstanceId() {
+    return baselineVerificationJobInstanceId;
+  }
+
   @Override
   protected void validateParams() {
     Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(TestVerificationJobKeys.sensitivity));
@@ -122,10 +126,8 @@ public class TestVerificationJob extends VerificationJob {
           verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(serviceEnvironmentParams)
               .orElse(null);
     } else if (baselineVerificationJobInstanceId == null && Objects.equals(baselineType, BaselineType.PINNED)) {
-      baselineVerificationJobInstanceId =
-          verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(serviceEnvironmentParams)
-              .orElse(null)
-              .getUuid();
+      verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(serviceEnvironmentParams)
+          .ifPresent(verificationJobInstance -> baselineVerificationJobInstanceId = verificationJobInstance.getUuid());
     }
     return this;
   }

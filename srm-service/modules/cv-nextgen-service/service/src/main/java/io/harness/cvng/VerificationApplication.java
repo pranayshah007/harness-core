@@ -953,19 +953,20 @@ public class VerificationApplication extends Application<VerificationConfigurati
   }
 
   private void registerAnalysisOrchestratorQueueNextAnalysisHandler(Injector injector) {
-    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(3,
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(2,
         new ThreadFactoryBuilder().setNameFormat("analysis-orchestrator-queue-next-analysis-handler-iterator").build());
     AnalysisOrchestratorQueueNextAnalysisHandler analysisOrchestraorQueueNextAnalysisHandler =
         injector.getInstance(AnalysisOrchestratorQueueNextAnalysisHandler.class);
     PersistenceIterator iterator =
         MongoPersistenceIterator.<AnalysisOrchestrator, MorphiaFilterExpander<AnalysisOrchestrator>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("AnalysisOrchestraorQueueNextAnalysisIterator")
+            .iteratorName("AnalysisOrchestratorQueueNextAnalysisIterator")
             .clazz(AnalysisOrchestrator.class)
+            .fieldName(AnalysisOrchestratorKeys.analysisOrchestrationIteration)
             .targetInterval(ofMinutes(5))
-            .acceptableNoAlertDelay(ofMinutes(1))
+            .acceptableNoAlertDelay(ofHours(2))
             .executorService(dataCollectionExecutor)
-            .semaphore(new Semaphore(3))
+            .semaphore(new Semaphore(2))
             .handler(analysisOrchestraorQueueNextAnalysisHandler)
             .schedulingType(REGULAR)
             .filterExpander(query
@@ -1201,7 +1202,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(3))
             .handler(cvngSchemaMigrationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query -> query.criteria(CVNGSchemaKeys.cvngMigrationStatus).notEqual(RUNNING))
+            .filterExpander(query
+                -> query.or(query.criteria(CVNGSchemaKeys.cvngMigrationStatus).notEqual(RUNNING),
+                    query.and(query.criteria(CVNGSchemaKeys.cvngMigrationStatus).equal(RUNNING)),
+                    query.criteria(CVNGSchemaKeys.lastUpdatedAt)
+                        .lessThan(
+                            injector.getInstance(Clock.class).instant().minus(4, ChronoUnit.HOURS).toEpochMilli())))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
