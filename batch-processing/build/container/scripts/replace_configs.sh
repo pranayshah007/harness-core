@@ -206,11 +206,19 @@ if [[ "" != "$AWS_ACCOUNT_TAGS_COLLECTION_CRON" ]]; then
 fi
 
 if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON" ]]; then
-  export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCron=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
+  export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCronAws=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON_AZURE" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_CRON_AZURE; yq -i '.scheduler-jobs-config.governanceRecommendationJobCronAzure=env(GOVERNANCE_RECOMMENDATION_JOB_CRON_AZURE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED" ]]; then
-  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED; yq -i '.recommendationConfig.governanceRecommendationEnabled=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED)' $CONFIG_FILE
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED; yq -i '.recommendationConfig.governanceRecommendationEnabledAws=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED_AZURE" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED_AZURE; yq -i '.recommendationConfig.governanceRecommendationEnabledAzure=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED_AZURE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HARNESS_CE_AZURE_CLIENTID" ]]; then

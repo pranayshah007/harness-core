@@ -9,14 +9,14 @@ package io.harness.batch.processing.governance;
 
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
-import io.harness.ccm.views.entities.RecommendatioAdhocDTO;
+import io.harness.ccm.views.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.graphql.QLCESortOrder;
@@ -37,17 +37,12 @@ import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.ViewsBillingService;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
-import io.harness.filter.FilterType;
-import io.harness.ng.beans.PageResponse;
-import io.harness.remote.client.NGRestUtils;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 
@@ -79,64 +74,30 @@ public class GovernanceRecommendationService {
   @Autowired private AwsEC2HelperService awsEC2HelperService;
   @Autowired private RuleDAO ruleDAO;
   @Autowired BatchMainConfig configuration;
+  @Autowired private NGConnectorHelper ngConnectorHelper;
   private static final String DEFAULT_TIMEZONE = "GMT";
 
-  public void generateRecommendation() {
+  public void generateRecommendation(List<ConnectorType> ceEnabledConnectorType) {
     // get all ce enabled accounts
     List<String> getAccounts = accountShardService.getCeEnabledAccountIds();
     for (String account : getAccounts) {
       log.info("generateRecommendationForAccount: {}", account);
-      generateRecommendationForAccount(account);
+      generateRecommendationForAccount(account, ceEnabledConnectorType);
     }
   }
 
-  public void generateRecommendationForAccount(String accountId) {
+  public void generateRecommendationForAccount(String accountId, List<ConnectorType> ceEnabledConnectorType) {
     // fetch connector information for all the account with governance enabled
-    List<ConnectorResponseDTO> nextGenConnectorResponses = listV2(accountId);
+    List<ConnectorResponseDTO> nextGenConnectorResponses = ngConnectorHelper.getNextGenConnectors(
+        accountId, ceEnabledConnectorType, Arrays.asList(CEFeatures.GOVERNANCE), null);
     if (!nextGenConnectorResponses.isEmpty()) {
-      Set<Rule> ruleList = new HashSet<>();
-      ruleList.addAll(ruleDAO.forRecommendation());
-
-      // getting the needed fields for recommendation
-      List<RecommendatioAdhocDTO> recommendationAdhocDTOList = new ArrayList<>();
-      // List to get identifiers out; later used in fetching top accounts
-      List<String> awsIdentifiers = new ArrayList<>();
-      for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
-        ConnectorInfoDTO connectorInfoDTO = connector.getConnector();
-        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
-        awsIdentifiers.add(ceAwsConnectorDTO.getAwsAccountId());
-        recommendationAdhocDTOList.add(RecommendatioAdhocDTO.builder()
-                                           .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                                           .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
-                                           .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
-                                           .build());
+      if (ceEnabledConnectorType.get(0).equals(ConnectorType.CE_AWS)) {
+        generateAwsRecommendationForAccount(accountId, nextGenConnectorResponses);
+      }
+      if (ceEnabledConnectorType.get(0).equals(ConnectorType.CE_AZURE)) {
+        generateAzureRecommendationForAccount(accountId, nextGenConnectorResponses);
       }
 
-      // get top regions
-      List<String> regions = new ArrayList<>();
-      List<QLCEViewEntityStatsDataPoint> accountNames = getAccountNames(accountId, awsIdentifiers);
-      // filter out final list of rolearn,externalId etc based on top accounts
-      List<RecommendatioAdhocDTO> recommendatioAdhocDTOListFinal = new ArrayList<>();
-      if (!accountNames.isEmpty()) {
-        List<String> awsIdentifiersFinal = new ArrayList<>();
-        for (QLCEViewEntityStatsDataPoint accountData : accountNames) {
-          recommendatioAdhocDTOListFinal.add(recommendationAdhocDTOList.stream()
-                                                 .filter(e -> e.getTargetAccountId().matches(accountData.getId()))
-                                                 .findFirst()
-                                                 .get());
-          awsIdentifiersFinal.add(accountData.getName());
-        }
-        log.info("Account {} connectors: {}\n\n\n awsIdentifiers{} ", accountId, recommendatioAdhocDTOListFinal,
-            awsIdentifiersFinal);
-        List<QLCEViewEntityStatsDataPoint> regionsFromPerspective = getTopRegions(accountId, awsIdentifiersFinal);
-        regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
-      } else {
-        log.info("Failed to get account and regions from perspective {} ", accountId);
-        recommendatioAdhocDTOListFinal.addAll(
-            recommendationAdhocDTOList.subList(0, Math.min(recommendationAdhocDTOList.size(), 5)));
-      }
-      // enqueue call
-      enqueueRecommendationForAccount(recommendatioAdhocDTOListFinal, ruleList, regions, accountId);
       try {
         TimeUnit.SECONDS.sleep(configuration.getGovernanceConfig().getSleepTime());
       } catch (InterruptedException e) {
@@ -147,13 +108,63 @@ public class GovernanceRecommendationService {
     }
   }
 
-  void enqueueRecommendationForAccount(List<RecommendatioAdhocDTO> recommendatioAdhocDTOListFinal, Set<Rule> ruleList,
+  public void generateAwsRecommendationForAccount(
+      String accountId, List<ConnectorResponseDTO> nextGenConnectorResponses) {
+    Set<Rule> ruleList = new HashSet<>();
+    ruleList.addAll(ruleDAO.forRecommendation());
+
+    // getting the needed fields for recommendation
+    List<RecommendationAdhocDTO> recommendationAdhocDTOList = new ArrayList<>();
+    // List to get identifiers out; later used in fetching top accounts
+    List<String> awsIdentifiers = new ArrayList<>();
+    for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
+      ConnectorInfoDTO connectorInfoDTO = connector.getConnector();
+      CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      awsIdentifiers.add(ceAwsConnectorDTO.getAwsAccountId());
+      recommendationAdhocDTOList.add(RecommendationAdhocDTO.builder()
+                                         .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
+                                         .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
+                                         .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+                                         .build());
+    }
+
+    // get top regions
+    List<String> regions = new ArrayList<>();
+    List<QLCEViewEntityStatsDataPoint> accountNames = getAccountNames(accountId, awsIdentifiers);
+    // filter out final list of rolearn,externalId etc based on top accounts
+    List<RecommendationAdhocDTO> recommendationAdhocDTOListFinal = new ArrayList<>();
+    if (!accountNames.isEmpty()) {
+      List<String> awsIdentifiersFinal = new ArrayList<>();
+      for (QLCEViewEntityStatsDataPoint accountData : accountNames) {
+        recommendationAdhocDTOListFinal.add(recommendationAdhocDTOList.stream()
+                                                .filter(e -> e.getTargetAccountId().matches(accountData.getId()))
+                                                .findFirst()
+                                                .get());
+        awsIdentifiersFinal.add(accountData.getName());
+      }
+      log.info("Account {} connectors: {}\n\n\n awsIdentifiers{} ", accountId, recommendationAdhocDTOListFinal,
+          awsIdentifiersFinal);
+      List<QLCEViewEntityStatsDataPoint> regionsFromPerspective = getTopRegions(accountId, awsIdentifiersFinal);
+      regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
+    } else {
+      log.info("Failed to get account and regions from perspective {} ", accountId);
+      recommendationAdhocDTOListFinal.addAll(
+          recommendationAdhocDTOList.subList(0, Math.min(recommendationAdhocDTOList.size(), 5)));
+    }
+    // enqueue call
+    enqueueRecommendationForAccount(recommendationAdhocDTOListFinal, ruleList, regions, accountId);
+  }
+
+  public void generateAzureRecommendationForAccount(
+      String accountId, List<ConnectorResponseDTO> nextGenConnectorResponses) {}
+
+  void enqueueRecommendationForAccount(List<RecommendationAdhocDTO> recommendationAdhocDTOListFinal, Set<Rule> ruleList,
       List<String> regions, String accountId) {
-    for (RecommendatioAdhocDTO recommendatioAdhoc : recommendatioAdhocDTOListFinal) {
+    for (RecommendationAdhocDTO recommendationAdhoc : recommendationAdhocDTOListFinal) {
       if (Lists.isNullOrEmpty(regions)) {
         regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
-                                                      .crossAccountRoleArn(recommendatioAdhoc.getRoleArn())
-                                                      .externalId(recommendatioAdhoc.getExternalId())
+                                                      .crossAccountRoleArn(recommendationAdhoc.getRoleArn())
+                                                      .externalId(recommendationAdhoc.getExternalId())
                                                       .build());
       }
       for (Rule rule : ruleList) {
@@ -165,9 +176,9 @@ public class GovernanceRecommendationService {
                   .isDryRun(true)
                   .policy(rule.getRulesYaml())
                   .ruleCloudProviderType(RuleCloudProviderType.AWS)
-                  .targetAccountId(recommendatioAdhoc.getTargetAccountId())
-                  .externalId(recommendatioAdhoc.getExternalId())
-                  .roleArn(recommendatioAdhoc.getRoleArn())
+                  .targetAccountId(recommendationAdhoc.getTargetAccountId())
+                  .externalId(recommendationAdhoc.getExternalId())
+                  .roleArn(recommendationAdhoc.getRoleArn())
                   .targetRegion(region)
                   .build();
           log.info("enqueued: {}", governanceJobEnqueueDTO);
@@ -179,30 +190,6 @@ public class GovernanceRecommendationService {
         }
       }
     }
-  }
-
-  // Get all connectors in the database with GOVERNANCE ( ListV2 call)
-  List<ConnectorResponseDTO> listV2(String accountId) {
-    List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
-    PageResponse<ConnectorResponseDTO> response = null;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .types(Arrays.asList(ConnectorType.CE_AWS))
-            .ccmConnectorFilter(
-                CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.GOVERNANCE)).build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
-    int page = 0;
-    int size = 1000;
-    do {
-      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
-          accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
-      if (response != null && isNotEmpty(response.getContent())) {
-        nextGenConnectorResponses.addAll(response.getContent());
-      }
-      page++;
-    } while (response != null && isNotEmpty(response.getContent()));
-    return nextGenConnectorResponses;
   }
 
   // Get high impact region per account (Top 5 regions) using  aggreated names of different accounts
