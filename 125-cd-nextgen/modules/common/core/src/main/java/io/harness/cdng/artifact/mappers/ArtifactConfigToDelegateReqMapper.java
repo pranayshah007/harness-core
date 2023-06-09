@@ -213,11 +213,37 @@ public class ArtifactConfigToDelegateReqMapper {
       versionRegex = "*";
     }
 
+    if (ParameterField.isNotNull(artifactConfig.getPackageType())
+        && artifactConfig.getPackageType().getValue().equals("maven")) {
+      verifyArtifactConfigForGithubPackagesMavenType(artifactConfig);
+      String user = ParameterField.isNotNull(artifactConfig.getUser()) ? artifactConfig.getUser().getValue() : "";
+      String org = ParameterField.isNotNull(artifactConfig.getOrg()) ? artifactConfig.getOrg().getValue() : "";
+      if (StringUtils.isBlank(user) && StringUtils.isBlank(org)) {
+        throw new InvalidRequestException("Please provide User or Organization field");
+      }
+      return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
+          artifactConfig.getPackageType().getValue(), version, versionRegex, org, connectorRef, connectorDTO,
+          encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES, artifactConfig.getArtifactId().getValue(),
+          artifactConfig.getRepository().getValue(), user,
+          ParameterField.isNotNull(artifactConfig.getExtension()) ? artifactConfig.getExtension().getValue() : "",
+          artifactConfig.getGroupId().getValue());
+    }
     return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getOrg().getValue(),
         connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES);
   }
+  void verifyArtifactConfigForGithubPackagesMavenType(GithubPackagesArtifactConfig artifactConfig) {
+    if (ParameterField.isBlank(artifactConfig.getArtifactId())) {
+      throw new InvalidRequestException("ArtifactId field cannot be blank");
+    }
 
+    if (ParameterField.isBlank(artifactConfig.getGroupId())) {
+      throw new InvalidRequestException("GroupId field cannot be blank");
+    }
+    if (ParameterField.isBlank(artifactConfig.getRepository())) {
+      throw new InvalidRequestException("Repository field cannot be blank");
+    }
+  }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,
       AzureArtifactsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     String versionRegex = artifactConfig.getVersionRegex().getValue();

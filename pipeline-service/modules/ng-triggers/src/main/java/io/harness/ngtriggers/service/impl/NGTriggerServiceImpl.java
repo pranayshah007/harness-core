@@ -1155,7 +1155,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         break;
       }
     }
-    if (!hasApiKey && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (!hasApiKey) {
       String mandatoryAuth = NGRestUtils
                                  .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
                                      accountIdentifier, orgIdentifier, projectIdentifier))

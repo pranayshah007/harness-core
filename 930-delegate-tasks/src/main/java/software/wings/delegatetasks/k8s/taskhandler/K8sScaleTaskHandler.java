@@ -15,7 +15,6 @@ import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
-import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -167,7 +166,8 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
         return true;
       }
 
-      resourceIdToScale = createKubernetesResourceIdFromNamespaceKindName(k8sScaleTaskParameters.getWorkload());
+      resourceIdToScale =
+          k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(k8sScaleTaskParameters.getWorkload());
 
       executionLogCallback.saveExecutionLog(
           color("\nWorkload to scale is: ", White, Bold) + color(resourceIdToScale.namespaceKindNameRef(), Cyan, Bold));

@@ -1,0 +1,36 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Budget Group Alert for ${BUDGET_GROUP_NAME}* \n Hello, Your ${PERIOD} budget group ${BUDGET_GROUP_NAME} ${IS_OR_HAS} *${APPROACHING_OR_EXCEEDED}* it's set budget group amount."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Budget Group amount:* ${BUDGET_GROUP_AMOUNT}\n *Actual Spend: * ${ACTUAL_AMOUNT}  \n *Forecasted Spend: * ${FORECASTED_COST}  \n *Exceeded threshold:* ${THRESHOLD_PERCENTAGE}% of Budget Group amount \n *${ACTUAL_SPEND_OR_FORECASTED_SPEND} has exceeded set threshold.* "
+			}
+		},
+		{
+			"type": "actions",
+			"elements": [
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": "View Budget Group",
+						"emoji": true
+					},
+					"value": "view_budget_group",
+					"url": "${BUDGET_GROUP_URL}"
+				}
+			]
+		}
+	]
+}

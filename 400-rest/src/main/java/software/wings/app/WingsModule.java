@@ -160,6 +160,8 @@ import io.harness.event.timeseries.processor.instanceeventprocessor.instancereco
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconServiceImpl;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.executionInfra.ExecutionInfrastructureService;
+import io.harness.executionInfra.ExecutionInfrastructureServiceImpl;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.file.FileServiceModule;
 import io.harness.git.GitClientV2;
@@ -269,6 +271,8 @@ import io.harness.service.intfc.AccountDataProvider;
 import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 import io.harness.service.intfc.DelegateTokenService;
+import io.harness.taskclient.TaskClient;
+import io.harness.taskclient.TaskClientImpl;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.templatizedsm.RuntimeCredentialsInjector;
@@ -1100,6 +1104,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateStackdriverLogService.class).to(DelegateStackdriverLogServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
+    bind(TaskClient.class).to(TaskClientImpl.class);
+    bind(ExecutionInfrastructureService.class).to(ExecutionInfrastructureServiceImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);
     bind(CloudWatchService.class).to(CloudWatchServiceImpl.class);

@@ -459,7 +459,6 @@ public enum FeatureName {
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
-  ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
   SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
@@ -609,7 +608,6 @@ public enum FeatureName {
   PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS(
       "Enable Basic Role assignment  Default User Group in Orgs and Projects", HarnessTeam.PL),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
-  CDS_TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
   CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
           + "This flag only works with Service and Environments v2",
@@ -676,8 +674,6 @@ public enum FeatureName {
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
-  CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
-      "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
@@ -807,7 +803,12 @@ public enum FeatureName {
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
       HarnessTeam.CDP),
-  CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP);
+  CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP),
+  CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI),
+  PL_HELM2_DELEGATE_BANNER("FF for adding banner on delegate to mention deprecation of helm 2", HarnessTeam.PL),
+  PIE_PROCESS_ON_JSON_NODE(
+      "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
+      PIPELINE);
 
   @Deprecated
   FeatureName() {

@@ -1105,7 +1105,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo chaosStep =
         StepInfo.newBuilder()
-            .setName("Chaos Step")
+            .setName("Chaos")
             .setType(StepSpecTypeConstants.CHAOS_STEP)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(Arrays.asList("Chaos")).addFolderPaths("Chaos").build())
@@ -1332,7 +1332,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
                                                           .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
                                                           .build())
-                                     .setFeatureFlag(FeatureName.CDS_TERRAFORM_CLOUD.name())
                                      .build();
     StepInfo awsSamDeploy =
         StepInfo.newBuilder()
@@ -1376,7 +1375,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
                                  .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.CDS_TERRAFORM_CLOUD.name())
             .build();
 
     StepInfo awsLambdaRollback =

@@ -18,6 +18,9 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 @Component
 public class AwsCredentialHelper {
@@ -32,5 +35,12 @@ public class AwsCredentialHelper {
         .withRegion(ceAWSRegion)
         .withCredentials(awsCredentialsProvider)
         .build();
+  }
+
+  public AwsCredentialsProvider getAwsCredentialsProvider() {
+    AwsS3SyncConfig awsS3SyncConfig = batchMainConfig.getAwsS3SyncConfig();
+    AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(
+        new String(awsS3SyncConfig.getAwsAccessKey()), new String(awsS3SyncConfig.getAwsSecretKey()));
+    return StaticCredentialsProvider.create(awsBasicCredentials);
   }
 }

@@ -37,7 +37,7 @@ import io.harness.ccm.views.dto.GovernanceAdhocEnqueueDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
-import io.harness.ccm.views.entities.RecommendatioAdhocDTO;
+import io.harness.ccm.views.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
@@ -686,7 +686,7 @@ public class GovernanceRuleResource {
     List<String> ruleExecutionId = new ArrayList<>();
     rbacHelper.checkRuleExecutePermission(accountId, null, null, governanceAdhocEnqueueDTO.getRuleId());
     for (String targetAccount : governanceAdhocEnqueueDTO.getTargetAccountDetails().keySet()) {
-      RecommendatioAdhocDTO recommendationAdhocDTO =
+      RecommendationAdhocDTO recommendationAdhocDTO =
           governanceAdhocEnqueueDTO.getTargetAccountDetails().get(targetAccount);
       rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getIdentifier());
       for (String targetRegion : governanceAdhocEnqueueDTO.getTargetRegions()) {

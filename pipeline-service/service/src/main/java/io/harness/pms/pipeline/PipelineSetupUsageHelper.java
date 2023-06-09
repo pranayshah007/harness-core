@@ -55,6 +55,7 @@ import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -109,6 +110,21 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineYamlWithUnresolvedTemplates, allReferredUsages);
+    entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
+    return entityDetails;
+  }
+
+  public List<EntityDetail> getReferencesOfPipeline(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineId, JsonNode pipelineJsonNodeWithUnresolvedTemplates,
+      EntityType entityType) {
+    List<EntitySetupUsageDTO> allReferredUsages =
+        NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
+                                    FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+                                        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
+                                    entityType, null),
+            "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
+    List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(accountIdentifier,
+        orgIdentifier, projectIdentifier, pipelineJsonNodeWithUnresolvedTemplates, allReferredUsages);
     entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
     return entityDetails;
   }

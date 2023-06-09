@@ -108,15 +108,15 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
           IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, environmentRef);
       Optional<NGServiceOverridesEntity> serviceOverrideUsingQualifiedRef =
           serviceOverrideRepository
-              .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndType(accountId,
-                  orgIdentifier, projectIdentifier, qualifiedEnvironmentRef, serviceRef,
+              .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
+                  accountId, orgIdentifier, projectIdentifier, qualifiedEnvironmentRef, serviceRef,
                   ServiceOverridesType.ENV_SERVICE_OVERRIDE);
 
       return serviceOverrideUsingQualifiedRef.isPresent()
           ? serviceOverrideUsingQualifiedRef
           : serviceOverrideRepository
-                .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndType(accountId,
-                    orgIdentifier, projectIdentifier, environmentIdentifier, serviceRef,
+                .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
+                    accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceRef,
                     ServiceOverridesType.ENV_SERVICE_OVERRIDE);
     } else {
       IdentifierRef envIdentifierRef =
@@ -125,7 +125,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       qualifiedEnvironmentRef = environmentRef;
       Optional<NGServiceOverridesEntity> serviceOverrideUsingQualifiedRef =
           serviceOverrideRepository
-              .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndType(
+              .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
                   envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
                   envIdentifierRef.getProjectIdentifier(), qualifiedEnvironmentRef, serviceRef,
                   ServiceOverridesType.ENV_SERVICE_OVERRIDE);
@@ -133,7 +133,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       return serviceOverrideUsingQualifiedRef.isPresent()
           ? serviceOverrideUsingQualifiedRef
           : serviceOverrideRepository
-                .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndType(
+                .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
                     envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
                     envIdentifierRef.getProjectIdentifier(), environmentIdentifier, serviceRef,
                     ServiceOverridesType.ENV_SERVICE_OVERRIDE);

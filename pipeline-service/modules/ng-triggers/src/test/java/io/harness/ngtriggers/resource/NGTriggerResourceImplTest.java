@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -128,7 +127,6 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.NG_SETTINGS))).thenReturn(true);
     when(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
         .thenReturn(request);
     when(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, "", "", "")).thenReturn(request);

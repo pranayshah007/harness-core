@@ -993,5 +993,6 @@ io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackCon
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome
 io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters
+io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
 io.harness.cdng.aws.sam.DownloadManifestsStepInfo
 io.harness.cdng.aws.sam.DownloadManifestsStepNode

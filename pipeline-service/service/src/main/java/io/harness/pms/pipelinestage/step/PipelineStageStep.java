@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.step;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.OrchestrationStepTypes;
@@ -22,6 +23,7 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -124,10 +126,20 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     setSourcePrincipal(ambiance);
 
     PipelineStageInfo info = prepareParentStageInfo(ambiance, stepParameters);
-    responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
-        stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-        ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
-        stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
+    try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_PIPELINE_STAGE_STEP]")) {
+      if (!isEmpty(stepParameters.getPipelineInputsJsonNode())) {
+        responseDto =
+            pipelineExecutor.runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
+                stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+                ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
+                stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
+      } else {
+        responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
+            stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+            ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
+            stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
+      }
+    }
 
     if (responseDto == null) {
       throw new InvalidRequestException(
