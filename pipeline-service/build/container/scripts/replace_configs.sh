@@ -21,7 +21,7 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
 fi
 
 if [[ "" != "$STATIC_SCHEMA_BRANCH" ]]; then
-  export STATIC_SCHEMA_BRANCH; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_BRANCH)' $CONFIG_FILE
+  export STATIC_SCHEMA_BRANCH; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_FILE_URL)' $CONFIG_FILE
 fi
 
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
