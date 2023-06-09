@@ -9,8 +9,7 @@ LABEL name="harness/delegate-minimal" \
       vendor="Harness" \
       maintainer="Harness"
 
-RUN microdnf update --nodocs \
-  && microdnf install --nodocs \
+RUN microdnf install --nodocs \
     procps \
     hostname \
     lsof \
@@ -33,7 +32,9 @@ ARG TARGETARCH
 ARG BASEURL=https://app.harness.io/public/shared/delegates
 ARG DELEGATEVERSION
 
-RUN chmod -R 775 /opt/harness-delegate \
+RUN mkdir -m 777 -p client-tools/scm/9b34bea7 \
+  && curl -s -L -o client-tools/scm/9b34bea7/scm https://app.harness.io/public/shared/tools/scm/release/9b34bea7/bin/linux/$TARGETARCH/scm \
+  && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate \
   && chown -R 1001 /opt/harness-delegate
 
