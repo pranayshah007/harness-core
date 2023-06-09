@@ -14,7 +14,9 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
@@ -58,6 +60,7 @@ import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -116,6 +119,7 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private ViewTimeRangeHelper viewTimeRangeHelper;
   @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Inject private ViewsQueryHelper viewsQueryHelper;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public CEView save(CEView ceView, boolean clone) {
@@ -236,6 +240,10 @@ public class CEViewServiceImpl implements CEViewService {
       ceView.setViewTimeRange(ViewTimeRange.builder().viewTimeRangeType(ViewTimeRangeType.LAST_7).build());
     }
 
+    // TODO: Remove this condition
+    boolean shouldUseCloudProviderDataSources =
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, ceView.getAccountId());
+
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = new HashSet<>();
     if (ceView.getViewRules() != null) {
       for (ViewRule rule : ceView.getViewRules()) {
@@ -268,12 +276,34 @@ public class CEViewServiceImpl implements CEViewService {
           if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
             viewFieldIdentifierSet.add(ViewFieldIdentifier.BUSINESS_MAPPING);
           }
+          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.COMMON
+              && shouldUseCloudProviderDataSources) {
+            viewFieldIdentifierSet.addAll(getDataSourcesFromCloudProviderField(viewIdCondition));
+          }
         }
       }
     }
 
     setDataSources(ceView, viewFieldIdentifierSet);
     ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(final ViewIdCondition viewIdCondition) {
+    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
+    if (ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID.equals(viewIdCondition.getViewField().getFieldId())) {
+      for (final String value : viewIdCondition.getValues()) {
+        if (ViewFieldIdentifier.AWS.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.AWS);
+        } else if (ViewFieldIdentifier.GCP.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.GCP);
+        } else if (ViewFieldIdentifier.AZURE.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.AZURE);
+        } else if (ViewFieldIdentifier.CLUSTER.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.CLUSTER);
+        }
+      }
+    }
+    return viewFieldIdentifiers;
   }
 
   private void setDataSources(final CEView ceView, final Set<ViewFieldIdentifier> viewFieldIdentifierSet) {

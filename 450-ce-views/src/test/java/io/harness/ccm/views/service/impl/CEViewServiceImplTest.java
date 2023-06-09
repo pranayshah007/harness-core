@@ -38,6 +38,7 @@ import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewField;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -58,6 +59,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Mock private CEViewDao ceViewDao;
   @Mock private CEViewFolderDao ceViewFolderDao;
   @Mock private CEReportScheduleDao ceReportScheduleDao;
+  @Mock private FeatureFlagService featureFlagService;
 
   private static final String ACCOUNT_ID = "account_id";
   private static final String VIEW_NAME = "view_name";

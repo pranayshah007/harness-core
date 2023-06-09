@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -70,6 +71,7 @@ import io.harness.ccm.views.helper.ViewBillingServiceHelper;
 import io.harness.ccm.views.helper.ViewBusinessMappingResponseHelper;
 import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -119,7 +121,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @InjectMocks @Spy private ViewBillingServiceHelper viewBillingServiceHelper;
   @InjectMocks @Spy private ViewParametersHelper viewParametersHelper;
   @InjectMocks @Spy private ViewBusinessMappingResponseHelper viewBusinessMappingResponseHelper;
-  @Mock private ViewsQueryBuilder viewsQueryBuilder;
+  @InjectMocks @Spy private ViewsQueryBuilder viewsQueryBuilder;
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private CEViewService viewService;
@@ -131,6 +133,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private CEMetadataRecordDao ceMetadataRecordDao;
   @Mock private BigQueryService bigQueryService;
   @Mock private BigQueryHelper bigQueryHelper;
+  @Mock private LabelFlattenedService labelFlattenedService;
 
   private Schema schema;
   private List<Field> fields;
@@ -157,14 +160,19 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
-    doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap(), anyBoolean());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean(), anyBoolean());
