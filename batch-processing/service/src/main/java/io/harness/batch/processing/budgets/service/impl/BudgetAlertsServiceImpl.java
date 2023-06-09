@@ -50,7 +50,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,7 +89,12 @@ public class BudgetAlertsServiceImpl {
   private static final String NG_PATH_CONST = "ng/";
   private static final String BUDGET_DETAILS_URL_FORMAT = "/account/%s/continuous-efficiency/budget/%s";
   private static final String BUDGET_DETAILS_URL_FORMAT_NG = "/account/%s/ce/budget/%s/%s";
+  private static final String PERSPECTIVE_DETAILS_URL_FORMAT =
+      "/account/%s/continuous-efficiency/perspective-explorer/%s/%s";
+  private static final String PERSPECTIVE_DETAILS_URL_FORMAT_NG = "/account/%s/ce/perspectives/%s/name/%s";
   private static final String ACTUAL_COST_BUDGET = "cost";
+  private static final String ACTUAL_SPEND = "Actual Spend";
+  private static final String FORECASTED_SPEND = "Forecasted Spend";
   private static final String SUBJECT_ACTUAL_COST_BUDGET = "Spent so far";
   private static final String FORECASTED_COST_BUDGET = "forecasted cost";
   private static final String SUBJECT_FORECASTED_COST_BUDGET = "Forecasted cost";
@@ -147,6 +154,8 @@ public class BudgetAlertsServiceImpl {
           .userGroupIds(budget.getUserGroupIds())
           .isNgBudget(budget.isNgBudget())
           .notifyOnSlack(budget.isNotifyOnSlack())
+          .perspectiveName(BudgetUtils.getPerspectiveNameForBudget(budget))
+          .perspectiveId(BudgetUtils.getPerspectiveIdForBudget(budget))
           .build();
     }
     return BudgetCommon.builder()
@@ -246,10 +255,12 @@ public class BudgetAlertsServiceImpl {
       }
       String costType = ACTUAL_COST_BUDGET;
       String subjectCostType = SUBJECT_ACTUAL_COST_BUDGET;
+      String costTypeSlackAlert = ACTUAL_SPEND;
       try {
         if (alertThreshold.getBasedOn() == FORECASTED_COST) {
           costType = FORECASTED_COST_BUDGET;
           subjectCostType = SUBJECT_FORECASTED_COST_BUDGET;
+          costTypeSlackAlert = FORECASTED_SPEND;
         }
         log.info("{} has been spent under the {} with id={}, accountId={}", cost, budgetOrBudgetGroup,
             budgetCommon.getUuid(), budgetCommon.getAccountId());
@@ -260,7 +271,7 @@ public class BudgetAlertsServiceImpl {
 
       if (exceedsThreshold(cost, getThresholdAmount(budgetCommon, alertThreshold))) {
         try {
-          sendBudgetAlertViaSlack(budgetCommon, alertThreshold, slackWebhooks);
+          sendBudgetAlertViaSlack(budgetCommon, alertThreshold, slackWebhooks, currency, costTypeSlackAlert);
           log.info("slack {} alert sent! for accountId: {}, budgetId: {}", budgetOrBudgetGroup,
               budgetCommon.getAccountId(), budgetCommon.getUuid());
         } catch (Exception e) {
@@ -278,24 +289,15 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void sendBudgetAlertViaSlack(BudgetCommon budgetCommon, AlertThreshold alertThreshold,
-      List<String> slackWebhooks) throws IOException, URISyntaxException {
+      List<String> slackWebhooks, Currency currency, String costTypeSlackAlert) throws IOException, URISyntaxException {
     if ((isEmpty(slackWebhooks) || !budgetCommon.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
       return;
     }
-    String budgetUrl = buildAbsoluteUrl(
-        budgetCommon.getAccountId(), budgetCommon.getUuid(), budgetCommon.getName(), budgetCommon.isNgBudget());
-    Map<String, String> templateData = ImmutableMap.<String, String>builder()
-                                           .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
-                                           .put("BUDGET_NAME", budgetCommon.getName())
-                                           .put("BUDGET_URL", budgetUrl)
-                                           .build();
-    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
-                                                            .accountId(budgetCommon.getAccountId())
-                                                            .templateData(templateData)
-                                                            .webhookUrls(slackWebhooks)
-                                                            .team(Team.OTHER)
-                                                            .templateId("slack_ccm_budget_alert")
-                                                            .userGroups(Collections.emptyList());
+    NotificationChannelDTOBuilder slackChannelBuilder = budgetCommon.isBudgetGroup()
+        ? getBudgetGroupNotificationChannelDTOBuilder(
+            budgetCommon, alertThreshold, slackWebhooks, currency, costTypeSlackAlert)
+        : getBudgetNotificationChannelDTOBuilder(
+            budgetCommon, alertThreshold, slackWebhooks, currency, costTypeSlackAlert);
     Response<RestResponse<NotificationResult>> response =
         notificationResourceClient.sendNotification(budgetCommon.getAccountId(), slackChannelBuilder.build()).execute();
     if (!response.isSuccessful()) {
@@ -346,7 +348,7 @@ public class BudgetAlertsServiceImpl {
     List<String> uniqueEmailAddresses = new ArrayList<>(new HashSet<>(emailAddresses));
 
     try {
-      String budgetUrl = buildAbsoluteUrl(accountId, budgetId, budgetName, isNgBudget);
+      String budgetUrl = buildAbsoluteUrl(accountId, budgetId, budgetName, isNgBudget, true);
 
       Map<String, String> templateModel = new HashMap<>();
       templateModel.put("url", budgetUrl);
@@ -387,15 +389,30 @@ public class BudgetAlertsServiceImpl {
     }
   }
 
-  private String buildAbsoluteUrl(String accountId, String budgetId, String budgetName, boolean isNgBudget)
+  private String buildAbsoluteUrl(String accountId, String id, String name, boolean isNg, boolean isBudgetUrl)
       throws URISyntaxException {
     String baseUrl = mainConfiguration.getBaseUrl();
     URIBuilder uriBuilder = new URIBuilder(baseUrl);
-    if (isNgBudget) {
+    // If name has / in it
+    String encodedName = name;
+    try {
+      encodedName = URLEncoder.encode(name, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      log.info("Exception while encoding the name: {}", e);
+    }
+    if (isNg) {
       uriBuilder.setPath(NG_PATH_CONST);
-      uriBuilder.setFragment(format(BUDGET_DETAILS_URL_FORMAT_NG, accountId, budgetId, budgetName));
+      if (isBudgetUrl) {
+        uriBuilder.setFragment(format(BUDGET_DETAILS_URL_FORMAT_NG, accountId, id, encodedName));
+      } else {
+        uriBuilder.setFragment(format(PERSPECTIVE_DETAILS_URL_FORMAT_NG, accountId, id, encodedName));
+      }
     } else {
-      uriBuilder.setFragment(format(BUDGET_DETAILS_URL_FORMAT, accountId, budgetId));
+      if (isBudgetUrl) {
+        uriBuilder.setFragment(format(BUDGET_DETAILS_URL_FORMAT, accountId, id));
+      } else {
+        uriBuilder.setFragment(format(PERSPECTIVE_DETAILS_URL_FORMAT, accountId, id, encodedName));
+      }
     }
     return uriBuilder.toString();
   }
@@ -469,5 +486,83 @@ public class BudgetAlertsServiceImpl {
       default:
         return MONTH;
     }
+  }
+
+  private NotificationChannelDTOBuilder getBudgetNotificationChannelDTOBuilder(BudgetCommon budgetCommon,
+      AlertThreshold alertThreshold, List<String> slackWebhooks, Currency currency, String costTypeSlackAlert)
+      throws URISyntaxException {
+    String budgetUrl = buildAbsoluteUrl(
+        budgetCommon.getAccountId(), budgetCommon.getUuid(), budgetCommon.getName(), budgetCommon.isNgBudget(), true);
+    String perspectiveUrl = buildAbsoluteUrl(budgetCommon.getAccountId(), budgetCommon.getPerspectiveId(),
+        budgetCommon.getPerspectiveName(), budgetCommon.isNgBudget(), false);
+    String isOrHas = "is";
+    String approachingOrExceeded = "approaching";
+    if (alertThreshold.getPercentage() >= 100.0) {
+      isOrHas = "has";
+      approachingOrExceeded = "exceeded";
+    }
+    Map<String, String> templateData =
+        ImmutableMap.<String, String>builder()
+            .put("PERSPECTIVE_NAME", budgetCommon.getPerspectiveName())
+            .put("IS_OR_HAS", isOrHas)
+            .put("APPROACHING_OR_EXCEEDED", approachingOrExceeded)
+            .put("PERIOD", budgetCommon.getPeriod().name().toLowerCase())
+            .put("BUDGET_NAME", budgetCommon.getName())
+            .put("BUDGET_AMOUNT",
+                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
+            .put("ACTUAL_AMOUNT",
+                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getActualCost())))
+            .put("FORECASTED_COST",
+                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getForecastCost())))
+            .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
+            .put("ACTUAL_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
+            .put("BUDGET_URL", budgetUrl)
+            .put("PERSPECTIVE_URL", perspectiveUrl)
+            .build();
+    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
+                                                            .accountId(budgetCommon.getAccountId())
+                                                            .templateData(templateData)
+                                                            .webhookUrls(slackWebhooks)
+                                                            .team(Team.OTHER)
+                                                            .templateId("slack_ccm_budget_alert")
+                                                            .userGroups(Collections.emptyList());
+    return slackChannelBuilder;
+  }
+
+  private NotificationChannelDTOBuilder getBudgetGroupNotificationChannelDTOBuilder(BudgetCommon budgetCommon,
+      AlertThreshold alertThreshold, List<String> slackWebhooks, Currency currency, String costTypeSlackAlert)
+      throws URISyntaxException {
+    String budgetGroupUrl = buildAbsoluteUrl(
+        budgetCommon.getAccountId(), budgetCommon.getUuid(), budgetCommon.getName(), budgetCommon.isNgBudget(), true);
+    String isOrHas = "is";
+    String approachingOrExceeded = "approaching";
+    if (alertThreshold.getPercentage() >= 100.0) {
+      isOrHas = "has";
+      approachingOrExceeded = "exceeded";
+    }
+    Map<String, String> templateData =
+        ImmutableMap.<String, String>builder()
+            .put("BUDGET_GROUP_NAME", budgetCommon.getName())
+            .put("PERIOD", budgetCommon.getPeriod().name().toLowerCase())
+            .put("IS_OR_HAS", isOrHas)
+            .put("APPROACHING_OR_EXCEEDED", approachingOrExceeded)
+            .put("BUDGET_GROUP_AMOUNT",
+                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
+            .put("ACTUAL_AMOUNT",
+                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getActualCost())))
+            .put("FORECASTED_COST",
+                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getForecastCost())))
+            .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
+            .put("ACTUAL_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
+            .put("BUDGET_GROUP_URL", budgetGroupUrl)
+            .build();
+    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
+                                                            .accountId(budgetCommon.getAccountId())
+                                                            .templateData(templateData)
+                                                            .webhookUrls(slackWebhooks)
+                                                            .team(Team.OTHER)
+                                                            .templateId("slack_ccm_budget_group_alert")
+                                                            .userGroups(Collections.emptyList());
+    return slackChannelBuilder;
   }
 }

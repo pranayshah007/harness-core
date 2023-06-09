@@ -33,4 +33,6 @@ public class BudgetCommon {
   String[] userGroupIds;
   boolean isNgBudget;
   boolean notifyOnSlack;
+  String perspectiveName;
+  String perspectiveId;
 }
