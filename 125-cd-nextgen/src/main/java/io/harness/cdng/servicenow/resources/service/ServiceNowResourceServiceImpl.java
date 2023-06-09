@@ -50,6 +50,7 @@ import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -217,7 +218,8 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
+        .taskSelectors(taskNGParameters.getDelegateSelectors() == null ? Collections.emptyList()
+                                                                       : taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();
