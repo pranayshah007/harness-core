@@ -11,6 +11,7 @@ import static io.harness.beans.DelegateTask.Status.ABORTED;
 import static io.harness.beans.DelegateTask.Status.PARKED;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.exception.WingsException.USER;
@@ -26,6 +27,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -36,6 +38,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HPersistence;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.core.managerConfiguration.ConfigurationController;
@@ -50,9 +53,12 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -66,6 +72,7 @@ public class FailDelegateTaskIteratorHelper {
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private Clock clock;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
+  @Inject private DelegateCache delegateCache;
 
   private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
   private static int MAX_BROADCAST_ROUND = 3;
@@ -116,6 +123,7 @@ public class FailDelegateTaskIteratorHelper {
           tasksToExpire.add(task);
           taskIdsToExpire.add(task.getUuid());
           delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
+          logValidationFailedErrorsInSelectionLog(task);
         }
       }
 
@@ -174,7 +182,6 @@ public class FailDelegateTaskIteratorHelper {
               ? assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTasks.get(taskId))
               : "Unable to determine proper error as delegate task could not be deserialized.";
           log.info("Marking task as failed - {}: {}", taskId, errorMessage);
-
           if (delegateTasks.get(taskId) != null) {
             delegateTaskService.handleResponse(delegateTasks.get(taskId), null,
                 DelegateTaskResponse.builder()
@@ -215,8 +222,6 @@ public class FailDelegateTaskIteratorHelper {
               assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
           log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
 
-          delegateSelectionLogsService.logTaskValidationFailed(delegateTask, errorMessage);
-
           DelegateResponseData response;
           boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
                                                                : delegateTask.getData().isAsync();
@@ -243,5 +248,34 @@ public class FailDelegateTaskIteratorHelper {
         }
       }
     }
+  }
+
+  public void logValidationFailedErrorsInSelectionLog(DelegateTask delegateTask) {
+    if (isEmpty(delegateTask.getExecutionCapabilities())) {
+      return;
+    }
+    if (!delegateTask.getStatus().equals(QUEUED)) {
+      return;
+    }
+    if (delegateTask.getValidationStartedAt() != null
+        && !delegateTask.getValidationCompleteDelegateIds().containsAll(
+            delegateTask.getEligibleToExecuteDelegateIds())) {
+      return;
+    }
+    delegateTask.getExecutionCapabilities().forEach(capability -> {
+      if (isNotEmpty(capability.getCapabilityValidationError())) {
+        String capabilityErrors = String.format("%s : [%s]", capability.getCapabilityValidationError(),
+            getHostNamesFromDelegateIds(delegateTask.getAccountId(), delegateTask.getEligibleToExecuteDelegateIds()));
+        delegateSelectionLogsService.logTaskValidationFailed(delegateTask, capabilityErrors);
+      }
+    });
+  }
+
+  private List<String> getHostNamesFromDelegateIds(String accountId, LinkedList<String> eligibleToExecuteDelegateIds) {
+    return eligibleToExecuteDelegateIds.stream()
+        .map(id -> delegateCache.get(accountId, id, false))
+        .filter(Objects::nonNull)
+        .map(Delegate::getHostName)
+        .collect(Collectors.toList());
   }
 }

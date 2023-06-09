@@ -805,6 +805,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public String getActiveDelegateAssignmentErrorMessage(TaskFailureReason reason, DelegateTask delegateTask) {
+    //@TODO : Move this capabilitySpecific error message: getCapabilityValidationError()
     log.info("Delegate task is terminated");
 
     String errorMessage = "Unknown";
