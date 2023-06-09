@@ -169,15 +169,19 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         bigQueryHelperService.removeAllCostCategories(tableName, formattedTime(Date.from(queryStartTime)),
             formattedTime(Date.from(queryEndTime)), message.getCloudProvider(), message.getCloudProviderAccountIds());
         for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
-          String costCategoriesStatement = "["
-              + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                  viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
-                      BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
-                      shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping))
-              + "]";
-          bigQueryHelperService.addCostCategory(tableName, costCategoriesStatement,
-              formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)),
-              message.getCloudProvider(), message.getCloudProviderAccountIds());
+          try {
+            String costCategoriesStatement = "["
+                + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
+                    viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                        BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
+                        shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping))
+                + "]";
+            bigQueryHelperService.addCostCategory(tableName, costCategoriesStatement,
+                formattedTime(Date.from(queryStartTime)), formattedTime(Date.from(queryEndTime)),
+                message.getCloudProvider(), message.getCloudProviderAccountIds());
+          } catch (Exception e) {
+            log.warn("Couldn't add Cost Category {}, skipping it.", businessMappingHistory.getName(), e);
+          }
         }
       }
 
