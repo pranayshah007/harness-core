@@ -14,11 +14,12 @@ import io.harness.beans.SecretText;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.ff.FeatureFlagService;
 
-import com.google.inject.Inject;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public abstract class DelegateSecretManager {
-  @Inject FeatureFlagService featureFlagService;
+  final FeatureFlagService featureFlagService;
 
   public String getDelegateTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
