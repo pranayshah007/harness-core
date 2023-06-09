@@ -21,7 +21,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepVariableCreator
     extends GenericStepVariableCreator<ServerlessAwsLambdaCloudFormationRollbackStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Collections.singleton(StepSpecTypeConstants.SERVERLESS_ROLLBACK);
+    return Collections.singleton(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
   }
 
   @Override

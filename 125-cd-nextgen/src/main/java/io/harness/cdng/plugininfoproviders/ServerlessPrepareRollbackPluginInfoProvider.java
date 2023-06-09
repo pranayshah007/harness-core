@@ -167,7 +167,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
   @Override
   public boolean isSupported(String stepType) {
-    if (stepType.equals(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)) {
+    if (stepType.equals(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)) {
       return true;
     }
     return false;

@@ -49,10 +49,11 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
 
   @Inject private InstanceInfoService instanceInfoService;
 
-  public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.SERVERLESS_PREPARE_ROLLBACK.getYamlType())
-                                               .setStepCategory(StepCategory.STEP)
-                                               .build();
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder()
+          .setType(ExecutionNodeType.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2.getYamlType())
+          .setStepCategory(StepCategory.STEP)
+          .build();
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {

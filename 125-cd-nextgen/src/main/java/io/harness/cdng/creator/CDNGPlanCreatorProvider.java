@@ -1385,22 +1385,25 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_BG_STAGE_SCALE_DOWN_STEP_NG.name())
             .build();
 
-    StepInfo serverlessPrepareRollback = StepInfo.newBuilder()
-                                             .setName("Serverless Prepare Rollback")
-                                             .setType(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
-                                             .setStepMetaData(StepMetaData.newBuilder()
-                                                                  .addCategory("SERVERLESS_PREPARE_ROLLBACK")
-                                                                  .setFolderPath("Serverless Lambda")
-                                                                  .build())
-                                             .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
-                                             .build();
+    StepInfo serverlessPrepareRollback =
+        StepInfo.newBuilder()
+            .setName("Serverless Aws Lambda Prepare Rollback V2")
+            .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addCategory("SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2")
+                                 .setFolderPath("Serverless Lambda")
+                                 .build())
+            .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
+            .build();
 
     StepInfo serverlessCloudFormationRollback =
         StepInfo.newBuilder()
-            .setName("Serverless Rollback")
-            .setType(StepSpecTypeConstants.SERVERLESS_ROLLBACK)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("SERVERLESS_ROLLBACK").setFolderPath("Serverless Lambda").build())
+            .setName("Serverless Aws Lambda Rollback V2")
+            .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addCategory("SERVERLESS_AWS_LAMBDA_ROLLBACK_V2")
+                                 .setFolderPath("Serverless Lambda")
+                                 .build())
             .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
             .build();
 

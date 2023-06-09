@@ -28,7 +28,7 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator
     extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaPrepareRollbackContainerStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK);
+    return Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
   }
 
   @Override

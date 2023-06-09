@@ -132,6 +132,6 @@ public interface StepSpecTypeConstants {
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 
-  String SERVERLESS_PREPARE_ROLLBACK = "ServerlessPrepareRollback";
-  String SERVERLESS_ROLLBACK = "ServerlessRollback";
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
+  String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
 }

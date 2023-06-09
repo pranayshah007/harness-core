@@ -597,12 +597,13 @@ public enum EntityType {
   IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.CD_SSCA_ENFORCEMENT)
   CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
-  @JsonProperty(EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
-  SERVERLESS_PREPARE_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.SERVERLESS_PREPARE_ROLLBACK),
-  @JsonProperty(EntityTypeConstants.SERVERLESS_ROLLBACK)
-  SERVERLESS_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.SERVERLESS_ROLLBACK);
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2(ModuleType.CD,
+      EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2, IdentifierRef.class,
+      EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
 
   private final ModuleType moduleType;
   String yamlName;

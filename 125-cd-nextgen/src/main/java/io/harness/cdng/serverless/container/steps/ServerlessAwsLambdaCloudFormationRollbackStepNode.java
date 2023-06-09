@@ -31,18 +31,18 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.SERVERLESS_ROLLBACK)
+@JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
 @TypeAlias("serverlessAwsLambdaCloudFormationRollbackStepNode")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepNode")
 public class ServerlessAwsLambdaCloudFormationRollbackStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull StepType type = StepType.ServerlessRollback;
+  @JsonProperty("type") @NotNull StepType type = StepType.ServerlessAwsLambdaRollbackV2;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ServerlessAwsLambdaCloudFormationRollbackStepInfo serverlessAwsLambdaCloudFormationRollbackStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.SERVERLESS_ROLLBACK;
+    return StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2;
   }
 
   @Override
@@ -51,7 +51,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepNode extends CdAbstrac
   }
 
   enum StepType {
-    ServerlessRollback(StepSpecTypeConstants.SERVERLESS_ROLLBACK);
+    ServerlessAwsLambdaRollbackV2(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
     @Getter String name;
     StepType(String name) {
       this.name = name;

@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SimpleVisitorHelper(helperClass = ServerlessAwsLambdaPrepareRollbackContainerStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
+@JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
 @TypeAlias("serverlessAwsLambdaPrepareRollbackContainerStepInfo")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo")
 public class ServerlessAwsLambdaPrepareRollbackContainerStepInfo

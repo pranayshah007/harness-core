@@ -31,20 +31,20 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
+@JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
 @TypeAlias("serverlessAwsLambdaPrepareRollbackContainerStepNode")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode")
 public class ServerlessAwsLambdaPrepareRollbackContainerStepNode extends CdAbstractStepNode {
   @JsonProperty("type")
   @NotNull
-  ServerlessAwsLambdaPrepareRollbackContainerStepNode.StepType type = StepType.ServerlessPrepareRollback;
+  ServerlessAwsLambdaPrepareRollbackContainerStepNode.StepType type = StepType.ServerlessAwsLambdaPrepareRollbackV2;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK;
+    return StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
   }
 
   @Override
@@ -53,7 +53,7 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepNode extends CdAbstr
   }
 
   enum StepType {
-    ServerlessPrepareRollback(StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK);
+    ServerlessAwsLambdaPrepareRollbackV2(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
     @Getter String name;
     StepType(String name) {
       this.name = name;

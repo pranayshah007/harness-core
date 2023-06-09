@@ -7,7 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps.serverless;
 
-import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_PREPARE_ROLLBACK;
+import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,7 +28,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepPlanCreator
     extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaCloudFormationRollbackStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_ROLLBACK);
+    return Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
   }
 
   @Override
@@ -47,7 +47,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepPlanCreator
       PlanCreationContext ctx, ServerlessAwsLambdaCloudFormationRollbackStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
-    String serverlessAwsLambdaRollbackFnq = getExecutionStepFqn(ctx.getCurrentField(), SERVERLESS_PREPARE_ROLLBACK);
+    String serverlessAwsLambdaRollbackFnq =
+        getExecutionStepFqn(ctx.getCurrentField(), SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
     ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec())
         .setServerlessAwsLambdaRollbackFnq(serverlessAwsLambdaRollbackFnq);
 

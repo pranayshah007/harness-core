@@ -55,10 +55,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecutable<ServerlessCommandResponse> {
-  public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.SERVERLESS_ROLLBACK.getYamlType())
-                                               .setStepCategory(StepCategory.STEP)
-                                               .build();
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder()
+          .setType(ExecutionNodeType.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2.getYamlType())
+          .setStepCategory(StepCategory.STEP)
+          .build();
 
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_COMMAND_NAME = "ServerlessAwsLambdaRollback";
 
