@@ -11,6 +11,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.views.dao.RuleDAO;
@@ -48,7 +49,10 @@ import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
 import io.harness.remote.client.NGRestUtils;
 
+import software.wings.beans.AwsCrossAccountAttributes;
+
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -72,6 +76,7 @@ public class GovernanceRecommendationService {
   @Autowired private AccountShardService accountShardService;
   @Autowired private ViewsBillingService viewsBillingService;
   @Autowired private ViewsQueryHelper viewsQueryHelper;
+  @Autowired private AwsEC2HelperService awsEC2HelperService;
   @Autowired private RuleDAO ruleDAO;
   @Autowired BatchMainConfig configuration;
   private static final String DEFAULT_TIMEZONE = "GMT";
@@ -127,8 +132,6 @@ public class GovernanceRecommendationService {
         regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
       } else {
         log.info("Failed to get account and regions from perspective {} ", accountId);
-        // If top accounts came as empty due to data unavailability take default regions and any 5 connector with
-        regions.addAll(Arrays.asList("us-east-1", "us-east-2", "us-west-2", "ap-southeast-1", "eu-west-1"));
         recommendatioAdhocDTOListFinal.addAll(
             recommendationAdhocDTOList.subList(0, Math.min(recommendationAdhocDTOList.size(), 5)));
       }
@@ -147,6 +150,12 @@ public class GovernanceRecommendationService {
   void enqueueRecommendationForAccount(List<RecommendatioAdhocDTO> recommendatioAdhocDTOListFinal, Set<Rule> ruleList,
       List<String> regions, String accountId) {
     for (RecommendatioAdhocDTO recommendatioAdhoc : recommendatioAdhocDTOListFinal) {
+      if (Lists.isNullOrEmpty(regions)) {
+        regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
+                                                      .crossAccountRoleArn(recommendatioAdhoc.getRoleArn())
+                                                      .externalId(recommendatioAdhoc.getExternalId())
+                                                      .build());
+      }
       for (Rule rule : ruleList) {
         for (String region : regions) {
           GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
