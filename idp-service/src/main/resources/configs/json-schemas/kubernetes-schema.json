@@ -1,0 +1,206 @@
+{
+  "definitions": {
+
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1686219531.json",
+  "title": "Root",
+  "type": "object",
+  "required": [
+    "kubernetes"
+  ],
+  "properties": {
+    "kubernetes": {
+      "$id": "#root/kubernetes",
+      "title": "Kubernetes",
+      "type": "object",
+      "required": [
+        "serviceLocatorMethod",
+        "clusterLocatorMethods"
+      ],
+      "properties": {
+        "serviceLocatorMethod": {
+          "$id": "#root/kubernetes/serviceLocatorMethod",
+          "title": "Servicelocatormethod",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "$id": "#root/kubernetes/serviceLocatorMethod/type",
+              "title": "Type",
+              "type": "string",
+              "default": "",
+              "pattern": "^.*$"
+            }
+          }
+        },
+        "clusterLocatorMethods": {
+          "$id": "#root/kubernetes/clusterLocatorMethods",
+          "title": "Clusterlocatormethods",
+          "type": "array",
+          "default": [
+
+          ],
+          "items": {
+            "$id": "#root/kubernetes/clusterLocatorMethods/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "type",
+              "clusters"
+            ],
+            "properties": {
+              "type": {
+                "$id": "#root/kubernetes/clusterLocatorMethods/items/type",
+                "title": "Type",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "clusters": {
+                "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters",
+                "title": "Clusters",
+                "type": "array",
+                "default": [
+
+                ],
+                "items": {
+                  "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items",
+                  "title": "Items",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "anyOf": [
+                    "url",
+                    "name",
+                    "authProvider",
+                    "skipTLSVerify",
+                    "skipMetricsLookup",
+                    "serviceAccountToken",
+                    "dashboardUrl",
+                    "dashboardApp",
+                    "caData",
+                    "caFile",
+                    "customResources"
+                  ],
+                  "properties": {
+                    "url": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/url",
+                      "title": "Url",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+                    },
+                    "name": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/name",
+                      "title": "Name",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "authProvider": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/authProvider",
+                      "title": "Authprovider",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "skipTLSVerify": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/skipTLSVerify",
+                      "title": "Skiptlsverify",
+                      "type": "boolean",
+                      "default": true
+                    },
+                    "skipMetricsLookup": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/skipMetricsLookup",
+                      "title": "Skipmetricslookup",
+                      "type": "boolean",
+                      "default": true
+                    },
+                    "serviceAccountToken": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/serviceAccountToken",
+                      "title": "Serviceaccounttoken",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "dashboardUrl": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/dashboardUrl",
+                      "title": "Dashboardurl",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+                    },
+                    "dashboardApp": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/dashboardApp",
+                      "title": "Dashboardapp",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "caData": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/caData",
+                      "title": "Cadata",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "caFile": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/caFile",
+                      "title": "Cafile",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "customResources": {
+                      "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/customResources",
+                      "title": "Customresources",
+                      "type": "array",
+                      "default": [
+
+                      ],
+                      "items": {
+                        "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/customResources/items",
+                        "title": "Items",
+                        "type": "object",
+                        "required": [
+                          "group",
+                          "apiVersion",
+                          "plural"
+                        ],
+                        "properties": {
+                          "group": {
+                            "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/customResources/items/group",
+                            "title": "Group",
+                            "type": "string",
+                            "default": "",
+                            "pattern": "^.*$"
+                          },
+                          "apiVersion": {
+                            "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/customResources/items/apiVersion",
+                            "title": "Apiversion",
+                            "type": "string",
+                            "default": "",
+                            "pattern": "^.*$"
+                          },
+                          "plural": {
+                            "$id": "#root/kubernetes/clusterLocatorMethods/items/clusters/items/customResources/items/plural",
+                            "title": "Plural",
+                            "type": "string",
+                            "default": "",
+                            "pattern": "^.*$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
