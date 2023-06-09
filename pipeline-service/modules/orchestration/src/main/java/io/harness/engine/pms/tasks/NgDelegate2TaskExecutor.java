@@ -55,14 +55,9 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
       throw new InvalidRequestException(check.getMessage());
     }
 
-    SubmitTaskResponse submitTaskResponse;
-    if (taskRequest.getUseReferenceFalseKryoSerializer()) {
-      submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTaskV2,
-          buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
-    } else {
-      submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask,
-          buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
-    }
+    SubmitTaskResponse submitTaskResponse =
+        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTaskV2,
+            buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
     delegateAsyncService.setupTimeoutForTask(submitTaskResponse.getTaskId().getId(),
         Timestamps.toMillis(submitTaskResponse.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
     return submitTaskResponse.getTaskId().getId();
@@ -76,7 +71,7 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
     }
     SubmitTaskRequest submitTaskRequest = buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest());
     SubmitTaskResponse submitTaskResponse =
-        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask, submitTaskRequest);
+        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTaskV2, submitTaskRequest);
     return delegateSyncService.waitForTask(submitTaskResponse.getTaskId().getId(),
         submitTaskRequest.getDetails().getType().getType(),
         Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
@@ -111,7 +106,8 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
   @Override
   public boolean abortTask(Map<String, String> setupAbstractions, String taskId) {
     try {
-      CancelTaskResponse response = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::cancelTask,
+      CancelTaskResponse response = PmsGrpcClientUtils.retryAndProcessException(
+          delegateServiceBlockingStub::cancelTaskV2,
           CancelTaskRequest.newBuilder()
               .setAccountId(AccountId.newBuilder().setId(setupAbstractions.get(SetupAbstractionKeys.accountId)).build())
               .setTaskId(TaskId.newBuilder().setId(taskId).build())
