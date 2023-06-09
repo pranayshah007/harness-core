@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
+import io.harness.exception.InvalidRequestException;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -124,5 +125,12 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
       }
     }
     return chainState;
+  }
+
+  @Override
+  protected void validateManifest(CreateLaunchTemplateRequest manifest) {
+    if (manifest.getLaunchTemplateData() == null) {
+      throw new InvalidRequestException("`LaunchTemplateData` is a required property for AsgLaunchTemplate manifest");
+    }
   }
 }
