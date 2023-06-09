@@ -18338,6 +18338,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "ServerlessAwsLambdaPrepareRollbackV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaPrepareRollbackContainerStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServerlessAwsLambdaRollback"
               }
             }
@@ -18354,23 +18370,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "ServerlessPrepareRollback"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ServerlessAwsLambdaPrepareRollbackContainerStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ServerlessRollback"
+                "const": "ServerlessAwsLambdaRollbackV2"
               }
             }
           },
