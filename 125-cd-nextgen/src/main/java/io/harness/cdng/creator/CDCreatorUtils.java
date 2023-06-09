@@ -67,6 +67,6 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.GITOPS_SYNC, StepSpecTypeConstants.TAS_ROUTE_MAPPING,
         StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY,
         StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
-        StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN, StepSpecTypeConstants.SERVERLESS_PREPARE_ROLLBACK);
+        StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN);
   }
 }

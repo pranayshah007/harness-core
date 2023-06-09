@@ -597,9 +597,6 @@ public enum EntityType {
   IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.CD_SSCA_ENFORCEMENT)
   CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
-  @JsonProperty(EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
-  SERVERLESS_PREPARE_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.SERVERLESS_PREPARE_ROLLBACK),
   @JsonProperty(EntityTypeConstants.DOWNLOAD_MANIFESTS)
   DOWNLOAD_MANIFESTS(ModuleType.CD, EntityTypeConstants.DOWNLOAD_MANIFESTS, IdentifierRef.class,
       EntityYamlRootNames.DOWNLOAD_MANIFESTS);

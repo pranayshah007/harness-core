@@ -86,7 +86,6 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStep;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tas.TasAppResizeStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
@@ -138,8 +137,7 @@ import io.swagger.annotations.ApiModel;
         GoogleFunctionsTrafficShiftStepInfo.class, GoogleFunctionsRollbackStepInfo.class, AwsSamDeployStepInfo.class,
         AwsSamBuildStepInfo.class, AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class,
         AwsLambdaRollbackStepInfo.class, BambooBuildStepInfo.class, TasRouteMappingStepInfo.class,
-        GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class, K8sBGStageScaleDownStep.class,
-        ServerlessAwsLambdaPrepareRollbackContainerStep.class})
+        GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class, K8sBGStageScaleDownStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it
