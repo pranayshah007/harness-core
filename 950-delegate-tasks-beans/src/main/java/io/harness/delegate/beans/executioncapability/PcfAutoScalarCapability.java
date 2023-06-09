@@ -42,4 +42,15 @@ public class PcfAutoScalarCapability implements ExecutionCapability {
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Make sure following delegate(s) have CF CLI %s and Autoscalar plugin is configured: [h1,h2]
+    return version != null ? String.format(
+               "Make sure following delegate(s) have CF CLI %s and Autoscalar plugin is configured", version.toString())
+                           : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }

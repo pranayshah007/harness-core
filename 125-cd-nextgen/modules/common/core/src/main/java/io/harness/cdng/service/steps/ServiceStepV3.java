@@ -109,6 +109,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
@@ -487,8 +488,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
           new EnumMap<>(ServiceOverridesType.class);
 
-      boolean isOverridesV2enabled =
-          ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0);
+      boolean isOverridesV2enabled = isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
+
       if (isOverridesV2enabled) {
         if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
           resolve(ambiance, parameters.getInfraId());
@@ -1099,6 +1100,18 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private String generateEnvGlobalOverrideV2Identifier(String envRef) {
     return String.join("_", envRef).replace(".", "_");
+  }
+
+  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
+    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0)
+        && isOverridesV2SettingEnabled(accountId, orgId, projectId);
+  }
+
+  private boolean isOverridesV2SettingEnabled(String accountId, String orgId, String projectId) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
+        .getValue()
+        .equals("true");
   }
 
   @Data

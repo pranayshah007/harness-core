@@ -26,17 +26,30 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.account.AccountClient;
+import software.amazon.awssdk.services.account.model.ListRegionsRequest;
+import software.amazon.awssdk.services.account.model.RegionOptStatus;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 @Slf4j
 @Service
 public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
   @Autowired private AwsCredentialHelper awsCredentialHelper;
+  private static final String AWS_DEFAULT_REGION = "us-east-1";
+  private static final List<RegionOptStatus> REGION_OPT_STATUSES =
+      Arrays.asList(RegionOptStatus.ENABLED, RegionOptStatus.ENABLED_BY_DEFAULT);
 
   @Override
   public List<Instance> listEc2Instances(
@@ -60,6 +73,23 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
     return emptyList();
   }
 
+  @Override
+  public List<String> listRegions(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+    try {
+      AccountClient accountClient = getAmazonAccountClient(awsCrossAccountAttributes);
+      List<String> regions =
+          accountClient.listRegions(ListRegionsRequest.builder().regionOptStatusContains(REGION_OPT_STATUSES).build())
+              .regions()
+              .stream()
+              .map(region -> region.regionName())
+              .collect(Collectors.toList());
+      return regions;
+    } catch (Exception ex) {
+      log.info("Exception while listing regions {}", ex);
+    }
+    return Arrays.asList("us-east-1", "us-east-2", "us-west-2", "ap-southeast-1", "eu-west-1");
+  }
+
   private List<Instance> getInstanceList(DescribeInstancesResult result) {
     List<Instance> instanceList = Lists.newArrayList();
     result.getReservations().forEach(reservation -> instanceList.addAll(reservation.getInstances()));
@@ -78,5 +108,29 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
             .build();
     builder.withCredentials(credentialsProvider);
     return (AmazonEC2Client) builder.build();
+  }
+
+  @VisibleForTesting
+  AccountClient getAmazonAccountClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+    return AccountClient.builder()
+        .credentialsProvider(getStsAssumeRoleAwsCredentialsProvider(awsCrossAccountAttributes))
+        .region(Region.of(AWS_DEFAULT_REGION))
+        .build();
+  }
+
+  private AwsCredentialsProvider getStsAssumeRoleAwsCredentialsProvider(
+      AwsCrossAccountAttributes awsCrossAccountAttributes) {
+    AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
+                                              .roleArn(awsCrossAccountAttributes.getCrossAccountRoleArn())
+                                              .roleSessionName(UUID.randomUUID().toString())
+                                              .externalId(awsCrossAccountAttributes.getExternalId())
+                                              .build();
+
+    StsClient stsClient = StsClient.builder()
+                              .region(Region.of(AWS_DEFAULT_REGION))
+                              .credentialsProvider(awsCredentialHelper.getAwsCredentialsProvider())
+                              .build();
+
+    return StsAssumeRoleCredentialsProvider.builder().stsClient(stsClient).refreshRequest(assumeRoleRequest).build();
   }
 }

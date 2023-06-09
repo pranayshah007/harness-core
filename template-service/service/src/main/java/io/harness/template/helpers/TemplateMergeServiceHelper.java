@@ -35,9 +35,9 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -115,14 +115,14 @@ public class TemplateMergeServiceHelper {
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntity getLinkedTemplateEntity(String accountId, String orgId, String projectId, String identifier,
-      String versionLabel, Map<String, TemplateEntity> templateCacheMap) {
+      String versionLabel, Map<String, TemplateEntity> templateCacheMap, String branch) {
     String versionMarker = STABLE_VERSION;
     if (!EmptyPredicate.isEmpty(versionLabel)) {
       versionMarker = versionLabel;
     }
 
     return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false);
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false, branch);
   }
 
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
@@ -137,11 +137,13 @@ public class TemplateMergeServiceHelper {
       return templateCacheMap.get(templateUniqueIdentifier);
     }
 
-    GitAwareContextHelper.updateGitEntityContextWithBranch(branch);
-    Optional<TemplateEntity> templateEntity =
-        templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
-            templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-            templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
+    Optional<TemplateEntity> templateEntity;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branch)) {
+      templateEntity =
+          templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
+              templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
+              templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
+    }
     if (!templateEntity.isPresent()) {
       throw new NGTemplateException(String.format(
           "The template identifier %s and version label %s does not exist. Could not replace this template",
@@ -150,13 +152,6 @@ public class TemplateMergeServiceHelper {
     TemplateEntity template = templateEntity.get();
     templateCacheMap.put(templateUniqueIdentifier, template);
     return template;
-  }
-
-  public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
-      String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
-      boolean loadFromCache) {
-    return getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, loadFromCache, null);
   }
 
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value

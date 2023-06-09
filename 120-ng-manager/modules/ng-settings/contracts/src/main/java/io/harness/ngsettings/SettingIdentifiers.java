@@ -30,4 +30,5 @@ public class SettingIdentifiers {
   public static String SHOW_AWS_COST_AS_IDENTIFIER = "show_aws_cost_as";
   public static String INCLUDE_GCP_DISCOUNTS_IDENTIFIER = "include_gcp_discounts";
   public static String INCLUDE_GCP_TAXES_IDENTIFIER = "include_gcp_taxes";
+  public static String SERVICE_OVERRIDE_V2_IDENTIFIER = "service_override_v2";
 }

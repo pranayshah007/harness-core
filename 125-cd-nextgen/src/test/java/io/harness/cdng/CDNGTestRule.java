@@ -35,7 +35,6 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.Service
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateServiceImpl;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorServiceImpl;
@@ -62,6 +61,7 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ngsettings.client.remote.NGSettingsClient;

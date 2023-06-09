@@ -72,6 +72,34 @@ public class TriggerEventResponseHelper {
     return response;
   }
 
+  public TriggerEventResponse toResponseWithPollingInfo(TriggerEventResponse.FinalStatus status,
+      TriggerWebhookEvent triggerWebhookEvent, NGPipelineExecutionResponseDTO pipelineExecutionResponseDTO,
+      NGTriggerEntity ngTriggerEntity, String message, TargetExecutionSummary targetExecutionSummary,
+      String pollingDocId) {
+    TriggerEventResponse response =
+        TriggerEventResponse.builder()
+            .accountId(triggerWebhookEvent.getAccountId())
+            .orgIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getOrgIdentifier())
+            .projectIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getProjectIdentifier())
+            .targetIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getTargetIdentifier())
+            .eventCorrelationId(triggerWebhookEvent.getUuid())
+            .payload(triggerWebhookEvent.getPayload())
+            .createdAt(triggerWebhookEvent.getCreatedAt())
+            .finalStatus(status)
+            .triggerIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getIdentifier())
+            .message(message)
+            .ngTriggerType(ngTriggerEntity == null ? null : ngTriggerEntity.getType())
+            .targetExecutionSummary(targetExecutionSummary)
+            .pollingDocId(pollingDocId)
+            .build();
+    if (pipelineExecutionResponseDTO == null) {
+      response.setExceptionOccurred(true);
+      return response;
+    }
+    response.setExceptionOccurred(false);
+    return response;
+  }
+
   public TriggerEventResponse toResponse(TriggerEventResponse.FinalStatus status,
       TriggerWebhookEvent triggerWebhookEvent, NGTriggerEntity ngTriggerEntity, String message,
       TargetExecutionSummary targetExecutionSummary) {
@@ -89,6 +117,29 @@ public class TriggerEventResponseHelper {
             .message(message)
             .targetExecutionSummary(targetExecutionSummary)
             .ngTriggerType(ngTriggerEntity.getType())
+            .build();
+    response.setExceptionOccurred(false);
+    return response;
+  }
+
+  public TriggerEventResponse toResponseWithPollingInfo(TriggerEventResponse.FinalStatus status,
+      TriggerWebhookEvent triggerWebhookEvent, NGTriggerEntity ngTriggerEntity, String message,
+      TargetExecutionSummary targetExecutionSummary, String pollingDocId) {
+    TriggerEventResponse response =
+        TriggerEventResponse.builder()
+            .accountId(triggerWebhookEvent.getAccountId())
+            .orgIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getOrgIdentifier())
+            .projectIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getProjectIdentifier())
+            .targetIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getTargetIdentifier())
+            .eventCorrelationId(triggerWebhookEvent.getUuid())
+            .payload(triggerWebhookEvent.getPayload())
+            .createdAt(triggerWebhookEvent.getCreatedAt())
+            .finalStatus(status)
+            .triggerIdentifier(ngTriggerEntity == null ? null : ngTriggerEntity.getIdentifier())
+            .message(message)
+            .targetExecutionSummary(targetExecutionSummary)
+            .ngTriggerType(ngTriggerEntity.getType())
+            .pollingDocId(pollingDocId)
             .build();
     response.setExceptionOccurred(false);
     return response;
@@ -138,6 +189,7 @@ public class TriggerEventResponseHelper {
         .exceptionOccurred(response.isExceptionOccurred())
         .triggerIdentifier(response.getTriggerIdentifier())
         .targetExecutionSummary(response.getTargetExecutionSummary())
+        .pollingDocId(response.getPollingDocId())
         .build();
   }
 

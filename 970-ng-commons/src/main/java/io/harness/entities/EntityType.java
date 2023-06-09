@@ -594,7 +594,12 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SSCA_ENFORCEMENT)
   SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.IDP_CONNECTOR)
-  IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class);
+  IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.CD_SSCA_ENFORCEMENT)
+  CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK)
+  SERVERLESS_PREPARE_ROLLBACK(ModuleType.CD, EntityTypeConstants.SERVERLESS_PREPARE_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.SERVERLESS_PREPARE_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

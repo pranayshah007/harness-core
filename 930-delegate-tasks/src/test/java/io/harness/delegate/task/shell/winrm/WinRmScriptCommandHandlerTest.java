@@ -61,7 +61,8 @@ public class WinRmScriptCommandHandlerTest {
   @Category(UnitTests.class)
   public void testShouldExecuteScriptCommandWithWinRmExecutor() {
     String command = "command";
-    List<String> outputVariables = Arrays.asList("variable");
+    List<String> outputVariables = List.of("variable");
+    List<String> secretOutputVariables = List.of("secretVariable");
     ScriptCommandUnit scriptCommandUnit =
         ScriptCommandUnit.builder().script("echo HELLO").scriptType(ScriptType.BASH).command(command).build();
     WinRmInfraDelegateConfig winRmInfraDelegateConfig = mock(WinRmInfraDelegateConfig.class);
@@ -71,10 +72,11 @@ public class WinRmScriptCommandHandlerTest {
                                                   .winRmInfraDelegateConfig(winRmInfraDelegateConfig)
                                                   .disableWinRMCommandEncodingFFSet(true)
                                                   .outputVariables(outputVariables)
+                                                  .secretOutputVariables(secretOutputVariables)
                                                   .build();
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
-    when(executor.executeCommandString(command, outputVariables))
+    when(executor.executeCommandString(command, outputVariables, secretOutputVariables, null))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     CommandExecutionStatus result = winRmScriptCommandHandler
                                         .handle(winrmTaskParameters, scriptCommandUnit, iLogStreamingTaskClient,
@@ -88,7 +90,8 @@ public class WinRmScriptCommandHandlerTest {
   @Category(UnitTests.class)
   public void testShouldExecuteScriptCommandWithWinRmExecutorOnDelegate() {
     String command = "command";
-    List<String> outputVariables = Arrays.asList("variable");
+    List<String> outputVariables = List.of("variable");
+    List<String> secretOutputVariables = List.of("secretVariable");
     ScriptCommandUnit scriptCommandUnit =
         ScriptCommandUnit.builder().script("echo HELLO").scriptType(ScriptType.POWERSHELL).command(command).build();
     WinRmInfraDelegateConfig winRmInfraDelegateConfig = mock(WinRmInfraDelegateConfig.class);
@@ -98,10 +101,11 @@ public class WinRmScriptCommandHandlerTest {
                                                   .winRmInfraDelegateConfig(winRmInfraDelegateConfig)
                                                   .disableWinRMCommandEncodingFFSet(true)
                                                   .outputVariables(outputVariables)
+                                                  .secretOutputVariables(secretOutputVariables)
                                                   .build();
     ScriptProcessExecutor executor = mock(ScriptProcessExecutor.class);
     when(shellExecutorFactory.getExecutor(any(), any(), any(), anyBoolean())).thenReturn(executor);
-    when(executor.executeCommandString(command, outputVariables))
+    when(executor.executeCommandString(command, outputVariables, secretOutputVariables, null))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     when(executor.getLogCallback()).thenReturn(mock(LogCallback.class));
     CommandExecutionStatus result = winRmScriptCommandHandler

@@ -33,7 +33,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class YamlPipelineUtilsTest extends CategoryTest {
   @Test
-  @Owner(developers = OwnerRule.YOGESH)
+  @Owner(developers = OwnerRule.SHALINI)
   @Category(UnitTests.class)
   public void testWriteYamlString() throws IOException {
     // Testing an entire pipeline yaml

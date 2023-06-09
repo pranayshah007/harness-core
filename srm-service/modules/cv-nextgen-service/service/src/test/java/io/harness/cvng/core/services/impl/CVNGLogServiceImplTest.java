@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
 
@@ -103,6 +104,63 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
                    .get()
                    .getLogRecords())
         .hasSize(3);
+    cvngLogs.forEach(logRecord -> {
+      assertThat(logRecord.getAccountId()).isEqualTo(accountId);
+      assertThat(logRecord.getStartTime()).isEqualTo(startTime);
+      assertThat(logRecord.getEndTime()).isEqualTo(endTime);
+      assertThat(logRecord.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+    });
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testSave_verificationApiCallWithNullResponse() {
+    ApiCallLogDTO apiCallLogDTONoResponse = ApiCallLogDTO.builder()
+                                                .accountId(accountId)
+                                                .traceableId(traceableId)
+                                                .requestTime(requestTime.toEpochMilli())
+                                                .requests(Arrays.asList(ApiCallLogDTOField.builder()
+                                                                            .name("url")
+                                                                            .value("http:/appd.com")
+                                                                            .type(ApiCallLogDTO.FieldType.URL)
+                                                                            .build()))
+                                                .responses(Arrays.asList())
+                                                .responseTime(responseTime.toEpochMilli())
+                                                .startTime(startTime.toEpochMilli())
+                                                .endTime(endTime.toEpochMilli())
+                                                .createdAt(createdAt)
+                                                .traceableType(TraceableType.VERIFICATION_TASK)
+                                                .build();
+    ApiCallLogDTO apiCallLogDTOOnlyStatus = ApiCallLogDTO.builder()
+                                                .accountId(accountId)
+                                                .traceableId(traceableId)
+                                                .requestTime(requestTime.toEpochMilli())
+                                                .requests(Arrays.asList(ApiCallLogDTOField.builder()
+                                                                            .name("url")
+                                                                            .value("http:/appd.com")
+                                                                            .type(ApiCallLogDTO.FieldType.URL)
+                                                                            .build()))
+                                                .responses(Arrays.asList(ApiCallLogDTOField.builder()
+                                                                             .name("Status Code")
+                                                                             .value("500")
+                                                                             .type(ApiCallLogDTO.FieldType.NUMBER)
+                                                                             .build()))
+                                                .responseTime(responseTime.toEpochMilli())
+                                                .startTime(startTime.toEpochMilli())
+                                                .endTime(endTime.toEpochMilli())
+                                                .createdAt(createdAt)
+                                                .traceableType(TraceableType.VERIFICATION_TASK)
+                                                .build();
+    cvngLogService.save(List.of(apiCallLogDTONoResponse, apiCallLogDTOOnlyStatus));
+    List<CVNGLog> cvngLogs = hPersistence.createQuery(CVNGLog.class).filter(CVNGLogKeys.accountId, accountId).asList();
+    assertThat(cvngLogs).hasSize(1);
+    assertThat(cvngLogs.stream()
+                   .filter(cvngLog -> cvngLog.getTraceableId().equals(traceableId))
+                   .findAny()
+                   .get()
+                   .getLogRecords())
+        .hasSize(2);
     cvngLogs.forEach(logRecord -> {
       assertThat(logRecord.getAccountId()).isEqualTo(accountId);
       assertThat(logRecord.getStartTime()).isEqualTo(startTime);

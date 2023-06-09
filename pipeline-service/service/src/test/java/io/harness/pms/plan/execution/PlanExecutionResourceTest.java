@@ -9,7 +9,6 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -118,9 +117,9 @@ public class PlanExecutionResourceTest extends CategoryTest {
   public void testGetStagesExecutionList() {
     doReturn(Optional.of(entity))
         .when(pmsPipelineService)
-        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false, false);
     ResponseDTO<List<StageExecutionResponse>> stagesExecutionList = planExecutionResource.getStagesExecutionList(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "false");
     assertThat(stagesExecutionList.getData()).hasSize(2);
     StageExecutionResponse stage0Data = stagesExecutionList.getData().get(0);
     assertThat(stage0Data.getStageIdentifier()).isEqualTo("qaStage");
@@ -140,14 +139,14 @@ public class PlanExecutionResourceTest extends CategoryTest {
   public void testGetStagesExecutionListWhenFfIsOn() {
     doReturn(Optional.of(entity))
         .when(pmsPipelineService)
-        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false, true);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, "true");
     ResponseDTO<List<StageExecutionResponse>> stagesExecutionList = planExecutionResource.getStagesExecutionList(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "true");
     assertThat(stagesExecutionList.getData()).hasSize(2);
     StageExecutionResponse stage0Data = stagesExecutionList.getData().get(0);
     assertThat(stage0Data.getStageIdentifier()).isEqualTo("qaStage");

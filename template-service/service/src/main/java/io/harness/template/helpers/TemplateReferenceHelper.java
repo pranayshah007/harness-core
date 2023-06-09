@@ -31,6 +31,7 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.template.TemplateReferenceProtoUtils;
+import io.harness.template.async.beans.SetupUsageParams;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.crud.TemplateCrudHelper;
 import io.harness.template.helpers.crud.TemplateCrudHelperFactory;
@@ -74,7 +75,8 @@ public class TemplateReferenceHelper {
     templateSetupUsageHelper.deleteExistingSetupUsages(templateEntity);
   }
 
-  public void populateTemplateReferences(TemplateEntity templateEntity) {
+  public void populateTemplateReferences(SetupUsageParams setupUsageParams) {
+    TemplateEntity templateEntity = setupUsageParams.getTemplateEntity();
     String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
 
     Map<String, String> metadata = new HashMap<>();
@@ -97,7 +99,7 @@ public class TemplateReferenceHelper {
               templateEntity.getProjectIdentifier(), entityYaml, true);
       referredEntities.addAll(referredEntitiesInLinkedTemplates);
 
-      templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities, metadata);
+      templateSetupUsageHelper.publishSetupUsageEvent(setupUsageParams, referredEntities, metadata);
 
     } catch (InvalidIdentifierRefException ex) {
       log.error("Error occurred while calculating template references {}", ex.getMessage());

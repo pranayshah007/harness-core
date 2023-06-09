@@ -9,6 +9,7 @@ package io.harness.ci.states.codebase;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,6 +23,7 @@ import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.Repository;
 import io.harness.beans.execution.WebhookBaseAttributes;
 import io.harness.beans.execution.WebhookExecutionSource;
@@ -329,6 +331,41 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
     assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
     assertThat(codebaseSweepingOutput.getCommitMessage()).isEqualTo("Last commit message");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldBuildReleaseWebhookCodebaseSweepingOutput() {
+    WebhookExecutionSource webhookExecutionSource =
+        WebhookExecutionSource.builder()
+            .webhookEvent(ReleaseWebhookEvent.builder()
+                              .releaseTag("1.1")
+                              .releaseBody("releaseBody")
+                              .releaseLink("LinkToRelease")
+                              .title("releaseTitle")
+                              .baseAttributes(WebhookBaseAttributes.builder()
+                                                  .after("commitId")
+                                                  .before("commitIdBase")
+                                                  .authorName("First Last")
+                                                  .authorEmail("first.last@email.com")
+                                                  .authorAvatar("http://...")
+                                                  .authorLogin("firstLast")
+                                                  .build())
+                              .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
+                              .build())
+            .build();
+    CodebaseSweepingOutput codebaseSweepingOutput =
+        codeBaseTaskStep.buildWebhookCodebaseSweepingOutput(webhookExecutionSource);
+    assertThat(codebaseSweepingOutput.getReleaseTag()).isEqualTo("1.1");
+    assertThat(codebaseSweepingOutput.getReleaseBody()).isEqualTo("releaseBody");
+    assertThat(codebaseSweepingOutput.getReleaseLink()).isEqualTo("LinkToRelease");
+    assertThat(codebaseSweepingOutput.getReleaseTitle()).isEqualTo("releaseTitle");
+    assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
+    assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("First Last");
+    assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("first.last@email.com");
+    assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
+    assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
   }
 
   @Test

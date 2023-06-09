@@ -114,6 +114,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   private static final String TYPE = "type";
   private static final String FEED = "feed";
   private static final String PACKAGE_URL = "packageUrl";
+  private static final String REGISTRY_ID = "registryId";
   private static final String MESSAGE = String.format(
       "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: %s\nAvailable digests:\n%s (V1)\n%s (V2)",
       "sha", SHA, SHA_V2);
@@ -636,6 +637,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         EcrArtifactDelegateResponse.builder()
+            .registryId(REGISTRY_ID)
             .tag(VERSION)
             .label(LABEL)
             .buildDetails(ArtifactBuildDetailsNG.builder().metadata(METADATA).build())
@@ -643,6 +645,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
         ecrArtifactConfig, ecrArtifactDelegateResponse, true);
     assertThat(ecrArtifactOutcome.getTag()).isEqualTo(VERSION);
+    assertThat(ecrArtifactOutcome.getRegistryId()).isEqualTo(REGISTRY_ID);
     assertThat(ecrArtifactOutcome.getRegion()).isEqualTo(REGION);
     assertThat(ecrArtifactOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
     assertThat(ecrArtifactOutcome.getTagRegex()).isEqualTo(VERSION_REGEX);
@@ -1049,6 +1052,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
   private EcrArtifactConfig getSampleEcrArtifactConfig(ParameterField<String> digest) {
     return EcrArtifactConfig.builder()
+        .registryId(ParameterField.createValueField(REGISTRY_ID))
         .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
         .identifier(IDENTIFIER)
         .tagRegex(ParameterField.createValueField(VERSION_REGEX))

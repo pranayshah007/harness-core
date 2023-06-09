@@ -38,6 +38,8 @@ import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
 import static io.harness.k8s.model.Kind.Namespace;
+import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
+import static io.harness.k8s.model.KubernetesResourceId.findScalableKubernetesResourceId;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -240,6 +242,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -285,6 +288,8 @@ public class K8sTaskHelperBase {
   public static final String kustomizePatchesDirPrefix = "kustomizePatches-";
   public static final String VALUE_MISSING_REPLACEMENT = "<no value>";
   public static final String NOT_FOUND = "not found";
+  private static final String GET_DIRECT_APPLY_ANNOTATION =
+      "jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'";
 
   @Inject private TimeLimiter timeLimiter;
   @Inject private KubernetesContainerService kubernetesContainerService;
@@ -363,11 +368,11 @@ public class K8sTaskHelperBase {
   }
 
   public static ProcessResponse executeCommand(AbstractExecutable command, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback) throws Exception {
-    try (
-        LogOutputStream logOutputStream = getExecutionLogOutputStream(executionLogCallback, INFO);
-        ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
-        LogOutputStream logErrorStream = getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
+      LogCallback executionLogCallback, LogLevel errorLogLevel) throws Exception {
+    try (LogOutputStream logOutputStream = getExecutionLogOutputStream(executionLogCallback, INFO);
+         ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
+         LogOutputStream logErrorStream =
+             getExecutionLogOutputStream(executionLogCallback, errorLogLevel, errorCaptureStream)) {
       return ProcessResponse.builder()
           .processResult(command.execute(k8sDelegateTaskParams.getWorkingDirectory(), logOutputStream, logErrorStream,
               true, Collections.emptyMap()))
@@ -878,10 +883,14 @@ public class K8sTaskHelperBase {
         k8sDelegateTaskParams.getWorkingDirectory());
   }
 
-  @VisibleForTesting
   public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
       AbstractExecutable executable) throws Exception {
-    return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback);
+    return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback, ERROR);
+  }
+
+  public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
+      AbstractExecutable executable, LogLevel logLevel) throws Exception {
+    return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback, logLevel);
   }
 
   public boolean applyManifests(Kubectl client, List<KubernetesResource> resources,
@@ -1062,13 +1071,17 @@ public class K8sTaskHelperBase {
     return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, deleteCommand).getProcessResult();
   }
 
-  public boolean checkIfResourceExists(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
-      KubernetesResourceId kubernetesResourceId, LogCallback executionLogCallback) {
+  public boolean checkIfResourceContainsHarnessDirectApplyAnnotation(Kubectl client,
+      K8sDelegateTaskParams k8sDelegateTaskParams, KubernetesResourceId kubernetesResourceId,
+      LogCallback executionLogCallback) {
     try {
-      ProcessResult result =
-          executeGetWorkloadCommand(client, k8sDelegateTaskParams, executionLogCallback, kubernetesResourceId);
+      ProcessResult result = executeGetWorkloadCommand(
+          client, k8sDelegateTaskParams, executionLogCallback, kubernetesResourceId, GET_DIRECT_APPLY_ANNOTATION);
       if (result.getExitValue() == 0) {
-        return true;
+        if (result.hasOutput() && isEmpty(result.outputUTF8())) {
+          return true;
+        }
+        return !Boolean.parseBoolean(result.outputUTF8().replaceAll("'", ""));
       }
     } catch (Exception ex) {
       log.warn("Resource {} not found in cluster. Error {}", kubernetesResourceId.kindNameRef(), ex);
@@ -1077,9 +1090,10 @@ public class K8sTaskHelperBase {
   }
 
   private ProcessResult executeGetWorkloadCommand(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback, KubernetesResourceId resourceId) throws Exception {
-    GetCommand getCommand = client.get().resources(resourceId.kindNameRef()).namespace(resourceId.getNamespace());
-    return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, getCommand).getProcessResult();
+      LogCallback executionLogCallback, KubernetesResourceId resourceId, String output) throws Exception {
+    GetCommand getCommand =
+        client.get().resources(resourceId.kindNameRef()).namespace(resourceId.getNamespace()).output(output);
+    return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, getCommand, WARN).getProcessResult();
   }
 
   public void describe(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback)
@@ -3383,5 +3397,23 @@ public class K8sTaskHelperBase {
 
   private String getFileName(String path) {
     return path != null ? (new File(path)).getName() : null;
+  }
+
+  public KubernetesResourceId findScalableKubernetesResourceIdFromWorkload(String workloadName) {
+    List<String> kindNameRefs = Arrays.asList(workloadName.trim().split(","));
+    if (kindNameRefs.size() == 1) {
+      return createKubernetesResourceIdFromNamespaceKindName(workloadName);
+    }
+    List<KubernetesResourceId> kubernetesResourceIds = findScalableKubernetesResourceId(kindNameRefs);
+    if (kubernetesResourceIds.size() != 1) {
+      if (kubernetesResourceIds.isEmpty()) {
+        throw new WingsException(
+            "Invalid Kubernetes resource name " + String.join(",", kindNameRefs) + ". No workload found");
+      }
+      throw new WingsException("Invalid Kubernetes resource name " + String.join(",", kindNameRefs)
+          + ". More than one workloads found. Others should be marked with annotation" + HarnessAnnotations.directApply
+          + ": true");
+    }
+    return kubernetesResourceIds.get(0);
   }
 }

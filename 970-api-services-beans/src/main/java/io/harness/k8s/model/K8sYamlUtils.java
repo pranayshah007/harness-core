@@ -15,6 +15,7 @@ import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.representer.Representer;
 
 public class K8sYamlUtils {
@@ -45,6 +46,8 @@ public class K8sYamlUtils {
     LoaderOptions loaderOptions = new LoaderOptions();
     loaderOptions.setCodePointLimit(customLoadSize());
     BooleanPatchedRepresenter booleanPatchedRepresenter = new BooleanPatchedRepresenter();
+    PropertyUtils propertyUtils = booleanPatchedRepresenter.getPropertyUtils();
+    propertyUtils.setSkipMissingProperties(true);
     return new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class, loaderOptions),
         booleanPatchedRepresenter, initDumperOptions(booleanPatchedRepresenter), loaderOptions);
   }

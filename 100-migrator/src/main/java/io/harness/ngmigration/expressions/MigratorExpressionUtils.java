@@ -163,6 +163,7 @@ public class MigratorExpressionUtils {
     context.put("app.description", "<+project.description>");
     context.put("app.accountId", "<+account.identifier>");
     context.put("pipeline.name", "<+pipeline.name>");
+    context.put("pipeline.description", "<+pipeline.description>");
     context.put("workflow.name", "<+stage.name>");
     context.put("workflow.description", "<+stage.description>");
     context.put("workflow.releaseNo", "<+pipeline.sequenceId>");

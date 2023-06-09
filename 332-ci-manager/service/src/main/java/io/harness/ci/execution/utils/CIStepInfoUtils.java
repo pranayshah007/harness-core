@@ -220,18 +220,15 @@ public class CIStepInfoUtils {
   }
 
   public static boolean canRunVmStepOnHost(CIStepInfoType ciStepInfoType, StageInfraDetails stageInfraDetails,
-      String accountId, CIExecutionConfigService ciExecutionConfigService, CIFeatureFlagService featureFlagService) {
+      String accountId, CIExecutionConfigService ciExecutionConfigService, CIFeatureFlagService featureFlagService,
+      PluginCompatibleStep pluginCompatibleStep) {
     if (stageInfraDetails.getType() != Type.DLITE_VM) {
       return false;
     }
     if (!featureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId)) {
       return false;
     }
-    if ((ciStepInfoType == CIStepInfoType.DOCKER || ciStepInfoType == CIStepInfoType.ECR)
-        && !featureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)) {
-      return false;
-    }
-    String pluginName = ciExecutionConfigService.getContainerlessPluginNameForVM(ciStepInfoType);
+    String pluginName = ciExecutionConfigService.getContainerlessPluginNameForVM(ciStepInfoType, pluginCompatibleStep);
     return isNotEmpty(pluginName);
   }
 

@@ -25,6 +25,7 @@ import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -377,6 +378,21 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .gitUserAvatar(branchWebhookEvent.getBaseAttributes().getAuthorAvatar())
           .gitUserId(branchWebhookEvent.getBaseAttributes().getAuthorLogin())
           .commitMessage(getCommitMessage(codeBaseCommits))
+          .build();
+    } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.RELEASE) {
+      ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+
+      return CodebaseSweepingOutput.builder()
+          .build(new Build("release"))
+          .releaseTag(releaseWebhookEvent.getReleaseTag())
+          .releaseLink(releaseWebhookEvent.getReleaseLink())
+          .releaseTitle(releaseWebhookEvent.getTitle())
+          .releaseBody(releaseWebhookEvent.getReleaseBody())
+          .repoUrl(releaseWebhookEvent.getRepository().getLink())
+          .gitUser(releaseWebhookEvent.getBaseAttributes().getAuthorName())
+          .gitUserEmail(releaseWebhookEvent.getBaseAttributes().getAuthorEmail())
+          .gitUserAvatar(releaseWebhookEvent.getBaseAttributes().getAuthorAvatar())
+          .gitUserId(releaseWebhookEvent.getBaseAttributes().getAuthorLogin())
           .build();
     }
     return CodebaseSweepingOutput.builder().build();

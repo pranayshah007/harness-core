@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF_MAX_ERROR_RETRIES;
 
@@ -17,6 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -178,5 +181,17 @@ public class AwsApiHelperServiceTest extends CategoryTest {
 
     assertThat(expected.getBackoffStrategy()).isInstanceOf(PredefinedBackoffStrategies.SDKDefaultBackoffStrategy.class);
     assertThat(expected.getMaxErrorRetry()).isEqualTo(DEFAULT_BACKOFF_MAX_ERROR_RETRIES);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetArtifactBuildDetails() {
+    String region = "us-east-1";
+    String bucketName = "bucket";
+    String filePath = "file.jar:abcd";
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+    awsApiHelperService.getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, false, 100, region, false);
+    verify(tracker, times(0)).trackS3Call("Get Object Metadata");
   }
 }

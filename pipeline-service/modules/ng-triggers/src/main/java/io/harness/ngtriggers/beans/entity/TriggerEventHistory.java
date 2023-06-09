@@ -25,6 +25,7 @@ import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
@@ -74,6 +75,7 @@ public class TriggerEventHistory implements PersistentEntity {
   String projectIdentifier;
   String targetIdentifier;
   String eventCorrelationId;
+  @Nullable String pollingDocId;
   String payload;
   Long eventCreatedAt;
   String finalStatus;

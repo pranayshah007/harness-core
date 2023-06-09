@@ -722,6 +722,8 @@ public class EngineExpressionEvaluator {
           if (isAnyCollection(value)) {
             return JsonUtils.asJson(value);
           }
+        } else if (isAnyCollection(value)) {
+          log.info("[PMS_ENGINE_JSON]: Following expression is referred as json - " + expression);
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {

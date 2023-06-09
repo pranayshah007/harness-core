@@ -554,7 +554,7 @@ paths:
       x-internal: true
   /v1/connector-info:
     get:
-      summary: 'Get Connector Info'
+      summary: Get Connector Info
       tags:
         - ConnectorInfo
       operationId: get-connector-info
@@ -1340,12 +1340,16 @@ components:
             id: rbsynehqc2icl
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: h8yoj2ikr9k75
         config_name:
           type: string
           x-stoplight:
             id: jqz82xb7khx5d
+        proxy:
+          type: array
+          x-stoplight:
+            id: vvman59mk8g63
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config_id
         - configs
@@ -1777,6 +1781,32 @@ components:
             $ref: '#/components/schemas/HostInfo'
       required:
         - allow
+    ProxyHostDetail:
+      title: ProxyHostDetail
+      x-stoplight:
+        id: qzvmc7ygi53g8
+      type: object
+      properties:
+        host:
+          type: string
+          x-stoplight:
+            id: cd7j4zdyj0wqa
+        proxy:
+          type: boolean
+          x-stoplight:
+            id: hida2jcczo9jn
+        selectors:
+          type: array
+          x-stoplight:
+            id: 6t6308uuj8wrp
+          items:
+            x-stoplight:
+              id: 0sgdczdy6graq
+            type: string
+      required:
+        - host
+        - proxy
+      description: Proxy Host Detail
   parameters:
     AccountHeader:
       name: Harness-Account

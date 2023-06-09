@@ -39,4 +39,8 @@ public interface GithubPackagesRegistryService {
 
   List<Map<String, String>> listPackages(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org);
+
+  String fetchDownloadUrl(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org,
+      String artifactId, String user, String extension, String repository, String packageName, String version,
+      String groupId);
 }

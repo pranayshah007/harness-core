@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.time.Duration;
 import lombok.Builder;
 import lombok.Value;
@@ -34,5 +36,15 @@ public class GitInstallationCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format("Following delegate(s) missing the capability %s", fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

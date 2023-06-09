@@ -32,4 +32,5 @@ public class CIWebhookInfoDTO {
   private CIBuildBranchHook branch;
   private CIBuildPRHook pullRequest;
   private String userSource;
+  private CIBuildReleaseHook release;
 }

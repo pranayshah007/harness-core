@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +19,7 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
-public class RancherTestConnectionTaskResponse implements DelegateResponseData {
+public class RancherTestConnectionTaskResponse implements ConnectorValidationResponseData {
   private ConnectorValidationResult connectorValidationResult;
   private DelegateMetaInfo delegateMetaInfo;
 }

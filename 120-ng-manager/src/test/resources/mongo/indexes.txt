@@ -59,6 +59,9 @@ gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique"
 gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_createdAtSort", "background": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1, "gitSyncDirection": 1, "createdAt": -1}
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}
+gitDefaultBranchCache {"name": "accountIdentifier_repoUrl_repo_idx", "unique": true} {"accountIdentifier": 1, "repoUrl": 1, "repo": 1}
+gitDefaultBranchCache {"name": "createdAt_1", "background": true} {"createdAt": 1}
+gitDefaultBranchCache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitFileActivityNG {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 gitFileCache {"name": "accountIdentifier_gitProvider_repoName_ref_completeFilepath_isDefaultBranch_unique_idx", "unique": true} {"accountIdentifier": 1, "gitProvider": 1, "repoName": 1, "ref": 1, "completeFilepath": 1, "isDefaultBranch": 1}
 gitFileCache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

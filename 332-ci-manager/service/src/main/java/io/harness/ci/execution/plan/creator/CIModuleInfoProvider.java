@@ -9,6 +9,7 @@ package io.harness.ci.plan.creator;
 
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
+import static io.harness.beans.execution.WebhookEvent.Type.RELEASE;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
@@ -21,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -228,7 +230,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         triggerRepoName = fetchTriggerRepo(webhookExecutionSource);
         if (ciWebhookInfoDTO.getEvent().equals("branch")) {
           triggerCommits = ciWebhookInfoDTO.getBranch().getCommits();
-        } else {
+        } else if (ciWebhookInfoDTO.getEvent().equals("PR")) {
           triggerCommits = ciWebhookInfoDTO.getPullRequest().getCommits();
         }
         if (optionalSweepingOutput.isFound()) {
@@ -374,7 +376,17 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
   }
 
   public String fetchTriggerRepo(WebhookExecutionSource webhookExecutionSource) {
-    if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
+    if (webhookExecutionSource.getWebhookEvent().getType() == RELEASE) {
+      ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+
+      if (releaseWebhookEvent == null || releaseWebhookEvent.getRepository() == null
+          || releaseWebhookEvent.getRepository().getHttpURL() == null) {
+        return null;
+      }
+
+      return getGitRepo(releaseWebhookEvent.getRepository().getHttpURL());
+
+    } else if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
       PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
 
       if (prWebhookEvent == null || prWebhookEvent.getRepository() == null

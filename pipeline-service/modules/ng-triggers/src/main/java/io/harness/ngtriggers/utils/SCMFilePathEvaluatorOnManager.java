@@ -119,7 +119,7 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
     return filePaths;
   }
 
-  private void decrypt(ScmConnector connector, List<EncryptedDataDetail> encryptedDataDetails) {
+  public void decrypt(ScmConnector connector, List<EncryptedDataDetail> encryptedDataDetails) {
     final DecryptableEntity decryptableEntity = secretDecryptor.decrypt(
         GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(connector), encryptedDataDetails);
     GitApiAccessDecryptionHelper.setAPIAccessDecryptableEntity(connector, decryptableEntity);
@@ -135,7 +135,7 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 
-  private boolean isBitBucketOnPrem(ScmConnector connector) {
+  public boolean isBitBucketOnPrem(ScmConnector connector) {
     return ConnectorType.BITBUCKET.equals(connector.getConnectorType())
         && !GitClientHelper.isBitBucketSAAS(connector.getUrl());
   }

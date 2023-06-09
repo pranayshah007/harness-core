@@ -68,7 +68,7 @@ import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.resources.DelegateTaskResource;
 import io.harness.delegate.resources.DelegateTaskResourceV2;
-import io.harness.delegate.resources.core.CoreDelegateResource;
+import io.harness.delegate.resources.core.CoreDelegateExecutionResource;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
 import io.harness.dms.DmsModule;
@@ -1185,7 +1185,7 @@ public class WingsApplication extends Application<MainConfiguration> {
                 -> StringUtils.startsWithAny(klazz.getPackage().getName(), AppResource.class.getPackage().getName(),
                     DelegateTaskResource.class.getPackage().getName(),
                     DelegateTaskResourceV2.class.getPackage().getName(),
-                    CoreDelegateResource.class.getPackage().getName()))
+                    CoreDelegateExecutionResource.class.getPackage().getName()))
             .collect(Collectors.toSet());
 
     if (!configuration.isGraphQLEnabled()) {
@@ -1363,32 +1363,35 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   private void scheduleJobsDelegateService(
       Injector injector, MainConfiguration configuration, ScheduledExecutorService delegateExecutor) {
-    log.info("Initializing delegate service scheduled jobs ...");
-    // delegate task broadcasting schedule job
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("delegateTaskNotifier")))
-        .scheduleWithFixedDelay(injector.getInstance(DelegateQueueTask.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
-    delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while monitoring task progress updates",
-                                                injector.getInstance(ProgressUpdateService.class)),
-        0L, 5L, TimeUnit.SECONDS);
+    if (configuration.isRunScheduleJobsInManagerIteratorOnly()) {
+      log.info("Initializing delegate service scheduled jobs ...");
+      // delegate task broadcasting schedule job
+      injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("delegateTaskNotifier")))
+          .scheduleWithFixedDelay(
+              injector.getInstance(DelegateQueueTask.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
+      delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while monitoring task progress updates",
+                                                  injector.getInstance(ProgressUpdateService.class)),
+          0L, 5L, TimeUnit.SECONDS);
 
-    delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while monitoring sync task responses",
-                                                injector.getInstance(DelegateSyncServiceImpl.class)),
-        0L, 2L, TimeUnit.SECONDS);
+      delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while monitoring sync task responses",
+                                                  injector.getInstance(DelegateSyncServiceImpl.class)),
+          0L, 2L, TimeUnit.SECONDS);
 
-    delegateExecutor.scheduleWithFixedDelay(
-        new Schedulable("Failed while broadcasting perpetual tasks",
-            () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
-        0L, 10L, TimeUnit.SECONDS);
-    if (configuration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
       delegateExecutor.scheduleWithFixedDelay(
-          new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
-          15L, TimeUnit.SECONDS);
-    }
+          new Schedulable("Failed while broadcasting perpetual tasks",
+              () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
+          0L, 10L, TimeUnit.SECONDS);
+      if (configuration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+        delegateExecutor.scheduleWithFixedDelay(
+            new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)),
+            0L, 15L, TimeUnit.SECONDS);
+      }
 
-    delegateExecutor.scheduleWithFixedDelay(
-        new Schedulable("Failed while auto revoking delegate tokens",
-            () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
-        1L, 1L, TimeUnit.HOURS);
+      delegateExecutor.scheduleWithFixedDelay(
+          new Schedulable("Failed while auto revoking delegate tokens",
+              () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
+          1L, 1L, TimeUnit.HOURS);
+    }
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {

@@ -29,10 +29,7 @@ import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.idp.v1.model.AppConfig;
-import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
-import io.harness.spec.server.idp.v1.model.NamespaceInfo;
+import io.harness.spec.server.idp.v1.model.*;
 
 import java.util.*;
 import org.junit.Before;
@@ -110,6 +107,12 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
       + "    brokers:\n"
       + "    - localhost:9092\n";
 
+  static final String TEST_PROXY_HOST_VALUE = "TEST_PROXY_HOST_VALUE";
+  static final Boolean TEST_PROXY_BOOLEAN_VALUE = true;
+  static final String TEST_PROXY_DELEGATE_SELECTOR_DELEGATE = "TEST_DELEGATE_SELECTOR";
+  static final List<String> TEST_PROXY_DELEGATE_SELECTOR =
+      Collections.singletonList(TEST_PROXY_DELEGATE_SELECTOR_DELEGATE);
+
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
@@ -155,6 +158,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(TEST_CONFIG_ID);
     appConfig.setConfigs(TEST_CONFIG_VALUE);
+    appConfig.setProxy(getTestProxyHostDetails());
     AppConfig savedAppConfig =
         configManagerServiceImpl.saveConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE);
     List<BackstageEnvSecretVariable> returnedBackstageEnvVariable = savedAppConfig.getEnvVariables();
@@ -162,6 +166,9 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(returnedBackstageEnvVariable.get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
     assertEquals(savedAppConfig.getConfigName(), TEST_CONFIG_NAME);
     assertEquals(savedAppConfig.getConfigId(), TEST_CONFIG_ID);
+    assertEquals(savedAppConfig.getProxy().get(0).getHost(), TEST_PROXY_HOST_VALUE);
+    assertEquals(savedAppConfig.getProxy().get(0).isProxy().booleanValue(), true);
+    assertEquals(savedAppConfig.getProxy().get(0).getSelectors().get(0), TEST_PROXY_DELEGATE_SELECTOR_DELEGATE);
 
     // Handling for harness-ci-cd plugin
     AppConfigEntity harnessCiCdPluginEntity = getTestAppConfigEntity();
@@ -214,6 +221,9 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(returnedBackstageEnvVariable.get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
     assertEquals(updatedConfig.getConfigName(), TEST_CONFIG_NAME);
     assertEquals(updatedConfig.getConfigId(), TEST_CONFIG_ID);
+    assertEquals(updatedConfig.getProxy().get(0).getHost(), TEST_PROXY_HOST_VALUE);
+    assertEquals(updatedConfig.getProxy().get(0).isProxy().booleanValue(), true);
+    assertEquals(updatedConfig.getProxy().get(0).getSelectors().get(0), TEST_PROXY_DELEGATE_SELECTOR_DELEGATE);
   }
 
   @Test
@@ -386,6 +396,15 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
         .createdAt(TEST_CREATED_AT_TIME)
         .lastModifiedAt(TEST_LAST_MODIFIED_AT_TIME)
         .enabledDisabledAt(TEST_ENABLED_DISABLED_AT_TIME)
+        .proxy(getTestProxyHostDetails())
         .build();
+  }
+
+  private List<ProxyHostDetail> getTestProxyHostDetails() {
+    ProxyHostDetail proxyHostDetail = new ProxyHostDetail();
+    proxyHostDetail.setHost(TEST_PROXY_HOST_VALUE);
+    proxyHostDetail.setProxy(TEST_PROXY_BOOLEAN_VALUE);
+    proxyHostDetail.setSelectors(TEST_PROXY_DELEGATE_SELECTOR);
+    return Collections.singletonList(proxyHostDetail);
   }
 }
