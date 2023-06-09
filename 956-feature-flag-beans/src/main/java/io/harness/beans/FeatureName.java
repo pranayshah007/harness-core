@@ -805,6 +805,7 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP),
   CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI),
+  PL_HELM2_DELEGATE_BANNER("FF for adding banner on delegate to mention deprecation of helm 2", HarnessTeam.PL),
   PIE_PROCESS_ON_JSON_NODE(
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
       PIPELINE);
