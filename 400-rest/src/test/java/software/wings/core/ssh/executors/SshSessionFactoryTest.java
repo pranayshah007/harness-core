@@ -8,6 +8,7 @@
 package software.wings.core.ssh.executors;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.shell.SshSessionFactory.getCopyOfKey;
@@ -27,6 +28,7 @@ import io.harness.shell.SshSessionFactory;
 
 import com.jcraft.jsch.JSchException;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -62,5 +64,41 @@ public class SshSessionFactoryTest extends CategoryTest {
     final SshSessionConfig config = SshSessionConfig.Builder.aSshSessionConfig().build();
     final LogCallback logCallback = new NoopExecutionCallback();
     assertThatThrownBy(() -> SshSessionFactory.getSSHSession(config, logCallback)).isInstanceOf(JSchException.class);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void getSSHSessionThrowsExceptionWhenInterrupted() throws InterruptedException, JSchException {
+    final SshSessionConfig config = SshSessionConfig.Builder.aSshSessionConfig()
+                                        .withSocketConnectTimeout(12000)
+                                        .withHost("1.1.1.1")
+                                        .withPort(22)
+                                        .withUserName("test")
+                                        .withPassword("test".toCharArray())
+                                        .build();
+    final LogCallback logCallback = new NoopExecutionCallback();
+
+    AtomicReference<String> errorMessageRef = new AtomicReference<>();
+
+    Thread sessionThread = new Thread(() -> {
+      try {
+        SshSessionFactory.getSSHSession(config, logCallback);
+      } catch (JSchException e) {
+        errorMessageRef.set(e.getMessage());
+      }
+    });
+
+    sessionThread.start();
+
+    // 1.5 seconds because 1 sec sleep is present in getSshSession itself, we want the logic to reach session.connect
+    Thread.sleep(1500);
+
+    sessionThread.interrupt();
+    sessionThread.join();
+
+    // get message once sessionThread completes
+    String errorMessage = errorMessageRef.get();
+    assertThat(errorMessage).isEqualTo("socket is not established");
   }
 }

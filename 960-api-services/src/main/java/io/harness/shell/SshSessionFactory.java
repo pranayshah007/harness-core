@@ -41,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SshSessionFactory {
   private static final String SSH_NETWORK_PROXY = "SSH_NETWORK_PROXY";
   private static final int NR_OF_RETRIES_FOR_SSH_SESSION_CONNECTION = 6;
+  private static final String SOCKET_INTERRUPT_MESSAGE = "socket is not established";
 
   /**
    * Gets the SSH session with jumpbox.
@@ -91,7 +92,11 @@ public class SshSessionFactory {
       } catch (InterruptedException ie) {
         log.error("Interrupted exception while fetching ssh session", ie);
       } catch (JSchException jse) {
-        if (retryCount == NR_OF_RETRIES_FOR_SSH_SESSION_CONNECTION) {
+        if (SOCKET_INTERRUPT_MESSAGE.equals(jse.getMessage())) {
+          log.error("Interrupted while waiting for SSH connection with retry count {}, cause {}", retryCount,
+              jse.getMessage());
+          throw jse;
+        } else if (retryCount == NR_OF_RETRIES_FOR_SSH_SESSION_CONNECTION) {
           log.error("Jschexception while SSH connection with retry count {}, cause {}", retryCount, jse.getMessage());
           throw jse;
         }

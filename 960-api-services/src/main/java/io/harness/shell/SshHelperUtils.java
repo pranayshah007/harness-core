@@ -83,6 +83,8 @@ public class SshHelperUtils {
         errorConst = SOCKET_CONNECTION_TIMEOUT;
       } else if (message.equals("session is down")) {
         errorConst = SSH_SESSION_TIMEOUT;
+      } else if (message.equals("socket is not established")) {
+        errorConst = SOCKET_CONNECTION_ERROR;
       }
     }
     return errorConst;
