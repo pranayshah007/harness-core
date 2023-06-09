@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
+import org.jvnet.hk2.annotations.Optional;
 
 @Data
 @Builder
@@ -31,4 +32,5 @@ public class CardDTO {
   private String addressZip;
   private String addressLine1;
   private String addressLine2;
+  @Optional private Boolean isDefaultCard;
 }

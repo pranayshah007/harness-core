@@ -88,22 +88,26 @@ public class StripeHelperImpl implements StripeHelper {
 
   @Override
   public CustomerDetailDTO createCustomer(CustomerParams customerParams) {
-    CustomerCreateParams.Address address = CustomerCreateParams.Address.builder()
-                                               .setCity(customerParams.getAddress().getCity())
-                                               .setCountry(customerParams.getAddress().getCountry())
-                                               .setLine1(customerParams.getAddress().getLine1())
-                                               .setLine2(customerParams.getAddress().getLine2())
-                                               .setPostalCode(customerParams.getAddress().getPostalCode())
-                                               .setState(customerParams.getAddress().getState())
-                                               .build();
-
-    CustomerCreateParams params =
+    CustomerCreateParams.Builder paramsBuilder =
         CustomerCreateParams.builder()
-            .setAddress(address)
             .setEmail(customerParams.getBillingContactEmail())
             .setName(customerParams.getName())
-            .setMetadata(ImmutableMap.of(ACCOUNT_IDENTIFIER_KEY, customerParams.getAccountIdentifier()))
-            .build();
+            .setMetadata(Map.of(ACCOUNT_IDENTIFIER_KEY, customerParams.getAccountIdentifier()));
+
+    if (customerParams.getAddress() != null) {
+      CustomerCreateParams.Address address = CustomerCreateParams.Address.builder()
+                                                 .setCity(customerParams.getAddress().getCity())
+                                                 .setCountry(customerParams.getAddress().getCountry())
+                                                 .setLine1(customerParams.getAddress().getLine1())
+                                                 .setLine2(customerParams.getAddress().getLine2())
+                                                 .setPostalCode(customerParams.getAddress().getPostalCode())
+                                                 .setState(customerParams.getAddress().getState())
+                                                 .build();
+
+      paramsBuilder.setAddress(address);
+    }
+
+    CustomerCreateParams params = paramsBuilder.build();
 
     Customer customer = stripeHandler.createCustomer(params);
     return toCustomerDetailDTO(customer);
@@ -421,12 +425,27 @@ public class StripeHelperImpl implements StripeHelper {
   @Override
   public PaymentMethodCollectionDTO listPaymentMethods(String customerId) {
     PaymentMethodCollection paymentMethodCollection = stripeHandler.retrievePaymentMethodsUnderCustomer(customerId);
-    return toPaymentMethodCollectionDTO(paymentMethodCollection);
+    PaymentMethodCollectionDTO paymentMethodCollectionDTO = toPaymentMethodCollectionDTO(paymentMethodCollection);
+    String defaultPaymentMethodId = getCustomer(customerId).getDefaultSource();
+    Optional<CardDTO> cardDTO = paymentMethodCollectionDTO.getPaymentMethods()
+                                    .stream()
+                                    .filter((CardDTO card) -> card.getId().equals(defaultPaymentMethodId))
+                                    .findFirst();
+    if (cardDTO.isPresent()) {
+      cardDTO.get().setIsDefaultCard(true);
+    }
+
+    return paymentMethodCollectionDTO;
   }
 
   @Override
   public InvoiceDetailDTO finalizeInvoice(String invoiceId) {
     return toInvoiceDetailDTO(stripeHandler.finalizeInvoice(invoiceId));
+  }
+
+  @Override
+  public String retrieveClientSecret(String customerId) {
+    return stripeHandler.retrieveSetupIntent(customerId).getClientSecret();
   }
 
   private InvoiceDetailDTO toInvoiceDetailDTO(Invoice invoice) {
@@ -503,11 +522,9 @@ public class StripeHelperImpl implements StripeHelper {
     builder.customerId(customer.getId())
         .address(address)
         .billingEmail(customer.getEmail())
-        .companyName(customer.getName());
-    // display default payment method
-    if (customer.getInvoiceSettings() != null) {
-      builder.defaultSource(customer.getInvoiceSettings().getDefaultPaymentMethod());
-    }
+        .companyName(customer.getName())
+        .defaultSource(customer.getDefaultSource());
+
     return builder.build();
   }
 
