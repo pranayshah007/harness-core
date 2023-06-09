@@ -185,14 +185,14 @@ public class PMSYamlSchemaServiceImplTest {
     pipelineServiceConfiguration = mock(PipelineServiceConfiguration.class);
     pmsYamlSchemaService.pipelineServiceConfiguration = pipelineServiceConfiguration;
 
-    doReturn("main").when(pipelineServiceConfiguration).getStaticSchemaBranch();
+    doReturn("main").when(pipelineServiceConfiguration).getStaticSchemaFileURL();
     String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "v0");
     assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/pipeline.json");
 
     fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "v1");
     assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v1/template.json");
 
-    doReturn("quality-assurance").when(pipelineServiceConfiguration).getStaticSchemaBranch();
+    doReturn("quality-assurance").when(pipelineServiceConfiguration).getStaticSchemaFileURL();
     fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.TEMPLATE, "v1");
     assertThat(fileUrL).isEqualTo(
         "https://raw.githubusercontent.com/harness/harness-schema/quality-assurance/v1/template.json");

@@ -173,7 +173,7 @@ public class PipelineServiceConfiguration extends Configuration {
 
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 
-  @JsonProperty("staticSchemaBranch") private String staticSchemaBranch;
+  @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
 
   private String managerServiceSecret;
   private String managerTarget;

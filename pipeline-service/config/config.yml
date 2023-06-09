@@ -628,4 +628,4 @@ pipelineSetupUsageCreationExecutorServiceConfig:
 expandedJsonConfig:
   lockTimeOutInMinutes: 2
 
-staticSchemaBranch: ${STATIC_SCHEMA_BRANCH:-"main"}
+staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}

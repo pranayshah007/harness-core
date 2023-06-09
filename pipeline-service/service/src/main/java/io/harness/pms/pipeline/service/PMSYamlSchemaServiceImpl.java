@@ -105,7 +105,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
   Integer allowedParallelStages;
 
-  private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/%s/%s";
   private final String PIPELINE_JSON = "pipeline.json";
   private final String TEMPLATE_JSON = "template.json";
 
@@ -550,7 +549,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   supported env branch will be master
    */
   public String calculateFileURL(EntityType entityType, String version) {
-    String branch = pipelineServiceConfiguration.getStaticSchemaBranch();
+    String fileURL = pipelineServiceConfiguration.getStaticSchemaFileURL();
 
     String entityTypeJson = "";
     switch (entityType) {
@@ -565,7 +564,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         log.error("Code should never reach here {}", entityType);
     }
 
-    return String.format(STATIC_SCHEMA_FILE_URL, branch, version, entityTypeJson);
+    return String.format(fileURL, version, entityTypeJson);
   }
 
   private String getYamlGroup(String yamlGroup) {
