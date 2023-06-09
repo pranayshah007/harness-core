@@ -1,4 +1,4 @@
-.gitleaksignore pranay.shah@harness.io jyotiraval
+.gitleaksignore pranay.shah@harness.io jyoti.raval@harness.io
 DockerFile* diptiman.adak@harness.io udham.singh@harness.io
 .bazel* diptiman.adak@harness.io udham.singh@harness.io
 bazel* diptiman.adak@harness.io udham.singh@harness.io
@@ -7,7 +7,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /clients/access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
 /platform-service/modules/resource-group-service/ ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
 /clients/resource-group/ ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
-WORKSPACE pranay.shah@harness.io jyotiraval shaun.murphy@harness.io
+WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 # CDNG
 /125-cd-nextgen/src/test/resources/recaster/alias/alias.txt deepak.puthraya@harness.io yogesh.chauhan@harness.io vaibhav.si@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/creator/CDNGPlanCreatorProvider.java yogesh.chauhan@harness.io deepak.puthraya@harness.io vaibhav.si@harness.io
