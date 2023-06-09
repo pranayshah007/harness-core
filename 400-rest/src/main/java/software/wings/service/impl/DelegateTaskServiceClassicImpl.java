@@ -114,6 +114,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.FailDelegateTaskIteratorHelper;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -290,6 +291,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+  @Inject private FailDelegateTaskIteratorHelper failDelegateTaskIteratorHelper;
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
@@ -1987,7 +1989,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
     DelegateTask oldTask = persistence.findAndModify(
         delegateTaskQuery, updateOperations, HPersistence.returnOldOptions, migrationEnabledForDelegateTask);
-
+    if (oldTask != null) {
+      failDelegateTaskIteratorHelper.logValidationFailedErrorsInSelectionLog(oldTask);
+    }
     broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
         .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
 
@@ -2006,6 +2010,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
     if (oldTask != null) {
       persistence.update(oldTask, updateOperations, migrationEnabledForDelegateTask);
+      failDelegateTaskIteratorHelper.logValidationFailedErrorsInSelectionLog(oldTask);
       broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
           .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
     }

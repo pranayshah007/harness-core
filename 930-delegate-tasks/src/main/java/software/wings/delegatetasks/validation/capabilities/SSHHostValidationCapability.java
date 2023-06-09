@@ -73,4 +73,18 @@ public class SSHHostValidationCapability implements ExecutionCapability {
         ? String.format("Capability reach on host : %s ", validationInfo.getPublicDns())
         : null;
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) unable to connect to {criteria}, make sure to provide the connectivity with the
+    // following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format(
+            "Delegate(s) unable to connect to %s, make sure the following delegates has connectivity with valid credentials",
+            fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }
