@@ -8,6 +8,7 @@
 package io.harness.ng.core.migration.serviceenvmigrationv2;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
@@ -21,15 +22,24 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
+import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
+import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
+import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.common.NGExpressionUtils;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -53,6 +63,7 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
@@ -63,6 +74,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -72,6 +84,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,6 +109,7 @@ public class ServiceEnvironmentV2MigrationService {
     @JsonProperty("stage") private DeploymentStageNode stageNode;
   }
 
+  @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private InfrastructureEntityService infrastructureEntityService;
   @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
@@ -106,9 +120,6 @@ public class ServiceEnvironmentV2MigrationService {
   @Inject private TemplateResourceClient templateResourceClient;
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final Integer PIPELINE_SIZE = 25;
-  private Map<String, String> stageIdentifierToDeploymentTypeMap = new HashMap<>();
-  private Map<String, ObjectNode> stageIdentifierToSvcObjectMap = new HashMap<>();
-  private Map<String, ObjectNode> stageIdentifierToEnvObjectMap = new HashMap<>();
 
   private DeploymentStageConfig getDeploymentStageConfig(String stageYaml) {
     if (isEmpty(stageYaml)) {
@@ -184,9 +195,9 @@ public class ServiceEnvironmentV2MigrationService {
 
   public SvcEnvMigrationResponseDto migratePipeline(
       @NonNull SvcEnvMigrationRequestDto requestDto, @NonNull String accountId) {
-    stageIdentifierToDeploymentTypeMap = new HashMap<>();
-    stageIdentifierToSvcObjectMap = new HashMap<>();
-    stageIdentifierToEnvObjectMap = new HashMap<>();
+    Map<String, String> stageIdentifierToDeploymentTypeMap = new HashMap<>();
+    Map<String, ObjectNode> stageIdentifierToSvcObjectMap = new HashMap<>();
+    Map<String, ObjectNode> stageIdentifierToEnvObjectMap = new HashMap<>();
     final PMSPipelineResponseDTO existingPipeline =
         NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(requestDto.getPipelineIdentifier(),
             accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null));
@@ -240,12 +251,14 @@ public class ServiceEnvironmentV2MigrationService {
              currentParallelIndex++) {
           JsonNode currentParallelNode = parallelStageArrayNode.get(currentParallelIndex);
           YamlNode parallelStageYamlNode = new YamlNode(currentParallelNode);
-          isStageChanged = migrateStageNode(
-              requestDto, accountId, failures, parallelStageYamlNode, parallelStageArrayNode, currentParallelIndex);
+          isStageChanged = migrateStageNode(requestDto, accountId, failures, parallelStageYamlNode,
+              parallelStageArrayNode, currentParallelIndex, stageIdentifierToDeploymentTypeMap,
+              stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
           isPipelineChanged = isPipelineChanged || isStageChanged;
         }
       } else {
-        isStageChanged = migrateStageNode(requestDto, accountId, failures, stageYamlNode, stageArrayNode, currentIndex);
+        isStageChanged = migrateStageNode(requestDto, accountId, failures, stageYamlNode, stageArrayNode, currentIndex,
+            stageIdentifierToDeploymentTypeMap, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
         isPipelineChanged = isPipelineChanged || isStageChanged;
       }
     }
@@ -254,7 +267,8 @@ public class ServiceEnvironmentV2MigrationService {
     pipelineParentNode.set("pipeline", pipelineYamlField.getNode().getCurrJsonNode());
     String migratedPipelineYaml = YamlPipelineUtils.writeYamlString(pipelineParentNode);
     if (isPipelineContainPipelineTemplate) {
-      migratedPipelineYaml = migratePipelineYamlWithPipelineTemplate(requestDto, actualPipelineYaml, accountId);
+      migratedPipelineYaml = migratePipelineYamlWithPipelineTemplate(
+          requestDto, actualPipelineYaml, accountId, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
       migratedPipelineYaml = entityRefreshService.refreshLinkedInputs(
           accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), migratedPipelineYaml, null);
     }
@@ -270,8 +284,9 @@ public class ServiceEnvironmentV2MigrationService {
         .build();
   }
 
-  private String migratePipelineYamlWithPipelineTemplate(
-      SvcEnvMigrationRequestDto requestDto, String pipelineYaml, String accountId) {
+  private String migratePipelineYamlWithPipelineTemplate(SvcEnvMigrationRequestDto requestDto, String pipelineYaml,
+      String accountId, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     YamlField pipelineYamlField = getYamlField(pipelineYaml, "pipeline");
     ObjectNode pipelineParentNode = objectMapper.createObjectNode();
     pipelineParentNode.set("pipeline", pipelineYamlField.getNode().getCurrJsonNode());
@@ -306,16 +321,19 @@ public class ServiceEnvironmentV2MigrationService {
              currentParallelIndex++) {
           JsonNode currentParallelNode = parallelStageArrayNode.get(currentParallelIndex);
           YamlNode parallelStageYamlNode = new YamlNode(currentParallelNode);
-          migrateStageYamlInPipelineTemplateInput(parallelStageYamlNode);
+          migrateStageYamlInPipelineTemplateInput(
+              parallelStageYamlNode, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
         }
       } else {
-        migrateStageYamlInPipelineTemplateInput(stageYamlNode);
+        migrateStageYamlInPipelineTemplateInput(
+            stageYamlNode, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
       }
     }
     return YamlPipelineUtils.writeYamlString(pipelineParentNode);
   }
 
-  private void migrateStageYamlInPipelineTemplateInput(YamlNode stageYamlNode) {
+  private void migrateStageYamlInPipelineTemplateInput(YamlNode stageYamlNode,
+      Map<String, ObjectNode> stageIdentifierToSvcObjectMap, Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     if (!"Deployment".equals(getStageType(stageYamlNode))) {
       return;
     }
@@ -339,12 +357,14 @@ public class ServiceEnvironmentV2MigrationService {
   }
 
   private boolean migrateStageNode(@NonNull SvcEnvMigrationRequestDto requestDto, @NonNull String accountId,
-      List<StageMigrationFailureResponse> failures, YamlNode stageYamlNode, ArrayNode stageArrayNode,
-      int currentIndex) {
+      List<StageMigrationFailureResponse> failures, YamlNode stageYamlNode, ArrayNode stageArrayNode, int currentIndex,
+      Map<String, String> stageIdentifierToDeploymentTypeMap, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     if (!"Deployment".equals(getStageType(stageYamlNode))) {
       return false;
     }
-    Optional<JsonNode> migratedStageNode = createMigratedYaml(accountId, stageYamlNode, requestDto, failures);
+    Optional<JsonNode> migratedStageNode = createMigratedYaml(accountId, stageYamlNode, requestDto, failures,
+        stageIdentifierToDeploymentTypeMap, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
     if (migratedStageNode.isPresent()) {
       stageArrayNode.set(currentIndex, migratedStageNode.get());
       return true;
@@ -377,18 +397,22 @@ public class ServiceEnvironmentV2MigrationService {
   }
 
   private Optional<JsonNode> createMigratedYaml(String accountId, YamlNode stageNode,
-      SvcEnvMigrationRequestDto requestDto, List<StageMigrationFailureResponse> failures) {
+      SvcEnvMigrationRequestDto requestDto, List<StageMigrationFailureResponse> failures,
+      Map<String, String> stageIdentifierToDeploymentTypeMap, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     try {
       boolean isStageTemplatePresent = isStageContainStageTemplate(stageNode);
       JsonNode stageJsonNode;
       if (isStageTemplatePresent) {
-        stageJsonNode = migrateStageWithTemplate(stageNode, accountId, requestDto);
+        stageJsonNode = migrateStageWithTemplate(stageNode, accountId, requestDto, stageIdentifierToDeploymentTypeMap,
+            stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
       } else {
-        stageJsonNode = migrateStage(stageNode, accountId, requestDto);
+        stageJsonNode = migrateStage(stageNode, accountId, requestDto, stageIdentifierToDeploymentTypeMap,
+            stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
       }
       ObjectNode stageParentNode = objectMapper.createObjectNode();
       stageParentNode.set("stage", stageJsonNode);
-      return Optional.of(refreshInputsInStageYaml(accountId, requestDto, stageParentNode));
+      return Optional.of(refreshInputsInStageYaml(accountId, requestDto, stageParentNode, stageNode));
     } catch (Exception ex) {
       failures.add(
           StageMigrationFailureResponse.builder()
@@ -403,19 +427,84 @@ public class ServiceEnvironmentV2MigrationService {
     }
   }
 
-  private JsonNode refreshInputsInStageYaml(
-      String accountId, SvcEnvMigrationRequestDto requestDto, ObjectNode stageNode) {
+  private JsonNode refreshInputsInStageYaml(String accountId, SvcEnvMigrationRequestDto requestDto,
+      ObjectNode stageNode, YamlNode originalStageNode) throws IOException {
     String migratedStageYaml = YamlPipelineUtils.writeYamlString(stageNode);
     migratedStageYaml = entityRefreshService.refreshLinkedInputs(
         accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), migratedStageYaml, null);
     YamlField migratedStageYamlField = getYamlField(migratedStageYaml, "stage");
     ObjectNode stageParentNode = objectMapper.createObjectNode();
+
+    if (requestDto.isPopulateInfrastructureInputs()) {
+      populateInfraInputs(originalStageNode, migratedStageYamlField);
+    }
+
+    if (requestDto.isPopulateServiceInputs()) {
+      populateServiceInputs(originalStageNode, migratedStageYamlField);
+    }
+
     stageParentNode.set("stage", migratedStageYamlField.getNode().getCurrJsonNode());
     return stageParentNode;
   }
 
-  private JsonNode migrateStageWithTemplate(
-      YamlNode stageNode, String accountId, SvcEnvMigrationRequestDto requestDto) {
+  private void populateInfraInputs(YamlNode originalStageNode, YamlField migratedStageYamlField) throws IOException {
+    String infrastructureDefinitionInputsString = YamlPipelineUtils.writeYamlString(
+        migratedStageYamlField.fromYamlPath("spec/environment/infrastructureDefinitions")
+            .getNode()
+            .asArray()
+            .get(0)
+            .getCurrJsonNode());
+
+    YamlField infrastructureDefinitionInputsYamlField = getYamlField(infrastructureDefinitionInputsString, "inputs");
+    infrastructureDefinitionInputsYamlField.getNode().removePath("identifier");
+    infrastructureDefinitionInputsYamlField.getNode().removePath("type");
+
+    String originalStageInfrastructureDefinitionString = YamlPipelineUtils.writeYamlString(
+        new YamlField(originalStageNode).fromYamlPath("stage/spec/infrastructure").getNode().getCurrJsonNode());
+    YamlField originalStageInfrastructureDefinitionYamlField =
+        getYamlField(originalStageInfrastructureDefinitionString, "infrastructureDefinition");
+    originalStageInfrastructureDefinitionYamlField.getNode().removePath("type");
+
+    String mergedInfraInputs = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
+        YamlUtils.writeYamlString(infrastructureDefinitionInputsYamlField),
+        YamlUtils.writeYamlString(originalStageInfrastructureDefinitionYamlField));
+
+    migratedStageYamlField.fromYamlPath("spec/environment/infrastructureDefinitions")
+        .getNode()
+        .asArray()
+        .get(0)
+        .getField("inputs")
+        .getNode()
+        .getField("spec")
+        .getNode()
+        .setCurrJsonNode(getYamlField(mergedInfraInputs, "spec").getNode().getCurrJsonNode(), "spec");
+  }
+
+  private void populateServiceInputs(YamlNode originalStageNode, YamlField migratedStageYamlField) throws IOException {
+    String serviceInputsServiceDefinitionString = YamlPipelineUtils.writeYamlString(
+        migratedStageYamlField.fromYamlPath("spec/service/serviceInputs").getNode().getCurrJsonNode());
+    YamlField serviceInputsServiceDefinitionYamlField =
+        getYamlField(serviceInputsServiceDefinitionString, "serviceDefinition");
+    serviceInputsServiceDefinitionYamlField.getNode().removePath("type");
+
+    String originalStageServiceDefinitionString = YamlPipelineUtils.writeYamlString(
+        new YamlField(originalStageNode).fromYamlPath("stage/spec/serviceConfig").getNode().getCurrJsonNode());
+    YamlField originalStageServiceDefinitionYamlField =
+        getYamlField(originalStageServiceDefinitionString, "serviceDefinition");
+    originalStageServiceDefinitionYamlField.getNode().removePath("type");
+
+    String mergedServiceDefinition = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
+        YamlUtils.writeYamlString(serviceInputsServiceDefinitionYamlField),
+        YamlUtils.writeYamlString(originalStageServiceDefinitionYamlField));
+
+    migratedStageYamlField.fromYamlPath("spec/service/serviceInputs/serviceDefinition")
+        .getNode()
+        .setCurrJsonNode(YamlUtils.readTree(mergedServiceDefinition).getNode().getCurrJsonNode(), "serviceDefinition");
+  }
+
+  private JsonNode migrateStageWithTemplate(YamlNode stageNode, String accountId, SvcEnvMigrationRequestDto requestDto,
+      Map<String, String> stageIdentifierToDeploymentTypeMap, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     String stageYaml = YamlPipelineUtils.writeYamlString(stageNode.getCurrJsonNode());
     String resolvedStageYaml =
         NGRestUtils
@@ -436,9 +525,11 @@ public class ServiceEnvironmentV2MigrationService {
                      .getCurrJsonNode();
     }
 
-    String serviceType = migrateService(accountId, requestDto, deploymentStageConfig, resolvedStageField, specNode);
+    String serviceType = migrateService(accountId, requestDto, deploymentStageConfig, resolvedStageField, specNode,
+        stageIdentifierToDeploymentTypeMap, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
 
-    migrateEnv(accountId, requestDto, serviceType, deploymentStageConfig, resolvedStageField, specNode);
+    migrateEnv(accountId, requestDto, serviceType, deploymentStageConfig, resolvedStageField, specNode,
+        stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
 
     String templateKey = templateStageYamlNode.getField("templateRef").getNode().getCurrJsonNode().textValue() + "@"
         + templateStageYamlNode.getField("versionLabel").getNode().getCurrJsonNode().textValue();
@@ -454,25 +545,30 @@ public class ServiceEnvironmentV2MigrationService {
     return stageField.getNode().getCurrJsonNode();
   }
 
-  public JsonNode migrateStage(YamlNode stageNode, String accountId, SvcEnvMigrationRequestDto requestDto) {
+  public JsonNode migrateStage(YamlNode stageNode, String accountId, SvcEnvMigrationRequestDto requestDto,
+      Map<String, String> stageIdentifierToDeploymentTypeMap, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     String stageYaml = YamlPipelineUtils.writeYamlString(stageNode.getCurrJsonNode());
     DeploymentStageConfig deploymentStageConfig = getDeploymentStageConfig(stageYaml);
     YamlField stageField = getYamlField(stageYaml, "stage");
     ObjectNode specNode = (ObjectNode) stageField.getNode().getField("spec").getNode().getCurrJsonNode();
 
-    String serviceType = migrateService(accountId, requestDto, deploymentStageConfig, stageField, specNode);
+    String serviceType = migrateService(accountId, requestDto, deploymentStageConfig, stageField, specNode,
+        stageIdentifierToDeploymentTypeMap, stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
     if (isNotEmpty(serviceType)) {
       specNode.put("deploymentType", serviceType);
     }
 
-    migrateEnv(accountId, requestDto, serviceType, deploymentStageConfig, stageField, specNode);
+    migrateEnv(accountId, requestDto, serviceType, deploymentStageConfig, stageField, specNode,
+        stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
     addDeployToAllFieldInEnv(specNode);
 
     return stageField.getNode().getCurrJsonNode();
   }
 
-  private void migrateStageYaml(
-      ServiceEntity service, InfrastructureEntity infrastructure, ObjectNode specNode, String stageIdentifier) {
+  private void migrateStageYaml(ServiceEntity service, InfrastructureEntity infrastructure, ObjectNode specNode,
+      String stageIdentifier, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     if (service != null) {
       specNode.remove("serviceConfig");
       ObjectNode serviceNode = getServiceV2Node(objectMapper, service);
@@ -487,8 +583,8 @@ public class ServiceEnvironmentV2MigrationService {
     }
   }
 
-  private String migrateUseFromStage(
-      ObjectNode specNode, ServiceUseFromStage serviceUseFromStage, String stageIdentifier) {
+  private String migrateUseFromStage(ObjectNode specNode, ServiceUseFromStage serviceUseFromStage,
+      String stageIdentifier, Map<String, ObjectNode> stageIdentifierToSvcObjectMap) {
     specNode.remove("serviceConfig");
     ObjectNode stageNode = objectMapper.createObjectNode();
     stageNode.put("stage", serviceUseFromStage.getStage());
@@ -505,13 +601,15 @@ public class ServiceEnvironmentV2MigrationService {
   }
 
   private String migrateService(String accountId, SvcEnvMigrationRequestDto requestDto,
-      DeploymentStageConfig deploymentStageConfig, YamlField stageField, ObjectNode resultantSpecNode) {
+      DeploymentStageConfig deploymentStageConfig, YamlField stageField, ObjectNode resultantSpecNode,
+      Map<String, String> stageIdentifierToDeploymentTypeMap, Map<String, ObjectNode> stageIdentifierToSvcObjectMap,
+      Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     ServiceEntity migratedServiceEntity;
     validateOldService(deploymentStageConfig);
     String stageIdentifier = getStageIdentifier(stageField);
     if (isUseFromStagePresent(deploymentStageConfig)) {
-      String propagatedStage = migrateUseFromStage(
-          resultantSpecNode, deploymentStageConfig.getServiceConfig().getUseFromStage(), stageIdentifier);
+      String propagatedStage = migrateUseFromStage(resultantSpecNode,
+          deploymentStageConfig.getServiceConfig().getUseFromStage(), stageIdentifier, stageIdentifierToSvcObjectMap);
       if (stageIdentifierToDeploymentTypeMap.containsKey(propagatedStage)) {
         return stageIdentifierToDeploymentTypeMap.get(propagatedStage);
       } else {
@@ -524,7 +622,8 @@ public class ServiceEnvironmentV2MigrationService {
     if (isSkipEntityUpdation(serviceRef, requestDto.getSkipServices())) {
       migratedServiceEntity = getServiceEntity(
           accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), serviceRef, "v2");
-      migrateStageYaml(migratedServiceEntity, null, resultantSpecNode, stageIdentifier);
+      migrateStageYaml(migratedServiceEntity, null, resultantSpecNode, stageIdentifier, stageIdentifierToSvcObjectMap,
+          stageIdentifierToEnvObjectMap);
       stageIdentifierToDeploymentTypeMap.put(stageIdentifier, migratedServiceEntity.getType().getYamlName());
       return migratedServiceEntity.getType().getYamlName();
     }
@@ -532,13 +631,15 @@ public class ServiceEnvironmentV2MigrationService {
         getServiceEntity(accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), serviceRef, "v1");
     addServiceV2YamlInServiceEntity(deploymentStageConfig.getServiceConfig(), stageField, existedServiceEntity);
     migratedServiceEntity = serviceEntityService.update(existedServiceEntity);
-    migrateStageYaml(migratedServiceEntity, null, resultantSpecNode, stageIdentifier);
+    migrateStageYaml(migratedServiceEntity, null, resultantSpecNode, stageIdentifier, stageIdentifierToSvcObjectMap,
+        stageIdentifierToEnvObjectMap);
     stageIdentifierToDeploymentTypeMap.put(stageIdentifier, migratedServiceEntity.getType().getYamlName());
     return migratedServiceEntity.getType().getYamlName();
   }
 
   private void migrateEnv(String accountId, SvcEnvMigrationRequestDto requestDto, String deploymentType,
-      DeploymentStageConfig deploymentStageConfig, YamlField stageField, ObjectNode resultantSpecNode) {
+      DeploymentStageConfig deploymentStageConfig, YamlField stageField, ObjectNode resultantSpecNode,
+      Map<String, ObjectNode> stageIdentifierToSvcObjectMap, Map<String, ObjectNode> stageIdentifierToEnvObjectMap) {
     InfrastructureEntity migratedInfrastructureEntity;
     validateOldInfra(deploymentStageConfig);
     String stageIdentifier = getStageIdentifier(stageField);
@@ -559,12 +660,24 @@ public class ServiceEnvironmentV2MigrationService {
             .getConnectorReference()
             .getValue()
         != null) {
-      infraIdentifier = infraIdentifier.replace("<+infra.connectorRef>",
-          deploymentStageConfig.getInfrastructure()
-              .getInfrastructureDefinition()
-              .getSpec()
-              .getConnectorReference()
-              .getValue());
+      String connectorRef = deploymentStageConfig.getInfrastructure()
+                                .getInfrastructureDefinition()
+                                .getSpec()
+                                .getConnectorReference()
+                                .getValue();
+      infraIdentifier = infraIdentifier.replace("<+infra.connectorRef>", connectorRef);
+
+      if (infraIdentifier.contains("<+infra.connector.name>")) {
+        IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
+            connectorRef, accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier());
+        Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(identifierRef.getAccountIdentifier(),
+            identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+
+        infraIdentifier =
+            infraIdentifier.replace("<+infra.connector.name>", connectorDTO.get().getConnector().getName());
+      }
+      infraIdentifier = replaceK8sInfraExpressions(
+          infraIdentifier, deploymentStageConfig.getInfrastructure().getInfrastructureDefinition().getSpec());
     }
     infraIdentifier = infraIdentifier.replace("<+infra.type>",
         deploymentStageConfig.getInfrastructure().getInfrastructureDefinition().getType().getDisplayName());
@@ -578,7 +691,8 @@ public class ServiceEnvironmentV2MigrationService {
           accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), environmentRef, infraIdentifier);
       if (optionalInfra.isPresent()) {
         migratedInfrastructureEntity = optionalInfra.get();
-        migrateStageYaml(null, migratedInfrastructureEntity, resultantSpecNode, stageIdentifier);
+        migrateStageYaml(null, migratedInfrastructureEntity, resultantSpecNode, stageIdentifier,
+            stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
         return;
       }
       throw new InvalidRequestException(
@@ -588,7 +702,37 @@ public class ServiceEnvironmentV2MigrationService {
         createInfraEntity(deploymentStageConfig.getInfrastructure(), requestDto.getOrgIdentifier(),
             requestDto.getProjectIdentifier(), infraIdentifier, deploymentType, accountId, stageField, environmentRef);
     migratedInfrastructureEntity = infrastructureEntityService.create(infrastructureEntity);
-    migrateStageYaml(null, migratedInfrastructureEntity, resultantSpecNode, stageIdentifier);
+    migrateStageYaml(null, migratedInfrastructureEntity, resultantSpecNode, stageIdentifier,
+        stageIdentifierToSvcObjectMap, stageIdentifierToEnvObjectMap);
+  }
+
+  private String replaceK8sInfraExpressions(String infraIdentifier, Infrastructure infrastructure) {
+    String namespace = null;
+    String releaseName = null;
+    if (infrastructure instanceof K8SDirectInfrastructure) {
+      namespace = ((K8SDirectInfrastructure) infrastructure).getNamespace().getValue();
+      releaseName = ((K8SDirectInfrastructure) infrastructure).getReleaseName().getValue();
+    } else if (infrastructure instanceof K8sAwsInfrastructure) {
+      namespace = ((K8sAwsInfrastructure) infrastructure).getNamespace().getValue();
+      releaseName = ((K8sAwsInfrastructure) infrastructure).getReleaseName().getValue();
+    } else if (infrastructure instanceof K8sAzureInfrastructure) {
+      namespace = ((K8sAzureInfrastructure) infrastructure).getNamespace().getValue();
+      releaseName = ((K8sAzureInfrastructure) infrastructure).getReleaseName().getValue();
+    } else if (infrastructure instanceof K8sGcpInfrastructure) {
+      namespace = ((K8sGcpInfrastructure) infrastructure).getNamespace().getValue();
+      releaseName = ((K8sGcpInfrastructure) infrastructure).getReleaseName().getValue();
+    } else if (infrastructure instanceof K8sRancherInfrastructure) {
+      namespace = ((K8sRancherInfrastructure) infrastructure).getNamespace().getValue();
+      releaseName = ((K8sRancherInfrastructure) infrastructure).getReleaseName().getValue();
+    }
+
+    if (namespace != null) {
+      infraIdentifier = infraIdentifier.replace("<+infra.namespace>", namespace);
+    }
+    if (releaseName != null) {
+      infraIdentifier = infraIdentifier.replace("<+infra.releaseName>", releaseName);
+    }
+    return infraIdentifier;
   }
 
   private String getStageIdentifier(YamlField stageField) {
