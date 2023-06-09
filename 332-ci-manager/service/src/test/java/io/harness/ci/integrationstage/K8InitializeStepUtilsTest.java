@@ -23,7 +23,6 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
@@ -187,7 +186,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     List<String> identifiers =
-        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+        IntegrationStageUtils.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
     assertThat(identifiers).isNotEmpty();
     assertThat(identifiers.get(0)).isEqualTo("step-2");
     assertThat(identifiers.get(1)).isEqualTo("step_g_run2");
@@ -221,7 +220,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     List<String> identifiers =
-        IntegrationStageStepParametersPMS.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+        IntegrationStageUtils.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
     assertThat(identifiers).isNotEmpty();
     assertThat(identifiers.get(0)).isEqualTo("step_g_run2");
     assertThat(identifiers.get(1)).isEqualTo("step_g_sg1_run3");
