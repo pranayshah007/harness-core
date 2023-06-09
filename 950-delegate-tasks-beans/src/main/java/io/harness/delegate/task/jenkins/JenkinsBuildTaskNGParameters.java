@@ -8,7 +8,6 @@
 package io.harness.delegate.task.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
@@ -20,11 +19,8 @@ import io.harness.delegate.task.mixin.JenkinsCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -44,10 +40,6 @@ public class JenkinsBuildTaskNGParameters implements TaskParameters, ExecutionCa
   Map<String, String> jobParameter;
   boolean unstableStatusAsSuccess;
   boolean captureEnvironmentVariable;
-
-  public Set<String> getDelegateSelectors() {
-    return isEmpty(delegateSelectors) ? Collections.EMPTY_SET : delegateSelectors.stream().collect(Collectors.toSet());
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -22,11 +22,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.servicenow.ServiceNowActionNG;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -63,10 +60,6 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   @Expression(ALLOW_SECRETS) String importData;
 
   List<String> delegateSelectors;
-
-  public Set<String> getDelegateSelectors() {
-    return isEmpty(delegateSelectors) ? Collections.EMPTY_SET : delegateSelectors.stream().collect(Collectors.toSet());
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
