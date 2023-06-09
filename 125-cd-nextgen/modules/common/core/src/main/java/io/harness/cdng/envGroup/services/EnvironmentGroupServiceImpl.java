@@ -444,8 +444,9 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
     if (EmptyPredicate.isNotEmpty(referredByEntities)) {
       throw new ReferencedEntityException(String.format(
-          "Could not delete the Environment Group %s as it is referenced by other entities - " + referredByEntities,
-          envGroupEntity.getIdentifier()));
+          "The environment group %s cannot be deleted because it is being referenced in %d %s. To delete your environment group, please remove the environment group references from these entities.",
+          envGroupEntity.getIdentifier(), referredByEntities.size(),
+          referredByEntities.size() > 1 ? "entities" : "entity"));
     }
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
