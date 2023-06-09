@@ -236,7 +236,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
                             .and(NGServiceOverridesEntityKeys.infraIdentifier)
                             .is(infraId)
                             .and(NGServiceOverridesEntityKeys.type)
-                            .is(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+                            .is(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE)
                             .and(NGServiceOverridesEntityKeys.spec)
                             .exists(true);
     return getScopedEntities(accountId, orgId, projectId, criteria, logCallback);
@@ -254,7 +254,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
                             .and(NGServiceOverridesEntityKeys.infraIdentifier)
                             .is(infraId)
                             .and(NGServiceOverridesEntityKeys.type)
-                            .is(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+                            .is(ServiceOverridesType.INFRA_SERVICE_OVERRIDE)
                             .and(NGServiceOverridesEntityKeys.spec)
                             .exists(true);
     return getScopedEntities(accountId, orgId, projectId, criteria, logCallback);
@@ -686,9 +686,9 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     }
 
     return ServiceOverridesSpec.builder()
-        .variables((List<NGVariable>) finalNGVariables.values())
-        .manifests((List<ManifestConfigWrapper>) finalManifests.values())
-        .configFiles((List<ConfigFileWrapper>) finalConfigFiles.values())
+        .variables(new ArrayList<>(finalNGVariables.values()))
+        .manifests(new ArrayList<>(finalManifests.values()))
+        .configFiles(new ArrayList<>(finalConfigFiles.values()))
         .connectionStrings(finalConnectionStrings)
         .applicationSettings(finalApplicationSetting)
         .build();
