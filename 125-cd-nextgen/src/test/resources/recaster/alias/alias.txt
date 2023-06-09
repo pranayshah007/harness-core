@@ -987,9 +987,3 @@ io.harness.cdng.k8s.K8sBlueGreenOutcome
 io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome
 io.harness.cdng.jenkins.jenkinsstep.JenkinsStepPassThoughData
 io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
-io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome
-io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo
-io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode
-io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome
-io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput

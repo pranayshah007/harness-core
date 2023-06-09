@@ -84,5 +84,4 @@ public class OutcomeExpressionConstants {
 
   public final String AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "awsLambdaFunctionPrepareRollbackOutcome";
   public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
-  public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
 }
