@@ -214,7 +214,7 @@ public class ViewBillingServiceHelper {
     return unionQuery;
   }
 
-  private List<ViewFieldIdentifier> getDataSourcesFromViewMetadataFilter(final List<QLCEViewFilterWrapper> filters) {
+  public List<ViewFieldIdentifier> getDataSourcesFromViewMetadataFilter(final List<QLCEViewFilterWrapper> filters) {
     List<ViewFieldIdentifier> dataSources = null;
     final Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
@@ -646,7 +646,7 @@ public class ViewBillingServiceHelper {
   }
 
   // TODO: Remove it once verification is done on prod
-  private boolean shouldUseFlattenedLabelsColumn(final List<ViewFieldIdentifier> dataSources) {
+  public boolean shouldUseFlattenedLabelsColumn(final List<ViewFieldIdentifier> dataSources) {
     // Enabling flattened labels for AWS perspective only
     return !Lists.isNullOrEmpty(dataSources) && dataSources.size() == 1
         && dataSources.contains(ViewFieldIdentifier.AWS);

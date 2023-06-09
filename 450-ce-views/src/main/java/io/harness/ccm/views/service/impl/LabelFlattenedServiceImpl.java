@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
+import io.harness.ccm.views.helper.ViewBillingServiceHelper;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ff.FeatureFlagService;
 
@@ -28,6 +31,7 @@ import com.google.inject.Inject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -42,10 +46,15 @@ public class LabelFlattenedServiceImpl implements LabelFlattenedService {
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private BigQueryService bigQueryService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private ViewBillingServiceHelper viewBillingServiceHelper;
 
   @Override
-  public Map<String, String> getLabelsKeyAndColumnMapping(final String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, accountId)) {
+  public Map<String, String> getLabelsKeyAndColumnMapping(
+      final String accountId, final List<QLCEViewFilterWrapper> filters, final boolean isCostCategoryUpdateRequest) {
+    List<ViewFieldIdentifier> dataSources = viewBillingServiceHelper.getDataSourcesFromViewMetadataFilter(filters);
+    final boolean shouldUseFlattenedLabelsColumn = viewBillingServiceHelper.shouldUseFlattenedLabelsColumn(dataSources);
+    if (!featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, accountId)
+        && (shouldUseFlattenedLabelsColumn || isCostCategoryUpdateRequest)) {
       return Collections.emptyMap();
     }
     final String tableName =

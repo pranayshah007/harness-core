@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +148,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         continue;
       }
       Map<String, String> labelsKeyAndColumnMapping =
-          labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
+          labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId(), Collections.emptyList(), true);
       boolean shouldUseFlattenedLabelsColumn =
           featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId());
       if (!shouldUseFlattenedLabelsColumn) {

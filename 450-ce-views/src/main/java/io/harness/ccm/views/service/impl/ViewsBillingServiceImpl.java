@@ -249,7 +249,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     boolean isClusterPerspective = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
@@ -630,7 +630,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
 
@@ -732,7 +732,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     if (viewBillingServiceHelper.shouldShowUnallocatedCost(groupBy)
         && viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams)) {
       final List<QLCEViewAggregation> aggregateFunction =
@@ -761,7 +761,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     final List<QLCEViewAggregation> aggregateFunction =
         Collections.singletonList(QLCEViewAggregation.builder()
                                       .operationType(QLCEViewAggregateOperation.SUM)
@@ -907,7 +907,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
@@ -1033,7 +1033,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     if (Lists.isNullOrEmpty(groupBy)) {
       Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
@@ -1091,7 +1091,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
 
     SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
@@ -1130,7 +1130,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     SelectQuery query =
         getTotalCountQuery(filters, groupBy, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
 
@@ -1249,7 +1249,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     BigQuery bigQuery = bigQueryService.get();
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId(), filters, false);
     // Fetching business mapping Ids from filters
     List<ViewRule> viewRules = getViewRules(filters);
     Map<String, Map<Timestamp, Double>> entitySharedCostsPerTimestamp = new HashMap<>();
