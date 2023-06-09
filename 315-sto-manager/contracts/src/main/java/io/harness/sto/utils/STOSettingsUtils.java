@@ -171,16 +171,16 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     if (authData != null) {
-      STOYamlAuthType authType = authData.getType();
+      ParameterField<STOYamlAuthType> authType = authData.getType();
 
       map.put(getSTOKey("product_auth_type"),
-          authType != null ? authType.getYamlName() : STOYamlAuthType.API_KEY.getYamlName());
+          authType != null ? authType.getValue().getYamlName() : STOYamlAuthType.API_KEY.getYamlName());
 
       Boolean authSsl = resolveBooleanParameter(authData.getSsl(), Boolean.TRUE);
 
       String authFieldPrefix = "product";
-
-      if (target != null && target.getType() == STOYamlTargetType.CONFIGURATION) {
+      ParameterField<STOYamlTargetType> targetParam = target.getType();
+      if (targetParam != null && targetParam.getValue() == STOYamlTargetType.CONFIGURATION) {
         authFieldPrefix = "configuration";
       }
 
@@ -204,10 +204,10 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     if (imageData != null) {
-      STOYamlImageType imageType = imageData.getType();
+      ParameterField<STOYamlImageType> imageType = imageData.getType();
 
       map.put(getSTOKey("container_type"),
-          imageType != null ? imageType.getYamlName() : STOYamlImageType.DOCKER_V2.getYamlName());
+          imageType != null ? imageType.getValue().getYamlName() : STOYamlImageType.DOCKER_V2.getYamlName());
       map.put(getSTOKey("container_domain"),
           resolveStringParameter("image.domain", stepType, identifier, imageData.getDomain(), false));
       map.put(getSTOKey("container_region"),
@@ -256,9 +256,9 @@ public final class STOSettingsUtils {
     if (target != null) {
       map.put(getSTOKey("workspace"),
           resolveStringParameter("target.workspace", stepType, identifier, target.getWorkspace(), false));
-      STOYamlTargetType targetType = target.getType();
+      ParameterField<STOYamlTargetType> targetType = target.getType();
       map.put(getSTOKey("scan_type"),
-          targetType != null ? targetType.getYamlName() : STOYamlTargetType.REPOSITORY.getYamlName());
+          targetType != null ? targetType.getValue().getYamlName() : STOYamlTargetType.REPOSITORY.getYamlName());
 
       String targetName = resolveStringParameter("target.name", stepType, identifier, target.getName(), true);
       String targetVariant = resolveStringParameter("target.variant", stepType, identifier, target.getVariant(), true);
@@ -266,7 +266,7 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("target_name"), targetName);
       map.put(getSTOKey("target_variant"), targetVariant);
 
-      switch (target.getType()) {
+      switch (target.getType().getValue()) {
         case INSTANCE:
           map.put(getSTOKey("instance_identifier"), targetName);
           map.put(getSTOKey("instance_environment"), targetVariant);
@@ -293,10 +293,11 @@ public final class STOSettingsUtils {
     if (advancedSettings != null) {
       STOYamlLog logData = advancedSettings.getLog();
       if (logData != null) {
-        STOYamlLogLevel logLevel = logData.getLevel();
+        ParameterField<STOYamlLogLevel> logLevel = logData.getLevel();
         STOYamlLogSerializer logSerializer = logData.getSerializer();
 
-        map.put(getSTOKey("log_level"), logLevel != null ? logLevel.getYamlName() : STOYamlLogLevel.INFO.getYamlName());
+        map.put(getSTOKey("log_level"),
+            logLevel != null ? logLevel.getValue().getYamlName() : STOYamlLogLevel.INFO.getYamlName());
         map.put(getSTOKey("log_serializer"),
             logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
       }
@@ -309,10 +310,9 @@ public final class STOSettingsUtils {
             resolveStringParameter("args.passthrough", stepType, identifier, argsData.getPassthrough(), false));
       }
 
-      STOYamlFailOnSeverity failOnSeverity = advancedSettings.getFailOnSeverity();
-
+      ParameterField<STOYamlFailOnSeverity> failOnSeverity = advancedSettings.getFailOnSeverity();
       map.put(getSTOKey("fail_on_severity"),
-          failOnSeverity != null ? failOnSeverity.getYamlName() : STOYamlFailOnSeverity.NONE.getYamlName());
+          failOnSeverity != null ? failOnSeverity.getValue().getYamlName() : STOYamlFailOnSeverity.NONE.getYamlName());
       map.put(getSTOKey("include_raw"),
           String.valueOf(resolveBooleanParameter(advancedSettings.getIncludeRaw(), Boolean.TRUE)));
     }
