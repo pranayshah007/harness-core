@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.authenticator;
+
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 
 import io.harness.beans.FeatureName;
@@ -13,22 +14,12 @@ import io.harness.beans.SecretText;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.ff.FeatureFlagService;
 
-import software.wings.service.intfc.security.SecretManager;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
-@Singleton
-public class DelegateTokenEncryptDecrypt {
-  private FeatureFlagService featureFlagService;
-  private SecretManager secretManager;
-
-  @Inject
-  public DelegateTokenEncryptDecrypt(FeatureFlagService featureFlagService, SecretManager secretManager) {
-    this.featureFlagService = featureFlagService;
-    this.secretManager = secretManager;
-  }
+@RequiredArgsConstructor
+public abstract class DelegateSecretManager {
+  final FeatureFlagService featureFlagService;
 
   public String getDelegateTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
@@ -40,7 +31,7 @@ public class DelegateTokenEncryptDecrypt {
   // this flow doesn't need to decodeBase64, it used for to display token in UI or yaml
   public String getBase64EncodedTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
-      return secretManager.fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+      return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
     }
     return delegateToken.getValue();
   }
@@ -54,13 +45,15 @@ public class DelegateTokenEncryptDecrypt {
                                 .scopedToAccount(true)
                                 .kmsId(accountId)
                                 .build();
-    return secretManager.encryptSecretUsingGlobalSM(accountId, secretText, false).getUuid();
+    return encryptSecretUsingGlobalSM(accountId, secretText, false);
   }
 
   public String decrypt(DelegateToken delegateToken) {
     return delegateToken.isNg()
-        ? decodeBase64ToString(
-            secretManager.fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()))
-        : secretManager.fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+        ? decodeBase64ToString(fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()))
+        : fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
   }
+
+  protected abstract String fetchSecretValue(String accountId, String ecryptedTokenId);
+  protected abstract String encryptSecretUsingGlobalSM(String accountId, SecretText secretText, boolean validateScopes);
 }

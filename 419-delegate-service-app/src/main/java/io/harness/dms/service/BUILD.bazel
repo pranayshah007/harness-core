@@ -12,15 +12,11 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//940-feature-flag:module",
-        "//960-continuous-features:module",
-        "//960-persistence:module",
-        "//980-commons/src/main/java/io/harness/secret:module",
-        "//980-commons/src/main/java/io/harness/threading:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/client:module",
+        "//420-delegate-service:module",
+        "//930-delegate-tasks:module",
+        "//970-ng-commons:module",
         "@maven//:com_google_inject_guice",
-        "@maven//:io_dropwizard_dropwizard_core",
     ],
 )
 

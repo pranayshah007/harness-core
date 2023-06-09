@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.resources;
+package io.harness.dms.resource;
 
 import static java.util.Collections.emptyList;
 
@@ -47,7 +47,6 @@ public class DelegateServiceVersionInfoResource {
     if (!CollectionUtils.isEmpty(ringVersion)) {
       return new RestResponse<>(ringVersion);
     }
-
     return new RestResponse<>(emptyList());
   }
 

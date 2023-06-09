@@ -12,7 +12,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.authenticator.DelegateTokenEncryptDecrypt;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 public class EncryptDelegateTokenMigration implements Migration {
   @Inject private HPersistence persistence;
-  @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  @Inject private DelegateSecretManager delegateSecretManager;
 
   @Override
   public void migrate() {
@@ -78,8 +78,8 @@ public class EncryptDelegateTokenMigration implements Migration {
               DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegateToken.getOwner().getIdentifier());
           tokenIdentifier = String.format("%s_%s_%s", delegateToken.getName(), orgId, projectId);
         }
-        String encryptedTokenId = delegateTokenEncryptDecrypt.encrypt(
-            delegateToken.getAccountId(), delegateToken.getValue(), tokenIdentifier);
+        String encryptedTokenId =
+            delegateSecretManager.encrypt(delegateToken.getAccountId(), delegateToken.getValue(), tokenIdentifier);
         setUnset(updateOperation, DelegateTokenKeys.encryptedTokenId, encryptedTokenId);
         persistence.update(delegateToken, updateOperation);
         count++;
