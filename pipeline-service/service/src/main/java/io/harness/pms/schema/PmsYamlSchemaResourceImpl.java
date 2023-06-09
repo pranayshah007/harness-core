@@ -69,8 +69,13 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
       return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
     }
 
-    return pmsYamlSchemaService.getStaticSchema(
+    JsonNode staticJson = pmsYamlSchemaService.getStaticSchema(
         accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope, version);
+
+    // return static json if not empty or return the Pojo Schema
+    return staticJson != null
+        ? ResponseDTO.newResponse(staticJson)
+        : getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
   }
 
   private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {

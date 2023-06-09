@@ -36,7 +36,6 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.manage.ManagedExecutorService;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -109,10 +108,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final String STATIC_SCHEMA_FILE_URL = "https://raw.githubusercontent.com/harness/harness-schema/%s/%s/%s";
   private final String PIPELINE_JSON = "pipeline.json";
   private final String TEMPLATE_JSON = "template.json";
-
-  private final String QA_ENV_BRANCH = "quality-assurance";
-
-  private final String PROD_ENV_BRANCH = "main";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -533,7 +528,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public ResponseDTO<JsonNode> getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier,
+  public JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier,
       String identifier, EntityType entityType, Scope scope, String version) {
     // Appending branch and json in url
     String fileUrl = calculateFileURL(entityType, version);
@@ -543,7 +538,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(fileUrl));
 
-      return ResponseDTO.newResponse(jsonNode);
+      return jsonNode;
     } catch (Exception ex) {
       log.error(String.format("Not able to read file from %s path", fileUrl));
     }
