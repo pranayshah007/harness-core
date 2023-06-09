@@ -38,6 +38,8 @@ import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
 import static io.harness.k8s.model.Kind.Namespace;
+import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
+import static io.harness.k8s.model.KubernetesResourceId.findScalableKubernetesResourceId;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -240,6 +242,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -3394,5 +3397,23 @@ public class K8sTaskHelperBase {
 
   private String getFileName(String path) {
     return path != null ? (new File(path)).getName() : null;
+  }
+
+  public KubernetesResourceId findScalableKubernetesResourceIdFromWorkload(String workloadName) {
+    List<String> kindNameRefs = Arrays.asList(workloadName.trim().split(","));
+    if (kindNameRefs.size() == 1) {
+      return createKubernetesResourceIdFromNamespaceKindName(workloadName);
+    }
+    List<KubernetesResourceId> kubernetesResourceIds = findScalableKubernetesResourceId(kindNameRefs);
+    if (kubernetesResourceIds.size() != 1) {
+      if (kubernetesResourceIds.isEmpty()) {
+        throw new WingsException(
+            "Invalid Kubernetes resource name " + String.join(",", kindNameRefs) + ". No workload found");
+      }
+      throw new WingsException("Invalid Kubernetes resource name " + String.join(",", kindNameRefs)
+          + ". More than one workloads found. Others should be marked with annotation" + HarnessAnnotations.directApply
+          + ": true");
+    }
+    return kubernetesResourceIds.get(0);
   }
 }
