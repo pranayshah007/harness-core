@@ -118,10 +118,11 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
         Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT), true, taskName,
-        params.getDelegateSelectors()
-            .stream()
-            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-            .collect(Collectors.toList()),
+        params.getDelegateSelectors() == null ? Collections.emptyList()
+                                              : params.getDelegateSelectors()
+                                                    .stream()
+                                                    .map(s -> TaskSelector.newBuilder().setSelector(s).build())
+                                                    .collect(Collectors.toList()),
         Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
   }
 
