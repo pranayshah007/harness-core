@@ -44,4 +44,6 @@ public interface TokenService {
   TokenDTO getToken(String tokenId, boolean withEncodedPassword);
 
   TokenDTO validateToken(String accountIdentifier, String apiKey);
+
+  Long countApiTokens(String accountIdentifier);
 }
