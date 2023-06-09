@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class RecommendatioAdhocDTO {
+public class RecommendationAdhocDTO {
   String roleArn;
   String externalId;
   String identifier;

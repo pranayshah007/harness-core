@@ -47,6 +47,7 @@ import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -54,6 +55,7 @@ import io.harness.logging.AutoLogContext;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -345,15 +347,27 @@ public class EventJobScheduler {
   }
 
   // Run once a day, midnight
-  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCron}")
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCronAws}")
   public void runGovernanceRecommendationJob() {
     try {
-      log.info("generateRecommendation Running");
-      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabled()) {
-        governanceRecommendationService.generateRecommendation();
+      log.info("generateRecommendation Running for AWS");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabledAws()) {
+        governanceRecommendationService.generateRecommendation(Collections.singletonList(ConnectorType.CE_AWS));
       }
     } catch (Exception e) {
-      log.error("Exception while running runGovernanceRecommendationJob", e);
+      log.error("Exception while running runGovernanceRecommendationJob for AWS", e);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCronAzure}")
+  public void runGovernanceRecommendationJobForAzure() {
+    try {
+      log.info("generateRecommendation Running for Azure");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabledAzure()) {
+        governanceRecommendationService.generateRecommendation(Collections.singletonList(ConnectorType.CE_AZURE));
+      }
+    } catch (Exception e) {
+      log.error("Exception while running runGovernanceRecommendationJob for Azure", e);
     }
   }
 
