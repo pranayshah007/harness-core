@@ -1330,14 +1330,16 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           "Application monitored service cannot be attached to more than one environment");
     }
 
-    nextGenService.getService(accountId, monitoredServiceDTO.getOrgIdentifier(),
-        monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getServiceRef());
-    validateEnvironmentList(accountId, monitoredServiceDTO);
+    if (featureFlagService.isFeatureFlagEnabled(accountId, FeatureName.SRM_MONITORED_SERVICE_VALIDATION.name())) {
+      nextGenService.getService(accountId, monitoredServiceDTO.getOrgIdentifier(),
+          monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getServiceRef());
+      validateEnvironmentList(accountId, monitoredServiceDTO);
 
-    List<String> connectorRefs = listConnectorRefs(monitoredServiceDTO);
-    if (connectorRefs != null && connectorRefs.size() > 0) {
-      nextGenService.validateConnectorIdList(
-          accountId, monitoredServiceDTO.getOrgIdentifier(), monitoredServiceDTO.getProjectIdentifier(), connectorRefs);
+      List<String> connectorRefs = listConnectorRefs(monitoredServiceDTO);
+      if (connectorRefs != null && connectorRefs.size() > 0) {
+        nextGenService.validateConnectorIdList(accountId, monitoredServiceDTO.getOrgIdentifier(),
+            monitoredServiceDTO.getProjectIdentifier(), connectorRefs);
+      }
     }
 
     if (monitoredServiceDTO.getSources() != null) {
