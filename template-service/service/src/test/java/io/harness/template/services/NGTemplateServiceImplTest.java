@@ -577,6 +577,107 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
+  public void testDeleteTemplateVersionLastUpdatedScenarios() {
+    /*
+      Consider 3 template versions ( version1, version2, version3 )
+      version1 is lastUpdatedTemplate
+      version2 is Stable template
+      version3 has references
+      consider case :- We delete version1 and version3 together, since version1 is lastStableTemplate
+      this is first deleted, it sets the lastUpdatedTemplate to true, and when we try to delete version3 is gives
+      ReferencedEntityException and it updates the lastStableTemplate to stable template i.e version2.
+     */
+
+    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    assertThat(createdEntity.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion2 = templateService.create(entity.withVersionLabel("version2"), true, "", false);
+    assertThat(entityVersion2.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion3 = templateService.create(entity.withVersionLabel("version3"), false, "", false);
+    assertThat(entityVersion3.isStableTemplate()).isFalse();
+    assertThat(entityVersion3.isLastUpdatedTemplate()).isTrue();
+
+    templateService.updateTemplateEntity(entity.withDescription("Updated"), ChangeType.MODIFY, false, "");
+
+    createdEntity =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", false, false)
+            .get();
+    assertThat(createdEntity.isLastUpdatedTemplate()).isTrue();
+
+    entityVersion2 =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", false, false)
+            .get();
+    assertThat(entityVersion2.isLastUpdatedTemplate()).isFalse();
+
+    entityVersion3 =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version3", false, false)
+            .get();
+    assertThat(entityVersion3.isLastUpdatedTemplate()).isFalse();
+
+    Criteria criteria =
+        templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "", false);
+    criteria.and(TemplateEntityKeys.isLastUpdatedTemplate).is(true);
+
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+
+    String fqn1 = String.format("%s/orgId/projId/template1/version3/", ACCOUNT_ID);
+    String fqn2 = String.format("%s/orgId/projId/template1/version1/", ACCOUNT_ID);
+
+    Call<ResponseDTO<Boolean>> request1 = mock(Call.class);
+    try {
+      when(request1.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(ACCOUNT_ID, fqn1, EntityType.TEMPLATE)).thenReturn(request1);
+
+    Call<ResponseDTO<Boolean>> request2 = mock(Call.class);
+    try {
+      when(request2.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(ACCOUNT_ID, fqn2, EntityType.TEMPLATE)).thenReturn(request2);
+
+    // Deleting complete templateIdentifier
+    assertThatThrownBy(()
+                           -> templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               TEMPLATE_IDENTIFIER, Sets.newHashSet("version1", "version3"), "", false))
+        .isInstanceOf(ReferencedEntityException.class);
+
+    entityVersion2 =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", false, false)
+            .get();
+    assertThat(entityVersion2.isLastUpdatedTemplate()).isTrue();
+
+    TemplateEntity entityVersion4 = templateService.create(entity.withVersionLabel("version4"), false, "", false);
+    assertThat(entityVersion4.isStableTemplate()).isFalse();
+    assertThat(entityVersion4.isLastUpdatedTemplate()).isTrue();
+
+    Call<ResponseDTO<Boolean>> request3 = mock(Call.class);
+    try {
+      when(request3.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request3);
+
+    /*
+      Trying to delete all templates at once including the stable template, only supported from BE
+      Since the lastUpdatedTemplate is also deleted, it sets stable template as lastUpdated
+      and Stable Template get deletes at the last
+    */
+
+    templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+        Sets.newHashSet("version2", "version4", "version3"), "", false);
+
+    Page<TemplateEntity> templateEntities =
+        templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
   public void testCreateNewVersionOfTemplateFromCreateFlow() {
     TemplateEntity createdEntity = templateService.create(entity, false, "", false);
     assertThat(createdEntity.isStableTemplate()).isTrue();
