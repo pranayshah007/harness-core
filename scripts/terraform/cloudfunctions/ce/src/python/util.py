@@ -6,7 +6,9 @@
 import json
 import bq_schema
 import time
+import re
 import datetime
+import hashlib
 
 from google.cloud import bigquery
 from google.cloud import pubsub_v1
@@ -29,6 +31,7 @@ AWSEBSINVENTORY = "awsEbsInventory"
 AWSRDSINVENTORY = "awsRdsInventory"
 UNIFIED = "unifiedTable"
 CURRENCYCONVERSIONFACTORUSERINPUT = "currencyConversionFactorUserInput"
+LABELKEYSTOCOLUMNMAPPING = "labelKeysToColumnMapping"
 MSPMARKUP = 'mspMarkup'
 AWSCURPREFIX = "awscur"
 COSTAGGREGATED = "costAggregated"
@@ -43,6 +46,8 @@ CONNECTORDATASYNCSTATUSTABLE = "connectorDataSyncStatus"
 GCPCONNECTORINFOTABLE = "gcpConnectorInfo"
 CURRENCY_LIST = ["AED", "ARS", "AUD", "BRL", "CAD", "CNY", "EUR", "GBP",
                  "INR", "JPY", "MXN", "NOK", "NZD", "RUB", "SGD", "USD"]
+LABELS_FLATTENING_ENABLED_ACCOUNTS = ["EfOfrUbHTtupeZjUqxlHBg", "JQ3KKI5yRTGe37OrCiZaTA",
+                                      "k9C6xngtS06yOSMV7hPGlQ", "l4zWxf3BTs6mEyIMmQjQIg"]
 BACKUP_CURRENCY_FX_RATES = {
     "2022-01-01":{"date":"2022-01-01","usd":{"ada":0.756319,"aed":3.673043,"afn":103.750443,"all":106.650443,"amd":480.234504,"ang":1.802592,"aoa":550.590608,"ars":102.690012,"aud":1.375801,"awg":1.800001,"azn":1.703971,"bam":1.728132,"bbd":2.01951,"bch":0.002308,"bdt":85.737467,"bgn":1.718311,"bhd":0.376957,"bif":2003.500747,"bmd":1,"bnb":0.001945,"bnd":1.350134,"bob":6.896581,"brl":5.571306,"bsd":1.000213,"btc":2.2e-05,"btn":74.371452,"bwp":11.760184,"byn":2.557522,"byr":19600.007305,"bzd":2.016153,"cad":1.263915,"cdf":2002.504667,"chf":0.911704,"clf":0.030877,"clp":852.000679,"cny":6.355906,"cop":4065.331515,"crc":642.088668,"cuc":1,"cup":26.50001,"cve":97.250431,"czk":21.872258,"djf":177.72046,"dkk":6.539093,"doge":5.840507,"dop":57.375062,"dzd":138.805681,"egp":15.709769,"ern":15.000084,"etb":49.15041,"etc":0.029168,"eth":0.00027,"eur":0.879395,"fjd":2.124505,"fkp":0.75438,"gbp":0.739649,"gel":3.095042,"ggp":0.75438,"ghs":6.150392,"gip":0.75438,"gmd":52.750409,"gnf":9325.003832,"gtq":7.719042,"gyd":209.16103,"hkd":7.796107,"hnl":24.40385,"hrk":6.610391,"htg":100.291619,"huf":324.710509,"idr":14242.005308,"ils":3.112646,"imp":0.75438,"inr":74.514078,"iqd":1460.000544,"irr":42275.01611,"isk":129.790435,"jep":0.75438,"jmd":153.996488,"jod":0.709204,"jpy":115.108082,"kes":113.150427,"kgs":84.803833,"khr":4070.001868,"kmf":434.875201,"kpw":900.000258,"krw":1188.880827,"kwd":0.302521,"kyd":0.833481,"kzt":435.092408,"lak":11185.004518,"lbp":1513.000913,"link":0.050882,"lkr":202.921709,"lrd":145.125093,"lsl":15.950387,"ltc":0.006796,"ltl":2.952741,"lvl":0.60489,"lyd":4.603766,"mad":9.280384,"mdl":17.799099,"mga":3965.001825,"mkd":54.454284,"mmk":1778.409382,"mnt":2858.385719,"mop":8.034234,"mro":356.999961,"mur":43.597202,"mvr":15.403747,"mwk":814.000648,"mxn":20.497311,"myr":4.176505,"mzn":63.830402,"nad":15.950383,"ngn":411.95053,"nio":35.403737,"nok":8.817948,"npr":118.993974,"nzd":1.461563,"omr":0.384996,"pab":1.000213,"pen":3.989505,"pgk":3.525039,"php":51.000361,"pkr":178.250441,"pln":4.035305,"pyg":6881.530124,"qar":3.64104,"ron":4.351106,"rsd":103.385263,"rub":74.791632,"rwf":1015.000378,"sar":3.754176,"sbd":8.093926,"scr":13.606865,"sdg":437.503841,"sek":9.050053,"sgd":1.348651,"shp":1.377405,"sll":11255.004533,"sos":584.000556,"srd":20.808046,"std":20697.988723,"svc":8.751858,"syp":2512.49372,"szl":15.950376,"thb":33.195051,"theta":0.210542,"tjs":11.301782,"tmt":3.510001,"tnd":2.875805,"top":2.274604,"trx":13.231364,"try":13.321109,"ttd":6.793757,"twd":27.717114,"tzs":2306.001195,"uah":27.28804,"ugx":3545.717728,"usd":1,"usdt":0.997149,"uyu":44.625896,"uzs":10820.004367,"vef":213830302037.97214,"vnd":22855.008519,"vuv":113.252695,"wst":2.600172,"xaf":579.600654,"xag":0.042953,"xau":0.000547,"xcd":2.702552,"xdr":0.714652,"xlm":3.732903,"xof":579.503818,"xpf":105.850403,"xrp":1.1978,"yer":250.250457,"zar":15.951051,"zmk":9001.206948,"zmw":16.663433,"zwl":321.999712}},
     "2022-02-01":{"date":"2022-02-01","usd":{"ada":0.948606,"aed":3.672981,"afn":101.999816,"all":107.697414,"amd":482.779734,"ang":1.795303,"aoa":529.092078,"ars":105.166512,"aud":1.415389,"awg":1.8,"azn":1.700254,"bam":1.752983,"bbd":2.019422,"bch":0.003502,"bdt":85.990412,"bgn":1.743127,"bhd":0.376933,"bif":1970.000244,"bmd":1,"bnb":0.002657,"bnd":1.355088,"bob":6.896076,"brl":5.304602,"bsd":1.000139,"btc":2.6e-05,"btn":74.712732,"bwp":11.683972,"byn":2.601023,"byr":19600.002431,"bzd":2.016106,"cad":1.271361,"cdf":2012.000514,"chf":0.92715,"clf":0.02902,"clp":800.730146,"cny":6.36098,"cop":3943.020489,"crc":641.562444,"cuc":1,"cup":26.500004,"cve":98.874996,"czk":21.675404,"djf":177.719531,"dkk":6.626699,"doge":7.043444,"dop":57.749919,"dzd":140.322009,"egp":15.727104,"ern":15.000021,"etb":49.799541,"etc":0.038844,"eth":0.000371,"eur":0.89058,"fjd":2.164975,"fkp":0.72792,"gbp":0.74405,"gel":3.044962,"ggp":0.72792,"ghs":6.290081,"gip":0.72792,"gmd":53.000012,"gnf":9002.505176,"gtq":7.689061,"gyd":209.246597,"hkd":7.797311,"hnl":24.579648,"hrk":6.694699,"htg":102.010777,"huf":316.439742,"idr":14356.50178,"ils":3.17935,"imp":0.72792,"inr":74.556059,"iqd":1460.500181,"irr":42250.005186,"isk":127.710201,"jep":0.72792,"jmd":156.356307,"jod":0.708994,"jpy":115.161516,"kes":113.596868,"kgs":84.797413,"khr":4065.501181,"kmf":439.250321,"kpw":900.000269,"krw":1206.890021,"kwd":0.303008,"kyd":0.833494,"kzt":434.788508,"lak":11345.000967,"lbp":1513.999961,"link":0.058396,"lkr":203.033701,"lrd":152.475033,"lsl":15.520242,"ltc":0.00912,"ltl":2.95274,"lvl":0.60489,"lyd":4.615031,"mad":9.436015,"mdl":18.003525,"mga":4000.000545,"mkd":55.238128,"mmk":1778.255335,"mnt":2858.831518,"mop":8.033611,"mro":356.999873,"mur":43.697927,"mvr":15.450185,"mwk":817.504692,"mxn":20.642562,"myr":4.1855,"mzn":63.829654,"nad":15.520104,"ngn":415.830275,"nio":35.459902,"nok":8.907141,"npr":119.535764,"nzd":1.521185,"omr":0.385012,"pab":1.000229,"pen":3.839949,"pgk":3.514947,"php":51.195,"pkr":176.829951,"pln":4.08055,"pyg":7089.856446,"qar":3.641014,"ron":4.404302,"rsd":104.60006,"rub":77.33902,"rwf":1015.000126,"sar":3.752002,"sbd":8.110349,"scr":14.52447,"sdg":441.000164,"sek":9.332022,"sgd":1.351596,"shp":1.377402,"sll":11462.506834,"sos":585.000428,"srd":20.879501,"std":20697.983575,"svc":8.752236,"syp":2512.000087,"szl":15.403191,"thb":33.205024,"theta":0.341649,"tjs":11.297242,"tmt":3.5,"tnd":2.905998,"top":2.267951,"trx":16.872227,"try":13.303203,"ttd":6.788796,"twd":27.775003,"tzs":2311.000121,"uah":28.418641,"ugx":3507.706256,"usd":1,"usdt":0.997428,"uyu":43.953095,"uzs":10812.498093,"vef":213830248859.7712,"vnd":22650.002809,"vuv":113.671428,"wst":2.612343,"xaf":587.885786,"xag":0.044487,"xau":0.000557,"xcd":2.702551,"xdr":0.719132,"xlm":4.985119,"xmr":0.006836,"xof":587.501697,"xpf":106.924986,"xrp":1.621702,"yer":250.250264,"zar":15.382252,"zmk":9001.200116,"zmw":18.10355,"zwl":321.999632}},
@@ -113,6 +118,7 @@ def createTable(client, table_ref):
     tableName = table_ref.table_id
     print_("Creating %s table" % tableName)
     schema = []
+    clustering_fields = []
     if tableName == CLUSTERDATA or tableName == CLUSTERDATAHOURLY:
         fieldset = bq_schema.clusterDataTableFields
         partition = bigquery.RangePartitioning(
@@ -179,6 +185,9 @@ def createTable(client, table_ref):
             type_=bigquery.TimePartitioningType.DAY,
             field="updatedAt"  # name of column to use for partitioning
         )
+    elif tableName == LABELKEYSTOCOLUMNMAPPING:
+        fieldset = bq_schema.labelKeysToColumnMappingTableSchema
+        clustering_fields = ["labelKey"]
     elif tableName == COSTAGGREGATED:
         fieldset = bq_schema.costAggregatedSchema
         partition = bigquery.TimePartitioning(
@@ -249,8 +258,13 @@ def createTable(client, table_ref):
     elif tableName.startswith(AWSEC2INVENTORY) or tableName.startswith(AWSEBSINVENTORY) or \
             tableName in [CLUSTERDATA, CLUSTERDATAAGGREGATED, CLUSTERDATAHOURLY, CLUSTERDATAHOURLYAGGREGATED]:
         table.range_partitioning = partition
-
+    elif clustering_fields:
+        table.clustering_fields = clustering_fields
     try:
+        if tableName == LABELKEYSTOCOLUMNMAPPING and table.dataset_id.split('BillingReport_')[-1] \
+                not in [flattening_enabled_account_id.replace('-','_').lower()
+                        for flattening_enabled_account_id in LABELS_FLATTENING_ENABLED_ACCOUNTS]:
+            return True
         table = client.create_table(table)  # Make an API request.
         print_("Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id))
     except Exception as e:
@@ -362,3 +376,139 @@ def send_event(topic_path, event_data):
     except Exception as e:
         print_(e)
         print_("Error while sending event: %s to pubsub: %s" % event_data, topic_path)
+
+
+def flatten_label_keys_in_table(client, accountId, PROJECTID, dataset_name, table_name, labels_column_name, query_filters):
+    if accountId not in LABELS_FLATTENING_ENABLED_ACCOUNTS:
+        return
+    print_(f"Flattening of labels is enabled for accountId: {accountId}. "
+           f"Continuing to flatten the labels in {table_name}.")
+
+    label_key_to_column_mapping = {}
+    newly_flattened_label_keys_count = 0
+
+    # Generate (& execute) the following 3 queries in this function:
+    # Note: we will use a common mapping-table (LABELKEYSTOCOLUMNMAPPING) for unifiedTable as well as cluster tables.
+    add_flattened_columns_query = "ALTER TABLE `%s.%s.%s` " % (PROJECTID, dataset_name, table_name)
+    update_flattened_columns_query = "UPDATE `%s.%s.%s` SET " % (PROJECTID, dataset_name, table_name)
+    query_to_insert_new_entries_in_mapping_table = "INSERT INTO `%s.%s.%s` (labelKey, columnName) " \
+                                                   "SELECT lKey as labelKey, cName as columnName FROM (" \
+                                                   % (PROJECTID, dataset_name, LABELKEYSTOCOLUMNMAPPING)
+
+    # get labelKey list from table (unified/cluster) on applying filters [should have csp and time filters applied]
+    bq_query = """
+        SELECT distinct l.key as labelKey FROM `%s.%s.%s`, UNNEST(%s) as l
+        WHERE %s
+    """ % (PROJECTID, dataset_name, table_name, labels_column_name, query_filters)
+    results = run_bq_query_with_retries(client=client, query=bq_query)
+    for row in results:
+        label_key_to_column_mapping[row.labelKey] = None
+
+    # set mapped column-names for labelKeys that were already mapped (using the mapping table)
+    bq_query = """
+        SELECT labelKey, columnName FROM `%s.%s.%s`
+    """ % (PROJECTID, dataset_name, LABELKEYSTOCOLUMNMAPPING)
+    results = run_bq_query_with_retries(client=client, query=bq_query)
+    for row in results:
+        if row.labelKey in list(label_key_to_column_mapping.keys()):
+            label_key_to_column_mapping[row.labelKey] = row.columnName
+
+    # generate mapping for labelKeys which don't yet have a mapping.
+    # ensure to generate a mapping that doesn't exist already in mapping table]
+    # also, generate query to persist newly mapped labelKeys into mapping table
+    newly_added_label_keys_dict = {}
+    for label_key in list(label_key_to_column_mapping.keys()):
+        if label_key_to_column_mapping[label_key] is None:
+            # i.e. labelKey hasn't been mapped to a column yet. Map it.
+            if newly_flattened_label_keys_count > 0:
+                query_to_insert_new_entries_in_mapping_table += " union all "
+
+            label_key_to_column_mapping[label_key] = generate_unique_column_name(label_key)
+            newly_added_label_keys_dict[label_key] = label_key_to_column_mapping[label_key]
+
+            query_to_insert_new_entries_in_mapping_table += f" select '{label_key}' as lKey, " \
+                                                            f"'{label_key_to_column_mapping[label_key]}' as cName "
+
+            newly_flattened_label_keys_count += 1
+
+    # the following "left join" and where-clause will ensure that we dont insert duplicate rows even in cases of
+    # concurrent CF executions operating on same labelKey
+    query_to_insert_new_entries_in_mapping_table += """)
+        LEFT JOIN `%s.%s.%s` t
+        ON (lkey=t.labelKey or cName=t.columnName)
+        WHERE (t.labelKey IS NULL and t.columnName is null)
+    """ % (PROJECTID, dataset_name, LABELKEYSTOCOLUMNMAPPING)
+
+    print_(f"LabelKey-to-Column mapping: {label_key_to_column_mapping}")
+    # Trying to insert the new mappings first. Then fetch the latest mapping after that.
+    if newly_flattened_label_keys_count > 0:
+        try:
+            run_bq_query_with_retries(client=client,
+                                      query=query_to_insert_new_entries_in_mapping_table,
+                                      max_retry_count=3)
+        except Exception as e:
+            print_(e)
+            print_("Error occurred while trying to run query", "ERROR")
+            raise e
+
+    # after inserting into mapping table,
+    # reloading/overwriting-in-dict using latest mappings from mapping-table which we need for current ingestion
+    bq_query_temp = """
+        SELECT labelKey, columnName FROM `%s.%s.%s`
+    """ % (PROJECTID, dataset_name, LABELKEYSTOCOLUMNMAPPING)
+    results = run_bq_query_with_retries(client=client, query=bq_query_temp)
+    for row in results:
+        if row.labelKey in list(label_key_to_column_mapping.keys()):
+            label_key_to_column_mapping[row.labelKey] = row.columnName
+    # label_key_to_column_mapping now has the latest labelkey-to-column mappings (even from concurrent runs)
+
+    # generate alter table query for all labelKeys in current ingestion.
+    # some labelKeys might already have entry in mapping-table via cluster pipeline,
+    # so those mappings won't have a corresponding column in unified (& vice versa)
+    # Also, generate update table query, with same query_filters in where clause as used in ingestion.
+    # todo: split this update-query in case of too many labelKeys in unified - since it will have many unnest statements
+    # break the update-query into multiple queries in that case if required.
+    cnt = 0
+    for label_key in label_key_to_column_mapping:
+        if cnt > 0:
+            add_flattened_columns_query += ", "
+            update_flattened_columns_query += ", "
+        add_flattened_columns_query += f" ADD COLUMN IF NOT EXISTS {label_key_to_column_mapping[label_key]} STRING "
+        update_flattened_columns_query += \
+            f" {label_key_to_column_mapping[label_key]}=(SELECT value FROM UNNEST({labels_column_name}) WHERE key='{label_key}')"
+        cnt += 1
+    add_flattened_columns_query += ";"
+    update_flattened_columns_query += f" WHERE {query_filters};"
+
+    run_bq_query_with_retries(client=client, query=add_flattened_columns_query, max_retry_count=3)
+    run_bq_query_with_retries(client=client, query=update_flattened_columns_query, max_retry_count=3)
+
+
+def generate_unique_column_name(label_key):
+    reg = re.compile("[^a-zA-Z0-9_]")
+    unique_deterministic_hash_for_label_key = hashlib.md5(bytes(label_key, 'utf-8')).hexdigest()
+    return re.sub(reg, '_', f"flattenedLabelKey_{label_key}_{unique_deterministic_hash_for_label_key}")
+
+
+def run_bq_query_with_retries(client, query, max_retry_count=1, job_config=None):
+    # retries can be used to overcome query failure due to multiple concurrent DMLs
+    print_(query)
+    for retry_count in range(max_retry_count):
+        if retry_count > 0:
+            print_("Retrying..")
+            # waiting 10 seconds after encountering failure once
+            # todo: should we sleep for random number of seconds between 5-15 seconds to ensure all queries
+            #  ...are not waking up at same time?
+            time.sleep(10)
+        try:
+            query_job = client.query(query, job_config=job_config) if job_config else client.query(query)
+            print_(f"BQ JobId: {query_job.job_id}")
+            results = query_job.result()  # wait for job to complete
+            return results
+        except Exception as e:
+            # todo: should we retry only if we catch a specific type of exception related to concurrent DMLs?
+            print_(e)
+            print_(f"Failed to execute BQ query (retry_count={retry_count+1})!", "ERROR")
+            if retry_count + 1 == max_retry_count:
+                raise e
+
