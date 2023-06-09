@@ -222,4 +222,7 @@ public interface YamlTypes {
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
   String TAS_ROUTE_MAPPING = StepSpecTypeConstants.TAS_ROUTE_MAPPING;
+
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
+
 }
