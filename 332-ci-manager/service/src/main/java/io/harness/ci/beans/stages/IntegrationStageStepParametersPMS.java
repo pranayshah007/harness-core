@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
-import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml.DockerInfraSpec;
@@ -24,11 +23,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -40,7 +35,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
 
-import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -57,6 +51,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   ParameterField<List<String>> sharedPaths;
   ParameterField<Boolean> enableCloneRepo;
   BuildStatusUpdateParameter buildStatusUpdateParameter;
+  @Deprecated(since = "moved the usage to runtime as plan creation doesn't have strategy context")
   List<String> stepIdentifiers;
   String childNodeID;
   Caching caching;
@@ -74,7 +69,8 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
     Infrastructure infrastructure = getInfrastructure(stageNode, ctx);
 
-    List<String> stepIdentifiers = getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
+    List<String> stepIdentifiers =
+        IntegrationStageUtils.getStepIdentifiers(integrationStageConfig.getExecution().getSteps());
 
     return IntegrationStageStepParametersPMS.builder()
         .buildStatusUpdateParameter(buildStatusUpdateParameter)
@@ -152,57 +148,6 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     } catch (Exception ex) {
       throw new CIStageExecutionException(
           "Failed to deserialize IntegrationStage for use from stage identifier: " + identifier, ex);
-    }
-  }
-
-  public static List<String> getStepIdentifiers(List<ExecutionWrapperConfig> executionWrapperConfigs) {
-    List<String> stepIdentifiers = new ArrayList<>();
-    executionWrapperConfigs.forEach(executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
-    return stepIdentifiers;
-  }
-
-  private static void addStepIdentifier(
-      ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers, String parentId) {
-    if (executionWrapper != null) {
-      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        CIAbstractStepNode stepNode = getStepElementConfig(executionWrapper);
-        stepIdentifiers.add(parentId + stepNode.getIdentifier());
-      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
-        ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
-        parallelStepElementConfig.getSections().forEach(
-            section -> addStepIdentifier(section, stepIdentifiers, parentId));
-      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
-        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
-        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
-          addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
-        }
-      } else {
-        throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
-      }
-    }
-  }
-
-  public static StepGroupElementConfig getStepGroupElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
-    try {
-      return YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
-    } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
-    }
-  }
-
-  private static CIAbstractStepNode getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
-    try {
-      return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
-    } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
-    }
-  }
-
-  private static ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
-    try {
-      return YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);
-    } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig parallel node", ex);
     }
   }
 }
