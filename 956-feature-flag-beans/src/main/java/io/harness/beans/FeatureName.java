@@ -806,7 +806,8 @@ public enum FeatureName {
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
       HarnessTeam.CDP),
-  CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP);
+  CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP),
+  CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {
