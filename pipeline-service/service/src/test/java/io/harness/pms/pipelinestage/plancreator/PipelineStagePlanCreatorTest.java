@@ -18,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExpressionMode;
@@ -42,6 +43,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 
 import java.io.IOException;
@@ -49,6 +51,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,12 +68,19 @@ public class PipelineStagePlanCreatorTest {
   @Mock KryoSerializer kryoSerializer;
   @Mock PMSPipelineServiceImpl pmsPipelineService;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks PipelineStagePlanCreator pipelineStagePlanCreator;
 
   private String ORG = "org";
   private String PROJ = "proj";
   private String PIPELINE = "pipeline";
   private String ACC = "acc";
+
+  @Before
+  public void setup() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACC, FeatureName.PIE_PROCESS_ON_JSON_NODE);
+  }
+
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -109,7 +119,7 @@ public class PipelineStagePlanCreatorTest {
     doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0);
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0, "acc");
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);

@@ -131,16 +131,16 @@ public class YamlUtils {
     }
   }
 
-  public YamlField readTree(String content) throws IOException {
-    return readTreeInternal(content, mapper);
+  public JsonNode replaceYamlInJsonNode(JsonNode jsonNode, String yaml) {
+    try {
+      return mapper.readerForUpdating(jsonNode).readValue(yaml);
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't replace yaml in jsonNode", e);
+    }
   }
 
-  public YamlField tryReadTree(String content) {
-    try {
-      return readTreeInternal(content, mapper);
-    } catch (Exception ex) {
-      throw new InvalidRequestException("Invalid yaml", ex);
-    }
+  public YamlField readTree(String content) throws IOException {
+    return readTreeInternal(content, mapper);
   }
 
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {

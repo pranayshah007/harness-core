@@ -49,10 +49,18 @@ public class RuntimeInputFormHelper {
     return runtimeInputFormYamlConfig.getYaml();
   }
 
+  public JsonNode createRuntimeInputFormWithJsonNode(JsonNode jsonNode, boolean keepInput) {
+    return createRuntimeInputFormJsonNode(jsonNode, keepInput);
+  }
+
   // only to be used for get runtime input form API, everywhere else the above method is to be used
   public String createRuntimeInputFormWithDefaultValues(String yaml) {
     YamlConfig runtimeInputFormYamlConfig = createRuntimeInputFormWithDefaultValuesYamlConfig(yaml);
     return runtimeInputFormYamlConfig.getYaml();
+  }
+
+  public JsonNode createRuntimeInputFormWithDefaultValues(JsonNode jsonNode) {
+    return createRuntimeInputFormWithDefaultValuesJsonNode(jsonNode);
   }
 
   public String removeRuntimeInputsFromYaml(String pipelineYaml, String runtimeInputsYaml, boolean keepInput) {
@@ -66,9 +74,17 @@ public class RuntimeInputFormHelper {
     return createRuntimeInputFormYamlConfig(yamlConfig, keepInput, false);
   }
 
+  private JsonNode createRuntimeInputFormJsonNode(JsonNode jsonNode, boolean keepInput) {
+    return createRuntimeInputFormJsonNode(jsonNode, keepInput, false);
+  }
+
   private YamlConfig createRuntimeInputFormWithDefaultValuesYamlConfig(String yaml) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
     return createRuntimeInputFormYamlConfig(yamlConfig, true, true);
+  }
+
+  private JsonNode createRuntimeInputFormWithDefaultValuesJsonNode(JsonNode jsonNode) {
+    return createRuntimeInputFormJsonNode(jsonNode, true, true);
   }
 
   public YamlConfig createRuntimeInputFormYamlConfig(
@@ -115,6 +131,51 @@ public class RuntimeInputFormHelper {
     }
 
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
+  }
+
+  public JsonNode createRuntimeInputFormJsonNode(JsonNode jsonNode, boolean keepInput, boolean keepDefaultValues) {
+    Map<FQN, Object> fullMap = FQNMapGenerator.generateFQNMap(jsonNode);
+    Map<FQN, Object> templateMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
+      // keepInput can be considered always true if value matches executionInputPattern. As the input will be provided
+      // at execution time.
+      if (NGExpressionUtils.matchesExecutionInputPattern(value)
+          || (keepInput && NGExpressionUtils.matchesInputSetPattern(value))
+          || (!keepInput && !NGExpressionUtils.matchesInputSetPattern(value) && !key.isIdentifierOrVariableName()
+              && !key.isType())) {
+        templateMap.put(key, fullMap.get(key));
+      }
+    });
+
+    /* we only want to keep "default" keys if they have a sibling as runtime input
+    For example, over here, the default of v1 should be kept, while v2 should not be kept at all
+    - name: v1
+      type: String
+      default: v1Val
+      value: <+input>
+    - name: v2
+      type: String
+      default: v2Val
+      value: fixedValue
+      This code block goes over all the runtime input fields (all of them are in templateMap). For every runtime input
+    key, it checks if it has a sibling with key "default" in the full pipeline map. If it is there, then the default key
+    is added to the template. In the above example, the "default" key for v2 is not even looped over
+     */
+    if (keepDefaultValues && EmptyPredicate.isNotEmpty(templateMap)) {
+      Map<FQN, Object> defaultKeys = new LinkedHashMap<>();
+      templateMap.keySet().forEach(key -> {
+        FQN parent = key.getParent();
+        FQN defaultSibling = FQN.duplicateAndAddNode(
+            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
+        if (fullMap.containsKey(defaultSibling)) {
+          defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
+        }
+      });
+      templateMap.putAll(defaultKeys);
+    }
+
+    return YamlMapGenerator.generateYamlMap(fullMap, jsonNode, false);
   }
   public Map<FQN, Object> getRuntimeInputFormYamlConfig(YamlConfig pipelineTemplate, YamlConfig inputSet) {
     Map<FQN, Object> fullMap = pipelineTemplate.getFqnToValueMap();

@@ -102,6 +102,7 @@ import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -208,14 +209,15 @@ public class ExecutionHelper {
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       boolean isDebug) {
     return buildExecutionArgs(pipelineEntity, moduleType, mergedRuntimeInputYaml, stagesToRun, expressionValues,
-        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null);
+        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null, null);
   }
 
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
   @SneakyThrows
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
-      boolean isDebug, String notes) {
+      boolean isDebug, String notes, JsonNode mergedRuntimeInputJsonNode) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
 
@@ -227,7 +229,7 @@ public class ExecutionHelper {
              PlanCreatorUtils.autoLogContext(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                  pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), executionId)) {
       PipelineMetadataInternalDTO pipelineMetadataInternalDTO =
-          getPipelineMetadataInternalDTO(pipelineEntity, mergedRuntimeInputYaml);
+          getPipelineMetadataInternalDTO(pipelineEntity, mergedRuntimeInputYaml, mergedRuntimeInputJsonNode);
 
       // This will only be non-null in case of V0 for now.
       BasicPipeline basicPipeline = pipelineMetadataInternalDTO.getBasicPipeline();
@@ -239,6 +241,7 @@ public class ExecutionHelper {
         allowedStageExecution = pipelineMetadataInternalDTO.getBasicPipeline().isAllowStageExecutions();
       }
 
+      // TODO(Shalini): Change these methods to use jsonNode instead of yaml in processing.
       // This method throws error if stagesToRun is empty when allowedStageExecution is true. So, this needs to be done
       // before validating yaml schema, else error propagation would be different.
       ProcessStageExecutionInfoResult processStageExecutionInfoResult =
@@ -247,11 +250,17 @@ public class ExecutionHelper {
       StagesExecutionInfo stagesExecutionInfo = processStageExecutionInfoResult.getStagesExecutionInfo();
       pipelineYamlWithTemplateRef = processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef();
 
-      validateYamlSchema(pipelineEntity, mergedRuntimeInputYaml);
-
-      PlanExecutionMetadata planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity, mergedRuntimeInputYaml,
-          originalExecutionId, retryExecutionParameters, notifyOnlyUser, notes, executionId, stagesExecutionInfo,
-          pipelineYamlWithTemplateRef);
+      validateYamlSchema(pipelineEntity, mergedRuntimeInputYaml, mergedRuntimeInputJsonNode);
+      PlanExecutionMetadata planExecutionMetadata;
+      if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+        planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity,
+            YamlUtils.writeYamlString(mergedRuntimeInputJsonNode), originalExecutionId, retryExecutionParameters,
+            notifyOnlyUser, notes, executionId, stagesExecutionInfo, pipelineYamlWithTemplateRef);
+      } else {
+        planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity, mergedRuntimeInputYaml, originalExecutionId,
+            retryExecutionParameters, notifyOnlyUser, notes, executionId, stagesExecutionInfo,
+            pipelineYamlWithTemplateRef);
+      }
 
       // RetryExecutionInfo
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(retryExecutionParameters.isRetry(), originalExecutionId);
@@ -273,20 +282,32 @@ public class ExecutionHelper {
     }
   }
 
-  private PipelineMetadataInternalDTO getPipelineMetadataInternalDTO(
-      PipelineEntity pipelineEntity, String mergedRuntimeInputYaml) throws Exception {
+  private PipelineMetadataInternalDTO getPipelineMetadataInternalDTO(PipelineEntity pipelineEntity,
+      String mergedRuntimeInputYaml, JsonNode mergedRuntimeInputJsonNode) throws Exception {
     String pipelineYaml;
     String pipelineYamlWithTemplateRef;
     BasicPipeline basicPipeline = null;
     switch (pipelineEntity.getHarnessVersion()) {
       case PipelineVersion.V1:
-        pipelineYaml =
-            InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
-        pipelineYamlWithTemplateRef = pipelineYaml;
+        if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+          pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
+              mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
+          pipelineYamlWithTemplateRef = pipelineYaml;
+        } else {
+          pipelineYaml =
+              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
+          pipelineYamlWithTemplateRef = pipelineYaml;
+        }
         break;
       case PipelineVersion.V0:
-        TemplateMergeResponseDTO templateMergeResponseDTO =
-            getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
+        TemplateMergeResponseDTO templateMergeResponseDTO;
+        if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+          templateMergeResponseDTO =
+              getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputJsonNode, pipelineEntity);
+        } else {
+          templateMergeResponseDTO =
+              getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
+        }
         pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
         basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
@@ -328,18 +349,23 @@ public class ExecutionHelper {
     return planExecutionMetadataBuilder.build();
   }
 
-  public void validateYamlSchema(PipelineEntity pipelineEntity, String mergedRuntimeInputYaml) {
+  public void validateYamlSchema(
+      PipelineEntity pipelineEntity, String mergedRuntimeInputYaml, JsonNode mergedRuntimeInputJsonNode) {
     /*
     For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
     the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
-    in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+    in pipelineYamlJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
     give an error in schema validation. That's why we need a value that doesn't have this validator appended.
      */
     // We don't have schema validation for V1 yaml as of now.
     if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
-      String yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
+      if (EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode) && !isEmpty(mergedRuntimeInputYaml)) {
+        mergedRuntimeInputJsonNode = YamlUtils.readAsJsonNode(mergedRuntimeInputYaml);
+      }
+      JsonNode jsonNodeForValidatingSchema =
+          getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputJsonNode, pipelineEntity);
       pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
+          pipelineEntity.getProjectIdentifier(), jsonNodeForValidatingSchema);
     }
   }
 
@@ -394,28 +420,60 @@ public class ExecutionHelper {
     return pipelineYamlConfigForSchemaValidations.getYaml();
   }
 
+  public JsonNode getPipelineYamlWithUnResolvedTemplates(
+      JsonNode mergedRuntimeInputJsonNode, PipelineEntity pipelineEntity) {
+    JsonNode pipelineJsonNodeForSchemaValidations;
+    if (EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+      pipelineJsonNodeForSchemaValidations = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
+    } else {
+      /*
+      For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
+      the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
+      in pipelineJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+      give an error in schema validation. That's why we need a value that doesn't have this validator appended.
+       */
+      pipelineJsonNodeForSchemaValidations = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+          YamlUtils.readAsJsonNode(pipelineEntity.getYaml()), mergedRuntimeInputJsonNode, false);
+    }
+    pipelineJsonNodeForSchemaValidations = InputSetSanitizer.trimValues(pipelineJsonNodeForSchemaValidations);
+    return pipelineJsonNodeForSchemaValidations;
+  }
+
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
       String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
-    YamlConfig pipelineYamlConfig;
+    JsonNode runtimeInputJsonNode = null;
+    if (!isEmpty(mergedRuntimeInputYaml)) {
+      runtimeInputJsonNode = YamlUtils.readAsJsonNode(mergedRuntimeInputYaml);
+    }
+    return getPipelineYamlAndValidateStaticallyReferredEntities(runtimeInputJsonNode, pipelineEntity);
+  }
+
+  @VisibleForTesting
+  TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
+      JsonNode mergedRuntimeInputJsonNode, PipelineEntity pipelineEntity) {
+    JsonNode pipelineJsonNode;
 
     long start = System.currentTimeMillis();
-    if (isEmpty(mergedRuntimeInputYaml)) {
-      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+    if (EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+      pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
     } else {
-      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      pipelineYamlConfig = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-          pipelineEntityYamlConfig, runtimeInputYamlConfig, true, true);
+      JsonNode pipelineEntityJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
+      pipelineJsonNode = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+          pipelineEntityJsonNode, mergedRuntimeInputJsonNode, true, true);
     }
-    pipelineYamlConfig = InputSetSanitizer.trimValues(pipelineYamlConfig);
+    return getPipelineYamlAndValidateStaticallyReferredEntities(pipelineJsonNode, pipelineEntity, start);
+  }
 
-    String pipelineYaml = pipelineYamlConfig.getYaml();
+  TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
+      JsonNode pipelineJsonNode, PipelineEntity pipelineEntity, long start) {
+    pipelineJsonNode = InputSetSanitizer.trimValues(pipelineJsonNode);
+
+    String pipelineYaml = YamlUtils.writeYamlString(pipelineJsonNode);
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
-    String unresolvedPipelineYaml = pipelineYaml;
     String pipelineYamlWithTemplateRef = pipelineYaml;
-    if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
+    if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineJsonNode))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
@@ -433,7 +491,7 @@ public class ExecutionHelper {
       // RBAC checks can't be provided for remote pipelines
       pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-          unresolvedPipelineYaml);
+          pipelineJsonNode);
     }
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)
