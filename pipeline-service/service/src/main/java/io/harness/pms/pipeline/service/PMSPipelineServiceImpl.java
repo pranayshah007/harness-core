@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -91,7 +90,6 @@ import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
@@ -636,8 +634,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     try {
-      boolean isForceDeleteEnabledBySettings =
-          isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+      boolean isForceDeleteEnabledBySettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
       return isForceDeleteEnabledBySettings;
     } catch (Exception e) {
       log.error("Failed to fetch feature flag info for force delete ", e);
@@ -645,9 +642,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
 
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-  }
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils

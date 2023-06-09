@@ -8,7 +8,6 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -84,7 +83,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
@@ -604,7 +602,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   @VisibleForTesting
@@ -613,11 +611,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  @VisibleForTesting
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 
   private String getMessageHelper(String accountId, String orgIdentifier, String projectIdentifier) {
