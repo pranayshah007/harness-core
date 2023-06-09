@@ -92,9 +92,10 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
       healthSources.forEach(healthSource -> {
         String sourceIdentifier = HealthSourceService.getNameSpacedIdentifier(
             resolvedCVConfigInfo.getMonitoredServiceIdentifier(), healthSource.getIdentifier());
-        monitoringSourcePerpetualTaskService.createTask(serviceEnvironmentParams.getAccountIdentifier(),
-            serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier(),
-            healthSource.getConnectorRef(), sourceIdentifier, healthSource.isDemoEnabledForAnyCVConfig());
+        monitoringSourcePerpetualTaskService.createDeploymentTaskAndPerpetualTaskInSyncForTemplateCV(
+            serviceEnvironmentParams.getAccountIdentifier(), serviceEnvironmentParams.getOrgIdentifier(),
+            serviceEnvironmentParams.getProjectIdentifier(), healthSource.getConnectorRef(), sourceIdentifier,
+            healthSource.isDemoEnabledForAnyCVConfig());
         sourceIdentifiersToCleanUp.add(sourceIdentifier);
       });
       sideKickService.schedule(VerificationJobInstanceCleanupSideKickData.builder()
@@ -104,7 +105,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
                                    .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
                                    .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
                                    .build(),
-          clock.instant().plus(Duration.ofMinutes(30)));
+          clock.instant().plus(Duration.ofHours(3)));
     }
   }
 
