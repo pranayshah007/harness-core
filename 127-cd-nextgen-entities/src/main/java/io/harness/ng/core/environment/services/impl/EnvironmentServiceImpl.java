@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.environment.services.impl;
 
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -71,7 +70,6 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
@@ -862,7 +860,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
@@ -870,10 +868,6 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  private boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 
   private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId, boolean isOverrideV2Enabled) {
@@ -899,7 +893,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                   settingsClient.getSetting(SettingIdentifiers.SERVICE_OVERRIDE_V2_IDENTIFIER, accountId, null, null))
               .getValue());
     }
-    return isNgSettingsFFEnabled(accountId) && isOverrideV2Enabled && isOverrideV2SettingEnabled;
+    return isOverrideV2Enabled && isOverrideV2SettingEnabled;
   }
 
   private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(Environment environment) {
