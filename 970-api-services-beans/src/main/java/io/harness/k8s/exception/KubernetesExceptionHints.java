@@ -108,4 +108,6 @@ public class KubernetesExceptionHints {
   public final String MAYBE_DID_YOU_MEAN_FILE_FORMAT = "Maybe did you mean: %s";
   public final String NO_FILES_FOUND_IN_MANIFEST_DIRECTORY =
       "Check manifest folder/file path in manifest configuration";
+  public final String HASH_CALCULATION_FAILED_ERROR =
+      "Failed to create manifests file to be used for generating hash. Please check resources";
 }

@@ -11,4 +11,4 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(CDP) public enum KubernetesCliCommandType { APPLY, SCALE, DELETE, DRY_RUN, STEADY_STATE_CHECK }
+@OwnedBy(CDP) public enum KubernetesCliCommandType { APPLY, SCALE, DELETE, DRY_RUN, STEADY_STATE_CHECK, GENERATE_HASH }
