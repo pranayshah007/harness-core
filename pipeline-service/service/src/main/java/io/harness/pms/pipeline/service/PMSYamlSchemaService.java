@@ -11,7 +11,6 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
-import io.harness.ng.core.dto.ResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
