@@ -15121,111 +15121,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ServerlessAwsLambdaPrepareRollbackContainerStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "settings"
-          ],
-          "properties": {
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
-            },
-            "downloadManifestsFqn": {
-              "type": "string"
-            },
-            "image": {
-              "type": "string"
-            },
-            "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
-            },
-            "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "resources": {
-              "$ref": "#/definitions/ContainerResource"
-            },
-            "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "serverlessVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ServerlessAwsLambdaRollbackStepInfo": {
       "allOf": [
         {
@@ -18318,22 +18213,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaRollbackStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ServerlessPrepareRollback"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ServerlessAwsLambdaPrepareRollbackContainerStepInfo"
               }
             }
           }
