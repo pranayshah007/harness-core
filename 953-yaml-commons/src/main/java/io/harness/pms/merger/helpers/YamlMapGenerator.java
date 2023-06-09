@@ -65,6 +65,7 @@ public class YamlMapGenerator {
     generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currentFQN), currentFQN, originalYaml.get(topKey),
         tempMap, topKey, isSanitiseFlow);
     try {
+      // TODO(Shalini): Use JsonPipelineUtils to convert map to jsonNode
       return YamlUtils.readTree(YamlUtils.writeYamlString(tempMap)).getNode().getCurrJsonNode();
     } catch (IOException e) {
       log.error("Could not generate JsonNode from FQN Map.", e);

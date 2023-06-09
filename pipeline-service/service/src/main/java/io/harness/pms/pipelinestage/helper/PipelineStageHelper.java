@@ -47,9 +47,9 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -177,18 +177,43 @@ public class PipelineStageHelper {
     }
   }
 
+  public JsonNode getInputSetJsonNode(YamlField pipelineInputs, String pipelineVersion) {
+    switch (pipelineVersion) {
+      case PipelineVersion.V0:
+        return getInputSetJsonNode(pipelineInputs);
+      case PipelineVersion.V1:
+        return pipelineStageHelperV1.getInputSetJsonNode(pipelineInputs);
+      default:
+        throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
+    }
+  }
+
   private String getInputSetYaml(YamlField pipelineInputs) {
     String inputSetYaml = "";
     if (pipelineInputs != null) {
-      // Deep copy is required to prevent any concurrentException as we are reading yaml in other places. This is caught
-      // via PIE-8733
-      JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode().deepCopy();
-      YamlUtils.removeUuid(inputJsonNode);
-      Map<String, JsonNode> map = new HashMap<>();
-      map.put(YAMLFieldNameConstants.PIPELINE, inputJsonNode);
-      inputSetYaml = YamlPipelineUtils.writeYamlString(map);
+      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
+      inputSetYaml = YamlUtils.writeYamlString(map);
     }
     return inputSetYaml;
+  }
+
+  private JsonNode getInputSetJsonNode(YamlField pipelineInputs) {
+    JsonNode inputJsonNode = null;
+    if (pipelineInputs != null) {
+      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
+      inputJsonNode = JsonPipelineUtils.asTree(map);
+    }
+    return inputJsonNode;
+  }
+
+  private Map<String, JsonNode> getInputSetMapInternal(YamlField pipelineInputs) {
+    // Deep copy is required to prevent any concurrentException as we are reading yaml in other places. This is caught
+    // via PIE-8733
+    JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode().deepCopy();
+    YamlUtils.removeUuid(inputJsonNode);
+    Map<String, JsonNode> map = new HashMap<>();
+    map.put(YAMLFieldNameConstants.PIPELINE, inputJsonNode);
+    return map;
   }
 
   public ChildExecutionDetailDTO getChildGraph(String accountId, String childStageNodeId,

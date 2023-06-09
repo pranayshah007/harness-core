@@ -8,6 +8,7 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityYamlRootNames;
@@ -36,6 +37,23 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class InputSetYamlHelper {
+  public JsonNode getPipelineComponent(JsonNode inputSetYaml) {
+    if (isEmpty(inputSetYaml)) {
+      return inputSetYaml;
+    }
+    JsonNode node = inputSetYaml;
+    ObjectNode innerMap = (ObjectNode) node.get("inputSet");
+    if (innerMap == null) {
+      log.error("Yaml provided is not an input set yaml. Yaml:\n" + inputSetYaml);
+      throw new InvalidRequestException("Yaml provided is not an input set yaml.");
+    }
+    JsonNode pipelineNode = innerMap.get("pipeline");
+    innerMap.removeAll();
+    innerMap.putObject("pipeline");
+    innerMap.set("pipeline", pipelineNode);
+    return innerMap;
+  }
+
   public String getPipelineComponent(String inputSetYaml) {
     try {
       if (EmptyPredicate.isEmpty(inputSetYaml)) {

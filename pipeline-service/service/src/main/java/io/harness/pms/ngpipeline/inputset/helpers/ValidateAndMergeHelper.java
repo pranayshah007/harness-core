@@ -8,9 +8,9 @@
 package io.harness.pms.ngpipeline.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
-import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
@@ -31,6 +31,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
+import io.harness.pms.ngpipeline.inputset.beans.dto.InputSetMetadataDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
@@ -43,8 +44,10 @@ import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PipelineGitXHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -223,6 +226,13 @@ public class ValidateAndMergeHelper {
         pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null, false, false);
   }
 
+  public JsonNode getMergeInputSetFromPipelineTemplateWithJsonNode(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
+      String pipelineRepoID, List<String> stageIdentifiers) {
+    return getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null, false, false);
+  }
+
   public String getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences,
       String pipelineBranch, String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge,
@@ -232,11 +242,51 @@ public class ValidateAndMergeHelper {
         loadFromCache);
   }
 
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
   public String getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
       String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge, boolean keepDefaultValues,
       boolean loadFromCache) {
-    Set<String> inputSetVersions = new HashSet<>();
+    JsonNode lastJsonNodeToMerge = null;
+    if (!isEmpty(lastYamlToMerge)) {
+      lastJsonNodeToMerge = YamlUtils.readAsJsonNode(lastYamlToMerge);
+    }
+    return YamlUtils.writeYamlString(getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId,
+        orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
+        stageIdentifiers, lastJsonNodeToMerge, keepDefaultValues, loadFromCache));
+  }
+
+  public JsonNode getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
+      String pipelineRepoID, List<String> stageIdentifiers, JsonNode lastJsonNodeToMerge, boolean keepDefaultValues,
+      boolean loadFromCache) {
+    InputSetMetadataDTO inputSetMetadataDTO =
+        getInputSetMetadataDTO(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences,
+            pipelineBranch, pipelineRepoID, stageIdentifiers, keepDefaultValues, loadFromCache);
+
+    Set<String> inputSetVersions = inputSetMetadataDTO.getInputSetVersions();
+    List<JsonNode> inputSetJsonNodeList = inputSetMetadataDTO.getInputSetJsonNodeList();
+    JsonNode pipelineTemplate = inputSetMetadataDTO.getPipelineTemplate();
+    if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
+      throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
+    }
+    if (inputSetVersions.contains(PipelineVersion.V1)) {
+      return InputSetMergeHelper.mergeInputSetsV1(inputSetJsonNodeList);
+    }
+
+    if (!EmptyPredicate.isEmpty(lastJsonNodeToMerge)) {
+      inputSetJsonNodeList.add(lastJsonNodeToMerge);
+    }
+
+    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
+      return InputSetMergeHelper.mergeInputSets(pipelineTemplate, inputSetJsonNodeList, false);
+    }
+    return mergeInputSetsForGivenStages(pipelineTemplate, inputSetJsonNodeList, false, stageIdentifiers);
+  }
+
+  public InputSetMetadataDTO getInputSetMetadataDTO(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
+      List<String> stageIdentifiers, boolean keepDefaultValues, boolean loadFromCache) {
     GitSyncBranchContext branchContext = setupGitContext(accountId, orgIdentifier, projectIdentifier, pipelineBranch);
     PipelineEntity pipelineEntity;
     PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier, null, null);
@@ -244,25 +294,26 @@ public class ValidateAndMergeHelper {
       pipelineEntity = getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
           pipelineBranch, pipelineRepoID, false, loadFromCache);
     }
-    String pipelineYaml = pipelineEntity.getYaml();
-    String pipelineTemplate = "";
+    JsonNode pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
+    JsonNode pipelineTemplate = null;
     if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
       if (keepDefaultValues) {
         pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
-            ? createTemplateWithDefaultValuesFromPipeline(pipelineYaml)
-            : createTemplateWithDefaultValuesFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+            ? createTemplateWithDefaultValuesFromPipeline(pipelineJsonNode)
+            : createTemplateWithDefaultValuesFromPipelineForGivenStages(pipelineJsonNode, stageIdentifiers);
       } else {
         pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
-            ? createTemplateFromPipeline(pipelineYaml)
-            : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+            ? createTemplateFromPipeline(pipelineJsonNode)
+            : createTemplateFromPipelineForGivenStages(pipelineJsonNode, stageIdentifiers);
       }
       if (EmptyPredicate.isEmpty(pipelineTemplate)) {
         throw new InvalidRequestException(
             "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
       }
     }
+    List<JsonNode> inputSetJsonNodeList = new ArrayList<>();
+    Set<String> inputSetVersions = new HashSet<>();
 
-    List<String> inputSetYamlList = new ArrayList<>();
     if (inputSetReferences != null) {
       inputSetReferences.forEach(identifier -> {
         Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
@@ -274,7 +325,7 @@ public class ValidateAndMergeHelper {
         inputSetVersions.add(inputSet.getHarnessVersion());
         checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
         if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-          inputSetYamlList.add(inputSet.getYaml());
+          inputSetJsonNodeList.add(YamlUtils.readAsJsonNode(inputSet.getYaml()));
         } else {
           List<String> overlayReferences = inputSet.getInputSetReferences();
           overlayReferences.forEach(id -> {
@@ -282,28 +333,17 @@ public class ValidateAndMergeHelper {
                 accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false, false, loadFromCache);
             entity2.ifPresent(inputSetEntity -> {
               checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
-              inputSetYamlList.add(inputSetEntity.getYaml());
+              inputSetJsonNodeList.add(YamlUtils.readAsJsonNode(inputSetEntity.getYaml()));
             });
           });
         }
       });
     }
-
-    if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
-      throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
-    }
-    if (inputSetVersions.contains(PipelineVersion.V1)) {
-      return InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
-    }
-
-    if (EmptyPredicate.isNotEmpty(lastYamlToMerge)) {
-      inputSetYamlList.add(lastYamlToMerge);
-    }
-
-    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
-      return mergeInputSets(pipelineTemplate, inputSetYamlList, false);
-    }
-    return mergeInputSetsForGivenStages(pipelineTemplate, inputSetYamlList, false, stageIdentifiers);
+    return InputSetMetadataDTO.builder()
+        .inputSetVersions(inputSetVersions)
+        .inputSetJsonNodeList(inputSetJsonNodeList)
+        .pipelineTemplate(pipelineTemplate)
+        .build();
   }
 
   public String mergeInputSetIntoPipeline(String accountId, String orgIdentifier, String projectIdentifier,
