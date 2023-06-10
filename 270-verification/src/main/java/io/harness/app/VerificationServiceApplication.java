@@ -33,6 +33,7 @@ import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.cvng.core.services.api.VerificationServiceSecretManager;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -81,6 +82,7 @@ import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.VerificationRegistrars;
+import io.harness.service.impl.DelegateSecretManagerImpl;
 import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 
@@ -330,6 +332,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
         // verification service only needs reading capabilities for datapath authority validation
         bind(AgentMtlsEndpointService.class).to(AgentMtlsEndpointServiceReadOnlyImpl.class);
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
+        bind(DelegateSecretManager.class).to(DelegateSecretManagerImpl.class);
       }
     });
 

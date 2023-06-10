@@ -175,7 +175,7 @@ public class RuntimeInputFormHelper {
       templateMap.putAll(defaultKeys);
     }
 
-    return YamlMapGenerator.generateYamlMap(fullMap, jsonNode, false);
+    return YamlMapGenerator.generateYamlMap(templateMap, jsonNode, false);
   }
   public Map<FQN, Object> getRuntimeInputFormYamlConfig(YamlConfig pipelineTemplate, YamlConfig inputSet) {
     Map<FQN, Object> fullMap = pipelineTemplate.getFqnToValueMap();

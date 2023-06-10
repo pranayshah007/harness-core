@@ -12,7 +12,8 @@ import time
 from google.cloud import bigquery
 from google.cloud import storage
 
-from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, CEINTERNALDATASET
+from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
+    CEINTERNALDATASET, flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries
 
 """
 Step1) Ingest data from avro to Bigquery's clusterData table.
@@ -125,10 +126,11 @@ def create_dataset_and_tables(jsonData):
     cluster_data_table_ref = dataset.table(jsonData["tableName"])
     cluster_data_aggregated_table_ref = dataset.table(jsonData["tableNameAggregated"])
     unified_table_ref = dataset.table("unifiedTable")
+    label_keys_to_column_mapping_table_ref = dataset.table(LABELKEYSTOCOLUMNMAPPING)
     cost_aggregated_table_ref = client.dataset(CEINTERNALDATASET).table(COSTAGGREGATED)
 
     for table_ref in [cluster_data_table_ref, unified_table_ref, cluster_data_aggregated_table_ref,
-                      cost_aggregated_table_ref]:
+                      cost_aggregated_table_ref, label_keys_to_column_mapping_table_ref]:
         if not if_tbl_exists(client, table_ref):
             print_("%s table does not exists, creating table..." % table_ref)
             createTable(client, table_ref)
@@ -173,6 +175,8 @@ def ingest_data_from_avro(jsonData):
         print_("Total: {} rows in table {}".format(table.num_rows, jsonData["tableId"]))
         blob_to_delete.delete()
         print_("Deleted blob : %s" % blob_to_delete.name)
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"],
+                                    jsonData["tableName"], "labels", fetch_cluster_table_ingestion_filters(jsonData))
     except Exception as e:
         print_(e, "WARN")
         return False
@@ -228,7 +232,8 @@ def delete_existing_data(jsonData):
             )
         ]
     )
-    run_batch_query(client, query, job_config, timeout=240)
+    # run_batch_query(client, query, job_config, timeout=240)
+    run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
     print_("Deleted data from %s..." % jsonData["tableId"])
 
 
@@ -273,14 +278,29 @@ def ingest_data_in_unified(jsonData):
             )
         ]
     )
-    query_job = client.query(query, job_config=job_config)
     try:
-        print_(query_job.job_id)
-        query_job.result()
+        run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_unifiedTable_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e
     print_("Loaded into %s.unifiedTable..." % ds)
+
+
+def fetch_unifiedTable_ingestion_filters(jsonData):
+    return """ DATE(startTime) = DATE(%s, %s, %s) 
+    AND cloudProvider = "CLUSTER" """ % (jsonData["fileYear"], jsonData["fileMonth"], jsonData["fileDay"])
+
+
+def fetch_cluster_table_ingestion_filters(jsonData):
+    return """ DATE(TIMESTAMP_TRUNC(TIMESTAMP_MILLIS(starttime), DAY)) = DATE(%s, %s, %s) """ \
+           % (jsonData["fileYear"], jsonData["fileMonth"], jsonData["fileDay"])
+
+
+def fetch_cluster_table_aggregated_ingestion_filters(jsonData):
+    return """ starttime = UNIX_MILLIS(TIMESTAMP(DATETIME(%s, %s, %s, %s, 00, 00))) """ \
+           % (jsonData["fileYear"], jsonData["fileMonth"], jsonData["fileDay"], jsonData["fileHour"])
 
 
 def ingest_aggregated_data(jsonData):
@@ -292,9 +312,7 @@ def ingest_aggregated_data(jsonData):
                             """ % (jsonData["tableIdAggregated"], jsonData["fileYear"], jsonData["fileMonth"], jsonData["fileDay"],
                                    jsonData["fileHour"])
     try:
-        query_job = client.query(DELETE_EXISTING_PREAGG)
-        print_(query_job.job_id)
-        query_job.result()
+        run_bq_query_with_retries(client, DELETE_EXISTING_PREAGG, max_retry_count=3)
     except Exception as e:
         print_(DELETE_EXISTING_PREAGG, "ERROR")
         print_(e)
@@ -332,9 +350,7 @@ def ingest_aggregated_data(jsonData):
     # Call query
     print_("Ingesting aggregated data 1st query")
     try:
-        query_job = client.query(PREAGG_QUERY)
-        print_(query_job.job_id)
-        query_job.result()
+        run_bq_query_with_retries(client, PREAGG_QUERY, max_retry_count=3)
     except Exception as e:
         print_(PREAGG_QUERY, "ERROR")
         print_(e)
@@ -368,12 +384,18 @@ def ingest_aggregated_data(jsonData):
 
     print_("Ingesting aggregated data 2nd query")
     try:
-        query_job = client.query(PREAGG_QUERY_ID)
-        print_(query_job.job_id)
-        query_job.result()
+        run_bq_query_with_retries(client, PREAGG_QUERY_ID, max_retry_count=3)
     except Exception as e:
         print_(PREAGG_QUERY_ID, "ERROR")
         print_(e)
+
+    try:
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"],
+                                    jsonData["tableNameAggregated"], "labels",
+                                    fetch_cluster_table_aggregated_ingestion_filters(jsonData))
+    except Exception as e:
+        print_(e, "ERROR")
+        raise e
 
 
 def alterTableAggregated(jsonData):

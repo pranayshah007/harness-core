@@ -181,7 +181,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
             .filter(MonitoringSourcePerpetualTaskKeys.projectIdentifier, projectIdentifier)
             .filter(MonitoringSourcePerpetualTaskKeys.orgIdentifier, orgIdentifier);
     List<MonitoringSourcePerpetualTask> savedPerpetualTasks = query.asList();
-    assertThat(savedPerpetualTasks).hasSize(2);
+    assertThat(savedPerpetualTasks).hasSize(1);
   }
 
   @Test

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -34,6 +35,9 @@ public class CIVmConnectionCapability implements ExecutionCapability {
   @Override
   public String fetchCapabilityBasis() {
     //    return infraInfo.fetchCapabilityBasis();
+    if (isEmpty(poolId) || isEmpty(stageRuntimeId)) {
+      return "";
+    }
     if (infraInfo == CIInitializeTaskParams.Type.VM) {
       return String.format("%s-%s", poolId, stageRuntimeId);
     } else {
