@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.core.services.impl.MetricPackServiceImpl.SIGNALFX_DSL;
 import static io.harness.cvng.core.services.impl.MetricPackServiceImpl.SUMOLOGIC_DSL;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 
@@ -23,6 +24,7 @@ import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.beans.SignalFXMetricDataCollectionInfo;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
@@ -67,11 +69,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -87,7 +91,8 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
   private static final String HEALTH_SOURCE_RECORDS_API = "/health-source/records";
   private BuilderFactory builderFactory;
 
-  private static HealthSourceOnboardingResource healthSourceOnboardingResource = new HealthSourceOnboardingResource();
+  private static final HealthSourceOnboardingResource healthSourceOnboardingResource =
+      new HealthSourceOnboardingResource();
 
   @Inject private Injector injector;
   @Inject private HealthSourceOnboardingService healthSourceOnboardingService;
@@ -295,7 +300,8 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     queryRecordsRequest.setQuery(metricQuery);
     queryRecordsRequest.setProviderType(DataSourceType.SUMOLOGIC_METRICS);
     queryRecordsRequest.setHealthSourceParams(HealthSourceParamsDTO.builder().build());
-    OnboardingRequestDTO onboardingRequestDTO = createOnboardingRequestDTOForMetric(startTime, endTime, metricQuery);
+    OnboardingRequestDTO onboardingRequestDTO =
+        createOnboardingRequestDTOForMetric(startTime, endTime, metricQuery, DataSourceType.SUMOLOGIC_METRICS);
     List<TimeSeriesRecord> timeSeriesRecords =
         generateTimeSeriesRecordData("host", "default", "Mem_UsedPercent", "Mem_UsedPercent", startTime, endTime);
     mockOnboardingService(onboardingRequestDTO, timeSeriesRecords);
@@ -307,26 +313,44 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     MetricRecordsResponse metricRecordsResponse =
         response.readEntity(new GenericType<RestResponse<MetricRecordsResponse>>() {}).getResource();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(metricRecordsResponse.getTimeSeriesData().size()).isEqualTo(timeSeriesRecords.size());
-    assertThat(metricRecordsResponse.getTimeSeriesData()).isEqualTo(getTimeseriesFromResponse(timeSeriesRecords));
+    assertThat(metricRecordsResponse.getTimeSeriesData().size()).isEqualTo(1);
+    assertThat(metricRecordsResponse.getTimeSeriesData().get(0))
+        .isEqualTo(getTimeseriesFromResponse(timeSeriesRecords, "host"));
   }
 
-  private OnboardingRequestDTO createOnboardingRequestDTOForMetric(long startTime, long endTime, String metricQuery) {
-    DataCollectionInfo sumologicMetricDataCollectionInfo =
-        SumologicMetricDataCollectionInfo.builder()
-            .groupName("onboarding_default_group")
-            .metricDefinitions(List.of(SumologicMetricDataCollectionInfo.MetricCollectionInfo.builder()
-                                           .metricName("onboarding_sample_metric")
-                                           .metricIdentifier("onboarding_sample_metric")
-                                           .query(metricQuery)
-                                           .build()))
-            .build();
-    sumologicMetricDataCollectionInfo.setCollectHostData(false);
-    sumologicMetricDataCollectionInfo.setDataCollectionDsl(SUMOLOGIC_DSL);
+  private OnboardingRequestDTO createOnboardingRequestDTOForMetric(
+      long startTime, long endTime, String metricQuery, DataSourceType type) {
+    DataCollectionInfo metricDataCollectionInfo = null;
+    if (type == DataSourceType.SUMOLOGIC_METRICS) {
+      metricDataCollectionInfo =
+          SumologicMetricDataCollectionInfo.builder()
+              .groupName("onboarding_default_group")
+              .metricDefinitions(List.of(SumologicMetricDataCollectionInfo.MetricCollectionInfo.builder()
+                                             .metricName("onboarding_sample_metric")
+                                             .metricIdentifier("onboarding_sample_metric")
+                                             .query(metricQuery)
+                                             .build()))
+              .build();
+      metricDataCollectionInfo.setCollectHostData(false);
+      metricDataCollectionInfo.setDataCollectionDsl(SUMOLOGIC_DSL);
+    }
+    if (type == DataSourceType.SPLUNK_SIGNALFX_METRICS) {
+      metricDataCollectionInfo =
+          SignalFXMetricDataCollectionInfo.builder()
+              .groupName("onboarding_default_group")
+              .metricDefinitions(List.of(SignalFXMetricDataCollectionInfo.MetricCollectionInfo.builder()
+                                             .metricName("onboarding_sample_metric")
+                                             .metricIdentifier("onboarding_sample_metric")
+                                             .query(metricQuery)
+                                             .build()))
+              .build();
+      metricDataCollectionInfo.setCollectHostData(false);
+      metricDataCollectionInfo.setDataCollectionDsl(SIGNALFX_DSL);
+    }
 
     DataCollectionRequest request = SyncDataCollectionRequest.builder()
                                         .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
-                                        .dataCollectionInfo(sumologicMetricDataCollectionInfo)
+                                        .dataCollectionInfo(metricDataCollectionInfo)
                                         .endTime(Instant.ofEpochMilli(endTime))
                                         .startTime(Instant.ofEpochMilli(startTime))
                                         .build();
@@ -374,7 +398,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
       double metricValue = ThreadLocalRandom.current().nextInt(50, 100);
       timeSeriesRecords.add(
           new TimeSeriesRecord(hostName, groupName, metricIdentifer, metricName, metricValue, currentTime));
-      currentTime = Instant.ofEpochSecond(currentTime).plus(1, ChronoUnit.MINUTES).toEpochMilli();
+      currentTime = Instant.ofEpochMilli(currentTime).plus(1, ChronoUnit.MINUTES).toEpochMilli();
     }
     return timeSeriesRecords;
   }
@@ -385,38 +409,32 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     while (currentTime <= endTime) {
       double metricValue = ThreadLocalRandom.current().nextInt(50, 100);
       logDataRecords.add(new LogDataRecord(hostName, "ERROR: DUMMY ERROR Message " + metricValue, currentTime));
-      currentTime = Instant.ofEpochSecond(currentTime).plus(1, ChronoUnit.MINUTES).toEpochMilli();
+      currentTime = Instant.ofEpochMilli(currentTime).plus(1, ChronoUnit.MINUTES).toEpochMilli();
     }
     return logDataRecords;
   }
 
   List<LogRecord> getLogRecordFromResponse(List<LogDataRecord> logDataRecords) {
-    List<LogRecord> logRecordList = logDataRecords.stream()
-                                        .map(logDataRecord
-                                            -> LogRecord.builder()
-                                                   .message(logDataRecord.getLog())
-                                                   .timestamp(logDataRecord.getTimestamp())
-                                                   .serviceInstance(logDataRecord.getHostname())
-                                                   .build())
-                                        .collect(Collectors.toList());
-    return logRecordList;
+    return logDataRecords.stream()
+        .map(logDataRecord
+            -> LogRecord.builder()
+                   .message(logDataRecord.getLog())
+                   .timestamp(logDataRecord.getTimestamp())
+                   .serviceInstance(logDataRecord.getHostname())
+                   .build())
+        .collect(Collectors.toList());
   }
 
-  List<TimeSeries> getTimeseriesFromResponse(List<TimeSeriesRecord> timeSeriesRecords) {
-    List<TimeSeriesDataPoint> timeSeriesDataPoints =
-        timeSeriesRecords.stream()
-            .map(x -> TimeSeriesDataPoint.builder().timestamp(x.getTimestamp()).value(x.getMetricValue()).build())
-            .collect(Collectors.toList());
-    TimeSeries timeSeries = TimeSeries.builder().timeseriesName("sampleTimeseries").build();
-    timeSeries.getData().addAll(timeSeriesDataPoints);
-    return List.of(timeSeries);
+  TimeSeries getTimeseriesFromResponse(List<TimeSeriesRecord> timeSeriesRecords, String timeseriesName) {
+    List<TimeSeriesDataPoint> timeSeriesDataPoints = timeSeriesRecords.stream()
+                                                         .map(timeSeriesRecord
+                                                             -> TimeSeriesDataPoint.builder()
+                                                                    .timestamp(timeSeriesRecord.getTimestamp())
+                                                                    .value(timeSeriesRecord.getMetricValue())
+                                                                    .build())
+                                                         .collect(Collectors.toList());
+    return TimeSeries.builder().timeseriesName(timeseriesName).data(timeSeriesDataPoints).build();
   }
-  /*
-        @Test
-        @Owner(developers = ANSUMAN)
-        @Category(UnitTests.class)
-        public void fetchMetricDataMultipleTimeseries() {}
-        */
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
@@ -524,5 +542,51 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(paramValuesResponse.getParamName()).isEqualTo(QueryParamsDTO.QueryParamKeys.timeStampFormat);
     assertThat(paramValuesResponse.getParamValues()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchMetricChartSIIMultipleTimeseries() throws JsonProcessingException, IllegalAccessException {
+    long startTime = 1668137400000L;
+    long endTime = Instant.ofEpochMilli(startTime).plus(5, ChronoUnit.MINUTES).toEpochMilli();
+    String metricQuery = "metric=Mem_UsedPercent";
+
+    QueryRecordsRequest queryRecordsRequest = new QueryRecordsRequest();
+    queryRecordsRequest.setStartTime(startTime);
+    queryRecordsRequest.setEndTime(endTime);
+    queryRecordsRequest.setConnectorIdentifier(connectorIdentifier);
+    queryRecordsRequest.setQuery(metricQuery);
+    queryRecordsRequest.setProviderType(DataSourceType.SPLUNK_SIGNALFX_METRICS);
+    queryRecordsRequest.setHealthSourceParams(HealthSourceParamsDTO.builder().build());
+    OnboardingRequestDTO onboardingRequestDTO =
+        createOnboardingRequestDTOForMetric(startTime, endTime, metricQuery, DataSourceType.SPLUNK_SIGNALFX_METRICS);
+    String groupName = "default";
+    String metricIdentifier = "Mem_UsedPercent";
+    List<TimeSeriesRecord> timeSeriesRecords1 =
+        generateTimeSeriesRecordData("host1", groupName, metricIdentifier, "Mem_UsedPercent", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords2 =
+        generateTimeSeriesRecordData("host2", groupName, metricIdentifier, "Mem_UsedPercent", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords3 =
+        generateTimeSeriesRecordData("host3", groupName, metricIdentifier, "Mem_UsedPercent", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecordList = Stream.of(timeSeriesRecords1, timeSeriesRecords2, timeSeriesRecords3)
+                                                      .flatMap(Collection::stream)
+                                                      .collect(Collectors.toList());
+
+    mockOnboardingService(onboardingRequestDTO, timeSeriesRecordList);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/metric-records")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(queryRecordsRequest)));
+
+    MetricRecordsResponse metricRecordsResponse =
+        response.readEntity(new GenericType<RestResponse<MetricRecordsResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords1, "host1"));
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords2, "host2"));
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords3, "host3"));
   }
 }
