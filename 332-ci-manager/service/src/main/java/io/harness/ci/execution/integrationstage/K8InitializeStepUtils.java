@@ -1152,8 +1152,12 @@ public class K8InitializeStepUtils {
     } else if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
       StepGroupElementConfig stepGroupElementConfig =
           IntegrationStageUtils.getStepGroupElementConfig(executionWrapperConfig);
+      String stepGroupIdentifier = stepGroupElementConfig.getIdentifier();
+      if (!isEmpty(stepGroupIdOfParent)) {
+        stepGroupIdentifier = stepGroupIdOfParent + UNDERSCORE_SEPARATOR + stepGroupIdentifier;
+      }
       for (ExecutionWrapperConfig executionWrapper : stepGroupElementConfig.getSteps()) {
-        populateStepConnectorRefsUtil(executionWrapper, ambiance, map, stepGroupElementConfig.getIdentifier());
+        populateStepConnectorRefsUtil(executionWrapper, ambiance, map, stepGroupIdentifier);
       }
     }
   }
