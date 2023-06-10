@@ -9,7 +9,8 @@ LABEL name="harness/delegate-minimal" \
       vendor="Harness" \
       maintainer="Harness"
 
-RUN microdnf install --nodocs \
+RUN microdnf update --nodocs --setopt=install_weak_deps=0 \
+  && microdnf install --nodocs \
     procps \
     hostname \
     lsof \
