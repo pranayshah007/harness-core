@@ -1,4 +1,4 @@
-BUILD_SCRIPT_PATH: 332-ci-manager/build/feature_build.sh
+BUILD_SCRIPT_PATH: build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/dist/ci-manager/Dockerfile-cie-jdk
 CONTEXT_PATH: /harness/harness-core/dist/ci-manager
 ARTIFACT_REPO: harness/feature-ci-manager-openjdk-8u242

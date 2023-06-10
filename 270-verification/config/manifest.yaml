@@ -1,4 +1,4 @@
-BUILD_SCRIPT_PATH: 270-verification/build/feature_build.sh
+BUILD_SCRIPT_PATH: build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/dist/verification-service/Dockerfile-cie-jdk
 CONTEXT_PATH: /harness/harness-core/dist/verification-service
 ARTIFACT_REPO: harness/feature-verification-service-openjdk-8u242
