@@ -32,6 +32,7 @@ import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamRollbackStep;
+import io.harness.cdng.aws.sam.DownloadManifestsStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -303,6 +304,7 @@ public class NgStepRegistrar {
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
     engineSteps.put(AwsSamBuildStep.STEP_TYPE, AwsSamBuildStep.class);
     engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
+    engineSteps.put(DownloadManifestsStep.STEP_TYPE, DownloadManifestsStep.class);
 
     // Service Hooks
     engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);

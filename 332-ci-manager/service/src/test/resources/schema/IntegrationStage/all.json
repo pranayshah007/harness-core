@@ -4087,6 +4087,12 @@
                 }
               ]
             },
+            "outputFilePathsContent": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "projectName": {
               "type": "string"
             },
@@ -11872,7 +11878,19 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "sharedPaths": {
-          "$ref": "#/definitions/ParameterFieldListString"
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "stepGroupInfra": {
           "oneOf": [

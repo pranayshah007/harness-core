@@ -15,8 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -35,6 +38,8 @@ import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.execution.plugin.StepImageConfig;
@@ -57,6 +62,10 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
   @Inject PluginExecutionConfig pluginExecutionConfig;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
+  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
+
+  @Inject private OutcomeService outcomeService;
+
   @Override
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
@@ -73,7 +82,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        request, awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser());
+        awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
@@ -158,10 +167,19 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
       }
     }
 
-    // Resolve Expressions
-    // cdExpressionResolver.updateExpressions(ambiance, buildCommandOptions);
+    ManifestsOutcome manifestsOutcome =
+        (ManifestsOutcome) outcomeService
+            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+            .getOutcome();
 
-    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "");
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
+        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
+            manifestsOutcome.values());
+
+    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+        awsSamDirectoryManifestOutcome);
+
+    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
     samBuildEnvironmentVariablesMap.put(
         "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
 

@@ -869,6 +869,12 @@
                 }
               ]
             },
+            "outputFilePathsContent": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "projectName": {
               "type": "string"
             },
