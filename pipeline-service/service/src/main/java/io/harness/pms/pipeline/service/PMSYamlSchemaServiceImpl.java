@@ -151,8 +151,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {
-        log.error(String.format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s",
-                      accountId, orgId, projectId),
+        log.error(format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s", accountId,
+                      orgId, projectId),
             e);
         // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
         // save/execute).
@@ -180,8 +180,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {
-        log.error(String.format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s",
-                      accountId, orgId, projectId),
+        log.error(format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s", accountId,
+                      orgId, projectId),
             e);
         // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
         // save/execute).
@@ -534,12 +534,12 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
     try {
       // Read the JSON file as JsonNode
-      log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
+      log.info(format("Fetching static schema with file URL %s ", fileUrl));
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(fileUrl));
 
       return jsonNode;
     } catch (Exception ex) {
-      log.error(String.format("Not able to read file from %s path", fileUrl));
+      log.error(format("Not able to read file from %s path", fileUrl));
     }
     return null;
   }
@@ -564,7 +564,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         log.error("Code should never reach here {}", entityType);
     }
 
-    return String.format(fileURL, version, entityTypeJson);
+    return format(fileURL, version, entityTypeJson);
   }
 
   private String getYamlGroup(String yamlGroup) {
