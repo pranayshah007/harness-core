@@ -13,7 +13,7 @@ server:
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: h2
-      port: 9091
+      port: 9096
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -702,7 +702,7 @@ eventListenersCountConfig:
 
 delegateQueueServiceConfig:
     topic: "delegate-service"
-    enableQueueAndDequeue: false
+    enableQueueAndDequeue: true
     queueServiceClientConfig:
       httpClientConfig:
         baseUrl: http://localhost:9091/
@@ -760,7 +760,7 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
-runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-false}
+runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
 
 secretsConfiguration:
   secretResolutionEnabled: false

@@ -42,6 +42,7 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -111,6 +112,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                          .build())
               .filter(this::isResourceAvailableToAssignTask)
               .collect(toList());
+      log.info("Dequeue list {}", delegateTasksDequeueList);
       delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
       return true;
     } catch (Exception e) {
@@ -160,7 +162,12 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
 
   @VisibleForTesting
   List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
-    return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
+    List<Delegate> delegateList = new ArrayList<>();
+    for (String delegateId : eligibleDelegateId) {
+      Delegate delegate = delegateCache.get(accountId, delegateId, false);
+      delegateList.add(delegate);
+    }
+    return delegateList;
   }
 
   @VisibleForTesting
@@ -180,7 +187,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
             return;
           }
           String taskId =
-              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
+              delegateTaskServiceClassic.saveAndBroadcastDelegateTaskV2(delegateTaskDequeue.getDelegateTask());
           log.info("Queued task {} broadcasting to delegate.", taskId);
         }
       }
