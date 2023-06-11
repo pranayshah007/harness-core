@@ -68,7 +68,7 @@ public class GitClonePluginInfoProvider implements PluginInfoProvider {
         k8InitializeStepUtils.createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, null,
             null, portFinder, 0, ciAbstractStepNode.getIdentifier(), ciAbstractStepNode.getName(),
             ciAbstractStepNode.getType(), timeout, request.getAccountId(), OSType.fromString(request.getOsType()),
-            request.getAmbiance(), 0, 0);
+            ambiance, 0, 0);
     List<SecretVariable> secretVariables = containerDefinitionInfo.getSecretVariables()
                                                .stream()
                                                .map(SecretNgVariableUtils::getSecretVariable)

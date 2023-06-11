@@ -985,6 +985,9 @@ io.harness.cdng.k8s.K8sCanaryDeleteStepParameters
 io.harness.cdng.infra.yaml.PdcInfrastructure
 io.harness.cdng.k8s.K8sBlueGreenOutcome
 io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome
+io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome
 io.harness.cdng.jenkins.jenkinsstep.JenkinsStepPassThoughData
 io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
 io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
+io.harness.cdng.aws.sam.DownloadManifestsStepInfo
+io.harness.cdng.aws.sam.DownloadManifestsStepNode

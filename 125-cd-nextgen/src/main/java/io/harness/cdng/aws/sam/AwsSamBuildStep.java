@@ -51,16 +51,19 @@ public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParamete
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    // todo: add env variable and image and entrypoint
     AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
     awsSamStepHelper.verifyPluginImageIsProvider(awsSamBuildStepParameters.getImage());
 
+    Map<String, String> envVarMap = new HashMap<>();
+
+    awsSamStepHelper.putValuesYamlEnvVars(ambiance, awsSamBuildStepParameters, envVarMap);
+
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
         awsSamBuildStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
