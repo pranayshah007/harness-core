@@ -137,6 +137,12 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
   @Override
   public AnalysisState handleSuccess(SLIMetricAnalysisState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
+    handleFinalStatuses(analysisState);
+    return analysisState;
+  }
+
+  @Override
+  public void handleFinalStatuses(SLIMetricAnalysisState analysisState) {
     if (analysisState.getInputs().isSLORestoreTask()) {
       ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(
           verificationTaskService.getSliId(analysisState.getInputs().getVerificationTaskId()));
@@ -163,7 +169,6 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
                                                .build());
       }
     }
-    return analysisState;
   }
 
   @Override
