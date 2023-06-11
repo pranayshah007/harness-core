@@ -205,7 +205,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -215,6 +214,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -298,10 +298,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
-
-  final Comparator<Map.Entry<String, Integer>> delegateTaskCountComparator = (d1, d2) -> {
-    return d1.getValue() - d2.getValue();
-  };
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -866,41 +862,23 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Map<String, Integer> tasksCount =
         delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, summingInt(delegateTaskCount -> 1)));
     eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0));
-    // find entry with minimum count and used that to split into 2 maps
-    Optional<Map.Entry<String, Integer>> minCount = tasksCount.entrySet().stream().min(delegateTaskCountComparator);
-    int minVal = minCount.isPresent() ? minCount.get().getValue() : 0;
-
-    // first map with min value entries only to apply shuffling. Note we only care about shuffling min values to pick
-    // first broadcast
-    Map<String, Integer> minValues = tasksCount.entrySet()
-                                         .stream()
-                                         .filter(entry -> entry.getValue() <= minVal)
-                                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    // if there are only one entry with minValue, then we dont need extra shuffling. Return sorted list.
-    if (minValues.size() <= 1) {
-      return tasksCount.entrySet()
-          .stream()
-          .sorted(delegateTaskCountComparator)
-          .map(Map.Entry::getKey)
-          .collect(toList());
-    }
-    // if present more than one min value, then do extra shuffle/swapping for entries with minVal
-    List<String> delegateIds = new ArrayList<>(minValues.keySet());
-    Collections.swap(delegateIds, 0, random.nextInt(delegateIds.size()));
-    // if list is very large then above swap should be sufficient, as shuffle on large list can cause slowness
-    if (delegateIds.size() < 100) {
+    TreeMap<Integer, List<String>> taskCountToDelegates = tasksCount.entrySet().stream().collect(Collectors.groupingBy(
+        Map.Entry::getValue, TreeMap::new, Collectors.mapping(Map.Entry::getKey, Collectors.toList())));
+    // In order to improve randomness on delegate ids with same task counts, we apply the following
+    // 1: Add first map entry value(list of delegateIds) to an output list,
+    // 2: Do swap/shuffle if list has more than one delegateIds. Note we only concerned about shuffling delegateIds with
+    // min count
+    // 3: Add rest of map entry values to output list. 4:
+    List<String> delegateIds = new ArrayList<>(taskCountToDelegates.firstEntry().getValue());
+    if (delegateIds.size() > 1) {
+      Collections.swap(delegateIds, 0, random.nextInt(delegateIds.size()));
       Collections.shuffle(delegateIds);
     }
-
-    // Add sorted second half of delegateIds to the above list.
-    // Note adding sorting is not necessary here, it helps rebroadcast in sorted order.
-    List<String> secondHalfDelegateIds = tasksCount.entrySet()
-                                             .stream()
-                                             .filter(entry -> entry.getValue() > minVal)
-                                             .sorted(delegateTaskCountComparator)
-                                             .map(Map.Entry::getKey)
-                                             .collect(toList());
-    delegateIds.addAll(secondHalfDelegateIds);
+    delegateIds.addAll(taskCountToDelegates.entrySet()
+                           .stream()
+                           .skip(1) // Skip the first entry
+                           .flatMap(entry -> entry.getValue().stream())
+                           .collect(Collectors.toList()));
     return delegateIds;
   }
 
