@@ -2164,7 +2164,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
-  @Ignore
+  @Ignore("This test need to be fixed by Fernando Dourado")
   public void testGetPreviousApprovalDetails() {
     String approvalId = generateUuid();
     WorkflowExecution currentWorkflowExecution =
