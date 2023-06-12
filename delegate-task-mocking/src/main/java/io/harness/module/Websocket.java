@@ -1,15 +1,18 @@
 package io.harness.module;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.name.Named;
+import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.security.TokenGenerator;
 import io.harness.security.X509TrustManagerBuilder;
 
 import io.harness.taskResponse.TaskResponse;
+import io.harness.threading.ThreadPool;
 import io.harness.util.DataConfiguration;
 import io.harness.util.DelegateTaskExecutionData;
 import io.harness.util.RequestCall;
@@ -40,10 +43,8 @@ import java.rmi.UnexpectedException;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
 
 
 @Slf4j
@@ -78,7 +79,11 @@ public class Websocket{
     private DelegateTaskResponse delegateTaskResponse = null;
 
     private TaskResponse taskResponse = null;
-    private final ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1000);
+    private final ThreadPoolExecutor threadPoolExecutor = ThreadPool.create(10, 400, 1, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder().setNameFormat("task-exec-%d").setPriority(Thread.MIN_PRIORITY).build());
+
+    private ScheduledExecutorService healthMonitorExecutor = new ScheduledThreadPoolExecutor(
+            1, new ThreadFactoryBuilder().setNameFormat("healthMonitor-%d").setPriority(Thread.MAX_PRIORITY).build());
     private final Map<String, DelegateTaskEvent> currentlyExecutingFutures = new ConcurrentHashMap<>();
     private int waitTime = new Random().nextInt(10 - 0 + 1) + 0;
     public Websocket(DataConfiguration delegateData,  int delegateIdGen, String uuid, Injector injector) {
@@ -155,17 +160,25 @@ public class Websocket{
                 });
 
         socket.open(requestBuilder.build());
-        Thread.sleep(1000);
         String connectionTimeInMin = System.getenv("CONNECTION_TIME_IN_MIN");
         int round = connectionTimeInMin!=null?Integer.parseInt(connectionTimeInMin):10000;
-        for (int i = 0; i < round; i++) {
-            System.out.println("HeartBeat going" +" - "+ delegateId);
-            heartBeat.sendHeartbeat(accountId, delegateId, delegateTokenName, delegateConnectionId);
-            Thread.sleep(50000);
-        }
+        startHeartbeat(accountId, delegateId, delegateTokenName, delegateConnectionId);
+        Thread.sleep(round*60000);
         socket.close();
         System.exit(0);
     }
+
+    private void startHeartbeat(String accountId, String delegateId, String delegateTokenName, String delegateConnectionId) {
+        healthMonitorExecutor.scheduleAtFixedRate(() -> {
+            try {
+                System.out.println("HeartBeat going" +" - "+ delegateId);
+                heartBeat.sendHeartbeat(accountId, delegateId, delegateTokenName, delegateConnectionId);
+            } catch (Exception ex) {
+                log.error("Exception while sending heartbeat", ex);
+            }
+        }, 0, 50000, TimeUnit.MILLISECONDS);
+    }
+
     private void handleMessageSubmit(String message) {
         DelegateTaskEvent delegateTaskEvent;
         if (StringUtils.startsWith(message, TASK_EVENT_MARKER)) {
@@ -181,6 +194,7 @@ public class Websocket{
                     return;
                 }
                 DelegateTaskExecutionData taskExecutionData = DelegateTaskExecutionData.builder().build();
+
                 if (currentlyExecutingFutures.putIfAbsent(delegateTaskEvent.getDelegateTaskId(), delegateTaskEvent) == null) {
                     final Future<?> taskFuture = threadPoolExecutor.submit(() -> dispatchDelegateTaskAsync(delegateTaskEvent));
                     taskExecutionData.setTaskFuture(taskFuture);
@@ -207,14 +221,11 @@ public class Websocket{
         try {
         currentlyAcquiringTasks.add(delegateTaskId);
 
-
-        httpput = new HttpPut("https://"+env+"/api/agent/delegates/"+delegateId+"/tasks/"+delegateTaskId+"/acquire/v2?accountId="+accountId+"&delegateInstanceId="+delegateId);
-        httpput.addHeader("Authorization","Delegate "+strToken);
-        httpput.addHeader("Content-Type","application/json");
-        httpClient.execute(httpput);
+        request.acquireTask(env,delegateTaskId,delegateId,accountId,strToken);
         executeTask(delegateTaskEvent);
+        System.out.println("threadPoolExecutor.getCompletedTaskCount() : " + threadPoolExecutor.getCompletedTaskCount());
     } catch (Exception ex) {
-        log.error("Exception while acquiring task {}",delegateTaskId);
+        log.error("Exception while acquiring task {}",ex);
     } finally {
         currentlyAcquiringTasks.remove(delegateTaskId);
         currentlyExecutingFutures.remove(delegateTaskId);
@@ -222,19 +233,12 @@ public class Websocket{
     }
     private void executeTask(DelegateTaskEvent delegateTaskEvent) throws Exception{
         taskResponse = new TaskResponse();
-        PoolingHttpClientConnectionManager connManager
-                = new PoolingHttpClientConnectionManager();
-        connManager.setDefaultMaxPerRoute(100);
-        httpClient = HttpClients.custom().setConnectionManager(connManager)
-                .build();
-
         final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
         String strToken = tokenGenerator.getToken("https", "localhost", 9090, "test-0");
-
         delegateTaskResponse = taskResponse.getTaskResponse(delegateTaskEvent, delegateId);
         Thread.sleep(waitTime*1000);
         if (delegateTaskResponse != null) {
-            request.requestNew(delegateTaskResponse,delegateTaskId,delegateId,accountId,strToken, injector, env);
+            request.executeTask(delegateTaskResponse,delegateTaskId,delegateId,accountId,strToken, injector, env);
         }
     }
 

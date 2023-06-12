@@ -47,15 +47,33 @@ public class CSVParser {
         List<DataConfiguration> testCases = new ArrayList<>();
         try {
             for (String line : lines) {
-                String[] data = line.split(",");
-                if (data.length != 4) {
-                    throw new Exception("Data is invalid");
-                }
-                //need to change
-                testCases.add(null);
+                data = line.split(DELIMITER);
+                dataConfiguration.setEnv(data[0]);
+                dataConfiguration.setVersion(data[1]);
+                dataConfiguration.setAccountId(data[2]);
+                dataConfiguration.setToken(data[3]);
+                dataConfiguration.setDelegateName(data[4]);
+                dataConfiguration.setDelegateCount(Integer.parseInt(data[5]));
+                testCases.add(dataConfiguration);
             }
         } catch (Exception ex) {
             log.error("Exception while reading data from csv file");
+        }
+        return testCases;
+    }
+
+    public static List<DataConfiguration> readFromStringArray(String[] data) {
+
+        List<DataConfiguration> testCases = new ArrayList<>();
+        try {
+            dataConfiguration.setEnv(data[0]);
+            dataConfiguration.setVersion(data[1]);
+            dataConfiguration.setAccountId(data[2]);
+            dataConfiguration.setToken(data[3]);
+            dataConfiguration.setDelegateName(data[4]);
+            testCases.add(dataConfiguration);
+        } catch (Exception ex) {
+            log.error("Exception while reading data from args file");
         }
         return testCases;
     }

@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class DelegateMockApp {
     private static final String DELEGATE_DATA_CSV =System.getenv().get("DELEGATE_DETAIL_CSV");
+
     private static final List<DataConfiguration> obj = DELEGATE_DATA_CSV !=null ? CSVParser.readFromString(DELEGATE_DATA_CSV): CSVParser.readFromCSV("delegate.csv");
 
     public static void main(String... args) throws Exception {
