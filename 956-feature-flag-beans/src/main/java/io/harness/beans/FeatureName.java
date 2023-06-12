@@ -802,7 +802,9 @@ public enum FeatureName {
   PL_HELM2_DELEGATE_BANNER("FF for adding banner on delegate to mention deprecation of helm 2", HarnessTeam.PL),
   PIE_PROCESS_ON_JSON_NODE(
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
-      PIPELINE);
+      PIPELINE),
+
+  SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {
