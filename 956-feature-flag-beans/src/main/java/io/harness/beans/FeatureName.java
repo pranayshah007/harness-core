@@ -805,7 +805,8 @@ public enum FeatureName {
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
       PIPELINE),
 
-  SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV);
+  SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
+  PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
