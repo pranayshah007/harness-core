@@ -14,6 +14,7 @@ build --java_runtime_version=local_jdk
 build --tool_java_language_version=11
 build --tool_java_runtime_version=local_jdk
 build --javacopt='--release 11'
+build --jvmopt="--illegal-access=warn"
 
 # Use JDK17 targeting JDK11 --config=jdk1711
 build:jdk1711 --jvmopt="--add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED"
