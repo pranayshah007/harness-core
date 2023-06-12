@@ -9,7 +9,7 @@ LABEL name="harness/delegate" \
       vendor="Harness" \
       maintainer="Harness"
 
-RUN microdnf update --nodocs \
+RUN microdnf update --nodocs --setopt=install_weak_deps=0 \
   && microdnf install --nodocs \
     procps \
     hostname \
@@ -30,7 +30,7 @@ COPY immutable-scripts /opt/harness-delegate/
 
 WORKDIR /opt/harness-delegate
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV LANG=en_US.UTF-8
 ENV HOME=/opt/harness-delegate
