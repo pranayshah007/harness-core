@@ -41,4 +41,7 @@ public class K8sBlueGreenBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @YamlSchemaTypes({runtime}) List<K8sStepCommandFlag> commandFlags;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({expression})
+  ParameterField<Boolean> skipDeploymentIfSameManifest;
 }

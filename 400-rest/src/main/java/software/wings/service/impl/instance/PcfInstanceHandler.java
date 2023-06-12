@@ -144,11 +144,15 @@ public class PcfInstanceHandler extends InstanceHandler implements InstanceSyncB
           failedToRetrieveData = true;
         } catch (Exception e) {
           if (e instanceof PcfAppNotFoundException) {
-            throw new InvalidRequestException(
-                String.format(
-                    "Application not found for PCF application Name: [%s] with InfraMappingId: [%s], Failed to perform instance sync for this PCF Application with Exception: [%s]",
-                    pcfApplicationName, infraMappingId, ExceptionUtils.getMessage(e)),
-                e);
+            if (instanceSyncFlow.equals(NEW_DEPLOYMENT)) {
+              failedToRetrieveData = true;
+            } else {
+              throw new InvalidRequestException(
+                  String.format(
+                      "Application not found for PCF application Name: [%s] with InfraMappingId: [%s], Failed to perform instance sync for this PCF Application with Exception: [%s]",
+                      pcfApplicationName, infraMappingId, ExceptionUtils.getMessage(e)),
+                  e);
+            }
           } else {
             throw new InvalidRequestException(
                 String.format(

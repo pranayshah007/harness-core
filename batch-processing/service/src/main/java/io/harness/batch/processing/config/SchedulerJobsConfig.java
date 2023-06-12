@@ -20,4 +20,6 @@ public class SchedulerJobsConfig {
   private String budgetCostUpdateJobCron;
   private String connectorHealthUpdateJobCron;
   private String awsAccountTagsCollectionJobCron;
+  private String governanceRecommendationJobCronAws;
+  private String governanceRecommendationJobCronAzure;
 }

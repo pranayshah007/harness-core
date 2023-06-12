@@ -67,6 +67,11 @@ public class EngineExpressionSecretUtils {
     }
 
     @Override
+    public Object getContextValue(String key) {
+      return ctx.get(key);
+    }
+
+    @Override
     public String resolveInternal(String expression) {
       try {
         JexlExpression jexlExpression = engine.createExpression(expression);

@@ -95,6 +95,23 @@ public class MonitoringSourcePerpetualTaskServiceImpl
   }
 
   @Override
+  public void createDeploymentTaskAndPerpetualTaskInSyncForTemplateCV(String accountId, String orgIdentifier,
+      String projectIdentifier, String connectorIdentifier, String monitoringSourceIdentifier, boolean isDemo) {
+    MonitoringSourcePerpetualTask monitoringSourcePerpetualTask =
+        MonitoringSourcePerpetualTask.builder()
+            .accountId(accountId)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .connectorIdentifier(connectorIdentifier)
+            .monitoringSourceIdentifier(monitoringSourceIdentifier)
+            .verificationType(VerificationType.DEPLOYMENT)
+            .isDemo(isDemo)
+            .build();
+    hPersistence.insertIgnoringDuplicateKeys(monitoringSourcePerpetualTask);
+    createPerpetualTask(monitoringSourcePerpetualTask);
+  }
+
+  @Override
   public void deleteTask(
       String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier) {
     List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks =

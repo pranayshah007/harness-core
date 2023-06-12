@@ -147,6 +147,7 @@ public class SCMGitSyncHelper {
         scmErrorHandler.processAndThrowException(getFileResponse.getStatusCode(),
             getScmErrorDetailsFromGitProtoResponse(getFileResponse.getError()), scmGitMetaData);
       }
+      log.info("Git SDK file content {} and scmGetMetadata : {}", getFileResponse.getFileContent(), scmGitMetaData);
       return ScmGetFileResponse.builder()
           .fileContent(getFileResponse.getFileContent())
           .gitMetaData(scmGitMetaData)

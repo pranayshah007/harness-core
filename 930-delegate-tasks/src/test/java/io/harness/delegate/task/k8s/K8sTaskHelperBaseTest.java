@@ -95,6 +95,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
+import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.connector.ConnectivityStatus;
@@ -152,6 +153,7 @@ import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
+import io.harness.exception.WingsException;
 import io.harness.filesystem.FileIo;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
@@ -167,9 +169,10 @@ import io.harness.k8s.kubectl.DescribeCommand;
 import io.harness.k8s.kubectl.GetCommand;
 import io.harness.k8s.kubectl.GetJobCommand;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
+import io.harness.k8s.kubectl.OcClient;
 import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
-import io.harness.k8s.kubectl.VersionCommand;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
@@ -333,6 +336,16 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
       HelmCommandFlag.builder().valueMap(ImmutableMap.of(TEMPLATE, flagValue)).build();
 
   long LONG_TIMEOUT_INTERVAL = 60 * 1000L;
+  private static final String validDeploymentWorkload =
+      "namespace/Deployment/name,namespace/ConfigMap/name,namespace/ConfigMap/name2,namespace/Secret/name";
+  private static final String validStatefulSetWorkload =
+      "namespace/StatefulSet/name,namespace/ConfigMap/name,namespace/ConfigMap/name2,namespace/Secret/name";
+  private static final String validDeploymentConfigWorkload =
+      "namespace/DeploymentConfig/name,namespace/ConfigMap/name,namespace/ConfigMap/name2,namespace/Secret/name";
+  private static final String invalidDeploymentWorkload =
+      "namespace/Deployment/name,namespace/Deployment/name2,namespace/ConfigMap/name,namespace/ConfigMap/name2,namespace/Secret/name";
+  private static final String invalidWorkload =
+      "namespace/ConfigMap/name,namespace/ConfigMap/name2,namespace/Secret/name";
 
   @Before
   public void setup() throws Exception {
@@ -630,13 +643,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
     MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
     PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
-    spyK8sTaskHelperBase.dryRunManifests(client,
+    Kubectl ocClient = OcClient.client("oc", "config-path");
+    ocClient.setVersion(Version.parse("4.2"));
+    MockedStatic<KubectlFactory> mockFactory = mockStatic(KubectlFactory.class);
+    PowerMockito.when(KubectlFactory.getOpenShiftClient("oc", "config-path", ".")).thenReturn(ocClient);
+    spyK8sTaskHelperBase.dryRunManifests(ocClient,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback, false);
     mock.close();
+    mockFactory.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
         .isEqualTo("oc --kubeconfig=config-path apply --filename=manifests-dry-run.yaml --dry-run");
@@ -660,11 +678,11 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .kubectlPath("kubectl")
                                                       .kubeconfigPath("config-path")
                                                       .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", ".");
 
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.dryRunManifests(
-                               client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true, false))
+                               client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
@@ -682,7 +700,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         ProcessResponse.builder()
             .processResult(new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes())))
             .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", ".");
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
     ProcessResult result = new ProcessResult(0, null);
     doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
@@ -702,7 +720,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                         .spec("Sample resouece")
                         .resourceId(new KubernetesResourceId().builder().kind("Deployment").name("test-svc").build())
                         .build()),
-                k8sDelegateTaskParams, executionLogCallback, true, false))
+                k8sDelegateTaskParams, executionLogCallback, true))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
@@ -718,7 +736,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDryRunManifestIsErrorFrameworkEnabledWithEmptyOutput() throws Exception {
     ProcessResponse response = ProcessResponse.builder().processResult(new ProcessResult(1, null)).build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", ".");
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
     ProcessResult result = new ProcessResult(0, null);
     doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
@@ -738,7 +756,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                         .spec("Sample resouece")
                         .resourceId(new KubernetesResourceId().builder().kind("Deployment").name("test-svc").build())
                         .build()),
-                k8sDelegateTaskParams, executionLogCallback, true, false))
+                k8sDelegateTaskParams, executionLogCallback, true))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getResourcesNotApplied().contains("deployment/test-svc"));
@@ -751,49 +769,12 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
-  public void testDryRunForOpenshiftResourcesNoOutput() throws Exception {
-    ProcessResult result = new ProcessResult(0, null);
-    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+  public void testDryRunForOpenshiftResourcesKubernetesVersion() {
     final String workingDirectory = ".";
-    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
-                                                      .workingDirectory(workingDirectory)
-                                                      .ocPath("oc")
-                                                      .kubectlPath("kubectl")
-                                                      .kubeconfigPath("config-path")
-                                                      .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
-    String result2 = spyK8sTaskHelperBase.getKubernetesVersion(k8sDelegateTaskParams, client);
-    assertThat(result2).isEqualTo("");
-    ArgumentCaptor<VersionCommand> captor = ArgumentCaptor.forClass(VersionCommand.class);
-    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutableSilent(any(), captor.capture());
-    assertThat(captor.getValue().command()).isEqualTo("kubectl --kubeconfig=config-path version --output=json ");
-  }
+    Kubectl client = KubectlFactory.getOpenShiftClient("kubectl", "config-path", workingDirectory);
 
-  @Test
-  @Owner(developers = TARUN_UBA)
-  @Category(UnitTests.class)
-  public void testDryRunForOpenshiftResourcesKubernetesVersion() throws Exception {
-    ProcessResult result = new ProcessResult(0,
-        new ProcessOutput(
-            "{\"clientVersion\":{\"gitVersion\":\"v1.19.2\"},\"serverVersion\":{\"gitVersion\":\"v1.23.14-gke.1800\"}}"
-                .getBytes()));
-    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
-
-    final String workingDirectory = ".";
-    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
-                                                      .workingDirectory(workingDirectory)
-                                                      .ocPath("oc")
-                                                      .kubectlPath("kubectl")
-                                                      .kubeconfigPath("config-path")
-                                                      .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
-
-    String result2 = spyK8sTaskHelperBase.getKubernetesVersion(k8sDelegateTaskParams, client);
-    assertThat(result2).contains(
-        "{\"clientVersion\":{\"gitVersion\":\"v1.19.2\"},\"serverVersion\":{\"gitVersion\":\"v1.23.14-gke.1800\"}}");
-    ArgumentCaptor<VersionCommand> captor = ArgumentCaptor.forClass(VersionCommand.class);
-    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutableSilent(any(), captor.capture());
-    assertThat(captor.getValue().command()).isEqualTo("kubectl --kubeconfig=config-path version --output=json ");
+    String result2 = client.getVersion().toString();
+    assertThat(result2).isEqualTo("4.2.16");
   }
 
   @Test
@@ -811,8 +792,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .ocPath("oc")
                                                       .kubeconfigPath("config-path")
                                                       .build();
-    Kubectl client = Kubectl.client("kubectl", "config-path");
-
+    Kubectl client = KubectlFactory.getKubectlClient("kubectl", "config-path", workingDirectory);
+    client.setVersion(Version.parse("1.21"));
     spyK8sTaskHelperBase.applyManifests(client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true, null);
 
     ArgumentCaptor<ApplyCommand> captor = ArgumentCaptor.forClass(ApplyCommand.class);
@@ -824,13 +805,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(AbstractExecutable.class));
     MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
     PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
-    spyK8sTaskHelperBase.applyManifests(client,
+    Kubectl ocClient = OcClient.client("oc", "config-path");
+    ocClient.setVersion(Version.parse("4.7"));
+    MockedStatic<KubectlFactory> mockFactory = mockStatic(KubectlFactory.class);
+    PowerMockito.when(KubectlFactory.getOpenShiftClient("oc", "config-path", ".")).thenReturn(ocClient);
+    spyK8sTaskHelperBase.applyManifests(ocClient,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback, true, null);
     mock.close();
+    mockFactory.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
         .isEqualTo("oc --kubeconfig=config-path apply --filename=manifests.yaml --record");
@@ -1126,15 +1112,69 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     Kubectl kubectl = Kubectl.client("kubectl", "config-path");
     ProcessResponse response =
         ProcessResponse.builder().processResult(new ProcessResult(1, new ProcessOutput("failure".getBytes()))).build();
-    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
-    final boolean success = spyK8sTaskHelperBase.checkIfResourceExists(kubectl, K8sDelegateTaskParams.builder().build(),
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    final boolean success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
         KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
         executionLogCallback);
     assertThat(success).isFalse();
     ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
-    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
     assertThat(captor.getValue().command())
-        .isEqualTo("kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default");
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidateScaleDownResourcesSuccess() throws Exception {
+    Kubectl kubectl = Kubectl.client("kubectl", "config-path");
+    ProcessResponse response =
+        ProcessResponse.builder()
+            .processResult(new ProcessResult(0, new ProcessOutput("false".getBytes(StandardCharsets.UTF_8))))
+            .build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    boolean success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isTrue();
+    ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
+    assertThat(captor.getValue().command())
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
+
+    response = ProcessResponse.builder()
+                   .processResult(new ProcessResult(0, new ProcessOutput("true".getBytes(StandardCharsets.UTF_8))))
+                   .build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isFalse();
+    captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(2)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
+    assertThat(captor.getValue().command())
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
+
+    response = ProcessResponse.builder()
+                   .processResult(new ProcessResult(0, new ProcessOutput("".getBytes(StandardCharsets.UTF_8))))
+                   .build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
+        KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
+        executionLogCallback);
+    assertThat(success).isTrue();
+    captor = ArgumentCaptor.forClass(GetCommand.class);
+    verify(spyK8sTaskHelperBase, times(3)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
+    assertThat(captor.getValue().command())
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
   }
 
   @Test
@@ -1142,16 +1182,19 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateExistingResourceIdsSuccess() throws Exception {
     Kubectl kubectl = Kubectl.client("kubectl", "config-path");
-    ProcessResponse response = ProcessResponse.builder().processResult(new ProcessResult(0, null)).build();
-    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
-    final boolean success = spyK8sTaskHelperBase.checkIfResourceExists(kubectl, K8sDelegateTaskParams.builder().build(),
+    ProcessResponse response =
+        ProcessResponse.builder().processResult(new ProcessResult(0, new ProcessOutput("".getBytes()))).build();
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(), eq(WARN));
+    final boolean success = spyK8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(kubectl,
+        K8sDelegateTaskParams.builder().build(),
         KubernetesResourceId.builder().name("nginx").kind("Deployment").namespace("default").build(),
         executionLogCallback);
     assertThat(success).isTrue();
     ArgumentCaptor<GetCommand> captor = ArgumentCaptor.forClass(GetCommand.class);
-    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture(), eq(WARN));
     assertThat(captor.getValue().command())
-        .isEqualTo("kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default");
+        .isEqualTo(
+            "kubectl --kubeconfig=config-path get Deployment/nginx --namespace=default --output=jsonpath='{.metadata.annotations.harness\\.io/direct-apply}'");
   }
 
   @Test
@@ -3897,5 +3940,42 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                           .collect(Collectors.toList());
     assertThat(diff.size()).isEqualTo(1);
     assertThat(diff.get(0).getKind()).isEqualTo(Namespace.name());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testCreateKubernetesResourceIdFromNamespaceKindNameWrapper() {
+    KubernetesResourceId kubernetesResourceId =
+        spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(validDeploymentWorkload);
+    assertThat(kubernetesResourceId).isNotNull();
+    assertThat(kubernetesResourceId.namespaceKindNameRef()).isEqualTo("namespace/Deployment/name");
+
+    kubernetesResourceId = spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(validStatefulSetWorkload);
+    assertThat(kubernetesResourceId).isNotNull();
+    assertThat(kubernetesResourceId.namespaceKindNameRef()).isEqualTo("namespace/StatefulSet/name");
+
+    kubernetesResourceId =
+        spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(validDeploymentConfigWorkload);
+    assertThat(kubernetesResourceId).isNotNull();
+    assertThat(kubernetesResourceId.namespaceKindNameRef()).isEqualTo("namespace/DeploymentConfig/name");
+
+    kubernetesResourceId =
+        spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload("namespace/Deployment/name");
+    assertThat(kubernetesResourceId).isNotNull();
+    assertThat(kubernetesResourceId.namespaceKindNameRef()).isEqualTo("namespace/Deployment/name");
+
+    assertThatThrownBy(
+        () -> spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(invalidDeploymentWorkload))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Invalid Kubernetes resource name " + invalidDeploymentWorkload
+            + ". More than one workloads found. Others should be marked with annotation"
+            + HarnessAnnotations.directApply + ": true");
+
+    assertThatThrownBy(() -> spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(invalidWorkload))
+        .hasMessage("Invalid Kubernetes resource name " + invalidWorkload + ". No workload found");
+
+    assertThatThrownBy(() -> spyK8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload("dummy"))
+        .hasMessage("Invalid Kubernetes resource name dummy. Should be in format Kind/Name");
   }
 }

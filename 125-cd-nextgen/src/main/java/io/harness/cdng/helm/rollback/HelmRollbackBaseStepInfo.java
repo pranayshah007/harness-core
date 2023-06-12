@@ -7,6 +7,7 @@
 
 package io.harness.cdng.helm.rollback;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -38,4 +39,5 @@ public class HelmRollbackBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String helmRollbackFqn;
+  @YamlSchemaTypes({expression, bool}) ParameterField<Boolean> skipSteadyStateCheck;
 }

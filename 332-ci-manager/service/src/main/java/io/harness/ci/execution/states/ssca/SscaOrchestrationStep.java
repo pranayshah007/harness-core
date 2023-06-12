@@ -57,6 +57,28 @@ public class SscaOrchestrationStep extends AbstractStepExecutable {
   }
 
   @Override
+  protected StepArtifacts handleArtifactForVm(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+
+    SBOMArtifactResponse sbomArtifactResponse =
+        sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
+    return StepArtifacts.builder()
+        .publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                   .id(sbomArtifactResponse.getArtifact().getId())
+                                   .url(sbomArtifactResponse.getArtifact().getUrl())
+                                   .imageName(sbomArtifactResponse.getArtifact().getName())
+                                   .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
+                                   .sbomName(sbomArtifactResponse.getSbom().getName())
+                                   .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
+                                   .stepExecutionId(stepExecutionId)
+                                   .build())
+        .build();
+  }
+
+  @Override
   protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {
     StepArtifactsBuilder stepArtifactsBuilder = StepArtifacts.builder();
     if (artifactMetadata == null) {

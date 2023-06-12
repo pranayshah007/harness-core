@@ -279,7 +279,9 @@ public class VmInitializeTaskParamsBuilder {
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountId));
-    envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId));
+    if (featureFlagService.isEnabled(FeatureName.SSCA_ENABLED, accountId)) {
+      envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId));
+    }
     return envVars;
   }
 

@@ -28,6 +28,7 @@ import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityGitMetadata;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
@@ -101,6 +102,24 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
             .build();
     List<EntitySetupUsage> entitySetupUsages = entitySetupUsageEventDTOMapper.toEntityDTO(createSetupUsageDTO);
     assertThat(entitySetupUsages.size()).isEqualTo(8);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ADITHYA)
+  @Category(UnitTests.class)
+  public void toEntityDTOWhenGitMetadataIsPresent() {
+    EntityDetailProtoDTO referredByEntity =
+        createEntityDetailDTOWithGitMetadata("pipelineIdentifier", EntityTypeProtoEnum.PIPELINES, branch, repo);
+    EntitySetupUsageCreateV2DTO createSetupUsageDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                          .setAccountIdentifier(accountIdentifier)
+                                                          .setReferredByEntity(referredByEntity)
+                                                          .setDeleteOldReferredByRecords(true)
+                                                          .build();
+    List<EntitySetupUsage> entitySetupUsages = entitySetupUsageEventDTOMapper.toEntityDTO(createSetupUsageDTO);
+    assertThat(entitySetupUsages.size()).isEqualTo(1);
+    EntitySetupUsage entitySetupUsage = entitySetupUsages.get(0);
+    assertThat(entitySetupUsage.getReferredByEntity().getEntityGitMetadata().getBranch()).isEqualTo(branch);
+    assertThat(entitySetupUsage.getReferredByEntity().getEntityGitMetadata().getRepo()).isEqualTo(repo);
   }
 
   @Test
@@ -329,6 +348,21 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
     return EntityDetailProtoDTO.newBuilder()
         .setIdentifierRef(identifierRefProtoDTO)
         .setType(entityTypeProtoEnum)
+        .build();
+  }
+  private EntityDetailProtoDTO createEntityDetailDTOWithGitMetadata(
+      String identifier, EntityTypeProtoEnum entityTypeProtoEnum, String branch, String repo) {
+    IdentifierRefProtoDTO identifierRefProtoDTO = IdentifierRefProtoDTO.newBuilder()
+                                                      .setAccountIdentifier(StringValue.of(accountIdentifier))
+                                                      .setOrgIdentifier(StringValue.of(orgIdentifier))
+                                                      .setProjectIdentifier(StringValue.of(projectIdentifier))
+                                                      .setIdentifier(StringValue.of(identifier))
+                                                      .setScope(PROJECT)
+                                                      .build();
+    return EntityDetailProtoDTO.newBuilder()
+        .setIdentifierRef(identifierRefProtoDTO)
+        .setType(entityTypeProtoEnum)
+        .setEntityGitMetadata(EntityGitMetadata.newBuilder().setRepo(repo).setBranch(branch).build())
         .build();
   }
 

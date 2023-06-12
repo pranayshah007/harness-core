@@ -10,6 +10,7 @@ package io.harness.delegate.beans.azure.response;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,6 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
-public class AzureValidateTaskResponse extends AzureDelegateTaskResponse {
+public class AzureValidateTaskResponse extends AzureDelegateTaskResponse implements ConnectorValidationResponseData {
   private ConnectorValidationResult connectorValidationResult;
 }

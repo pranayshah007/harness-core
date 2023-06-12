@@ -359,6 +359,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
+
     // For backward compatibility
     metricPackThresholds.forEach(metricPackThreshold
         -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));

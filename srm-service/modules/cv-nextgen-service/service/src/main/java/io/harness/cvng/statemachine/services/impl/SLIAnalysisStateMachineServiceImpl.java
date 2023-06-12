@@ -11,6 +11,7 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_SLI;
 
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -29,12 +30,13 @@ public class SLIAnalysisStateMachineServiceImpl extends AnalysisStateMachineServ
 
   @Override
   public AnalysisStateMachine createStateMachine(AnalysisInput inputForAnalysis) {
-    AnalysisStateMachine stateMachine = AnalysisStateMachine.builder()
-                                            .verificationTaskId(inputForAnalysis.getVerificationTaskId())
-                                            .analysisStartTime(inputForAnalysis.getStartTime())
-                                            .analysisEndTime(inputForAnalysis.getEndTime())
-                                            .status(AnalysisStatus.CREATED)
-                                            .build();
+    AnalysisStateMachine stateMachine =
+        AnalysisStateMachine.builder()
+            .verificationTaskId(inputForAnalysis.getVerificationTaskId())
+            .analysisStartTime(DateTimeUtils.roundDownTo5MinBoundary(inputForAnalysis.getStartTime()))
+            .analysisEndTime(DateTimeUtils.roundDownTo5MinBoundary(inputForAnalysis.getEndTime()))
+            .status(AnalysisStatus.CREATED)
+            .build();
 
     String sliId = verificationTaskService.getSliId(inputForAnalysis.getVerificationTaskId());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);

@@ -222,9 +222,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
       String principalIdentifier, Scope scope, boolean createAccountViewerRoleBinding) {
     createRoleAssignment(
         principalIdentifier, scope, true, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    boolean isAccountBasicFeatureFlagEnabled =
-        ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
-    if (!isAccountBasicFeatureFlagEnabled && createAccountViewerRoleBinding) {
+    if (createAccountViewerRoleBinding) {
       createRoleAssignment(principalIdentifier, scope, false, false, ACCOUNT_VIEWER_ROLE,
           DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     }

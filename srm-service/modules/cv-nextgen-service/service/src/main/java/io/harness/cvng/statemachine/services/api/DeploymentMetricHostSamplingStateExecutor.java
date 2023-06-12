@@ -32,7 +32,7 @@ public class DeploymentMetricHostSamplingStateExecutor extends HostSamplingState
   protected Set<String> getPostDeploymentHosts(
       VerificationJobInstance verificationJobInstance, AnalysisInput analysisInput) {
     List<TimeSeriesRecordDTO> postDeploymentTimeSeriesRecords = timeSeriesRecordService.getTimeSeriesRecordDTOs(
-        analysisInput.getVerificationTaskId(), analysisInput.getStartTime(), analysisInput.getEndTime());
+        analysisInput.getVerificationTaskId(), verificationJobInstance.getStartTime(), analysisInput.getEndTime());
     return postDeploymentTimeSeriesRecords.stream().map(TimeSeriesRecordDTO::getHost).collect(Collectors.toSet());
   }
 

@@ -60,7 +60,7 @@ public class TemplateYamlConversionHelper {
     if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.STEPGROUP_TEMPLATE)) {
       rootFieldYamlField.getNode().removePath("stepGroup/stageType");
     }
-    return YamlUtils.write(rootFieldYamlField.getNode().getCurrJsonNode()).replace("---\n", "");
+    return YamlUtils.writeYamlString(rootFieldYamlField.getNode().getCurrJsonNode());
   }
 
   private JsonNode getTemplateSpecNode(String templateYaml) {

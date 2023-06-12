@@ -30,6 +30,7 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
+import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -277,6 +278,9 @@ public class PcfSwitchBlueGreenRoutes extends State {
           (PcfRouteUpdateStateExecutionData) context.getStateExecutionData();
       stateExecutionData.setStatus(executionStatus);
       stateExecutionData.setErrorMsg(executionResponse.getErrorMessage());
+      CfRouteUpdateCommandResponse cfRouteUpdateCommandResponse =
+          (CfRouteUpdateCommandResponse) executionResponse.getPcfCommandResponse();
+      stateExecutionData.setFinalAppDetails(cfRouteUpdateCommandResponse.getUpdatedValues());
       if (executionStatus == ExecutionStatus.SUCCESS) {
         pcfStateHelper.updateInfoVariables(context, stateExecutionData, executionResponse, isRollback());
       }

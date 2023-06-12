@@ -46,6 +46,7 @@ import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
@@ -81,6 +82,7 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineMetadataInternalDTO;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
@@ -90,6 +92,7 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
@@ -97,9 +100,9 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
-import io.harness.utils.NGPipelineSettingsConstant;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -206,14 +209,15 @@ public class ExecutionHelper {
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       boolean isDebug) {
     return buildExecutionArgs(pipelineEntity, moduleType, mergedRuntimeInputYaml, stagesToRun, expressionValues,
-        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null);
+        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null, null);
   }
 
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
   @SneakyThrows
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
-      boolean isDebug, String notes) {
+      boolean isDebug, String notes, JsonNode mergedRuntimeInputJsonNode) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
 
@@ -224,73 +228,42 @@ public class ExecutionHelper {
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                  pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), executionId)) {
-      String version = pipelineEntity.getHarnessVersion();
-      String pipelineYaml;
-      String pipelineYamlWithTemplateRef;
-      boolean allowedStageExecution;
+      PipelineMetadataInternalDTO pipelineMetadataInternalDTO =
+          getPipelineMetadataInternalDTO(pipelineEntity, mergedRuntimeInputYaml, mergedRuntimeInputJsonNode);
+
+      // This will only be non-null in case of V0 for now.
+      BasicPipeline basicPipeline = pipelineMetadataInternalDTO.getBasicPipeline();
+      String pipelineYamlWithTemplateRef = pipelineMetadataInternalDTO.getPipelineYamlWithTemplateRef();
       List<NotificationRules> notificationRules = new ArrayList<>();
-      switch (version) {
-        case PipelineVersion.V1:
-          allowedStageExecution = false;
-          pipelineYaml =
-              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
-          pipelineYamlWithTemplateRef = pipelineYaml;
-          break;
-        case PipelineVersion.V0:
-          TemplateMergeResponseDTO templateMergeResponseDTO =
-              getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
-          pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
-          pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
-          BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
-          allowedStageExecution = basicPipeline.isAllowStageExecutions();
-          notificationRules = basicPipeline.getNotificationRules();
-          break;
-        default:
-          throw new InvalidRequestException("version not supported");
+      boolean allowedStageExecution = false;
+      if (basicPipeline != null) {
+        notificationRules = basicPipeline.getNotificationRules();
+        allowedStageExecution = pipelineMetadataInternalDTO.getBasicPipeline().isAllowStageExecutions();
       }
 
-      ProcessStageExecutionInfoResult processStageExecutionInfoResult = processStageExecutionInfo(stagesToRun,
-          allowedStageExecution, pipelineEntity, pipelineYaml, pipelineYamlWithTemplateRef, expressionValues);
+      // TODO(Shalini): Change these methods to use jsonNode instead of yaml in processing.
+      // This method throws error if stagesToRun is empty when allowedStageExecution is true. So, this needs to be done
+      // before validating yaml schema, else error propagation would be different.
+      ProcessStageExecutionInfoResult processStageExecutionInfoResult =
+          processStageExecutionInfo(stagesToRun, allowedStageExecution, pipelineEntity,
+              pipelineMetadataInternalDTO.getPipelineYaml(), pipelineYamlWithTemplateRef, expressionValues);
       StagesExecutionInfo stagesExecutionInfo = processStageExecutionInfoResult.getStagesExecutionInfo();
       pipelineYamlWithTemplateRef = processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef();
 
-      /*
-    For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
-    the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
-    in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
-    give an error in schema validation. That's why we need a value that doesn't have this validator appended.
-     */
-      // We don't have schema validation for V1 yaml as of now.
-      if (PipelineVersion.V0.equals(version)) {
-        String yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
-        pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
-      }
-
-      Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
-          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version, notes);
-      if (stagesExecutionInfo.isStagesExecution()) {
-        pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
-            YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
+      validateYamlSchema(pipelineEntity, mergedRuntimeInputYaml, mergedRuntimeInputJsonNode);
+      PlanExecutionMetadata planExecutionMetadata;
+      if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+        planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity,
+            YamlUtils.writeYamlString(mergedRuntimeInputJsonNode), originalExecutionId, retryExecutionParameters,
+            notifyOnlyUser, notes, executionId, stagesExecutionInfo, pipelineYamlWithTemplateRef);
       } else {
-        pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+        planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity, mergedRuntimeInputYaml, originalExecutionId,
+            retryExecutionParameters, notifyOnlyUser, notes, executionId, stagesExecutionInfo,
+            pipelineYamlWithTemplateRef);
       }
-      String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
-          OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
-      planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
-      boolean isRetry = retryExecutionParameters.isRetry();
-      if (isRetry) {
-        planExecutionMetadataBuilder.retryStagesMetadata(
-            RetryStagesMetadata.builder()
-                .retryStagesIdentifier(retryExecutionParameters.getRetryStagesIdentifier())
-                .skipStagesIdentifier(retryExecutionParameters.getIdentifierOfSkipStages())
-                .build());
-      }
-      PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
       // RetryExecutionInfo
-      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
+      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(retryExecutionParameters.isRetry(), originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
           triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules, isDebug);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
@@ -306,6 +279,93 @@ public class ExecutionHelper {
       throw new InvalidRequestException("Failed to start execution for Pipeline.", e);
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
+    }
+  }
+
+  private PipelineMetadataInternalDTO getPipelineMetadataInternalDTO(PipelineEntity pipelineEntity,
+      String mergedRuntimeInputYaml, JsonNode mergedRuntimeInputJsonNode) throws Exception {
+    String pipelineYaml;
+    String pipelineYamlWithTemplateRef;
+    BasicPipeline basicPipeline = null;
+    switch (pipelineEntity.getHarnessVersion()) {
+      case PipelineVersion.V1:
+        if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+          pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
+              mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
+          pipelineYamlWithTemplateRef = pipelineYaml;
+        } else {
+          pipelineYaml =
+              InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(mergedRuntimeInputYaml, pipelineEntity.getYaml());
+          pipelineYamlWithTemplateRef = pipelineYaml;
+        }
+        break;
+      case PipelineVersion.V0:
+        TemplateMergeResponseDTO templateMergeResponseDTO;
+        if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+          templateMergeResponseDTO =
+              getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputJsonNode, pipelineEntity);
+        } else {
+          templateMergeResponseDTO =
+              getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputYaml, pipelineEntity);
+        }
+        pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
+        pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+        basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+        break;
+      default:
+        throw new InvalidRequestException("version not supported");
+    }
+    return PipelineMetadataInternalDTO.builder()
+        .pipelineYaml(pipelineYaml)
+        .basicPipeline(basicPipeline)
+        .pipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .build();
+  }
+
+  private PlanExecutionMetadata buildPlanExecutionMetadata(PipelineEntity pipelineEntity, String mergedRuntimeInputYaml,
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
+      String notes, String executionId, StagesExecutionInfo stagesExecutionInfo, String pipelineYamlWithTemplateRef)
+      throws Exception {
+    Builder planExecutionMetadataBuilder =
+        obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId, stagesExecutionInfo, originalExecutionId,
+            retryExecutionParameters, notifyOnlyUser, pipelineEntity.getHarnessVersion(), notes);
+    if (stagesExecutionInfo.isStagesExecution()) {
+      pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
+          YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
+    } else {
+      pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+    }
+    String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
+        OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+    planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
+    if (retryExecutionParameters.isRetry()) {
+      planExecutionMetadataBuilder.retryStagesMetadata(
+          RetryStagesMetadata.builder()
+              .retryStagesIdentifier(retryExecutionParameters.getRetryStagesIdentifier())
+              .skipStagesIdentifier(retryExecutionParameters.getIdentifierOfSkipStages())
+              .build());
+    }
+    return planExecutionMetadataBuilder.build();
+  }
+
+  public void validateYamlSchema(
+      PipelineEntity pipelineEntity, String mergedRuntimeInputYaml, JsonNode mergedRuntimeInputJsonNode) {
+    /*
+    For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
+    the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
+    in pipelineYamlJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+    give an error in schema validation. That's why we need a value that doesn't have this validator appended.
+     */
+    // We don't have schema validation for V1 yaml as of now.
+    if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
+      if (EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode) && !isEmpty(mergedRuntimeInputYaml)) {
+        mergedRuntimeInputJsonNode = YamlUtils.readAsJsonNode(mergedRuntimeInputYaml);
+      }
+      JsonNode jsonNodeForValidatingSchema =
+          getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputJsonNode, pipelineEntity);
+      pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), jsonNodeForValidatingSchema);
     }
   }
 
@@ -360,28 +420,60 @@ public class ExecutionHelper {
     return pipelineYamlConfigForSchemaValidations.getYaml();
   }
 
+  public JsonNode getPipelineYamlWithUnResolvedTemplates(
+      JsonNode mergedRuntimeInputJsonNode, PipelineEntity pipelineEntity) {
+    JsonNode pipelineJsonNodeForSchemaValidations;
+    if (EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+      pipelineJsonNodeForSchemaValidations = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
+    } else {
+      /*
+      For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
+      the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
+      in pipelineJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+      give an error in schema validation. That's why we need a value that doesn't have this validator appended.
+       */
+      pipelineJsonNodeForSchemaValidations = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+          YamlUtils.readAsJsonNode(pipelineEntity.getYaml()), mergedRuntimeInputJsonNode, false);
+    }
+    pipelineJsonNodeForSchemaValidations = InputSetSanitizer.trimValues(pipelineJsonNodeForSchemaValidations);
+    return pipelineJsonNodeForSchemaValidations;
+  }
+
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
       String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
-    YamlConfig pipelineYamlConfig;
+    JsonNode runtimeInputJsonNode = null;
+    if (!isEmpty(mergedRuntimeInputYaml)) {
+      runtimeInputJsonNode = YamlUtils.readAsJsonNode(mergedRuntimeInputYaml);
+    }
+    return getPipelineYamlAndValidateStaticallyReferredEntities(runtimeInputJsonNode, pipelineEntity);
+  }
+
+  @VisibleForTesting
+  TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
+      JsonNode mergedRuntimeInputJsonNode, PipelineEntity pipelineEntity) {
+    JsonNode pipelineJsonNode;
 
     long start = System.currentTimeMillis();
-    if (isEmpty(mergedRuntimeInputYaml)) {
-      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+    if (EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
+      pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
     } else {
-      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
-      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      pipelineYamlConfig = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-          pipelineEntityYamlConfig, runtimeInputYamlConfig, true, true);
+      JsonNode pipelineEntityJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
+      pipelineJsonNode = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+          pipelineEntityJsonNode, mergedRuntimeInputJsonNode, true, true);
     }
-    pipelineYamlConfig = InputSetSanitizer.trimValues(pipelineYamlConfig);
+    return getPipelineYamlAndValidateStaticallyReferredEntities(pipelineJsonNode, pipelineEntity, start);
+  }
 
-    String pipelineYaml = pipelineYamlConfig.getYaml();
+  TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
+      JsonNode pipelineJsonNode, PipelineEntity pipelineEntity, long start) {
+    pipelineJsonNode = InputSetSanitizer.trimValues(pipelineJsonNode);
+
+    String pipelineYaml = YamlUtils.writeYamlString(pipelineJsonNode);
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
-    String unresolvedPipelineYaml = pipelineYaml;
     String pipelineYamlWithTemplateRef = pipelineYaml;
-    if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
+    if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineJsonNode))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
@@ -399,7 +491,7 @@ public class ExecutionHelper {
       // RBAC checks can't be provided for remote pipelines
       pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-          unresolvedPipelineYaml);
+          pipelineJsonNode);
     }
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)
@@ -682,17 +774,21 @@ public class ExecutionHelper {
 
       List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
 
-      // TODO: The filed useMatrixFieldName is redundant, we can make use of the settingToValueMap values. Please make
-      // sure before removing the field from proto that its not being used anywhere. Also there has been some releases
-      // after removing the usages of the field to maintain Backward compatibility.
       for (SettingResponseDTO settingDto : response) {
         SettingDTO setting = settingDto.getSetting();
-        if (setting.getIdentifier().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
-            && setting.getValue().equals("true")) {
-          builder.setUseMatrixFieldName(true);
-        } else {
-          builder.putSettingToValueMap(setting.getIdentifier(), setting.getValue());
-        }
+        builder.putSettingToValueMap(setting.getIdentifier(), setting.getValue());
+      }
+
+      // TODO(Remove this specific setting call once the settings-list API returns all scope settings and not only
+      // project)
+      if (!builder.getSettingToValueMapMap().containsKey(
+              NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName())) {
+        Call<ResponseDTO<SettingValueResponseDTO>> auditSettingResponseDTO =
+            settingsClient.getSetting(NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName(),
+                pipelineEntity.getAccountIdentifier(), null, null);
+        SettingValueResponseDTO auditSettingResponse = NGRestUtils.getResponse(auditSettingResponseDTO);
+        builder.putSettingToValueMap(
+            NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName(), auditSettingResponse.getValue());
       }
     } catch (Exception e) {
       log.error("Error in fetching pipeline Settings due to {}", e.getMessage());

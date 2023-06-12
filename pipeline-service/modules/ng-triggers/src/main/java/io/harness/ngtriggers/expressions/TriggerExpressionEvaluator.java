@@ -41,6 +41,9 @@ public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {
     if (parseWebhookResponse != null) {
       if (parseWebhookResponse.hasPr()) {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPr(parseWebhookResponse.getPr()).build()).build();
+      } else if (parseWebhookResponse.hasRelease()) {
+        builder.setParsedPayload(ParsedPayload.newBuilder().setRelease(parseWebhookResponse.getRelease()).build())
+            .build();
       } else {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPush(parseWebhookResponse.getPush()).build()).build();
       }

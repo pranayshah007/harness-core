@@ -8,6 +8,7 @@
 package io.harness.ng.core.artifacts.resources.ecr;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.cdng.artifact.NGArtifactConstants.REGISTRY_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -30,6 +31,7 @@ import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -68,24 +70,26 @@ public class EcrArtifactResource {
   @GET
   @Path("getBuildDetails")
   @ApiOperation(value = "Gets ecr build details", nickname = "getBuildDetailsForEcr")
-  public ResponseDTO<EcrResponseDTO> getBuildDetails(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("region") String region, @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrResponseDTO> getBuildDetails(@QueryParam(REGISTRY_ID) String registryId,
+      @NotNull @QueryParam("imagePath") String imagePath, @NotNull @QueryParam("region") String region,
+      @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    EcrResponseDTO buildDetails =
-        ecrResourceService.getBuildDetails(connectorRef, imagePath, region, orgIdentifier, projectIdentifier);
+    EcrResponseDTO buildDetails = ecrResourceService.getBuildDetails(
+        connectorRef, registryId, imagePath, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
 
   @POST
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets ecr build details with yaml expression", nickname = "getBuildDetailsForEcrWithYaml")
-  public ResponseDTO<EcrResponseDTO> getBuildDetailsV2(@QueryParam("imagePath") String imagePath,
-      @QueryParam("region") String region, @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrResponseDTO> getBuildDetailsV2(@QueryParam(REGISTRY_ID) String registryId,
+      @QueryParam("imagePath") String imagePath, @QueryParam("region") String region,
+      @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -97,6 +101,9 @@ public class EcrArtifactResource {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(registryId) && ParameterField.isNotNull(ecrArtifactConfig.getRegistryId())) {
+        registryId = (String) ecrArtifactConfig.getRegistryId().fetchFinalValue();
+      }
       if (isEmpty(imagePath)) {
         imagePath = (String) ecrArtifactConfig.getImagePath().fetchFinalValue();
       }
@@ -114,6 +121,10 @@ public class EcrArtifactResource {
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    registryId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, registryId, fqnPath, gitEntityBasicInfo, serviceRef);
+
     imagePath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
 
@@ -121,15 +132,15 @@ public class EcrArtifactResource {
     region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
-    EcrResponseDTO buildDetails =
-        ecrResourceService.getBuildDetails(connectorRef, imagePath, region, orgIdentifier, projectIdentifier);
+    EcrResponseDTO buildDetails = ecrResourceService.getBuildDetails(
+        connectorRef, registryId, imagePath, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
 
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets ecr last successful build", nickname = "getLastSuccessfulBuildForEcr")
-  public ResponseDTO<EcrBuildDetailsDTO> getLastSuccessfulBuild(
+  public ResponseDTO<EcrBuildDetailsDTO> getLastSuccessfulBuild(@QueryParam(REGISTRY_ID) String registryId,
       @NotNull @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
       @NotNull @QueryParam(NGArtifactConstants.CONNECTOR_REF) String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -137,8 +148,8 @@ public class EcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, EcrRequestDTO requestDTO) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    EcrBuildDetailsDTO buildDetails =
-        ecrResourceService.getSuccessfulBuild(connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
+    EcrBuildDetailsDTO buildDetails = ecrResourceService.getSuccessfulBuild(
+        connectorRef, registryId, imagePath, requestDTO, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -147,7 +158,8 @@ public class EcrArtifactResource {
   @ApiOperation(
       value = "Gets ecr last successful build with yaml expression", nickname = "getLastSuccessfulBuildForEcrWithYaml")
   public ResponseDTO<EcrBuildDetailsDTO>
-  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+  getLastSuccessfulBuildV2(@QueryParam(REGISTRY_ID) String registryId,
+      @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
       @QueryParam(NGArtifactConstants.CONNECTOR_REF) String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -156,52 +168,58 @@ public class EcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull EcrRequestDTO ecrRequestDTO) {
-    EcrBuildDetailsDTO ecrBuildDetailsDTO =
-        artifactResourceUtils.getLastSuccessfulBuildV2ECR(imagePath, ecrConnectorIdentifier, accountId, orgIdentifier,
-            projectIdentifier, fqnPath, serviceRef, pipelineIdentifier, gitEntityBasicInfo, ecrRequestDTO);
+    EcrBuildDetailsDTO ecrBuildDetailsDTO = artifactResourceUtils.getLastSuccessfulBuildV2ECR(registryId, imagePath,
+        ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef, pipelineIdentifier,
+        gitEntityBasicInfo, ecrRequestDTO);
     return ResponseDTO.newResponse(ecrBuildDetailsDTO);
   }
 
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate ecr artifact server", nickname = "validateArtifactServerForEcr")
-  public ResponseDTO<Boolean> validateArtifactServer(@NotNull @QueryParam("imagePath") String imagePath,
+  public ResponseDTO<Boolean> validateArtifactServer(@QueryParam(REGISTRY_ID) String registryId,
+      @NotNull @QueryParam("imagePath") String imagePath,
       @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier, @NotNull @QueryParam("region") String region,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    boolean isValidArtifactServer =
-        ecrResourceService.validateArtifactServer(connectorRef, imagePath, orgIdentifier, projectIdentifier, region);
+    boolean isValidArtifactServer = ecrResourceService.validateArtifactServer(
+        connectorRef, registryId, imagePath, orgIdentifier, projectIdentifier, region);
     return ResponseDTO.newResponse(isValidArtifactServer);
   }
 
   @GET
   @Path("validateArtifactSource")
   @ApiOperation(value = "Validate Ecr image", nickname = "validateArtifactImageForEcr")
-  public ResponseDTO<Boolean> validateArtifactImage(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("region") String region, @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<Boolean> validateArtifactImage(@QueryParam(REGISTRY_ID) String registryId,
+      @NotNull @QueryParam("imagePath") String imagePath, @NotNull @QueryParam("region") String region,
+      @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    boolean isValidArtifactImage =
-        ecrResourceService.validateArtifactSource(imagePath, connectorRef, region, orgIdentifier, projectIdentifier);
+    boolean isValidArtifactImage = ecrResourceService.validateArtifactSource(
+        registryId, imagePath, connectorRef, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(isValidArtifactImage);
   }
 
   @POST
   @Path("validateArtifact")
   @ApiOperation(value = "Validate Ecr Artifact", nickname = "validateArtifactForEcr")
-  public ResponseDTO<Boolean> validateArtifact(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("region") String region, @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<Boolean> validateArtifact(@QueryParam(REGISTRY_ID) String registryId,
+      @NotNull @QueryParam("imagePath") String imagePath, @NotNull @QueryParam("region") String region,
+      @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, EcrRequestDTO requestDTO) {
     if (NGExpressionUtils.isRuntimeOrExpressionField(ecrConnectorIdentifier)) {
       throw new InvalidRequestException("ConnectorRef is an expression/runtime input, please send fixed value.");
+    }
+    if (NGExpressionUtils.isRuntimeOrExpressionField(registryId)) {
+      throw new InvalidRequestException("RegistryId is an expression/runtime input, please send fixed value.");
     }
     if (NGExpressionUtils.isRuntimeOrExpressionField(imagePath)) {
       throw new InvalidRequestException("ImagePath is an expression/runtime input, please send fixed value.");
@@ -216,12 +234,12 @@ public class EcrArtifactResource {
     boolean isValidArtifact = false;
     if (!ArtifactResourceUtils.isFieldFixedValue(requestDTO.getTag())
         && !ArtifactResourceUtils.isFieldFixedValue(requestDTO.getTagRegex())) {
-      isValidArtifact =
-          ecrResourceService.validateArtifactSource(imagePath, connectorRef, region, orgIdentifier, projectIdentifier);
+      isValidArtifact = ecrResourceService.validateArtifactSource(
+          registryId, imagePath, connectorRef, region, orgIdentifier, projectIdentifier);
     } else {
       try {
         ResponseDTO<EcrBuildDetailsDTO> lastSuccessfulBuild = getLastSuccessfulBuild(
-            imagePath, ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, requestDTO);
+            registryId, imagePath, ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, requestDTO);
         if (lastSuccessfulBuild.getData() != null
             && EmptyPredicate.isNotEmpty(lastSuccessfulBuild.getData().getTag())) {
           isValidArtifact = true;
@@ -237,8 +255,8 @@ public class EcrArtifactResource {
   @POST
   @Path("getImages")
   @ApiOperation(value = "Gets ecr images", nickname = "getImagesListForEcr")
-  public ResponseDTO<EcrListImagesDTO> getImages(@QueryParam("region") String region,
-      @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrListImagesDTO> getImages(@QueryParam(REGISTRY_ID) String registryId,
+      @QueryParam("region") String region, @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("fqnPath") String fqnPath,
       String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
@@ -249,6 +267,9 @@ public class EcrArtifactResource {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(registryId) && ParameterField.isNotNull(ecrArtifactConfig.getRegistryId())) {
+        registryId = (String) ecrArtifactConfig.getRegistryId().fetchFinalValue();
+      }
       if (isEmpty(region)) {
         region = (String) ecrArtifactConfig.getRegion().fetchFinalValue();
         if (isEmpty(region)) {
@@ -261,13 +282,15 @@ public class EcrArtifactResource {
     }
     ecrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    registryId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, registryId, fqnPath, gitEntityBasicInfo, serviceRef);
     region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     EcrListImagesDTO ecrListImagesDTO =
-        ecrResourceService.getImages(connectorRef, region, orgIdentifier, projectIdentifier);
+        ecrResourceService.getImages(connectorRef, registryId, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(ecrListImagesDTO);
   }
 }

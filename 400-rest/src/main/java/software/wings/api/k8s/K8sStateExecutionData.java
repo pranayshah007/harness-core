@@ -64,6 +64,7 @@ public class K8sStateExecutionData extends StateExecutionData implements Delegat
   private List<KubernetesResourceId> prunedResourcesIds;
   private boolean exportManifests;
   private String zippedManifestFileId;
+  private boolean timeoutSupported;
   @Override
   public Map<String, ExecutionDataValue> getExecutionDetails() {
     return getInternalExecutionDetails();

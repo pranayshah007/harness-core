@@ -24,8 +24,10 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
+import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
+import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -104,9 +106,14 @@ public class PcfSwitchBlueGreenRoutesTest extends WingsBaseTest {
         PcfRouteUpdateStateExecutionData.builder()
             .pcfRouteUpdateRequestConfigData(CfRouteUpdateRequestConfigData.builder().build())
             .build();
+    CfInBuiltVariablesUpdateValues updatedValues =
+        CfInBuiltVariablesUpdateValues.builder().newAppName("newApp").oldAppName("oldApp").build();
+    CfRouteUpdateCommandResponse cfRouteUpdateCommandResponse =
+        CfRouteUpdateCommandResponse.builder().updateValues(updatedValues).build();
     CfCommandExecutionResponse commandExecutionResponse = CfCommandExecutionResponse.builder()
                                                               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                               .errorMessage("ERROR_MESSAGE")
+                                                              .pcfCommandResponse(cfRouteUpdateCommandResponse)
                                                               .build();
     response.put("1", commandExecutionResponse);
     doReturn(stateExecutionData).when(context).getStateExecutionData();

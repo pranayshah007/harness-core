@@ -440,7 +440,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     delegateConfiguration.setImmutable(isImmutableDelegate);
 
     // check if someone used the older stateful set yaml with immutable image
-    checkForMismatchBetweenImageAndK8sResourceType();
+    checkForImmutbleAndStatefulset();
 
     try {
       // Initialize delegate process in background.
@@ -471,8 +471,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
    * This will indicate that the customer started an immutable delegate with older stateful set yaml
    */
   @SuppressWarnings("PMD")
-  private void checkForMismatchBetweenImageAndK8sResourceType() {
-    if (!KUBERNETES.equals(DELEGATE_TYPE) && !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
+  private void checkForImmutbleAndStatefulset() {
+    if (!this.isImmutableDelegate || !KUBERNETES.equals(DELEGATE_TYPE) && !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
       return;
     }
 
@@ -484,19 +484,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try {
       int delegateIndex = Integer.parseInt(HOST_NAME.substring(index + 1));
       // a delegate can have a name like test-8bbd86b7b-23455 in which case we don't want to fail
-      if (delegateIndex < 1000 && isImmutableDelegate) {
+      if (delegateIndex < 1000) {
         log.error("It appears that you have used a legacy delegate yaml with the newer delegate image."
             + " Please note that for the delegate images formatted as YY.MM.XXXXX you should download a fresh yaml and not reuse legacy delegate yaml");
         System.exit(1);
       }
     } catch (NumberFormatException e) {
-      // if there is NumberFormatException then its a deployment
-      log.info("{} is not from a stateful set, checking whether its using immutable image", HOST_NAME);
-      if (!isImmutableDelegate) {
-        log.error(
-            "It appears that you have used a legacy delegate image with newer delegate yaml. Please use images formatted as YY.MM.XXXXX");
-        System.exit(1);
-      }
+      log.info("{} is not from a stateful set, continuing", HOST_NAME);
     } catch (StringIndexOutOfBoundsException e) {
       log.info("{} is an unexpected name, continuing", HOST_NAME);
     }
@@ -941,13 +935,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.startsWith(message, MIGRATE)) {
       migrate(StringUtils.substringAfter(message, MIGRATE));
     } else if (StringUtils.contains(message, INVALID_TOKEN.name())) {
-      log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+      log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
       initiateSelfDestruct();
     } else if (StringUtils.contains(message, EXPIRED_TOKEN.name())) {
-      log.warn("Delegate used expired token. It will be frozen and drained.");
+      log.error("Delegate used expired token. It will be frozen and drained.");
       freeze();
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
-      log.warn("Delegate used revoked token. It will be frozen and drained.");
+      log.error("Delegate used revoked token. It will be frozen and drained.");
       freeze();
     } else {
       log.warn("Delegate received unhandled message {}", message);
@@ -1096,15 +1090,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Received Error Response: {}", errorResponse);
 
       if (errorResponse.contains(INVALID_TOKEN.name())) {
-        log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+        log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
         initiateSelfDestruct();
       } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
         initiateSelfDestruct();
       } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-        log.warn("Delegate used expired token. It will be frozen and drained.");
+        log.error("Delegate used expired token. It will be frozen and drained.");
         freeze();
       } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-        log.warn("Delegate used revoked token. It will be frozen and drained.");
+        log.error("Delegate used revoked token. It will be frozen and drained.");
         freeze();
       }
 
@@ -2696,6 +2690,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       secretDetails.forEach((key, value) -> {
         char[] secretValue = decryptedRecords.get(value.getEncryptedRecord().getUuid());
+        if (secretValue == null) {
+          throw new UnexpectedException(format("Value for secret [%s] (uuid: [%s]) found null.",
+              value.getEncryptedRecord().getName(), value.getEncryptedRecord().getUuid()));
+        }
         secretUuidToValues.put(key, secretValue);
 
         // Adds secret values from the 3 phase decryption to the list of task secrets to be masked

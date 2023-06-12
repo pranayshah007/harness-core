@@ -8,6 +8,7 @@
 package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,9 +27,11 @@ import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.K8sInfrastructureUtility;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
@@ -63,7 +66,11 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   @Override
   public String getInfrastructureKind() {
-    return InfrastructureKind.KUBERNETES_DIRECT;
+    return KUBERNETES_DIRECT;
+  }
+
+  public boolean isInstanceSyncV2Enabled() {
+    return false;
   }
 
   @Override
@@ -91,17 +98,13 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         log.warn("Unexpected type of deploymentInfoDto, expected K8sDeploymentInfoDTO found {}",
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
-        // Todo: Add Cluster Name as well
-        K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
-        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.builder()
-                                                .releaseName(k8sDeploymentInfoDTO.getReleaseName())
-                                                .namespaces(k8sDeploymentInfoDTO.getNamespaces())
-                                                .build());
+        k8sDeploymentReleaseDetailsList.add(K8sInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO));
       }
     }
     return DeploymentReleaseDetails.builder()
         .taskInfoId(instanceSyncPerpetualTaskInfoDTO.getId())
         .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
+        .deploymentType(ServiceSpecType.KUBERNETES)
         .build();
   }
 
@@ -143,11 +146,21 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfoList.get(0);
     LinkedHashSet<String> namespaces = getNamespaces(serverInstanceInfoList);
 
+    K8sCloudConfigMetadata k8sCloudConfigMetadata =
+        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+
     return K8sDeploymentInfoDTO.builder()
         .namespaces(namespaces)
         .releaseName(k8sServerInstanceInfo.getReleaseName())
         .blueGreenStageColor(k8sServerInstanceInfo.getBlueGreenColor())
+        .cloudConfigMetadata(k8sCloudConfigMetadata)
         .build();
+  }
+
+  @Override
+  public InfrastructureOutcome getInfrastructureOutcome(
+      String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    return K8sInfrastructureUtility.getInfrastructureOutcome(infrastructureKind, deploymentInfoDTO, connectorRef);
   }
 
   private LinkedHashSet<String> getNamespaces(@NotNull List<ServerInstanceInfo> serverInstanceInfoList) {

@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileReference;
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
@@ -76,7 +77,9 @@ import io.harness.exception.SkipRollbackException;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.ng.core.models.Secret;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -95,6 +98,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.SecretType;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.ssh.FileSourceType;
@@ -113,6 +117,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -120,6 +125,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -143,6 +149,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private CommandStepRollbackHelper commandStepRollbackHelper;
   @Mock private NGLogCallback ngLogCallback;
   @Mock private EngineExpressionService engineExpressionService;
+  @Mock private NGSecretServiceV2 ngSecretServiceV2;
 
   @InjectMocks @Spy private SshCommandStepHelper helper;
 
@@ -251,6 +258,8 @@ public class SshCommandStepHelperTest extends CategoryTest {
   private OptionalSweepingOutput variablesSweepingOutput =
       OptionalSweepingOutput.builder().found(true).output(new VariablesSweepingOutput()).build();
 
+  MockedStatic<CommandStepUtils> mockStaticCommandStepUtils;
+
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
@@ -278,7 +287,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .when(sshWinRmArtifactHelper)
         .getArtifactDelegateConfigConfig(artifactoryArtifact, ambiance);
 
-    Mockito.mockStatic(CommandStepUtils.class);
+    mockStaticCommandStepUtils = Mockito.mockStatic(CommandStepUtils.class);
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
     doNothing()
@@ -290,6 +299,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(fileDelegateConfig)
         .when(sshWinRmConfigFileHelper)
         .getFileDelegateConfig(any(), eq(ambiance), anyBoolean());
+  }
+
+  @After
+  public void cleanup() {
+    mockStaticCommandStepUtils.close();
   }
 
   private HarnessStore getHarnessStore() {
@@ -565,6 +579,92 @@ public class SshCommandStepHelperTest extends CategoryTest {
 
     ArgumentCaptor<Ambiance> argumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
     verify(commandStepRollbackHelper, times(1)).deleteIfExistsCurrentStageExecutionInfo(argumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMap() {
+    LinkedHashMap<String, Object> evaluatedStageVariables =
+        new LinkedHashMap<>(Map.of("var1", "value1s", "var2", "value2s"));
+    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+        new LinkedHashMap<>(Map.of("var1", "value1p", "var3", "value3p"));
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of("var4", "value4"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(envVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var1")).isEqualTo("value1p");
+    assertThat(result.get("var2")).isEqualTo("value2s");
+    assertThat(result.get("var3")).isEqualTo("value3p");
+    assertThat(result.get("var4")).isEqualTo("value4");
+    assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testEvaluateVariables() {
+    doReturn(Optional.of(Secret.builder().type(SecretType.SecretText).build()))
+        .when(ngSecretServiceV2)
+        .get(any(IdentifierRef.class));
+    doReturn("evaluated String").when(cdExpressionResolver).renderExpression(any(), anyString());
+
+    Map<String, Object> variables = Map.of("key", "value");
+    Map<String, Object> result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("value");
+
+    variables = Map.of("key", ParameterField.createValueField("value"));
+    result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("value");
+
+    variables = Map.of("key", "<+secrets.getValue(\"secret\")>");
+    result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("evaluated String");
+
+    variables =
+        Map.of("key", ParameterField.createExpressionField(true, "<+secrets.getValue(\"secret\")>", null, true));
+    result = helper.evaluateVariables(ambiance, variables);
+    assertThat(result.get("key")).isEqualTo("evaluated String");
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

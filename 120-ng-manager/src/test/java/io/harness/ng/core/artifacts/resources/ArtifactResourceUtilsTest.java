@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -1294,10 +1295,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     doReturn(ECR_BUILD_DETAILS_DTO)
         .when(ecrResourceService)
-        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), isNull(), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
 
-    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(null, null, ACCOUNT_ID, ORG_ID, PROJECT_ID, FQN,
-                   SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(null, null, null, ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                   FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
                    EcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ECR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
@@ -1331,9 +1332,9 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     doReturn(ECR_BUILD_DETAILS_DTO)
         .when(ecrResourceService)
-        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+        .getSuccessfulBuild(eq(IDENTIFIER_REF), isNull(), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
 
-    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(IMAGE, CONNECTOR_REF, ACCOUNT_ID, ORG_ID,
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(null, IMAGE, CONNECTOR_REF, ACCOUNT_ID, ORG_ID,
                    PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, ECR_REQUEST_DTO))
         .isSameAs(ECR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
@@ -1363,6 +1364,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                               .tag(ParameterField.<String>builder().value(TAG_2).build())
                                               .tagRegex(ParameterField.<String>builder().value(TAG_REGEX_2).build())
                                               .region(ParameterField.createValueField(REGION_2))
+                                              .registryId(ParameterField.createValueField(REGISTRY))
                                               .build();
 
     doReturn(ecrArtifactConfig)
@@ -1371,7 +1373,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     doReturn(ECR_BUILD_DETAILS_DTO)
         .when(ecrResourceService)
-        .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
+        .getSuccessfulBuild(
+            eq(IDENTIFIER_REF), eq(REGISTRY), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
 
     doReturn(REGION)
         .when(spyartifactResourceUtils)
@@ -1394,7 +1397,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
             FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
 
-    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(IMAGE_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID,
+    assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(null, IMAGE_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID,
                    PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
                    EcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ECR_BUILD_DETAILS_DTO);

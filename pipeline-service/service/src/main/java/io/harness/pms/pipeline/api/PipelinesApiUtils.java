@@ -531,8 +531,6 @@ public class PipelinesApiUtils {
     switch (moveConfigOperationType) {
       case INLINE_TO_REMOTE:
         return io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
-      case REMOTE_TO_INLINE:
-        return io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
       default:
         throw new InvalidRequestException("Invalid move config type provided.");
     }

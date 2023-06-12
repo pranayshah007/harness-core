@@ -33,8 +33,9 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sBlueGreenStepParameters extends K8sBlueGreenBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public K8sBlueGreenStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<K8sStepCommandFlag> commandFlags) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<K8sStepCommandFlag> commandFlags,
+      ParameterField<Boolean> skipDeploymentIfSameManifest) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, commandFlags, skipDeploymentIfSameManifest);
   }
   @NotNull
   @Override

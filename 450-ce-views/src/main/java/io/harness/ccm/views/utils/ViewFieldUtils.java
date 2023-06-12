@@ -42,11 +42,11 @@ import java.util.Map;
 
 @OwnedBy(CE)
 public class ViewFieldUtils {
-  private static final String UNIFIED_TABLE = "unifiedTable";
-  private static final String CLUSTER_DATA_TABLE = "clusterData";
-  private static final String CLUSTER_DATA_HOURLY_TABLE = "clusterDataHourly";
-  private static final String CLUSTER_DATA_AGGREGATED_TABLE = "clusterDataAggregated";
-  private static final String CLUSTER_DATA_HOURLY_AGGREGATED_TABLE = "clusterDataHourlyAggregated";
+  public static final String UNIFIED_TABLE = "unifiedTable";
+  public static final String CLUSTER_DATA_TABLE = "clusterData";
+  public static final String CLUSTER_DATA_HOURLY_TABLE = "clusterDataHourly";
+  public static final String CLUSTER_DATA_AGGREGATED_TABLE = "clusterDataAggregated";
+  public static final String CLUSTER_DATA_HOURLY_AGGREGATED_TABLE = "clusterDataHourlyAggregated";
   public static final String COLUMN_MAPPING_KEY = "%s_%s";
 
   public static List<QLCEViewField> getAwsFields() {

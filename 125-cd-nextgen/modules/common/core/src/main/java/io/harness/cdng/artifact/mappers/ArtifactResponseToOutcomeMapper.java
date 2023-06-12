@@ -240,6 +240,7 @@ public class ArtifactResponseToOutcomeMapper {
         .project(azureArtifactsConfig.getProject().getValue())
         .packageType(azureArtifactsConfig.getPackageType().getValue())
         .scope(azureArtifactsConfig.getScope().getValue())
+        .metadata(useDelegateResponse ? getMetadata(azureArtifactsDelegateResponse) : null)
         .build();
   }
 
@@ -318,7 +319,6 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
-    Map<String, String> metadata = null;
     String displayName = null;
     checkSHAEquality(dockerDelegateResponse, dockerConfig.getDigest(), useDelegateResponse);
     if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
@@ -342,7 +342,7 @@ public class ArtifactResponseToOutcomeMapper {
         .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
         .digest(dockerConfig.getDigest() != null ? dockerConfig.getDigest().getValue() : null)
-        .metadata(metadata)
+        .metadata(useDelegateResponse ? getMetadata(dockerDelegateResponse) : null)
         .build();
   }
 
@@ -404,6 +404,7 @@ public class ArtifactResponseToOutcomeMapper {
       EcrArtifactDelegateResponse ecrArtifactDelegateResponse, boolean useDelegateResponse) {
     checkSHAEquality(ecrArtifactDelegateResponse, ecrArtifactConfig.getDigest(), useDelegateResponse);
     return EcrArtifactOutcome.builder()
+        .registryId(getRegistryId(ecrArtifactDelegateResponse))
         .image(getImageValue(ecrArtifactDelegateResponse))
         .connectorRef(ecrArtifactConfig.getConnectorRef().getValue())
         .imagePath(ecrArtifactConfig.getImagePath().getValue())
@@ -690,6 +691,13 @@ public class ArtifactResponseToOutcomeMapper {
     return useDelegateResponse
         ? bambooArtifactDelegateResponse.getBuild()
         : (bambooArtifactConfig.getBuild() != null ? bambooArtifactConfig.getBuild().getValue() : null);
+  }
+
+  private String getRegistryId(EcrArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || StringUtils.isBlank(artifactDelegateResponse.getRegistryId())) {
+      return null;
+    }
+    return artifactDelegateResponse.getRegistryId();
   }
 
   private String getImageValue(ArtifactDelegateResponse artifactDelegateResponse) {

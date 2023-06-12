@@ -35,11 +35,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,7 +71,12 @@ public class YamlUtils {
       configureObjectMapperForNG(new ObjectMapper(new YAMLFactory()));
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
+    mapper.registerModule(new EdgeCaseRegexModule());
+    mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     mapper.disable(DeserializationFeature.FAIL_ON_MISSING_EXTERNAL_TYPE_ID_PROPERTY);
     mapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver()));
@@ -84,6 +91,15 @@ public class YamlUtils {
     mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
+  // Takes stringified yaml as input and returns the JsonNode
+  public JsonNode readAsJsonNode(String yaml) {
+    try {
+      return mapper.readTree(yaml);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
+    }
+  }
+
   public <T> T read(String yaml, Class<T> cls) throws IOException {
     return mapper.readValue(yaml, cls);
   }
@@ -96,39 +112,35 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
+  @Deprecated
+  // Use writeYamlString method instead
+  // It will replace "---\n" with ""
   public String write(Object object) {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml");
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+    }
+  }
+
+  public String writeYamlString(Object object) {
+    try {
+      return mapper.writeValueAsString(object).replace("---\n", "");
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+    }
+  }
+
+  public JsonNode replaceYamlInJsonNode(JsonNode jsonNode, String yaml) {
+    try {
+      return mapper.readerForUpdating(jsonNode).readValue(yaml);
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't replace yaml in jsonNode", e);
     }
   }
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
-  }
-
-  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
-  // save. The below yaml is invalid and should not be allowed to save.
-  /*
-  pipeline:
-    name: pipeline
-    orgIdentifier: org
-    projectIdentifier: project
-    orgIdentifier: org
-   */
-  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
-    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
-    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
-    return readTreeInternal(content, mapperWithDuplicate);
-  }
-
-  public YamlField tryReadTree(String content) {
-    try {
-      return readTreeInternal(content, mapper);
-    } catch (Exception ex) {
-      throw new InvalidRequestException("Invalid yaml", ex);
-    }
   }
 
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {

@@ -360,7 +360,9 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
         (currentTime - startTime) / 1000);
 
     if (shouldPublishArtifact(stepStatus)) {
-      modifyStepStatus(ambiance, stepStatus, stepIdentifier);
+      publishArtifact(ambiance, stepParameters, stepIdentifier, stepStatus, stepResponseBuilder);
+    }
+    if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       if (stepStatus.getOutput() != null) {
         StepResponse.StepOutcome stepOutcome =
             StepResponse.StepOutcome.builder()
@@ -370,39 +372,6 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
                 .build();
         stepResponseBuilder.stepOutcome(stepOutcome);
       }
-
-      StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters);
-      if (stepArtifacts != null) {
-        // since jexl doesn't understand - therefore we are adding a new outcome with artifact_ appended
-        // Also to have backward compatibility we'll save the old outcome as an output variable.
-        String artifactOutputVariableKey = "artifact-" + stepIdentifier;
-        OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(artifactOutputVariableKey));
-        if (!optionalSweepingOutput.isFound()) {
-          executionSweepingOutputResolver.consume(ambiance, artifactOutputVariableKey,
-              StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
-        }
-
-        // we found a bug CI-7115 due to which we had to change the outcome identifier from artifact_+stepId to
-        // artifact_+stepGroupId+stepId. But customers might be using older expression with only step Id, hence to make
-        // it backward compatible, we are saving older expression into sweepingOutput
-        optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact_" + stepIdentifier));
-        if (!optionalSweepingOutput.isFound()) {
-          executionSweepingOutputResolver.consume(ambiance, "artifact_" + stepIdentifier,
-              StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
-        }
-
-        String uniqueStepIdentifier = getUniqueStepIdentifier(ambiance, stepIdentifier);
-        StepResponse.StepOutcome stepArtifactOutcomeOld =
-            StepResponse.StepOutcome.builder()
-                .outcome(CIStepArtifactOutcome.builder().stepArtifacts(stepArtifacts).build())
-                .group(StepOutcomeGroup.STAGE.name())
-                .name("artifact_" + uniqueStepIdentifier)
-                .build();
-        stepResponseBuilder.stepOutcome(stepArtifactOutcomeOld);
-      }
-
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SKIPPED) {
       return stepResponseBuilder.status(Status.SKIPPED).build();
@@ -416,6 +385,43 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
                            .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
                            .build())
           .build();
+    }
+  }
+
+  private void publishArtifact(Ambiance ambiance, StepElementParameters stepParameters, String stepIdentifier,
+      StepStatus stepStatus, StepResponseBuilder stepResponseBuilder) {
+    modifyStepStatus(ambiance, stepStatus, stepIdentifier);
+
+    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters);
+    if (stepArtifacts != null) {
+      // since jexl doesn't understand - therefore we are adding a new outcome with artifact_ appended
+      // Also to have backward compatibility we'll save the old outcome as an output variable.
+      String artifactOutputVariableKey = "artifact-" + stepIdentifier;
+      OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+          ambiance, RefObjectUtils.getSweepingOutputRefObject(artifactOutputVariableKey));
+      if (!optionalSweepingOutput.isFound()) {
+        executionSweepingOutputResolver.consume(ambiance, artifactOutputVariableKey,
+            StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+      }
+
+      // we found a bug CI-7115 due to which we had to change the outcome identifier from artifact_+stepId to
+      // artifact_+stepGroupId+stepId. But customers might be using older expression with only step Id, hence to make
+      // it backward compatible, we are saving older expression into sweepingOutput
+      optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+          ambiance, RefObjectUtils.getSweepingOutputRefObject("artifact_" + stepIdentifier));
+      if (!optionalSweepingOutput.isFound()) {
+        executionSweepingOutputResolver.consume(ambiance, "artifact_" + stepIdentifier,
+            StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+      }
+
+      String uniqueStepIdentifier = getUniqueStepIdentifier(ambiance, stepIdentifier);
+      StepResponse.StepOutcome stepArtifactOutcomeOld =
+          StepResponse.StepOutcome.builder()
+              .outcome(CIStepArtifactOutcome.builder().stepArtifacts(stepArtifacts).build())
+              .group(StepOutcomeGroup.STAGE.name())
+              .name("artifact_" + uniqueStepIdentifier)
+              .build();
+      stepResponseBuilder.stepOutcome(stepArtifactOutcomeOld);
     }
   }
 

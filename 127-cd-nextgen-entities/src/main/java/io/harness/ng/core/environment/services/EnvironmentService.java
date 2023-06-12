@@ -40,7 +40,8 @@ public interface EnvironmentService {
 
   /**
    * Deletes all environments linked to a particular harness org.
-   * @param accountId  the account id
+   *
+   * @param accountId     the account id
    * @param orgIdentifier the organization identifier
    * @return boolean to indicate if deletion was successful
    */
@@ -64,7 +65,8 @@ public interface EnvironmentService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
 
   EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
-      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs, List<String> serviceRefs);
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs, List<String> serviceRefs,
+      boolean isServiceOverrideV2Enabled);
 
   EnvironmentInputsMergedResponseDto mergeEnvironmentInputs(
       String accountId, String orgId, String projectId, String serviceId, String oldEnvironmentInputsYaml);

@@ -9,6 +9,7 @@ package io.harness.artifacts.githubpackages;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +31,12 @@ import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.artifacts.githubpackages.beans.GithubMavenMetaData;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
+import io.harness.artifacts.githubpackages.beans.SnapshotVersion;
+import io.harness.artifacts.githubpackages.beans.SnapshotVersions;
+import io.harness.artifacts.githubpackages.beans.Versioning;
+import io.harness.artifacts.githubpackages.client.GithubPackagesMavenRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
@@ -70,6 +76,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
   @InjectMocks GithubPackagesRegistryServiceImpl githubPackagesRegistryService;
   @Mock private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
   @Mock private GithubPackagesRestClient githubPackagesRestClient;
+  @Mock private GithubPackagesMavenRestClient githubPackagesMavenRestClient;
   @Mock private DockerRegistryRestClient dockerRegistryRestClient;
   @Mock private DockerRegistryServiceImpl dockerRegistryService;
   @Mock private DockerRegistryUtils dockerRegistryUtils;
@@ -936,5 +943,127 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
         githubPackagesInternalConfig, packageName, version, org, true);
     assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
     assertThat(artifactMetaInfo.getLabels()).isEqualTo(label);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetVersionsForMaven() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String packageType = "maven";
+    String org = null;
+    String versionRegex = "*";
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-maven.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesRestClient)
+        .listVersionsForPackages(anyString(), anyString(), anyString(), anyInt(), anyInt());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
+        githubPackagesInternalConfig, packageName, packageType, null, versionRegex);
+
+    BuildDetails build1 = builds.get(0);
+
+    assertThat(build1.getNumber()).isEqualTo("0.0.3-SNAPSHOT");
+    assertThat(build1.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:0.0.3-SNAPSHOT");
+    assertThat(build1.getBuildDisplayName()).isEqualTo("helloworld: 0.0.3-SNAPSHOT");
+    assertThat(build1.getBuildFullDisplayName()).isEqualTo("0.0.3-SNAPSHOT");
+    assertThat(build1.getUiDisplayName()).isEqualTo("Tag# 0.0.3-SNAPSHOT");
+    assertThat(build1.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+
+    BuildDetails build2 = builds.get(1);
+
+    assertThat(build2.getNumber()).isEqualTo("0.0.2-SNAPSHOT");
+    assertThat(build2.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:0.0.2-SNAPSHOT");
+    assertThat(build2.getBuildDisplayName()).isEqualTo("helloworld: 0.0.2-SNAPSHOT");
+    assertThat(build2.getBuildFullDisplayName()).isEqualTo("0.0.2-SNAPSHOT");
+    assertThat(build2.getUiDisplayName()).isEqualTo("Tag# 0.0.2-SNAPSHOT");
+    assertThat(build2.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testFetchDownloadUrl() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    doReturn(githubPackagesMavenRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesMavenRestClient(githubPackagesInternalConfig);
+
+    Call<GithubMavenMetaData> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesMavenRestClient)
+        .getMavenMetaData(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+
+    GithubMavenMetaData githubMavenMetaData = new GithubMavenMetaData();
+    Versioning versioning = new Versioning();
+    SnapshotVersions snapshotVersions = new SnapshotVersions();
+    List<SnapshotVersion> snapshotVersion = new ArrayList<>();
+    SnapshotVersion snapshotVersion1 = new SnapshotVersion();
+    snapshotVersion1.setValue("value1");
+    snapshotVersion1.setExtension("jar");
+    snapshotVersion1.setUpdated("updated");
+    SnapshotVersion snapshotVersion2 = new SnapshotVersion();
+    snapshotVersion2.setValue("value2");
+    snapshotVersion2.setExtension("pom");
+    snapshotVersion2.setUpdated("updated");
+    snapshotVersion.add(snapshotVersion1);
+    snapshotVersion.add(snapshotVersion2);
+    snapshotVersions.setSnapshotVersion(snapshotVersion);
+    versioning.setSnapshotVersions(snapshotVersions);
+    githubMavenMetaData.setVersioning(versioning);
+
+    doReturn(Response.success(githubMavenMetaData)).when(executeCall).execute();
+
+    String packageName = "helloworld";
+    String packageType = "maven";
+    String artifactId = "artifactId";
+    String user = "user";
+    String extension = "jar";
+    String org = null;
+    String groupId = "groupId";
+    String repository = "repository";
+    String version = "version";
+    String url = githubPackagesRegistryService.fetchDownloadUrl(githubPackagesInternalConfig, packageType, org,
+        artifactId, user, extension, repository, packageName, version, groupId);
+    assertThat(url).isEqualTo(
+        "https://maven.pkg.github.com/user/repository/groupId/artifactId/version/artifactId-value1.jar");
   }
 }

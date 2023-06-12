@@ -1,19 +1,19 @@
 dummyReplace:
-  type: "Approval"
+  type: Approval
   spec:
     execution:
       steps:
-      - step:
-          name: "dummyReplace"
-          identifier: "approval"
-          template:
-            templateRef: "approvalTemplate"
-            versionLabel: 1
-            templateInputs:
-              type: "HarnessApproval"
-              spec:
-                approvers:
-                  userGroups: "<+input>"
-      - Step:
-          identifier: "identifier"
-          name: "name"
+        - step:
+            name: dummyReplace
+            identifier: approval
+            template:
+              templateRef: approvalTemplate
+              versionLabel: 1
+              templateInputs:
+                type: HarnessApproval
+                spec:
+                  approvers:
+                    userGroups: <+input>
+        - Step:
+            identifier: identifier
+            name: name

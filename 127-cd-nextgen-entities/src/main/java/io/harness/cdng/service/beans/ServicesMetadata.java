@@ -7,8 +7,13 @@
 
 package io.harness.cdng.service.beans;
 
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+
 import io.harness.annotation.RecasterAlias;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -25,5 +30,5 @@ public class ServicesMetadata {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  Boolean parallel;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> parallel;
 }

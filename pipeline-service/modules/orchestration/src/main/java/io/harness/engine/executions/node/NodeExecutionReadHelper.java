@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -31,11 +32,14 @@ public class NodeExecutionReadHelper {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate analyticsMongoTemplate;
 
+  private final MongoTemplate secondaryMongoTemplate;
+
   @Inject
-  public NodeExecutionReadHelper(
-      MongoTemplate mongoTemplate, AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder) {
+  public NodeExecutionReadHelper(MongoTemplate mongoTemplate, AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder,
+      SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
     this.mongoTemplate = mongoTemplate;
     this.analyticsMongoTemplate = analyticsMongoTemplateHolder.getAnalyticsMongoTemplate();
+    this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
   }
 
   @Deprecated
@@ -103,5 +107,10 @@ public class NodeExecutionReadHelper {
     if (query.getFieldsObject().isEmpty()) {
       throw new InvalidRequestException("NodeExecution list query should have projection fields");
     }
+  }
+
+  public NodeExecution fetchNodeExecutionsFromSecondaryTemplate(Query query) {
+    validateNodeExecutionProjection(query);
+    return secondaryMongoTemplate.findOne(query, NodeExecution.class);
   }
 }

@@ -169,7 +169,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(String id, List<TaskPayload> tasks);
+  protected abstract void executeTask(String id, TaskPayload executeTask);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -294,7 +294,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
         final var taskGroup = acquireTask(delegateTaskId);
-        executeTask(taskGroup.getId(), taskGroup.getTasksList());
+        executeTask(taskGroup.getExecutionInfraId(), taskGroup.getTask(0));
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {
@@ -310,9 +310,9 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     final var response = executeRestCall(managerClient.acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(),
         delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
 
-    final var pluginDescriptors = response.getTasksList();
+    final var pluginDescriptors = response.getTaskList();
     log.info("Delegate {} received tasks group {} of {} tasks for delegateInstance {}",
-        DelegateAgentCommonVariables.getDelegateId(), response.getId(), response.getTasksList().size(),
+        DelegateAgentCommonVariables.getDelegateId(), response.getExecutionInfraId(), response.getTaskList().size(),
         DELEGATE_INSTANCE_ID);
     return response;
   }

@@ -13,7 +13,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -23,10 +25,16 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -39,11 +47,21 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class EnvironmentRefreshHelperTest extends CategoryTest {
   @Mock private EnvironmentService environmentService;
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ServiceOverrideService serviceOverrideService;
+
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock NGSettingsClient settingsClient;
+  @Mock AccountClient accountClient;
+  @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock private Call<RestResponse<Boolean>> restRequest;
+
   @InjectMocks private EnvironmentRefreshHelper refreshHelper;
 
   private final EntityRefreshContext refreshContext = getRefreshContext();
@@ -52,6 +70,13 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(settingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+    doReturn(restRequest).when(accountClient).isFeatureFlagEnabled(anyString(), anyString());
+    RestResponse<Boolean> mockResponse = new RestResponse<>(true);
+    doReturn(Response.success(mockResponse)).when(restRequest).execute();
   }
 
   @After

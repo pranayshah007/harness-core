@@ -67,19 +67,19 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     assertThat(errorWrapperDTOPMS).isNotNull();
     assertThat(errorWrapperDTOPMS.getErrorPipelineYaml())
         .isEqualTo("pipeline:\n"
-            + "  identifier: \"Test_Pipline11\"\n"
+            + "  identifier: Test_Pipline11\n"
             + "  stages:\n"
-            + "  - stage:\n"
-            + "      identifier: \"qaStage\"\n"
-            + "      type: \"Deployment\"\n"
-            + "      spec:\n"
-            + "        execution:\n"
-            + "          steps:\n"
-            + "          - step:\n"
-            + "              identifier: \"httpStep1\"\n"
-            + "              type: \"Http\"\n"
-            + "              spec:\n"
-            + "                method: \"pipeline.stages.qaStage.spec.execution.steps.httpStep1.spec.method\"\n");
+            + "    - stage:\n"
+            + "        identifier: qaStage\n"
+            + "        type: Deployment\n"
+            + "        spec:\n"
+            + "          execution:\n"
+            + "            steps:\n"
+            + "              - step:\n"
+            + "                  identifier: httpStep1\n"
+            + "                  type: Http\n"
+            + "                  spec:\n"
+            + "                    method: pipeline.stages.qaStage.spec.execution.steps.httpStep1.spec.method\n");
     assertThat(errorWrapperDTOPMS.getUuidToErrorResponseMap().size()).isEqualTo(1);
     assertThat(errorWrapperDTOPMS.getUuidToErrorResponseMap().containsKey(
                    "pipeline.stages.qaStage.spec.execution.steps.httpStep1.spec.method"))

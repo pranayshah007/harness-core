@@ -296,7 +296,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
     doNothing().when(cfDeploymentManager).renameApplication(any(), any());
-    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any(), any());
     doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
     doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
     doReturn(TasArtifactDownloadResponse.builder().build())
@@ -359,7 +359,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
     doNothing().when(cfDeploymentManager).renameApplication(any(), any());
     doThrow(new PivotalClientApiException("error")).when(cfDeploymentManager).deleteApplication(any());
-    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any(), any());
     doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
     doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
     doReturn(TasArtifactDownloadResponse.builder().build())
@@ -416,7 +416,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
     doNothing().when(cfDeploymentManager).renameApplication(any(), any());
     doThrow(new PivotalClientApiException("error")).when(cfDeploymentManager).deleteApplication(any());
-    doReturn(null).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(null).when(cfDeploymentManager).resizeApplication(any(), any());
     doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
     doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
     doReturn(TasArtifactDownloadResponse.builder().build())

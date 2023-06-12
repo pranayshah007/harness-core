@@ -116,8 +116,8 @@ public class HttpTest extends CategoryTest {
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void testConnectableHttpUrl() throws IOException {
-    assertThat(Http.checkResponseCode(200)).isTrue();
-    assertThat(Http.checkResponseCode(400)).isFalse();
-    assertThat(Http.checkResponseCode(500)).isTrue();
+    assertThat(Http.checkResponseCode(200, false)).isTrue();
+    assertThat(Http.checkResponseCode(400, false)).isFalse();
+    assertThat(Http.checkResponseCode(500, false)).isTrue();
   }
 }

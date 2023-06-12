@@ -34,6 +34,10 @@ public class EcrArtifactOutcome implements ArtifactOutcome {
    */
   String connectorRef;
   /**
+   * ECR Registry Id
+   */
+  String registryId;
+  /**
    * Images in repos need to be referenced via a path.
    */
   String imagePath;

@@ -250,6 +250,8 @@ import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob.SimpleVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -283,7 +285,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -383,12 +384,10 @@ public class BuilderFactory {
         .tags(new HashMap<>())
         .dependencies(Sets.newHashSet(ServiceDependencyDTO.builder().monitoredServiceIdentifier("service1").build(),
             ServiceDependencyDTO.builder().monitoredServiceIdentifier("service2").build()))
-        .sources(
-            MonitoredServiceDTO.Sources.builder()
-                .healthSources(
-                    Arrays.asList(createHealthSource(CVMonitoringCategory.ERRORS)).stream().collect(Collectors.toSet()))
-                .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
-                .build());
+        .sources(MonitoredServiceDTO.Sources.builder()
+                     .healthSources(new HashSet<>(List.of(createHealthSource(CVMonitoringCategory.ERRORS))))
+                     .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
+                     .build());
   }
 
   public HeatMapBuilder heatMapBuilder() {
@@ -777,58 +776,64 @@ public class BuilderFactory {
   }
 
   public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
-      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, String metricName, String identifier,
-      HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory, boolean isDeploymentEnabled,
-      boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
+      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, List<String> metricNameList,
+      String identifier, HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
     MetricResponseMapping responseMapping = MetricResponseMapping.builder()
                                                 .metricValueJsonPath(metricValueJSONPath)
                                                 .timestampJsonPath(timestampJsonPath)
                                                 .serviceInstanceJsonPath(serviceInstanceJsonPath)
                                                 .build();
-
-    CustomHealthMetricDefinition metricDefinition =
-        CustomHealthMetricDefinition.builder()
-            .groupName(groupName)
-            .metricName(metricName)
-            .queryType(queryType)
-            .metricResponseMapping(responseMapping)
-            .requestDefinition(CustomHealthRequestDefinition.builder().method(CustomHealthMethod.GET).build())
-            .identifier(identifier)
-            .analysis(
-                HealthSourceMetricDefinition.AnalysisDTO.builder()
-                    .deploymentVerification(HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
-                                                .enabled(isDeploymentEnabled)
+    List<CustomHealthMetricDefinition> metricDefinitionList = new ArrayList<>();
+    for (String metricName : metricNameList) {
+      CustomHealthMetricDefinition metricDefinition =
+          CustomHealthMetricDefinition.builder()
+              .groupName(groupName)
+              .metricName(metricName)
+              .queryType(queryType)
+              .metricResponseMapping(responseMapping)
+              .requestDefinition(CustomHealthRequestDefinition.builder().method(CustomHealthMethod.GET).build())
+              .identifier(identifier)
+              .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
+                            .deploymentVerification(
+                                HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
+                                    .enabled(isDeploymentEnabled)
+                                    .build())
+                            .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
+                                                .enabled(isLiveMonitoringEnabled)
                                                 .build())
-                    .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
-                                        .enabled(isLiveMonitoringEnabled)
-                                        .build())
-                    .build())
-            .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(isSliEnabled).build())
-            .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
-            .build();
-
-    List<CustomHealthMetricDefinition> customHealthSourceSpecs = new ArrayList<>();
-    customHealthSourceSpecs.add(metricDefinition);
-    return CustomHealthSourceMetricSpec.builder().metricDefinitions(customHealthSourceSpecs).build();
+                            .build())
+              .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(isSliEnabled).build())
+              .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
+              .build();
+      metricDefinitionList.add(metricDefinition);
+    }
+    return CustomHealthSourceMetricSpec.builder().metricDefinitions(metricDefinitionList).build();
   }
 
-  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilder(String metricName, boolean isDeploymentEnabled,
-      boolean isLiveMonitoringEnabled, boolean isSliEnabled, MetricResponseMapping responseMapping, String group,
-      HealthSourceQueryType queryType, CustomHealthMethod method, CVMonitoringCategory category, String requestBody) {
-    CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
-        CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
-            .metricName(metricName)
-            .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
-            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
-            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
-            .metricResponseMapping(responseMapping)
-            .requestDefinition(CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
-            .build();
+  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilder(List<String> metricNameList,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled,
+      MetricResponseMapping responseMapping, String group, HealthSourceQueryType queryType, CustomHealthMethod method,
+      CVMonitoringCategory category, String requestBody) {
+    List<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition> customMetricDefinitionList =
+        new ArrayList<>();
+    for (String metricName : metricNameList) {
+      CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
+          CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+              .metricName(metricName)
+              .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
+              .deploymentVerification(
+                  AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
+              .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
+              .metricResponseMapping(responseMapping)
+              .requestDefinition(
+                  CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
+              .build();
+      customMetricDefinitionList.add(metricDefinition);
+    }
 
     return CustomHealthMetricCVConfig.builder()
-        .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
-          { add(metricDefinition); }
-        })
+        .metricDefinitions(customMetricDefinitionList)
         .groupName(group)
         .queryType(queryType)
         .category(category)
@@ -1652,6 +1657,19 @@ public class BuilderFactory {
         .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
         .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
         .sensitivity(RuntimeParameter.builder().value("High").build())
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+
+  public SimpleVerificationJobBuilder simpleVerificationJobBuilder() {
+    return SimpleVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
         .duration(RuntimeParameter.builder().value("10m").build());
   }
 

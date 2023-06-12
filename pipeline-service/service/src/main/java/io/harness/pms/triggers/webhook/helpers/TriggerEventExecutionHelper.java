@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_HUB_SIGNATURE_256;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.NgSetupFields.NG;
+import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ngtriggers.Constants.MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE;
 import static io.harness.ngtriggers.Constants.TRIGGERS_MANDATE_GITHUB_AUTHENTICATION;
@@ -36,6 +38,7 @@ import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
+import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
@@ -126,6 +129,7 @@ public class TriggerEventExecutionHelper {
   private final TriggerExecutionHelper triggerExecutionHelper;
   private final WebhookEventMapperHelper webhookEventMapperHelper;
   private final TriggerWebhookEventPublisher triggerWebhookEventPublisher;
+  private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   @Inject @Named("TriggerAuthenticationExecutorService") ExecutorService triggerAuthenticationExecutor;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
@@ -277,14 +281,16 @@ public class TriggerEventExecutionHelper {
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
           triggerDetails, triggerPayload, triggerWebhookEvent, payload, runtimeInputYaml);
       return generateEventHistoryForSuccess(
-          triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response);
+          triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response, null);
     } catch (Exception e) {
-      return generateEventHistoryForError(triggerWebhookEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e);
+      return generateEventHistoryForError(
+          triggerWebhookEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, null);
     }
   }
 
   public TriggerEventResponse generateEventHistoryForError(TriggerWebhookEvent triggerWebhookEvent,
-      TriggerDetails triggerDetails, String runtimeInputYaml, NGTriggerEntity ngTriggerEntity, Exception e) {
+      TriggerDetails triggerDetails, String runtimeInputYaml, NGTriggerEntity ngTriggerEntity, Exception e,
+      String pollingDocId) {
     log.error(new StringBuilder(512)
                   .append("Exception occurred while requesting pipeline execution using Trigger ")
                   .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
@@ -295,8 +301,8 @@ public class TriggerEventExecutionHelper {
 
     TargetExecutionSummary targetExecutionSummary = TriggerEventResponseHelper.prepareTargetExecutionSummary(
         (PlanExecution) null, triggerDetails, runtimeInputYaml);
-    return TriggerEventResponseHelper.toResponse(
-        INVALID_RUNTIME_INPUT_YAML, triggerWebhookEvent, null, ngTriggerEntity, e.getMessage(), targetExecutionSummary);
+    return TriggerEventResponseHelper.toResponseWithPollingInfo(INVALID_RUNTIME_INPUT_YAML, triggerWebhookEvent, null,
+        ngTriggerEntity, e.getMessage(), targetExecutionSummary, pollingDocId);
   }
 
   public TriggerEventResponse generateEventHistoryForAuthenticationError(
@@ -325,6 +331,7 @@ public class TriggerEventExecutionHelper {
 
   public TriggerEventResponse triggerEventPipelineExecution(
       TriggerDetails triggerDetails, PollingResponse pollingResponse) {
+    String pollingDocId = null;
     String runtimeInputYaml = null;
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     TriggerWebhookEvent pseudoEvent = TriggerWebhookEvent.builder()
@@ -335,6 +342,7 @@ public class TriggerEventExecutionHelper {
              ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(),
              AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      pollingDocId = pollingResponse.getPollingDocId();
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
@@ -359,20 +367,26 @@ public class TriggerEventExecutionHelper {
         }
         triggerPayloadBuilder.setArtifactData(
             ArtifactData.newBuilder().setBuild(build).putAllMetadata(metadata).build());
+
       } else if (buildType == Type.MANIFEST) {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
       }
-
+      TriggerPayload triggerPayload = triggerPayloadBuilder.build();
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-          triggerDetails, triggerPayloadBuilder.build(), runtimeInputYaml);
-      return generateEventHistoryForSuccess(triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response);
+          triggerDetails, triggerPayload, runtimeInputYaml);
+      if (triggerPayload != null) {
+        pseudoEvent.setPayload(triggerPayload.toString());
+      }
+      return generateEventHistoryForSuccess(
+          triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response, pollingDocId);
     } catch (Exception e) {
-      return generateEventHistoryForError(pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e);
+      return generateEventHistoryForError(
+          pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, pollingDocId);
     }
   }
 
   private TriggerEventResponse generateEventHistoryForSuccess(TriggerDetails triggerDetails, String runtimeInputYaml,
-      NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response) {
+      NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response, String pollingDocId) {
     try (AutoLogContext ignore1 = new NgAutoLogContext(ngTriggerEntity.getProjectIdentifier(),
              ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(), OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AutoLogContext(ImmutableMap.of("planExecutionId", response.getPlanId()),
@@ -383,8 +397,8 @@ public class TriggerEventExecutionHelper {
       log.info(ngTriggerEntity.getTargetType() + " execution was requested successfully for Pipeline: "
           + ngTriggerEntity.getTargetIdentifier() + ", using trigger: " + ngTriggerEntity.getIdentifier());
 
-      return TriggerEventResponseHelper.toResponse(TARGET_EXECUTION_REQUESTED, pseudoEvent, ngTriggerEntity,
-          "Pipeline execution was requested successfully", targetExecutionSummary);
+      return TriggerEventResponseHelper.toResponseWithPollingInfo(TARGET_EXECUTION_REQUESTED, pseudoEvent,
+          ngTriggerEntity, "Pipeline execution was requested successfully", targetExecutionSummary, pollingDocId);
     }
   }
 
@@ -403,49 +417,62 @@ public class TriggerEventExecutionHelper {
       return;
     }
     CompletableFutures<ResponseData> completableFutures = new CompletableFutures<>(triggerAuthenticationExecutor);
+    Map<Integer, TriggerDetails> triggerDetailsMap = new HashMap<>();
+    int counter = 0;
     for (TriggerDetails triggerDetails : triggersToAuthenticate) {
-      NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-      NGAccess basicNGAccessObject = BaseNGAccess.builder()
-                                         .accountIdentifier(triggerWebhookEvent.getAccountId())
-                                         .orgIdentifier(ngTriggerConfigV2.getOrgIdentifier())
-                                         .projectIdentifier(ngTriggerConfigV2.getProjectIdentifier())
-                                         .build();
-      SecretRefData secretRefData =
-          SecretRefHelper.createSecretRef(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
-      WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
-          WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
-      List<EncryptedDataDetail> encryptedDataDetail =
-          ngSecretService.getEncryptionDetails(basicNGAccessObject, webhookEncryptedSecretDTO);
-      List<WebhookSecretData> webhookSecretData =
-          Collections.singletonList(WebhookSecretData.builder()
-                                        .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
-                                        .encryptedDataDetails(encryptedDataDetail)
-                                        .build());
-      Set<String> taskSelectors =
-          getAuthenticationTaskSelectors(basicNGAccessObject, secretRefData, ngTriggerConfigV2.getIdentifier());
-      log.info("Authenticating trigger [" + ngTriggerConfigV2.getIdentifier()
-          + "] with delegate selectors: " + taskSelectors);
-      completableFutures.supplyAsync(()
-                                         -> taskExecutionUtils.executeSyncTask(
-                                             DelegateTaskRequest.builder()
-                                                 .accountId(triggerWebhookEvent.getAccountId())
-                                                 .executionTimeout(Duration.ofSeconds(
-                                                     60)) // todo: Gather suggestions regarding this timeout value.
-                                                 .taskType(TaskType.TRIGGER_AUTHENTICATION_TASK.toString())
-                                                 .taskSelectors(taskSelectors)
-                                                 .taskParameters(TriggerAuthenticationTaskParams.builder()
-                                                                     .eventPayload(triggerWebhookEvent.getPayload())
-                                                                     .gitRepoType(GitRepoType.GITHUB)
-                                                                     .hashedPayload(hashedPayload)
-                                                                     .webhookSecretData(webhookSecretData)
-                                                                     .build())
-                                                 .build()));
+      try {
+        NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
+        NGAccess basicNGAccessObject = BaseNGAccess.builder()
+                                           .accountIdentifier(triggerWebhookEvent.getAccountId())
+                                           .orgIdentifier(ngTriggerConfigV2.getOrgIdentifier())
+                                           .projectIdentifier(ngTriggerConfigV2.getProjectIdentifier())
+                                           .build();
+        SecretRefData secretRefData =
+            SecretRefHelper.createSecretRef(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
+        WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
+            WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
+        List<EncryptedDataDetail> encryptedDataDetail =
+            ngSecretService.getEncryptionDetails(basicNGAccessObject, webhookEncryptedSecretDTO);
+        List<WebhookSecretData> webhookSecretData =
+            Collections.singletonList(WebhookSecretData.builder()
+                                          .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
+                                          .encryptedDataDetails(encryptedDataDetail)
+                                          .build());
+        Set<String> taskSelectors =
+            getAuthenticationTaskSelectors(basicNGAccessObject, secretRefData, ngTriggerConfigV2.getIdentifier());
+        log.info("Authenticating trigger [" + ngTriggerConfigV2.getIdentifier()
+            + "] with delegate selectors: " + taskSelectors);
+        completableFutures.supplyAsync(
+            ()
+                -> taskExecutionUtils.executeSyncTask(
+                    DelegateTaskRequest.builder()
+                        .accountId(triggerWebhookEvent.getAccountId())
+                        .executionTimeout(
+                            Duration.ofSeconds(60)) // todo: Gather suggestions regarding this timeout value.
+                        .taskType(TaskType.TRIGGER_AUTHENTICATION_TASK.toString())
+                        .taskSelectors(taskSelectors)
+                        .taskSetupAbstractions(buildAbstractions(triggerWebhookEvent.getAccountId(),
+                            ngTriggerConfigV2.getOrgIdentifier(), ngTriggerConfigV2.getProjectIdentifier()))
+                        .taskParameters(TriggerAuthenticationTaskParams.builder()
+                                            .eventPayload(triggerWebhookEvent.getPayload())
+                                            .gitRepoType(GitRepoType.GITHUB)
+                                            .hashedPayload(hashedPayload)
+                                            .webhookSecretData(webhookSecretData)
+                                            .build())
+                        .build()));
+        triggerDetailsMap.put(counter, triggerDetails);
+        counter++;
+      } catch (Exception e) {
+        triggerDetails.setAuthenticated(false);
+        log.error("Exception while authenticating trigger with id {}",
+            triggerDetails.getNgTriggerEntity().getIdentifier(), e);
+      }
     }
     try {
       List<ResponseData> authenticationTaskResponses = completableFutures.allOf().get(2, TimeUnit.MINUTES);
       int index = 0;
       for (ResponseData responseData : authenticationTaskResponses) {
-        TriggerDetails triggerDetails = triggersToAuthenticate.get(index);
+        TriggerDetails triggerDetails = triggerDetailsMap.get(index);
         if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
           BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
           Object object = binaryResponseData.isUsingKryoWithoutReference()
@@ -476,12 +503,9 @@ public class TriggerEventExecutionHelper {
     // Only GitHub events authentication is supported for now
     List<TriggerDetails> triggersToAuthenticate = new ArrayList<>();
     if (GITHUB.name().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
-      Boolean ngSettingsFFEnabled =
-          pmsFeatureFlagService.isEnabled(triggerWebhookEvent.getAccountId(), FeatureName.NG_SETTINGS);
       for (TriggerDetails triggerDetails : webhookEventMappingResponse.getTriggers()) {
         NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-        if (ngTriggerConfigV2 != null
-            && shouldAuthenticateTrigger(triggerWebhookEvent, ngTriggerConfigV2, ngSettingsFFEnabled)) {
+        if (ngTriggerConfigV2 != null && shouldAuthenticateTrigger(triggerWebhookEvent, ngTriggerConfigV2)) {
           triggersToAuthenticate.add(triggerDetails);
         }
       }
@@ -504,17 +528,16 @@ public class TriggerEventExecutionHelper {
   }
 
   private Boolean shouldAuthenticateTrigger(
-      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2, Boolean ngSettingsFFEnabled) {
-    if (ngSettingsFFEnabled) {
-      String mandatoryAuth = NGRestUtils
-                                 .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
-                                     triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-                                     ngTriggerConfigV2.getProjectIdentifier()))
-                                 .getValue();
-      if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
-        return true;
-      }
+      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2) {
+    String mandatoryAuth = NGRestUtils
+                               .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
+                                   triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
+                                   ngTriggerConfigV2.getProjectIdentifier()))
+                               .getValue();
+    if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
+      return true;
     }
+
     return isNotEmpty(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
   }
 
@@ -534,5 +557,16 @@ public class TriggerEventExecutionHelper {
     SecretManagerConfigDTO secretManagerDTO = ngSecretService.getSecretManager(secretNGAccess.getAccountIdentifier(),
         secretNGAccess.getOrgIdentifier(), secretNGAccess.getProjectIdentifier(), secretManagerIdentifier, false);
     return SecretManagerConfigMapper.getDelegateSelectors(secretManagerDTO);
+  }
+
+  private Map<String, String> buildAbstractions(
+      String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
+    Map<String, String> abstractions = new HashMap<>(2);
+    String owner = taskSetupAbstractionHelper.getOwner(accountIdIdentifier, orgIdentifier, projectIdentifier);
+    if (isNotEmpty(owner)) {
+      abstractions.put(OWNER, owner);
+    }
+    abstractions.put(NG, "true");
+    return abstractions;
   }
 }

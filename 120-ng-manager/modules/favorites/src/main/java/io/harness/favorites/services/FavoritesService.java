@@ -7,9 +7,9 @@
 
 package io.harness.favorites.services;
 
-import io.harness.favorites.ResourceType;
 import io.harness.favorites.entities.Favorite;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
+import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public interface FavoritesService {
    */
 
   List<Favorite> getFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      ResourceType resourceType);
+      FavoritesResourceType resourceType);
 
   /**
    *
@@ -56,5 +56,5 @@ public interface FavoritesService {
    */
 
   void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      String resourceType, String resourceId);
+      FavoritesResourceType resourceType, String resourceId);
 }

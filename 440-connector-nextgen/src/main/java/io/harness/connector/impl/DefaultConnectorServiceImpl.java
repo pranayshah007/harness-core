@@ -10,7 +10,6 @@ package io.harness.connector.impl;
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.beans.FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
@@ -1262,23 +1261,22 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmK8sConnectors);
   }
 
-  private Boolean isBuiltInSMDisabled(String accountIdentifier) {
-    Boolean isBuiltInSMDisabled = false;
+  @Override
+  public Long countConnectors(String accountIdentifier) {
+    return connectorRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
+  }
 
-    if (isNgSettingsFFEnabled(accountIdentifier)) {
-      isBuiltInSMDisabled = parseBoolean(
-          NGRestUtils
-              .getResponse(settingsClient.getSetting(
-                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
-              .getValue());
-    }
-    return isBuiltInSMDisabled;
+  private Boolean isBuiltInSMDisabled(String accountIdentifier) {
+    return parseBoolean(
+        NGRestUtils
+            .getResponse(settingsClient.getSetting(
+                SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+            .getValue());
   }
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
     return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
   }
 
@@ -1294,10 +1292,5 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(
         accountClient.isFeatureFlagEnabled(PL_FORCE_DELETE_CONNECTOR_SECRET.name(), accountIdentifier));
-  }
-
-  @VisibleForTesting
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }

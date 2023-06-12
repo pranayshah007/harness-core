@@ -50,6 +50,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,13 +97,14 @@ public class DockerConnectionValidatorTest extends CategoryTest {
         DockerConnectorDTO.builder().dockerRegistryUrl(dockerRegistryUrl).auth(dockerAuthenticationDTO).build();
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(DockerTestConnectionTaskResponse.builder()
-                        .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx",
+            DockerTestConnectionTaskResponse.builder()
+                .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
+                .build()));
     dockerConnectionValidator.validate(
         dockerConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test

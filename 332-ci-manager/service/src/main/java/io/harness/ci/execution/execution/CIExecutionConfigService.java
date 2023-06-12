@@ -10,11 +10,13 @@ package io.harness.ci.execution;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
+import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
@@ -35,6 +37,7 @@ import org.apache.logging.log4j.util.Strings;
 public class CIExecutionConfigService {
   @Inject CIExecutionConfigRepository configRepository;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private PluginSettingUtils pluginSettingUtils;
 
   private static final String UNEXPECTED_ERR_FORMAT = "Unexpected value: %s";
   public CIExecutionServiceConfig getCiExecutionServiceConfig() {
@@ -660,7 +663,8 @@ public class CIExecutionConfigService {
     return image;
   }
 
-  public String getContainerlessPluginNameForVM(CIStepInfoType stepInfoType) {
+  public String getContainerlessPluginNameForVM(
+      CIStepInfoType stepInfoType, PluginCompatibleStep pluginCompatibleStep) {
     VmContainerlessStepConfig vmContainerlessStepConfig =
         ciExecutionServiceConfig.getStepConfig().getVmContainerlessStepConfig();
     String name = null;
@@ -683,10 +687,14 @@ public class CIExecutionConfigService {
         name = vmContainerlessStepConfig.getGitCloneConfig().getName();
         break;
       case DOCKER:
-        name = vmContainerlessStepConfig.getDockerBuildxConfig().getName();
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxConfig().getName();
+        }
         break;
       case ECR:
-        name = vmContainerlessStepConfig.getDockerBuildxEcrConfig().getName();
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxEcrConfig().getName();
+        }
         break;
       case GCR:
       case ACR:

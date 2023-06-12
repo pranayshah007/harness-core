@@ -354,7 +354,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
 
         // resize app (upsize in swap rollback, downsize in swap state)
         if (!isRollback) {
-          pcfDeploymentManager.resizeApplication(cfRequestConfig);
+          pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
         } else {
           pcfDeploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, executionLogCallback);
         }

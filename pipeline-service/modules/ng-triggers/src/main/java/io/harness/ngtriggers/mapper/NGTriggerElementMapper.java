@@ -23,6 +23,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AWS_CODECOMMIT;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
@@ -86,7 +87,7 @@ import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTypeSpec;
-import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -364,11 +365,12 @@ public class NGTriggerElementMapper {
                                .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
                                .build())
             .build();
-      case MULTI_ARTIFACT:
-        MultiArtifactTriggerConfig multiArtifactTriggerConfig = (MultiArtifactTriggerConfig) triggerSource.getSpec();
+      case MULTI_REGION_ARTIFACT:
+        MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig =
+            (MultiRegionArtifactTriggerConfig) triggerSource.getSpec();
         return NGTriggerMetadata.builder()
             .multiBuildMetadata(
-                multiArtifactTriggerConfig.getSources()
+                multiRegionArtifactTriggerConfig.getSources()
                     .stream()
                     .map(source
                         -> BuildMetadata.builder()
@@ -579,7 +581,8 @@ public class NGTriggerElementMapper {
       ngTriggerDetailsResponseDTO.webhookDetails(webhookDetails.build());
       ngTriggerDetailsResponseDTO.registrationStatus(
           ngTriggerEntity.getMetadata().getWebhook().getRegistrationStatus());
-    } else if (ngTriggerEntity.getType() == MANIFEST || ngTriggerEntity.getType() == ARTIFACT) {
+    } else if (ngTriggerEntity.getType() == MANIFEST || ngTriggerEntity.getType() == ARTIFACT
+        || ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
       NGTriggerConfigV2 ngTriggerConfigV2 = toTriggerConfigV2(ngTriggerEntity.getYaml());
       NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerConfigV2.getSource().getSpec();
       if (BuildAware.class.isAssignableFrom(ngTriggerSpecV2.getClass())) {
@@ -785,7 +788,7 @@ public class NGTriggerElementMapper {
       YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
       ((ObjectNode) triggerNode.getCurrJsonNode()).put("enabled", ngTriggerEntity.getEnabled());
       String updateYml = YamlUtils.writeYamlString(yamlField);
-      ngTriggerEntity.setYaml(updateYml);
+      ngTriggerEntity.setYaml(updateYml.replace("---\n", ""));
     } catch (Exception e) {
       log.error(new StringBuilder("Failed to update enable attribute to ")
                     .append(ngTriggerEntity.getEnabled())

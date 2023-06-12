@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.metrics.impl.ExternalApiMetricsServiceImpl.EXTERNAL_API_REQUEST_COUNT;
 import static io.harness.security.JWTAuthenticationFilter.setSourcePrincipalInContext;
 import static io.harness.security.JWTTokenServiceUtils.extractToken;
 import static io.harness.security.JWTTokenServiceUtils.verifyJWTToken;
@@ -36,6 +37,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.logging.AccountLogContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.metrics.impl.ExternalApiMetricsServiceImpl;
 import io.harness.security.JWTAuthenticationFilter;
 import io.harness.security.JWTTokenHandler;
 import io.harness.security.SecurityContextBuilder;
@@ -109,12 +111,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   private Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping;
 
   private DelegateAuthService delegateAuthService;
+  private ExternalApiMetricsServiceImpl externalApiMetricsService;
 
   @Inject
   public AuthenticationFilter(UserService userService, AuthService authService, AuditService auditService,
       AuditHelper auditHelper, ApiKeyService apiKeyService, HarnessApiKeyService harnessApiKeyService,
       ExternalApiRateLimitingService rateLimitingService, SecretManager secretManager,
-      DelegateAuthService delegateAuthService) {
+      DelegateAuthService delegateAuthService, ExternalApiMetricsServiceImpl externalApiMetricsService) {
     this.userService = userService;
     this.authService = authService;
     this.auditService = auditService;
@@ -124,6 +127,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     this.rateLimitingService = rateLimitingService;
     this.secretManager = secretManager;
     this.delegateAuthService = delegateAuthService;
+    this.externalApiMetricsService = externalApiMetricsService;
     serviceToSecretMapping = getServiceToSecretMapping();
     serviceToJWTTokenHandlerMapping = getServiceToJWTTokenHandlerMapping();
   }
@@ -368,14 +372,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
   private void ensureValidQPM(ContainerRequestContext containerRequestContext) {
     String key = containerRequestContext.getHeaderString(API_KEY_HEADER);
+    String accountId = apiKeyService.getAccountIdFromApiKey(key);
+    String reqPath = containerRequestContext.getUriInfo().getPath();
+    externalApiMetricsService.recordApiRequestMetric(accountId, reqPath, EXTERNAL_API_REQUEST_COUNT);
     if (rateLimitingService.rateLimitRequest(key)) {
-      String reqPath = containerRequestContext.getUriInfo().getPath();
       String queryParams = containerRequestContext.getUriInfo().getQueryParameters().toString();
-      log.warn("Rate Limit exceeded for QPM {}, reqPath {}, queryParams {}", rateLimitingService.getMaxQPMPerManager(),
-          reqPath, queryParams);
+      log.warn("Rate Limit exceeded for QPM {}, reqPath {}, queryParams {}",
+          rateLimitingService.getMaxQPMPerManager(key), reqPath, queryParams);
       throw new WebApplicationException(Response.status(429)
                                             .entity("Too Many requests. Throttled. Max QPS: "
-                                                + rateLimitingService.getMaxQPMPerManager() * NUM_MANAGERS / 60)
+                                                + rateLimitingService.getMaxQPMPerManager(key) * NUM_MANAGERS / 60)
                                             .build());
     }
   }

@@ -32,6 +32,7 @@ import io.harness.k8s.model.harnesscrds.RollingDeploymentStrategyParams;
 import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.k8s.utils.ResourceUtils;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -61,15 +62,14 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeProjection;
+import io.kubernetes.client.openapi.models.V2HorizontalPodAutoscaler;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -418,7 +418,7 @@ public class KubernetesResource {
         break;
 
       case HorizontalPodAutoscaler:
-        V1HorizontalPodAutoscaler horizontalPodAutoscaler = (V1HorizontalPodAutoscaler) k8sResource;
+        KubernetesObject horizontalPodAutoscaler = (KubernetesObject) k8sResource;
         notNullCheck("Horizontal Pod Autoscaler does not have metadata", horizontalPodAutoscaler.getMetadata());
         newName = (String) transformer.apply(horizontalPodAutoscaler.getMetadata().getName());
         horizontalPodAutoscaler.getMetadata().setName(newName);
@@ -603,6 +603,9 @@ public class KubernetesResource {
         case CronJob:
           return Yaml.loadAs(this.spec, V1CronJob.class);
         case HorizontalPodAutoscaler:
+          if (isHPAV2()) {
+            return Yaml.loadAs(this.spec, V2HorizontalPodAutoscaler.class);
+          }
           return Yaml.loadAs(this.spec, V1HorizontalPodAutoscaler.class);
         case PodDisruptionBudget:
           return Yaml.loadAs(this.spec, V1PodDisruptionBudget.class);
@@ -612,19 +615,42 @@ public class KubernetesResource {
       }
     } catch (Exception ex) {
       String yamlConstructionExceptionMessage =
-          ex instanceof ConstructorException ? extractMessageHeaderWithProblemMarks(ex) : "";
+          ex instanceof ConstructorException && !Kind.Secret.toString().equalsIgnoreCase(this.resourceId.getKind())
+          ? extractMessageHeaderWithProblemMarks(ex)
+          : "";
       String exceptionMessage = format("Failed to load spec for resource kind: %s, name: %s %n",
           this.resourceId.getKind(), this.resourceId.getName());
       throw new KubernetesYamlException(exceptionMessage + yamlConstructionExceptionMessage);
     }
   }
 
+  private boolean isHPAV2() {
+    if (this.getField("apiVersion") != null
+        && String.valueOf(this.getField("apiVersion")).startsWith("autoscaling/v1")) {
+      return false;
+    }
+
+    return true;
+  }
+
   private String extractMessageHeaderWithProblemMarks(Exception ex) {
-    String messageHeader = ex.getMessage().split("\\{")[0];
-    String problemMarkLine = Arrays.stream(((ConstructorException) ex).getProblemMark().toString().split("\\n"))
-                                 .filter(line -> line.contains("line"))
-                                 .collect(Collectors.joining("\n"));
-    return String.format(YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT, messageHeader, problemMarkLine);
+    String messageHeader = ex.getMessage().split("\\{")[0].replace("property=", "").replace(" JavaBean=class", "");
+    StringBuilder sb = new StringBuilder();
+    String[] lines = ((ConstructorException) ex).getProblem().split("\\n");
+    int openedBrackets = 0;
+    int i = 0;
+    while (i < lines.length) {
+      // we are hiding all object representation
+      if (lines[i].endsWith("{")) {
+        openedBrackets++;
+      } else if (lines[i].replace(" ", "").equals("}")) {
+        openedBrackets--;
+      } else if (openedBrackets == 0) {
+        sb.append(lines[i].replace("in 'reader',", "")).append("\n");
+      }
+      i++;
+    }
+    return String.format(YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT, messageHeader, sb);
   }
 
   private void updateConfigMapRef(Object k8sResource, UnaryOperator<Object> transformer) {

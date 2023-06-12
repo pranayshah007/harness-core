@@ -229,6 +229,7 @@ public interface EntityTypeConstants {
 
   // AWS SAM
   String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String DOWNLOAD_MANIFESTS = "DownloadManifests";
   String AWS_SAM_BUILD = "AwsSamBuild";
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
   String SSCA_ORCHESTRATION = "SscaOrchestration";
@@ -238,4 +239,6 @@ public interface EntityTypeConstants {
   String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
+  String IDP_CONNECTOR = "IdpConnector";
+  String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
 }

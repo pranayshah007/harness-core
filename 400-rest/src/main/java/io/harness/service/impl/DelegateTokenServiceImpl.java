@@ -14,7 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.authenticator.DelegateTokenEncryptDecrypt;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
@@ -47,7 +47,7 @@ import org.apache.commons.lang3.StringUtils;
 public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
-  @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  @Inject private DelegateSecretManager delegateSecretManager;
 
   private static final String DEFAULT_TOKEN_NAME = "default";
 
@@ -60,7 +60,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .name(name.trim())
                                       .status(DelegateTokenStatus.ACTIVE)
                                       .value(token)
-                                      .encryptedTokenId(delegateTokenEncryptDecrypt.encrypt(accountId, token, name))
+                                      .encryptedTokenId(delegateSecretManager.encrypt(accountId, token, name))
                                       .build();
 
     try {
@@ -88,7 +88,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
             .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
             .set(DelegateTokenKeys.value, tokenValue)
             .set(DelegateTokenKeys.encryptedTokenId,
-                delegateTokenEncryptDecrypt.encrypt(accountId, tokenValue, DEFAULT_TOKEN_NAME));
+                delegateSecretManager.encrypt(accountId, tokenValue, DEFAULT_TOKEN_NAME));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
 
@@ -144,7 +144,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .equal(tokenName)
                                       .get();
 
-    return delegateToken != null ? delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken) : null;
+    return delegateToken != null ? delegateSecretManager.getDelegateTokenValue(delegateToken) : null;
   }
 
   @Override
@@ -186,7 +186,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
+      delegateTokenDetailsBuilder.value(delegateSecretManager.getDelegateTokenValue(delegateToken));
     }
 
     return delegateTokenDetailsBuilder.build();

@@ -10,6 +10,8 @@ package io.harness.cdng.infra.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.helper.K8sAzureCloudConfigMetadata;
+import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
@@ -39,5 +41,15 @@ public class K8sAzureInfrastructureOutcome extends InfrastructureOutcomeAbstract
   @Override
   public String getKind() {
     return InfrastructureKind.KUBERNETES_AZURE;
+  }
+
+  @Override
+  public K8sCloudConfigMetadata getInfraOutcomeMetadata() {
+    return K8sAzureCloudConfigMetadata.builder()
+        .clusterName(cluster)
+        .resourceGroup(resourceGroup)
+        .subscription(subscription)
+        .useClusterAdminCredentials(useClusterAdminCredentials)
+        .build();
   }
 }

@@ -119,6 +119,8 @@ public abstract class ConnectorProcessor {
 
   public abstract GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig);
 
+  public abstract String getLocationTarget(CatalogConnectorInfo catalogConnectorInfo, String path);
+
   public ConnectorInfoDTO getConnectorInfo(String accountIdentifier, String connectorIdentifier) {
     Optional<ConnectorDTO> connectorDTO =
         NGRestUtils.getResponse(connectorResourceClient.get(connectorIdentifier, accountIdentifier, null, null));
@@ -495,7 +497,7 @@ public abstract class ConnectorProcessor {
     if (createFileResponse.getStatusCode() >= 300) {
       log.error("Error response from git sync grpc while pushing files to source in IDP catalog onboarding flow = {}",
           createFileResponse);
-      throw new UnexpectedException(createFileResponse.getError().getHintMessage());
+      throw new UnexpectedException(createFileResponse.getError().getErrorMessage());
     }
   }
 }

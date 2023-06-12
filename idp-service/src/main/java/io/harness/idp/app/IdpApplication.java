@@ -40,6 +40,7 @@ import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
+import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
@@ -146,6 +147,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
+    environment.jersey().register(RequestLoggingFilter.class);
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -208,6 +210,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     serviceToSecretMapping.put(
         AuthorizationServiceHeader.IDENTITY_SERVICE.getServiceId(), config.getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(), config.getNgManagerServiceSecret());
+    serviceToSecretMapping.put(AuthorizationServiceHeader.IDP_UI.getServiceId(), config.getIdpServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     registerInternalApiAuthFilter(config, environment);

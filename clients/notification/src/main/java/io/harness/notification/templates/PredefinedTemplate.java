@@ -118,7 +118,8 @@ public enum PredefinedTemplate {
       "harness_approval_action_execution_email"),
   HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS(
       "notification_templates/approval/msteams/plain_text_action_execution.txt",
-      "harness_approval_action_execution_msteams");
+      "harness_approval_action_execution_msteams"),
+  SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert");
 
   private String path;
   private String identifier;

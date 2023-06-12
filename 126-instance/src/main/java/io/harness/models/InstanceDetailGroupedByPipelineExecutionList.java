@@ -7,6 +7,9 @@
 
 package io.harness.models;
 
+import io.harness.entities.RollbackStatus;
+import io.harness.pms.contracts.execution.Status;
+
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -20,9 +23,13 @@ public class InstanceDetailGroupedByPipelineExecutionList {
   @Value
   @Builder
   public static class InstanceDetailGroupedByPipelineExecution {
-    @NotNull private String pipelineId;
-    @NotNull private String planExecutionId;
-    private long lastDeployedAt;
+    @NotNull String pipelineId;
+    @NotNull String planExecutionId;
+    long lastDeployedAt;
     @NotNull List<InstanceDetailsDTO> instances;
+    String stageNodeExecutionId;
+    Status stageStatus;
+    String stageSetupId;
+    @Builder.Default RollbackStatus rollbackStatus = RollbackStatus.UNAVAILABLE;
   }
 }

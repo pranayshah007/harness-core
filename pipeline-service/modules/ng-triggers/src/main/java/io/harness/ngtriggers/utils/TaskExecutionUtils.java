@@ -24,7 +24,8 @@ public class TaskExecutionUtils {
   private final Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   public ResponseData executeSyncTask(DelegateTaskRequest taskRequest) {
-    return delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
-        taskRequest, delegateCallbackTokenSupplier.get());
+    return delegateServiceGrpcClient
+        .executeSyncTaskReturningResponseDataV2(taskRequest, delegateCallbackTokenSupplier.get())
+        .getValue();
   }
 }

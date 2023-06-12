@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -31,6 +32,7 @@ public class SessionTimeoutSettings {
   @Schema(
       description = "Any user of this account will be logged out if there is no activity for this number of minutes")
   @Min(value = 30)
+  @Max(value = 4320)
   @NotNull
   private Integer sessionTimeOutInMinutes;
 }

@@ -578,4 +578,20 @@ public class AmbianceUtilsTest extends CategoryTest {
     Ambiance rbModeAmbiance = Ambiance.newBuilder().setMetadata(rbMode).build();
     assertThat(AmbianceUtils.getPlanExecutionIdForExecutionMode(rbModeAmbiance)).isEqualTo("origId");
   }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void checkIfSettingEnabled() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .putSettingToValueMap("setting1", "true")
+                                             .putSettingToValueMap("setting2", "false")
+                                             .putSettingToValueMap("setting3", "some random string value")
+                                             .build())
+                            .build();
+    assertThat(AmbianceUtils.checkIfSettingEnabled(ambiance, "setting1")).isTrue();
+    assertThat(AmbianceUtils.checkIfSettingEnabled(ambiance, "setting2")).isFalse();
+    assertThat(AmbianceUtils.checkIfSettingEnabled(ambiance, "setting3")).isFalse();
+  }
 }

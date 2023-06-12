@@ -193,6 +193,7 @@ import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.ssca.client.SSCAServiceClientModuleV2;
+import io.harness.steps.PodCleanUpModule;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -247,6 +248,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.cache.Cache;
@@ -325,6 +327,7 @@ public class PipelineServiceModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
         configuration.getOrchestrationVisualizationThreadPoolConfig()));
+    install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new DelegateServiceDriverGrpcClientModule(configuration.getManagerServiceSecret(),
         configuration.getManagerTarget(), configuration.getManagerAuthority(), true));
@@ -841,5 +844,14 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("jsonExpansionRequestBatchSize")
   public Integer getjsonExpansionRequestBatchSize() {
     return configuration.getJsonExpansionBatchSize();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pipelineSetupUsageCreationExecutorService")
+  public ExecutorService pipelineSetupUsageCreationExecutorService() {
+    return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineSetupUsageCreationPoolConfig(), 1,
+        new ThreadFactoryBuilder().setNameFormat("PipelineSetupUsageCreationExecutorService-%d").build(),
+        new ThreadPoolExecutor.AbortPolicy()));
   }
 }

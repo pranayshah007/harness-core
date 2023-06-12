@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -26,8 +27,10 @@ import io.harness.logging.LogLevel;
 
 import software.wings.beans.ClusterSelectionCriteriaEntry;
 
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,6 +53,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RancherResolveClustersTask extends AbstractDelegateRunnableTask {
   public static final String COMMAND_UNIT_NAME = "Execute";
   public static final String COMMAND_NAME = "Rancher Cluster Resolve";
+  @Inject private TimeLimiter timeLimiter;
 
   @Inject private RancherTaskHelper helper;
 
@@ -78,8 +82,16 @@ public class RancherResolveClustersTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(
           "Fetching list of clusters and labels from Rancher: " + resolveTaskParams.getRancherConfig().getRancherUrl(),
           LogLevel.INFO);
-      rancherClusterData = helper.resolveRancherClusters(
-          resolveTaskParams.getRancherConfig(), resolveTaskParams.getEncryptedDataDetails());
+      if (resolveTaskParams.isTimeoutSupported()) {
+        rancherClusterData =
+            HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(resolveTaskParams.getTimeout()), () -> {
+              return helper.resolveRancherClusters(
+                  resolveTaskParams.getRancherConfig(), resolveTaskParams.getEncryptedDataDetails());
+            });
+      } else {
+        rancherClusterData = helper.resolveRancherClusters(
+            resolveTaskParams.getRancherConfig(), resolveTaskParams.getEncryptedDataDetails());
+      }
 
       if (CollectionUtils.isNotEmpty(rancherClusterData.getData())) {
         logCallback.saveExecutionLog("Fetched clusters list: "
@@ -91,7 +103,10 @@ public class RancherResolveClustersTask extends AbstractDelegateRunnableTask {
       } else {
         logCallback.saveExecutionLog(
             "Rancher returned an empty list of clusters.", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-        return RancherResolveClustersResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
+        return RancherResolveClustersResponse.builder()
+            .isTimeoutError(resolveTaskParams.isTimeoutSupported())
+            .executionStatus(ExecutionStatus.FAILED)
+            .build();
       }
     } catch (Exception e) {
       log.error("Caught exception while fetching clusters data from rancher", e);

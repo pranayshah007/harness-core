@@ -8,7 +8,6 @@ package io.harness.idp.configmanager.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 
@@ -26,6 +25,7 @@ public class AppConfigMapper {
     appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setCreated(appConfigEntity.getCreatedAt());
     appConfig.setUpdated(appConfigEntity.getLastModifiedAt());
+    appConfig.setProxy(appConfigEntity.getProxy());
     return appConfig;
   }
 
@@ -35,6 +35,7 @@ public class AppConfigMapper {
         .configId(appConfig.getConfigId())
         .configs(appConfig.getConfigs())
         .configName(appConfig.getConfigName())
+        .proxy(appConfig.getProxy())
         .build();
   }
 }

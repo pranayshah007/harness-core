@@ -8,7 +8,6 @@
 package io.harness.connector.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -35,7 +34,6 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 
@@ -126,16 +124,10 @@ public class ConnectorStatisticsHelper {
   }
 
   private Boolean isBuiltInSMDisabled(String accountIdentifier) {
-    Boolean isBuiltInSMDisabled = false;
-    boolean isNgSettingsEnabled =
-        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-    if (isNgSettingsEnabled) {
-      isBuiltInSMDisabled = parseBoolean(
-          NGRestUtils
-              .getResponse(settingsClient.getSetting(
-                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
-              .getValue());
-    }
-    return isBuiltInSMDisabled;
+    return parseBoolean(
+        NGRestUtils
+            .getResponse(settingsClient.getSetting(
+                SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+            .getValue());
   }
 }

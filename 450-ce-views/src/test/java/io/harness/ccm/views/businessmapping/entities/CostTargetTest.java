@@ -30,7 +30,7 @@ public class CostTargetTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testConstructor() {
-    final CostTarget costTarget = new CostTarget(TEST_NAME, BusinessMappingTestHelper.getRules());
+    final CostTarget costTarget = new CostTarget(TEST_NAME, 1.0, BusinessMappingTestHelper.getRules());
     assertThat(costTarget).isNotNull();
   }
 

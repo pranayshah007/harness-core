@@ -23,4 +23,5 @@ import lombok.experimental.FieldDefaults;
 public class DeploymentReleaseDetails {
   private String taskInfoId;
   List<DeploymentDetails> deploymentDetails;
+  String deploymentType;
 }

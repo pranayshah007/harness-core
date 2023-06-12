@@ -14,6 +14,7 @@ import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
+import software.wings.TaskTypeToRequestResponseMapper;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
@@ -35,9 +36,10 @@ public class SerializedResponseDataHelper {
         Class<? extends DelegateResponseData> responseClass;
         if (!isEmpty(serializedResponseData.getTaskTypeAsString())) {
           TaskType taskType = TaskType.valueOf(serializedResponseData.getTaskTypeAsString());
-          responseClass = taskType.getResponse();
+          responseClass = TaskTypeToRequestResponseMapper.getTaskResponseClass(taskType).orElse(null);
         } else {
-          responseClass = serializedResponseData.getTaskType().getResponse();
+          responseClass =
+              TaskTypeToRequestResponseMapper.getTaskResponseClass(serializedResponseData.getTaskType()).orElse(null);
         }
         try {
           return objectMapper.readValue(serializedResponseData.serialize(), responseClass);

@@ -12,10 +12,12 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
         "//970-ng-commons/src/main/java/io/harness/connector:module",
         "//980-commons/src/main/java/io/harness/beans:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "@maven//:com_google_inject_guice",
+        "@maven//:io_github_resilience4j_resilience4j_retry",
     ],
 )
 

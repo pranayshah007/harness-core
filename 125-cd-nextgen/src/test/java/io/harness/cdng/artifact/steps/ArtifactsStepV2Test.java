@@ -956,7 +956,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     String serviceYamlFromSweepingOutput = readFile(serviceYamlFileName).replace("$PRIMARY_ARTIFACT_REF", "fromtemp1");
 
     // primary artifact processed
-    String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput);
+    String actualServiceYaml =
+        stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput).getServiceYaml();
     String processedServiceYamlFileName = "service-with-processed-primaryartifact.yaml";
     String expectedServiceYaml = readFile(processedServiceYamlFileName);
     assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);
@@ -972,7 +973,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
             .replace("$PRIMARY_ARTIFACT_REF", "fromtemp1.allowedValues(fromtemp1,fromtemp2,gcr)");
 
     // primary artifact processed
-    String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput);
+    String actualServiceYaml =
+        stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput).getServiceYaml();
     String processedServiceYamlFileName = "service-with-processed-primaryartifact.yaml";
     String expectedServiceYaml = readFile(processedServiceYamlFileName);
     assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);
@@ -989,7 +991,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     String serviceYamlFromSweepingOutput = readFile(serviceYamlFileName).replace("$PRIMARY_ARTIFACT_REF", expression);
 
     // primary artifact processed
-    String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput);
+    String actualServiceYaml =
+        stepHelper.getArtifactProcessedServiceYaml(ambiance, serviceYamlFromSweepingOutput).getServiceYaml();
     String processedServiceYamlFileName = "service-with-processed-primaryartifact.yaml";
     String expectedServiceYaml = readFile(processedServiceYamlFileName);
     assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);
@@ -1009,7 +1012,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     // primary artifact processed
     for (String testString : List.of(asRuntime, asExpression)) {
-      String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, testString);
+      String actualServiceYaml = stepHelper.getArtifactProcessedServiceYaml(ambiance, testString).getServiceYaml();
       String processedServiceYamlFileName = "service-with-processed-primaryartifact.yaml";
       String expectedServiceYaml = readFile(processedServiceYamlFileName);
       assertThat(actualServiceYaml).isEqualTo(expectedServiceYaml);

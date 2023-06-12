@@ -378,6 +378,7 @@ public class HelmClientImpl implements HelmClient {
       command = command.replace("${NAMESPACE}", namespace);
     }
 
+    command = applyKubeConfigToCommand(command, helmCommandData.getKubeConfigLocation());
     command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(),
         helmCommandData.isHelmCmdFlagsNull(), helmCommandData.getValueMap(), helmCommandData.getHelmVersion());
     logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());

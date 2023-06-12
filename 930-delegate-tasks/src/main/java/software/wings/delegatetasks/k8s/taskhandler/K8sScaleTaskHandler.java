@@ -15,7 +15,6 @@ import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
-import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -37,6 +36,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
@@ -157,7 +157,8 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     try {
-      client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+      client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
       if (StringUtils.isEmpty(k8sScaleTaskParameters.getWorkload())) {
         executionLogCallback.saveExecutionLog("\nNo Workload found to scale.");
@@ -165,7 +166,8 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
         return true;
       }
 
-      resourceIdToScale = createKubernetesResourceIdFromNamespaceKindName(k8sScaleTaskParameters.getWorkload());
+      resourceIdToScale =
+          k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(k8sScaleTaskParameters.getWorkload());
 
       executionLogCallback.saveExecutionLog(
           color("\nWorkload to scale is: ", White, Bold) + color(resourceIdToScale.namespaceKindNameRef(), Cyan, Bold));

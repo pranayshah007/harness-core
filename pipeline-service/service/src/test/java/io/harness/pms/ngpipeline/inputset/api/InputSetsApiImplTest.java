@@ -254,7 +254,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
 
     InputSetMoveConfigRequestBody inputSetMoveConfigRequestBody = new InputSetMoveConfigRequestBody();
     inputSetMoveConfigRequestBody.setGitDetails(gitMoveDetails);
-    inputSetMoveConfigRequestBody.setMoveConfigOperationType(MoveConfigOperationType.REMOTE_TO_INLINE);
+    inputSetMoveConfigRequestBody.setMoveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE);
     inputSetMoveConfigRequestBody.setPipelineIdentifier(pipeline);
     inputSetMoveConfigRequestBody.setInputSetIdentifier(inputSet);
     doReturn(InputSetEntity.builder().identifier(inputSet).build())

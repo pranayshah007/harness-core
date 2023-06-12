@@ -47,15 +47,13 @@ public class PluginInfoApiImpl implements PluginInfoApi {
   private IdpCommonService idpCommonService;
   private PluginInfoService pluginInfoService;
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getPlugins(@AccountIdentifier String harnessAccount) {
+  public Response getPlugins(String harnessAccount) {
     List<PluginInfo> plugins = pluginInfoService.getAllPluginsInfo(harnessAccount);
     return Response.status(Response.Status.OK).entity(PluginInfoMapper.toResponseList(plugins)).build();
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getPluginsInfoPluginId(String pluginId, @AccountIdentifier String harnessAccount) {
+  public Response getPluginsInfoPluginId(String pluginId, String harnessAccount) {
     try {
       PluginDetailedInfo pluginDetailedInfo = pluginInfoService.getPluginDetailedInfo(pluginId, harnessAccount);
       PluginDetailedInfoResponse response = new PluginDetailedInfoResponse();
@@ -77,7 +75,7 @@ public class PluginInfoApiImpl implements PluginInfoApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response postPluginRequest(@Valid RequestPlugin pluginRequest, String harnessAccount) {
+  public Response postPluginRequest(@Valid RequestPlugin pluginRequest, @AccountIdentifier String harnessAccount) {
     pluginInfoService.savePluginRequest(harnessAccount, pluginRequest);
     return Response.status(Response.Status.CREATED).build();
   }

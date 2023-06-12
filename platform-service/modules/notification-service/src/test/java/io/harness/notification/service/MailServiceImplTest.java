@@ -427,7 +427,9 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(delegateGrpcClientWrapper.executeSyncTaskV2(requestCaptor.capture()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
-
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
+    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
     mailService.sendEmail(emailDTO);
     DelegateTaskRequest request = requestCaptor.getValue();
     assertThat(((MailTaskParams) request.getTaskParameters()).getEmailIds().size()).isEqualTo(2);

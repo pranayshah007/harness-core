@@ -90,7 +90,11 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
     Map<StepInfo, PluginCreationResponseList> stepInfoPluginCreationResponseListMap = new HashMap<>();
     for (Map.Entry<String, Map<StepInfo, PluginCreationRequest>> entry : moduleToBatchRequest.entrySet()) {
       PluginCreationBatchRequest pluginCreationBatchRequest =
-          PluginCreationBatchRequest.newBuilder().addAllPluginCreationRequest(entry.getValue().values()).build();
+          PluginCreationBatchRequest.newBuilder()
+              .addAllPluginCreationRequest(entry.getValue().values())
+              .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
+              .setAmbiance(ambiance)
+              .build();
       Map<String, StepInfo> stepInfoUuidToStepInfo =
           entry.getValue().keySet().stream().collect(Collectors.toMap(StepInfo::getStepUuid, stepInfo -> stepInfo));
       PluginCreationBatchResponse pluginCreationBatchResponse =
@@ -127,7 +131,6 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
             PluginCreationRequest.newBuilder()
                 .setType(stepInfo.getStepType())
                 .setStepJsonNode(stepInfo.getExecutionWrapperConfig().getStep().toString())
-                .setAmbiance(ambiance)
                 .setAccountId(AmbianceUtils.getAccountId(ambiance))
                 .setOsType(os.getYamlName())
                 .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
