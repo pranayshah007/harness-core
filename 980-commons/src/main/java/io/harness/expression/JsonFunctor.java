@@ -16,6 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class JsonFunctor implements ExpressionFunctor {
+  public JsonFunctor(boolean resolveObjectsViaJSONSelect) {
+    this.resolveObjectsViaJSONSelect = resolveObjectsViaJSONSelect;
+  }
+
+  public JsonFunctor() {
+    this.resolveObjectsViaJSONSelect = false;
+  }
+  boolean resolveObjectsViaJSONSelect;
   public Object object(String json) {
     return JsonUtils.asObject(json, HashMap.class);
   }
@@ -31,7 +39,7 @@ public class JsonFunctor implements ExpressionFunctor {
       }
     }
     log.info(String.format("Json functor evaluation returned null for the Json: %s and path %s", json, path));
-    return null;
+    return resolveObjectsViaJSONSelect ? object : null;
   }
 
   public Object list(String path, String json) {

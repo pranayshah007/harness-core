@@ -810,7 +810,9 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
   SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS(
-      "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV);
+      "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
+  RESOLVE_OBJECTS_VIA_JSON_SELECT(
+      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {
