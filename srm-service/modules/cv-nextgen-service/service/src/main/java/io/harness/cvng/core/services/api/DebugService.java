@@ -15,10 +15,20 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 
+import java.util.List;
+
 public interface DebugService {
   SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier);
 
-  boolean forceDeleteSLO(ProjectParams projectParams, String sloIdentifier);
+  Boolean isProjectDeleted(ProjectParams projectParams);
+
+  Boolean isSLODeleted(ProjectParams projectParams, String identifier);
+
+  Boolean isSLIDeleted(ProjectParams projectParams, String identifier);
+
+  boolean forceDeleteSLO(ProjectParams projectParams, List<String> sloIdentifiers);
+
+  boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers);
 
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 

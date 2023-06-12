@@ -109,6 +109,15 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
   }
 
   @Override
+  public List<SLOHealthIndicator> get(ProjectParams projectParams) {
+    return hPersistence.createQuery(SLOHealthIndicator.class)
+        .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .asList();
+  }
+
+  @Override
   public void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier) {
     hPersistence.delete(
         hPersistence.createQuery(SLOHealthIndicator.class)
@@ -116,6 +125,16 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
             .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
             .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
             .filter(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier, serviceLevelObjectiveIdentifier));
+  }
+
+  @Override
+  public void delete(ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers) {
+    hPersistence.delete(hPersistence.createQuery(SLOHealthIndicator.class)
+                            .filter(SLOHealthIndicatorKeys.accountId, projectParams.getAccountIdentifier())
+                            .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                            .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
+                            .field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
+                            .in(serviceLevelObjectiveIdentifiers));
   }
 
   @Override

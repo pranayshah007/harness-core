@@ -13,12 +13,15 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.DataCollectionTask;
+import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
+import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 import io.harness.cvng.core.services.DebugConfigService;
@@ -26,7 +29,13 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.DebugService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
+import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
@@ -46,10 +55,14 @@ import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.persistence.HPersistence;
+import io.harness.persistence.PersistentEntity;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,11 +83,24 @@ public class DebugServiceImpl implements DebugService {
   @Inject CVNGLogService cvngLogService;
   @Inject OrchestrationService orchestrationService;
 
+  @Inject TimeSeriesRecordService timeSeriesRecordService;
+
+  @Inject EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
+
   @Inject private FakeFeatureFlagSRMProducer fakeFeatureFlagSRMProducer;
   @Inject ChangeEventService changeEventService;
 
   @Inject DebugConfigService debugConfigService;
+
+  @Inject private NextGenService nextGenService;
+
+  @Inject HPersistence hPersistence;
+
   public static final Integer RECORDS_BATCH_SIZE = 100;
+
+  static final List<Class<? extends PersistentEntity>> ENTITIES_TO_DELETE_WITH_PROJECT_DELETION =
+      Arrays.asList(AbstractServiceLevelObjective.class, ServiceLevelIndicator.class, SLOHealthIndicator.class,
+          Downtime.class, EntityUnavailabilityStatuses.class, MonitoringSourcePerpetualTask.class);
 
   @Override
   public SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier) {
@@ -100,6 +126,10 @@ public class DebugServiceImpl implements DebugService {
 
     Map<String, List<SLIRecord>> sliIdentifierToSLIRecordMap = new HashMap<>();
 
+    Map<String, List<TimeSeriesRecord>> sliIdentifierToTimeSeriesRecords = new HashMap<>();
+
+    Map<String, AnalysisOrchestrator> sliIdentifierToAnalysisOrchestrator = new HashMap<>();
+
     for (ServiceLevelIndicator serviceLevelIndicator : serviceLevelIndicatorList) {
       sliIdentifierToVerificationTaskMap.put(serviceLevelIndicator.getIdentifier(),
           verificationTaskService.getSLITask(projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid()));
@@ -111,9 +141,17 @@ public class DebugServiceImpl implements DebugService {
       sliIdentifierToSLIRecordMap.put(serviceLevelIndicator.getIdentifier(),
           sliRecordService.getLatestCountSLIRecords(serviceLevelIndicator.getUuid(), 100));
 
+      String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+          projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid());
+
       sliIdentifierToAnalysisStateMachineMap.put(serviceLevelIndicator.getIdentifier(),
-          analysisStateMachineService.getExecutingStateMachine(verificationTaskService.getSLIVerificationTaskId(
-              projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid())));
+          analysisStateMachineService.getExecutingStateMachine(verificationTaskId));
+
+      sliIdentifierToTimeSeriesRecords.put(serviceLevelIndicator.getIdentifier(),
+          timeSeriesRecordService.getLatestTimeSeriesRecords(verificationTaskId, 100));
+
+      sliIdentifierToAnalysisOrchestrator.put(
+          serviceLevelIndicator.getIdentifier(), orchestrationService.getAnalysisOrchestrator(verificationTaskId));
     }
 
     return SLODebugResponse.builder()
@@ -125,15 +163,64 @@ public class DebugServiceImpl implements DebugService {
         .sliIdentifierToDataCollectionTaskMap(sliIdentifierToDataCollectionTaskMap)
         .sliIdentifierToSLIRecordMap(sliIdentifierToSLIRecordMap)
         .sliIdentifierToAnalysisStateMachineMap(sliIdentifierToAnalysisStateMachineMap)
+        .sliIdentifierToTimeSeriesRecords(sliIdentifierToTimeSeriesRecords)
+        .sliIdentifierToAnalysisOrchestrator(sliIdentifierToAnalysisOrchestrator)
         .build();
   }
 
   @Override
-  public boolean forceDeleteSLO(ProjectParams projectParams, String sloIdentifier) {
+  public Boolean isProjectDeleted(ProjectParams projectParams) {
+    if (!nextGenService.isProjectDeleted(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier())) {
+      throw new RuntimeException("Project is not deleted");
+    }
+    for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_WITH_PROJECT_DELETION) {
+      Query<? extends PersistentEntity> query = hPersistence.createQuery(clazz)
+                                                    .filter("accountId", projectParams.getAccountIdentifier())
+                                                    .filter("orgIdentifier", projectParams.getOrgIdentifier())
+                                                    .filter("projectIdentifier", projectParams.getProjectIdentifier());
+      Preconditions.checkArgument(query.asList().isEmpty(), String.format("%s entities are not deleted", clazz));
+    }
+    return true;
+  }
+
+  @Override
+  public Boolean isSLODeleted(ProjectParams projectParams, String identifier) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
+    Preconditions.checkArgument(abstractServiceLevelObjective == null, "SLO is present in the database");
+
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(projectParams, identifier);
+    Preconditions.checkArgument(sloHealthIndicator == null, "SLO Health Indicator is present in the database");
+    return true;
+  }
+
+  @Override
+  public Boolean isSLIDeleted(ProjectParams projectParams, String identifier) {
+    ServiceLevelIndicator serviceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, identifier);
+    Preconditions.checkArgument(serviceLevelIndicator == null, "SLI is present in the database");
+
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatuses =
+        entityUnavailabilityStatusesService.getAllInstances(projectParams, EntityType.SLO, identifier);
+    Preconditions.checkArgument(
+        entityUnavailabilityStatuses.isEmpty(), "Entity Unavailability Statuses are present in the database");
+    return true;
+  }
+  @Override
+  public boolean forceDeleteSLO(ProjectParams projectParams, List<String> sloIdentifiers) {
     if (!debugConfigService.isDebugEnabled()) {
       throw new RuntimeException("Debug Mode is turned off");
     }
-    return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifier);
+    return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifiers);
+  }
+
+  @Override
+  public boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off");
+    }
+    return serviceLevelIndicatorService.deleteByIdentifier(projectParams, sliIdentifiers);
   }
 
   @Override

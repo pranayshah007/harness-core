@@ -29,4 +29,6 @@ public interface SLOErrorBudgetResetService {
       ProjectParams projectParams, Set<String> sloIdentifiers);
 
   void clearErrorBudgetResets(ProjectParams projectParams, String sloIdentifier);
+
+  void clearErrorBudgetResets(ProjectParams projectParams, List<String> sloIdentifiers);
 }

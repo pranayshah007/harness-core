@@ -344,7 +344,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   }
 
   @Override
-  public void deleteByIdentifier(ProjectParams projectParams, List<String> serviceLevelIndicatorIdentifier) {
+  public boolean deleteByIdentifier(ProjectParams projectParams, List<String> serviceLevelIndicatorIdentifier) {
+    boolean isDeleted = false;
     if (isNotEmpty(serviceLevelIndicatorIdentifier)) {
       Query<ServiceLevelIndicator> serviceLevelIndicatorQuery =
           hPersistence.createQuery(ServiceLevelIndicator.class, excludeAuthority)
@@ -354,7 +355,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
               .field(ServiceLevelIndicatorKeys.identifier)
               .in(serviceLevelIndicatorIdentifier);
       List<ServiceLevelIndicator> serviceLevelIndicatorList = serviceLevelIndicatorQuery.asList();
-      hPersistence.delete(serviceLevelIndicatorQuery);
+      isDeleted = hPersistence.delete(serviceLevelIndicatorQuery);
       serviceLevelIndicatorList.forEach(sli -> {
         String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(sli.getAccountId(), sli.getUuid());
         if (StringUtils.isNotBlank(verificationTaskId)) {
@@ -364,6 +365,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         }
       });
     }
+    return isDeleted;
   }
 
   private void updateServiceLevelIndicatorEntity(ProjectParams projectParams,
@@ -497,6 +499,16 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
             .filter(ServiceLevelIndicatorKeys.monitoredServiceIdentifier, monitoredServiceIdentifier)
             .project(ServiceLevelIndicatorKeys.identifier, true);
     return query.asList().stream().map(ServiceLevelIndicator::getIdentifier).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<ServiceLevelIndicator> getSLIs(ProjectParams projectParams) {
+    return hPersistence.createQuery(ServiceLevelIndicator.class)
+        .filter(ServiceLevelIndicatorKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(ServiceLevelIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(ServiceLevelIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .project(ServiceLevelIndicatorKeys.identifier, true)
+        .asList();
   }
 
   private Map<String, MetricGraph> getMetricGraphs(
