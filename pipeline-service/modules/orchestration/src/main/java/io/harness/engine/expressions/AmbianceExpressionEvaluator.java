@@ -131,7 +131,14 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
       addToContext("regex", new RegexFunctor());
       // Todo(Archit): revisit NGJsonFunctor(PIE-9772)
       if (contextMapProvided) {
-        addToContext("json", new JsonFunctor());
+        boolean resolveObjectsViaJSONSelect;
+        if (pmsFeatureFlagService.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.RESOLVE_OBJECTS_VIA_JSON_SELECT)) {
+          resolveObjectsViaJSONSelect = true;
+        } else {
+          resolveObjectsViaJSONSelect = false;
+        }
+        addToContext("json", new JsonFunctor(resolveObjectsViaJSONSelect));
       } else {
         addToContext("json", new NGJsonFunctor());
       }
