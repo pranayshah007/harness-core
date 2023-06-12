@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 23
+version : 24
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -373,3 +373,13 @@ settings :
       - PROJECT
       - ACCOUNT
       - ORGANIZATION
+  - identifier: export_service_variables_as_env_variables
+    name: Export service variables as ENV variables in shell script
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
