@@ -17,6 +17,7 @@ io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData
 io.harness.cdng.service.beans.ServiceOutcome$StageOverridesOutcome
 io.harness.cdng.provision.terragrunt.TerragruntApplyStepNode
 io.harness.cdng.service.steps.ServiceStepParameters
+io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters
 io.harness.steps.group.GroupStepParametersV1
 io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
