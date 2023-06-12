@@ -521,8 +521,6 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
   SPG_CD_RUN_STEP("CD run step in NG", HarnessTeam.SPG),
   GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
-  GITOPS_HOSTED(
-      "Enable hosted GitOps.Allows to install agent and ArgoCD components in Harness cluster", HarnessTeam.GITOPS),
   CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
   SPG_DELETE_ENVIRONMENTS_ON_SERVICE_RENAME_GIT_SYNC(
       "On service rename delete stale folders inside environments folders.", HarnessTeam.SPG),
@@ -534,7 +532,6 @@ public enum FeatureName {
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
-  GITOPS_RECONCILER_ENABLED("Enable reconcile processing", HarnessTeam.GITOPS),
   CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
   CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
@@ -544,8 +541,6 @@ public enum FeatureName {
       "Flag that enables populating WorkflowExecution with ids of freeze windows that rejected the execution",
       HarnessTeam.SPG),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
-  CDS_FILTER_INFRA_CLUSTERS_ON_TAGS(
-      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC),
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),

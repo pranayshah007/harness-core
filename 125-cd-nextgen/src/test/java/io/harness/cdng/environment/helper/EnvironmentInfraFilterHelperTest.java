@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -89,7 +88,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Collections.emptyList())).when(environmentService).list(any(), any());
 
     Assertions
@@ -115,7 +113,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
     Environment env1 = Environment.builder().build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
 
     Assertions
@@ -135,7 +132,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
     Environment env1 = getEnv("env1");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
 
     Assertions
@@ -161,7 +157,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Collections.emptyList())
         .when(infrastructureEntityService)
@@ -192,7 +187,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1))
         .when(infrastructureEntityService)
@@ -232,7 +226,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1, infra2))
         .when(infrastructureEntityService)
@@ -272,7 +265,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml))).build();
     Environment env1 = getEnv("env1");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1, infra2))
         .when(infrastructureEntityService)
@@ -312,7 +304,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml, envYaml2))).build();
     Environment env1 = getEnv("env1");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1, infra2))
         .when(infrastructureEntityService)
@@ -366,7 +357,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .build();
     EnvironmentGroupEntity envGroupEntity = getEnvGroup();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(Optional.of(envGroupEntity)).when(environmentGroupService).get(ACC_ID, ORG_ID, PROJ_ID, "EG_1", false);
     doReturn(Arrays.asList(env1, env2))
         .when(environmentService)
@@ -413,7 +403,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Collections.emptyList())).when(environmentService).list(any(), any());
 
     Assertions
@@ -439,7 +428,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
     Environment env1 = Environment.builder().build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
 
     Assertions
@@ -468,7 +456,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Collections.emptyList())
         .when(clusterService)
@@ -493,7 +480,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     Cluster c1 = getCluster("c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(c1))
         .when(clusterService)
@@ -527,7 +513,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     Cluster c1 = getCluster("c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(c1))
         .when(clusterService)
@@ -568,7 +553,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     io.harness.gitops.models.Cluster gitopsCluster2 = new io.harness.gitops.models.Cluster("c2", "c2");
     io.harness.gitops.models.Cluster gitopsCluster3 = new io.harness.gitops.models.Cluster("c3", "c3");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(c1, c2, c3))
         .when(clusterService)
@@ -626,37 +610,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
-  public void shouldThrowErrorWhenFFDisabledAndFiltersPresent() {
-    FilterYaml envFilter =
-        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
-    EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
-
-    doReturn(false).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
-
-    Assertions
-        .assertThatThrownBy(()
-                                -> environmentInfraFilterHelper.processEnvInfraFiltering(
-                                    ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES))
-        .hasMessageContaining(
-            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.");
-
-    EnvironmentGroupYaml envGroupYaml = EnvironmentGroupYaml.builder()
-                                            .envGroupRef(ParameterField.createValueField("EG_1"))
-                                            .filters(ParameterField.createValueField(Arrays.asList(envFilter)))
-                                            .build();
-
-    Assertions
-        .assertThatThrownBy(()
-                                -> environmentInfraFilterHelper.processEnvInfraFiltering(
-                                    ACC_ID, ORG_ID, PROJ_ID, null, envGroupYaml, ServiceDefinitionType.KUBERNETES))
-        .hasMessageContaining(
-            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.");
-  }
-
-  @Test
-  @Owner(developers = VAIBHAV_SI)
-  @Category(UnitTests.class)
   public void shouldProcessAccountLevelEnvInfraFilteringForEnvFilter() {
     FilterYaml envFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
@@ -671,7 +624,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1))
         .when(infrastructureEntityService)
@@ -711,7 +663,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1, infra2))
         .when(infrastructureEntityService)
@@ -751,7 +702,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml))).build();
     Environment env1 = getAccountEnv("env1");
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1, infra2))
         .when(infrastructureEntityService)
@@ -787,7 +737,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .build();
     EnvironmentGroupEntity envGroupEntity = getAccountLevelEnvGroup(Arrays.asList("env1", "env2"));
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(Optional.of(envGroupEntity))
         .when(environmentGroupService)
         .get(ACC_ID, ORG_ID, PROJ_ID, "account.EG_1", false);
@@ -831,7 +780,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
     gitopsCluster1.setAccountIdentifier(ACC_ID);
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(c1))
         .when(clusterService)
@@ -875,7 +823,6 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
 
-    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
     doReturn(Arrays.asList(infra1, infra2))
         .when(infrastructureEntityService)
