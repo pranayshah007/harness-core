@@ -29,4 +29,7 @@ public interface PMSYamlSchemaService {
 
   JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
       EntityType entityType, String yamlGroup);
+
+  JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String identifier,
+      EntityType entityType, Scope scope, String version);
 }
