@@ -399,13 +399,17 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         if (intervalEndTime.isAfter(endTime)) {
           intervalEndTime = endTime;
         }
-        orchestrationService.queueAnalysis(
-            AnalysisInput.builder()
-                .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
-                    serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()))
-                .startTime(intervalStartTime)
-                .endTime(intervalEndTime)
-                .build());
+        AnalysisInput analysisInput = AnalysisInput.builder()
+                                          .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
+                                              serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()))
+                                          .startTime(intervalStartTime)
+                                          .endTime(intervalEndTime)
+                                          .build();
+        if (intervalStartTime.equals(startTime)) {
+          orchestrationService.queueAnalysis(analysisInput);
+        } else {
+          orchestrationService.queueAnalysisWithoutEventPublish(serviceLevelIndicator.getAccountId(), analysisInput);
+        }
         intervalStartTime = intervalEndTime;
       }
     } else {
@@ -627,11 +631,16 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       if (intervalEndTime.isAfter(endTime)) {
         intervalEndTime = endTime;
       }
-      orchestrationService.queueAnalysis(AnalysisInput.builder()
-                                             .verificationTaskId(verificationTaskId)
-                                             .startTime(intervalStartTime)
-                                             .endTime(intervalEndTime)
-                                             .build());
+      AnalysisInput analysisInput = AnalysisInput.builder()
+                                        .verificationTaskId(verificationTaskId)
+                                        .startTime(intervalStartTime)
+                                        .endTime(intervalEndTime)
+                                        .build();
+      if (intervalStartTime.equals(startTime)) {
+        orchestrationService.queueAnalysis(analysisInput);
+      } else {
+        orchestrationService.queueAnalysisWithoutEventPublish(serviceLevelIndicator.getAccountId(), analysisInput);
+      }
       intervalStartTime = intervalEndTime;
     }
   }
