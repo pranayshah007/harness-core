@@ -24,6 +24,7 @@ import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
 import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
+import io.harness.cvng.core.jobs.RestoreDataCollectionTaskRecalculationHandler;
 import io.harness.cvng.core.services.DebugConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ChangeEventService;
@@ -32,6 +33,7 @@ import io.harness.cvng.core.services.api.DebugService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
@@ -42,6 +44,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
@@ -61,6 +64,8 @@ import io.harness.persistence.PersistentEntity;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -87,14 +92,18 @@ public class DebugServiceImpl implements DebugService {
 
   @Inject EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
+  @Inject SLIDataCollectionTaskServiceImpl sliDataCollectionTaskService;
+
+  @Inject RestoreDataCollectionTaskRecalculationHandler recalculationHandler;
+
+  @Inject HPersistence hPersistence;
+
   @Inject private FakeFeatureFlagSRMProducer fakeFeatureFlagSRMProducer;
   @Inject ChangeEventService changeEventService;
 
   @Inject DebugConfigService debugConfigService;
 
   @Inject private NextGenService nextGenService;
-
-  @Inject HPersistence hPersistence;
 
   public static final Integer RECORDS_BATCH_SIZE = 100;
 
@@ -333,6 +342,68 @@ public class DebugServiceImpl implements DebugService {
         .analysisStateMachine(analysisStateMachine)
         .sloRecords(sloRecords)
         .build();
+  }
+
+  @Override
+  public void enqueueDataCollectionFailure(
+      ProjectParams projectParams, String sloIdentifier, long startTime, long endTime) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloIdentifier);
+    Preconditions.checkNotNull(abstractServiceLevelObjective, "SLO is not present in database");
+    Preconditions.checkArgument(abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE));
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) abstractServiceLevelObjective;
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+    Preconditions.checkNotNull(serviceLevelIndicator, "SLI is not present in database");
+    String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+        projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid());
+    serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+        verificationTaskId, Instant.ofEpochSecond(startTime), Instant.ofEpochSecond(endTime), serviceLevelIndicator);
+  }
+
+  @Override
+  public void restoreSLOData(ProjectParams projectParams, String sloIdentifier, long startTime, long endTime) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloIdentifier);
+    Preconditions.checkNotNull(abstractServiceLevelObjective, "SLO is not present in database");
+    Preconditions.checkArgument(abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE));
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) abstractServiceLevelObjective;
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+    Preconditions.checkNotNull(serviceLevelIndicator, "SLI is not present in database");
+    List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses =
+        entityUnavailabilityStatusesService.getAllInstancesEntity(projectParams, startTime, endTime);
+    for (EntityUnavailabilityStatuses entity : entityUnavailabilityStatuses) {
+      if (entity.getEntityType() == EntityType.SLO) {
+        entityUnavailabilityStatusesService.updateStatusOfEntity(EntityType.SLO, serviceLevelIndicator.getUuid(),
+            entity.getStartTime(), entity.getEndTime(), EntityUnavailabilityStatus.DATA_COLLECTION_FAILED,
+            EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED);
+      }
+    }
+    for (EntityUnavailabilityStatuses entity : entityUnavailabilityStatuses) {
+      if (entity.getEntityType() == EntityType.SLO
+          && entity.getEntityIdentifier().equals(serviceLevelIndicator.getUuid())) {
+        recalculationHandler.handle(entity);
+      }
+    }
+  }
+
+  @Override
+  public void updateFailedStateOfSLO(ProjectParams projectParams, String sloIdentifier, boolean failedState) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloIdentifier);
+    Preconditions.checkNotNull(abstractServiceLevelObjective, "SLO is not present in database");
+    Preconditions.checkArgument(abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE));
+    SLOHealthIndicator sloHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, abstractServiceLevelObjective.getIdentifier());
+    UpdateOperations<SLOHealthIndicator> updateOperations =
+        hPersistence.createUpdateOperations(SLOHealthIndicator.class);
+    updateOperations.set(SLOHealthIndicatorKeys.failedState, failedState);
+    hPersistence.update(hPersistence.createQuery(SLOHealthIndicator.class)
+                            .filter(SLOHealthIndicatorKeys.uuid, sloHealthIndicator.getUuid()),
+        updateOperations);
   }
 
   public DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier) {

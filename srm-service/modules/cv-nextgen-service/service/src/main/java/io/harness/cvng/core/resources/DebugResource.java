@@ -138,6 +138,38 @@ public class DebugResource {
     return new RestResponse<>(debugService.retryDataCollectionTask(projectParams.getProjectParams(), identifier));
   }
 
+  @PUT
+  @Timed
+  @Path("slo/{identifier}/failed")
+  @ApiOperation(value = "Updates failed state of SLO for automation", nickname = "markSLOAsFailed", hidden = true)
+  public void markSLOAsFailed(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @QueryParam("enable") Boolean enable) {
+    debugService.updateFailedStateOfSLO(projectParams.getProjectParams(), identifier, enable);
+  }
+
+  @PUT
+  @Timed
+  @Path("slo/{identifier}/dataCollectionFailures")
+  @ApiOperation(value = "enqueue DataCollection Failures for automation", nickname = "enqueueDataCollectionFailure",
+      hidden = true)
+  public void
+  enqueueDataCollectionFailure(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime) {
+    debugService.enqueueDataCollectionFailure(projectParams.getProjectParams(), identifier, startTime, endTime);
+  }
+
+  @PUT
+  @Timed
+  @Path("slo/{identifier}/restore")
+  @ApiOperation(value = "Restore Failed DC tasks", nickname = "restoreFailedDCTasks", hidden = true)
+  public void restore(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime) {
+    debugService.restoreSLOData(projectParams.getProjectParams(), identifier, startTime, endTime);
+  }
+
   @POST
   @Timed
   @Path("change-event/register")
