@@ -43,5 +43,5 @@ public class K8sBlueGreenBaseStepInfo {
   @YamlSchemaTypes({runtime}) List<K8sStepCommandFlag> commandFlags;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({expression})
-  ParameterField<Boolean> skipDeploymentIfSameManifest;
+  ParameterField<Boolean> skipUnchangedManifest;
 }

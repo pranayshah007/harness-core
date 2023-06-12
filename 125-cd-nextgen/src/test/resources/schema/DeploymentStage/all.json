@@ -10183,7 +10183,17 @@
                 }
               ]
             },
-            "skipDeploymentIfSameManifest": {
+            "skipDryRun": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "skipUnchangedManifest": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -10192,16 +10202,6 @@
                   "type": "string",
                   "pattern": "(<\\+.+>.*)",
                   "minLength": 1
-                }
-              ]
-            },
-            "skipDryRun": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
                 }
               ]
             }
