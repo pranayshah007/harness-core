@@ -58,8 +58,6 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   private String delegateType;
 
-  private List<String> runnerTypes;
-
   private String description;
 
   @NotEmpty private String accountId;
