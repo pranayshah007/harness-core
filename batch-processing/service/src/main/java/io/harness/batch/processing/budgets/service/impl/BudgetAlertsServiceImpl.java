@@ -508,12 +508,10 @@ public class BudgetAlertsServiceImpl {
             .put("APPROACHING_OR_EXCEEDED", approachingOrExceeded)
             .put("PERIOD", budgetCommon.getPeriod().name().toLowerCase())
             .put("BUDGET_NAME", budgetCommon.getName())
-            .put("BUDGET_AMOUNT",
-                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
-            .put("ACTUAL_AMOUNT",
-                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getActualCost())))
-            .put("FORECASTED_COST",
-                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getForecastCost())))
+            .put("BUDGET_AMOUNT", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
+            .put("ACTUAL_AMOUNT", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getActualCost())))
+            .put(
+                "FORECASTED_COST", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getForecastCost())))
             .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
             .put("ACTUAL_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
             .put("BUDGET_URL", budgetUrl)
@@ -547,11 +545,10 @@ public class BudgetAlertsServiceImpl {
             .put("IS_OR_HAS", isOrHas)
             .put("APPROACHING_OR_EXCEEDED", approachingOrExceeded)
             .put("BUDGET_GROUP_AMOUNT",
-                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
-            .put("ACTUAL_AMOUNT",
-                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getActualCost())))
-            .put("FORECASTED_COST",
-                format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", budgetCommon.getForecastCost())))
+                format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
+            .put("ACTUAL_AMOUNT", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getActualCost())))
+            .put(
+                "FORECASTED_COST", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getForecastCost())))
             .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
             .put("ACTUAL_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
             .put("BUDGET_GROUP_URL", budgetGroupUrl)
