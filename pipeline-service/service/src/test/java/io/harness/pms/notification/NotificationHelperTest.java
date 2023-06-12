@@ -54,10 +54,15 @@ import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 import io.harness.sanitizer.HtmlInputSanitizer;
@@ -83,6 +88,7 @@ public class NotificationHelperTest extends CategoryTest {
   PMSPipelineService pmsPipelineService;
   PipelineExpressionHelper pipelineExpressionHelper;
   HtmlInputSanitizer htmlInputSanitizer;
+  PMSExecutionService pmsExecutionService;
   String executionUrl =
       "http:127.0.0.1:8080/account/dummyAccount/cd/orgs/dummyOrg/projects/dummyProject/pipelines/dummyPipeline/executions/dummyPlanExecutionId/pipeline";
   Ambiance ambiance =
@@ -139,6 +145,21 @@ public class NotificationHelperTest extends CategoryTest {
       + "                    - admin@harness.io \n"
       + "                    - test@harness.io \n"
       + "          enabled: true\n";
+  String webhookNotificationYaml = "pipeline:\n"
+      + "    name: DockerTest\n"
+      + "    identifier: DockerTest\n"
+      + "    notificationRules:\n"
+      + "        - name: N2\n"
+      + "          pipelineEvents:\n"
+      + "              - type: PipelineSuccess\n"
+      + "              - type: StageFailed\n"
+      + "                forStages:\n"
+      + "                    - stage1\n"
+      + "          notificationMethod:\n"
+      + "              type: Webhook\n"
+      + "              spec:\n"
+      + "                  webhookUrl: https://www.google.com\n"
+      + "          enabled: true\n";
   String allEventsYaml = "pipeline:\n"
       + "    name: DockerTest\n"
       + "    identifier: DockerTest\n"
@@ -170,6 +191,7 @@ public class NotificationHelperTest extends CategoryTest {
     pmsPipelineService = mock(PMSPipelineService.class);
     pipelineExpressionHelper = mock(PipelineExpressionHelper.class);
     htmlInputSanitizer = mock(HtmlInputSanitizer.class);
+    pmsExecutionService = mock(PMSExecutionService.class);
     notificationHelper = spy(new NotificationHelper());
     notificationHelper.notificationClient = notificationClient;
     notificationHelper.planExecutionService = planExecutionService;
@@ -179,6 +201,7 @@ public class NotificationHelperTest extends CategoryTest {
     notificationHelper.pmsPipelineService = pmsPipelineService;
     notificationHelper.pipelineExpressionHelper = pipelineExpressionHelper;
     notificationHelper.userNameSanitizer = htmlInputSanitizer;
+    notificationHelper.pmsExecutionService = pmsExecutionService;
   }
 
   @Test
@@ -248,6 +271,7 @@ public class NotificationHelperTest extends CategoryTest {
     assertEquals(notificationHelper.getEventTypeForStage(nodeExecutionBuilder.build()), Optional.empty());
   }
 
+  // TODO: Add ut for webhookNotification once PL PR is merged.
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
@@ -260,6 +284,16 @@ public class NotificationHelperTest extends CategoryTest {
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(emailNotificationYaml).build()));
     when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
     ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
         ArgumentCaptor.forClass(NotificationChannel.class);
     doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
@@ -295,6 +329,16 @@ public class NotificationHelperTest extends CategoryTest {
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
     doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
     when(htmlInputSanitizer.sanitizeInput(anyString())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
 
     for (int idx = 0; idx < pipelineEventTypeList.size(); idx++) {
       notificationHelper.sendNotification(ambiance, pipelineEventTypeList.get(idx), nodeExecution, 1L);
