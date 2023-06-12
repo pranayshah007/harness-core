@@ -748,7 +748,11 @@ public class ExecutionHelper {
       }
 
       StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(pipelineYaml, stagesToRun);
-      pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
+      if (featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.PIE_PROCESS_ON_JSON_NODE)) {
+        pipelineYaml = StagesExpressionExtractor.replaceExpressionsWithJsonNode(pipelineYaml, expressionValues);
+      } else {
+        pipelineYaml = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
+      }
       stagesExecutionInfo = StagesExecutionHelper.getStagesExecutionInfo(pipelineYaml, stagesToRun, expressionValues);
       pipelineYamlWithTemplateRef =
           InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
