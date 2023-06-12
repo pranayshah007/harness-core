@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -112,7 +111,6 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                          .build())
               .filter(this::isResourceAvailableToAssignTask)
               .collect(toList());
-      log.info("Dequeue list {}", delegateTasksDequeueList);
       delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
       return true;
     } catch (Exception e) {

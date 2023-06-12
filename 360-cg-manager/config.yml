@@ -13,7 +13,7 @@ server:
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: h2
-      port: 9096
+      port: 9091
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -702,7 +702,7 @@ eventListenersCountConfig:
 
 delegateQueueServiceConfig:
     topic: "delegate-service"
-    enableQueueAndDequeue: true
+    enableQueueAndDequeue: false
     queueServiceClientConfig:
       httpClientConfig:
         baseUrl: http://localhost:9091/
