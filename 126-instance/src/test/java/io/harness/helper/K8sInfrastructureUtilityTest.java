@@ -54,7 +54,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
                                               .build();
 
     K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO);
+        K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO);
     assertThat(k8sDeploymentReleaseDetails).isNotNull();
     assertThat(k8sDeploymentReleaseDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
     assertThat(k8sDeploymentReleaseDetails.getNamespaces()).contains(NAMESPACE);
@@ -76,7 +76,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
                                                       .useClusterAdminCredentials(true)
                                                       .build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sAzureCloudConfigMetadata.class);
     K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata = (K8sAzureCloudConfigMetadata) k8sCloudConfigMetadata;
@@ -93,7 +93,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
     InfrastructureOutcome infrastructureOutcome =
         K8sAwsInfrastructureOutcome.builder().cluster("cluster").namespace(NAMESPACE).build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sAWSCloudConfigMetadata.class);
     K8sAWSCloudConfigMetadata k8sAWSCloudConfigMetadata = (K8sAWSCloudConfigMetadata) k8sCloudConfigMetadata;
@@ -107,7 +107,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
     InfrastructureOutcome infrastructureOutcome =
         K8sGcpInfrastructureOutcome.builder().cluster("cluster").namespace(NAMESPACE).build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sGcpCloudConfigMetadata.class);
     K8sGcpCloudConfigMetadata k8sAWSCloudConfigMetadata = (K8sGcpCloudConfigMetadata) k8sCloudConfigMetadata;
