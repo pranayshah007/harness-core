@@ -57,8 +57,6 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
-import static java.lang.Boolean.FALSE;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofMinutes;
@@ -224,12 +222,9 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1LoadBalancerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ResourceAttributes;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
-import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -2880,40 +2875,6 @@ public class K8sTaskHelperBase {
       return createConnectivityFailureValidationResult(ExceptionMessageSanitizer.sanitizeException(ex));
     }
     return ConnectorValidationResult.builder().status(connectivityStatus).build();
-  }
-
-  public List<ErrorDetail> validateLightwingResourcePermissions(KubernetesConfig kubernetesConfig) throws Exception {
-    final List<V1SelfSubjectAccessReview> reviewStatusList =
-        kubernetesContainerService.validateLightwingResourcePermissions(kubernetesConfig);
-    final List<ErrorDetail> errorDetailList = new ArrayList<>();
-
-    for (V1SelfSubjectAccessReview reviewStatus : reviewStatusList) {
-      if (FALSE.equals(reviewStatus.getStatus().getAllowed())) {
-        final V1ResourceAttributes resourceAttributes = reviewStatus.getSpec().getResourceAttributes();
-
-        final String message =
-            String.format("missing '%s' permission on resource '%s' in api group '%s'", resourceAttributes.getVerb(),
-                resourceAttributes.getResource(), firstNonNull(resourceAttributes.getGroup(), ""));
-
-        errorDetailList.add(ErrorDetail.builder().message(message).reason("not allowed").build());
-      }
-    }
-
-    return errorDetailList;
-  }
-
-  public List<ErrorDetail> validateLightwingResourceExists(KubernetesConfig kubernetesConfig) throws Exception {
-    final List<V1Status> statusList = kubernetesContainerService.validateLightwingResourceExists(kubernetesConfig);
-    final List<ErrorDetail> errorDetailList = new ArrayList<>();
-
-    for (V1Status status : statusList) {
-      errorDetailList.add(ErrorDetail.builder()
-                              .reason(status.getReason())
-                              .message(status.getMessage())
-                              .code(firstNonNull(status.getCode(), 0))
-                              .build());
-    }
-    return errorDetailList;
   }
 
   public V1TokenReviewStatus fetchTokenReviewStatus(
