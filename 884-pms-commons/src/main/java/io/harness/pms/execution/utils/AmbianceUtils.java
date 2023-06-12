@@ -480,6 +480,10 @@ public class AmbianceUtils {
     return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName());
   }
 
+  public boolean shouldUseExpressionEngineV2(Ambiance ambiance) {
+    return checkIfSettingEnabled(ambiance, NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName());
+  }
+
   // This method should be used when the setting value is of type boolean.
   public boolean checkIfSettingEnabled(Ambiance ambiance, String settingId) {
     Map<String, String> settingToValueMap = ambiance.getMetadata().getSettingToValueMapMap();

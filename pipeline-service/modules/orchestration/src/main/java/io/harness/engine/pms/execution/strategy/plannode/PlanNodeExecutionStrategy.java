@@ -41,6 +41,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
@@ -155,9 +156,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
               AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
         enabledFeatureFlags.add(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION.name());
       }
-      if (pmsFeatureFlagService.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_JSON_SUPPORT)) {
-        enabledFeatureFlags.add(FeatureName.PIE_EXECUTION_JSON_SUPPORT.name());
+      if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
+        enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
       }
       if (pmsFeatureFlagService.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {

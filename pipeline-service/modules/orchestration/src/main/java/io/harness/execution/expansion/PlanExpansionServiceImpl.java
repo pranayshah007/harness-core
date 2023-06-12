@@ -7,7 +7,6 @@
 package io.harness.execution.expansion;
 
 import io.harness.OrchestrationModuleConfig;
-import io.harness.beans.FeatureName;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -20,7 +19,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.planExecutionJson.PlanExecutionExpansionRepository;
 import io.harness.serializer.JsonUtils;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -41,7 +39,6 @@ import org.springframework.data.mongodb.core.query.Update;
 public class PlanExpansionServiceImpl implements PlanExpansionService {
   @Inject PlanExecutionExpansionRepository planExecutionExpansionRepository;
 
-  @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject OrchestrationModuleConfig moduleConfig;
 
   @Override
@@ -140,14 +137,13 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   private boolean shouldSkipUpdate(Ambiance ambiance) {
-    return !pmsFeatureFlagService.isEnabled(
-               AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_JSON_SUPPORT)
+    return !AmbianceUtils.shouldUseExpressionEngineV2(ambiance)
         || (AmbianceUtils.obtainCurrentLevel(ambiance).getSkipExpressionChain()
             && AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getStepCategory() != StepCategory.STRATEGY);
   }
 
   private boolean shouldUseExpandedJsonFunctor(Ambiance ambiance) {
-    return pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2);
+    return AmbianceUtils.shouldUseExpressionEngineV2(ambiance);
   }
 
   @Override
