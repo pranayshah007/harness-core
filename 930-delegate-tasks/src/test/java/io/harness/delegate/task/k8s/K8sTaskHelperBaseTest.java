@@ -2863,7 +2863,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHelmV2CommandForRender() {
     String command = k8sTaskHelperBase.getHelmCommandForRender(
-        "helm", "chart_location", "test-release", "default", " -f values-0.yaml", HelmVersion.V2, null);
+        "helm", "chart_location", "test-release", "default", " -f values-0.yaml", HelmVersion.V2, null, "");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
   }
 
@@ -2871,8 +2871,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testGetHelmV2CommandForRenderWithCommand() {
-    String command = k8sTaskHelperBase.getHelmCommandForRender(
-        "helm", "chart_location", "test-release", "default", " -f values-0.yaml", HelmVersion.V2, commandFlag);
+    String command = k8sTaskHelperBase.getHelmCommandForRender("helm", "chart_location", "test-release", "default",
+        " -f values-0.yaml", HelmVersion.V2, commandFlag, "config");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
     assertThat(command).contains(flagValue);
   }
@@ -2882,7 +2882,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHelmV2CommandForRenderOneChartFile() {
     String command = k8sTaskHelperBase.getHelmCommandForRender("helm", "chart_location", "test-release", "default",
-        " -f values-0.yaml", "template/service.yaml", HelmVersion.V2, null);
+        " -f values-0.yaml", "template/service.yaml", HelmVersion.V2, null, "");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
   }
 
@@ -2891,7 +2891,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHelmV2CommandForRenderOneChartFileWithCommandFlags() {
     String command = k8sTaskHelperBase.getHelmCommandForRender("helm", "chart_location", "test-release", "default",
-        " -f values-0.yaml", "template/service.yaml", HelmVersion.V2, commandFlag);
+        " -f values-0.yaml", "template/service.yaml", HelmVersion.V2, commandFlag, "config");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
     assertThat(command).contains(flagValue);
   }
@@ -2901,7 +2901,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHelmV3CommandForRender() {
     String command = k8sTaskHelperBase.getHelmCommandForRender(
-        "helm", "chart_location", "test-release", "default", " -f values-0.yaml", HelmVersion.V3, null);
+        "helm", "chart_location", "test-release", "default", " -f values-0.yaml", HelmVersion.V3, null, "");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
   }
 
@@ -2909,8 +2909,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testGetHelmV3CommandForRenderWithCommand() {
-    String command = k8sTaskHelperBase.getHelmCommandForRender(
-        "helm", "chart_location", "test-release", "default", " -f values-0.yaml", HelmVersion.V3, commandFlag);
+    String command = k8sTaskHelperBase.getHelmCommandForRender("helm", "chart_location", "test-release", "default",
+        " -f values-0.yaml", HelmVersion.V3, commandFlag, "config");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
     assertThat(command).contains(flagValue);
   }
@@ -2920,7 +2920,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHelmV3CommandForRenderOneChartFile() {
     String command = k8sTaskHelperBase.getHelmCommandForRender("helm", "chart_location", "test-release", "default",
-        " -f values-0.yaml", "template/service.yaml", HelmVersion.V3, null);
+        " -f values-0.yaml", "template/service.yaml", HelmVersion.V3, null, null);
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
   }
 
@@ -2929,7 +2929,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHelmV3CommandForRenderOneChartFileWithCommandFlag() {
     String command = k8sTaskHelperBase.getHelmCommandForRender("helm", "chart_location", "test-release", "default",
-        " -f values-0.yaml", "template/service.yaml", HelmVersion.V3, commandFlag);
+        " -f values-0.yaml", "template/service.yaml", HelmVersion.V3, commandFlag, "config");
     assertThat(command).doesNotContain("$").doesNotContain("{").doesNotContain("}");
     assertThat(command).contains(flagValue);
   }
@@ -2945,12 +2945,12 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(processResult).when(spyHelperBase).executeShellCommand(any(), any(), any(), anyLong());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelmChartFiles("helm", "manifest", chartFiles,
-        new ArrayList<>(), "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
+        new ArrayList<>(), "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "config");
 
     assertThat(manifestFiles.size()).isEqualTo(1);
     verify(spyHelperBase, times(1))
         .getHelmCommandForRender(
-            "helm", "manifest", "release", "namespace", "", "file.yaml", HelmVersion.V3, commandFlag);
+            "helm", "manifest", "release", "namespace", "", "file.yaml", HelmVersion.V3, commandFlag, "config");
   }
 
   @Test
@@ -2964,7 +2964,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn("").when(spyHelperBase).writeValuesToFile(any(), any());
 
     final List<FileData> manifestFiles = spyHelperBase.renderTemplateForHelm("helm", "./chart", new ArrayList<>(),
-        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag);
+        "release", "namespace", executionLogCallback, HelmVersion.V3, 9000, commandFlag, "config");
 
     verify(spyHelperBase, times(1)).executeShellCommand(eq("./chart"), anyString(), any(), anyLong());
     assertThat(manifestFiles.size()).isEqualTo(1);
@@ -3275,15 +3275,16 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "dir/config");
 
-    List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
+    List<FileData> result = spyHelper.renderTemplate(
+        K8sDelegateTaskParams.builder().helmPath(helmPath).kubeconfigPath("config").workingDirectory("dir").build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
+            executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND, "dir/config");
   }
 
   private void testRenderTemplateWithHelmSubChart(ManifestDelegateConfig manifestDelegateConfig,
@@ -3296,15 +3297,16 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "dir/config");
 
-    List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
+    List<FileData> result = spyHelper.renderTemplate(
+        K8sDelegateTaskParams.builder().helmPath(helmPath).workingDirectory("dir").kubeconfigPath("config").build(),
         manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelm(helmPath, expectedManifestDirectory, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE);
+            executionLogCallback, HelmVersion.V3, 600000, HELM_DEPENDENCY_UPDATE, "dir/config");
   }
 
   @Test
@@ -3326,16 +3328,17 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(spyHelper)
         .renderTemplateForHelmChartFiles(helmPath, "manifest", filesToRender, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, helmCommandFlag);
+            executionLogCallback, HelmVersion.V3, 600000, helmCommandFlag, "dir/config");
 
     List<FileData> result = spyHelper.renderTemplateForGivenFiles(
-        K8sDelegateTaskParams.builder().helmPath(helmPath).build(), manifestDelegateConfig, "manifest", filesToRender,
-        valuesList, "release", "namespace", executionLogCallback, 10, false);
+        K8sDelegateTaskParams.builder().helmPath(helmPath).kubeconfigPath("config").workingDirectory("dir").build(),
+        manifestDelegateConfig, "manifest", filesToRender, valuesList, "release", "namespace", executionLogCallback, 10,
+        false);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
         .renderTemplateForHelmChartFiles(helmPath, "manifest", filesToRender, valuesList, "release", "namespace",
-            executionLogCallback, HelmVersion.V3, 600000, helmCommandFlag);
+            executionLogCallback, HelmVersion.V3, 600000, helmCommandFlag, "dir/config");
   }
 
   @Test
