@@ -158,7 +158,6 @@ def get_vm_cpu_data(jsonData):
                 }
                 print(f"vmId({vm_id}): minCPU={metric_value.minimum}%, maxCPU={metric_value.maximum}%, avgCPU={metric_value.average}%")
             except Exception as e:
-                print_(e)
-                raise e
+                print_(e, "ERROR")
 
     return vm_data_map, added_at

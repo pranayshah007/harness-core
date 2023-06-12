@@ -342,4 +342,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         throw new InvalidArgumentsException(String.format("Invalid api key type: %s", apiKeyType));
     }
   }
+
+  @Override
+  public Long countApiKeys(String accountIdentifier) {
+    return apiKeyRepository.countByAccountIdentifier(accountIdentifier);
+  }
 }

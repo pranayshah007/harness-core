@@ -49,4 +49,16 @@ public class SmtpCapability implements ExecutionCapability {
     return isNotEmpty(fetchCapabilityBasis()) ? String.format("Capability reach host, %s ", fetchCapabilityBasis())
                                               : null;
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format(
+            "Delegate(s) unable to connect to  %s, make sure to provide the connectivity with the following delegates",
+            fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }

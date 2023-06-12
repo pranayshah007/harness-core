@@ -10,7 +10,6 @@ package io.harness.monitoring;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.metrics.service.api.MetricService;
-import io.harness.utils.system.SystemWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Message;
@@ -29,13 +28,12 @@ public class EventMonitoringServiceImpl implements EventMonitoringService {
   public <T extends Message> void sendMetric(
       String metricName, MonitoringInfo monitoringInfo, Map<String, String> metadataMap) {
     try {
-      long currentTimeMillis = SystemWrapper.currentTimeMillis();
       String metricValue = String.format(metricName, monitoringInfo.getMetricPrefix());
       long newCount = countMap.compute(metricValue, (k, v) -> v == null ? 1 : ((v + 1) % SAMPLE_SIZE));
-      if (newCount == 1 || (currentTimeMillis - monitoringInfo.getCreatedAt() > 5000)) {
+      if (newCount == 1 || (monitoringInfo.getReadTs() - monitoringInfo.getCreatedAt() > 5000)) {
         log.debug(
             String.format("Sampled the metric [%s]", String.format(metricName, monitoringInfo.getMetricPrefix())));
-        metricService.recordMetric(metricValue, System.currentTimeMillis() - monitoringInfo.getCreatedAt());
+        metricService.recordMetric(metricValue, monitoringInfo.getReadTs() - monitoringInfo.getCreatedAt());
       }
     } catch (Exception ex) {
       log.error("Exception Occurred while recording metrics", ex);

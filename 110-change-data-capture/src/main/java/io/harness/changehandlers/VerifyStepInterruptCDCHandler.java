@@ -31,9 +31,13 @@ public class VerifyStepInterruptCDCHandler extends AbstractChangeDataHandler {
     columnValueMapping.put("id", interruptId);
     if (dbObject.get(InterruptKeys.planExecutionId) != null) {
       columnValueMapping.put("planExecutionId", dbObject.get(InterruptKeys.planExecutionId).toString());
+    } else {
+      return null;
     }
     if (dbObject.get(InterruptKeys.nodeExecutionId) != null) {
       columnValueMapping.put("nodeExecutionId", dbObject.get(InterruptKeys.nodeExecutionId).toString());
+    } else {
+      return null;
     }
     if (dbObject.get(InterruptKeys.type) != null) {
       columnValueMapping.put("type", dbObject.get(InterruptKeys.type).toString());

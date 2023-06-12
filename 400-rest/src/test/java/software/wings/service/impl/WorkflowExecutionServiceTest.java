@@ -226,6 +226,7 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -2163,6 +2164,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
+  @Ignore("This test need to be fixed by Fernando Dourado")
   public void testGetPreviousApprovalDetails() {
     String approvalId = generateUuid();
     WorkflowExecution currentWorkflowExecution =

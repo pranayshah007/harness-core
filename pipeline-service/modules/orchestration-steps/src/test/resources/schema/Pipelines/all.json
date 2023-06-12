@@ -1325,8 +1325,7 @@
       "type": "object",
       "required": [
         "connectorRef",
-        "namespace",
-        "resources"
+        "namespace"
       ],
       "properties": {
         "annotations": {
@@ -2410,7 +2409,8 @@
             "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValues",
-            "MarkAsFailure"
+            "MarkAsFailure",
+            "RetryStepGroup"
           ]
         }
       },
@@ -2646,6 +2646,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "outputFilePathsContent": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "projectName": {
               "type": "string"
@@ -5258,6 +5264,33 @@
           "minItems": 1
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetrySGFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "readOnly": true,
+              "$ref": "#/definitions/RetryFailureSpecConfig"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "RetryStepGroup"
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {
@@ -8015,7 +8048,19 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "sharedPaths": {
-          "$ref": "#/definitions/ParameterFieldListString"
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "stepGroupInfra": {
           "oneOf": [

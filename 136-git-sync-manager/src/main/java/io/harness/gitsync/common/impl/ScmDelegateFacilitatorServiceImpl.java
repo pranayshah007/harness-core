@@ -1098,8 +1098,11 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
         connectorDetailsToFileLocationMapping = new HashMap<>();
 
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      ConnectorDetails key =
-          ConnectorDetails.builder().scope(request.getScope()).connectorRef(request.getConnectorRef()).build();
+      ConnectorDetails key = ConnectorDetails.builder()
+                                 .scope(request.getScope())
+                                 .connectorRef(request.getConnectorRef())
+                                 .repo(request.getRepo())
+                                 .build();
       populateScmConnectorEncryptionDetailsMap(
           key, connectorDetailsToEncryptedDataDetailsMapping, request.getScope(), request.getScmConnector());
       GitFileLocationDetails gitFileLocationDetails = getGitFileLocationDetails(request);

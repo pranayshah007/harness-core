@@ -67,7 +67,7 @@ public class ContainerParamsProvider {
       ContainerDetailsSweepingOutput k8PodDetails, Integer stageCpuRequest, Integer stageMemoryRequest,
       Map<String, String> logEnvVars, Map<String, String> volumeToMountPath, String workDirPath,
       ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance,
-      CIExecutionImages overridenExecutionImages) {
+      CIExecutionImages overridenExecutionImages, String imagePullPolicy) {
     String imageName = overridenExecutionImages == null || isEmpty(overridenExecutionImages.getLiteEngineTag())
         ? containerExecutionConfig.getLiteEngineImage()
         : overridenExecutionImages.getLiteEngineTag();
@@ -86,6 +86,7 @@ public class ContainerParamsProvider {
         .volumeToMountPath(volumeToMountPath)
         .securityContext(ctrSecurityContext)
         .workingDir(workDirPath)
+        .imagePullPolicy(imagePullPolicy)
         .build();
   }
 
@@ -160,7 +161,7 @@ public class ContainerParamsProvider {
 
   public CIK8ContainerParams getSetupAddonContainerParams(ConnectorDetails harnessInternalImageConnector,
       Map<String, String> volumeToMountPath, String workDir, ContainerSecurityContext ctrSecurityContext, OSType os,
-      CIExecutionImages overridenExecutionImages) {
+      CIExecutionImages overridenExecutionImages, String imagePullPolicy) {
     Map<String, String> envVars = new HashMap<>();
     envVars.put(HARNESS_WORKSPACE, workDir);
 
@@ -187,6 +188,7 @@ public class ContainerParamsProvider {
         .args(args)
         .securityContext(ctrSecurityContext)
         .containerResourceParams(getAddonResourceParams())
+        .imagePullPolicy(imagePullPolicy)
         .build();
   }
 }

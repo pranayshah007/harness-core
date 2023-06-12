@@ -14,7 +14,6 @@ import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvir
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -35,6 +34,7 @@ import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOverridesSpecBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.MergeHelper;

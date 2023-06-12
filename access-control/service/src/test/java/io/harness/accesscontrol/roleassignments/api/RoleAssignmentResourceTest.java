@@ -185,6 +185,15 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         .principal(PrincipalDTO.builder().identifier(randomAlphabetic(10)).type(principalType).build())
         .build();
   }
+  private RoleAssignmentDTO getRoleAssignmentDTO(PrincipalType principalType, String scope) {
+    return RoleAssignmentDTO.builder()
+        .identifier(randomAlphabetic(10))
+        .roleIdentifier(randomAlphabetic(10))
+        .resourceGroupIdentifier(randomAlphabetic(10))
+        .principal(
+            PrincipalDTO.builder().identifier(randomAlphabetic(10)).type(principalType).scopeLevel(scope).build())
+        .build();
+  }
 
   private void preViewPrincipalPermissions(
       boolean hasViewUserPermission, boolean hasViewUserGroupPermission, boolean hasViewServiceAccountPermission) {
@@ -515,6 +524,26 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
     verify(transactionTemplate, times(1)).execute(any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testCreate_accountScopeUserGroupRoleAtProjectScope() {
+    HarnessScopeParams harnessScopeParams1 = HarnessScopeParams.builder()
+                                                 .accountIdentifier(randomAlphabetic(10))
+                                                 .orgIdentifier(randomAlphabetic(10))
+                                                 .projectIdentifier(randomAlphabetic(10))
+                                                 .build();
+    RoleAssignmentDTO roleAssignmentDTO = getRoleAssignmentDTO(USER_GROUP, "account");
+    RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
+    preSyncDependencies(roleAssignmentDTO, true, true, true);
+    preCheckUpdatePermission(roleAssignmentDTO);
+
+    roleAssignmentResource.create(harnessScopeParams1, roleAssignmentDTO);
+    assertSyncDependencies(2, roleAssignmentDTOClone, true, true, true);
+    assertCheckUpdatePermission(2, roleAssignmentDTOClone);
+    verify(transactionTemplate, times(2)).execute(any());
   }
 
   @Test

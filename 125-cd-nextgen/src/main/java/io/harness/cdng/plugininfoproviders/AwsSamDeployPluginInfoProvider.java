@@ -17,6 +17,8 @@ import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -66,8 +68,11 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
+  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
+
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     CdAbstractStepNode cdAbstractStepNode;
 
@@ -81,7 +86,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        request, awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser());
+        awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
@@ -97,7 +102,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(request.getAmbiance(), awsSamDeployStepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(ambiance, awsSamDeployStepInfo));
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
@@ -167,7 +172,20 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     }
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
-    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "");
+
+    ManifestsOutcome manifestsOutcome =
+        (ManifestsOutcome) outcomeService
+            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+            .getOutcome();
+
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
+        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
+            manifestsOutcome.values());
+
+    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+        awsSamDirectoryManifestOutcome);
+
+    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
     samDeployEnvironmentVariablesMap.put(
         "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());

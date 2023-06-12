@@ -7,6 +7,7 @@
 
 package io.harness.delegate.service.impl;
 
+import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
@@ -14,6 +15,8 @@ import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.exception.DelegateInstallationCommandNotSupportedException;
+
+import software.wings.app.MainConfiguration;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -29,10 +32,13 @@ import org.apache.commons.text.StringSubstitutor;
 public class DelegateInstallationCommandServiceImpl implements DelegateInstallationCommandService {
   private final DelegateNgTokenService delegateNgTokenService;
   private final DelegateVersionService delegateVersionService;
+
+  private final MainConfiguration mainConfiguration;
   private static final String TERRAFORM_TEMPLATE_FLE = "/delegatetemplates/delegate-terraform-example-module.ftl";
 
   private static final String DOCKER_COMMAND = "docker run --cpus=1 --memory=2g \\\n"
       + "  -e DELEGATE_NAME=docker-delegate \\\n"
+      + "${docker_deploy_mode_string}"
       + "  -e NEXT_GEN=\"true\" \\\n"
       + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
       + "  -e ACCOUNT_ID=${account_id} \\\n"
@@ -44,6 +50,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       "helm upgrade -i helm-delegate --namespace harness-delegate-ng --create-namespace \\\n"
       + "  harness-delegate/harness-delegate-ng \\\n"
       + "  --set delegateName=helm-delegate \\\n"
+      + "${helm_deploy_mode_string}"
       + "  --set accountId=${account_id} \\\n"
       + "  --set delegateToken=${token} \\\n"
       + "  --set managerEndpoint=${manager_url} \\\n"
@@ -56,11 +63,16 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       + "\"PUT_YOUR_DELEGATE_TOKEN\" with ${token}\n"
       + "\"PUT_YOUR_DELEGATE_IMAGE\" with ${image}";
 
+  private String DOCKER_DEPLOY_MODE_STRING = "  -e DEPLOY_MODE=%s \\\n";
+  private String HELM_DEPLOY_MODE_STRING = "  --set deployMode=%s \\\n";
+  private static final String EMPTY_STRING = "";
+
   @Inject
-  public DelegateInstallationCommandServiceImpl(
-      DelegateNgTokenService delegateNgTokenService, DelegateVersionService delegateVersionService) {
+  public DelegateInstallationCommandServiceImpl(DelegateNgTokenService delegateNgTokenService,
+      DelegateVersionService delegateVersionService, MainConfiguration mainConfiguration) {
     this.delegateNgTokenService = delegateNgTokenService;
     this.delegateVersionService = delegateVersionService;
+    this.mainConfiguration = mainConfiguration;
   }
 
   @Override
@@ -99,12 +111,23 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
 
   private Map<String, String> getScriptParams(
       final String managerUrl, final String accountId, final String tokenValue, final String image) {
-    return ImmutableMap.<String, String>builder()
-        .put("account_id", accountId)
-        .put("token", tokenValue)
-        .put("manager_url", managerUrl)
-        .put("image", image)
-        .build();
+    ImmutableMap.Builder<String, String> valuesMapBuilder =
+        ImmutableMap.<String, String>builder()
+            .put("account_id", accountId)
+            .put("token", tokenValue)
+            .put("manager_url", managerUrl)
+            .put("deployMode", mainConfiguration.getDeployMode().name())
+            .put("image", image);
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      valuesMapBuilder.put("docker_deploy_mode_string",
+          String.format(DOCKER_DEPLOY_MODE_STRING, mainConfiguration.getDeployMode().name()));
+      valuesMapBuilder.put(
+          "helm_deploy_mode_string", String.format(HELM_DEPLOY_MODE_STRING, mainConfiguration.getDeployMode().name()));
+    } else {
+      valuesMapBuilder.put("docker_deploy_mode_string", EMPTY_STRING);
+      valuesMapBuilder.put("helm_deploy_mode_string", EMPTY_STRING);
+    }
+    return valuesMapBuilder.build();
   }
 
   private String getDefaultNgToken(String accountId, DelegateEntityOwner owner) {

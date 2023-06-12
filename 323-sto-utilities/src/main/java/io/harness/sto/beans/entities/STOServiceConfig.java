@@ -12,6 +12,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
+import org.apache.commons.lang3.StringUtils;
 
 @Value
 @Getter
@@ -24,6 +25,6 @@ public class STOServiceConfig {
   @Getter(AccessLevel.NONE) String internalUrl;
 
   public String getInternalUrl() {
-    return this.internalUrl != null ? this.internalUrl : this.baseUrl;
+    return StringUtils.isEmpty(this.internalUrl) ? this.baseUrl : this.internalUrl;
   }
 }

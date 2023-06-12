@@ -34,6 +34,7 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(AppConfigEntityKeys.configs, appConfigEntity.getConfigs());
+    update.set(AppConfigEntityKeys.proxy, appConfigEntity.getProxy());
     update.set(AppConfigEntityKeys.lastModifiedAt, System.currentTimeMillis());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, AppConfigEntity.class);

@@ -10,6 +10,7 @@ package io.harness.polling.service.intfc;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
 import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
@@ -41,4 +42,6 @@ public interface PollingService {
   void deleteAtAllScopes(Scope scope);
 
   void resetPerpetualTasksForConnector(String accountId, String connectorRef);
+
+  PollingInfoForTriggers getPollingInfoForTriggers(String accountId, String pollingDocId);
 }

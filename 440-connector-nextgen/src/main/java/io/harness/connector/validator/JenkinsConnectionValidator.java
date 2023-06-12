@@ -15,7 +15,6 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskParams;
-import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 
 import com.google.inject.Singleton;
@@ -45,8 +44,8 @@ public class JenkinsConnectionValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO jenkinsConnector, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    JenkinsTestConnectionTaskResponse responseData = (JenkinsTestConnectionTaskResponse) super.validateConnector(
-        jenkinsConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseData =
+        super.validateConnector(jenkinsConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 

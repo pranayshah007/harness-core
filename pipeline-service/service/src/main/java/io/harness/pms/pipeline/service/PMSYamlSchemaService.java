@@ -20,6 +20,9 @@ public interface PMSYamlSchemaService {
 
   boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml);
 
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
+  boolean validateYamlSchema(String accountId, String orgId, String projectId, JsonNode jsonNode);
+
   void validateUniqueFqn(String yaml);
 
   void invalidateAllCache();

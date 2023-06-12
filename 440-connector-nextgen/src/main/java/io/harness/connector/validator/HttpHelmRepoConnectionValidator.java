@@ -18,7 +18,6 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
-import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
 
@@ -52,8 +51,8 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    HttpHelmConnectivityTaskResponse responseData = (HttpHelmConnectivityTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseData =
+        super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 

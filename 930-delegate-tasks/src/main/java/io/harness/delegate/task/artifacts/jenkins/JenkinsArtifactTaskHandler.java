@@ -20,8 +20,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
-import io.harness.artifacts.jenkins.client.JenkinsClient;
-import io.harness.artifacts.jenkins.client.JenkinsCustomServer;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryService;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.beans.ExecutionStatus;
@@ -85,7 +83,6 @@ import org.apache.http.conn.ConnectTimeoutException;
 @Slf4j
 public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<JenkinsArtifactDelegateRequest> {
   private static final int ARTIFACT_RETENTION_SIZE = 25;
-  private static final int MAX_RETRY = 5;
   private final SecretDecryptionService secretDecryptionService;
   private final JenkinsRegistryService jenkinsRegistryService;
   @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
@@ -232,7 +229,6 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
         executionLogCallback.saveExecutionLog(
             "The Job was not triggered successfully with queued Build URL {} " + queueItemUrl, LogLevel.ERROR);
       }
-      JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
       Build jenkinsBuild = jenkinsRegistryUtils.waitForJobToStartExecution(queueReference, jenkinsInternalConfig);
       jenkinsBuildTaskNGResponse.setBuildNumber(String.valueOf(jenkinsBuild.getNumber()));
       jenkinsBuildTaskNGResponse.setJobUrl(jenkinsBuild.getUrl());

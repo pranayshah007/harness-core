@@ -149,7 +149,7 @@ public class EmptyPredicate {
     return array != null && array.length != 0;
   }
 
-  public static boolean isNull(JsonNode jsonNode) {
-    return jsonNode == null || jsonNode.isNull();
+  public static boolean isEmpty(JsonNode jsonNode) {
+    return jsonNode == null || jsonNode.isNull() || jsonNode.isEmpty();
   }
 }

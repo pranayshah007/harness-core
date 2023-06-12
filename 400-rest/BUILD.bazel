@@ -120,6 +120,7 @@ java_library(
         "//955-alert-beans:module",
         "//955-cg-yaml:module",
         "//955-delegate-beans:module",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//955-filters-sdk:module",
         "//955-outbox-sdk:module",
         "//956-feature-flag-beans:module",

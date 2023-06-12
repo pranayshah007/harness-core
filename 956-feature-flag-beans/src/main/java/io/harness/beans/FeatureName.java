@@ -90,6 +90,8 @@ public enum FeatureName {
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
   CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED(
       "If enabled, OOTB steps will run directly on host in cloud infra", HarnessTeam.CI),
+  CI_AI_ENHANCED_REMEDIATIONS(
+      "Enables use of generative AI to provide remediation information in CI step logs", HarnessTeam.CI),
   CUSTOM_DASHBOARD,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   CUSTOM_MAX_PAGE_SIZE,
@@ -435,6 +437,8 @@ public enum FeatureName {
       HarnessTeam.CI),
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   CD_TRIGGER_V2("Enable support for nexus3, nexus2, azure, ami trigger", HarnessTeam.CDC),
+  CD_AI_ENHANCED_REMEDIATIONS(
+      "Enables use of generative AI to provide remediation information in CD step logs", HarnessTeam.CDP),
   NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
@@ -455,7 +459,6 @@ public enum FeatureName {
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
-  ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
   SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
@@ -504,6 +507,7 @@ public enum FeatureName {
   SRM_ET_JIRA_INTEGRATION("Enable code errors JIRA integration", HarnessTeam.CV),
   SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
   CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
+  CET_EVENTS_CHART("Enable events chart in UI of Continuous Error Tracking module", HarnessTeam.CET),
   DEL_FETCH_TASK_LOG_API("FF to enable fetch delegate task logs from stackdriver", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),
@@ -604,7 +608,6 @@ public enum FeatureName {
   PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS(
       "Enable Basic Role assignment  Default User Group in Orgs and Projects", HarnessTeam.PL),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
-  CDS_TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
   CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
           + "This flag only works with Service and Environments v2",
@@ -666,14 +669,11 @@ public enum FeatureName {
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
-  NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   SPG_SERVICES_OVERVIEW_RBAC(
       "Applies RBAC on services overview page, only displays services which the user has access to read",
       HarnessTeam.SPG),
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
-  CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG(
-      "Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
@@ -748,6 +748,10 @@ public enum FeatureName {
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
   CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
+
+  SRM_MONITORED_SERVICE_VALIDATION(
+      "Will Enable Service, Environment and Connector Ref Validation for Monitored Service Create/Update",
+      HarnessTeam.CV),
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
   SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC(
       "Will fire the all the triggers to be fired by a single webhook event asyncrounouly", HarnessTeam.SPG),
@@ -772,8 +776,12 @@ public enum FeatureName {
   CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC),
   PL_DISCOVERY_ENABLE(
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
+
   CDS_AUTO_APPROVAL("This FF is for allowing scheduled approval in Harness approval step", HarnessTeam.CDP),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
+  PL_FIX_INCONSISTENT_USER_DATA(
+      "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",
+      HarnessTeam.PL),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
       HarnessTeam.CDP),
@@ -788,7 +796,19 @@ public enum FeatureName {
   PIE_RETRY_STEP_GROUP(
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
-  PL_ENABLE_JIT_USER_PROVISION("Enable support for Just in time user provision", HarnessTeam.PL);
+  PL_ENABLE_JIT_USER_PROVISION("Enable support for Just in time user provision", HarnessTeam.PL),
+  AZURE_WEBAPP_LISTING_APP_NAMES_AND_SLOTS(
+      "Support for listing Azure Web App names and slots on Slot Deployment and Swap Slot steps", HarnessTeam.CDP),
+  CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC),
+  CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
+      "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
+      HarnessTeam.CDP),
+  CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP),
+  CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI),
+  PL_HELM2_DELEGATE_BANNER("FF for adding banner on delegate to mention deprecation of helm 2", HarnessTeam.PL),
+  PIE_PROCESS_ON_JSON_NODE(
+      "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
+      PIPELINE);
 
   @Deprecated
   FeatureName() {

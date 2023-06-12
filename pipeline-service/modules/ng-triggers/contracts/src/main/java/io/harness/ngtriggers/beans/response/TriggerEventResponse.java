@@ -75,6 +75,7 @@ public class TriggerEventResponse {
   private String projectIdentifier;
   private String targetIdentifier;
   private String eventCorrelationId;
+  private String pollingDocId;
   private String payload;
   private long createdAt;
   private FinalStatus finalStatus;

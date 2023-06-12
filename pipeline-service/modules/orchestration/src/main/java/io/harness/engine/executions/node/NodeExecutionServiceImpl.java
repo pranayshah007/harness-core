@@ -106,6 +106,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
+  @Inject private MongoTemplate secondaryMongoTemplate;
 
   @Inject private PlanExpansionService planExpansionService;
 
@@ -955,5 +956,20 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
 
     return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
+
+  @Override
+  public NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
+      String planNodeId, boolean oldRetry, List<String> retriedId) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.nodeId)
+                            .is(planNodeId)
+                            .and(NodeExecutionKeys.oldRetry)
+                            .is(oldRetry)
+                            .and(NodeExecutionKeys.retryIds)
+                            .in(retriedId);
+
+    Query query = query(criteria);
+    query.fields().include(NodeExecutionKeys.id);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(query);
   }
 }

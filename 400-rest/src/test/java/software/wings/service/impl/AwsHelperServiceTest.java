@@ -404,7 +404,7 @@ public class AwsHelperServiceTest extends WingsBaseTest {
         .thenReturn(result);
     doReturn(ecrClient).when(awsApiHelperService).getAmazonEcrClient(any(), any(String.class));
     doCallRealMethod().when(awsApiHelperService).attachCredentialsAndBackoffPolicy(any(), any());
-    doCallRealMethod().when(awsApiHelperService).fetchLabels(any(), any(), any(), any());
+    doCallRealMethod().when(awsApiHelperService).fetchLabels(any(), any(), any(), any(), any());
     Reflect.on(service).set("awsApiHelperService", awsApiHelperService);
 
     assertThat(

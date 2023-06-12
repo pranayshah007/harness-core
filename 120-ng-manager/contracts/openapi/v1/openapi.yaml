@@ -41,6 +41,9 @@ tags:
   - name: Project Favorites
     description: This contains APIs for project-scoped Favorites.
     x-displayName: 'Project Favorites [Beta]'
+  - name: Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities.
+    x-displayName: 'Rancher Infrastructure [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -1276,6 +1279,135 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       x-internal: true
+  '/v1/rancher/connectors/{connector}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/ConnectorPathParam'
+    get:
+      summary: List rancher clusters using account level connector
+      tags:
+        - Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-account-scoped-rancher-clusters-using-connector
+      description: List rancher clusters using the given account level rancher connector
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/rancher/connectors/{connector}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ConnectorPathParam'
+    get:
+      summary: List rancher clusters using org level connector
+      tags:
+        - Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-org-scoped-rancher-clusters-using-connector
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given org level rancher connector
+  '/v1/orgs/{org}/projects/{project}/rancher/connectors/{connector}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/ConnectorPathParam'
+    get:
+      summary: List rancher clusters using project level connector
+      tags:
+        - Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-project-scoped-rancher-clusters-using-connector
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given project level rancher connector
+  '/v1/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/EnvironmentPathParam'
+      - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
+    get:
+      summary: List rancher clusters using account level env and infra def
+      tags:
+        - Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-account-scoped-rancher-clusters-using-env-and-infra
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given account level environment and infrastructure definition.
+  '/v1/orgs/{org}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/EnvironmentPathParam'
+      - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
+    get:
+      summary: List rancher clusters using org level env and infra def
+      tags:
+        - Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-org-scoped-rancher-clusters-using-env-and-infra
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given org level environment and infrastructure definition.
+  '/v1/orgs/{org}/projects/{project}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/EnvironmentPathParam'
+      - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
+    get:
+      summary: List rancher clusters using project level env and infra def
+      tags:
+        - Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-project-scoped-rancher-clusters-using-env-and-infra
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given project level environment and infrastructure definition.
 components:
   schemas:
     Service:
@@ -2795,6 +2927,32 @@ components:
         application/json:
           schema:
             type: boolean
+    RancherListClustersResponse:
+      description: Response containing list of rancher cluster names
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: string
+          examples:
+            Example 1:
+              value:
+                - cluster1
+                - cluster2
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     ServiceRequest:
       content:
@@ -3484,3 +3642,24 @@ components:
       schema:
         $ref: '#/components/schemas/FavoritesResourceType'
       description: Determines the type of favorite entity requested.
+    ConnectorPathParam:
+      name: connector
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the scoped connector entity to be used for this operation.
+    EnvironmentPathParam:
+      name: environment
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the scoped environment entity to be used for the selected operation.
+    InfrastructureDefinitionPathParam:
+      name: infrastructure-definition
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the scoped infrastructure definition entity to be used in the selected operation.

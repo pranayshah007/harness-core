@@ -118,6 +118,7 @@ public class TerraformPlanStepTest extends CategoryTest {
   }
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
@@ -468,6 +469,8 @@ public class TerraformPlanStepTest extends CategoryTest {
 
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
   }
 
   @Test // Different Status
@@ -556,6 +559,8 @@ public class TerraformPlanStepTest extends CategoryTest {
         terraformPlanStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> ngResponse);
 
     verify(terraformStepHelper).saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
@@ -597,6 +602,8 @@ public class TerraformPlanStepTest extends CategoryTest {
         terraformPlanStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> ngResponse);
 
     verify(terraformStepHelper).saveTerraformPlanHumanReadableOutput(ambiance, ngResponse, "provisioner1");
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();

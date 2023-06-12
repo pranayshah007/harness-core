@@ -71,6 +71,7 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
   private static final String SHA = "sha:12345";
   private static final String SHA_KEY = "SHA";
   private static final String SHA_V2_KEY = "SHAV2";
+  private static final String REGISTRY_ID = "registryId";
   private static final String TAG = "tag";
   private static final Map<String, String> LABEL = ImmutableMap.<String, String>builder().put("key1", "val1").build();
   private static final ArtifactMetaInfo ARTIFACT_META_INFO =
@@ -98,12 +99,12 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
         EcrArtifactDelegateRequest.builder().region(region).awsConnectorDTO(awsConnectorDTO).build();
     on(ecrArtifactTaskHandler).set("awsNgConfigMapper", new AwsNgConfigMapper());
     doNothing().when(awsApiHelperService).attachCredentialsAndBackoffPolicy(any(), any());
-    doReturn(Arrays.asList(nginx, todolist)).when(ecrService).listEcrRegistry(any(), any());
+    doReturn(Arrays.asList(nginx, todolist)).when(ecrService).listEcrRegistry(any(), any(), any());
     ArtifactTaskExecutionResponse response = ecrArtifactTaskHandler.getImages(ecrArtifactDelegateRequest);
     assertThat(response.getArtifactImages()).isNotEmpty();
     assertThat(response.getArtifactImages()).containsExactly(nginx, todolist);
 
-    verify(ecrService, times(1)).listEcrRegistry(any(), any());
+    verify(ecrService, times(1)).listEcrRegistry(any(), any(), any());
   }
 
   @Test
@@ -130,6 +131,7 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
                                                                 .region(region)
                                                                 .awsConnectorDTO(awsConnectorDTO)
                                                                 .imagePath("imagePath")
+                                                                .registryId(REGISTRY_ID)
                                                                 .tag(TAG)
                                                                 .build();
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
@@ -143,15 +145,18 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(buildDetailsInternal)
         .when(ecrService)
-        .verifyBuildNumber(awsInternalConfig, "EcrImageUrl", region, "imagePath", TAG);
+        .verifyBuildNumber(awsInternalConfig, REGISTRY_ID, "EcrImageUrl", region, "imagePath", TAG);
 
-    doReturn("EcrImageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("EcrImageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, REGISTRY_ID, region, "imagePath");
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getLastSuccessfulBuild(ecrArtifactDelegateRequest);
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         (EcrArtifactDelegateResponse) response.getArtifactDelegateResponses().get(0);
 
+    assertThat(ecrArtifactDelegateResponse.getRegistryId()).isEqualTo(REGISTRY_ID);
     assertThat(ecrArtifactDelegateResponse.getLabel()).isEqualTo(LABEL);
     ArtifactBuildDetailsNG artifactBuildDetailsNG = ecrArtifactDelegateResponse.getBuildDetails();
     assertThat(artifactBuildDetailsNG.getNumber()).isEqualTo(TAG);
@@ -190,7 +195,9 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(awsInternalConfig).when(spyecrtaskhandler).getAwsInternalConfig(ecrArtifactDelegateRequest);
 
-    doReturn("imageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("imageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getEcrImageUrl(ecrArtifactDelegateRequest);
 
@@ -231,7 +238,9 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(awsInternalConfig).when(spyecrtaskhandler).getAwsInternalConfig(ecrArtifactDelegateRequest);
 
-    doReturn("imageUrl.").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("imageUrl.")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
 
     doReturn("AuthToken")
         .when(awsEcrApiHelperServiceDelegate)
@@ -278,11 +287,13 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number(TAG).build();
 
-    doReturn("EcrImageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("EcrImageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
 
     doReturn(Collections.singletonList(buildDetailsInternal))
         .when(ecrService)
-        .getBuilds(awsInternalConfig, "EcrImageUrl", region, "imagePath", 10000);
+        .getBuilds(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", 10000);
     //
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getBuilds(ecrArtifactDelegateRequest);
@@ -341,12 +352,14 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
                                                          .imagePushedAt(parseDate("2022-11-22T23:03:17-08:00"))
                                                          .build();
 
-    doReturn("EcrImageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("EcrImageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
 
     doReturn(Arrays.asList(buildDetailsTagStablePerl, buildDetailsTagV1, buildDetailsTagV2, buildDetailsTagV3,
                  buildDetailsTagLatest, buildDetailsTagStable))
         .when(ecrService)
-        .getBuilds(awsInternalConfig, "EcrImageUrl", region, "imagePath", 10000);
+        .getBuilds(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", 10000);
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getBuilds(ecrArtifactDelegateRequest);
     assertEquals(response.getArtifactDelegateResponses().size(), 6);
@@ -396,8 +409,10 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(awsInternalConfig).when(spyecrtaskhandler).getAwsInternalConfig(ecrArtifactDelegateRequest);
 
-    doReturn("imageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
-    doReturn(true).when(ecrService).validateCredentials(awsInternalConfig, "imageUrl", region, "imagePath");
+    doReturn("imageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
+    doReturn(true).when(ecrService).validateCredentials(awsInternalConfig, null, "imageUrl", region, "imagePath");
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.validateArtifactServer(ecrArtifactDelegateRequest);
 
@@ -440,9 +455,11 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(awsInternalConfig).when(spyecrtaskhandler).getAwsInternalConfig(ecrArtifactDelegateRequest);
 
-    doReturn("EcrImageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("EcrImageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
 
-    doReturn(true).when(ecrService).verifyImageName(awsInternalConfig, "EcrImageUrl", region, "imagePath");
+    doReturn(true).when(ecrService).verifyImageName(awsInternalConfig, null, "EcrImageUrl", region, "imagePath");
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.validateArtifactImage(ecrArtifactDelegateRequest);
 
@@ -514,9 +531,11 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(buildDetailsInternal)
         .when(ecrService)
-        .getLastSuccessfulBuildFromRegex(awsInternalConfig, "EcrImageUrl", region, "imagePath", "t.*");
+        .getLastSuccessfulBuildFromRegex(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", "t.*");
 
-    doReturn("EcrImageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+    doReturn("EcrImageUrl")
+        .when(awsEcrApiHelperServiceDelegate)
+        .getEcrImageUrl(awsInternalConfig, null, region, "imagePath");
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getLastSuccessfulBuild(ecrArtifactDelegateRequest);
 

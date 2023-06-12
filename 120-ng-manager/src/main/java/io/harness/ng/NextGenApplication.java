@@ -116,6 +116,7 @@ import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
+import io.harness.ng.core.FixInconsistentUserDataMigrationJob;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -126,12 +127,13 @@ import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapp
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
-import io.harness.ng.core.handler.NGVaultUnsetRenewalHandler;
 import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
+import io.harness.ng.core.remote.licenserestriction.ApiKeyRestrictionsUsageImpl;
+import io.harness.ng.core.remote.licenserestriction.ApiTokenRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.OrgRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl;
@@ -651,7 +653,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(BitbucketSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
-    injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
   }
@@ -874,6 +875,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
+    environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     createConsumerThreadsToListenToEvents(environment, injector);
@@ -1073,6 +1075,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.TEST3, ExampleRateLimitUsageImpl.class)
                     .put(FeatureRestrictionName.TEST6, ExampleRateLimitUsageImpl.class)
                     .put(FeatureRestrictionName.TEST7, ExampleStaticLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_API_KEYS, ApiKeyRestrictionsUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_API_TOKENS, ApiTokenRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_PROJECTS, ProjectRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)

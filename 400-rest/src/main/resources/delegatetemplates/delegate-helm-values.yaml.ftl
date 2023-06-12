@@ -19,6 +19,7 @@ delegateToken: ${delegateToken}
 # Short 6 character identifier of the account
 accountIdShort: ${kubernetesAccountLabel}
 delegateName: ${delegateName}
+deployMode: ${deployMode}
 delegateType: ${delegateType}
 delegateDockerImage: ${delegateDockerImage}
 managerHostAndPort: ${managerHostAndPort}

@@ -7,11 +7,14 @@
 
 package io.harness.dms.module;
 
+import static io.harness.lock.DistributedLockImplementation.MONGO;
+
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.govern.ProviderModule;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -19,6 +22,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.redis.RedisConfig;
 import io.harness.serializer.DelegateServiceRegistrars;
 
 import com.google.common.collect.ImmutableMap;
@@ -75,6 +79,19 @@ public class DelegateServiceMongoModule extends ProviderModule {
   @Named("dbAliases")
   public List<String> getDbAliases() {
     return config.getDbAliases();
+  }
+
+  @Provides
+  @Singleton
+  DistributedLockImplementation distributedLockImplementation() {
+    return config.getDistributedLockImplementation() == null ? MONGO : config.getDistributedLockImplementation();
+  }
+
+  @Provides
+  @Named("lock")
+  @Singleton
+  RedisConfig redisLockConfig() {
+    return config.getRedisLockConfig();
   }
 
   @Override

@@ -1,0 +1,53 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+import "google/protobuf/duration.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
+
+option java_multiple_files = true;
+option go_package = "920_delegate_service_beans";
+
+// Setup An Execution Infrastructure
+message SetupExecutionInfrastructureRequest {
+  //    ExecutionInfrastructure infra = 1;
+  SchedulingConfig config = 1;
+}
+
+message ScheduleTaskRequest {
+  //    ExecutionRequest execution = 1;
+  string infraRef = 1;
+  SchedulingConfig config = 2;
+}
+
+message SchedulingConfig {
+  // Scheduling related
+  // The time the task should stay in the queue. To set the execution time out, fill out
+  // details.execution_timeout
+  google.protobuf.Duration execution_timeout = 1;
+
+  // This map provides a list of key-vals used filter delegates during assignment process.
+  // This is anti-pattern because we already have selectors framework. This map gives an open-ended way for different
+  // product modules to write customized codes in assignment instead of using the framework delegate provides. Keep it
+  // in new APIs for backward compatibility, but tend to remove it in the future.
+  TaskSetupAbstractions setup_abstractions = 2;
+
+  // Routing related
+  repeated TaskSelector selectors = 3;
+  // Runner's type
+  string runnerType = 4;
+
+  bool selectionTrackingLogEnabled = 5;
+  string account_id = 6;
+  string org_id = 7;
+  string project_id = 8;
+
+  // Represents the callback driver to send task response by DMS
+  callback.DelegateCallbackToken callback_token = 9;
+}

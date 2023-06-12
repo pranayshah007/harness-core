@@ -7,7 +7,6 @@
 
 package io.harness.pms.pipelinestage.helper;
 
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -82,22 +81,22 @@ public class PipelineStageHelperTest extends CategoryTest {
     PipelineEntity pipelineEntity = PipelineEntity.builder().build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(pipelineEntity, "true");
     pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity);
-    verify(pmsPipelineTemplateHelper, times(1)).resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+    verify(pmsPipelineTemplateHelper, times(1)).resolveTemplateRefsInPipeline(pipelineEntity, "true");
     verify(pipelineStageHelperV1, times(0)).containsPipelineStage(yaml);
 
     pipelineEntity = PipelineEntity.builder().harnessVersion(PipelineVersion.V1).build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(pipelineEntity, "true");
     pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity);
     verify(pipelineStageHelperV1, times(1)).containsPipelineStage(yaml);
 
     PipelineEntity pipelineEntity1 = PipelineEntity.builder().harnessVersion("V2").build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity1, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(pipelineEntity1, "true");
     assertThatThrownBy(() -> pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity1))
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -122,7 +121,7 @@ public class PipelineStageHelperTest extends CategoryTest {
     PipelineEntity pipelineEntity = PipelineEntity.builder().build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(pipelineEntity, "true");
 
     assertThatThrownBy(() -> pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
@@ -149,7 +148,7 @@ public class PipelineStageHelperTest extends CategoryTest {
     PipelineEntity pipelineEntity = PipelineEntity.builder().build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(pipelineEntity, "true");
 
     assertThatThrownBy(() -> pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
@@ -176,7 +175,7 @@ public class PipelineStageHelperTest extends CategoryTest {
     PipelineEntity pipelineEntity = PipelineEntity.builder().build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(pipelineEntity, "true");
 
     assertThatCode(() -> pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity)).doesNotThrowAnyException();
   }

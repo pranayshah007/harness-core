@@ -21,7 +21,7 @@ public class Constants {
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
   public static final List<String> pluginIds =
-      List.of("circleci", "firehydrant", "harness-ci-cd", "jenkins", "jira", "pager-duty", "todo");
+      List.of("circleci", "firehydrant", "harness-ci-cd", "jenkins", "jira", "kubernetes", "pager-duty", "todo");
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";

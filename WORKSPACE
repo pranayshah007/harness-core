@@ -5594,11 +5594,13 @@ maven_install(
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
+        "software.amazon.awssdk:account:2.20.74",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
         "https://search.maven.org/artifact/",
+        "https://mvnrepository.com/artifact/",
     ],
     version_conflict_policy = "pinned",
 )

@@ -13,17 +13,22 @@ import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter.RuntimeParameterKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
+import io.harness.serializer.JsonUtils;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.text.StrBuilder;
 
 @OwnedBy(HarnessTeam.CV)
 public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
+  private static final String EMPTY_ARRAY = "{}";
   @Override
   public Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields) {
     if (Objects.isNull(changeEvent)) {
@@ -125,6 +130,13 @@ public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
   }
 
   private static String parseAppliedVerificationTypes(Object appliedVerificationTypesObject) {
-    return ((Map<String, String>) appliedVerificationTypesObject).values().toString();
+    Collection<String> appliedVerificationTypes = ((Map<String, String>) appliedVerificationTypesObject).values();
+    if (CollectionUtils.isNotEmpty(appliedVerificationTypes)) {
+      String listString = JsonUtils.asJson(appliedVerificationTypes);
+      StrBuilder strBuilder = new StrBuilder(listString);
+      strBuilder.replaceAll("[", "{").replaceAll("]", "}");
+      return strBuilder.toString();
+    }
+    return EMPTY_ARRAY;
   }
 }

@@ -150,7 +150,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     Map<FQN, Object> inputSetFqnToValueMap = FQNMapGenerator.generateFQNMap(inputSetPipelineCompJsonNode);
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetFqnToValueMap.keySet());
-    if (EmptyPredicate.isNull(templateJsonNode)) {
+    if (EmptyPredicate.isEmpty(templateJsonNode)) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }
