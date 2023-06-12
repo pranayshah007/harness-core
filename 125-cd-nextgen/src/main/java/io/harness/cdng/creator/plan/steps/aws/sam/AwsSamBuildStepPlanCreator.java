@@ -7,11 +7,15 @@
 
 package io.harness.cdng.creator.plan.steps.aws.sam;
 
+import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_MANIFESTS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.sam.AwsSamBuildStepNode;
+import io.harness.cdng.aws.sam.AwsSamBuildStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -38,6 +42,12 @@ public class AwsSamBuildStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsSamBui
 
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsSamBuildStepNode stepNode) {
-    return super.getStepParameters(ctx, stepNode);
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
+    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_MANIFESTS);
+    AwsSamBuildStepParameters awsSamBuildStepParameters =
+        (AwsSamBuildStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    awsSamBuildStepParameters.setDownloadManifestsFqn(downloadManifestsFqn);
+    awsSamBuildStepParameters.setDelegateSelectors(stepNode.getAwsSamBuildStepInfo().getDelegateSelectors());
+    return stepParameters;
   }
 }

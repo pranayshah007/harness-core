@@ -94,4 +94,5 @@ public class ContainerExecutionConstants {
 
   public static final String MEMORY = "MEMORY";
   public static final String CPU = "CPU";
+  public static final String PLUGIN_OUTPUT_FILE_PATHS_CONTENT = "PLUGIN_OUTPUT_FILE_PATHS_CONTENT";
 }
