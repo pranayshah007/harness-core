@@ -10,6 +10,7 @@ package io.harness.idp.configmanager.resources;
 import static io.harness.rule.OwnerRule.DEVESH;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -21,13 +22,15 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.service.PluginsProxyInfoService;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.namespace.service.NamespaceService;
-import io.harness.pms.sdk.core.resolver.expressions.EngineGrpcExpressionService;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
 
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -49,6 +52,8 @@ public class MergedPluginsConfigApiImplTest extends CategoryTest {
   ConfigManagerService configManagerService;
   @Mock IdpCommonService idpCommonService;
   @Mock NamespaceService namespaceService;
+  @Mock BackstageEnvVariableService backstageEnvVariableService;
+  @Mock PluginsProxyInfoService pluginsProxyInfoService;
   String backstageAppBaseUrl;
   String backstageBackendBaseUrl;
   String backstagePostgresHost;
@@ -59,7 +64,8 @@ public class MergedPluginsConfigApiImplTest extends CategoryTest {
   public void setUp() {
     configManagerService = Mockito.mock(ConfigManagerService.class);
     mergedPluginsConfigApiImpl = new MergedPluginsConfigApiImpl(backstageAppBaseUrl, backstagePostgresHost,
-        ServiceHttpClientConfig.builder().build(), namespaceService, idpCommonService, configManagerService);
+        ServiceHttpClientConfig.builder().build(), namespaceService, idpCommonService, configManagerService,
+        backstageEnvVariableService, pluginsProxyInfoService);
     openMocks = MockitoAnnotations.openMocks(this);
   }
 
@@ -88,5 +94,44 @@ public class MergedPluginsConfigApiImplTest extends CategoryTest {
     Response response = mergedPluginsConfigApiImpl.getMergedPluginsConfig(TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_TOGGLE_PLUGIN_FOR_ACCOUNT, ((ResponseMessage) response.getEntity()).getMessage());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testUpdateConfigurationEntities() throws Exception {
+    ConfigurationEntities configurationEntities = new ConfigurationEntities();
+    List<BackstageEnvVariable> backstageEnvVariables = Collections.singletonList(new BackstageEnvVariable());
+    List<ProxyHostDetail> proxyHostDetails = Collections.singletonList(new ProxyHostDetail());
+    configurationEntities.setEnvVariables(backstageEnvVariables);
+    configurationEntities.setProxy(proxyHostDetails);
+    when(backstageEnvVariableService.createOrUpdate(any(), any())).thenReturn(backstageEnvVariables);
+    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any())).thenReturn(proxyHostDetails);
+    Response response = mergedPluginsConfigApiImpl.updateConfigurationEntities(
+        getTestConfigurationEntityRequestBody(), TEST_ACCOUNT_IDENTIFIER);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testUpdateConfigurationEntitiesError() throws Exception {
+    ConfigurationEntities configurationEntities = new ConfigurationEntities();
+    List<BackstageEnvVariable> backstageEnvVariables = Collections.singletonList(new BackstageEnvVariable());
+    List<ProxyHostDetail> proxyHostDetails = Collections.singletonList(new ProxyHostDetail());
+    configurationEntities.setEnvVariables(backstageEnvVariables);
+    configurationEntities.setProxy(proxyHostDetails);
+    when(backstageEnvVariableService.createOrUpdate(any(), any())).thenThrow(new InvalidRequestException("Error"));
+    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any())).thenReturn(proxyHostDetails);
+    Response response = mergedPluginsConfigApiImpl.updateConfigurationEntities(
+        getTestConfigurationEntityRequestBody(), TEST_ACCOUNT_IDENTIFIER);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
+
+  private ConfigurationEntities getTestConfigurationEntityRequestBody() {
+    ConfigurationEntities configurationEntities = new ConfigurationEntities();
+    configurationEntities.setProxy(Collections.singletonList(new ProxyHostDetail()));
+    configurationEntities.setEnvVariables(Collections.singletonList(new BackstageEnvVariable()));
+    return configurationEntities;
   }
 }

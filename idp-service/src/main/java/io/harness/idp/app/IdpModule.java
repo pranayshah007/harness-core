@@ -35,10 +35,7 @@ import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
-import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
-import io.harness.idp.configmanager.service.ConfigEnvVariablesServiceImpl;
-import io.harness.idp.configmanager.service.ConfigManagerService;
-import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
+import io.harness.idp.configmanager.service.*;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvConfigVariableEntity.BackstageEnvConfigVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity.BackstageEnvSecretVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
@@ -317,6 +314,7 @@ public class IdpModule extends AbstractModule {
     bind(AuthInfoService.class).to(AuthInfoServiceImpl.class);
     bind(AllowListApi.class).to(AllowListApiImpl.class);
     bind(AllowListService.class).to(AllowListServiceImpl.class);
+    bind(PluginsProxyInfoService.class).to(PluginsProxyInfoServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));

@@ -9,12 +9,10 @@ package io.harness.idp.configmanager.beans.entity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
-import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -31,32 +29,35 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "AppConfigEntityKeys")
+@FieldNameConstants(innerTypeName = "PluginProxyInfoEntityKeys")
 @StoreIn(DbAliases.IDP)
-@Entity(value = "appConfigs", noClassnameStored = true)
-@Document("appConfigs")
+@Entity(value = "pluginsProxyInfo", noClassnameStored = true)
+@Document("pluginsProxyInfo")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public class AppConfigEntity implements PersistentEntity {
+public class PluginsProxyInfoEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_account_config_id")
+                 .name("unique_account_proxy_host")
                  .unique(true)
-                 .field(AppConfigEntityKeys.accountIdentifier)
-                 .field(AppConfigEntityKeys.configId)
+                 .field(PluginProxyInfoEntityKeys.accountIdentifier)
+                 .field(PluginProxyInfoEntityKeys.host)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("compound_account_plugin_id")
+                 .field(PluginProxyInfoEntityKeys.accountIdentifier)
+                 .field(PluginProxyInfoEntityKeys.pluginId)
                  .build())
         .build();
   }
 
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  @NotNull private String accountIdentifier;
-  @NotNull private ConfigType configType;
-  @NotNull private String configId;
-  @NotNull private String configName;
-  private String configs;
-  @NotNull private Boolean enabled;
+  private String accountIdentifier;
+  @NotNull String pluginId;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
-  @NotNull Long enabledDisabledAt;
+  @NotNull String host;
+  @NotNull Boolean proxy;
+  List<String> delegateSelectors;
 }

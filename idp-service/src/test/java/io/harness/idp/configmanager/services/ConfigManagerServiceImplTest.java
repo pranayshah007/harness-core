@@ -25,6 +25,7 @@ import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
+import io.harness.idp.configmanager.service.PluginsProxyInfoService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
@@ -53,6 +54,8 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
 
   @Mock private NamespaceService namespaceService;
+
+  @Mock private PluginsProxyInfoService pluginsProxyInfoService;
   String env = "prod";
   @InjectMocks ConfigManagerServiceImpl configManagerServiceImpl;
 
@@ -60,7 +63,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
     configManagerServiceImpl = new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository,
-        k8sClient, namespaceService, configEnvVariablesService, backstageEnvVariableService);
+        k8sClient, namespaceService, configEnvVariablesService, backstageEnvVariableService, pluginsProxyInfoService);
   }
 
   static final String TEST_ID = "test_id";
@@ -154,6 +157,8 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     backstageEnvSecretVariable.envName(TEST_SECRET_ENV_NAME);
     when(configEnvVariablesService.insertConfigEnvVariables(any(AppConfig.class), any(String.class)))
         .thenReturn(Arrays.asList(backstageEnvSecretVariable));
+    when(pluginsProxyInfoService.insertProxyHostDetailsForPlugin(any(), any()))
+        .thenReturn(Collections.singletonList(new ProxyHostDetail()));
     when(appConfigRepository.save(any(AppConfigEntity.class))).thenReturn(getTestAppConfigEntity());
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(TEST_CONFIG_ID);
@@ -166,9 +171,6 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(returnedBackstageEnvVariable.get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
     assertEquals(savedAppConfig.getConfigName(), TEST_CONFIG_NAME);
     assertEquals(savedAppConfig.getConfigId(), TEST_CONFIG_ID);
-    assertEquals(savedAppConfig.getProxy().get(0).getHost(), TEST_PROXY_HOST_VALUE);
-    assertEquals(savedAppConfig.getProxy().get(0).isProxy().booleanValue(), true);
-    assertEquals(savedAppConfig.getProxy().get(0).getSelectors().get(0), TEST_PROXY_DELEGATE_SELECTOR_DELEGATE);
 
     // Handling for harness-ci-cd plugin
     AppConfigEntity harnessCiCdPluginEntity = getTestAppConfigEntity();
@@ -198,6 +200,8 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     backstageEnvSecretVariable.envName(TEST_SECRET_ENV_NAME);
     when(configEnvVariablesService.updateConfigEnvVariables(any(AppConfig.class), any(String.class)))
         .thenReturn(Arrays.asList(backstageEnvSecretVariable));
+    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any()))
+        .thenReturn(Collections.singletonList(new ProxyHostDetail()));
     when(appConfigRepository.updateConfig(any(AppConfigEntity.class), any(ConfigType.class))).thenReturn(null);
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(TEST_CONFIG_ID);
@@ -221,9 +225,6 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(returnedBackstageEnvVariable.get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
     assertEquals(updatedConfig.getConfigName(), TEST_CONFIG_NAME);
     assertEquals(updatedConfig.getConfigId(), TEST_CONFIG_ID);
-    assertEquals(updatedConfig.getProxy().get(0).getHost(), TEST_PROXY_HOST_VALUE);
-    assertEquals(updatedConfig.getProxy().get(0).isProxy().booleanValue(), true);
-    assertEquals(updatedConfig.getProxy().get(0).getSelectors().get(0), TEST_PROXY_DELEGATE_SELECTOR_DELEGATE);
   }
 
   @Test
@@ -356,6 +357,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(any(), any(), any()))
         .thenReturn(Optional.of(appConfigEntity));
     doNothing().when(configEnvVariablesService).deleteConfigEnvVariables(any(), any());
+    doNothing().when(pluginsProxyInfoService).deleteProxyHostDetailsForPlugin(any(), any());
     Exception exception = null;
     try {
       configManagerServiceImpl.toggleConfigForAccount(
@@ -396,7 +398,6 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
         .createdAt(TEST_CREATED_AT_TIME)
         .lastModifiedAt(TEST_LAST_MODIFIED_AT_TIME)
         .enabledDisabledAt(TEST_ENABLED_DISABLED_AT_TIME)
-        .proxy(getTestProxyHostDetails())
         .build();
   }
 

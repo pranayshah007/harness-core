@@ -786,6 +786,23 @@ paths:
             schema:
               $ref: '#/components/schemas/AllowListRequest'
         description: Save backend url allow list
+  /v1/configuration-entities:
+    put:
+      summary: Updates entities present in the configuration screen
+      operationId: update-configuration-entities
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfigurationEntitiesResponse'
+      description: Updates entities present in the configuration screen
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfigurationEntitiesRequest'
+      x-internal: true
+      tags:
+        - MergedPluginsConfig
 components:
   schemas:
     BackstageEnvVariable:
@@ -1458,11 +1475,16 @@ components:
             id: rvzbk4sw9nxvp
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
-            x-stoplight:
-              id: lv3438bpnl1d1
+        proxy:
+          type: array
+          x-stoplight:
+            id: mwvxo7zsdc5zo
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config
         - env_variables
+        - proxy
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
@@ -1807,6 +1829,27 @@ components:
         - host
         - proxy
       description: Proxy Host Detail
+    ConfigurationEntities:
+      title: ConfigurationEntities
+      x-stoplight:
+        id: f0upqtv6bktce
+      type: object
+      properties:
+        env_variables:
+          type: array
+          x-stoplight:
+            id: evwoa6kfuf4zg
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+        proxy:
+          type: array
+          x-stoplight:
+            id: fin6y5q4eggxu
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
+      required:
+        - env_variables
+        - proxy
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -2046,6 +2089,11 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/AllowListRequest'
+    ConfigurationEntitiesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -2263,6 +2311,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/AllowListResponse'
+    ConfigurationEntitiesResponse:
+      description: Response for configuration screen resources
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   securitySchemes:
     x-api-key:
       name: x-api-key
