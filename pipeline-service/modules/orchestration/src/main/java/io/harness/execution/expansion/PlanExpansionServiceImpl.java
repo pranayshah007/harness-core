@@ -66,6 +66,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
         String strategyKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), entry.getKey());
         if (ClassUtils.isPrimitiveOrWrapper(entry.getValue().getClass())) {
           update.set(strategyKey, String.valueOf(entry.getValue()));
+        } else if (entry.getValue() instanceof String) {
+          update.set(strategyKey, entry.getValue());
         } else {
           update.set(strategyKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(entry.getValue())));
         }
