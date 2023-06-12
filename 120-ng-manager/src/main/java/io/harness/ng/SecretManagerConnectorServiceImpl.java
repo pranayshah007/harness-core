@@ -28,6 +28,7 @@ import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.Vaul
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGVaultService;
 import io.harness.connector.stats.ConnectorStatistics;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
@@ -47,16 +48,27 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
+import io.harness.template.remote.TemplateResourceClient;
 
+import software.wings.beans.NameValuePairWithDefault;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,15 +84,18 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   private final ConnectorRepository connectorRepository;
   private final NGVaultService ngVaultService;
   private final EnforcementClientService enforcementClientService;
+  private final TemplateResourceClient templateResourceClient;
+  private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
 
   @Inject
   public SecretManagerConnectorServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService defaultConnectorService,
       ConnectorRepository connectorRepository, NGVaultService ngVaultService,
-      EnforcementClientService enforcementClientService) {
+      EnforcementClientService enforcementClientService, TemplateResourceClient templateResourceClient) {
     this.defaultConnectorService = defaultConnectorService;
     this.connectorRepository = connectorRepository;
     this.ngVaultService = ngVaultService;
     this.enforcementClientService = enforcementClientService;
+    this.templateResourceClient = templateResourceClient;
   }
 
   @Override
@@ -147,12 +162,80 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
     // Check which type of token is provided
     ngVaultService.processTokenLookup(connector, accountIdentifier);
 
+    // Validate inputs for custom secret manager
+    try {
+      validateCustomSecretManagerInputs(connectorConfigDTO, accountIdentifier, connectorInfo.getOrgIdentifier(),
+          connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
+    } catch (IOException ex) {
+      log.error(
+          "error reading templateInputs from template YAML which is used in this Custom Secret Manager {} in account {}",
+          connectorInfo.getIdentifier(), accountIdentifier);
+    }
+
     if (isDefaultSecretManager(connector.getConnectorInfo())) {
       clearDefaultFlagOfSecretManagers(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
           connector.getConnectorInfo().getProjectIdentifier());
     }
 
     return defaultConnectorService.create(connector, accountIdentifier, NONE);
+  }
+
+  private void validateCustomSecretManagerInputs(ConnectorConfigDTO connectorConfigDTO, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String connectorIdentifier) throws IOException {
+    if (connectorConfigDTO instanceof CustomSecretManagerConnectorDTO) {
+      String templateRef = ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getTemplateRef();
+      List<NameValuePairWithDefault> envVariables = ((CustomSecretManagerConnectorDTO) connectorConfigDTO)
+                                                        .getTemplate()
+                                                        .getTemplateInputs()
+                                                        .get(ENVIRONMENT_VARIABLES);
+      Set<String> inputs =
+          checkForDuplicateInputsAndReturnInputsLIst(envVariables, accountIdentifier, connectorIdentifier);
+      String template = NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(
+          templateIdFromRef(templateRef), accountIdentifier, orgIdentifier, projectIdentifier,
+          ((CustomSecretManagerConnectorDTO) connectorConfigDTO).getTemplate().getVersionLabel(), false));
+      if (template == null || StringUtils.isBlank(template)) {
+        return;
+      }
+      JsonNode templateInputs = YamlUtils.read(template, JsonNode.class);
+      ArrayNode variablesArray = (ArrayNode) templateInputs.get(ENVIRONMENT_VARIABLES);
+      verifyWhetherAllTheRuntimeParametersWereProvidedWithValues(
+          variablesArray, inputs, accountIdentifier, connectorIdentifier);
+    }
+  }
+
+  private Set<String> checkForDuplicateInputsAndReturnInputsLIst(
+      List<NameValuePairWithDefault> templateInputs, String accountIdentifier, String connectorIdentifier) {
+    Set<String> inputs = new HashSet<>();
+    for (NameValuePairWithDefault node : templateInputs) {
+      if (inputs.contains(node.getName())) {
+        log.error("Same input is given more than once for custom SM {} in account {}. Duplicated input is {}",
+            connectorIdentifier, accountIdentifier, node.getName());
+        throw new InvalidRequestException("Multiple values for the same input Parameter is passed. Please check.");
+      }
+      inputs.add(node.getName());
+    }
+    return inputs;
+  }
+
+  private void verifyWhetherAllTheRuntimeParametersWereProvidedWithValues(
+      ArrayNode variablesArray, Set<String> inputs, String accountIdentifier, String connectorIdentifier) {
+    if (!EmptyPredicate.isEmpty(variablesArray)) {
+      for (JsonNode node : variablesArray) {
+        String key = node.get("name").asText();
+        // validate this key value is present in the incoming connector inputs
+        if (!inputs.contains(key)) {
+          log.error(
+              "Run time inputs of templates should be passed in Custom SM {} in account {}. Runtime parameter {} is missing.",
+              connectorIdentifier, accountIdentifier, key);
+          throw new InvalidRequestException("Run time inputs of templates should be passed in connector.");
+        }
+      }
+    }
+  }
+
+  private String templateIdFromRef(String templateRef) {
+    String[] arrOfStr = templateRef.split("\\.");
+    return (arrOfStr.length == 1) ? arrOfStr[0] : arrOfStr[1];
   }
 
   private boolean isDefaultSecretManager(ConnectorInfoDTO connector) {
