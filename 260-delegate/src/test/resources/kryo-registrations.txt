@@ -1739,6 +1739,7 @@
 55217:io.harness.delegate.beans.NotificationProcessingResponse
 55218:com.github.dikhan.pagerduty.client.events.domain.Severity
 55219:io.harness.notification.remote.SmtpConfigResponse
+55220:io.harness.delegate.beans.WebhookTaskParams
 55299:io.harness.notification.SmtpConfig
 55300:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest
 55301:io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType

@@ -113,6 +113,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/terragrunt/constants:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/terragrunt/files:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/trigger:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/webhook:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/winrm/authentication:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/utils:module",
         "//930-delegate-tasks/src/main/java/io/harness/helpers/k8s/releasehistory:module",

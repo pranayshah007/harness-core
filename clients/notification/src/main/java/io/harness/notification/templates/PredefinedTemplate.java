@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public enum PredefinedTemplate {
   EMAIL_TEST("templates/email_test.txt", "email_test"),
   SLACK_TEST("templates/slack_test.txt", "slack_test"),
+  WEBHOOK_TEST("templates/webhook_test.txt", "webhook_test"),
   SLACK_VANILLA("templates/slack_vanilla.txt", "slack_vanilla"),
   PD_TEST("templates/pd_test.txt", "pd_test"),
   PD_VANILLA("templates/pd_vanilla.txt", "pd_vanilla"),
