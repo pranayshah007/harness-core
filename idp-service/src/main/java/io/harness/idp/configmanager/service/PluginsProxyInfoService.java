@@ -21,4 +21,5 @@ public interface PluginsProxyInfoService {
   List<ProxyHostDetail> getProxyHostDetailsForMultiplePluginIds(String accountIdentifier, List<String> pluginIds);
   List<ProxyHostDetail> updateProxyHostDetailsForHostValues(
       List<ProxyHostDetail> proxyHostDetails, String accountIdentifier);
+  List<ProxyHostDetail> getProxyHostDetailsForPluginId(String accountIdentifier, String pluginId);
 }

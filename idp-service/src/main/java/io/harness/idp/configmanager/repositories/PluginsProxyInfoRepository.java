@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
@@ -18,5 +19,6 @@ import org.springframework.data.repository.CrudRepository;
 public interface PluginsProxyInfoRepository
     extends CrudRepository<PluginsProxyInfoEntity, String>, PluginsProxyInfoRepositoryCustom {
   PluginsProxyInfoEntity findByAccountIdentifierAndHost(String accountIdentifier, String host);
+  List<PluginsProxyInfoEntity> findAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
   void deleteAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
 }

@@ -1248,8 +1248,6 @@ components:
         id: ggn3lgk0pl7jx
       allOf:
         - $ref: '#/components/schemas/PluginDetails'
-          x-stoplight:
-            id: 8r3tc7aptshub
         - type: object
           properties:
             env_variables:
@@ -1258,12 +1256,16 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/BackstageEnvSecretVariable'
-                x-stoplight:
-                  id: v8fluu5h3dt3n
             saved:
               type: boolean
               x-stoplight:
                 id: b06clr6ww9ku0
+            proxy:
+              x-stoplight:
+                id: cxtlzxhi15ly8
+              type: array
+              items:
+                $ref: '#/components/schemas/ProxyHostDetail'
           required:
             - env_variables
             - saved

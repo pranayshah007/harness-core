@@ -97,6 +97,13 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     return getPluginProxyHostDetailsFromEntities(pluginsProxyInfoEntities);
   }
 
+  @Override
+  public List<ProxyHostDetail> getProxyHostDetailsForPluginId(String accountIdentifier, String pluginId) {
+    List<PluginsProxyInfoEntity> pluginsProxyInfoEntities =
+        pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    return getPluginProxyHostDetailsFromEntities(pluginsProxyInfoEntities);
+  }
+
   private List<String> getErrorMessageIfHostIsAlreadyInUse(String accountIdentifier, AppConfig appConfig) {
     List<ProxyHostDetail> proxyDetails = appConfig.getProxy();
     List<String> errorMessage = new ArrayList<>();
