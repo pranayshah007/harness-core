@@ -216,7 +216,7 @@ public class TokenServiceImpl implements TokenService {
         tokenDTO.setEncodedPassword(optionalToken.get().getEncodedPassword());
       }
       if (ApiKeyType.USER == tokenDTO.getApiKeyType()) {
-        Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(tokenDTO.getParentIdentifier(), false);
+        Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(tokenDTO.getParentIdentifier());
         if (optionalUserInfo.isPresent()) {
           UserInfo userInfo = optionalUserInfo.get();
           tokenDTO.setEmail(userInfo.getEmail());

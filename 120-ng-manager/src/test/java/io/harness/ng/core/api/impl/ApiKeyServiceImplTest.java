@@ -17,7 +17,6 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -222,7 +221,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                         .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID).build()))
                         .build()))
         .when(ngUserService)
-        .getUserById(any(), anyBoolean());
+        .getUserById(any());
 
     // Act
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
@@ -241,7 +240,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                         .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(randomAccountId).build()))
                         .build()))
         .when(ngUserService)
-        .getUserById(any(), anyBoolean());
+        .getUserById(any());
 
     // Act
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
