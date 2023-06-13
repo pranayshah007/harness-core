@@ -958,7 +958,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                         .addCategory(StepSpecTypeConstants.AWS_LAMBDA)
                                                         .setFolderPath("Aws Lambda")
                                                         .build())
-                                   .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+                                   .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
                                    .build();
 
     StepInfo createStack = StepInfo.newBuilder()
@@ -1374,7 +1374,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Aws Lambda Rollback")
             .setType(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath("Aws Lambda").build())
-            .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo k8sBGStageScaleDown =
