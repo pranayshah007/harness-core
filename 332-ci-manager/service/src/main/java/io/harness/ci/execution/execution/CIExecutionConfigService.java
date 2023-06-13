@@ -697,6 +697,10 @@ public class CIExecutionConfigService {
         }
         break;
       case GCR:
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxGcrConfig().getName();
+        }
+        break;
       case ACR:
       case SECURITY:
       case UPLOAD_ARTIFACTORY:

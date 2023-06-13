@@ -30,6 +30,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.FileUtils;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.service.PluginsProxyInfoService;
 import io.harness.idp.plugin.beans.ExportsData;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
@@ -62,6 +63,7 @@ public class PluginInfoServiceImplTest {
   @Mock private PluginInfoRepository pluginInfoRepository;
   @Mock private PluginRequestRepository pluginRequestRepository;
   @Mock private ConfigManagerService configManagerService;
+  @Mock private PluginsProxyInfoService pluginsProxyInfoService;
   private final ObjectMapper objectMapper = mock(ObjectMapper.class);
 
   private static final String ACCOUNT_ID = "123";
@@ -106,6 +108,8 @@ public class PluginInfoServiceImplTest {
     when(pluginInfoRepository.findByIdentifier(PAGER_DUTY_ID))
         .thenReturn(Optional.ofNullable(getPagerDutyInfoEntity()));
     when(configManagerService.getAppConfig(ACCOUNT_ID, PAGER_DUTY_ID, ConfigType.PLUGIN)).thenReturn(null);
+    when(pluginsProxyInfoService.getProxyHostDetailsForPluginId(ACCOUNT_ID, PAGER_DUTY_ID))
+        .thenReturn(new ArrayList<>());
     PluginDetailedInfo pluginDetailedInfo = pluginInfoServiceImpl.getPluginDetailedInfo(PAGER_DUTY_ID, ACCOUNT_ID);
     assertNotNull(pluginDetailedInfo);
     assertFalse(pluginDetailedInfo.getPluginDetails().isEnabled());

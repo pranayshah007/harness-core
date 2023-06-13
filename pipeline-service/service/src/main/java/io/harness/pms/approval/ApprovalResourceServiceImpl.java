@@ -142,7 +142,7 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
     }
 
     String userId = principal.getName();
-    Optional<UserInfo> userOptional = CGRestUtils.getResponse(userClient.getUserById(userId));
+    Optional<UserInfo> userOptional = CGRestUtils.getResponse(userClient.getUserById(userId, false));
     if (!userOptional.isPresent()) {
       throw new InvalidRequestException(String.format("Invalid user: %s", userId));
     }

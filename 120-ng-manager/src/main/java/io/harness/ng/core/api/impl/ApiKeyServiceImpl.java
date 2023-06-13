@@ -317,7 +317,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
           throw new InvalidArgumentsException(String.format(
               "User [%s] not authenticated to create api key for user [%s]", userId.get(), parentIdentifier));
         }
-        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
+        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get(), true);
         if (userInfo.isEmpty()) {
           throw new InvalidArgumentsException(String.format("No user found with id: [%s]", userId.get()));
         }

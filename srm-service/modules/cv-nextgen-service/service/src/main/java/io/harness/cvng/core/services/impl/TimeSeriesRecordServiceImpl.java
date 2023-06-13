@@ -61,6 +61,7 @@ import com.mongodb.ReadPreference;
 import dev.morphia.UpdateOptions;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.time.Instant;
@@ -565,6 +566,14 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       }
     });
     return timeSeriesRecordDTOS;
+  }
+
+  @Override
+  public List<TimeSeriesRecord> getLatestTimeSeriesRecords(String verificationTaskId, int count) {
+    return hPersistence.createQuery(TimeSeriesRecord.class, excludeAuthority)
+        .filter(TimeSeriesRecordKeys.verificationTaskId, verificationTaskId)
+        .order(Sort.descending(TimeSeriesRecordKeys.bucketStartTime))
+        .asList(new FindOptions().limit(count));
   }
 
   @Override

@@ -67,24 +67,35 @@ func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
 	return &tls.Config{RootCAs: roots}, nil
 }
 
-func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathForTLS string) *Redis {
-	opt := &redis.Options{
-		Addr:     endpoint,
-		Password: password,
-		DB:       0,
-		PoolSize: connectionPool,
-	}
-	if useTLS {
-		newTlSConfig, err := newTlSConfig(certPathForTLS)
-		if err != nil {
-			logrus.Fatalf("could not get TLS config: %s", err)
-			return nil
+func New(endpoint, password string, useTLS, disableExpiryWatcher, useSentinel bool, certPathForTLS string, masterName string, sentinelAddrs []string) *Redis {
+	var client redis.Cmdable
+	if useSentinel {
+		// Create Sentinel instance
+		client = redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:    masterName,
+			SentinelAddrs: sentinelAddrs,
+			Password:      password,
+		})
+	} else {
+		// Create Redis instance
+		opt := &redis.Options{
+			Addr:     endpoint,
+			Password: password,
+			DB:       0,
+			PoolSize: connectionPool,
 		}
-		opt.TLSConfig = newTlSConfig
+		if useTLS {
+			newTlSConfig, err := newTlSConfig(certPathForTLS)
+			if err != nil {
+				logrus.Fatalf("could not get TLS config: %s", err)
+				return nil
+			}
+			opt.TLSConfig = newTlSConfig
+		}
+		client = redis.NewClient(opt)
 	}
-	rdb := redis.NewClient(opt)
 	rc := &Redis{
-		Client: rdb,
+		Client: client,
 	}
 
 	if !disableExpiryWatcher {

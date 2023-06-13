@@ -44,6 +44,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.common.GsonUtils;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
+import io.harness.idp.common.delegateselectors.utils.DelegateSelectorsUtils;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
@@ -55,7 +57,6 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.idp.onboarding.beans.AsyncCatalogImportDetails;
 import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
@@ -739,7 +740,7 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   private void saveCatalogConnector(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) throws ExecutionException {
-    Set<String> delegateSelectors = GitIntegrationUtils.extractDelegateSelectors(connectorInfoDTO);
+    Set<String> delegateSelectors = DelegateSelectorsUtils.extractDelegateSelectors(connectorInfoDTO);
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity = new CatalogConnectorEntity();
 

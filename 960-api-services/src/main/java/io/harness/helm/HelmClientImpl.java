@@ -325,23 +325,6 @@ public class HelmClientImpl implements HelmClient {
         DEFAULT_HELM_COMMAND_TIMEOUT);
   }
 
-  /*
-  TODO: YOGESH check why this function is not called and do we need a version here.
-   */
-  @Override
-  public HelmCliResponse templateForK8sV2(String releaseName, String namespace, String chartLocation,
-      List<String> valuesOverrides) throws InterruptedException, TimeoutException, IOException, ExecutionException {
-    String keyValueOverrides = constructValueOverrideFile(valuesOverrides);
-
-    String templateCommand = HelmConstants.V2Commands.HELM_TEMPLATE_COMMAND_FOR_KUBERNETES_TEMPLATE
-                                 .replace("${CHART_LOCATION}", chartLocation)
-                                 .replace("${OVERRIDE_VALUES}", keyValueOverrides)
-                                 .replace("${RELEASE_NAME}", releaseName)
-                                 .replace("${NAMESPACE}", getNamespaceFlag(namespace));
-
-    return executeHelmCLICommand(templateCommand);
-  }
-
   @Override
   public HelmCliResponse renderChart(HelmCommandData helmCommandData, String chartLocation, String namespace,
       List<String> valuesOverrides, boolean isErrorFrameworkEnabled) throws Exception {
@@ -357,8 +340,8 @@ public class HelmClientImpl implements HelmClient {
 
     command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(),
         helmCommandData.isHelmCmdFlagsNull(), helmCommandData.getValueMap(), helmCommandData.getHelmVersion());
-    logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());
     command = applyKubeConfigToCommand(command, kubeConfigLocation);
+    logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());
     String errorMessagePrefix = "Failed to render helm chart. ";
 
     return executeHelmCLICommand(helmCommandData, isErrorFrameworkEnabled, command, commandType, errorMessagePrefix,

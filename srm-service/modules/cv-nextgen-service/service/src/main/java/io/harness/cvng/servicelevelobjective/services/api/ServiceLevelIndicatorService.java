@@ -37,7 +37,7 @@ public interface ServiceLevelIndicatorService {
       String serviceLevelObjectiveIdentifier, List<String> serviceLevelIndicatorsList, String monitoredServiceIndicator,
       String healthSourceIndicator, TimePeriod timePeriod, TimePeriod currentTimePeriod);
 
-  void deleteByIdentifier(ProjectParams projectParams, List<String> serviceLevelIndicatorIdentifier);
+  boolean deleteByIdentifier(ProjectParams projectParams, List<String> serviceLevelIndicatorIdentifier);
 
   ServiceLevelIndicator get(String sliId);
 
@@ -51,6 +51,8 @@ public interface ServiceLevelIndicatorService {
       String healthSourceIdentifier, List<String> metricIdentifiers);
 
   List<String> getSLIs(ProjectParams projectParams, String monitoredServiceIdentifier);
+
+  List<ServiceLevelIndicator> getSLIs(ProjectParams projectParams);
 
   void setMonitoredServiceSLIsEnableFlag(
       ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled);

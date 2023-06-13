@@ -207,7 +207,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         value, customSecretManagerConnectorDTO.getTemplate().getTemplateInputs());
     customSecretManagerConnectorDTO.getTemplate().setTemplateInputs(inputValues);
     Set<EncryptedDataParams> encryptedDataParamsSet = customSecretManagerHelper.prepareEncryptedDataParamsSet(
-        customSecretManagerConfigDTO, YamlUtils.write(connectorDTO));
+        customSecretManagerConfigDTO, YamlUtils.writeYamlString(connectorDTO));
     if (encryptedData.getParameters() == null) {
       encryptedData.setParameters(encryptedDataParamsSet);
     } else {

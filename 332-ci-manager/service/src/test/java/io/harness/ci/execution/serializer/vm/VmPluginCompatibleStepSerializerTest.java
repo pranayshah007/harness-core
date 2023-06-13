@@ -103,7 +103,6 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(true);
@@ -130,7 +129,6 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(false);
@@ -151,7 +149,6 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(true);
@@ -174,7 +171,6 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
@@ -201,7 +197,6 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(false);
@@ -222,7 +217,6 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);

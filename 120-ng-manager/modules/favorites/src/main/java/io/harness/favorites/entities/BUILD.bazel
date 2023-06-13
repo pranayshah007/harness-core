@@ -13,7 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//120-ng-manager/modules/favorites/contracts/src/main/java/io/harness/favorites:module",
-        "//960-persistence/src/main/java/io/harness/ng:module",
+        "//960-persistence:module",
         "//970-ng-commons/src/main/java/io/harness/entities:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//980-commons/src/main/java/io/harness/data/validator:module",

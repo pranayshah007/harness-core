@@ -137,7 +137,7 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     when(currentUserHelper.getPrincipalFromSecurityContext())
         .thenReturn(new UserPrincipal("email@harness.io", "name", "user", "ACCOUNTID"));
     Call userCall = mock(Call.class);
-    when(userClient.getUserById("email@harness.io")).thenReturn(userCall);
+    when(userClient.getUserById("email@harness.io", false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     // Should approve successfully
     approvalResourceService.addHarnessApprovalActivity(id, harnessApprovalActivityRequestDTO);
@@ -234,7 +234,7 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     when(currentUserHelper.getPrincipalFromSecurityContext())
         .thenReturn(new UserPrincipal("email@harness.io", "name", "user", "ACCOUNTID"));
     Call userCall = mock(Call.class);
-    when(userClient.getUserById("email@harness.io")).thenReturn(userCall);
+    when(userClient.getUserById("email@harness.io", false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     List<String> approvalInstanceIds = Collections.singletonList("uuid2");
     when(approvalInstanceService.findAllPreviousWaitingApprovals(

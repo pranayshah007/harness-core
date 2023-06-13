@@ -409,8 +409,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     String subType;
 
     // If filters are present
-    if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-        && (EnvironmentInfraFilterUtils.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments()))) {
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments())) {
       subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
     } else {
       if (stageConfig.getEnvironments() == null) {

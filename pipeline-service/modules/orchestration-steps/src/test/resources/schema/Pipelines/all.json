@@ -2522,6 +2522,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -3679,6 +3705,22 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Webhook"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PmsWebhookChannel"
+              }
+            }
+          }
         }
       ]
     },
@@ -4744,6 +4786,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PmsWebhookChannel": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/PmsNotificationChannel"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "webhookUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PolicyConfig": {
       "type": "object",
       "required": [
@@ -4840,7 +4898,7 @@
         "type": {
           "type": "string",
           "enum": [
-            "harness"
+            "Harness"
           ]
         }
       },
@@ -4850,7 +4908,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "harness"
+                "const": "Harness"
               }
             }
           },

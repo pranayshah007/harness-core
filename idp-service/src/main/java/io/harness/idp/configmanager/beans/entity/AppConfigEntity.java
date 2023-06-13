@@ -59,5 +59,4 @@ public class AppConfigEntity implements PersistentEntity {
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
   @NotNull Long enabledDisabledAt;
-  List<ProxyHostDetail> proxy;
 }

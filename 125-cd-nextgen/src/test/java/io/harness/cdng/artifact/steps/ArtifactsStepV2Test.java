@@ -1107,7 +1107,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                    .serviceSpec(KubernetesServiceSpec.builder().artifacts(artifactListConfig).build())
                                    .build())
             .build();
-    return YamlUtils.write(NGServiceConfig.builder().ngServiceV2InfoConfig(config).build());
+    return YamlUtils.writeYamlString(NGServiceConfig.builder().ngServiceV2InfoConfig(config).build());
   }
 
   private ArtifactListConfig artifactListConfigHelper(List<ArtifactSource> artifactSources, String primary) {

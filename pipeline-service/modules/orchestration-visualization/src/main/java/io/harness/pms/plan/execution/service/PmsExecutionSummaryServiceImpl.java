@@ -21,10 +21,10 @@ import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.LayoutNodeGraphConstants;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -199,7 +199,6 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       // Extract the node id for the given child
       String childSetupId =
           strategyNodeExecution.getExecutableResponses().get(0).getChildren().getChildren(0).getChildNodeId();
-      Ambiance ambiance = strategyNodeExecution.getAmbiance();
       Optional<PipelineExecutionSummaryEntity> entity =
           pmsExecutionSummaryRepository.findByPlanExecutionId(planExecutionId);
       if (entity.isEmpty()) {
@@ -207,6 +206,25 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       }
       addChildStagesForStrategy(update, entity.get(), concurrentChildInstance.getChildrenNodeExecutionIds(),
           childSetupId, strategyNodeExecution);
+    } else if (StatusUtils.brokeStatuses().contains(strategyNodeExecution.getStatus())) {
+      Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntity =
+          pmsExecutionSummaryRepository.findByPlanExecutionId(planExecutionId);
+      if (pipelineExecutionSummaryEntity.isPresent()
+          && pipelineExecutionSummaryEntity.get().getLayoutNodeMap().containsKey(strategyNodeExecution.getNodeId())) {
+        List<String> stageSetupIds = pipelineExecutionSummaryEntity.get()
+                                         .getLayoutNodeMap()
+                                         .get(strategyNodeExecution.getNodeId())
+                                         .getEdgeLayoutList()
+                                         .getCurrentNodeChildren();
+        if (EmptyPredicate.isNotEmpty(stageSetupIds) && stageSetupIds.size() == 1) {
+          String stageSetupId = stageSetupIds.get(0);
+          update.set(String.format(LayoutNodeGraphConstants.STATUS, stageSetupId), strategyNodeExecution.getStatus());
+          if (strategyNodeExecution.getFailureInfo() != null) {
+            update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".failureInfo",
+                ExecutionErrorInfo.builder().message(strategyNodeExecution.getFailureInfo().getErrorMessage()).build());
+          }
+        }
+      }
     }
     updateStatusAndStepParametersInStrategyNode(strategyNodeExecution, update);
     return true;

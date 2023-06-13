@@ -12,21 +12,31 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 
 import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.cdng.configfile.ConfigFile;
+import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.manifest.yaml.ManifestConfig;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 @Slf4j
@@ -104,7 +114,61 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceOverrideRequestDTOV2.getOrgIdentifier(), serviceOverrideRequestDTOV2.getProjectIdentifier(), accountId);
     throwExceptionForRequiredFields(serviceOverrideRequestDTOV2);
-    validateServiceOverrideScope(serviceOverrideRequestDTOV2, accountId);
+    validateServiceOverrideScopeAndThrow(serviceOverrideRequestDTOV2, accountId);
+    validateSubFieldsDuplicationsAndThrow(serviceOverrideRequestDTOV2.getSpec());
+  }
+
+  private void validateSubFieldsDuplicationsAndThrow(@NonNull ServiceOverridesSpec spec) {
+    checkDuplicateVariablesAndThrow(spec);
+    checkDuplicateManifestAndThrow(spec);
+    checkDuplicateConfigFilesAndThrow(spec);
+  }
+
+  private static void checkDuplicateConfigFilesAndThrow(@NotNull ServiceOverridesSpec spec) {
+    if (isNotEmpty(spec.getConfigFiles())) {
+      Set<String> existingUniqueIdentifier = new HashSet<>();
+      List<String> duplicateIdentifiers = spec.getConfigFiles()
+                                              .stream()
+                                              .map(ConfigFileWrapper::getConfigFile)
+                                              .map(ConfigFile::getIdentifier)
+                                              .filter(identifier -> !existingUniqueIdentifier.add(identifier))
+                                              .collect(Collectors.toList());
+      if (isNotEmpty(duplicateIdentifiers)) {
+        throw new InvalidRequestException(
+            String.format("found duplicate manifests %s in override request", duplicateIdentifiers.toString()));
+      }
+    }
+  }
+
+  private static void checkDuplicateManifestAndThrow(@NotNull ServiceOverridesSpec spec) {
+    if (isNotEmpty(spec.getManifests())) {
+      Set<String> existingUniqueIdentifier = new HashSet<>();
+      List<String> duplicateIdentifiers = spec.getManifests()
+                                              .stream()
+                                              .map(ManifestConfigWrapper::getManifest)
+                                              .map(ManifestConfig::getIdentifier)
+                                              .filter(identifier -> !existingUniqueIdentifier.add(identifier))
+                                              .collect(Collectors.toList());
+      if (isNotEmpty(duplicateIdentifiers)) {
+        throw new InvalidRequestException(
+            String.format("found duplicate manifests %s in override request", duplicateIdentifiers.toString()));
+      }
+    }
+  }
+
+  private static void checkDuplicateVariablesAndThrow(@NotNull ServiceOverridesSpec spec) {
+    if (isNotEmpty(spec.getVariables())) {
+      Set<String> existingUniqueIdentifier = new HashSet<>();
+      List<String> duplicateIdentifiers = spec.getVariables()
+                                              .stream()
+                                              .map(NGVariable::getName)
+                                              .filter(identifier -> !existingUniqueIdentifier.add(identifier))
+                                              .collect(Collectors.toList());
+      if (isNotEmpty(duplicateIdentifiers)) {
+        throw new InvalidRequestException(
+            String.format("found duplicate vars %s in override request", duplicateIdentifiers.toString()));
+      }
+    }
   }
 
   @Override
@@ -142,9 +206,19 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
     if (dto.getSpec() == null) {
       throw new InvalidRequestException("Override spec is not provided in request");
     }
+    final ServiceOverridesSpec overrideSpec = dto.getSpec();
+    if (isOverrideSpecEmpty(overrideSpec)) {
+      throw new InvalidRequestException("Override spec is empty in request");
+    }
   }
 
-  private void validateServiceOverrideScope(ServiceOverrideRequestDTOV2 requestDTO, String accountId) {
+  private boolean isOverrideSpecEmpty(ServiceOverridesSpec overrideSpec) {
+    return isEmpty(overrideSpec.getVariables()) && isEmpty(overrideSpec.getManifests())
+        && isEmpty(overrideSpec.getConfigFiles()) && overrideSpec.getApplicationSettings() == null
+        && overrideSpec.getConnectionStrings() == null;
+  }
+
+  private void validateServiceOverrideScopeAndThrow(ServiceOverrideRequestDTOV2 requestDTO, String accountId) {
     if (isNotEmpty(requestDTO.getProjectIdentifier()) && isEmpty(requestDTO.getOrgIdentifier())) {
       throw new InvalidRequestException("org identifier must be specified when project identifier is specified.");
     }

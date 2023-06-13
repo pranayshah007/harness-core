@@ -477,9 +477,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   //  public void testCreatePlanForChildrenNodesWithFilters_0(DeploymentStageNode node) {
   //    when(environmentInfraFilterHelper.areFiltersPresent(any())).thenReturn(true);
   //
-  //    doReturn(true).when(featureFlagHelperService).isEnabled("accountId",
-  //    FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
-  //
   //    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
   //                                          .onFailure(OnFailureConfig.builder()
   //                                                         .errors(List.of(NGFailureType.ALL_ERRORS))

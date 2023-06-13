@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,31 +32,54 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGVaultService;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.NGSecretManagerService;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
+import io.harness.template.remote.TemplateResourceClient;
 
+import software.wings.beans.NameValuePairWithDefault;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import retrofit2.Call;
 
 @OwnedBy(PL)
 public class SecretManagerConnectorServiceImplTest extends CategoryTest {
   private static final String ACCOUNT = "account";
+  private static final String ACCOUNT_IDENTIFIER = randomAlphabetic(10);
+  private static final String CONNECTOR_IDENTIFIER = randomAlphabetic(10);
+  private static final String ORG_IDENTIFIER = randomAlphabetic(10);
+  private static final String PROJECT_IDENTIFIER = randomAlphabetic(10);
+  private static final String TEMPLATE_REF = "templateRef";
+  private static final String VERSION = "VERSION1";
+  private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
   private NGSecretManagerService ngSecretManagerService;
   private ConnectorService defaultConnectorService;
   private SecretManagerConnectorServiceImpl secretManagerConnectorService;
   private ConnectorRepository connectorRepository;
   private NGVaultService ngVaultService;
   private EnforcementClientService enforcementClientService;
+  private TemplateResourceClient templateResourceClient;
 
   @Before
   public void setup() {
@@ -64,8 +88,9 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
     connectorRepository = mock(ConnectorRepository.class);
     ngVaultService = mock(NGVaultService.class);
     enforcementClientService = mock(EnforcementClientService.class);
+    templateResourceClient = mock(TemplateResourceClient.class);
     secretManagerConnectorService = new SecretManagerConnectorServiceImpl(
-        defaultConnectorService, connectorRepository, ngVaultService, enforcementClientService);
+        defaultConnectorService, connectorRepository, ngVaultService, enforcementClientService, templateResourceClient);
   }
 
   private InvalidRequestException getInvalidRequestException() {
@@ -88,6 +113,57 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
     connectorInfo.setOrgIdentifier("orgIdentifier");
     connectorInfo.setProjectIdentifier("projectIdentifier");
     return ConnectorDTO.builder().connectorInfo(connectorInfo).build();
+  }
+
+  private ConnectorInfoDTO nonDuplicateEntries_template() {
+    Map<String, List<NameValuePairWithDefault>> inputValues = new HashMap<>();
+    NameValuePairWithDefault var1 =
+        NameValuePairWithDefault.builder().name("var1").value("value1").type("String").build();
+    NameValuePairWithDefault var2 =
+        NameValuePairWithDefault.builder().name("var2").value("value2").type("String").build();
+    NameValuePairWithDefault var3 =
+        NameValuePairWithDefault.builder().name("var3").value("value3").type("String").useAsDefault(true).build();
+
+    List<NameValuePairWithDefault> inputEnvironmentVariables = new LinkedList<>();
+    inputEnvironmentVariables.add(var1);
+    inputEnvironmentVariables.add(var2);
+    inputEnvironmentVariables.add(var3);
+    inputValues.put(ENVIRONMENT_VARIABLES, inputEnvironmentVariables);
+    return getConnectorWithTemplateRef(inputValues);
+  }
+
+  private ConnectorInfoDTO duplicateEntries_template() {
+    Map<String, List<NameValuePairWithDefault>> inputValues = new HashMap<>();
+    NameValuePairWithDefault var1 =
+        NameValuePairWithDefault.builder().name("var1").value("value1").type("String").build();
+    NameValuePairWithDefault var2 =
+        NameValuePairWithDefault.builder().name("var2").value("value2").type("String").build();
+    NameValuePairWithDefault var3 =
+        NameValuePairWithDefault.builder().name("var2").value("value3").type("String").useAsDefault(true).build();
+
+    List<NameValuePairWithDefault> inputEnvironmentVariables = new LinkedList<>();
+    inputEnvironmentVariables.add(var1);
+    inputEnvironmentVariables.add(var2);
+    inputEnvironmentVariables.add(var3);
+    inputValues.put(ENVIRONMENT_VARIABLES, inputEnvironmentVariables);
+    return getConnectorWithTemplateRef(inputValues);
+  }
+
+  private ConnectorInfoDTO getConnectorWithTemplateRef(Map<String, List<NameValuePairWithDefault>> templateInputs) {
+    return ConnectorInfoDTO.builder()
+        .connectorType(ConnectorType.CUSTOM_SECRET_MANAGER)
+        .name("customSM")
+        .identifier(CONNECTOR_IDENTIFIER)
+        .projectIdentifier(PROJECT_IDENTIFIER)
+        .orgIdentifier(ORG_IDENTIFIER)
+        .connectorConfig(CustomSecretManagerConnectorDTO.builder()
+                             .template(TemplateLinkConfigForCustomSecretManager.builder()
+                                           .templateRef(TEMPLATE_REF)
+                                           .versionLabel(VERSION)
+                                           .templateInputs(templateInputs)
+                                           .build())
+                             .build())
+        .build();
   }
 
   @Test
@@ -133,6 +209,99 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
     ConnectorResponseDTO connectorDTO = secretManagerConnectorService.create(requestDTO, ACCOUNT);
     assertThat(connectorDTO).isEqualTo(null);
     verify(defaultConnectorService).create(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateCustomSM_withCorrectTemplateInputs() throws IOException {
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    when(defaultConnectorService.create(any(), any())).thenReturn(null);
+    ConnectorDTO requestDTO = ConnectorDTO.builder().connectorInfo(nonDuplicateEntries_template()).build();
+    String templateInputs = "type: \"ShellScript\"\n"
+        + "spec:\n"
+        + "  source:\n"
+        + "    type: \"Inline\"\n"
+        + "    spec:\n"
+        + "      script: \"<+input>\"\n"
+        + "environmentVariables:\n"
+        + "  - name: var1\n"
+        + "  - name: var2\n"
+        + "  - name: var3\n"
+        + "timeout: \"<+input>\"\n";
+    Call<ResponseDTO<String>> request = mock(Call.class);
+    doReturn(request)
+        .when(templateResourceClient)
+        .getTemplateInputsYaml(TEMPLATE_REF, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, VERSION, false);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(templateInputs);
+    ConnectorResponseDTO connectorDTO = secretManagerConnectorService.create(requestDTO, ACCOUNT_IDENTIFIER);
+    assertThat(connectorDTO).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateCustomSM_withDuplicateInput_shouldThrowError() throws IOException {
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    when(defaultConnectorService.create(any(), any())).thenReturn(null);
+    ConnectorDTO requestDTO = ConnectorDTO.builder().connectorInfo(duplicateEntries_template()).build();
+    String templateInputs = "type: \"ShellScript\"\n"
+        + "spec:\n"
+        + "  source:\n"
+        + "    type: \"Inline\"\n"
+        + "    spec:\n"
+        + "      script: \"<+input>\"\n"
+        + "environmentVariables:\n"
+        + "  - name: var1\n"
+        + "  - name: var2\n"
+        + "  - name: var3\n"
+        + "timeout: \"<+input>\"\n";
+    Call<ResponseDTO<String>> request = mock(Call.class);
+    doReturn(request)
+        .when(templateResourceClient)
+        .getTemplateInputsYaml(TEMPLATE_REF, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, VERSION, false);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(templateInputs);
+    try {
+      ConnectorResponseDTO connectorDTO = secretManagerConnectorService.create(requestDTO, ACCOUNT_IDENTIFIER);
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidRequestException.class);
+      assertThat(ex.getMessage()).isEqualTo("Multiple values for the same input Parameter is passed. Please check.");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateCustomSM_withSomeRunTimeParametersMissing_shouldThrowError() throws IOException {
+    when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    when(defaultConnectorService.create(any(), any())).thenReturn(null);
+    ConnectorDTO requestDTO = ConnectorDTO.builder().connectorInfo(nonDuplicateEntries_template()).build();
+    String templateInputs = "type: \"ShellScript\"\n"
+        + "spec:\n"
+        + "  source:\n"
+        + "    type: \"Inline\"\n"
+        + "    spec:\n"
+        + "      script: \"<+input>\"\n"
+        + "environmentVariables:\n"
+        + "  - name: var1\n"
+        + "  - name: var2\n"
+        + "  - name: var3\n"
+        + "  - name: var4\n"
+        + "timeout: \"<+input>\"\n";
+    Call<ResponseDTO<String>> request = mock(Call.class);
+    doReturn(request)
+        .when(templateResourceClient)
+        .getTemplateInputsYaml(TEMPLATE_REF, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, VERSION, false);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(templateInputs);
+    try {
+      ConnectorResponseDTO connectorDTO = secretManagerConnectorService.create(requestDTO, ACCOUNT_IDENTIFIER);
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(InvalidRequestException.class);
+      assertThat(ex.getMessage()).isEqualTo("Run time inputs of templates should be passed in connector.");
+    }
   }
 
   @Test

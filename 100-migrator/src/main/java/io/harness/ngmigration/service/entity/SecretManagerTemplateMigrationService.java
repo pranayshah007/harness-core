@@ -129,7 +129,7 @@ public class SecretManagerTemplateMigrationService extends NgMigrationService {
         templateClient
             .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())),
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
                 StoreType.INLINE)
             .execute();
     log.info("Secret manager template creation Response details {} {}", resp.code(), resp.message());

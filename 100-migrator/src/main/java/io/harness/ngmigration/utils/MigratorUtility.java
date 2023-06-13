@@ -106,14 +106,41 @@ public class MigratorUtility {
 
   private MigratorUtility() {}
 
-  public static <T> T getRestClient(ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
-    OkHttpClient okHttpClient = Http.getOkHttpClient(ngClientConfig.getBaseUrl(), false);
+  public static <T> T getRestClient(
+      MigrationInputDTO inputDTO, ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
+    String baseUrl = StringUtils.defaultIfBlank(constructBaseUrl(inputDTO, clazz), ngClientConfig.getBaseUrl());
+    OkHttpClient okHttpClient = Http.getOkHttpClient(baseUrl, false);
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
-                            .baseUrl(ngClientConfig.getBaseUrl())
+                            .baseUrl(baseUrl)
                             .addConverterFactory(JacksonConverterFactory.create(HObjectMapper.NG_DEFAULT_OBJECT_MAPPER))
                             .build();
     return retrofit.create(clazz);
+  }
+
+  private static <T> String constructBaseUrl(MigrationInputDTO inputDTO, Class<T> clazz) {
+    if (inputDTO == null || StringUtils.isBlank(inputDTO.getDestinationGatewayUrl())) {
+      return null;
+    }
+    String baseUrl = inputDTO.getDestinationGatewayUrl();
+    if (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+    }
+    String basePath;
+    switch (clazz.getName()) {
+      case "io.harness.ngmigration.client.NGClient":
+        basePath = "/ng/api/";
+        break;
+      case "io.harness.ngmigration.client.PmsClient":
+        basePath = "/pipeline/api/";
+        break;
+      case "io.harness.ngmigration.client.TemplateClient":
+        basePath = "/template/api/";
+        break;
+      default:
+        throw new InvalidRequestException("Invalid client class");
+    }
+    return baseUrl + basePath;
   }
 
   public static String generateManifestIdentifier(String name, CaseFormat caseFormat) {
@@ -648,6 +675,7 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationGatewayUrl(StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getGatewayUrl(), null))
         .destinationAccountIdentifier(StringUtils.defaultIfBlank(
             importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
         .destinationAuthToken(

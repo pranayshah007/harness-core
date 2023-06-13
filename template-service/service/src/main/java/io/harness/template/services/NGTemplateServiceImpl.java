@@ -234,6 +234,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
 
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+
     try {
       // Check if this is template identifier first entry, for marking it as stable template.
       List<TemplateEntity> templates =
@@ -279,8 +281,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
       GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
       if (doPublishSetupUsages(template)) {
-        templateReferenceHelper.populateTemplateReferences(
-            SetupUsageParams.builder().templateEntity(templateEntity).build());
+        templateReferenceHelper.publishTemplateReferences(
+            SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
       }
 
       return template;
@@ -368,6 +370,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getProjectIdentifier(), templateEntity.getRepo(), templateEntity.getConnectorRef());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     TemplateEntity template = null;
 
@@ -380,8 +384,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(
-          SetupUsageParams.builder().templateEntity(templateEntity).build());
+      templateReferenceHelper.publishTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
     return template;
@@ -394,6 +398,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo != null) {
@@ -424,8 +430,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(
-          SetupUsageParams.builder().templateEntity(templateEntity).build());
+      templateReferenceHelper.publishTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
     return template;

@@ -53,11 +53,6 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
   @Inject private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
 
   @Override
-  protected String getAccountId(PerpetualTaskExecutionParams params) {
-    return AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class).getAccountId();
-  }
-
-  @Override
   protected InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params) {
     K8sInstanceSyncPerpetualTaskParamsV2 taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class);
@@ -126,8 +121,8 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     return namespaces.stream()
         .map(namespace
             -> PodDetailsRequest.builder()
-                   .kubernetesConfig(
-                       k8sInstanceSyncV2Helper.getKubernetesConfig(connectorDTO, releaseDetails, namespace))
+                   .kubernetesConfig(k8sInstanceSyncV2Helper.getKubernetesConfig(
+                       connectorDTO, releaseDetails.getK8sCloudClusterConfig(), namespace))
                    .namespace(namespace)
                    .releaseName(releaseName)
                    .build())

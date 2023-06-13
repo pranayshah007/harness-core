@@ -3962,6 +3962,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -7679,7 +7705,7 @@
         "type": {
           "type": "string",
           "enum": [
-            "harness"
+            "Harness"
           ]
         }
       },
@@ -7689,7 +7715,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "harness"
+                "const": "Harness"
               }
             }
           },

@@ -12,12 +12,16 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.repositories.serviceoverridesv2.custom.ServiceOverrideRepositoryCustomV2;
 
 import java.util.Optional;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 public interface ServiceOverridesRepositoryV2
     extends CrudRepository<NGServiceOverridesEntity, String>, ServiceOverrideRepositoryCustomV2 {
+  @Query(
+      value =
+          "{ 'accountId': ?0, 'orgIdentifier': ?1, 'projectIdentifier': ?2, 'identifier': ?3,'spec': { '$exists': true, '$ne': null } }")
   Optional<NGServiceOverridesEntity>
-  getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+  getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier);
 }

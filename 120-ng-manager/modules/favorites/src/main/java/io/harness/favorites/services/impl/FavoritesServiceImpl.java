@@ -17,7 +17,6 @@ import io.harness.favorites.utils.FavoritesResourceUtils;
 import io.harness.favorites.utils.FavoritesValidator;
 import io.harness.repositories.favorites.spring.FavoriteRepository;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
-import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -53,16 +52,16 @@ public class FavoritesServiceImpl implements FavoritesService {
   }
 
   @Override
-  public List<Favorite> getFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String userId, FavoritesResourceType resourceTypeDTO) {
-    ResourceType resourceType =
-        resourceTypeDTO != null ? EnumUtils.getEnum(ResourceType.class, resourceTypeDTO.toString()) : null;
+  public List<Favorite> getFavorites(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId, String resourceType) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
     if (resourceType == null) {
       throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
     }
     return favoriteRepository
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceType(
-            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType);
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved);
   }
 
   @Override
@@ -74,14 +73,14 @@ public class FavoritesServiceImpl implements FavoritesService {
 
   @Override
   public void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      FavoritesResourceType resourceTypeDTO, String resourceId) throws InvalidRequestException {
-    ResourceType resourceType =
-        resourceTypeDTO != null ? EnumUtils.getEnum(ResourceType.class, resourceTypeDTO.toString()) : null;
-    if (resourceType == null) {
+      String resourceType, String resourceId) throws InvalidRequestException {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceTypeResolved == null) {
       throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
     }
     favoriteRepository
         .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
-            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType, resourceId);
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId);
   }
 }

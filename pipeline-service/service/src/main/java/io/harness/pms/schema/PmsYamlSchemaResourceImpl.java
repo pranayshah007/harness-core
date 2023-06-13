@@ -8,11 +8,15 @@
 package io.harness.pms.schema;
 
 import static io.harness.EntityType.PIPELINES;
+import static io.harness.EntityType.TEMPLATE;
 import static io.harness.EntityType.TRIGGERS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.configuration.DeployVariant;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
@@ -38,6 +42,8 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   private final PMSYamlSchemaService pmsYamlSchemaService;
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 
+  private final String deployMode = System.getenv().get("DEPLOY_MODE");
+
   public ResponseDTO<JsonNode> getYamlSchema(@NotNull EntityType entityType, String projectIdentifier,
       String orgIdentifier, Scope scope, String identifier, @NotNull String accountIdentifier) {
     JsonNode schema = null;
@@ -50,6 +56,49 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     }
 
     return ResponseDTO.newResponse(schema);
+  }
+
+  @Override
+  public ResponseDTO<JsonNode> getStaticYamlSchema(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String identifier, EntityType entityType, Scope scope, String version) {
+    String env = System.getenv("ENV");
+    /*
+    Currently static schema is not supported for community and onPrem env.
+     */
+    if (!validateIfStaticSchemaRequired(entityType, env)) {
+      return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
+    }
+
+    JsonNode staticJson = pmsYamlSchemaService.getStaticSchema(
+        accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope, version);
+
+    // return static json if not empty or return the Pojo Schema
+    return staticJson != null
+        ? ResponseDTO.newResponse(staticJson)
+        : getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
+  }
+
+  private boolean validateIfStaticSchemaRequired(EntityType entityType, String env) {
+    // static schema is not supported for empty env or on-prem env. In entity type currently its supported only for
+    // Pipelines or Template
+    if (isEmpty(env) || validateOnPremOrCommunityEdition() || (entityType != PIPELINES && entityType != TEMPLATE)) {
+      return false;
+    }
+    return true;
+  }
+
+  private boolean validateOnPremOrCommunityEdition() {
+    // On Prem Env check.
+    if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)) {
+      return true;
+    }
+
+    // Validating if current deployment is of community edition
+    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
+      return true;
+    }
+
+    return false;
   }
 
   public ResponseDTO<Boolean> invalidateYamlSchemaCache() {

@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RAJENDRA_BAVISKAR;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -84,8 +85,10 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   private ListAppender<ILoggingEvent> listAppender;
   private static List<TriggerDetails> triggerDetailsList;
   private static List<TriggerDetails> triggerDetailsList1;
+  private static List<TriggerDetails> triggerDetailsList2;
   private static List<ConnectorResponseDTO> connectors;
   private static List<ConnectorResponseDTO> connectors1;
+  private static List<ConnectorResponseDTO> connectors2;
   private static Repository repository1 = Repository.builder()
                                               .httpURL("https://github.com/owner1/repo1.git")
                                               .sshURL("git@github.com:owner1/repo1.git")
@@ -178,6 +181,41 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                            .connectorConfig(GithubConnectorDTO.builder()
                                                 .connectionType(GitConnectionType.REPO)
                                                 .url("https://github.com/owner1/repo1")
+                                                .build())
+                           .identifier("con1")
+                           .build())
+            .build();
+
+    TriggerDetails detailsGitlab =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder()
+                                 .accountId("acc")
+                                 .orgIdentifier("org")
+                                 .projectIdentifier("proj")
+                                 .metadata(NGTriggerMetadata.builder()
+                                               .webhook(WebhookMetadata.builder()
+                                                            .type("GITLAB")
+                                                            .git(GitMetadata.builder()
+                                                                     .connectorIdentifier("account.con1")
+                                                                     .repoName("sample.git")
+                                                                     .build())
+                                                            .build())
+                                               .build())
+                                 .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITLAB).build())
+                                .build())
+                    .build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTOLab =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(GithubConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .url("http://gitlab.gitlab/venkat/")
                                                 .build())
                            .identifier("con1")
                            .build())
@@ -359,8 +397,10 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
 
     triggerDetailsList = asList(details1, details2, details3);
     triggerDetailsList1 = asList(details2, details3, details4, details5);
+    triggerDetailsList2 = asList(detailsGitlab);
     connectors = asList(connectorResponseDTO1, connectorResponseDTO2, connectorResponseDTO3);
     connectors1 = asList(connectorResponseDTO4, connectorResponseDTO5, connectorResponseDTO6, connectorResponseDTO7);
+    connectors2 = asList(connectorResponseDTOLab);
   }
 
   @Before
@@ -496,6 +536,29 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
     assertThat(triggerDetails.get(1)).isEqualTo(triggerDetailsList1.get(3));
   }
 
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void applyRepoUrlFilterGitLabTest() {
+    doReturn(connectors2).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("acc")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITLAB").build())
+                    .webhookEvent(PushWebhookEvent.builder().repository(repository7).build())
+                    .repository(repository7)
+                    .build())
+            .details(triggerDetailsList2)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    List<TriggerDetails> triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(1);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList2.get(0));
+  }
   @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)

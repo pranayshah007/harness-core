@@ -46,6 +46,7 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -90,6 +91,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject @Named("ciEventHandlerExecutor") private ExecutorService executorService;
   @Inject @Named("ciRatelimitHandlerExecutor") private ExecutorService ciRatelimitHandlerExecutor;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject CIStageOutputRepository ciStageOutputRepository;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -103,6 +105,15 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
+  }
+
+  private void deleteCIStageOutputs(Ambiance ambiance) {
+    String stageExecutionId = ambiance.getStageExecutionId();
+    try {
+      ciStageOutputRepository.deleteFirstByStageExecutionId(stageExecutionId);
+    } catch (Exception e) {
+      log.error("Error while deleting CI outputs for stageExecutionId " + stageExecutionId, e);
+    }
   }
 
   private void sendCleanupRequest(Level level, Ambiance ambiance, Status status, String accountId) {
@@ -131,6 +142,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
             log.info("failed to remove execution record from db", ex);
           }
 
+          deleteCIStageOutputs(ambiance);
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,

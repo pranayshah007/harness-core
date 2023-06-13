@@ -283,9 +283,10 @@ public class DiscoveryService {
   private SaveSummaryDTO createEntities(MigrationInputDTO inputDTO, YamlGenerationDetails generationDetails) {
     List<NGYamlFile> ngYamlFiles = generationDetails.getYamlFileList();
     List<NGSkipDetail> skipDetails = generationDetails.getSkipDetails();
-    NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
-    PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
-    TemplateClient templateClient = MigratorUtility.getRestClient(templateServiceClientConfig, TemplateClient.class);
+    NGClient ngClient = MigratorUtility.getRestClient(inputDTO, ngClientConfig, NGClient.class);
+    PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
+    TemplateClient templateClient =
+        MigratorUtility.getRestClient(inputDTO, templateServiceClientConfig, TemplateClient.class);
     // Sort such that we create secrets first then connectors and so on.
     MigratorUtility.sort(ngYamlFiles);
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()

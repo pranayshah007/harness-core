@@ -15,4 +15,5 @@ public class NotificationChannelType {
   public static final String PAGERDUTY = "PagerDuty";
   public static final String SLACK = "Slack";
   public static final String MSTEAMS = "MsTeams";
+  public static final String WEBHOOK = "Webhook";
 }

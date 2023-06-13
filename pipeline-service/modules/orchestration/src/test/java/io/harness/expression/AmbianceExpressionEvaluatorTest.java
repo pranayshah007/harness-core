@@ -46,6 +46,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
@@ -53,6 +54,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -298,10 +300,19 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     validateSingleExpression(evaluator, "obj." + expression, expected, skipEvaluate);
   }
 
+  public boolean isAnyCollection(Object value) {
+    return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
+        || value instanceof Iterable;
+  }
+
   private void validateSingleExpression(
       EngineExpressionEvaluator evaluator, String expression, Object expected, boolean skipEvaluate) {
     expression = "<+" + expression + ">";
-    assertThat(evaluator.renderExpression(expression)).isEqualTo(String.valueOf(expected));
+    if (isAnyCollection(expected)) {
+      assertThat(evaluator.renderExpression(expression)).isEqualTo(JsonUtils.asJson(expected));
+    } else {
+      assertThat(evaluator.renderExpression(expression)).isEqualTo(String.valueOf(expected));
+    }
     if (skipEvaluate) {
       return;
     }
