@@ -161,13 +161,13 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
       if (wrapperConfig.getStep().get("spec").get("envVariables") != null) {
         ((ObjectNode) wrapperConfig.getStep().get("spec").get("envVariables")).put("HARNESS_WORKSPACE", workspace);
-        switch (wrapperConfig.getStep().get("type").asText()) {
-          case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
-            ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
-            break;
-          default:
-            break;
-        }
+      }
+      switch (wrapperConfig.getStep().get("type").asText()) {
+        case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
+          ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
+          break;
+        default:
+          break;
       }
       modifiedSteps.add(wrapperConfig);
     }
