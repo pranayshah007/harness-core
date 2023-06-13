@@ -10,6 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.NGConstants.ENTITY_REFERENCE_LOG_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.SECRET_REFERRED_BY_CONNECTOR;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.TEMPLATE_REFERRED_BY_CONNECTOR;
@@ -410,13 +411,14 @@ public class ConnectorEntityReferenceHelper {
         .setDescription("Test Connection")
         .setReferredEntity(
             EntityDetailProtoDTO.newBuilder()
+                .setType(SECRETS)
                 .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
                     accountIdentifier, secretOrgIdentifier, secretProjectIdentifier, secretRef.getIdentifier()))
                 .build())
         .setEntityUsageDetail(
             EntityActivityCreateDTO.EntityUsageActivityDetailProtoDTO.newBuilder()
                 .setReferredByEntity(EntityDetailProtoDTO.newBuilder()
-                                         .setType(EntityTypeProtoEnum.TEST_CONNECTION)
+                                         .setType(EntityTypeProtoEnum.CONNECTORS)
                                          .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
                                              accountIdentifier, connectorInfoDTO.getOrgIdentifier(),
                                              connectorInfoDTO.getProjectIdentifier(), connectorInfoDTO.getIdentifier()))
