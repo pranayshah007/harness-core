@@ -27,4 +27,5 @@ enum ExecutionMode {
 
   CONSTRAINT = 10;
   WAIT_STEP = 11;
+  ASYNC_CHAIN = 12;
 }
