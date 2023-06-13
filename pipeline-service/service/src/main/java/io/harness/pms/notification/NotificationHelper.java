@@ -23,8 +23,6 @@ import io.harness.logging.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.PipelineEventTypeConstants;
 import io.harness.notification.TriggerExecutionInfo;
-import io.harness.notification.WebhookNotificationEvent;
-import io.harness.notification.WebhookNotificationEvent.WebhookNotificationEventBuilder;
 import io.harness.notification.bean.NotificationChannelWrapper;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
@@ -41,6 +39,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.helpers.PipelineExpressionHelper;
+import io.harness.pms.notification.WebhookNotificationEvent.WebhookNotificationEventBuilder;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -275,6 +274,7 @@ public class NotificationHelper {
     WebhookNotificationEventBuilder webhookNotificationEvent =
         WebhookNotificationEvent.builder()
             .triggeredBy(getTriggerExecutionInfo(pipelineExecutionSummaryEntity))
+            .moduleInfo(ModuleInfo.getModuleInfo(ambiance, pipelineExecutionSummaryEntity))
             .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
