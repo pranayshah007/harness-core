@@ -326,7 +326,7 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.4.2
+      image: plugins/artifactory:1.4.4
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
@@ -361,7 +361,7 @@ ciExecutionServiceConfig:
       gcsUpload: plugins/gcs:1.4.0
       s3Upload: plugins/s3:1.2.3
       security: harness/sto-plugin:dev
-      artifactoryUpload: plugins/artifactory:1.4.2
+      artifactoryUpload: plugins/artifactory:1.4.4
       cacheGCS: plugins/cache:1.5.9
       cacheS3: plugins/cache:1.5.9
       sscaOrchestration: harness/ssca-plugin:latest
