@@ -806,7 +806,9 @@ public enum FeatureName {
   CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC),
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI);
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
