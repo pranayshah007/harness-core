@@ -35,7 +35,8 @@ import java.util.Map;
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Parameters")
 public class ServerlessAwsLambdaDeployStepV2Parameters
     extends ServerlessAwsLambdaContainerBaseStepInfo implements ServerlessSpecParameters, StepParameters {
-  @JsonIgnore String downloadManifestsFqn;
+  @JsonIgnore String packageStepFqn;
+  ParameterField<List<String>> deployCommandOptions;
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaDeployStepV2Parameters(
@@ -43,9 +44,10 @@ public class ServerlessAwsLambdaDeployStepV2Parameters
       ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
+      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions, String packageStepFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, serverlessVersion);
-    this.downloadManifestsFqn = downloadManifestsFqn;
+    this.deployCommandOptions = deployCommandOptions;
+    this.packageStepFqn = packageStepFqn;
   }
 }

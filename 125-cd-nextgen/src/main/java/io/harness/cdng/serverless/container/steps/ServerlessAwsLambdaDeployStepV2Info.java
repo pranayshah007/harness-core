@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaDeployStepV2InfoVisitorHelper;
@@ -25,6 +26,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
@@ -37,6 +39,8 @@ import org.springframework.data.annotation.TypeAlias;
 
 import java.util.List;
 import java.util.Map;
+
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -57,14 +61,19 @@ public class ServerlessAwsLambdaDeployStepV2Info
 
   @JsonIgnore String downloadManifestsFqn;
 
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> deployCommandOptions;
+
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaDeployStepV2Info(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
                                              ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
                                              ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
                                              ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-                                             ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
+                                             ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, serverlessVersion);
+    this.deployCommandOptions = deployCommandOptions;
     this.downloadManifestsFqn = downloadManifestsFqn;
   }
   @Override

@@ -24,6 +24,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import java.util.Set;
 
 import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_SERVERLESS_MANIFESTS;
+import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaDeployV2StepPlanCreator
@@ -48,12 +49,12 @@ public class ServerlessAwsLambdaDeployV2StepPlanCreator
   protected StepParameters getStepParameters(
       PlanCreationContext ctx, ServerlessAwsLambdaDeployStepV2Node stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_SERVERLESS_MANIFESTS);
+    String packageStepFqn = getExecutionStepFqn(ctx.getCurrentField(), SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
     ServerlessAwsLambdaDeployStepV2Parameters
             serverlessAwsLambdaDeployStepV2Parameters =
             (ServerlessAwsLambdaDeployStepV2Parameters) ((StepElementParameters) stepParameters)
                 .getSpec();
-    serverlessAwsLambdaDeployStepV2Parameters.setDownloadManifestsFqn(downloadManifestsFqn);
+    serverlessAwsLambdaDeployStepV2Parameters.setPackageStepFqn(packageStepFqn);
     serverlessAwsLambdaDeployStepV2Parameters.setDelegateSelectors(
         stepNode.getServerlessAwsLambdaDeployStepV2Info().getDelegateSelectors());
     return stepParameters;
