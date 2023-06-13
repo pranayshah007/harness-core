@@ -74,6 +74,7 @@ public class YamlUtils {
     mapper = new ObjectMapper(new YAMLFactory()
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                                   .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     mapper.registerModule(new EdgeCaseRegexModule());
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -125,7 +126,6 @@ public class YamlUtils {
 
   @Deprecated
   // Use writeYamlString method instead
-  // It will replace "---\n" with ""
   public String write(Object object) {
     try {
       return mapper.writeValueAsString(object);
@@ -136,7 +136,7 @@ public class YamlUtils {
 
   public String writeYamlString(Object object) {
     try {
-      return mapper.writeValueAsString(object).replace("---\n", "");
+      return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
