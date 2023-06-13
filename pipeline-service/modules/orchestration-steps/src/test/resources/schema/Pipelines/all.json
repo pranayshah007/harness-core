@@ -4794,12 +4794,6 @@
         {
           "type": "object",
           "properties": {
-            "userGroups": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
             "webhookUrl": {
               "type": "string"
             }

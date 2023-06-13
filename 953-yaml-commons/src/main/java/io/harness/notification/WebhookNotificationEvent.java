@@ -24,7 +24,8 @@ public class WebhookNotificationEvent {
   String projectIdentifier;
   String pipelineIdentifier;
   String planExecutionId;
-  String nodeIdentifier;
+  String stageIdentifier;
+  String stepIdentifier;
   PipelineEventType eventType;
   TriggerExecutionInfo triggeredBy;
   String startTime;
