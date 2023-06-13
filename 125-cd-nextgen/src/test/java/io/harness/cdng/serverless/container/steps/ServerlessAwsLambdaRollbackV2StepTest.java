@@ -76,7 +76,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
+public class ServerlessAwsLambdaRollbackV2StepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   private final Ambiance ambiance = Ambiance.newBuilder()
@@ -85,7 +85,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
 
-  private final SpecParameters specParameters = ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder()
+  private final SpecParameters specParameters = ServerlessAwsLambdaRollbackV2StepParameters.infoBuilder()
                                                     .serverlessAwsLambdaRollbackFnq("sadf")
                                                     .build();
   private final StepElementParameters stepElementParameters =
@@ -138,7 +138,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
   private final ServerInstanceInfo serverInstanceInfo = ServerlessAwsLambdaServerInstanceInfo.builder().build();
   private final List<ServerInstanceInfo> serverInstanceInfoList = Arrays.asList(serverInstanceInfo);
 
-  @InjectMocks private ServerlessAwsLambdaCloudFormationRollbackStep serverlessAwsLambdaRollbackStep;
+  @InjectMocks private ServerlessAwsLambdaRollbackV2Step serverlessAwsLambdaRollbackStep;
 
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
@@ -160,7 +160,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
   @Category(UnitTests.class)
   public void obtainTaskAfterRbacIfNoRollbackFunctionSpecifiedTest() {
     SpecParameters specParametersWithNoRollbackFn =
-        ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder().build();
+        ServerlessAwsLambdaRollbackV2StepParameters.infoBuilder().build();
     StepElementParameters stepElementParametersWithNoRollbackFnSpec =
         StepElementParameters.builder().spec(specParametersWithNoRollbackFn).build();
     SkipTaskRequest skipTaskRequest =
@@ -182,7 +182,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) specParameters)
+                ((ServerlessAwsLambdaRollbackV2StepParameters) specParameters)
                     .getServerlessAwsLambdaRollbackFnq()
                 + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
     TaskRequest taskRequest =
@@ -202,7 +202,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                ((ServerlessAwsLambdaCloudFormationRollbackStepParameters) specParameters)
+                ((ServerlessAwsLambdaRollbackV2StepParameters) specParameters)
                     .getServerlessAwsLambdaRollbackFnq()
                 + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
     doReturn(infrastructureOutcome)

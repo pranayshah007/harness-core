@@ -35,7 +35,7 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -687,13 +687,13 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public void putValuesYamlEnvVars(Ambiance ambiance,
-      ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-          serverlessAwsLambdaPrepareRollbackContainerStepParameters,
+      ServerlessAwsLambdaPrepareRollbackV2StepParameters
+              serverlessAwsLambdaPrepareRollbackV2StepParameters,
       Map<String, String> envVarMap) {
     OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                serverlessAwsLambdaPrepareRollbackContainerStepParameters.getDownloadManifestsFqn() + "."
+                serverlessAwsLambdaPrepareRollbackV2StepParameters.getDownloadManifestsFqn() + "."
                 + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {

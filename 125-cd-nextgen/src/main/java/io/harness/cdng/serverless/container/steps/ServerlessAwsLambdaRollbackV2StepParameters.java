@@ -29,12 +29,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("serverlessAwsLambdaCloudFormationRollbackStepParameters")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepParameters")
-public class ServerlessAwsLambdaCloudFormationRollbackStepParameters
-    extends ServerlessAwsLambdaCloudFormationRollbackBaseStepInfo implements ServerlessSpecParameters {
+@TypeAlias("serverlessAwsLambdaRollbackV2StepParameters")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepParameters")
+public class ServerlessAwsLambdaRollbackV2StepParameters
+    extends ServerlessAwsLambdaRollbackV2BaseStepInfo implements ServerlessSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaCloudFormationRollbackStepParameters(
+  public ServerlessAwsLambdaRollbackV2StepParameters(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String serverlessAwsLambdaRollbackFnq) {
     super(delegateSelectors, serverlessAwsLambdaRollbackFnq);
   }

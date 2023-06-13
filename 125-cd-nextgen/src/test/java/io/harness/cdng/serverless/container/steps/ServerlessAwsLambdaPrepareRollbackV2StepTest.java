@@ -51,7 +51,7 @@ import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends CategoryTest {
+public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
@@ -59,7 +59,7 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
 
   @InjectMocks
   @Spy
-  private ServerlessAwsLambdaPrepareRollbackContainerStep serverlessAwsLambdaPrepareRollbackContainerStep;
+  private ServerlessAwsLambdaPrepareRollbackV2Step serverlessAwsLambdaPrepareRollbackV2Step;
 
   @Before
   public void setup() {}
@@ -71,8 +71,8 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
   public void testGetAnyOutComeForStep() {
     String accountId = "accountId";
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-    ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters =
-        ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
             .image(ParameterField.<String>builder().value("sdaf").build())
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
@@ -94,7 +94,7 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
     when(serverlessStepCommonHelper.convertByte64ToString(contentBase64)).thenReturn(content);
     when(serverlessStepCommonHelper.getStackDetails(content)).thenReturn(stackDetails);
 
-    serverlessAwsLambdaPrepareRollbackContainerStep.getAnyOutComeForStep(
+    serverlessAwsLambdaPrepareRollbackV2Step.getAnyOutComeForStep(
         ambiance, stepElementParameters, responseDataMap);
     verify(executionSweepingOutputService, times(1)).consume(any(), any(), any(), any());
   }
@@ -112,8 +112,8 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
     String logKey = "logKey";
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
-    doReturn(1).when(serverlessAwsLambdaPrepareRollbackContainerStep).getPort(any(), any());
-    doReturn(122L).when(serverlessAwsLambdaPrepareRollbackContainerStep).getTimeout(any(), any());
+    doReturn(1).when(serverlessAwsLambdaPrepareRollbackV2Step).getPort(any(), any());
+    doReturn(122L).when(serverlessAwsLambdaPrepareRollbackV2Step).getTimeout(any(), any());
     UnitStep unitStep = mock(UnitStep.class);
     doReturn(accountId).when(unitStep).getAccountId();
     doReturn(port).when(unitStep).getContainerPort();
@@ -122,5 +122,5 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
     doReturn(id).when(unitStep).getId();
     doReturn(logKey).when(unitStep).getLogKey();
     doReturn(unitStep)
-        .when(serverlessAwsLambdaPrepareRollbackContainerStep)
+        .when(serverlessAwsLambdaPrepareRollbackV2Step)
         .getUnitStep(any(), any(), any(), any(), any(), any());

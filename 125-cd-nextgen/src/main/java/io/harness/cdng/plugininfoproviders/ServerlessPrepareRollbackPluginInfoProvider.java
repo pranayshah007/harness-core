@@ -32,7 +32,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -109,18 +109,18 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
-    ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-        (ServerlessAwsLambdaPrepareRollbackContainerStepInfo) cdAbstractStepNode.getStepSpecType();
+    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo =
+        (ServerlessAwsLambdaPrepareRollbackV2StepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder =
-        getPluginDetailsBuilder(serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(),
-            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser(), usedPorts);
+        getPluginDetailsBuilder(serverlessAwsLambdaPrepareRollbackV2StepInfo.getResources(),
+            serverlessAwsLambdaPrepareRollbackV2StepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
-    if (ParameterField.isNotNull(serverlessAwsLambdaPrepareRollbackContainerStepInfo.getConnectorRef())
-        || isNotEmpty(serverlessAwsLambdaPrepareRollbackContainerStepInfo.getConnectorRef().getValue())) {
-      imageDetails = getImageDetails(serverlessAwsLambdaPrepareRollbackContainerStepInfo);
+    if (ParameterField.isNotNull(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef())
+        || isNotEmpty(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef().getValue())) {
+      imageDetails = getImageDetails(serverlessAwsLambdaPrepareRollbackV2StepInfo);
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image
@@ -130,7 +130,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
     pluginDetailsBuilder.putAllEnvVariables(
-        getEnvironmentVariables(ambiance, serverlessAwsLambdaPrepareRollbackContainerStepInfo));
+        getEnvironmentVariables(ambiance, serverlessAwsLambdaPrepareRollbackV2StepInfo));
     PluginCreationResponse response = getPluginCreationResponse(pluginDetailsBuilder);
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
                                       .setIdentifier(cdAbstractStepNode.getIdentifier())
@@ -150,11 +150,11 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   }
 
   public ImageDetails getImageDetails(
-      ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo) {
+      ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
     return PluginInfoProviderHelper.getImageDetails(
-        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getConnectorRef(),
-        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImage(),
-        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImagePullPolicy());
+        serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef(),
+        serverlessAwsLambdaPrepareRollbackV2StepInfo.getImage(),
+        serverlessAwsLambdaPrepareRollbackV2StepInfo.getImagePullPolicy());
   }
 
   public PluginDetails.Builder getPluginDetailsBuilder(
@@ -191,9 +191,9 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   }
 
   public Map<String, String> getEnvironmentVariables(Ambiance ambiance,
-      ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo) {
+      ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
     ParameterField<Map<String, String>> envVariables =
-        serverlessAwsLambdaPrepareRollbackContainerStepInfo.getEnvVariables();
+        serverlessAwsLambdaPrepareRollbackV2StepInfo.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());

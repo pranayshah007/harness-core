@@ -9,7 +9,7 @@ package io.harness.cdng.creator.variables;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 
@@ -17,15 +17,15 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaCloudFormationRollbackStepVariableCreator
-    extends GenericStepVariableCreator<ServerlessAwsLambdaCloudFormationRollbackStepNode> {
+public class ServerlessAwsLambdaRollbackV2StepVariableCreator
+    extends GenericStepVariableCreator<ServerlessAwsLambdaRollbackV2StepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
   }
 
   @Override
-  public Class<ServerlessAwsLambdaCloudFormationRollbackStepNode> getFieldClass() {
-    return ServerlessAwsLambdaCloudFormationRollbackStepNode.class;
+  public Class<ServerlessAwsLambdaRollbackV2StepNode> getFieldClass() {
+    return ServerlessAwsLambdaRollbackV2StepNode.class;
   }
 }

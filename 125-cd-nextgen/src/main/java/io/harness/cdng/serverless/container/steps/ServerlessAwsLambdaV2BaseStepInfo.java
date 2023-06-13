@@ -40,9 +40,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("serverlessAwsLambdaContainerBaseStepInfo")
-@FieldNameConstants(innerTypeName = "ServerlessAwsLambdaContainerBaseStepInfoKeys")
-public class ServerlessAwsLambdaContainerBaseStepInfo {
+@TypeAlias("serverlessAwsLambdaV2BaseStepInfo")
+@FieldNameConstants(innerTypeName = "ServerlessAwsLambdaV2BaseStepInfoKeys")
+public class ServerlessAwsLambdaV2BaseStepInfo {
     @YamlSchemaTypes({expression})
     @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
     ParameterField<List<TaskSelectorYaml>> delegateSelectors;

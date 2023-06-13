@@ -7,14 +7,14 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class ServerlessAwsLambdaPrepareRollbackContainerStepInfoVisitorHelper implements ConfigValidator {
+public class ServerlessAwsLambdaPrepareRollbackV2StepInfoVisitorHelper implements ConfigValidator {
     @Override
     public Object createDummyVisitableElement(Object originalElement) {
-        return ServerlessAwsLambdaPrepareRollbackContainerStepInfo.infoBuilder().build();
+        return ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder().build();
     }
 
     @Override

@@ -29,9 +29,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("serverlessAwsLambdaCloudFormationRollbackBaseStepInfo")
-@FieldNameConstants(innerTypeName = "ServerlessAwsLambdaCloudFormationRollbackBaseStepInfoKeys")
-public class ServerlessAwsLambdaCloudFormationRollbackBaseStepInfo {
+@TypeAlias("serverlessAwsLambdaRollbackV2BaseStepInfo")
+@FieldNameConstants(innerTypeName = "ServerlessAwsLambdaRollbackV2BaseStepInfoKeys")
+public class ServerlessAwsLambdaRollbackV2BaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

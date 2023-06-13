@@ -163,9 +163,9 @@ import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneD
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaCloudFormationRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRunStepPlanCreator;
@@ -213,9 +213,9 @@ import io.harness.cdng.creator.variables.K8sDryRunManifestStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
-import io.harness.cdng.creator.variables.ServerlessAwsLambdaCloudFormationRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackV2StepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
-import io.harness.cdng.creator.variables.ServerlessAwsLambdaPrepareRollbackContainerStepVariableCreator;
+import io.harness.cdng.creator.variables.ServerlessAwsLambdaPrepareRollbackV2StepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
 import io.harness.cdng.creator.variables.TasAppResizeStepVariableCreator;
@@ -499,8 +499,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     planCreators.add(new K8sBGStageScaleDownStepPlanCreator());
 
-    planCreators.add(new ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator());
-    planCreators.add(new ServerlessAwsLambdaCloudFormationRollbackStepPlanCreator());
+    planCreators.add(new ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator());
+    planCreators.add(new ServerlessAwsLambdaRollbackV2StepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -645,8 +645,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     variableCreators.add(new K8sBGStageScaleDownStepVariableCreator());
 
-    variableCreators.add(new ServerlessAwsLambdaPrepareRollbackContainerStepVariableCreator());
-    variableCreators.add(new ServerlessAwsLambdaCloudFormationRollbackStepVariableCreator());
+    variableCreators.add(new ServerlessAwsLambdaPrepareRollbackV2StepVariableCreator());
+    variableCreators.add(new ServerlessAwsLambdaRollbackV2StepVariableCreator());
 
     return variableCreators;
   }

@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecutable<ServerlessCommandResponse> {
+public class ServerlessAwsLambdaRollbackV2Step extends CdTaskExecutable<ServerlessCommandResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder()
           .setType(ExecutionNodeType.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2.getYamlType())
@@ -79,8 +79,8 @@ public class ServerlessAwsLambdaCloudFormationRollbackStep extends CdTaskExecuta
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-    ServerlessAwsLambdaCloudFormationRollbackStepParameters rollbackStepParameters =
-        (ServerlessAwsLambdaCloudFormationRollbackStepParameters) stepElementParameters.getSpec();
+    ServerlessAwsLambdaRollbackV2StepParameters rollbackStepParameters =
+        (ServerlessAwsLambdaRollbackV2StepParameters) stepElementParameters.getSpec();
     if (EmptyPredicate.isEmpty(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq())) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(

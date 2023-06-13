@@ -9,15 +9,15 @@ package io.harness.cdng.visitor.helpers.cdstepinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaCloudFormationRollbackStepInfoVisitorHelper implements ConfigValidator {
+public class ServerlessAwsLambdaRollbackV2StepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return ServerlessAwsLambdaCloudFormationRollbackStepInfo.infoBuilder().build();
+    return ServerlessAwsLambdaRollbackV2StepInfo.infoBuilder().build();
   }
 
   @Override

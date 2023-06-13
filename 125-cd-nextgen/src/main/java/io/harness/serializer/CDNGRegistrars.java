@@ -91,8 +91,8 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepNode;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.tas.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
@@ -1267,7 +1267,7 @@ public class CDNGRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(ServerlessAwsLambdaPrepareRollbackContainerStepNode.class)
+                   .clazz(ServerlessAwsLambdaPrepareRollbackV2StepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
@@ -1279,7 +1279,7 @@ public class CDNGRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(ServerlessAwsLambdaCloudFormationRollbackStepNode.class)
+                   .clazz(ServerlessAwsLambdaRollbackV2StepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

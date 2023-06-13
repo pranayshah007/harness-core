@@ -13,8 +13,8 @@ import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_SERVERLESS_MANIFESTS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -25,36 +25,36 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator
-    extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaPrepareRollbackContainerStepNode> {
+public class ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator
+    extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaPrepareRollbackV2StepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
   }
 
   @Override
-  public Class<ServerlessAwsLambdaPrepareRollbackContainerStepNode> getFieldClass() {
-    return ServerlessAwsLambdaPrepareRollbackContainerStepNode.class;
+  public Class<ServerlessAwsLambdaPrepareRollbackV2StepNode> getFieldClass() {
+    return ServerlessAwsLambdaPrepareRollbackV2StepNode.class;
   }
 
   @Override
   public PlanCreationResponse createPlanForField(
-      PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackContainerStepNode stepNode) {
+      PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackV2StepNode stepNode) {
     return super.createPlanForField(ctx, stepNode);
   }
 
   @Override
   protected StepParameters getStepParameters(
-      PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackContainerStepNode stepNode) {
+      PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackV2StepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
     String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_SERVERLESS_MANIFESTS);
-    ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-        serverlessAwsLambdaPrepareRollbackContainerStepParameters =
-            (ServerlessAwsLambdaPrepareRollbackContainerStepParameters) ((StepElementParameters) stepParameters)
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters
+            serverlessAwsLambdaPrepareRollbackV2StepParameters =
+            (ServerlessAwsLambdaPrepareRollbackV2StepParameters) ((StepElementParameters) stepParameters)
                 .getSpec();
-    serverlessAwsLambdaPrepareRollbackContainerStepParameters.setDownloadManifestsFqn(downloadManifestsFqn);
-    serverlessAwsLambdaPrepareRollbackContainerStepParameters.setDelegateSelectors(
-        stepNode.getServerlessAwsLambdaPrepareRollbackContainerStepInfo().getDelegateSelectors());
+    serverlessAwsLambdaPrepareRollbackV2StepParameters.setDownloadManifestsFqn(downloadManifestsFqn);
+    serverlessAwsLambdaPrepareRollbackV2StepParameters.setDelegateSelectors(
+        stepNode.getServerlessAwsLambdaPrepareRollbackV2StepInfo().getDelegateSelectors());
     return stepParameters;
   }
 }

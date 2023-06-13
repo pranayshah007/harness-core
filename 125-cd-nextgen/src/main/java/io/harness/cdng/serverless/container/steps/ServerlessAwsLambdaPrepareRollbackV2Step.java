@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractContainerStepV2<StepElementParameters> {
+public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   @Inject ServerlessStepCommonHelper serverlessStepCommonHelper;
@@ -70,31 +70,31 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStep extends AbstractCon
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
     // Todo: Add entrypoint
-    ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-        serverlessAwsLambdaPrepareRollbackContainerStepParameters =
-            (ServerlessAwsLambdaPrepareRollbackContainerStepParameters) stepElementParameters.getSpec();
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters
+            serverlessAwsLambdaPrepareRollbackV2StepParameters =
+            (ServerlessAwsLambdaPrepareRollbackV2StepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
     serverlessStepCommonHelper.verifyPluginImageIsProvider(
-        serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage());
+        serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage());
 
     Map<String, String> envVarMap = new HashMap<>();
     serverlessStepCommonHelper.putValuesYamlEnvVars(
-        ambiance, serverlessAwsLambdaPrepareRollbackContainerStepParameters, envVarMap);
+        ambiance, serverlessAwsLambdaPrepareRollbackV2StepParameters, envVarMap);
 
     return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId,
-        serverlessAwsLambdaPrepareRollbackContainerStepParameters);
+            serverlessAwsLambdaPrepareRollbackV2StepParameters);
   }
 
   public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, String parkedTaskId,
-      ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-          serverlessAwsLambdaPrepareRollbackContainerStepParameters) {
+      ServerlessAwsLambdaPrepareRollbackV2StepParameters
+                                      serverlessAwsLambdaPrepareRollbackV2StepParameters) {
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
-        serverlessAwsLambdaPrepareRollbackContainerStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+        serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
   @Override

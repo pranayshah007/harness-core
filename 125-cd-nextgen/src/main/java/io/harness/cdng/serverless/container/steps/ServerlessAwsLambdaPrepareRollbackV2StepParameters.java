@@ -31,14 +31,14 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("serverlessAwsLambdaPrepareRollbackContainerStepParameters")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters")
-public class ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-        extends ServerlessAwsLambdaContainerBaseStepInfo implements ServerlessSpecParameters, StepParameters {
+@TypeAlias("serverlessAwsLambdaPrepareRollbackV2StepParameters")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters")
+public class ServerlessAwsLambdaPrepareRollbackV2StepParameters
+        extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
     @JsonIgnore String downloadManifestsFqn;
 
     @Builder(builderMethodName = "infoBuilder")
-    public ServerlessAwsLambdaPrepareRollbackContainerStepParameters(
+    public ServerlessAwsLambdaPrepareRollbackV2StepParameters(
             ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Map<String, JsonNode>> settings,
             ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
             ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,

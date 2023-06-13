@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaCloudFormationRollbackStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaRollbackV2StepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -37,12 +37,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = ServerlessAwsLambdaCloudFormationRollbackStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ServerlessAwsLambdaRollbackV2StepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
-@TypeAlias("serverlessAwsLambdaCloudFormationRollbackStepInfo")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepInfo")
-public class ServerlessAwsLambdaCloudFormationRollbackStepInfo
-    extends ServerlessAwsLambdaCloudFormationRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@TypeAlias("serverlessAwsLambdaRollbackV2StepInfo")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo")
+public class ServerlessAwsLambdaRollbackV2StepInfo
+    extends ServerlessAwsLambdaRollbackV2BaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -51,14 +51,14 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepInfo
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaCloudFormationRollbackStepInfo(
+  public ServerlessAwsLambdaRollbackV2StepInfo(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String serverlessAwsLambdaRollbackFnq) {
     super(delegateSelectors, serverlessAwsLambdaRollbackFnq);
   }
 
   @Override
   public StepType getStepType() {
-    return ServerlessAwsLambdaCloudFormationRollbackStep.STEP_TYPE;
+    return ServerlessAwsLambdaRollbackV2Step.STEP_TYPE;
   }
 
   @Override
@@ -68,7 +68,7 @@ public class ServerlessAwsLambdaCloudFormationRollbackStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ServerlessAwsLambdaCloudFormationRollbackStepParameters.infoBuilder()
+    return ServerlessAwsLambdaRollbackV2StepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

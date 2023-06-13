@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaPrepareRollbackContainerStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaPrepareRollbackV2StepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -43,12 +43,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = ServerlessAwsLambdaPrepareRollbackContainerStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ServerlessAwsLambdaPrepareRollbackV2StepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
-@TypeAlias("serverlessAwsLambdaPrepareRollbackContainerStepInfo")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo")
-public class ServerlessAwsLambdaPrepareRollbackContainerStepInfo
-    extends ServerlessAwsLambdaContainerBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@TypeAlias("serverlessAwsLambdaPrepareRollbackV2StepInfo")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo")
+public class ServerlessAwsLambdaPrepareRollbackV2StepInfo
+    extends ServerlessAwsLambdaV2BaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -59,18 +59,18 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepInfo
   @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaPrepareRollbackContainerStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
+  public ServerlessAwsLambdaPrepareRollbackV2StepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+                                                      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+                                                      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+                                                      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+                                                      ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, serverlessVersion);
     this.downloadManifestsFqn = downloadManifestsFqn;
   }
   @Override
   public StepType getStepType() {
-    return ServerlessAwsLambdaPrepareRollbackContainerStep.STEP_TYPE;
+    return ServerlessAwsLambdaPrepareRollbackV2Step.STEP_TYPE;
   }
 
   @Override
@@ -80,7 +80,7 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
+    return ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
         .image(getImage())
         .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())
