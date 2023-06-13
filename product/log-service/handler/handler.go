@@ -11,6 +11,7 @@ import (
 	"net/http/pprof"
 
 	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/db/mongodb"
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
@@ -21,7 +22,8 @@ import (
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
+func Handler(stream stream.Stream, store store.Store, config config.Config,
+	ngClient *client.HTTPClient, mongoDB *mongodb.MongoDb) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -112,7 +114,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 			sr.Use(AuthMiddleware(config, ngClient, true))
 		}
 
-		sr.Post("/", HandleRCA(store, config))
+		sr.Post("/", HandleRCA(store, mongoDB, config))
 		return sr
 	}())
 

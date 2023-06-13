@@ -18,15 +18,22 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/db"
+	"github.com/harness/harness-core/product/log-service/db/mongodb"
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/store/bolt"
 	"github.com/harness/harness-core/product/log-service/stream"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
+	collection           = "rca"
+	idParams             = "id"
 	keysParam            = "keys"
+	regenerateParams     = "regenerate"
 	maxLogLineSize       = 500
 	genAIPlainTextPrompt = `
 Provide error message, root cause and remediation from the below logs preserving the markdown format. %s
@@ -89,22 +96,22 @@ Here is the logs, remember to give the response only in json format like the exa
 %s
 ` + "```"
 
-	genAITemperature     = 0.0
-	genAITopP            = 1.0
-	genAITopK            = 1
-	genAIMaxOuptutTokens = 1024
-	errSummaryParam      = "err_summary"
-	infraParam           = "infra"
-	stepTypeParam        = "step_type"
-	commandParam         = "command"
-	osParam              = "os"
-	archParam            = "arch"
-	pluginParam          = "plugin"
-
-	azureAIProvider  = "azureopenai"
-	azureAIModel     = "gpt3"
-	vertexAIProvider = "vertexai"
-	vertexAIModel    = "text-bison"
+	genAITemperature      = 0.0
+	genAIRegenTemperature = 0.7
+	genAITopP             = 1.0
+	genAITopK             = 1
+	genAIMaxOuptutTokens  = 1024
+	errSummaryParam       = "err_summary"
+	infraParam            = "infra"
+	stepTypeParam         = "step_type"
+	commandParam          = "command"
+	osParam               = "os"
+	archParam             = "arch"
+	pluginParam           = "plugin"
+	azureAIProvider       = "azureopenai"
+	azureAIModel          = "gpt3"
+	vertexAIProvider      = "vertexai"
+	vertexAIModel         = "text-bison"
 )
 
 const (
@@ -114,18 +121,23 @@ const (
 
 type (
 	RCAReport struct {
-		Rca     string      `json:"rca"`
-		Results []RCAResult `json:"detailed_rca"`
+		Rca     string      `json:"rca" bson:"rca"`
+		Results []RCAResult `json:"detailed_rca" bson:"detailed_rca"`
 	}
 
 	RCAResult struct {
-		Error       string `json:"error"`
-		Cause       string `json:"cause"`
-		Remediation string `json:"remediation"`
+		Error       string `json:"error" bson:"error"`
+		Cause       string `json:"cause" bson:"cause"`
+		Remediation string `json:"remediation" bson:"remediation"`
+	}
+
+	RCAEntry struct {
+		LogID  string    `json:"log_id" bson:"log_id"`
+		Report RCAReport `bson:",inline"`
 	}
 )
 
-func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
+func HandleRCA(store store.Store, mongodb *mongodb.MongoDb, cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -136,6 +148,24 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 		if err != nil {
 			WriteBadRequest(w, err)
 			return
+		}
+
+		id := r.FormValue(idParams)
+		regenerate := false
+		if r.FormValue(regenerateParams) == "true" {
+			regenerate = true
+		}
+
+		if !regenerate {
+			if report, err := retrieveFromDB(ctx, id, mongodb); err == nil {
+				logger.FromRequest(r).
+					WithField("keys", keys).
+					WithField("latency", time.Since(st)).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					Infoln("api: successfully retrieved RCA from db")
+				WriteJSON(w, report, 200)
+				return
+			}
 		}
 
 		logs, err := fetchLogs(ctx, store, keys, cfg.GenAI.MaxInputPromptLen)
@@ -154,7 +184,7 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 		provider := cfg.GenAI.Provider
 		useJSONResponse := cfg.GenAI.UseJSONResponse
 		report, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret,
-			provider, logs, useJSONResponse, r)
+			provider, logs, useJSONResponse, regenerate, r)
 		if err != nil {
 			WriteInternalError(w, err)
 			logger.FromRequest(r).
@@ -163,6 +193,10 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 				WithField("keys", keys).
 				Errorln("api: failed to predict RCA")
 			return
+		}
+
+		if err := saveToDB(ctx, id, report, mongodb); err != nil {
+			logrus.WithError(err).Warn("failed to save report to db")
 		}
 
 		logger.FromRequest(r).
@@ -175,7 +209,7 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 }
 
 func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
-	logs string, useJSONResponse bool, r *http.Request) (
+	logs string, useJSONResponse, regenerate bool, r *http.Request) (
 	*RCAReport, error) {
 	promptTmpl := genAIPlainTextPrompt
 	if useJSONResponse {
@@ -192,7 +226,11 @@ func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	prompt := generatePrompt(r, logs, promptTmpl)
 	client := genAIClient{endpoint: endpoint, secret: secret}
 
-	response, isBlocked, err := predict(ctx, client, provider, prompt)
+	temp := genAITemperature
+	if regenerate {
+		temp = genAIRegenTemperature
+	}
+	response, isBlocked, err := predict(ctx, client, provider, prompt, temp)
 	if err != nil {
 		return nil, err
 	}
@@ -205,18 +243,19 @@ func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	return &RCAReport{Rca: response}, nil
 }
 
-func predict(ctx context.Context, client genAIClient, provider, prompt string) (string, bool, error) {
+func predict(ctx context.Context, client genAIClient, provider, prompt string, temp float64) (
+	string, bool, error) {
 	switch provider {
 	case vertexAIProvider:
 		response, err := client.Complete(ctx, vertexAIProvider, vertexAIModel, prompt,
-			genAITemperature, genAITopP, genAITopK, genAIMaxOuptutTokens)
+			temp, genAITopP, genAITopK, genAIMaxOuptutTokens)
 		if err != nil {
 			return "", false, err
 		}
 		return response.Text, response.Blocked, nil
 	case azureAIProvider:
 		response, err := client.Chat(ctx, azureAIProvider, azureAIModel, prompt,
-			genAITemperature, -1, -1, genAIMaxOuptutTokens)
+			temp, -1, -1, genAIMaxOuptutTokens)
 		if err != nil {
 			return "", false, err
 		}
@@ -464,4 +503,38 @@ func getKeys(r *http.Request) ([]string, error) {
 		keys = append(keys, CreateAccountSeparatedKey(accountID, v))
 	}
 	return keys, nil
+}
+
+func retrieveFromDB(ctx context.Context, id string, mongo *mongodb.MongoDb) (*RCAReport, error) {
+	if id == "" {
+		logrus.Error("id is required field")
+		return nil, errors.New("id is required")
+	}
+
+	entry := new(RCAEntry)
+	filter := bson.M{"log_id": id}
+	if err := mongo.FindOne(ctx, collection, filter, entry); err != nil {
+		if err != db.ErrNotFound {
+			logrus.WithError(err).WithField("log_id", id).Warn("failed to find document in mongo")
+		}
+		return nil, err
+	}
+	return &entry.Report, nil
+}
+
+func saveToDB(ctx context.Context, id string, report *RCAReport, mongo *mongodb.MongoDb) error {
+	if id == "" {
+		return errors.New("id is required field")
+	}
+
+	entry := &RCAEntry{
+		LogID:  id,
+		Report: *report,
+	}
+	if _, err := retrieveFromDB(ctx, id, mongo); err != nil {
+		return mongo.Insert(ctx, collection, entry)
+	}
+
+	filter := bson.M{"log_id": id}
+	return mongo.ReplaceOne(ctx, collection, filter, entry)
 }

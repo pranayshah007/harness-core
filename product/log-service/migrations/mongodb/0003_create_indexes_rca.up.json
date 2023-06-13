@@ -1,0 +1,13 @@
+[
+  {
+    "createIndexes": "rca",
+    "indexes": [
+      {
+        "key": {
+          "log_id": 1
+        },
+        "name": "log_id_1"
+      }
+    ]
+  }
+]

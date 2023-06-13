@@ -14,6 +14,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/secret"
 	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/db/mongodb"
 	"github.com/harness/harness-core/product/log-service/handler"
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/server"
@@ -109,11 +110,16 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
+	mongoDB, err := mongodb.New(config.MongoDb.Username, config.MongoDb.Password,
+		config.MongoDb.ConnStr, config.MongoDb.EnableSecondary)
+	if err != nil {
+		return err
+	}
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(stream, store, config, ngClient),
+		Handler: handler.Handler(stream, store, config, ngClient, mongoDB),
 	}
 
 	// trap the os signal to gracefully shutdown the

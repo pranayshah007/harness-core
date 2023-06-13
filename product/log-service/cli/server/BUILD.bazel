@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//commons/go/lib/secret",
         "//product/log-service/config",
+        "//product/log-service/db/mongodb",
         "//product/log-service/handler",
         "//product/log-service/logger",
         "//product/log-service/server",

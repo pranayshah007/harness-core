@@ -58,6 +58,14 @@ type Config struct {
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
 	}
 
+	MongoDb struct {
+		Username string `envconfig:"LOG_SERVICE_MONGODB_USERNAME"`
+		Password string `envconfig:"LOG_SERVICE_MONGODB_PASSWORD"`
+		ConnStr          string `envconfig:"LOG_SERVICE_MONGODB_CONN_STR" default:"mongodb://localhost:27017/logsvc-harness"`
+		EnableReflection bool   `envconfig:"LOG_SERVICE_MONGODB_ENABLE_REFLECTION"`
+		EnableSecondary  bool   `envconfig:"LOG_SERVICE_MONGODB_ENABLE_SECONDARY" default:"true"`
+	}
+
 	// Whether to use secret env variables as they are, or talk to GCP secret
 	// manager to resolve them.
 	SecretResolution struct {
