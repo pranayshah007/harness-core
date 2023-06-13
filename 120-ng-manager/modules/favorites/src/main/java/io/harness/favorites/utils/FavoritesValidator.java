@@ -54,7 +54,8 @@ public class FavoritesValidator {
   }
 
   private void checkIfUserExist(FavoriteDTO favoriteDTO, String accountIdentifier) {
-    Optional<UserInfo> userInfoOptional = CGRestUtils.getResponse(userClient.getUserById(favoriteDTO.getUserId()));
+    Optional<UserInfo> userInfoOptional =
+        CGRestUtils.getResponse(userClient.getUserById(favoriteDTO.getUserId(), false));
     if (userInfoOptional.isEmpty()) {
       log.error("User doesn't exist, for the user {}, in account {}", favoriteDTO.getUserId(), accountIdentifier);
       throw new InvalidRequestException("User doesn't exist");

@@ -152,13 +152,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
   }
 
   private ScimUser getUserInternal(String userId, String accountId) {
-    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
     return userInfo.map(user -> buildUserResponse(user, accountId)).orElse(null);
   }
 
   @Override
   public ScimUser getUser(String userId, String accountId) {
-    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
     if (userInfo.isPresent()) {
       Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userInfo.get().getEmail(), false);
       if (userOptional.isPresent()
@@ -268,7 +268,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   @Override
   public Response updateUser(String userId, String accountId, ScimUser scimUser) {
     log.info("NGSCIM: Updating user - userId: {}, accountId: {}", userId, accountId);
-    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);
     if (!userInfo.isPresent() || !userMetadataDTOOptional.isPresent()) {
       log.error("NGSCIM: User is not found. userId: {}, accountId: {}", userId, accountId);

@@ -46,6 +46,7 @@ public interface UserClient {
   String SEARCH_TERM_KEY = "searchTerm";
   String USERS_SEARCH_API = "ng/user/search";
   String USERS_API = "ng/user";
+  String USERS_API_INCLUDE_SUPPORT_USER = "ng/user/support-users";
 
   String USERS_AGGREGATE_API = "user";
   String USERS_API_OAUTH = "ng/user/oauth";
@@ -119,7 +120,9 @@ public interface UserClient {
       @Query("offset") String offset, @Query("limit") String limit, @Query("searchTerm") String searchTerm,
       @Query("requireAdminStatus") boolean requireAdminStatus);
 
-  @GET(USERS_API + "/{userId}") Call<RestResponse<Optional<UserInfo>>> getUserById(@Path("userId") String userId);
+  @GET(USERS_API + "/{userId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserById(
+      @Path("userId") String userId, @Query("includeSupportAccounts") boolean includeSupportAccounts);
 
   @GET(USERS_API + "/{userId}/{accountId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByIdAndAccount(

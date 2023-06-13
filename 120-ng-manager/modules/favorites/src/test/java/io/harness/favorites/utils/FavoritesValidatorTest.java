@@ -84,7 +84,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidConnectorFavorite() throws IOException {
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(of(UserInfo.builder().build()))));
     Optional<ConnectorResponseDTO> connectorResponseDTO =
         of(ConnectorResponseDTO.builder()
@@ -99,7 +99,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInValidUserCallFavorite() throws IOException {
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.empty())));
     assertThatThrownBy(() -> favoritesValidator.validateFavoriteEntry(favoriteDTO, accountId))
         .isInstanceOf(InvalidRequestException.class)
@@ -111,7 +111,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInValidConnectorFavorite() throws IOException {
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
     assertThatThrownBy(() -> favoritesValidator.validateFavoriteEntry(favoriteDTO, accountId))
@@ -125,7 +125,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   public void testValidProjectFavorite() throws IOException {
     favoriteDTO.setResourceType(FavoritesResourceType.PROJECT);
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     Project project = Project.builder().identifier(resourceId).name(resourceId).build();
     when(projectService.get(accountId, orgId, resourceId)).thenReturn(of(project));
@@ -138,7 +138,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   public void testInValidProjectFavorite() throws IOException {
     favoriteDTO.setResourceType(FavoritesResourceType.PROJECT);
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     when(projectService.get(accountId, orgId, resourceId)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> favoritesValidator.validateFavoriteEntry(favoriteDTO, accountId))
@@ -152,7 +152,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   public void testValidPipelineFavorite() throws IOException {
     favoriteDTO.setResourceType(FavoritesResourceType.PIPELINE);
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     Call pipelineCall = mock(Call.class);
     when(pipelineServiceClient.getPipelineByIdentifier(
@@ -170,7 +170,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   public void testInValidPipelineFavorite() throws IOException {
     favoriteDTO.setResourceType(FavoritesResourceType.PIPELINE);
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     Call pipelineCall = mock(Call.class);
     when(pipelineServiceClient.getPipelineByIdentifier(
@@ -189,7 +189,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   public void testValidSecretFavorite() throws IOException {
     favoriteDTO.setResourceType(FavoritesResourceType.SECRET);
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     SecretResponseWrapper secretResponseWrapper =
         SecretResponseWrapper.builder().secret(SecretDTOV2.builder().build()).build();
@@ -203,7 +203,7 @@ public class FavoritesValidatorTest extends CategoryTest {
   public void testInValidSecretFavorite() throws IOException {
     favoriteDTO.setResourceType(FavoritesResourceType.SECRET);
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(userId)).thenReturn(userCall);
+    when(userClient.getUserById(userId, false)).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
     when(secretCrudService.get(accountId, orgId, projectId, resourceId)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> favoritesValidator.validateFavoriteEntry(favoriteDTO, accountId))
