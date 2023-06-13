@@ -25,6 +25,6 @@ public class PluginExecutionConfig {
   StepImageConfig samBuildStepImageConfig;
   StepImageConfig samDeployStepImageConfig;
   StepImageConfig gitCloneConfig;
-  StepImageConfig serverlessPrepareRollbackContainerStepImageConfig;
+  StepImageConfig serverlessPrepareRollbackV2StepImageConfig;
   String apiUrl;
 }

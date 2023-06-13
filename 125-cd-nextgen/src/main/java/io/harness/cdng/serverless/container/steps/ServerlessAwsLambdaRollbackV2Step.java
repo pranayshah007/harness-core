@@ -20,9 +20,9 @@ import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaCloudFormationRollbackConfig;
+import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2Config;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
-import io.harness.delegate.task.serverless.request.ServerlessCloudFormationRollbackRequest;
+import io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
 import io.harness.exception.ExceptionUtils;
@@ -106,14 +106,14 @@ public class ServerlessAwsLambdaRollbackV2Step extends CdTaskExecutable<Serverle
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    ServerlessAwsLambdaCloudFormationRollbackConfig serverlessAwsLambdaRollbackConfig =
-        ServerlessAwsLambdaCloudFormationRollbackConfig.builder()
+    ServerlessAwsLambdaRollbackV2Config serverlessAwsLambdaRollbackConfig =
+        ServerlessAwsLambdaRollbackV2Config.builder()
             .stackDetails(serverlessAwsLambdaPrepareRollbackDataOutcome.getStackDetails())
             .isFirstDeployment(serverlessAwsLambdaPrepareRollbackDataOutcome.isFirstDeployment())
             .build();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
-    ServerlessCloudFormationRollbackRequest serverlessRollbackRequest =
-        ServerlessCloudFormationRollbackRequest.builder()
+    ServerlessRollbackV2Request serverlessRollbackRequest =
+        ServerlessRollbackV2Request.builder()
             .accountId(accountId)
             .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK)
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
@@ -125,7 +125,7 @@ public class ServerlessAwsLambdaRollbackV2Step extends CdTaskExecutable<Serverle
     return serverlessStepCommonHelper
         .queueServerlessTaskWithTaskType(stepElementParameters, serverlessRollbackRequest, ambiance,
             ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
-            TaskType.SERVERLESS_CLOUDFORMATION_ROLLBACK_TASK)
+            TaskType.SERVERLESS_ROLLBACK_V2_TASK)
         .getTaskRequest();
   }
 

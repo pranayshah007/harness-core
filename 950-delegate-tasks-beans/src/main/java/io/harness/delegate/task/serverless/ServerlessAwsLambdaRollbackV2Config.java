@@ -18,7 +18,7 @@ import lombok.Value;
 @OwnedBy(CDP)
 @Value
 @Builder
-public class ServerlessAwsLambdaCloudFormationRollbackConfig implements ServerlessRollbackConfig {
+public class ServerlessAwsLambdaRollbackV2Config implements ServerlessRollbackConfig {
   StackDetails stackDetails;
   boolean isFirstDeployment;
 }

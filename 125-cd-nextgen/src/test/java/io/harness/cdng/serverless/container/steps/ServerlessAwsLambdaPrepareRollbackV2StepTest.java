@@ -52,17 +52,21 @@ import org.mockito.junit.MockitoRule;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+  @Rule
+  public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
-  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock
+  private ServerlessStepCommonHelper serverlessStepCommonHelper;
+  @Mock
+  private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @InjectMocks
   @Spy
   private ServerlessAwsLambdaPrepareRollbackV2Step serverlessAwsLambdaPrepareRollbackV2Step;
 
   @Before
-  public void setup() {}
+  public void setup() {
+  }
 
   @SneakyThrows
   @Test
@@ -72,9 +76,9 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     String accountId = "accountId";
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
     ServerlessAwsLambdaPrepareRollbackV2StepParameters stepParameters =
-        ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
-            .image(ParameterField.<String>builder().value("sdaf").build())
-            .build();
+            ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
+                    .image(ParameterField.<String>builder().value("sdaf").build())
+                    .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
     Map<String, ResponseData> responseDataMap = new HashMap<>();
@@ -84,10 +88,10 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     resultMap.put("stackDetails", contentBase64);
     StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
     StepStatusTaskResponseData stepStatusTaskResponseData =
-        StepStatusTaskResponseData.builder()
-            .stepStatus(
-                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
-            .build();
+            StepStatusTaskResponseData.builder()
+                    .stepStatus(
+                            StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
+                    .build();
     responseDataMap.put("key", stepStatusTaskResponseData);
 
     StackDetails stackDetails = StackDetails.builder().build();
@@ -95,7 +99,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     when(serverlessStepCommonHelper.getStackDetails(content)).thenReturn(stackDetails);
 
     serverlessAwsLambdaPrepareRollbackV2Step.getAnyOutComeForStep(
-        ambiance, stepElementParameters, responseDataMap);
+            ambiance, stepElementParameters, responseDataMap);
     verify(executionSweepingOutputService, times(1)).consume(any(), any(), any(), any());
   }
 
@@ -122,5 +126,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     doReturn(id).when(unitStep).getId();
     doReturn(logKey).when(unitStep).getLogKey();
     doReturn(unitStep)
-        .when(serverlessAwsLambdaPrepareRollbackV2Step)
-        .getUnitStep(any(), any(), any(), any(), any(), any());
+            .when(serverlessAwsLambdaPrepareRollbackV2Step)
+            .getUnitStep(any(), any(), any(), any(), any(), any());
+  }
+}

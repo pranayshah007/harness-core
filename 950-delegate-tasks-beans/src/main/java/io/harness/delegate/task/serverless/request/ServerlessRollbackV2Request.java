@@ -20,7 +20,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaCloudFormationRollbackConfig;
+import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2Config;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
@@ -38,14 +38,14 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessCloudFormationRollbackRequest
+public class ServerlessRollbackV2Request
     implements NestedAnnotationResolver, ExecutionCapabilityDemander, TaskParameters {
   String accountId;
   ServerlessCommandType serverlessCommandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) ServerlessInfraConfig serverlessInfraConfig;
-  ServerlessAwsLambdaCloudFormationRollbackConfig serverlessRollbackConfig;
+  ServerlessAwsLambdaRollbackV2Config serverlessRollbackConfig;
   Integer timeoutIntervalInMin;
 
   @Override

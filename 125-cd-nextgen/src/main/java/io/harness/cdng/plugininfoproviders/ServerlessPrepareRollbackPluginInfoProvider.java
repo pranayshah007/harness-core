@@ -124,7 +124,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image
-      StepImageConfig stepImageConfig = pluginExecutionConfig.getServerlessPrepareRollbackContainerStepImageConfig();
+      StepImageConfig stepImageConfig = pluginExecutionConfig.getServerlessPrepareRollbackV2StepImageConfig();
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);

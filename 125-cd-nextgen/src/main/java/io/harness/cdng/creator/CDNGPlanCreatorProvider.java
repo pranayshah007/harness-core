@@ -163,10 +163,10 @@ import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneD
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsGenOneRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
-import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terraformcloud.TerraformCloudRunStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
@@ -213,10 +213,10 @@ import io.harness.cdng.creator.variables.K8sDryRunManifestStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
-import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackV2StepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaPrepareRollbackV2StepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackV2StepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
 import io.harness.cdng.creator.variables.TasAppResizeStepVariableCreator;
 import io.harness.cdng.creator.variables.TasBGAppSetupStepVariableCreator;
@@ -1398,7 +1398,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_BG_STAGE_SCALE_DOWN_STEP_NG.name())
             .build();
 
-    StepInfo serverlessPrepareRollback =
+    StepInfo serverlessAwsLambdaPrepareRollbackV2 =
         StepInfo.newBuilder()
             .setName("Serverless Aws Lambda Prepare Rollback V2")
             .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
@@ -1409,16 +1409,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
             .build();
 
-    StepInfo serverlessCloudFormationRollback =
-        StepInfo.newBuilder()
-            .setName("Serverless Aws Lambda Rollback V2")
-            .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
-            .setStepMetaData(StepMetaData.newBuilder()
-                                 .addCategory("SERVERLESS_AWS_LAMBDA_ROLLBACK_V2")
-                                 .setFolderPath("Serverless Lambda")
-                                 .build())
-            .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
-            .build();
+    StepInfo serverlessAwsLambdaRollbackV2 = StepInfo.newBuilder()
+                                                 .setName("Serverless Aws Lambda Rollback V2")
+                                                 .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+                                                 .setStepMetaData(StepMetaData.newBuilder()
+                                                                      .addCategory("SERVERLESS_AWS_LAMBDA_ROLLBACK_V2")
+                                                                      .setFolderPath("Serverless Lambda")
+                                                                      .build())
+                                                 .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
+                                                 .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -1511,8 +1510,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(googleFunctionGenOneDeploy);
     stepInfos.add(googleFunctionGenOneRollback);
     stepInfos.add(k8sBGStageScaleDown);
-    stepInfos.add(serverlessPrepareRollback);
-    stepInfos.add(serverlessCloudFormationRollback);
+    stepInfos.add(serverlessAwsLambdaPrepareRollbackV2);
+    stepInfos.add(serverlessAwsLambdaRollbackV2);
     return stepInfos;
   }
 }
