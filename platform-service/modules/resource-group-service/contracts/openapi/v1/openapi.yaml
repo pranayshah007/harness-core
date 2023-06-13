@@ -524,7 +524,7 @@ components:
             maxLength: 128
         attribute_name:
           type: string
-          description: Attribute name on the basis of which filtering will be done. User attribute name as [category] and [type] for resource_type CONNECTOR and ENVIRONMENT respectively.
+          description: Attribute name on the basis of which filtering will be done. Value can be [category] and [type] for resource_type CONNECTOR and ENVIRONMENT respectively.
         attribute_values:
           type: array
           description: Attribute values selected. Values can be one of ["Production","PreProduction"] for ENVIRONMENT or ["ARTIFACTORY","CLOUD_COST","CLOUD_PROVIDER","CODE_REPO","MONITORING","SECRET_MANAGER","TICKETING"] for CONNECTOR.
