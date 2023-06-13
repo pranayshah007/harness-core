@@ -809,7 +809,8 @@ public enum FeatureName {
       PIPELINE),
 
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
-  PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL);
+  PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
+  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {
