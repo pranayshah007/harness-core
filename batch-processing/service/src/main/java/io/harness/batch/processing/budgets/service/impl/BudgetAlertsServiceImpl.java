@@ -93,8 +93,8 @@ public class BudgetAlertsServiceImpl {
       "/account/%s/continuous-efficiency/perspective-explorer/%s/%s";
   private static final String PERSPECTIVE_DETAILS_URL_FORMAT_NG = "/account/%s/ce/perspectives/%s/name/%s";
   private static final String ACTUAL_COST_BUDGET = "cost";
-  private static final String ACTUAL_SPEND = "Actual Spend";
-  private static final String FORECASTED_SPEND = "Forecasted Spend";
+  private static final String CURRENT_SPEND = "Current spend";
+  private static final String FORECASTED_SPEND = "Forecasted spend";
   private static final String SUBJECT_ACTUAL_COST_BUDGET = "Spent so far";
   private static final String FORECASTED_COST_BUDGET = "forecasted cost";
   private static final String SUBJECT_FORECASTED_COST_BUDGET = "Forecasted cost";
@@ -255,7 +255,7 @@ public class BudgetAlertsServiceImpl {
       }
       String costType = ACTUAL_COST_BUDGET;
       String subjectCostType = SUBJECT_ACTUAL_COST_BUDGET;
-      String costTypeSlackAlert = ACTUAL_SPEND;
+      String costTypeSlackAlert = CURRENT_SPEND;
       try {
         if (alertThreshold.getBasedOn() == FORECASTED_COST) {
           costType = FORECASTED_COST_BUDGET;
@@ -495,25 +495,21 @@ public class BudgetAlertsServiceImpl {
         budgetCommon.getAccountId(), budgetCommon.getUuid(), budgetCommon.getName(), budgetCommon.isNgBudget(), true);
     String perspectiveUrl = buildAbsoluteUrl(budgetCommon.getAccountId(), budgetCommon.getPerspectiveId(),
         budgetCommon.getPerspectiveName(), budgetCommon.isNgBudget(), false);
-    String isOrHas = "is";
-    String approachingOrExceeded = "approaching";
-    if (alertThreshold.getPercentage() >= 100.0) {
-      isOrHas = "has";
-      approachingOrExceeded = "exceeded";
+    String thresholdPercentage = "";
+    if (alertThreshold.getPercentage() < 100.0) {
+      thresholdPercentage = format(" *%s%s* of", format("%.1f", alertThreshold.getPercentage()), "%");
     }
     Map<String, String> templateData =
         ImmutableMap.<String, String>builder()
             .put("PERSPECTIVE_NAME", budgetCommon.getPerspectiveName())
-            .put("IS_OR_HAS", isOrHas)
-            .put("APPROACHING_OR_EXCEEDED", approachingOrExceeded)
             .put("PERIOD", budgetCommon.getPeriod().name().toLowerCase())
             .put("BUDGET_NAME", budgetCommon.getName())
             .put("BUDGET_AMOUNT", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
-            .put("ACTUAL_AMOUNT", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getActualCost())))
-            .put(
-                "FORECASTED_COST", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getForecastCost())))
-            .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
-            .put("ACTUAL_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
+            .put("CURRENT_SPEND", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getActualCost())))
+            .put("FORECASTED_SPEND",
+                format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getForecastCost())))
+            .put("THRESHOLD_PERCENTAGE", thresholdPercentage)
+            .put("CURRENT_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
             .put("BUDGET_URL", budgetUrl)
             .put("PERSPECTIVE_URL", perspectiveUrl)
             .build();
@@ -532,25 +528,21 @@ public class BudgetAlertsServiceImpl {
       throws URISyntaxException {
     String budgetGroupUrl = buildAbsoluteUrl(
         budgetCommon.getAccountId(), budgetCommon.getUuid(), budgetCommon.getName(), budgetCommon.isNgBudget(), true);
-    String isOrHas = "is";
-    String approachingOrExceeded = "approaching";
-    if (alertThreshold.getPercentage() >= 100.0) {
-      isOrHas = "has";
-      approachingOrExceeded = "exceeded";
+    String thresholdPercentage = "";
+    if (alertThreshold.getPercentage() < 100.0) {
+      thresholdPercentage = format(" *%s%s* of", format("%.1f", alertThreshold.getPercentage()), "%");
     }
     Map<String, String> templateData =
         ImmutableMap.<String, String>builder()
             .put("BUDGET_GROUP_NAME", budgetCommon.getName())
             .put("PERIOD", budgetCommon.getPeriod().name().toLowerCase())
-            .put("IS_OR_HAS", isOrHas)
-            .put("APPROACHING_OR_EXCEEDED", approachingOrExceeded)
             .put("BUDGET_GROUP_AMOUNT",
                 format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getBudgetAmount())))
-            .put("ACTUAL_AMOUNT", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getActualCost())))
-            .put(
-                "FORECASTED_COST", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getForecastCost())))
-            .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
-            .put("ACTUAL_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
+            .put("CURRENT_SPEND", format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getActualCost())))
+            .put("FORECASTED_SPEND",
+                format("%s%s", currency.getSymbol(), format("%.2f", budgetCommon.getForecastCost())))
+            .put("THRESHOLD_PERCENTAGE", thresholdPercentage)
+            .put("CURRENT_SPEND_OR_FORECASTED_SPEND", costTypeSlackAlert)
             .put("BUDGET_GROUP_URL", budgetGroupUrl)
             .build();
     NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
