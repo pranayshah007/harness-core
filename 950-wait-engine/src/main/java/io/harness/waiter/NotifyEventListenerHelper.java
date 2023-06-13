@@ -86,7 +86,10 @@ public class NotifyEventListenerHelper {
         if (v instanceof ErrorResponseData) {
           if (((ErrorResponseData) v).getException() == null) {
             log.info("Exception is null for responseMap {}", v, new Exception());
+          } else {
+            throw((ErrorResponseData) v).getException();
           }
+
         } else {
           return v;
         }
