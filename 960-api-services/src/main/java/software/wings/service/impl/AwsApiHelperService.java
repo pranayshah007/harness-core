@@ -313,7 +313,7 @@ public class AwsApiHelperService {
       int size = pageBuildDetails.size();
 
       if (size > FETCH_FILE_COUNT_IN_BUCKET) {
-        pageBuildDetails.subList(0, size - FETCH_FILE_COUNT_IN_BUCKET).clear();
+        pageBuildDetails = pageBuildDetails.subList(0, FETCH_FILE_COUNT_IN_BUCKET);
       }
 
       buildDetailsList.addAll(pageBuildDetails);
