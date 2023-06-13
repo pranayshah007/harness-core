@@ -760,7 +760,7 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: true
 
-runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-false}
+runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
 
 secretsConfiguration:
   secretResolutionEnabled: false
