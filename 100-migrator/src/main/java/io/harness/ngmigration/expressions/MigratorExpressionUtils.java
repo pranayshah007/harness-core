@@ -190,6 +190,9 @@ public class MigratorExpressionUtils {
     // App
     context.put("app.defaults", new AppVariablesMigratorFunctor(identifierCaseFormat));
 
+    // Account
+    context.put("account.defaults", new AccountVariablesMigratorFunctor(identifierCaseFormat));
+
     // Http Step
     context.put("httpResponseCode", "<+httpResponseCode>");
     context.put("httpResponseBody", "<+httpResponseBody>");
