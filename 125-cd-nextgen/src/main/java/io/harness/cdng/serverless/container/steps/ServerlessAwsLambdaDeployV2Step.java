@@ -7,13 +7,24 @@
 
 package io.harness.cdng.serverless.container.steps;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.ServerlessAwsLambdaFunctionToServerInstanceInfoMapper;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
+import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -34,10 +45,14 @@ import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static java.lang.String.format;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -97,7 +112,8 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String stackDetailsString = null;
+    String instances = null;
+    String serviceName = null;
 
     StepStatusTaskResponseData stepStatusTaskResponseData = null;
 
@@ -116,24 +132,25 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
 
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
-        String stackDetailsByte64 = stepMapOutput.getMap().get("stackDetails");
-        stackDetailsString = serverlessStepCommonHelper.convertByte64ToString(stackDetailsByte64);
+        String instancesByte64 = stepMapOutput.getMap().get("instances");
+        instances = serverlessStepCommonHelper.convertByte64ToString(instancesByte64);
+
+        String service = stepMapOutput.getMap().get("service");
+        serviceName = serverlessStepCommonHelper.convertByte64ToString(service);
       }
 
-      StackDetails stackDetails = null;
+      List<ServerInstanceInfo> serverInstanceInfoList = null;
       try {
-        stackDetails = serverlessStepCommonHelper.getStackDetails(stackDetailsString);
+        List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions = serverlessStepCommonHelper.getServerlessAwsLambdaFunctions(instances);
+        ServerlessAwsLambdaInfrastructureOutcome infrastructureOutcome = (ServerlessAwsLambdaInfrastructureOutcome) serverlessStepCommonHelper.getInfrastructureOutcome(ambiance);
+        serverInstanceInfoList = serverlessStepCommonHelper.getServerlessDeployFunctionInstanceInfo(serverlessAwsLambdaFunctions, infrastructureOutcome.getRegion(), infrastructureOutcome.getStage(), serviceName, infrastructureOutcome.getInfrastructureKey());
       } catch (Exception e) {
         log.error("Error while parsing Stack Details", e);
       }
 
-      ServerlessAwsLambdaPrepareRollbackDataOutcome serverlessAwsLambdaPrepareRollbackDataOutcome = null;
-      if (stackDetails != null) {
-        serverlessAwsLambdaPrepareRollbackDataOutcome =
-            ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();
-        executionSweepingOutputService.consume(ambiance,
-            OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME,
-            serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
+      if (serverInstanceInfoList != null) {
+          stepOutcome =
+                instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
       }
     }
 
