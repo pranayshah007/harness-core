@@ -76,6 +76,8 @@ import io.harness.idp.provision.service.ProvisionServiceImpl;
 import io.harness.idp.proxy.delegate.DelegateProxyApi;
 import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
+import io.harness.idp.proxy.ngmanager.ManagerProxyApi;
+import io.harness.idp.proxy.ngmanager.ManagerProxyApiImpl;
 import io.harness.idp.proxy.ngmanager.NgManagerProxyApi;
 import io.harness.idp.proxy.ngmanager.NgManagerProxyApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
@@ -304,6 +306,7 @@ public class IdpModule extends AbstractModule {
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
     bind(NgManagerProxyApi.class).to(NgManagerProxyApiImpl.class);
+    bind(ManagerProxyApi.class).to(ManagerProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(DelegateProxyApi.class).to(DelegateProxyApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
@@ -425,6 +428,20 @@ public class IdpModule extends AbstractModule {
   @Named("ngManagerServiceSecret")
   public String ngManagerServiceSecret() {
     return this.appConfig.getNgManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("managerClientConfig")
+  public ServiceHttpClientConfig managerClientConfig() {
+    return this.appConfig.getManagerClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("managerServiceSecret")
+  public String managerServiceSecret() {
+    return this.appConfig.getManagerServiceSecret();
   }
 
   @Provides

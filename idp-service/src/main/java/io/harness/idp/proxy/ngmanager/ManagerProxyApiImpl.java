@@ -42,52 +42,25 @@ import org.jetbrains.annotations.Nullable;
 @RequestScoped
 @NextGenManagerAuth
 @NoArgsConstructor
-public class NgManagerProxyApiImpl implements NgManagerProxyApi {
-  private static final String FORWARDING_MESSAGE = "Forwarding request to [{}]";
-  private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
-  private String ngManagerServiceSecret;
+public class ManagerProxyApiImpl implements ManagerProxyApi {
+  private ServiceHttpClientConfig managerClientConfig;
+  private String managerServiceSecret;
   private ServiceTokenGenerator tokenGenerator;
-
+  private static final String FORWARDING_MESSAGE = "Forwarding request to [{}]";
   @Inject
-  public NgManagerProxyApiImpl(
-      @Named("ngManagerServiceHttpClientConfig") ServiceHttpClientConfig ngManagerServiceHttpClientConfig,
-      @Named("ngManagerServiceSecret") String ngManagerServiceSecret, ServiceTokenGenerator tokenGenerator) {
-    this.ngManagerServiceHttpClientConfig = ngManagerServiceHttpClientConfig;
-    this.ngManagerServiceSecret = ngManagerServiceSecret;
+  public ManagerProxyApiImpl(@Named("managerClientConfig") ServiceHttpClientConfig managerClientConfig,
+      @Named("managerServiceSecret") String managerServiceSecret, ServiceTokenGenerator tokenGenerator) {
+    this.managerClientConfig = managerClientConfig;
+    this.managerServiceSecret = managerServiceSecret;
     this.tokenGenerator = tokenGenerator;
   }
 
   @IdpServiceAuthIfHasApiKey
   @Override
-  public Response deleteProxyNgManager(UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount) {
+  public Response getProxyManager(UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount) {
     OkHttpClient client = getOkHttpClient();
-    HttpUrl.Builder urlBuilder =
-        Objects.requireNonNull(HttpUrl.parse(ngManagerServiceHttpClientConfig.getBaseUrl())).newBuilder();
-    ProxyUtils.filterAndCopyPath(uriInfo, urlBuilder);
-    ProxyUtils.copyQueryParams(uriInfo, urlBuilder);
+    HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(managerClientConfig.getBaseUrl())).newBuilder();
 
-    Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.build().toString()).delete();
-    ProxyUtils.copyHeaders(headers, requestBuilder);
-
-    okhttp3.Response response;
-    try {
-      log.info(FORWARDING_MESSAGE, urlBuilder);
-      response = client.newCall(requestBuilder.build()).execute();
-      return ProxyUtils.buildResponseObject(response);
-    } catch (Exception e) {
-      log.error("Could not forward DELETE request to ng manager", e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-          .build();
-    }
-  }
-
-  @IdpServiceAuthIfHasApiKey
-  @Override
-  public Response getProxyNgManager(UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount) {
-    OkHttpClient client = getOkHttpClient();
-    HttpUrl.Builder urlBuilder =
-        Objects.requireNonNull(HttpUrl.parse(ngManagerServiceHttpClientConfig.getBaseUrl())).newBuilder();
     ProxyUtils.filterAndCopyPath(uriInfo, urlBuilder);
     ProxyUtils.copyQueryParams(uriInfo, urlBuilder);
 
@@ -101,20 +74,18 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
       response = client.newCall(request).execute();
       return ProxyUtils.buildResponseObject(response);
     } catch (Exception e) {
-      log.error("Could not forward request GET to ng manager", e);
+      log.error("Could not forward request GET to manager", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
     }
   }
 
-  @IdpServiceAuthIfHasApiKey
   @Override
-  public Response postProxyNgManager(
+  public Response postProxyManager(
       UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount, String body) {
     OkHttpClient client = getOkHttpClient();
-    HttpUrl.Builder urlBuilder =
-        Objects.requireNonNull(HttpUrl.parse(ngManagerServiceHttpClientConfig.getBaseUrl())).newBuilder();
+    HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(managerClientConfig.getBaseUrl())).newBuilder();
     ProxyUtils.filterAndCopyPath(uriInfo, urlBuilder);
     ProxyUtils.copyQueryParams(uriInfo, urlBuilder);
 
@@ -138,7 +109,7 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
       response = client.newCall(requestBuilder.build()).execute();
       return ProxyUtils.buildResponseObject(response);
     } catch (Exception e) {
-      log.error("Could not forward POST request to ng manager", e);
+      log.error("Could not forward POST request to manager", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -147,11 +118,10 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
 
   @IdpServiceAuthIfHasApiKey
   @Override
-  public Response putProxyNgManager(
+  public Response putProxyManager(
       UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount, String body) {
     OkHttpClient client = getOkHttpClient();
-    HttpUrl.Builder urlBuilder =
-        Objects.requireNonNull(HttpUrl.parse(ngManagerServiceHttpClientConfig.getBaseUrl())).newBuilder();
+    HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(managerClientConfig.getBaseUrl())).newBuilder();
     ProxyUtils.filterAndCopyPath(uriInfo, urlBuilder);
     ProxyUtils.copyQueryParams(uriInfo, urlBuilder);
 
@@ -175,7 +145,31 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
       response = client.newCall(requestBuilder.build()).execute();
       return ProxyUtils.buildResponseObject(response);
     } catch (Exception e) {
-      log.error("Could not forward PUT request to ng manager", e);
+      log.error("Could not forward PUT request to manager", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @IdpServiceAuthIfHasApiKey
+  @Override
+  public Response deleteProxyManager(UriInfo uriInfo, HttpHeaders headers, String url, String harnessAccount) {
+    OkHttpClient client = getOkHttpClient();
+    HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(managerClientConfig.getBaseUrl())).newBuilder();
+    ProxyUtils.filterAndCopyPath(uriInfo, urlBuilder);
+    ProxyUtils.copyQueryParams(uriInfo, urlBuilder);
+
+    Request.Builder requestBuilder = new Request.Builder().url(urlBuilder.build().toString()).delete();
+    ProxyUtils.copyHeaders(headers, requestBuilder);
+
+    okhttp3.Response response;
+    try {
+      log.info(FORWARDING_MESSAGE, urlBuilder);
+      response = client.newCall(requestBuilder.build()).execute();
+      return ProxyUtils.buildResponseObject(response);
+    } catch (Exception e) {
+      log.error("Could not forward DELETE request to manager", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -186,11 +180,11 @@ public class NgManagerProxyApiImpl implements NgManagerProxyApi {
   OkHttpClient getOkHttpClient() {
     return new OkHttpClient()
         .newBuilder()
-        .connectTimeout(ngManagerServiceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
-        .readTimeout(ngManagerServiceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
-        .writeTimeout(ngManagerServiceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
+        .connectTimeout(managerClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
+        .readTimeout(managerClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
+        .writeTimeout(managerClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
         .retryOnConnectionFailure(false)
-        .addInterceptor(new IdpAuthInterceptor(tokenGenerator, ngManagerServiceSecret))
+        .addInterceptor(new IdpAuthInterceptor(tokenGenerator, managerServiceSecret))
         .addInterceptor(getEncodingInterceptor())
         .build();
   }
