@@ -257,6 +257,18 @@ public class EngineExpressionEvaluator {
         StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
         Object evaluatedExpression = evaluateInternalV2(replacerResponse, ctx);
 
+        // If expression is evaluated as null, check if prefix combinations can give any valid result or not, we should
+        // do recursive check only if render expression was modified to avoid cyclic loop
+        if (evaluatedExpression == null && replacerResponse.isOriginalExpressionAltered()) {
+          Object evaluateExpressionBlock =
+              evaluateExpressionBlock(replacerResponse.getFinalExpressionValue(), ctx, depth - 1, expressionMode);
+          if (evaluateExpressionBlock == null && replacerResponse.isOnlyRenderedExpressions()) {
+            return replacerResponse.getFinalExpressionValue();
+          } else {
+            return evaluateExpressionBlock;
+          }
+        }
+
         // If the evaluated expression has nested expressions again, then evaluate else return
         if (evaluatedExpression instanceof String && hasExpressions((String) evaluatedExpression)) {
           if (evaluatedExpression.equals(expression)) {
@@ -586,7 +598,7 @@ public class EngineExpressionEvaluator {
         return engine.createScript(expression).execute(ctx);
       } catch (Exception e) {
         if (response.isOnlyRenderedExpressions()) {
-          return expression;
+          return null;
         }
         throw e;
       }
@@ -596,7 +608,7 @@ public class EngineExpressionEvaluator {
       return jexlExpression.evaluate(ctx);
     } catch (Exception e) {
       if (response.isOnlyRenderedExpressions()) {
-        return expression;
+        return null;
       }
       throw e;
     }
