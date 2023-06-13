@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -70,6 +71,7 @@ import io.harness.ccm.views.helper.ViewBillingServiceHelper;
 import io.harness.ccm.views.helper.ViewBusinessMappingResponseHelper;
 import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -78,6 +80,9 @@ import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldValue;
 import com.google.cloud.bigquery.FieldValue.Attribute;
 import com.google.cloud.bigquery.FieldValueList;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobId;
+import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
@@ -86,6 +91,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -119,7 +125,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @InjectMocks @Spy private ViewBillingServiceHelper viewBillingServiceHelper;
   @InjectMocks @Spy private ViewParametersHelper viewParametersHelper;
   @InjectMocks @Spy private ViewBusinessMappingResponseHelper viewBusinessMappingResponseHelper;
-  @Mock private ViewsQueryBuilder viewsQueryBuilder;
+  @InjectMocks @Spy private ViewsQueryBuilder viewsQueryBuilder;
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private CEViewService viewService;
@@ -127,10 +133,12 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Mock private BigQuery bigQuery;
   @Mock private TableResult resultSet;
+  @Mock private Job job;
   @Mock private FieldValueList row;
   @Mock private CEMetadataRecordDao ceMetadataRecordDao;
   @Mock private BigQueryService bigQueryService;
   @Mock private BigQueryHelper bigQueryHelper;
+  @Mock private LabelFlattenedService labelFlattenedService;
 
   private Schema schema;
   private List<Field> fields;
@@ -157,15 +165,23 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any());
-    doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap(),
+            anyBoolean());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap(), anyBoolean());
     doReturn(resultSet).when(bigQuery).query(any());
+    doReturn(job).when(bigQuery).create(any(JobInfo.class));
+    doReturn(JobId.of(UUID.randomUUID().toString())).when(job).getJobId();
+    doReturn(resultSet).when(job).getQueryResults();
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean(), anyBoolean());
     doCallRealMethod()
