@@ -37,6 +37,7 @@ public enum PipelineEventType {
   private String displayName;
   public static List<PipelineEventType> notifyOnlyUserEvents =
       Arrays.asList(PipelineEventType.PIPELINE_START, PipelineEventType.PIPELINE_END);
+  public static List<PipelineEventType> startEvents = Arrays.asList(PIPELINE_START, STAGE_START);
 
   PipelineEventType(String level, String displayName) {
     this.level = level;

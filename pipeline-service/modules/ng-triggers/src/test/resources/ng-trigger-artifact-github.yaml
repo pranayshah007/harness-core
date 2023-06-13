@@ -1,0 +1,43 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  description: ""
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      type: GithubPackageRegistry
+      spec:
+        packageName: hello-world
+        connectorRef: GithubRepo
+        eventConditions: [ ]
+        packageType: container
+        org: "automation-cdc"
+        version: <+trigger.artifact.build>
+        versionRegex: <+trigger.artifact.build>
+        metaDataConditions: [ ]
+  inputYaml: |
+    pipeline:
+      identifier: GithibPackage
+      stages:
+        - stage:
+            identifier: Github
+            type: Deployment
+            spec:
+              service:
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: GithubPackage
+                          sources:
+                            - identifier: GithubPackage
+                              type: GithubPackageRegistry
+                              spec:
+                                version: nightly

@@ -8,6 +8,8 @@
 package io.harness.cdng.ssh.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -15,17 +17,23 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.security.SimpleEncryption;
 import io.harness.shell.ScriptType;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +68,7 @@ public class CommandStepUtils {
 
   public static String getWorkingDirectory(
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate) {
-    if (workingDirectory != null && EmptyPredicate.isNotEmpty(workingDirectory.getValue())) {
+    if (workingDirectory != null && isNotEmpty(workingDirectory.getValue())) {
       return workingDirectory.getValue();
     }
     String commandPath = null;
@@ -75,27 +83,91 @@ public class CommandStepUtils {
     return commandPath;
   }
 
-  public static List<String> getOutputVariables(Map<String, Object> outputVariables) {
+  public static List<String> getOutputVariableValuesWithoutSecrets(
+      Map<String, Object> outputVariables, Set<String> secretOutputVariableNames) {
     if (EmptyPredicate.isEmpty(outputVariables)) {
       return emptyList();
     }
 
-    List<String> outputVars = new ArrayList<>();
-    outputVariables.forEach((key, val) -> {
-      if (val instanceof ParameterField) {
-        ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
-        if (parameterFieldValue.getValue() == null) {
-          throw new InvalidRequestException(format("Output variable [%s] value found to be null", key));
+    List<String> outputVarValues = new ArrayList<>();
+    outputVariables.forEach((name, value) -> {
+      if (EmptyPredicate.isEmpty(secretOutputVariableNames) || !secretOutputVariableNames.contains(name)) {
+        if (value instanceof ParameterField) {
+          ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+          if (parameterFieldValue.getValue() == null) {
+            throw new InvalidRequestException(format("Output variable [%s] value is empty", name));
+          }
+
+          outputVarValues.add(((ParameterField<?>) value).getValue().toString());
+        } else {
+          log.error(format("Not found ParameterField value for output variable [%s]. value: [%s]", name, value));
         }
-        outputVars.add(((ParameterField<?>) val).getValue().toString());
-      } else if (val instanceof String) {
-        outputVars.add((String) val);
-      } else {
-        log.error(
-            format("Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
       }
     });
-    return outputVars;
+    return outputVarValues;
+  }
+
+  public static List<String> getSecretOutputVariableValues(
+      Map<String, Object> outputVariables, Set<String> secretOutputVariableNames) {
+    if (EmptyPredicate.isEmpty(outputVariables)) {
+      return emptyList();
+    }
+
+    List<String> outputVarValues = new ArrayList<>(secretOutputVariableNames.size());
+    outputVariables.forEach((name, value) -> {
+      if (secretOutputVariableNames.contains(name)) {
+        if (value instanceof ParameterField) {
+          ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+          if (parameterFieldValue.getValue() == null) {
+            throw new InvalidRequestException(format("Output variable [%s] value is empty", name));
+          }
+
+          outputVarValues.add(((ParameterField<?>) value).getValue().toString());
+        } else {
+          log.error(format("Not found ParameterField value for output variable [%s]. value: [%s]", name, value));
+        }
+      }
+    });
+    return outputVarValues;
+  }
+
+  public static Map<String, String> prepareOutputVariables(Map<String, String> sweepingOutputEnvVariables,
+      Map<String, Object> outputVariables, Set<String> secretOutputVariableNames) {
+    if (EmptyPredicate.isEmpty(outputVariables) || EmptyPredicate.isEmpty(sweepingOutputEnvVariables)) {
+      return Collections.emptyMap();
+    }
+
+    SimpleEncryption encryption = new SimpleEncryption();
+    Map<String, String> resolvedOutputVariables = new HashMap<>();
+    outputVariables.forEach((name, value) -> {
+      if (value instanceof ParameterField) {
+        Object variableNameToCollectOnDelegate = ((ParameterField<?>) value).getValue();
+        // we are safe to use variableNameToCollectOnDelegate.toString() because variableNameToCollectOnDelegate can't
+        // be null, see io.harness.yaml.utils.NGVariablesUtils#getMapOfVariablesWithoutSecretExpression
+        String collectedVariableValueOnDelegate =
+            sweepingOutputEnvVariables.get(variableNameToCollectOnDelegate.toString());
+        if (isEmpty(collectedVariableValueOnDelegate)) {
+          resolvedOutputVariables.put(name, collectedVariableValueOnDelegate);
+          log.info(format("Not found delegate collected value for output variable [%s]. value: [%s]", name,
+              variableNameToCollectOnDelegate));
+        } else if (isSecretOutputVariable(secretOutputVariableNames, name)) {
+          String encodedValue = EncodingUtils.encodeBase64(
+              encryption.encrypt(collectedVariableValueOnDelegate.getBytes(StandardCharsets.UTF_8)));
+          String finalValue = "${sweepingOutputSecrets.obtain(\"" + name + "\",\"" + encodedValue + "\")}";
+          resolvedOutputVariables.put(name, finalValue);
+        } else {
+          resolvedOutputVariables.put(name, collectedVariableValueOnDelegate);
+        }
+      } else {
+        log.error(format("Not found ParameterField value for output variable [%s]. value: [%s]", name, value));
+      }
+    });
+
+    return resolvedOutputVariables;
+  }
+
+  private static boolean isSecretOutputVariable(Set<String> secretOutputVariableNames, String name) {
+    return isNotEmpty(secretOutputVariableNames) && secretOutputVariableNames.contains(name);
   }
 
   public static String getHost(CommandStepParameters commandStepParameters) {

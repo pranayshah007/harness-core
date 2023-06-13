@@ -22,6 +22,9 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.PipelineEventTypeConstants;
+import io.harness.notification.TriggerExecutionInfo;
+import io.harness.notification.WebhookNotificationEvent;
+import io.harness.notification.WebhookNotificationEvent.WebhookNotificationEventBuilder;
 import io.harness.notification.bean.NotificationChannelWrapper;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
@@ -40,10 +43,13 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.sanitizer.HtmlInputSanitizer;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -67,6 +73,7 @@ public class NotificationHelper {
   @Inject PMSPipelineService pmsPipelineService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
   @Inject HtmlInputSanitizer userNameSanitizer;
+  @Inject PMSExecutionService pmsExecutionService;
 
   public Optional<PipelineEventType> getEventTypeForStage(NodeExecution nodeExecution) {
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
@@ -260,7 +267,21 @@ public class NotificationHelper {
       NodeExecution nodeExecution, Long updatedAt, String orgIdentifier, String projectIdentifier) {
     Map<String, String> templateData = new HashMap<>();
     PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(
+            AmbianceUtils.getAccountId(ambiance), orgIdentifier, projectIdentifier, ambiance.getPlanExecutionId());
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+
+    WebhookNotificationEventBuilder webhookNotificationEvent =
+        WebhookNotificationEvent.builder()
+            .triggeredBy(getTriggerExecutionInfo(pipelineExecutionSummaryEntity))
+            .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .pipelineIdentifier(pipelineId)
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .eventType(pipelineEventType);
+
     String userName;
     Long startTs;
     Long endTs;
@@ -312,6 +333,17 @@ public class NotificationHelper {
     templateData.put("IMAGE_STATUS", imageStatus);
     templateData.put("COLOR", themeColor);
     templateData.put("NODE_STATUS", nodeStatus);
+    webhookNotificationEvent.startTime(startDate);
+    webhookNotificationEvent.startTs(startTs);
+
+    if (!EmptyPredicate.isEmpty(endDate) && !PipelineEventType.startEvents.contains(pipelineEventType)) {
+      webhookNotificationEvent.endTime(endDate);
+      webhookNotificationEvent.endTs(endTs);
+    }
+    if (EmptyPredicate.isEmpty(stepIdentifier)) {
+      webhookNotificationEvent.nodeIdentifier(stepIdentifier);
+    }
+    templateData.put("WEBHOOK_EVENT_DATA", JsonUtils.asJson(webhookNotificationEvent.build()));
     return templateData;
   }
 
@@ -329,5 +361,13 @@ public class NotificationHelper {
       }
     }
     return identifier;
+  }
+
+  private TriggerExecutionInfo getTriggerExecutionInfo(PipelineExecutionSummaryEntity summaryEntity) {
+    return TriggerExecutionInfo.builder()
+        .triggerType(summaryEntity.getExecutionTriggerInfo().getTriggerType().toString())
+        .name(summaryEntity.getExecutionTriggerInfo().getTriggeredBy().getIdentifier())
+        .email(summaryEntity.getExecutionTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email"))
+        .build();
   }
 }

@@ -20,6 +20,10 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$STATIC_SCHEMA_FILE_URL" ]]; then
+  export STATIC_SCHEMA_FILE_URL; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_FILE_URL)' $CONFIG_FILE
+fi
+
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
 yq -i 'del(.grpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE

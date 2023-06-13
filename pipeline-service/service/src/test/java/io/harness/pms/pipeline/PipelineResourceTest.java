@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +46,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
+import io.harness.gitsync.GitMetadataUpdateRequestInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -938,5 +940,20 @@ public class PipelineResourceTest extends CategoryTest {
     ResponseDTO<PipelineValidationResponseDTO> responseDTO =
         pipelineResource.getPipelineValidateResult(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "uuid1");
     assertThat(responseDTO).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testUpdateGitMetadataForPipeline() {
+    GitMetadataUpdateRequestInfoDTO gitMetadataUpdateRequestInfo = GitMetadataUpdateRequestInfoDTO.builder()
+                                                                       .connectorRef("newConnectorRef")
+                                                                       .filePath("newFilePath")
+                                                                       .repoName("repoName")
+                                                                       .build();
+    doReturn(PIPELINE_IDENTIFIER).when(pmsPipelineService).updateGitMetadata(any(), any(), any(), any(), any());
+    ResponseDTO<PMSGitUpdateResponseDTO> response = pipelineResource.updateGitMetadataForPipeline(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, gitMetadataUpdateRequestInfo);
+    assertEquals(PIPELINE_IDENTIFIER, response.getData().getIdentifier());
   }
 }

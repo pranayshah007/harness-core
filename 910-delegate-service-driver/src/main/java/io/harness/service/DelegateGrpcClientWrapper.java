@@ -30,6 +30,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(DEL)
 @Singleton
@@ -42,8 +43,14 @@ public class DelegateGrpcClientWrapper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   public DelegateResponseData executeSyncTask(DelegateTaskRequest delegateTaskRequest) {
-    final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
+    return executeSyncTaskReturnTaskId(delegateTaskRequest).getValue();
+  }
+
+  public Pair<String, DelegateResponseData> executeSyncTaskReturnTaskId(DelegateTaskRequest delegateTaskRequest) {
+    var responseEntry = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
         delegateTaskRequest, delegateCallbackTokenSupplier.get());
+    final ResponseData responseData = responseEntry.getValue();
+    final String taskId = responseEntry.getKey();
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
@@ -65,12 +72,18 @@ public class DelegateGrpcClientWrapper {
     } else {
       delegateResponseData = (DelegateResponseData) responseData;
     }
-    return delegateResponseData;
+    return Pair.of(taskId, delegateResponseData);
   }
 
   public DelegateResponseData executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
-    final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
+    return executeSyncTaskV2ReturnTaskId(delegateTaskRequest).getValue();
+  }
+
+  public Pair<String, DelegateResponseData> executeSyncTaskV2ReturnTaskId(DelegateTaskRequest delegateTaskRequest) {
+    var responseEntry = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
         delegateTaskRequest, delegateCallbackTokenSupplier.get());
+    final ResponseData responseData = responseEntry.getValue();
+    final String taskId = responseEntry.getKey();
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
@@ -92,7 +105,7 @@ public class DelegateGrpcClientWrapper {
     } else {
       delegateResponseData = (DelegateResponseData) responseData;
     }
-    return delegateResponseData;
+    return Pair.of(taskId, delegateResponseData);
   }
 
   public String submitAsyncTask(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {

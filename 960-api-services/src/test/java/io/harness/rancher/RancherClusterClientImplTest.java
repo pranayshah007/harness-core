@@ -9,6 +9,7 @@ package io.harness.rancher;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,13 +61,13 @@ public class RancherClusterClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListClustersSuccess() throws IOException {
     RancherListClustersResponse clustersResponse = RancherListClustersResponse.builder().data(clusters).build();
-    doReturn(mockListClustersCall).when(rancherRestClient).listClusters();
+    doReturn(mockListClustersCall).when(rancherRestClient).listClusters(any());
     doReturn(mockListClustersResponseWrapper).when(mockListClustersCall).execute();
     doReturn(true).when(mockListClustersResponseWrapper).isSuccessful();
     doReturn(200).when(mockListClustersResponseWrapper).code();
     doReturn(clustersResponse).when(mockListClustersResponseWrapper).body();
 
-    RancherListClustersResponse actualResponse = clusterClient.listClusters("TOKEN", "URL");
+    RancherListClustersResponse actualResponse = clusterClient.listClusters("TOKEN", "URL", emptyMap());
     assertThat(actualResponse.getData()).isEqualTo(clusters);
   }
 
@@ -74,18 +75,18 @@ public class RancherClusterClientImplTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testListClustersUnsuccessfulOrEmptyResponse() throws IOException {
-    doReturn(mockListClustersCall).when(rancherRestClient).listClusters();
+    doReturn(mockListClustersCall).when(rancherRestClient).listClusters(any());
     doReturn(mockListClustersResponseWrapper).when(mockListClustersCall).execute();
     doReturn(false).when(mockListClustersResponseWrapper).isSuccessful();
     doReturn(1234).when(mockListClustersResponseWrapper).code();
-    assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL"))
+    assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL", emptyMap()))
         .isInstanceOf(RancherClientRuntimeException.class)
         .hasMessageContaining("Status code: [1234]");
 
     doReturn(true).when(mockListClustersResponseWrapper).isSuccessful();
     doReturn(null).when(mockListClustersResponseWrapper).body();
     doReturn(5678).when(mockListClustersResponseWrapper).code();
-    assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL"))
+    assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL", emptyMap()))
         .isInstanceOf(RancherClientRuntimeException.class)
         .hasMessageContaining("Status code: [5678]");
   }
@@ -94,8 +95,8 @@ public class RancherClusterClientImplTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testListClustersFailure() {
-    doThrow(RuntimeException.class).when(rancherRestClient).listClusters();
-    assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL"))
+    doThrow(RuntimeException.class).when(rancherRestClient).listClusters(any());
+    assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL", emptyMap()))
         .isInstanceOf(RancherClientRuntimeException.class);
   }
 

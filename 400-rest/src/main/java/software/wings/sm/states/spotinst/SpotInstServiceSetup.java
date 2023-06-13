@@ -8,6 +8,7 @@
 package software.wings.sm.states.spotinst;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.ExceptionUtils.getMessage;
@@ -29,6 +30,7 @@ import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstSetupTaskResponse;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -151,7 +153,7 @@ public class SpotInstServiceSetup extends State {
         (SpotInstTaskExecutionResponse) response.values().iterator().next();
     ExecutionStatus executionStatus = executionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS
         ? ExecutionStatus.SUCCESS
-        : ExecutionStatus.FAILED;
+        : FAILED;
 
     activityService.updateStatus(activityId, context.getAppId(), executionStatus);
 
@@ -191,6 +193,15 @@ public class SpotInstServiceSetup extends State {
         stateExecutionData.getElastiGroupOriginalConfig().getCapacity().setMaximum(max);
         stateExecutionData.getElastiGroupOriginalConfig().getCapacity().setTarget(target);
       }
+    }
+
+    if (FAILED == executionStatus && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage(executionResponse.getErrorMessage())
+          .stateExecutionData(stateExecutionData)
+          .build();
     }
 
     stateExecutionData.setDelegateMetaInfo(executionResponse.getDelegateMetaInfo());

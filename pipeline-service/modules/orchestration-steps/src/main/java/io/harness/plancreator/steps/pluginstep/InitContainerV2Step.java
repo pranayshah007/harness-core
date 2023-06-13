@@ -51,7 +51,7 @@ import java.util.Optional;
 public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainerV2StepInfo, K8sTaskExecutionResponse> {
   @Inject KryoSerializer kryoSerializer;
   @Inject ContainerStepInitHelper containerStepInitHelper;
-  @Inject ContainerStepV2PluginProvider containerStepV2PluginProvider;
+  @Inject io.harness.plancreator.steps.pluginstep.ContainerStepV2PluginProvider containerStepV2PluginProvider;
   @Inject ContainerStepRbacHelper containerStepRbacHelper;
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;

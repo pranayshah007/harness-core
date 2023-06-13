@@ -1,8 +1,8 @@
 BUILD_SCRIPT_PATH: 310-iacm-manager/build/feature_build.sh
-DOCKER_FILE_PATH: /harness/harness-core/dist/310-iacm-manager/Dockerfile-ce-nextgen-cie-jdk
-CONTEXT_PATH: /harness/harness-core/dist/310-iacm-manager
-ARTIFACT_REPO: harness/feature-cenextgen-service-openjdk-8u242
-HELM_CHART_REPO: harness-core/310-iacm-manager/chart
-HELM_PUBLISH_REPO: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
+DOCKER_FILE_PATH: /harness/harness-core/dist/iacm-manager-service/Dockerfile-ce-nextgen-cie-jdk
+CONTEXT_PATH: /harness/harness-core/dist/iacm-manager-service
+ARTIFACT_REPO: harness/saas-openjdk-8u242/iacm-manager
+HELM_CHART_SOURCE_DIRECTORY: harness-core/310-iacm-manager/chart
+HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
 BUILD_STEP_RESOURCE_CPU: 1000m
 BUILD_STEP_RESOURCE_MEMORY: 4Gi

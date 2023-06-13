@@ -432,7 +432,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private static Criteria getCriteriaForProjectServiceOverrides(
+  private Criteria getCriteriaForProjectServiceOverrides(
       String accountId, String orgId, String projectId, boolean isRevert) {
     Criteria criteria = new Criteria()
                             .and(NGServiceOverridesEntityKeys.accountId)
@@ -456,7 +456,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private static Criteria getCriteriaForOrgServiceOverrides(String accountId, String orgId, boolean isRevert) {
+  private Criteria getCriteriaForOrgServiceOverrides(String accountId, String orgId, boolean isRevert) {
     Criteria criteria = new Criteria()
                             .and(NGServiceOverridesEntityKeys.accountId)
                             .is(accountId)
@@ -480,7 +480,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private static Criteria getCriteriaForAccountServiceOverrides(String accountId, boolean isRevert) {
+  private Criteria getCriteriaForAccountServiceOverrides(String accountId, boolean isRevert) {
     Criteria criteria = new Criteria().and(NGServiceOverridesEntityKeys.accountId).is(accountId);
 
     Criteria additionalCriteria;
@@ -502,7 +502,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private static Criteria getCriteriaForOrgEnvs(String accountId, String orgId, boolean isRevert) {
+  private Criteria getCriteriaForOrgEnvs(String accountId, String orgId, boolean isRevert) {
     Criteria criteria =
         new Criteria().and(EnvironmentKeys.accountId).is(accountId).and(EnvironmentKeys.orgIdentifier).is(orgId);
     Criteria additionalCriteria;
@@ -521,7 +521,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private static Criteria getCriteriaForAccountEnvs(String accountId, boolean isRevert) {
+  private Criteria getCriteriaForAccountEnvs(String accountId, boolean isRevert) {
     Criteria criteria = new Criteria().and(EnvironmentKeys.accountId).is(accountId);
     Criteria additionalCriteria;
     if (isRevert) {
@@ -735,18 +735,18 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     return isSuccessful;
   }
 
-  private static boolean checkSuccessInAccount(ServiceOverrideMigrationResponseDTO responseDTO) {
+  private boolean checkSuccessInAccount(ServiceOverrideMigrationResponseDTO responseDTO) {
     return responseDTO.getAccountLevelMigrationInfo().isOverridesMigrationSuccessFul()
         && responseDTO.getAccountLevelMigrationInfo().isEnvsMigrationSuccessful();
   }
 
-  private static boolean checkSuccessInOrgs(ServiceOverrideMigrationResponseDTO responseDTO) {
+  private boolean checkSuccessInOrgs(ServiceOverrideMigrationResponseDTO responseDTO) {
     return !(
         responseDTO.getOrgLevelMigrationInfo().stream().anyMatch(orgDto -> !orgDto.isOverridesMigrationSuccessFul())
         || responseDTO.getOrgLevelMigrationInfo().stream().anyMatch(orgDto -> !orgDto.isEnvsMigrationSuccessful()));
   }
 
-  private static boolean checkSuccessInProjects(ServiceOverrideMigrationResponseDTO responseDTO) {
+  private boolean checkSuccessInProjects(ServiceOverrideMigrationResponseDTO responseDTO) {
     return !(responseDTO.getProjectLevelMigrationInfo().stream().anyMatch(
                  projectDto -> !projectDto.isOverridesMigrationSuccessFul())
         || responseDTO.getProjectLevelMigrationInfo().stream().anyMatch(

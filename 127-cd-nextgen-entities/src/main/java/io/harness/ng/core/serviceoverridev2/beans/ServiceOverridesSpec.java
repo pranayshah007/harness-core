@@ -24,11 +24,9 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDC)
-@Value
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)

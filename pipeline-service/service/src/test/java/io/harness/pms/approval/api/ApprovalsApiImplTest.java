@@ -13,13 +13,17 @@ import static io.harness.rule.OwnerRule.NAMANG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.approval.ApprovalResourceService;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.ApprovalInstanceResponseBody;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
@@ -30,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.core.Response;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -38,6 +43,7 @@ import org.mockito.Mock;
 @OwnedBy(PIPELINE)
 public class ApprovalsApiImplTest extends PipelineServiceTestBase {
   @Mock ApprovalResourceService approvalResourceService;
+  @Mock PMSExecutionService pmsExecutionService;
   @InjectMocks ApprovalsApiImpl approvalsApiImpl;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -51,6 +57,13 @@ public class ApprovalsApiImplTest extends PipelineServiceTestBase {
   private static final Long CREATED_AT = 1L;
   private static final Long UPDATED_AT = 2L;
   private static final Long DEADLINE = 3L;
+
+  @Before
+  public void setup() {
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(
+             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, false))
+        .thenReturn(null);
+  }
 
   @Test
   @Owner(developers = NAMANG)
@@ -88,6 +101,38 @@ public class ApprovalsApiImplTest extends PipelineServiceTestBase {
                        -> approvalsApiImpl.getApprovalInstancesByExecutionId(
                            ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, ACCOUNT_ID, null, null, null))
         .doesNotThrowAnyException();
+
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(
+             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, false))
+        .thenThrow(new EntityNotFoundException("summary doesn't exist"));
+
+    assertThatThrownBy(()
+                           -> approvalsApiImpl.getApprovalInstancesByExecutionId(
+                               ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, ACCOUNT_ID, null, null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "execution_id param value provided doesn't belong to Account: %s, Org: %s, Project: %s or the pipeline has been deleted",
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER));
+
+    verify(pmsExecutionService, times(2))
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, false);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetApprovalInstancesByExecutionIdWhenValidatingExecutionIdResultsInUnexpectedError() {
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(
+             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, false))
+        .thenThrow(new InvalidRequestException("random exception"));
+
+    assertThatThrownBy(()
+                           -> approvalsApiImpl.getApprovalInstancesByExecutionId(
+                               ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, ACCOUNT_ID, null, null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("An unexpected error occurred while validating execution_id param");
+    verify(pmsExecutionService, times(1))
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, EXECUTION_IDENTIFIER, false);
   }
 
   @Test

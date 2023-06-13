@@ -7,6 +7,8 @@
 
 package io.harness.batch.processing.config.k8s.recommendation;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
+
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.batch.processing.dao.intfc.PublishedMessageDao;
@@ -130,6 +132,7 @@ public class K8sWorkloadRecommendationConfig {
                             .equal(accountId)
                             .field(K8sWorkloadRecommendationKeys.dirty)
                             .equal(Boolean.TRUE)
+                            .limit(NO_LIMIT)
                             .fetch(),
             slow, dangerouslySlow);
     return new CloseableIteratorItemReader<>(hIterator);

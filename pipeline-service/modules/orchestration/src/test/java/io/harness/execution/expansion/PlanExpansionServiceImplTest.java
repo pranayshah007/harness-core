@@ -9,23 +9,20 @@ package io.harness.execution.expansion;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 
 import io.harness.CategoryTest;
 import io.harness.OrchestrationModuleConfig;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.repositories.planExecutionJson.ExpandedJsonLockConfig;
 import io.harness.repositories.planExecutionJson.PlanExecutionExpansionRepository;
 import io.harness.rule.Owner;
-import io.harness.utils.PmsFeatureFlagService;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,8 +45,6 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
   private static final String SPEC = "spec";
 
   @Mock PlanExecutionExpansionRepository planExecutionExpansionRepository;
-  @Mock PlanExecutionMetadataService planExecutionMetadataService;
-  @Mock PmsFeatureFlagService pmsFeatureFlagService;
 
   @Mock OrchestrationModuleConfig orchestrationModuleConfig;
 
@@ -89,13 +84,17 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testUpdateStatus() {
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(PLAN_EXECUTION_ID)
-                            .putSetupAbstractions("accountId", "accountId")
-                            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
-                            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(PLAN_EXECUTION_ID)
+            .putSetupAbstractions("accountId", "accountId")
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                    .build())
+            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
+            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
+            .build();
 
     planExpansionService.updateStatus(ambiance, Status.SUCCEEDED);
     Mockito.verifyNoInteractions(planExecutionExpansionRepository);
@@ -105,9 +104,12 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
                    .putSetupAbstractions("accountId", "accountId")
                    .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
                    .addLevels(Level.newBuilder().setIdentifier(SPEC).setSkipExpressionChain(false).build())
+                   .setMetadata(ExecutionMetadata.newBuilder()
+                                    .putSettingToValueMap(
+                                        NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                                    .build())
                    .build();
 
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
     ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
     planExpansionService.updateStatus(ambiance, Status.SUCCEEDED);
     ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);
@@ -127,25 +129,32 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testAddOutcomes() {
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(PLAN_EXECUTION_ID)
-                            .putSetupAbstractions("accountId", "accountId")
-                            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
-                            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(PLAN_EXECUTION_ID)
+            .putSetupAbstractions("accountId", "accountId")
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                    .build())
+            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
+            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
+            .build();
 
     planExpansionService.addOutcomes(ambiance, "name", PmsOutcome.parse(new HashMap<>()));
     Mockito.verifyNoInteractions(planExecutionExpansionRepository);
 
     ambiance = Ambiance.newBuilder()
                    .setPlanExecutionId(PLAN_EXECUTION_ID)
+                   .setMetadata(ExecutionMetadata.newBuilder()
+                                    .putSettingToValueMap(
+                                        NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                                    .build())
                    .putSetupAbstractions("accountId", "accountId")
                    .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
                    .addLevels(Level.newBuilder().setIdentifier(SPEC).setSkipExpressionChain(false).build())
                    .build();
 
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
     ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
     planExpansionService.addOutcomes(ambiance, "name", PmsOutcome.parse(new HashMap<>()));
     ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);
@@ -166,13 +175,18 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testAddStepInputs() {
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(PLAN_EXECUTION_ID)
-                            .putSetupAbstractions("accountId", "accountId")
-                            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
-                            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(PLAN_EXECUTION_ID)
+            .putSetupAbstractions("accountId", "accountId")
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                    .build())
+
+            .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
+            .addLevels(Level.newBuilder().setIdentifier("spec").setSkipExpressionChain(true).build())
+            .build();
 
     planExpansionService.addStepInputs(ambiance, PmsStepParameters.parse(Maps.newHashMap("a", "b")));
     Mockito.verifyNoInteractions(planExecutionExpansionRepository);
@@ -180,11 +194,15 @@ public class PlanExpansionServiceImplTest extends CategoryTest {
     ambiance = Ambiance.newBuilder()
                    .setPlanExecutionId(PLAN_EXECUTION_ID)
                    .putSetupAbstractions("accountId", "accountId")
+                   .setMetadata(ExecutionMetadata.newBuilder()
+                                    .putSettingToValueMap(
+                                        NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                                    .build())
+
                    .addLevels(Level.newBuilder().setIdentifier(PIPELINE).setSkipExpressionChain(false).build())
                    .addLevels(Level.newBuilder().setIdentifier(SPEC).setSkipExpressionChain(false).build())
                    .build();
 
-    Mockito.when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
     ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
     planExpansionService.addStepInputs(ambiance, PmsStepParameters.parse(Maps.newHashMap("a", "b")));
     ArgumentCaptor<String> planExecutionCaptor = ArgumentCaptor.forClass(String.class);

@@ -94,8 +94,13 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	// create the stream server.
 	var stream stream.Stream
-	if config.Redis.Endpoint != "" {
-		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
+
+	if config.Redis.UseSentinel {
+		// Create Redis Sentinel storage instance
+		stream = redis.New("", config.Redis.Password, false, false, true, "", config.Redis.MasterName, config.Redis.SentinelAddrs)
+		logrus.Infof("configuring log stream to use Redis Sentinel")
+	} else if config.Redis.Endpoint != "" {
+		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, false, config.Redis.CertPath, "", nil)
 		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
 	} else {
 		// create the in-memory stream

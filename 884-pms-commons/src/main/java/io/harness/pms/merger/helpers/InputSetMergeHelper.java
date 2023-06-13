@@ -8,19 +8,18 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.jackson.JsonNodeUtils;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.utils.YamlPipelineUtils;
+import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class InputSetMergeHelper {
+  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
   public String mergeInputSetIntoPipeline(
       String pipelineYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
     return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
@@ -44,50 +44,44 @@ public class InputSetMergeHelper {
         pipelineYaml, removeNonRequiredStages(inputSetPipelineCompYaml, stageIdentifiers), appendInputSetValidator);
   }
 
-  public String mergeInputSets(String template, List<String> inputSetYamlList, boolean appendInputSetValidator) {
-    return mergeInputSetsForGivenStages(template, inputSetYamlList, appendInputSetValidator, null);
+  public JsonNode mergeInputSets(
+      JsonNode template, List<JsonNode> inputSetJsonNodeList, boolean appendInputSetValidator) {
+    return mergeInputSetsForGivenStages(template, inputSetJsonNodeList, appendInputSetValidator, null);
   }
 
-  public String mergeInputSetsForGivenStages(
-      String template, List<String> inputSetYamlList, boolean appendInputSetValidator, List<String> stageIdentifiers) {
-    List<String> inputSetPipelineCompYamlList = inputSetYamlList.stream()
-                                                    .map(yaml -> {
-                                                      try {
-                                                        return InputSetYamlHelper.getPipelineComponent(yaml);
-                                                      } catch (InvalidRequestException e) {
-                                                        return yaml;
-                                                      }
-                                                    })
-                                                    .collect(Collectors.toList());
-    String res = template;
-    for (String yaml : inputSetPipelineCompYamlList) {
-      String yamlWithRequiredStages = removeNonRequiredStages(yaml, stageIdentifiers);
-      if (EmptyPredicate.isEmpty(yamlWithRequiredStages)) {
+  public JsonNode mergeInputSetsForGivenStages(JsonNode template, List<JsonNode> inputSetJsonNodeList,
+      boolean appendInputSetValidator, List<String> stageIdentifiers) {
+    List<JsonNode> inputSetPipelineCompJsonNodeList =
+        getInputSetPipelineCompJsonNodeListWithJsonNode(inputSetJsonNodeList);
+    JsonNode res = template;
+    for (JsonNode jsonNode : inputSetPipelineCompJsonNodeList) {
+      JsonNode jsonNodeWithRequiredStages = removeNonRequiredStages(jsonNode, stageIdentifiers);
+      if (isEmpty(jsonNodeWithRequiredStages)) {
         continue;
       }
-      res = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(res, yamlWithRequiredStages, appendInputSetValidator);
+      res = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+          res, jsonNodeWithRequiredStages, appendInputSetValidator);
     }
     return res;
   }
 
-  public String mergeInputSetsV1(List<String> inputSetYamlList) {
-    if (EmptyPredicate.isEmpty(inputSetYamlList)) {
-      return "";
+  private List<JsonNode> getInputSetPipelineCompJsonNodeListWithJsonNode(List<JsonNode> inputSetJsonNodeList) {
+    return inputSetJsonNodeList.stream()
+        .map(jsonNode -> {
+          try {
+            return InputSetYamlHelper.getPipelineComponent(jsonNode);
+          } catch (InvalidRequestException e) {
+            return jsonNode;
+          }
+        })
+        .collect(Collectors.toList());
+  }
+
+  public JsonNode mergeInputSetsV1(List<JsonNode> inputSetJsonNodeList) {
+    if (EmptyPredicate.isEmpty(inputSetJsonNodeList)) {
+      return null;
     }
-    JsonNode mergedInputSetNode = null;
-    for (String inputSetYaml : inputSetYamlList) {
-      JsonNode inputSetNode;
-      try {
-        inputSetNode = YamlUtils.readTreeWithDefaultObjectMapper(inputSetYaml).getNode().getCurrJsonNode();
-      } catch (IOException e) {
-        throw new InvalidRequestException(String.format("Input set is invalid: %s", inputSetYaml));
-      }
-      if (mergedInputSetNode == null) {
-        mergedInputSetNode = inputSetNode;
-      } else {
-        JsonNodeUtils.merge(mergedInputSetNode, inputSetNode);
-      }
-    }
+    JsonNode mergedInputSetNode = getMergedInputSetNodeWithJsonNode(inputSetJsonNodeList);
     Map<String, Object> inputsMap = new HashMap<>();
     if (mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS) != null) {
       inputsMap.put(YAMLFieldNameConstants.INPUTS, mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS));
@@ -95,15 +89,31 @@ public class InputSetMergeHelper {
     if (mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS) != null) {
       inputsMap.put(YAMLFieldNameConstants.OPTIONS, mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS));
     }
-    return YamlPipelineUtils.writeYamlString(inputsMap);
+    return JsonUtils.asTree(inputsMap);
   }
 
-  public String removeNonRequiredStages(String inputSetPipelineCompYaml, List<String> stageIdentifiers) {
-    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
-    Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
+  private JsonNode getMergedInputSetNodeWithJsonNode(List<JsonNode> inputSetJsonNodeList) {
+    JsonNode mergedInputSetNode = null;
+    for (JsonNode inputSetNode : inputSetJsonNodeList) {
+      if (mergedInputSetNode == null) {
+        mergedInputSetNode = inputSetNode;
+      } else {
+        JsonNodeUtils.merge(mergedInputSetNode, inputSetNode);
+      }
+    }
+    return mergedInputSetNode;
+  }
+
+  public JsonNode removeNonRequiredStages(JsonNode inputSetPipelineCompJsonNode, List<String> stageIdentifiers) {
+    Map<FQN, Object> inputSetFQNMap = FQNMapGenerator.generateFQNMap(inputSetPipelineCompJsonNode);
     if (EmptyPredicate.isNotEmpty(stageIdentifiers)) {
       FQNHelper.removeNonRequiredStages(inputSetFQNMap, stageIdentifiers);
     }
-    return new YamlConfig(inputSetFQNMap, inputSetConfig.getYamlMap()).getYaml();
+    return YamlMapGenerator.generateYamlMap(inputSetFQNMap, inputSetPipelineCompJsonNode, false);
+  }
+
+  public String removeNonRequiredStages(String inputSetPipelineCompYaml, List<String> stageIdentifiers) {
+    return YamlUtils.writeYamlString(
+        removeNonRequiredStages(YamlUtils.readAsJsonNode(inputSetPipelineCompYaml), stageIdentifiers));
   }
 }

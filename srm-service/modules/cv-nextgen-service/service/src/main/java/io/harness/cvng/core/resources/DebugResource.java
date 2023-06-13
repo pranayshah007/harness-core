@@ -30,7 +30,10 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +42,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import retrofit2.http.Body;
 
 @Api("debug")
@@ -58,13 +62,50 @@ public class DebugResource {
     return new RestResponse<>(debugService.getSLODebugResponse(projectParams.getProjectParams(), identifier));
   }
 
+  @GET
+  @Timed
+  @Path("isProjectDeleted")
+  @ApiOperation(
+      value = "Checks whether Project resources are deleted", nickname = "isProjectResourcesDeleted", hidden = true)
+  public RestResponse<Boolean>
+  isProjectDeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams) {
+    return new RestResponse<>(debugService.isProjectDeleted(projectParams.getProjectParams()));
+  }
+
+  @GET
+  @Timed
+  @Path("isSLODeleted/{identifier}")
+  @ApiOperation(value = "Checks whether SLO resources are deleted", nickname = "isSLOResourcesDeleted", hidden = true)
+  public RestResponse<Boolean> isSLODeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
+    return new RestResponse<>(debugService.isSLODeleted(projectParams.getProjectParams(), identifier));
+  }
+
+  @GET
+  @Timed
+  @Path("isSLIDeleted/{identifier}")
+  @ApiOperation(value = "Checks whether SLI resources are deleted", nickname = "isSLIResourcesDeleted", hidden = true)
+  public RestResponse<Boolean> isSLIDeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
+    return new RestResponse<>(debugService.isSLIDeleted(projectParams.getProjectParams(), identifier));
+  }
+
   @DELETE
   @Timed
-  @Path("slo/{identifier}")
+  @Path("slo")
   @ApiOperation(value = "Force deletes SLOs and associated entities", nickname = "forceDeleteSLO", hidden = true)
-  public RestResponse<Boolean> forceDeleteSLO(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
-    return new RestResponse<>(debugService.forceDeleteSLO(projectParams.getProjectParams(), identifier));
+  public RestResponse<Boolean> forceDeleteSLO(@NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
+    return new RestResponse<>(debugService.forceDeleteSLO(projectParams, identifiers));
+  }
+
+  @DELETE
+  @Timed
+  @Path("sli")
+  @ApiOperation(value = "Force deletes SLIs and associated entities", nickname = "forceDeleteSLI", hidden = true)
+  public RestResponse<Boolean> forceDeleteSLI(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
+    return new RestResponse<>(debugService.forceDeleteSLI(projectParams.getProjectParams(), identifiers));
   }
 
   @GET
@@ -95,6 +136,38 @@ public class DebugResource {
   updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.retryDataCollectionTask(projectParams.getProjectParams(), identifier));
+  }
+
+  @PUT
+  @Timed
+  @Path("slo/{identifier}/failed")
+  @ApiOperation(value = "Updates failed state of SLO for automation", nickname = "markSLOAsFailed", hidden = true)
+  public void markSLOAsFailed(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @QueryParam("enable") Boolean enable) {
+    debugService.updateFailedStateOfSLO(projectParams.getProjectParams(), identifier, enable);
+  }
+
+  @PUT
+  @Timed
+  @Path("slo/{identifier}/dataCollectionFailures")
+  @ApiOperation(value = "enqueue DataCollection Failures for automation", nickname = "enqueueDataCollectionFailure",
+      hidden = true)
+  public void
+  enqueueDataCollectionFailure(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime) {
+    debugService.enqueueDataCollectionFailure(projectParams.getProjectParams(), identifier, startTime, endTime);
+  }
+
+  @PUT
+  @Timed
+  @Path("slo/{identifier}/restore")
+  @ApiOperation(value = "Restore Failed DC tasks", nickname = "restoreFailedDCTasks", hidden = true)
+  public void restore(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime) {
+    debugService.restoreSLOData(projectParams.getProjectParams(), identifier, startTime, endTime);
   }
 
   @POST

@@ -57,7 +57,7 @@ public class EcrBuildServiceImpl implements EcrBuildService {
 
     return wrapNewBuildsWithLabels(
         ecrService
-            .getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig),
+            .getBuilds(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null,
                 ecrServiceDelegate.getEcrImageUrl(awsConfig, encryptionDetails, artifactStreamAttributes.getRegion(),
                     artifactStreamAttributes.getImageName()),
                 artifactStreamAttributes.getRegion(), artifactStreamAttributes.getImageName(), 50)
@@ -79,7 +79,7 @@ public class EcrBuildServiceImpl implements EcrBuildService {
   public List<String> getArtifactPaths(
       String region, String groupId, AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
-    return ecrService.listEcrRegistry(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region);
+    return ecrService.listEcrRegistry(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region, null);
   }
 
   @Override
@@ -116,7 +116,7 @@ public class EcrBuildServiceImpl implements EcrBuildService {
       ArtifactStreamAttributes artifactStreamAttributes) {
     encryptionService.decrypt(config, encryptionDetails, false);
     return ecrService.verifyRepository(AwsConfigToInternalMapper.toAwsInternalConfig(config),
-        artifactStreamAttributes.getRegion(), artifactStreamAttributes.getImageName());
+        artifactStreamAttributes.getRegion(), null, artifactStreamAttributes.getImageName());
   }
 
   @Override
@@ -140,7 +140,7 @@ public class EcrBuildServiceImpl implements EcrBuildService {
   public List<Map<String, String>> getLabels(ArtifactStreamAttributes artifactStreamAttributes, List<String> buildNos,
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
-    return ecrService.getLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig),
+    return ecrService.getLabels(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null,
         artifactStreamAttributes.getImageName(), artifactStreamAttributes.getRegion(), buildNos);
   }
 }

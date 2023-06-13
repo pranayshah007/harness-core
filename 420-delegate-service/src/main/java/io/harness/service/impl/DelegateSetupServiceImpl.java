@@ -188,6 +188,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
             selectorTypeMap.put(selector.toLowerCase(), SelectorType.GROUP_SELECTORS);
           }
         }
+        if (isNotEmpty(delegateGroup.getRunnerTypes())) {
+          for (String selector : delegateGroup.getRunnerTypes()) {
+            selectorTypeMap.put(selector.toLowerCase(), SelectorType.GROUP_SELECTORS);
+          }
+        }
       }
     }
 

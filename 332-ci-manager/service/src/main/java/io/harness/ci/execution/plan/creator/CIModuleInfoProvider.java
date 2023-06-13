@@ -9,6 +9,7 @@ package io.harness.ci.plan.creator;
 
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
+import static io.harness.beans.execution.WebhookEvent.Type.RELEASE;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
@@ -21,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -31,6 +33,7 @@ import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.commonconstants.CIExecutionConstants;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
@@ -227,7 +230,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         triggerRepoName = fetchTriggerRepo(webhookExecutionSource);
         if (ciWebhookInfoDTO.getEvent().equals("branch")) {
           triggerCommits = ciWebhookInfoDTO.getBranch().getCommits();
-        } else {
+        } else if (ciWebhookInfoDTO.getEvent().equals("PR")) {
           triggerCommits = ciWebhookInfoDTO.getPullRequest().getCommits();
         }
         if (optionalSweepingOutput.isFound()) {
@@ -283,6 +286,15 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         if (isEmpty(repoName) && isNotEmpty(codebaseSweepingOutput.getRepoUrl())) {
           repoName = getGitRepo(codebaseSweepingOutput.getRepoUrl());
         }
+
+        if (author == null) {
+          author = CIBuildAuthor.builder()
+                       .id(codebaseSweepingOutput.getGitUserId())
+                       .name(codebaseSweepingOutput.getGitUser())
+                       .avatar(codebaseSweepingOutput.getGitUserAvatar())
+                       .email(codebaseSweepingOutput.getGitUserEmail())
+                       .build();
+        }
       }
 
       return CIPipelineModuleInfo.builder()
@@ -333,10 +345,14 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       triggerCommits = null;
     }
 
+    String userSource = ciBuildAuthor != null && isNotEmpty(ciBuildAuthor.getId()) ? CIExecutionConstants.SOURCE_GIT
+                                                                                   : CIExecutionConstants.SOURCE_MANUAL;
+
     if (isNotEmpty(prNumber)) {
       return CIWebhookInfoDTO.builder()
           .event("pullRequest")
           .author(ciBuildAuthor)
+          .userSource(userSource)
           .pullRequest(CIBuildPRHook.builder()
                            .id(Long.valueOf(codebaseSweepingOutput.getPrNumber()))
                            .link(codebaseSweepingOutput.getPullRequestLink())
@@ -352,6 +368,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     } else {
       return CIWebhookInfoDTO.builder()
           .event("branch")
+          .userSource(userSource)
           .author(ciBuildAuthor)
           .branch(CIBuildBranchHook.builder().commits(ciBuildCommits).triggerCommits(triggerCommits).build())
           .build();
@@ -359,7 +376,17 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
   }
 
   public String fetchTriggerRepo(WebhookExecutionSource webhookExecutionSource) {
-    if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
+    if (webhookExecutionSource.getWebhookEvent().getType() == RELEASE) {
+      ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
+
+      if (releaseWebhookEvent == null || releaseWebhookEvent.getRepository() == null
+          || releaseWebhookEvent.getRepository().getHttpURL() == null) {
+        return null;
+      }
+
+      return getGitRepo(releaseWebhookEvent.getRepository().getHttpURL());
+
+    } else if (webhookExecutionSource.getWebhookEvent().getType() == PR) {
       PRWebhookEvent prWebhookEvent = (PRWebhookEvent) webhookExecutionSource.getWebhookEvent();
 
       if (prWebhookEvent == null || prWebhookEvent.getRepository() == null
@@ -501,7 +528,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       connection.setConnectTimeout(5000);
       connection.connect();
       int code = connection.getResponseCode();
-      return !Response.Status.Family.familyOf(code).equals(Response.Status.Family.SUCCESSFUL);
+      return (!Response.Status.Family.familyOf(code).equals(Response.Status.Family.SUCCESSFUL))
+          || code == HttpURLConnection.HTTP_NOT_AUTHORITATIVE;
     } catch (Exception e) {
       log.warn("Failed to get repo info, assuming private. url", e);
       return true;

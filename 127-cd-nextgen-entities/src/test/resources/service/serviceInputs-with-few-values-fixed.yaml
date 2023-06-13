@@ -1,22 +1,22 @@
 serviceInputs:
   serviceDefinition:
-    type: "Kubernetes"
+    type: Kubernetes
     spec:
       artifacts:
         primary:
-          primaryArtifactRef: "i1"
+          primaryArtifactRef: i1
           sources:
-            - identifier: "i1"
-              type: "DockerRegistry"
+            - identifier: i1
+              type: DockerRegistry
               spec:
-                imagePath: "<+input>"
+                imagePath: <+input>
       manifests:
         - manifest:
-            identifier: "mani_id"
-            type: "HelmChart"
+            identifier: mani_id
+            type: HelmChart
             spec:
-              chartName: "<+input>"
+              chartName: <+input>
       variables:
-        - name: "variable1"
-          type: "String"
-          value: "value"
+        - name: variable1
+          type: String
+          value: value

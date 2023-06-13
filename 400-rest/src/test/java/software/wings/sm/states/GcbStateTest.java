@@ -56,6 +56,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
@@ -128,6 +129,7 @@ public class GcbStateTest extends CategoryTest {
   @Mock private StateExecutionServiceImpl stateExecutionService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+  @Mock private FeatureFlagService featureFlagService;
 
   @InjectMocks private GcbState state = spy(new GcbState("gcb"));
 

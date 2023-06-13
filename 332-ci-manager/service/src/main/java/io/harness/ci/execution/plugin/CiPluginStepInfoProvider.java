@@ -18,6 +18,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginContainerResources;
@@ -48,7 +49,8 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
 
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
@@ -61,7 +63,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     ContainerDefinitionInfo containerDefinitionInfo =
         k8InitializeStepUtils.createStepContainerDefinition(ciAbstractStepNode, null, null, portFinder, 0,
-            request.getAccountId(), OSType.fromString(request.getOsType()), request.getAmbiance(), 0, 0);
+            request.getAccountId(), OSType.fromString(request.getOsType()), ambiance, 0, 0);
     List<SecretVariable> secretVariables = containerDefinitionInfo.getSecretVariables()
                                                .stream()
                                                .map(SecretNgVariableUtils::getSecretVariable)

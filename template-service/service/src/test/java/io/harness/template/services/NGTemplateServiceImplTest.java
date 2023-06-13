@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -39,10 +41,12 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.engine.GovernanceService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
@@ -58,6 +62,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitx.GitXSettingsHelper;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
@@ -96,6 +101,7 @@ import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.TemplateMoveConfigResponse;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -149,6 +155,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private AccountClient accountClient;
   @Mock private NGSettingsClient settingsClient;
 
+  @Mock TemplateAsyncSetupUsageService templateAsyncSetupUsageService;
+
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
@@ -161,6 +169,9 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
+  @Mock private GovernanceService governanceService;
+  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -241,6 +252,14 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(ngManagerReconcileCall)
         .when(ngManagerReconcileClient)
         .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
+
+    doReturn(GovernanceMetadata.newBuilder()
+                 .setDeny(false)
+                 .setMessage(String.format(
+                     "FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE, ACCOUNT_ID))
+                 .build())
+        .when(governanceService)
+        .evaluateGovernancePoliciesForTemplate(any(), any(), any(), any(), any(), any());
 
     doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
         .when(ngManagerReconcileCall)
@@ -483,7 +502,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     Page<TemplateEntity> templateEntities =
         templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+    assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting a non last update template version
     delete =
@@ -491,7 +510,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+    assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting complete templateIdentifier
     delete = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
@@ -553,6 +572,107 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
     assertThat(templateEntities.getContent().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteTemplateVersionLastUpdatedScenarios() {
+    /*
+      Consider 3 template versions ( version1, version2, version3 )
+      version1 is lastUpdatedTemplate
+      version2 is Stable template
+      version3 has references
+      consider case :- We delete version1 and version3 together, since version1 is lastStableTemplate
+      this is first deleted, it sets the lastUpdatedTemplate to true, and when we try to delete version3 is gives
+      ReferencedEntityException and it updates the lastStableTemplate to stable template i.e version2.
+     */
+
+    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    assertThat(createdEntity.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion2 = templateService.create(entity.withVersionLabel("version2"), true, "", false);
+    assertThat(entityVersion2.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion3 = templateService.create(entity.withVersionLabel("version3"), false, "", false);
+    assertThat(entityVersion3.isStableTemplate()).isFalse();
+    assertThat(entityVersion3.isLastUpdatedTemplate()).isTrue();
+
+    templateService.updateTemplateEntity(entity.withDescription("Updated"), ChangeType.MODIFY, false, "");
+
+    createdEntity =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", false, false)
+            .get();
+    assertThat(createdEntity.isLastUpdatedTemplate()).isTrue();
+
+    entityVersion2 =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", false, false)
+            .get();
+    assertThat(entityVersion2.isLastUpdatedTemplate()).isFalse();
+
+    entityVersion3 =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version3", false, false)
+            .get();
+    assertThat(entityVersion3.isLastUpdatedTemplate()).isFalse();
+
+    Criteria criteria =
+        templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "", false);
+    criteria.and(TemplateEntityKeys.isLastUpdatedTemplate).is(true);
+
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+
+    String fqn1 = String.format("%s/orgId/projId/template1/version3/", ACCOUNT_ID);
+    String fqn2 = String.format("%s/orgId/projId/template1/version1/", ACCOUNT_ID);
+
+    Call<ResponseDTO<Boolean>> request1 = mock(Call.class);
+    try {
+      when(request1.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(ACCOUNT_ID, fqn1, EntityType.TEMPLATE)).thenReturn(request1);
+
+    Call<ResponseDTO<Boolean>> request2 = mock(Call.class);
+    try {
+      when(request2.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(ACCOUNT_ID, fqn2, EntityType.TEMPLATE)).thenReturn(request2);
+
+    // Deleting complete templateIdentifier
+    assertThatThrownBy(()
+                           -> templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               TEMPLATE_IDENTIFIER, Sets.newHashSet("version1", "version3"), "", false))
+        .isInstanceOf(ReferencedEntityException.class);
+
+    entityVersion2 =
+        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", false, false)
+            .get();
+    assertThat(entityVersion2.isLastUpdatedTemplate()).isTrue();
+
+    TemplateEntity entityVersion4 = templateService.create(entity.withVersionLabel("version4"), false, "", false);
+    assertThat(entityVersion4.isStableTemplate()).isFalse();
+    assertThat(entityVersion4.isLastUpdatedTemplate()).isTrue();
+
+    Call<ResponseDTO<Boolean>> request3 = mock(Call.class);
+    try {
+      when(request3.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request3);
+
+    /*
+      Trying to delete all templates at once including the stable template, only supported from BE
+      Since the lastUpdatedTemplate is also deleted, it sets stable template as lastUpdated
+      and Stable Template get deletes at the last
+    */
+
+    templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+        Sets.newHashSet("version2", "version4", "version3"), "", false);
+
+    Page<TemplateEntity> templateEntities =
+        templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(0);
   }
 
   @Test
@@ -1344,5 +1464,49 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
+    GovernanceMetadata flagOffMetadata =
+        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
+    assertThat(flagOffMetadata.getDeny()).isFalse();
+    assertThat(flagOffMetadata.getMessage())
+        .isEqualTo("FF: [CDS_OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testFailOnMoveConfigForNotSupportedTemplates() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
+                                        .yaml(yaml)
+                                        .build();
+    ngTemplateService.create(templateEntity, true, "", false);
+    doReturn(templateEntity)
+        .when(ngTemplateService)
+        .moveTemplateEntity(any(), any(), any(), any(), any(), any(TemplateMoveConfigOperationDTO.class), any());
+    TemplateMoveConfigRequestDTO moveConfigOperationDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    assertThatThrownBy(()
+                           -> ngTemplateService.moveTemplateStoreTypeConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit", moveConfigOperationDTO))
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

@@ -22,6 +22,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.helm.HelmConstants;
@@ -74,7 +75,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       instanceSyncTaskDetails =
           AnyUtils.unpack(releaseDetails.getReleaseDetails(), DirectK8sInstanceSyncTaskDetails.class);
     } catch (Exception e) {
-      log.error("Unable to unpack Instance Sync task details for Id: [{}]", releaseDetails.getTaskDetailsId(), e);
+      log.warn("Unable to unpack Instance Sync task details for Id: [{}]  due to [{}]",
+          releaseDetails.getTaskDetailsId(), ExceptionUtils.getMessage(e));
       return InstanceSyncData.newBuilder().setTaskDetailsId(releaseDetails.getTaskDetailsId()).build();
     }
     try {
@@ -100,9 +102,9 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .build();
     } catch (Exception e) {
       log.warn(
-          "Exception while fetching running K8s pods for release details: [{}], infra mapping Id: [{}] of type: [{}]",
+          "Exception while fetching running K8s pods for release details: [{}], infra mapping Id: [{}] of type: [{}]  due to [{}]",
           releaseDetails.getTaskDetailsId(), releaseDetails.getInfraMappingId(), releaseDetails.getInfraMappingType(),
-          e);
+          ExceptionUtils.getMessage(e));
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
           .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
@@ -180,9 +182,9 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .build();
 
     } catch (Exception exception) {
-      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
-                   instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName()),
-          exception);
+      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] due to [%s]",
+          instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName(),
+          ExceptionUtils.getMessage(exception)));
       return K8sTaskExecutionResponse.builder()
           .commandExecutionStatus(FAILURE)
           .errorMessage(exception.getMessage())
@@ -203,9 +205,9 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .namespace(instanceSyncTaskDetails.getNamespace())
           .build();
     } catch (Exception exception) {
-      log.warn(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
-                   instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName()),
-          exception);
+      log.warn(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s]  due to [%s]",
+          instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName(),
+          ExceptionUtils.getMessage(exception)));
 
       return ContainerSyncResponse.builder()
           .commandExecutionStatus(FAILURE)

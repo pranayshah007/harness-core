@@ -28,6 +28,7 @@ import io.harness.favorites.utils.FavoritesValidator;
 import io.harness.repositories.favorites.spring.FavoriteRepository;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
+import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,7 @@ public class FavoritesServiceImplTest extends CategoryTest {
   private FavoritesServiceImpl favoriteService;
   private static String userId = "userId";
   private static String accountId = "accountId";
+  private static String resourceTypeDTO = "CONNECTOR";
 
   @Before
   public void setup() {
@@ -59,17 +61,19 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void createFavoriteValidInputSaveFavorite() {
-    FavoriteDTO favoriteDTO =
-        new FavoriteDTO().resourceType(ResourceType.CONNECTOR.toString()).module(ModuleType.CD.name()).userId(userId);
+    FavoriteDTO favoriteDTO = new FavoriteDTO()
+                                  .resourceType(FavoritesResourceType.CONNECTOR)
+                                  .module(io.harness.spec.server.ng.v1.model.ModuleType.CD)
+                                  .userId(userId);
     Favorite favorite =
         Favorite.builder().resourceType(ResourceType.CONNECTOR).module(ModuleType.CD).userIdentifier(userId).build();
     when(favoritesResourceUtils.toFavoriteEntity(favoriteDTO, accountId)).thenReturn(favorite);
     when(favoriteRepository.save(favorite)).thenReturn(favorite);
     Favorite createdFavorite = favoriteService.createFavorite(favoriteDTO, accountId);
     assertThat(createdFavorite.getResourceIdentifier()).isEqualTo(favoriteDTO.getResourceId());
-    assertThat(createdFavorite.getResourceType().toString()).isEqualTo(favoriteDTO.getResourceType());
+    assertThat(createdFavorite.getResourceType().toString()).isEqualTo(favoriteDTO.getResourceType().toString());
     assertThat(createdFavorite.getUserIdentifier()).isEqualTo(favoriteDTO.getUserId());
-    assertThat(createdFavorite.getModule().toString()).isEqualTo(favoriteDTO.getModule());
+    assertThat(createdFavorite.getModule().toString()).isEqualTo(favoriteDTO.getModule().toString());
     verify(favoritesValidator).validateFavoriteEntry(favoriteDTO, accountId);
     verify(favoritesResourceUtils).toFavoriteEntity(favoriteDTO, accountId);
     verify(favoriteRepository).save(favorite);
@@ -105,8 +109,19 @@ public class FavoritesServiceImplTest extends CategoryTest {
              accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType))
         .thenReturn(expectedFavorites);
     List<Favorite> actualFavorites =
-        favoriteService.getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType);
+        favoriteService.getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeDTO);
     assertThat(expectedFavorites).isEqualTo(actualFavorites);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void getFavoritesWithInvalidResourceTypeFoundFavoritesReturnFavoritesList() {
+    String accountIdentifier = "account123";
+    String orgIdentifier = "org123";
+    String projectIdentifier = "project123";
+    String userId = "user123";
+    favoriteService.getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId, null);
   }
 
   @Test
@@ -122,7 +137,7 @@ public class FavoritesServiceImplTest extends CategoryTest {
              accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType))
         .thenReturn(new ArrayList<>());
     List<Favorite> favorites =
-        favoriteService.getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType);
+        favoriteService.getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeDTO);
     assertThat(favorites.size()).isEqualTo(0);
   }
 
@@ -170,9 +185,8 @@ public class FavoritesServiceImplTest extends CategoryTest {
     String projectIdentifier = "project123";
     String userId = "user123";
     String resourceId = "resource123";
-    String resourceType = "CONNECTOR";
     favoriteService.deleteFavorite(
-        accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType, resourceId);
+        accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeDTO, resourceId);
     verify(favoriteRepository)
         .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, userId, ResourceType.CONNECTOR, resourceId);
@@ -187,8 +201,6 @@ public class FavoritesServiceImplTest extends CategoryTest {
     String projectIdentifier = "project123";
     String userId = "user123";
     String resourceId = "resource123";
-    String resourceType = "invalid";
-    favoriteService.deleteFavorite(
-        accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType, resourceId);
+    favoriteService.deleteFavorite(accountIdentifier, orgIdentifier, projectIdentifier, userId, null, resourceId);
   }
 }

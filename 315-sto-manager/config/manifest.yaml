@@ -1,8 +1,8 @@
 BUILD_SCRIPT_PATH: 315-sto-manager/build/feature_build.sh
-DOCKER_FILE_PATH: /harness/dist/sto-manager/Dockerfile-gcr-ubi
-CONTEXT_PATH: /harness/dist/sto-manager
+DOCKER_FILE_PATH: /harness/harness-core/dist/sto-manager-service/Dockerfile-gcr-ubi
+CONTEXT_PATH: /harness/harness-core/dist/sto-manager-service
 ARTIFACT_REPO: harness/saas-openjdk-8u242/sto-manager
-HELM_CHART_SOURCE_DIRECTORY: sto-manager/chart
+HELM_CHART_SOURCE_DIRECTORY: harness-core/315-sto-manager/chart
 HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
 BUILD_STEP_RESOURCE_CPU: 1000m
 BUILD_STEP_RESOURCE_MEMORY: 4Gi

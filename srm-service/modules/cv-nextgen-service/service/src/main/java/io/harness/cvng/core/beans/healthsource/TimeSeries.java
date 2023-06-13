@@ -7,7 +7,6 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
-import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -16,5 +15,5 @@ import lombok.Value;
 @Builder
 public class TimeSeries {
   String timeseriesName;
-  List<TimeSeriesDataPoint> data = new ArrayList<>();
+  List<TimeSeriesDataPoint> data;
 }

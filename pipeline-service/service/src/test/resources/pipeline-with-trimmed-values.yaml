@@ -1,129 +1,133 @@
 pipeline:
-  identifier: "http"
-  name: "http"
-  projectIdentifier: "HttpJson"
-  orgIdentifier: "default"
+  identifier: http
+  name: http
+  projectIdentifier: HttpJson
+  orgIdentifier: default
   tags: {}
   stages:
-  - stage:
-      identifier: "stage1"
-      type: "Deployment"
-      name: "stage1"
-      description: ""
-      spec:
-        serviceConfig:
-          serviceDefinition:
-            type: "Kubernetes"
-            spec:
-              artifacts:
-                sidecars: []
-              variables: []
-              manifestOverrideSets: []
-              manifests: []
-          serviceRef: "service1"
-        infrastructure:
-          environmentRef: "ev"
-          infrastructureDefinition:
-            type: "KubernetesDirect"
-            spec:
-              connectorRef: "fdfd"
-              namespace: "fdfd"
-              releaseName: "release-<+INFRA_KEY>"
-          allowSimultaneousDeployments: false
-        execution:
-          steps:
-          - step:
-              identifier: "tf_plan"
-              type: "TerraformPlan"
-              name: "Terraform Plan"
-              timeout: "10m"
+    - stage:
+        identifier: stage1
+        type: Deployment
+        name: stage1
+        description: ""
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
               spec:
-                provisionerIdentifier: "vbtest1"
-                configuration:
-                  command: "Apply"
-                  workspace: "w1"
-                  backendConfig:
-                    type: "Inline"
-                    spec:
-                      content: "bucket=\"terraform-test-vaibhav\"\nkey=\"ng-test-10.tfstate\"\
-                        \naccess_key=\"<+secrets.getValue(\"account.access_key\")>\"\
-                        \nsecret_key=\"<+secrets.getValue(\"account.secret_key\")>\""
-                  varFiles:
-                  - varFile:
-                      identifier: "file2"
-                      type: "Remote"
-                      spec:
-                        store:
-                          type: "Github"
-                          spec:
-                            connectorRef: "<+pipeline.variables.connectorRef>"
-                            gitFetchType: "Branch"
-                            branch: "master"
-                            paths:
-                            - "test/remoteState/values.tfvars"
-                  - varFile:
-                      identifier: "file1"
-                      type: "Inline"
-                      spec:
-                        content: "aws_access_key = \"<+secrets.getValue(\"account.access_key\"\
-                          )>\"\naws_secret_key = \"<+secrets.getValue(\"account.secret_key\"\
-                          )>\"\ninstance_type=\"test\"\ntag_name=\"vb-local\""
-                  configFiles:
-                    store:
-                      type: "Github"
-                      spec:
-                        branch: "master"
-                        connectorRef: "<+pipeline.variables.connectorRef>"
-                        gitFetchType: "Branch"
-                        folderPath: "test/remoteState/"
-                  secretManagerRef: "account.harnessSecretManager"
-              when:
-                stageStatus: "Success"
-                condition: "true"
-          - step:
-              identifier: "shell1"
-              type: "ShellScript"
-              name: "shell1"
+                artifacts:
+                  sidecars: []
+                variables: []
+                manifestOverrideSets: []
+                manifests: []
+            serviceRef: service1
+          infrastructure:
+            environmentRef: ev
+            infrastructureDefinition:
+              type: KubernetesDirect
               spec:
-                shell: "Bash"
-                onDelegate: true
-                source:
-                  type: "Inline"
+                connectorRef: fdfd
+                namespace: fdfd
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  identifier: tf_plan
+                  type: TerraformPlan
+                  name: Terraform Plan
+                  timeout: 10m
                   spec:
-                    script: "exit 0"
-                environmentVariables:
-                - name: "string1"
-                  type: "String"
-                  value: "prashant1"
-                - name: "string2"
-                  type: "String"
-                  value: "supu1"
-                - name: "string3"
-                  type: "String"
-                  value: "Notrim"
-                outputVariables:
-                - name: "string4"
-                  type: "String"
-                  value: "string1"
-                - name: "string5"
-                  type: "String"
-                  value: "string2"
-                - name: "string6"
-                  type: "String"
-                  value: "string3"
-                executionTarget: {}
-              timeout: "10m"
-          rollbackSteps:
-          - step:
-              identifier: "rollbackRolloutDeployment"
-              type: "K8sRollingRollback"
-              name: "Rollback Rollout Deployment"
-              timeout: "10m"
-              spec: {}
-      tags: {}
-      failureStrategies:
-      - onFailure:
-          errors:
-          - "AllErrors"
-          action:
-            type: "StageRollback"
+                    provisionerIdentifier: vbtest1
+                    configuration:
+                      command: Apply
+                      workspace: w1
+                      backendConfig:
+                        type: Inline
+                        spec:
+                          content: |-
+                            bucket="terraform-test-vaibhav"
+                            key="ng-test-10.tfstate"
+                            access_key="<+secrets.getValue("account.access_key")>"
+                            secret_key="<+secrets.getValue("account.secret_key")>"
+                      varFiles:
+                        - varFile:
+                            identifier: file2
+                            type: Remote
+                            spec:
+                              store:
+                                type: Github
+                                spec:
+                                  connectorRef: <+pipeline.variables.connectorRef>
+                                  gitFetchType: Branch
+                                  branch: master
+                                  paths:
+                                    - test/remoteState/values.tfvars
+                        - varFile:
+                            identifier: file1
+                            type: Inline
+                            spec:
+                              content: |-
+                                aws_access_key = "<+secrets.getValue("account.access_key")>"
+                                aws_secret_key = "<+secrets.getValue("account.secret_key")>"
+                                instance_type="test"
+                                tag_name="vb-local"
+                      configFiles:
+                        store:
+                          type: Github
+                          spec:
+                            branch: master
+                            connectorRef: <+pipeline.variables.connectorRef>
+                            gitFetchType: Branch
+                            folderPath: test/remoteState/
+                      secretManagerRef: account.harnessSecretManager
+                  when:
+                    stageStatus: Success
+                    condition: "true"
+              - step:
+                  identifier: shell1
+                  type: ShellScript
+                  name: shell1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: exit 0
+                    environmentVariables:
+                      - name: string1
+                        type: String
+                        value: prashant1
+                      - name: string2
+                        type: String
+                        value: supu1
+                      - name: string3
+                        type: String
+                        value: Notrim
+                    outputVariables:
+                      - name: string4
+                        type: String
+                        value: string1
+                      - name: string5
+                        type: String
+                        value: string2
+                      - name: string6
+                        type: String
+                        value: string3
+                    executionTarget: {}
+                  timeout: 10m
+            rollbackSteps:
+              - step:
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  name: Rollback Rollout Deployment
+                  timeout: 10m
+                  spec: {}
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

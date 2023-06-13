@@ -180,6 +180,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         .timeOutIntervalInMins(cfDeployCommandRequestNG.getTimeoutIntervalInMin())
         .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(true, cfDeployCommandRequestNG.getCfCliVersion()))
         .cfCliVersion(cfDeployCommandRequestNG.getCfCliVersion())
+        .useCFCLI(cfDeployCommandRequestNG.isUseCfCLI())
         .build();
   }
 

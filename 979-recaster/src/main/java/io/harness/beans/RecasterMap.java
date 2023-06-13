@@ -46,7 +46,7 @@ public class RecasterMap extends LinkedHashMap<String, Object> implements Map<St
       this.put(RECAST_CLASS_KEY, recasterAliasValue);
     } else {
       if (AliasRegistry.getInstance().shouldContainAlias(clazz)) {
-        log.debug("[RECAST_ALIAS]: Consider adding @RecasterAlias annotation to this class {}", clazz.getName());
+        log.warn("[RECAST_ALIAS]: Consider adding @RecasterAlias annotation to this class {}", clazz.getName());
       }
       this.put(RECAST_CLASS_KEY, clazz.getName());
     }

@@ -132,6 +132,11 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
     hPersistence.delete(getErrorBudgetResetQuery(projectParams, sloIdentifier));
   }
 
+  @Override
+  public void clearErrorBudgetResets(ProjectParams projectParams, List<String> sloIdentifiers) {
+    hPersistence.delete(getErrorBudgetResetQuery(projectParams, sloIdentifiers));
+  }
+
   private SLOErrorBudgetResetDTO dtoFromEntity(SLOErrorBudgetReset sloErrorBudgetReset) {
     return SLOErrorBudgetResetDTO.builder()
         .serviceLevelObjectiveIdentifier(sloErrorBudgetReset.getServiceLevelObjectiveIdentifier())
@@ -167,6 +172,16 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
         .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
         .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .filter(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier, sloIdentifier);
+  }
+
+  private Query<SLOErrorBudgetReset> getErrorBudgetResetQuery(
+      ProjectParams projectParams, List<String> sloIdentifiers) {
+    return hPersistence.createQuery(SLOErrorBudgetReset.class)
+        .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier)
+        .in(sloIdentifiers);
   }
 
   @VisibleForTesting

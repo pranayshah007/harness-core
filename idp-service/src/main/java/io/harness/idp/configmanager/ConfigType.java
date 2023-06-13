@@ -13,5 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.IDP)
 public enum ConfigType {
   PLUGIN,
-  INTEGRATION;
+  INTEGRATION,
+  AUTH,
+  BACKEND;
 }

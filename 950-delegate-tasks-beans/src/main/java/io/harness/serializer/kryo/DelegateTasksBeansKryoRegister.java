@@ -38,6 +38,7 @@ import io.harness.capability.TestingCapability;
 import io.harness.ccm.config.CCMConfig;
 import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
+import io.harness.delegate.InitializeExecutionInfraResponse;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
@@ -62,6 +63,7 @@ import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
+import io.harness.delegate.beans.WebhookTaskParams;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
@@ -254,6 +256,7 @@ import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskPara
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorValidationParams;
 import io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse;
+import io.harness.delegate.beans.connector.rancher.RancherListClustersTaskResponse;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTaskType;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
@@ -1521,6 +1524,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(DockerInfraInfo.class, 25002);
     kryo.register(VmInfraInfo.class, 25003);
     kryo.register(DliteVmInfraInfo.class, 25004);
+    kryo.register(InitializeExecutionInfraResponse.class, 25005);
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
@@ -2086,6 +2090,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NotificationTaskResponse.class, 55216);
     kryo.register(NotificationProcessingResponse.class, 55217);
     kryo.register(SmtpConfigResponse.class, 55219);
+    kryo.register(WebhookTaskParams.class, 55220);
     kryo.register(io.harness.notification.SmtpConfig.class, 55299);
     kryo.register(JenkinsTestConnectionTaskParams.class, 29117);
     kryo.register(JenkinsTestConnectionTaskResponse.class, 29118);
@@ -2490,6 +2495,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(RancherTestConnectionTaskParams.class, 20000503);
     kryo.register(RancherTestConnectionTaskResponse.class, 20000504);
     kryo.register(RancherTaskType.class, 20000505);
+    kryo.register(RancherListClustersTaskResponse.class, 20000507);
 
     kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
     kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);

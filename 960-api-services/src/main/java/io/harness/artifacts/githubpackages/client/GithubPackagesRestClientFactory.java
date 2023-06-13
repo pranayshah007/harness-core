@@ -17,4 +17,6 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 public interface GithubPackagesRestClientFactory {
   GithubPackagesRestClient getGithubPackagesRestClient(GithubPackagesInternalConfig githubPackagesInternalConfig);
   DockerRegistryRestClient getGithubPackagesDockerRestClient(GithubPackagesInternalConfig githubPackagesInternalConfig);
+  GithubPackagesMavenRestClient getGithubPackagesMavenRestClient(
+      GithubPackagesInternalConfig githubPackagesInternalConfig);
 }

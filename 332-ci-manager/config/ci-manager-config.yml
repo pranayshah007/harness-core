@@ -120,6 +120,7 @@ sscaServiceConfig:
 
 stoServiceConfig:
   baseUrl: http://localhost:4000
+  internalUrl: ""
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
 iacmServiceConfig:
@@ -291,19 +292,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.2
+      image: plugins/kaniko:1.7.5
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.2
+      image: plugins/kaniko-ecr:1.7.5
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.2
+      image: plugins/kaniko-gcr:1.7.5
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.2
+      image: plugins/kaniko-acr:1.7.5
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -325,7 +326,7 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.4.1
+      image: plugins/artifactory:1.4.2
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
@@ -360,7 +361,7 @@ ciExecutionServiceConfig:
       gcsUpload: plugins/gcs:1.4.0
       s3Upload: plugins/s3:1.2.3
       security: harness/sto-plugin:dev
-      artifactoryUpload: plugins/artifactory:1.4.1
+      artifactoryUpload: plugins/artifactory:1.4.2
       cacheGCS: plugins/cache:1.5.9
       cacheS3: plugins/cache:1.5.9
       sscaOrchestration: harness/ssca-plugin:latest
@@ -380,6 +381,8 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
       dockerBuildxEcrConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+      dockerBuildxGcrConfig:
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

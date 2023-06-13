@@ -12,4 +12,5 @@ import io.harness.subscription.responses.CreditCardResponse;
 
 public interface CreditCardService {
   CreditCardResponse saveCreditCard(CreditCardDTO creditCardDTO);
+  boolean hasValidCard(String accountIdentifier);
 }

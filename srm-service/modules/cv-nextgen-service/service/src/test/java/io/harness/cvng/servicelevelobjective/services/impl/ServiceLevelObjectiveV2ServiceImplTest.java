@@ -867,8 +867,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     createMonitoredService();
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
     boolean isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier());
     assertThat(isDeleted).isEqualTo(true);
+    verifyAllTheResourcesAreDeletedWithSimpleSLODeletion(projectParams, simpleServiceLevelObjective);
   }
 
   @Test
@@ -2441,10 +2444,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
-    Optional<ServiceLevelIndicator> serviceLevelIndicator =
-        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
-            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
-    assertThat(serviceLevelIndicator.isEmpty());
+    verifyAllTheResourcesAreDeletedWithSimpleSLODeletion(projectParamsTest, simpleServiceLevelObjective1);
   }
 
   @Test
@@ -2498,10 +2498,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
-    Optional<ServiceLevelIndicator> serviceLevelIndicator =
-        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
-            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
-    assertThat(serviceLevelIndicator.isEmpty());
+    verifyAllTheResourcesAreDeletedWithSimpleSLODeletion(projectParamsTest, simpleServiceLevelObjective1);
   }
 
   @Test
@@ -2556,10 +2553,23 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    verifyAllTheResourcesAreDeletedWithSimpleSLODeletion(projectParamsTest, simpleServiceLevelObjective1);
+  }
+
+  private void verifyAllTheResourcesAreDeletedWithSimpleSLODeletion(
+      ProjectParams projectParams, SimpleServiceLevelObjective simpleServiceLevelObjective) {
     Optional<ServiceLevelIndicator> serviceLevelIndicator =
         Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
-            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+            projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0)));
     assertThat(serviceLevelIndicator.isEmpty());
+
+    Optional<AbstractServiceLevelObjective> serviceLevelObjective = Optional.ofNullable(
+        serviceLevelObjectiveV2Service.getEntity(projectParams, simpleServiceLevelObjective.getIdentifier()));
+    assertThat(serviceLevelObjective.isEmpty());
+
+    Optional<SLOHealthIndicator> sloHealthIndicator = Optional.ofNullable(
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, simpleServiceLevelObjective.getIdentifier()));
+    assertThat(sloHealthIndicator.isEmpty());
   }
 
   @Test

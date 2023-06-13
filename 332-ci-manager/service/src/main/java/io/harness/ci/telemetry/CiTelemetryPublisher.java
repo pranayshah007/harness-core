@@ -11,12 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
-import io.harness.ModuleType;
 import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
@@ -56,31 +54,17 @@ public class CiTelemetryPublisher {
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
           if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(
                   accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
-            List<ModuleLicense> existing =
-                moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountId, ModuleType.CI);
             HashMap<String, Object> map = new HashMap<>();
             map.put(GROUP_TYPE, ACCOUNT);
             map.put(GROUP_ID, accountId);
             map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-            long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
-            long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId);
-            if (existing.size() != 0) {
-              if (developersCount != 0) {
-                map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
-              }
-              if (developersCount != 0) {
-                map.put(COUNT_HOSTED_CREDITS_USED, hostedCreditUsage);
-              }
-              telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                  TelemetryOption.builder().sendForCommunity(true).build());
-              log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
-            } else {
-              map.put(COUNT_ACTIVE_DEVELOPERS, null);
-              map.put(COUNT_HOSTED_CREDITS_USED, null);
-              telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                  TelemetryOption.builder().sendForCommunity(true).build());
-              log.info("Account {} does not have CI Module, sending null as count", accountId);
-            }
+            populateDeveloperCount(map, accountId);
+            populateCreditUsage(map, accountId);
+
+            telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
+                TelemetryOption.builder().sendForCommunity(true).build());
+            log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
+
           } else {
             log.info("Skipping already sent account {} in past 24 hours", accountId);
           }
@@ -91,6 +75,26 @@ public class CiTelemetryPublisher {
       log.error("CITelemetryPublisher recordTelemetry execute failed.", e);
     } finally {
       log.info("CITelemetryPublisher recordTelemetry execute finished.");
+    }
+  }
+
+  private void populateDeveloperCount(HashMap<String, Object> map, String accountId) {
+    long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
+    if (developersCount >= 0) {
+      map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
+    } else {
+      log.warn(String.format("Active developers count is %s for account id %s", developersCount, accountId));
+      map.put(COUNT_ACTIVE_DEVELOPERS, 0);
+    }
+  }
+
+  private void populateCreditUsage(HashMap<String, Object> map, String accountId) {
+    long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId);
+    if (hostedCreditUsage >= 0) {
+      map.put(COUNT_HOSTED_CREDITS_USED, hostedCreditUsage);
+    } else {
+      log.warn(String.format("Hosted credit usage is %s for account id %s", hostedCreditUsage, accountId));
+      map.put(COUNT_HOSTED_CREDITS_USED, 0);
     }
   }
 

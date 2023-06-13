@@ -8,6 +8,7 @@
 package io.harness.service.instancesync;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.Objects.isNull;
@@ -167,7 +168,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
           InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
 
-          if (instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled()) {
+          if (abstractInstanceSyncHandler.isInstanceSyncV2Enabled()) {
             instanceSyncPerpetualTaskInfoDTO = handlingInstanceSyncPerpetualTaskV2(
                 abstractInstanceSyncHandler, infrastructureMappingDTO, deploymentSummaryDTO);
           } else {
@@ -184,7 +185,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
               deploymentSummaryDTO.getServerInstanceInfoList(), abstractInstanceSyncHandler, true,
-              instanceSyncPerpetualTaskService.isInstanceSyncV2Enabled());
+              abstractInstanceSyncHandler.isInstanceSyncV2Enabled());
 
           instanceSyncMonitoringService.recordMetrics(
               infrastructureMappingDTO.getAccountIdentifier(), true, true, System.currentTimeMillis() - startTime);
@@ -279,7 +280,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             || instanceSyncPerpetualTaskInfoDTO.getConnectorIdentifier() == null) {
           instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskIdV2(
               instanceSyncPerpetualTaskMappingDTO.getPerpetualTaskId());
-
           addNewDeploymentInfoToInstanceSyncPerpetualTaskInfoRecord(
               instanceSyncPerpetualTaskInfoDTO, deploymentSummaryDTO);
           instanceSyncPerpetualTaskInfoDTO =
@@ -290,6 +290,12 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           instanceSyncPerpetualTaskService.resetPerpetualTaskV2(infrastructureMappingDTO.getAccountIdentifier(),
               instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2(), infrastructureMappingDTO,
               abstractInstanceSyncHandler, connectorInfoDTO);
+        } else if (instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2() == null) {
+          // Adding PerpetualTaskIdV2 in InstanceSyncPerpetualTaskInfo
+          instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskIdV2(
+              instanceSyncPerpetualTaskMappingDTO.getPerpetualTaskId());
+          instanceSyncPerpetualTaskInfoDTO =
+              instanceSyncPerpetualTaskInfoService.updatePerpetualTaskIdV1OrV2(instanceSyncPerpetualTaskInfoDTO);
         }
         return instanceSyncPerpetualTaskInfoDTO;
       }
@@ -448,14 +454,37 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
               "Infrastructure mapping not found for {}", instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId());
           // delete instance sync perpetual task info record
           instanceSyncHelper.cleanUpOnlyInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
-          return;
+          continue;
+        }
+
+        if (isEmpty(instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList())) {
+          // There is no deployment info left to process for instance sync
+          instanceSyncPerpetualTaskInfoService.deleteById(
+              instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
+          log.info("Deleted instance sync perpetual task info : {} as there is no deployment info to do instance sync",
+              instanceSyncPerpetualTaskInfoDTO.getId());
+          continue;
+        }
+
+        AbstractInstanceSyncHandler abstractInstanceSyncHandler =
+            instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+                instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()
+                    .get(0)
+                    .getDeploymentInfoDTO()
+                    .getType(),
+                infrastructureMappingDTO.get().getInfrastructureKind());
+
+        if (!abstractInstanceSyncHandler.isInstanceSyncV2Enabled()) {
+          migrateToInstanceSyncV1(
+              instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(), abstractInstanceSyncHandler);
+          continue;
         }
 
         if (!doSvcAndEnvExist(infrastructureMappingDTO.get())) {
           // as either or both of svc and env don't exist, we delete the instances
           instanceSyncPerpetualTaskMappingService.delete(accountIdentifier, perpetualTaskId);
           deleteInstances(infrastructureMappingDTO.get());
-          return;
+          continue;
         }
 
         InstanceSyncData instanceSyncData = instancesPerTask.get(taskInfoId);
@@ -473,6 +502,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(),
                 serverInstanceInfoList, instanceSyncHandler, false, true);
             log.info("Instance Sync completed");
+            // cleaning up V1 perpetual task
+            cleanupPerpetualTaskV1(instanceSyncPerpetualTaskInfoDTO);
           } catch (Exception exception) {
             log.error("Exception occurred during instance sync", exception);
           } finally {
@@ -481,6 +512,33 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           }
         }
       }
+    }
+  }
+
+  private void migrateToInstanceSyncV1(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO,
+      InfrastructureMappingDTO infrastructureMappingDTO, AbstractInstanceSyncHandler abstractInstanceSyncHandler) {
+    if (instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId() == null) {
+      String perpetualTaskIdV1 =
+          instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO, abstractInstanceSyncHandler,
+              instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()
+                  .stream()
+                  .map(DeploymentInfoDetailsDTO::getDeploymentInfoDTO)
+                  .collect(Collectors.toList()),
+              abstractInstanceSyncHandler.getInfrastructureOutcome(infrastructureMappingDTO.getInfrastructureKind(),
+                  instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList().get(0).getDeploymentInfoDTO(),
+                  instanceSyncPerpetualTaskInfoDTO.getConnectorIdentifier()));
+      instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskIdV2(null);
+      instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskId(perpetualTaskIdV1);
+      instanceSyncPerpetualTaskInfoService.updatePerpetualTaskIdV1OrV2(instanceSyncPerpetualTaskInfoDTO);
+    }
+  }
+
+  private void cleanupPerpetualTaskV1(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    if (instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId() != null) {
+      instanceSyncPerpetualTaskService.deletePerpetualTask(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(),
+          instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
+      instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskId(null);
+      instanceSyncPerpetualTaskInfoService.updatePerpetualTaskIdV1OrV2(instanceSyncPerpetualTaskInfoDTO);
     }
   }
 

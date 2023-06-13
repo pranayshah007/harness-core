@@ -10,6 +10,7 @@ package io.harness.perpetualtask.instancesyncv2.cg;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExceptionUtils;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -56,7 +57,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
 
     if (Objects.isNull(trackedDeploymentDetails)
         || CollectionUtils.isEmpty(trackedDeploymentDetails.getDeploymentDetailsList())) {
-      log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
+      log.warn("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
       publishInstanceSyncResult(taskParams.getAccountId(), taskId.getId(),
           responseBuilder.setExecutionStatus(CommandExecutionStatus.SKIPPED.name()).build());
       return PerpetualTaskResponse.builder()
@@ -72,7 +73,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
       InstanceDetailsFetcher instanceFetcher =
           instanceDetailsFetcherFactory.getFetcher(trackedDeployment.getInfraMappingType());
       if (Objects.isNull(instanceFetcher)) {
-        log.error(
+        log.warn(
             "Instance Sync Task for infraMappingId: [{}], with infra mapping type: [{}] is not supported. Doing nothing for tracked deployment Id: [{}]",
             trackedDeployment.getInfraMappingId(), trackedDeployment.getInfraMappingId(),
             trackedDeployment.getTaskDetailsId());
@@ -111,8 +112,9 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
       DelegateRestUtils.executeRestCall(
           delegateAgentManagerClient.publishInstanceSyncV2Result(perpetualTaskId, accountId, syncTaskResponse));
     } catch (IOException e) {
-      log.error("Exception while publishing instance sync response data for perpetual task Id: [{}], for account: [{}]",
-          perpetualTaskId, accountId, e);
+      log.warn(
+          "Exception while publishing instance sync response data for perpetual task Id: [{}], for account: [{}] due to [{}]",
+          perpetualTaskId, accountId, ExceptionUtils.getMessage(e));
     }
   }
 

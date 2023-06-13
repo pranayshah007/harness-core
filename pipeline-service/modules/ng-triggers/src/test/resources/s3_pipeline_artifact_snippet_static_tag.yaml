@@ -1,0 +1,20 @@
+pipeline:
+  identifier: AmazonS3
+  stages:
+    - stage:
+        identifier: S3
+        type: Deployment
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: ServerlessAwsLambda
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: das
+                      sources:
+                        - identifier: das
+                          type: AmazonS3
+                          spec:
+                            filePath: custom.json

@@ -760,6 +760,8 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: true
 
+runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-false}
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground

@@ -119,6 +119,7 @@ public class IdentityPlanNode implements Node {
         .serviceName(node.getServiceName())
         .stageFqn(node.getStageFqn())
         .advisorObtainmentsForExecutionMode(node.getAdvisorObtainmentsForExecutionMode())
+        .adviserObtainments(node.getAdviserObtainments())
         .whenCondition(node.getWhenCondition())
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();

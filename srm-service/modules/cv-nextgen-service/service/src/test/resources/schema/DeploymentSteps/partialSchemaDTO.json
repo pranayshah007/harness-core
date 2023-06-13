@@ -205,6 +205,21 @@
                 }
               }
             }
+          }, {
+            "if" : {
+              "properties" : {
+                "type" : {
+                  "const" : "SimpleVerification"
+                }
+              }
+            },
+            "then" : {
+              "properties" : {
+                "spec" : {
+                  "$ref" : "#/definitions/cvng/SimpleVerificationJobSpec"
+                }
+              }
+            }
           } ]
         },
         "CVVerifyStepNode" : {
@@ -312,7 +327,7 @@
           "properties" : {
             "type" : {
               "type" : "string",
-              "enum" : [ "Ignore", "Retry", "MarkAsSuccess", "Abort", "StageRollback", "StepGroupRollback", "PipelineRollback", "ManualIntervention", "ProceedWithDefaultValues", "MarkAsFailure" ]
+              "enum" : [ "Ignore", "Retry", "MarkAsSuccess", "Abort", "StageRollback", "StepGroupRollback", "PipelineRollback", "ManualIntervention", "ProceedWithDefaultValues", "MarkAsFailure", "RetryStepGroup" ]
             }
           },
           "$schema" : "http://json-schema.org/draft-07/schema#"
@@ -765,6 +780,34 @@
           },
           "$schema" : "http://json-schema.org/draft-07/schema#"
         },
+        "RetrySGFailureActionConfig" : {
+          "allOf" : [ {
+            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
+          }, {
+            "type" : "object",
+            "required" : [ "spec", "type" ],
+            "properties" : {
+              "spec" : {
+                "readOnly" : true,
+                "$ref" : "#/definitions/cvng/RetryFailureSpecConfig"
+              },
+              "type" : {
+                "type" : "string",
+                "enum" : [ "RetryStepGroup" ]
+              }
+            }
+          } ],
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        },
+        "SimpleVerificationJobSpec" : {
+          "allOf" : [ {
+            "$ref" : "#/definitions/cvng/VerificationJobSpec"
+          }, {
+            "type" : "object",
+            "properties" : { }
+          } ],
+          "$schema" : "http://json-schema.org/draft-07/schema#"
+        },
         "StageRollbackFailureActionConfig" : {
           "allOf" : [ {
             "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
@@ -874,14 +917,17 @@
           }, {
             "type" : "object",
             "properties" : {
-              "baseline":{"type":"string","description":"Possible values: [LAST, PINNED]"}
+              "baseline" : {
+                "type" : "string",
+                "description" : "Possible values: [LAST, PINNED]"
+              }
             }
           } ],
           "$schema" : "http://json-schema.org/draft-07/schema#"
         },
         "VerificationJobSpec" : {
           "type" : "object",
-          "required" : ["deploymentTag", "duration", "sensitivity" ],
+          "required" : [ "deploymentTag", "duration" ],
           "discriminator" : "type",
           "properties" : {
             "deploymentTag" : {
@@ -895,6 +941,13 @@
             "sensitivity" : {
               "type" : "string",
               "description" : "Possible values: [Low, Medium, High]"
+            },
+            "supportedDataTypesForVerification" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "enum" : [ "TIME_SERIES", "LOG" ]
+              }
             }
           },
           "$schema" : "http://json-schema.org/draft-07/schema#"

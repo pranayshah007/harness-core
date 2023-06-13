@@ -171,6 +171,10 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
   private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
 
+  @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
+
+  @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
+
   private String managerServiceSecret;
   private String managerTarget;
   private String managerAuthority;

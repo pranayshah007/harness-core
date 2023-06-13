@@ -43,9 +43,11 @@ import okhttp3.OkHttpClient;
 public class ApiClientFactoryImpl implements ApiClientFactory {
   private static final ConnectionPool connectionPool;
   @Inject OidcTokenRetriever oidcTokenRetriever;
-  private static final long READ_TIMEOUT_IN_SECONDS = 120;
-  private static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
-  @Inject private static K8sApiClientHelper k8sApiClientHelper;
+  private static final long DEFAULT_READ_TIMEOUT_SECONDS = 120;
+  private static final long DEFAULT_CONNECTION_TIMEOUT_SECONDS = 60;
+
+  private static final String READ_TIMEOUT_ENV_VAR = "K8S_API_CLIENT_READ_TIMEOUT";
+  private static final String CONNECT_TIMEOUT_ENV_VAR = "K8S_API_CLIENT_CONNECT_TIMEOUT";
 
   static {
     connectionPool = new ConnectionPool(32, 5L, TimeUnit.MINUTES);
@@ -109,19 +111,19 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
       clientBuilder.setAuthentication(new AccessTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
     } else if (kubernetesConfig.isUseKubeconfigAuthentication()) {
       addKubeConfigAuthentication(kubernetesConfig, clientBuilder);
-    } else {
-      // nothing to do here
     }
 
     ApiClient apiClient = clientBuilder.build();
-    // don't timeout on client-side
-    OkHttpClient.Builder builder =
-        apiClient.getHttpClient()
-            .newBuilder()
-            .readTimeout(useNewReadTimeoutForValidation ? READ_TIMEOUT_IN_SECONDS : 0, TimeUnit.SECONDS)
-            .connectTimeout(CONNECTION_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
-            .connectionPool(connectionPool)
-            .protocols(List.of(HTTP_1_1));
+    long connectTimeout =
+        K8sApiClientHelper.getTimeout(CONNECT_TIMEOUT_ENV_VAR).orElse(DEFAULT_CONNECTION_TIMEOUT_SECONDS);
+    long readTimeout = K8sApiClientHelper.getTimeout(READ_TIMEOUT_ENV_VAR).orElse(DEFAULT_READ_TIMEOUT_SECONDS);
+
+    OkHttpClient.Builder builder = apiClient.getHttpClient()
+                                       .newBuilder()
+                                       .readTimeout(useNewReadTimeoutForValidation ? readTimeout : 0, TimeUnit.SECONDS)
+                                       .connectTimeout(connectTimeout, TimeUnit.SECONDS)
+                                       .connectionPool(connectionPool)
+                                       .protocols(List.of(HTTP_1_1));
     String user = getProxyUserName();
     if (isNotEmpty(user)) {
       String password = getProxyPassword();
@@ -138,7 +140,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
   }
 
   private static void addKubeConfigAuthentication(KubernetesConfig kubernetesConfig, ClientBuilder clientBuilder) {
-    String kubeConfigString = k8sApiClientHelper.generateExecFormatKubeconfig(kubernetesConfig);
+    String kubeConfigString = K8sApiClientHelper.generateExecFormatKubeconfig(kubernetesConfig);
     try {
       KubeConfig kubeConfig = KubeConfig.loadKubeConfig(new StringReader(kubeConfigString));
       clientBuilder.setAuthentication(new KubeconfigAuthentication(kubeConfig));

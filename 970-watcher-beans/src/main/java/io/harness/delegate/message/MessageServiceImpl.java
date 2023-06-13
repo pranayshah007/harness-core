@@ -28,6 +28,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -192,6 +193,8 @@ public class MessageServiceImpl implements MessageService {
       });
     } catch (UncheckedTimeoutException e) {
       log.debug("Timed out reading message from channel {} {}", sourceType, sourceProcessId);
+    } catch (FileNotFoundException e) {
+      log.error("Message channel {} {} not found. Error {}", sourceType, sourceProcessId, e.getMessage());
     } catch (Exception e) {
       log.error("Error reading message from channel {} {}", sourceType, sourceProcessId, e);
     }

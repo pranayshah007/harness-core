@@ -37,20 +37,23 @@ import org.hibernate.validator.constraints.NotBlank;
 public interface SSOService {
   SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO);
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO,
+      Boolean jitEnabled, String jitValidationKey, String jitValidationValue);
 
   SSOConfig uploadOauthConfiguration(
       String accountId, String filter, Set<OauthProviderType> allowedProviders, boolean isNG);
 
   SSOConfig updateSamlConfiguration(@NotNull String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO, @NotNull Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue);
 
   // this overloading is for updating a SAML setting (samlSSOId) among list of saml settings in account
   SSOConfig updateSamlConfiguration(@NotNull String accountId, @NotNull String samlSSOId, InputStream inputStream,
       String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
       String entityIdentifier, String samlProviderType, String clientId, char[] clientSecret,
-      String friendlySamlAppName, boolean isNGSSO);
+      String friendlySamlAppName, boolean isNGSSO, @NotNull Boolean jitEnabled, String jitValidationKey,
+      String jitValidationValue);
 
   SSOConfig updateLogoutUrlSamlSettings(@NotNull String accountId, @NotNull String logoutUrl);
 

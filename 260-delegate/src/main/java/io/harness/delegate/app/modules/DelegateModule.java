@@ -379,6 +379,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.rancher.RancherListClustersDelegateTask;
 import io.harness.delegate.task.rancher.RancherTestConnectionDelegateTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
@@ -448,6 +449,7 @@ import io.harness.delegate.task.terragrunt.TerragruntDestroyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntPlanTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntRollbackTaskNG;
 import io.harness.delegate.task.trigger.TriggerAuthenticationTask;
+import io.harness.delegate.task.webhook.WebhookSenderDelegateTask;
 import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
@@ -2047,6 +2049,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.HTTP_TASK_NG).toInstance(HttpTaskNG.class);
     mapBinder.addBinding(TaskType.NOTIFY_MAIL).toInstance(MailSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_SLACK).toInstance(SlackSenderDelegateTask.class);
+    mapBinder.addBinding(TaskType.NOTIFY_WEBHOOK).toInstance(WebhookSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_PAGERDUTY).toInstance(PagerDutySenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_MICROSOFTTEAMS).toInstance(MicrosoftTeamsSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_TASK_NG).toInstance(ShellScriptTaskNG.class);
@@ -2088,6 +2091,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
         .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK).toInstance(K8sTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS).toInstance(CommandTaskNG.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -2246,6 +2250,7 @@ public class DelegateModule extends AbstractModule {
 
     // RANCHER NG
     mapBinder.addBinding(TaskType.RANCHER_TEST_CONNECTION_TASK_NG).toInstance(RancherTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.RANCHER_LIST_CLUSTERS_TASK_NG).toInstance(RancherListClustersDelegateTask.class);
   }
 
   private void registerSecretManagementBindings() {

@@ -11,14 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
+import static java.lang.Math.ceil;
+import static java.lang.Math.max;
+
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -29,34 +34,31 @@ import lombok.extern.slf4j.Slf4j;
 public class STOTelemetryPublisher {
   @Inject TelemetryReporter telemetryReporter;
   @Inject private STOServiceUtils stoServiceUtils;
-  String COUNT_ACTIVE_DEVELOPERS = "sto_license_developers_used";
-  String COUNT_SCANS = "sto_license_scans_used";
+  String LICENSE_USAGE = "sto_license_usage";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   private static final String ACCOUNT = "Account";
-  private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
+  private static final Double SCAN_COUNT_PER_DEVELOPER = 100.0;
 
   public void recordTelemetry() {
     log.info("STOTelemetryPublisher recordTelemetry execute started.");
     try {
+      long timestamp = Instant.now().toEpochMilli();
       final Gson gson = new Gson();
-      STOUsageReport allUsage =
-          gson.fromJson(stoServiceUtils.getUsageAllAcounts(GLOBAL_ACCOUNT_ID), STOUsageReport.class);
-      log.info("Size of the account list is {} ", allUsage.usage.size());
+      Type type = new TypeToken<List<STOUsage>>() {}.getType();
+      List<STOUsage> allUsage = gson.fromJson(stoServiceUtils.getUsageAllAccounts(timestamp), type);
+      log.info("Size of the account list is {} ", allUsage.size());
 
-      for (STOUsage usage : allUsage.usage) {
-        if (EmptyPredicate.isNotEmpty(usage.accountId) && !usage.accountId.equals(GLOBAL_ACCOUNT_ID)) {
-          HashMap<String, Object> map = new HashMap<>();
-          map.put(GROUP_TYPE, ACCOUNT);
-          map.put(GROUP_ID, usage.accountId);
-          map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-          map.put(COUNT_ACTIVE_DEVELOPERS, usage.developerCount);
-          map.put(COUNT_SCANS, usage.scanCount);
-          telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
-              TelemetryOption.builder().sendForCommunity(false).build());
-          log.info("Scheduled STOTelemetryPublisher event sent! for account {}", usage.accountId);
-        }
+      for (STOUsage usage : allUsage) {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put(GROUP_TYPE, ACCOUNT);
+        map.put(GROUP_ID, usage.accountId);
+        map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
+        map.put(LICENSE_USAGE, max((int) ceil(usage.scanCount / SCAN_COUNT_PER_DEVELOPER), usage.developerCount));
+        telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(false).build());
+        log.info("Scheduled STOTelemetryPublisher event sent for account {}", usage.accountId);
       }
     } catch (Exception e) {
       log.error("STOTelemetryPublisher recordTelemetry execute failed.", e);
@@ -66,10 +68,6 @@ public class STOTelemetryPublisher {
   }
 }
 
-class STOUsageReport {
-  int timestamp;
-  List<STOUsage> usage;
-}
 class STOUsage {
   String accountId;
   int developerCount;

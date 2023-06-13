@@ -39,6 +39,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.rule.Owner;
+import io.harness.template.async.beans.SetupUsageParams;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
@@ -150,6 +151,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
                                         .yaml(readFile(filename))
                                         .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .build();
+    SetupUsageParams setupUsageParams = SetupUsageParams.builder().templateEntity(templateEntity).build();
 
     templateYamlConversionHandlerRegistry.register(STAGE, new TemplateYamlConversionHandler());
     when(templateCrudHelperFactory.getCrudHelperForTemplateType(TemplateEntityType.STAGE_TEMPLATE))
@@ -174,11 +176,12 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
                                     .build())
                 .build()));
 
-    templateReferenceHelper.populateTemplateReferences(templateEntity);
+    templateReferenceHelper.populateTemplateReferences(
+        SetupUsageParams.builder().templateEntity(templateEntity).build());
 
     ArgumentCaptor<List> referredEntitiesArgumentCapture = ArgumentCaptor.forClass(List.class);
     verify(templateSetupUsageHelper)
-        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture(), any());
+        .publishSetupUsageEvent(eq(setupUsageParams), referredEntitiesArgumentCapture.capture(), any());
     List<EntityDetailProtoDTO> referredEntities = referredEntitiesArgumentCapture.getValue();
     assertThat(referredEntities).isNotNull().hasSize(4);
     assertThat(referredEntities).containsExactlyInAnyOrderElementsOf(getStageTemplateProtoReferences());

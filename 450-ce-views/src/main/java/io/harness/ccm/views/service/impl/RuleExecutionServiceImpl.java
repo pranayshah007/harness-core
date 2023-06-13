@@ -8,6 +8,8 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
+import static io.harness.ccm.commons.entities.CCMField.RULE_NAME;
+import static io.harness.ccm.commons.entities.CCMField.RULE_SET_NAME;
 import static io.harness.ccm.views.helper.RuleCostType.POTENTIAL;
 import static io.harness.ccm.views.helper.RuleCostType.REALIZED;
 import static io.harness.ccm.views.helper.RuleExecutionType.INTERNAL;
@@ -17,6 +19,8 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 
+import io.harness.ccm.commons.entities.CCMSort;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dao.RuleExecutionDAO;
@@ -45,7 +49,9 @@ import com.google.inject.Singleton;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -93,9 +99,11 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   public FilterValues filterValue(String accountId) {
     FilterValues filterValues = FilterValues.builder().build();
     RuleSetFilter ruleSetFilter = RuleSetFilter.builder().build();
+    ruleSetFilter.setOrderBy(
+        Collections.singletonList(CCMSort.builder().field(RULE_SET_NAME).order(CCMSortOrder.ASCENDING).build()));
     List<RuleSet> ruleSet = ruleSetDAO.list(accountId, ruleSetFilter).getRuleSet();
     if (ruleSet != null) {
-      HashMap<String, String> ruleSetsIds = new HashMap<>();
+      LinkedHashMap<String, String> ruleSetsIds = new LinkedHashMap<>();
       for (RuleSet iterate : ruleSet) {
         ruleSetsIds.put(iterate.getUuid(), iterate.getName());
       }
@@ -103,9 +111,11 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     }
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     governancePolicyFilter.setAccountId(accountId);
+    governancePolicyFilter.setOrderBy(
+        Collections.singletonList(CCMSort.builder().field(RULE_NAME).order(CCMSortOrder.ASCENDING).build()));
     List<Rule> rules = rulesDao.list(governancePolicyFilter).getRules();
     if (rules != null) {
-      HashMap<String, String> rulesIds = new HashMap<>();
+      LinkedHashMap<String, String> rulesIds = new LinkedHashMap<>();
       for (Rule iterate : rules) {
         rulesIds.put(iterate.getUuid(), iterate.getName());
       }

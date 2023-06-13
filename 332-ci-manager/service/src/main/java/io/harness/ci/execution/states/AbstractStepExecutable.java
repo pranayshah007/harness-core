@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
 import static java.util.Collections.singletonList;
@@ -49,6 +50,7 @@ import io.harness.ci.utils.GithubApiTokenEvaluator;
 import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
@@ -61,6 +63,7 @@ import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.delegate.task.stepstatus.artifact.Artifact;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.encryption.Scope;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
@@ -269,23 +272,18 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     VmTaskExecutionResponse taskResponse = filterVmStepResponse(responseDataMap);
     if (taskResponse == null) {
       log.error("stepStatusTaskResponseData should not be null for step {}", stepIdentifier);
+      String errorMessage = filterVmStepErrorResponse(responseDataMap);
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder().addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE)).build())
+          .failureInfo(FailureInfo.newBuilder()
+                           .setErrorMessage(errorMessage)
+                           .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
+                           .build())
           .build();
     }
 
-    if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
-      if (isNotEmpty(taskResponse.getOutputVars())) {
-        StepResponse.StepOutcome stepOutcome =
-            StepResponse.StepOutcome.builder()
-                .outcome(CIStepOutcome.builder().outputVariables(taskResponse.getOutputVars()).build())
-                .name("output")
-                .build();
-        stepResponseBuilder.stepOutcome(stepOutcome);
-      }
-
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    if (shouldPublishArtifactForVm(taskResponse.getCommandExecutionStatus())) {
       ArtifactMetadata artifactMetadata = null;
       if (taskResponse.getArtifact() != null) {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -299,16 +297,26 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
       StepArtifacts stepArtifacts = handleArtifactForVm(artifactMetadata, stepParameters, ambiance);
       buildArtifacts(ambiance, stepIdentifier, stepArtifacts, stepResponseBuilder);
-      return stepResponseBuilder.build();
+    }
+
+    if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+      if (isNotEmpty(taskResponse.getOutputVars())) {
+        StepResponse.StepOutcome stepOutcome =
+            StepResponse.StepOutcome.builder()
+                .outcome(CIStepOutcome.builder().outputVariables(taskResponse.getOutputVars()).build())
+                .name("output")
+                .build();
+        stepResponseBuilder.stepOutcome(stepOutcome);
+      }
+      return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-      return StepResponse.builder().status(Status.SKIPPED).build();
+      return stepResponseBuilder.status(Status.SKIPPED).build();
     } else {
       String errMsg = "";
       if (isNotEmpty(taskResponse.getErrorMessage())) {
         errMsg = taskResponse.getErrorMessage();
       }
-      return StepResponse.builder()
-          .status(Status.FAILED)
+      return stepResponseBuilder.status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder()
                            .setErrorMessage(errMsg)
                            .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
@@ -329,6 +337,10 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   protected StepArtifacts handleArtifactForVm(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
     return handleArtifact(artifactMetadata, stepParameters);
+  }
+
+  protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {
+    return commandExecutionStatus == CommandExecutionStatus.SUCCESS;
   }
 
   @Override
@@ -441,6 +453,18 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
         .findFirst()
         .map(obj -> (VmTaskExecutionResponse) obj.getValue())
         .orElse(null);
+  }
+
+  private String filterVmStepErrorResponse(Map<String, ResponseData> responseDataMap) {
+    // Filter error response from step
+    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+      ResponseData responseData = entry.getValue();
+      if (responseData instanceof ErrorNotifyResponseData) {
+        return emptyIfNull(ExceptionUtils.getMessage(
+            new CIStageExecutionException(((ErrorNotifyResponseData) responseData).getErrorMessage())));
+      }
+    }
+    return "Error while executing step, please validate the configuration or reach out to support@harness.io";
   }
 
   private void logBackgroundStepForBackwardCompatibility(

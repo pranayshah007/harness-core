@@ -61,13 +61,14 @@ public class CustomChangeSourceSpecTransformer
       urlBuilder.append('/');
     }
 
-    urlBuilder.append("webhook/custom-change?accountIdentifier=")
+    urlBuilder.append("account/")
         .append(changeSource.getAccountId())
-        .append("&orgIdentifier=")
+        .append("/org/")
         .append(changeSource.getOrgIdentifier())
-        .append("&projectIdentifier=")
-        .append(changeSource.getProjectIdentifier())
-        .append("&monitoredServiceIdentifier=")
+        .append("/project/")
+        .append(changeSource.getProjectIdentifier());
+    urlBuilder.append("/webhook/custom-change?")
+        .append("monitoredServiceIdentifier=")
         .append(changeSource.getMonitoredServiceIdentifier())
         .append("&changeSourceIdentifier=")
         .append(changeSource.getIdentifier());

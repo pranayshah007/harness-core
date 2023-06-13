@@ -1,0 +1,5 @@
+name: External Metrics Group
+identifier: external_metrics_group
+labels:
+  - accountId
+  - requestPath

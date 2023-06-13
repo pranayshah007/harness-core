@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.hsqs.client.model.AckResponse;
@@ -65,8 +66,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
    */
   @Override
   public void enqueue(DelegateTask delegateTask) {
-    try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getTaskDataV2().getTaskType(),
-             TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+    try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(delegateTask)) {
       String topic = delegateQueueServiceConfig.getTopic();
       String task = referenceFalseKryoSerializer.asString(delegateTask);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()

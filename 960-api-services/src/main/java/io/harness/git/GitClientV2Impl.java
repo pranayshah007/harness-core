@@ -395,13 +395,18 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(
+      log.error(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
         String message = e.getMessage();
-        if (containsUrlError(message)) {
+        if (message.contains("not authorized")) {
+          throw SCMRuntimeException.builder()
+              .message("Please check your credentials (potential token expiration issue)")
+              .errorCode(ErrorCode.SCM_UNAUTHORIZED)
+              .build();
+        } else if (containsUrlError(message)) {
           throw SCMRuntimeException.builder()
               .message("Couldn't connect to given repo")
               .errorCode(ErrorCode.GIT_CONNECTION_ERROR)

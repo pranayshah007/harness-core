@@ -7,23 +7,28 @@
 
 package io.harness.connector.validator;
 
+import static io.harness.remote.client.CGRestUtils.getResponse;
+
 import static software.wings.beans.TaskType.HTTP_HELM_CONNECTIVITY_TASK;
 
+import io.harness.account.AccountClient;
+import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
-import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator {
+  @Inject private AccountClient accountClient;
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -34,6 +39,7 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
         .helmConnector(helmConnector)
         .encryptionDetails(
             super.getEncryptionDetail(helmAuthCredentials, accountIdentifier, orgIdentifier, projectIdentifier))
+        .ignoreResponseCode(ignoreResponseCode(accountIdentifier))
         .build();
   }
 
@@ -45,8 +51,8 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    HttpHelmConnectivityTaskResponse responseData = (HttpHelmConnectivityTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    var responseData =
+        super.validateConnector(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return responseData.getConnectorValidationResult();
   }
 
@@ -54,5 +60,17 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
   public ConnectorValidationResult validate(ConnectorResponseDTO connectorResponseDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
     return null;
+  }
+
+  private boolean ignoreResponseCode(String accountIdentifier) {
+    try {
+      return getResponse(accountClient.isFeatureFlagEnabled(
+          FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG.name(), accountIdentifier));
+    } catch (Exception e) {
+      log.warn("Unable to evaluate FF {} for account {}",
+          FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG.name(), accountIdentifier);
+    }
+
+    return false;
   }
 }
