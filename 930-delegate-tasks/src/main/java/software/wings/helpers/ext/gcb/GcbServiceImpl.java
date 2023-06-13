@@ -156,8 +156,8 @@ public class GcbServiceImpl implements GcbService {
           }
           break;
         } catch (GcbClientException e) {
-          log.error("GCB fetching logs response is unsuccessful due to error: " + e.getMessage());
-          TimeUnit.SECONDS.sleep(10);
+          log.warn("GCB fetching logs response is unsuccessful due to error {}", e.getMessage());
+          TimeUnit.SECONDS.sleep(2);
           if (++count == maxTries) {
             throw e;
           }
