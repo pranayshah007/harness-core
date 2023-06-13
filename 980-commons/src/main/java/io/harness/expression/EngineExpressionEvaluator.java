@@ -717,11 +717,9 @@ public class EngineExpressionEvaluator {
         if (value == null) {
           unresolvedExpressions.add(expression);
         }
-        if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
-          // Use the asJson only when the FF is enabled.
-          if (isAnyCollection(value)) {
-            return JsonUtils.asJson(value);
-          }
+        // Use the asJson only when the FF is enabled.
+        if (isAnyCollection(value)) {
+          return JsonUtils.asJson(value);
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {

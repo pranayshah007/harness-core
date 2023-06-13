@@ -35,7 +35,6 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;

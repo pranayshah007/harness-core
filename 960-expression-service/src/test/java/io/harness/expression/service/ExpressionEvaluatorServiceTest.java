@@ -149,7 +149,7 @@ public class ExpressionEvaluatorServiceTest extends ExpressionServiceTestBase {
                             .build())
             .build());
     assertThat(expressionResponse).isNotNull();
-    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("{VAR3=VALUE, VAR4=VALUE4}");
+    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("{\"VAR3\":\"VALUE\",\"VAR4\":\"VALUE4\"}");
     assertThat(expressionResponse.getValues(0).getStatusCode()).isEqualTo(SUCCESS);
   }
 
@@ -247,7 +247,7 @@ public class ExpressionEvaluatorServiceTest extends ExpressionServiceTestBase {
                             .build())
             .build());
     assertThat(expressionResponse).isNotNull();
-    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("{VAR3=VALUE, VAR4=VALUE4}");
+    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("{\"VAR3\":\"VALUE\",\"VAR4\":\"VALUE4\"}");
     assertThat(expressionResponse.getValues(0).getStatusCode()).isEqualTo(SUCCESS);
   }
 
@@ -279,7 +279,7 @@ public class ExpressionEvaluatorServiceTest extends ExpressionServiceTestBase {
                             .build())
             .build());
     assertThat(expressionResponse).isNotNull();
-    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("true {VAR3=VALUE, VAR4=VALUE4}");
+    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("true {\"VAR3\":\"VALUE\",\"VAR4\":\"VALUE4\"}");
     assertThat(expressionResponse.getValues(0).getStatusCode()).isEqualTo(SUCCESS);
   }
 
@@ -311,7 +311,8 @@ public class ExpressionEvaluatorServiceTest extends ExpressionServiceTestBase {
                             .build())
             .build());
     assertThat(expressionResponse).isNotNull();
-    assertThat(expressionResponse.getValues(0).getValue()).isEqualTo("hello - {VAR3=VALUE, VAR4=VALUE4}");
+    assertThat(expressionResponse.getValues(0).getValue())
+        .isEqualTo("hello - {\"VAR3\":\"VALUE\",\"VAR4\":\"VALUE4\"}");
     assertThat(expressionResponse.getValues(0).getStatusCode()).isEqualTo(SUCCESS);
   }
 }
