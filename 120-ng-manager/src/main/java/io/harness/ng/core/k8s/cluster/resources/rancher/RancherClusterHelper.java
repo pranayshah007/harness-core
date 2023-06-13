@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -115,7 +116,7 @@ public class RancherClusterHelper {
   }
 
   Response generateResponseWithHeaders(RancherClusterListResponseDTO responseDTO, Integer page, Integer limit) {
-    Response.ResponseBuilder responseBuilder = Response.ok().entity(responseDTO);
+    ResponseBuilder responseBuilder = Response.ok().entity(responseDTO);
     addLinksHeader(
         responseBuilder, isNotEmpty(responseDTO.getClusters()) ? responseDTO.getClusters().size() : 0, page, limit);
     return responseBuilder.build();
