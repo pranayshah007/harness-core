@@ -52,6 +52,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.ImageDetails;
+import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
@@ -112,8 +113,8 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
         (ServerlessAwsLambdaPrepareRollbackContainerStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder =
-        getPluginDetailsBuilder(request, serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(),
-            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser());
+        getPluginDetailsBuilder(serverlessAwsLambdaPrepareRollbackContainerStepInfo.getResources(),
+            serverlessAwsLambdaPrepareRollbackContainerStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
@@ -156,9 +157,25 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
         serverlessAwsLambdaPrepareRollbackContainerStepInfo.getImagePullPolicy());
   }
 
-  public Builder getPluginDetailsBuilder(
-      PluginCreationRequest request, ContainerResource resources, ParameterField<Integer> runAsUser) {
-    return PluginInfoProviderHelper.buildPluginDetails(request, resources, runAsUser);
+  public PluginDetails.Builder getPluginDetailsBuilder(
+          ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
+    PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
+
+    PluginContainerResources pluginContainerResources = PluginContainerResources.newBuilder()
+            .setCpu(PluginInfoProviderHelper.getCPU(resources))
+            .setMemory(PluginInfoProviderHelper.getMemory(resources))
+            .build();
+
+    pluginDetailsBuilder.setResource(pluginContainerResources);
+
+    if (runAsUser != null && runAsUser.getValue() != null) {
+      pluginDetailsBuilder.setRunAsUser(runAsUser.getValue());
+    }
+
+    // Set used port and available port information
+    PluginInfoProviderHelper.setPortDetails(usedPorts, pluginDetailsBuilder);
+
+    return pluginDetailsBuilder;
   }
 
   public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {
