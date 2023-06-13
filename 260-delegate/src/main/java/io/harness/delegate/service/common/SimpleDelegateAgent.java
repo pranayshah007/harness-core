@@ -11,7 +11,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 
 import java.util.concurrent.Future;
 
-public abstract class SimpleDelegateAgent extends AbstractDelegateAgentService {
+public abstract class SimpleDelegateAgent<T> extends AbstractDelegateAgentService<T> {
   @Override
   protected void onDelegateStart() {}
 

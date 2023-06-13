@@ -44,9 +44,7 @@ import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
-import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
@@ -111,9 +109,9 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @Slf4j
-public abstract class AbstractDelegateAgentService implements DelegateAgentService {
+public abstract class AbstractDelegateAgentService<AcquireResponse> implements DelegateAgentService {
   protected static final String HOST_NAME = getLocalHostName();
-  private static final String DELEGATE_INSTANCE_ID = generateUuid();
+  protected static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
@@ -144,7 +142,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   @Inject @Getter(AccessLevel.PROTECTED) private DelegateConfiguration delegateConfiguration;
   @Inject @Getter(AccessLevel.PROTECTED) private HarnessMetricRegistry metricRegistry;
   @Inject @Getter(AccessLevel.PROTECTED) private Clock clock;
-  @Inject private DelegateCoreManagerClient managerClient;
+  @Inject @Getter(AccessLevel.PROTECTED) private DelegateCoreManagerClient managerClient;
   @Inject private RestartableServiceManager restartableServiceManager;
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private AsyncHttpClient asyncHttpClient;
@@ -169,7 +167,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(String id, TaskPayload executeTask);
+  protected abstract AcquireResponse acquireTask(String taskId) throws IOException;
+  protected abstract void executeTask(AcquireResponse acquireResponse);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -294,7 +293,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
         final var taskGroup = acquireTask(delegateTaskId);
-        executeTask(taskGroup.getExecutionInfraId(), taskGroup.getTask(0));
+        executeTask(taskGroup);
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {
@@ -304,17 +303,6 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         onPostExecute(delegateTaskId);
       }
     }
-  }
-
-  protected AcquireTasksResponse acquireTask(final String delegateTaskId) throws IOException {
-    final var response = executeRestCall(managerClient.acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(),
-        delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
-
-    final var pluginDescriptors = response.getTaskList();
-    log.info("Delegate {} received tasks group {} of {} tasks for delegateInstance {}",
-        DelegateAgentCommonVariables.getDelegateId(), response.getExecutionInfraId(), response.getTaskList().size(),
-        DELEGATE_INSTANCE_ID);
-    return response;
   }
 
   private void shutdownExecutors() throws InterruptedException {
@@ -349,7 +337,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     }
   }
 
-  private <T> T executeRestCall(Call<T> call) throws IOException {
+  protected <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
     try {
       response = call.execute();
