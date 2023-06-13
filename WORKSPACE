@@ -4918,6 +4918,7 @@ plain_artifacts = [
     "guru.nidi.com.kitfox:svgSalamander:1.1.3",
     "guru.nidi:graphviz-java:0.16.3",
     "guru.nidi:graphviz-rough:0.16.3",
+    "tv.cntt:jauter:1.7",
     "io.cloudsoft.windows:winrm4j-client:0.12.3",
     "io.cloudsoft.windows:winrm4j:0.12.3",
     "io.confluent:common-config:5.5.1",

@@ -118,22 +118,28 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.delegate.beans.SchedulingTaskEvent;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
+import io.harness.delegate.service.common.AcquireTaskHelper;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
+import io.harness.delegate.service.common.ManagerCallHelper;
+import io.harness.delegate.service.handlermapping.HandlerMappingServer;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.Cd1ApplicationAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.common.DelegateRunnableTask;
+import io.harness.delegate.task.tasklogging.ExecutionLogContext;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.event.client.impl.tailer.ChronicleEventTailer;
@@ -262,7 +268,6 @@ import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
-import retrofit2.Call;
 import retrofit2.Response;
 
 @Singleton
@@ -287,6 +292,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
+  private static final String SCHEDULING_TASK_EVENT_MARKER = "{\"eventType\":\"SchedulingTaskEvent\"";
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
@@ -362,7 +368,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
-  @Inject private Context context;
+  @Inject HandlerMappingServer handlerMappingServer;
+  @Inject AcquireTaskHelper acquireTaskHelper;
+  @Inject Context context;
 
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
@@ -919,8 +927,77 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
 
+    // Hnandle SchedulingTaskEvent
+    if (StringUtils.startsWith(message, SCHEDULING_TASK_EVENT_MARKER)) {
+      log.info("New scheduling task event received: {}", message);
+      try {
+        SchedulingTaskEvent taskEvent = JsonUtils.asObject(message, SchedulingTaskEvent.class);
+        final String uri = taskEvent.getUri();
+        final String method = taskEvent.getMethod();
+        try (ExecutionLogContext ignore = new ExecutionLogContext(taskEvent.getTaskId(), uri, method, OVERRIDE_ERROR)) {
+          dispatchTasksToRunner(taskEvent);
+        }
+      } catch (Exception e) {
+        log.error("Exception while decoding task", e);
+      }
+      return;
+    }
+
     // Handle other messages in task executor thread-pool.
     taskExecutor.submit(() -> handleMessage(message));
+  }
+
+  private void dispatchTasksToRunner(SchedulingTaskEvent taskEvent) {
+    if (!shouldProceedProcessingTaskEvent(taskEvent.getTaskId())) {
+      return;
+    }
+    taskExecutor.submit(() -> {
+      try {
+        if (!acquireTasks.get()) {
+          log.info("Delegate is shutting down. Won't acquire task while completing other tasks");
+          return;
+        }
+        AcquireTasksResponse acquired = acquireTaskHelper.acquireTaskPayload(
+            taskEvent.getAccountId(), delegateId, delegateInstanceId, taskEvent.getTaskId(), this::handleErrorResponse);
+        if (acquired.getTaskCount() == 0) {
+          log.error("Acquired empty task payload. account_id: %s, task_id %s", taskEvent.getAccountId(),
+              taskEvent.getTaskId());
+          return;
+        }
+        handlerMappingServer.serve(acquired);
+      } catch (IOException e) {
+        log.error("Acquire task failed for accountIdd: {}. taskIdd{}",
+            taskEvent.getAccountId(), taskEvent.getTaskId(), e);
+      }
+    });
+  }
+
+  private boolean shouldProceedProcessingTaskEvent(String taskId) {
+    if (taskId == null) {
+      log.warn("Delegate task id cannot be null");
+      return false;
+    }
+    if (!shouldContactManager()) {
+      log.info("Dropping task, self destruct in progress");
+      return false;
+    }
+
+    if (rejectRequest.get()) {
+      log.info("Delegate running out of resources, dropping this request");
+      return false;
+    }
+
+    if (currentlyExecutingFutures.containsKey(taskId)) {
+      log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", taskId);
+      return false;
+    }
+
+    if (frozen.get()) {
+      log.info(
+          "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+      return false;
+    }
+    return true;
   }
 
   @SuppressWarnings("PMD")
@@ -1038,77 +1115,29 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private <T> T executeRestCall(Call<T> call) throws IOException {
-    Response<T> response = null;
-    try {
-      response = call.execute();
-      return response.body();
-    } catch (Exception e) {
-      log.error("error executing rest call", e);
-      throw e;
-    } finally {
-      handleResponse(response);
-    }
-  }
-
-  private <T> Response<T> executeCallWithRetryableException(Call<T> call, String failureMessage) throws IOException {
-    T responseBody = null;
-    Response<T> response = null;
-    int attempt = 1;
-    while (attempt <= MAX_ATTEMPTS && responseBody == null) {
-      try {
-        response = call.clone().execute();
-        responseBody = response.body();
-        if (responseBody == null) {
-          log.warn("No response from manager on attempt {}, retrying. {}}", attempt, failureMessage);
-          attempt++;
-        }
-      } catch (Exception exception) {
-        if (attempt < MAX_ATTEMPTS) {
-          log.warn(
-              "Failed getting response from manager on attempt {}, retrying. {}}", attempt, failureMessage, exception);
-          attempt++;
-        } else {
-          throw exception;
-        }
-      }
-    }
-    return response;
-  }
-
-  private <T> T executeAcquireCallWithRetry(Call<T> call, String failureMessage) throws IOException {
-    Response<T> response = null;
-    try {
-      response = executeCallWithRetryableException(call, failureMessage);
-      return response.body();
-    } catch (Exception e) {
-      log.error("error executing acquire call", e);
-      throw e;
-    } finally {
-      handleResponse(response);
-    }
-  }
-
-  private <T> void handleResponse(Response<T> response) throws IOException {
+  private <T> void handleErrorResponse(Response<T> response) {
     if (response != null && !response.isSuccessful()) {
-      String errorResponse = response.errorBody().string();
+      try {
+        String errorResponse = null;
+        errorResponse = response.errorBody().string();
+        log.warn("Received Error Response: {}", errorResponse);
 
-      log.warn("Received Error Response: {}", errorResponse);
-
-      if (errorResponse.contains(INVALID_TOKEN.name())) {
-        log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
-        initiateSelfDestruct();
-      } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
-        initiateSelfDestruct();
-      } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-        log.error("Delegate used expired token. It will be frozen and drained.");
-        freeze();
-      } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-        log.error("Delegate used revoked token. It will be frozen and drained.");
-        freeze();
+        if (errorResponse.contains(INVALID_TOKEN.name())) {
+          log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
+          initiateSelfDestruct();
+        } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
+          initiateSelfDestruct();
+        } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
+          log.error("Delegate used expired token. It will be frozen and drained.");
+          freeze();
+        } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
+          log.error("Delegate used revoked token. It will be frozen and drained.");
+          freeze();
+        }
+        response.errorBody().close();
+      } catch (IOException e) {
+        log.error("Failed reading response body.", e);
       }
-
-      response.errorBody().close();
     }
   }
 
@@ -1131,7 +1160,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                             .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
                                             .heartbeatAsObject(true)
                                             .build();
-        restResponse = executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
+        restResponse = ManagerCallHelper.executeRestCall(
+            delegateAgentManagerClient.registerDelegate(accountId, delegateParams), this::handleErrorResponse);
       } catch (Exception e) {
         String msg = "Unknown error occurred while registering Delegate [" + accountId + "] with manager";
         log.error(msg, e);
@@ -1174,7 +1204,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         DELEGATE_TYPE, getLocalHostAddress(), delegateOrgIdentifier, delegateProjectIdentifier);
     try {
       log.info("Unregistering delegate {}", delegateId);
-      executeRestCall(delegateAgentManagerClient.unregisterDelegate(accountId, request));
+      ManagerCallHelper.executeRestCall(
+          delegateAgentManagerClient.unregisterDelegate(accountId, request), this::handleErrorResponse);
     } catch (final IOException e) {
       log.error("Failed unregistering delegate {}", delegateId, e);
     }
@@ -1200,8 +1231,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         RestResponse<DelegateProfileParams> response =
             HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
                 ()
-                    -> executeRestCall(
-                        delegateAgentManagerClient.checkForProfile(delegateId, accountId, profileId, updated)));
+                    -> ManagerCallHelper.executeRestCall(
+                        delegateAgentManagerClient.checkForProfile(delegateId, accountId, profileId, updated),
+                        this::handleErrorResponse));
         if (response != null) {
           applyProfile(response.getResource());
         }
@@ -1330,8 +1362,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     Part part = Part.createFormData("file", profileResult.getName(), requestFile);
     HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
         ()
-            -> executeRestCall(delegateAgentManagerClient.saveProfileResult(
-                delegateId, accountId, exitCode != 0, FileBucket.PROFILE_RESULTS, part)));
+            -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.saveProfileResult(delegateId, accountId,
+                                                     exitCode != 0, FileBucket.PROFILE_RESULTS, part),
+                this::handleErrorResponse));
   }
 
   private void startInputCheck() {
@@ -1435,7 +1468,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         DelegateTaskEventsResponse taskEventsResponse =
             HTimeLimiter.callInterruptible21(delegateTaskTimeLimiter, Duration.ofSeconds(15),
-                () -> executeRestCall(delegateAgentManagerClient.pollTaskEvents(delegateId, accountId)));
+                ()
+                    -> ManagerCallHelper.executeRestCall(
+                        delegateAgentManagerClient.pollTaskEvents(delegateId, accountId), this::handleErrorResponse));
         if (shouldProcessDelegateTaskEvents(taskEventsResponse)) {
           List<DelegateTaskEvent> taskEvents = taskEventsResponse.getDelegateTaskEvents();
           log.info("Processing DelegateTaskEvents {}", taskEvents);
@@ -1668,14 +1703,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Calling getDelegateScripts with version{}}", version);
         restResponse = HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofMinutes(1),
             ()
-                -> executeRestCall(delegateAgentManagerClient.getDelegateScripts(
-                    accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
+                -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.getDelegateScripts(
+                                                         accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME),
+                    this::handleErrorResponse));
       } else {
         log.info("Calling getDelegateScriptsNg with version{}}", version);
         restResponse = HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofMinutes(1),
             ()
-                -> executeRestCall(delegateAgentManagerClient.getDelegateScriptsNg(
-                    accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME)));
+                -> ManagerCallHelper.executeRestCall(delegateAgentManagerClient.getDelegateScriptsNg(
+                                                         accountId, version, DEFAULT_PATCH_VERSION, DELEGATE_NAME),
+                    this::handleErrorResponse));
       }
 
       if (restResponse == null) {
@@ -1712,8 +1749,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private String findExpectedWatcherVersion() {
     if (multiVersion) {
       try {
-        RestResponse<String> restResponse =
-            executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+        RestResponse<String> restResponse = ManagerCallHelper.executeRestCall(
+            delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()),
+            this::handleErrorResponse);
         if (restResponse != null) {
           return restResponse.getResource();
         }
@@ -1851,8 +1889,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                           .build();
       lastHeartbeatSentAt.set(clock.millis());
       sentFirstHeartbeat.set(true);
-      RestResponse<DelegateHeartbeatResponse> delegateParamsResponse =
-          executeRestCall(delegateAgentManagerClient.delegateHeartbeat(accountId, delegateParams));
+      RestResponse<DelegateHeartbeatResponse> delegateParamsResponse = ManagerCallHelper.executeRestCall(
+          delegateAgentManagerClient.delegateHeartbeat(accountId, delegateParams), this::handleErrorResponse);
       long now = clock.millis();
       log.info("[Polling]: Delegate {} received heartbeat response {} after sending at {}. {} since last response.",
           delegateId, getDurationString(lastHeartbeatSentAt.get(), now), now,
@@ -1902,7 +1940,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       updateBuilderIfEcsDelegate(builder);
       DelegateParams delegateParams =
           builder.build().toBuilder().keepAlivePacket(true).pollingModeEnabled(true).build();
-      executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
+      ManagerCallHelper.executeRestCall(
+          delegateAgentManagerClient.registerDelegate(accountId, delegateParams), this::handleErrorResponse);
     } catch (UncheckedTimeoutException ex) {
       log.warn("Timed out sending Keep Alive Request", ex);
     } catch (Exception e) {
@@ -1974,23 +2013,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void dispatchDelegateTaskAsync(DelegateTaskEvent delegateTaskEvent) {
     final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
-    if (delegateTaskId == null) {
-      log.warn("Delegate task id cannot be null");
-      return;
-    }
-
-    if (!shouldContactManager()) {
-      log.info("Dropping task, self destruct in progress");
-      return;
-    }
-
-    if (rejectRequest.get()) {
-      log.info("Delegate running out of resources, dropping this request");
-      return;
-    }
-
-    if (currentlyExecutingFutures.containsKey(delegateTaskEvent.getDelegateTaskId())) {
-      log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
+    if (!shouldProceedProcessingTaskEvent(delegateTaskId)) {
       return;
     }
 
@@ -2020,19 +2043,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
       try {
-        if (frozen.get()) {
-          log.info(
-              "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
-          return;
-        }
-
         if (!acquireTasks.get()) {
           log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
-          return;
-        }
-
-        if (currentlyAcquiringTasks.contains(delegateTaskId)) {
-          log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
           return;
         }
 
@@ -2057,11 +2069,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
-        Call<DelegateTaskPackage> acquireCall =
-            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
 
-        DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
-            acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
+        DelegateTaskPackage delegateTaskPackage = acquireTaskHelper.acquireKryo(
+            accountId, delegateId, delegateInstanceId, delegateTaskId, this::handleErrorResponse);
 
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
@@ -2074,6 +2084,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.debug("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
         }
 
+        // Delegate assignment protocol implicitly use instance id (set or not) to determine if a task has been
+        // assigned. This is not a good way of design. Good way is to use delegate id, or precisely one of delegate id
+        // or instance id
         if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
           // Not whitelisted. Perform validation.
           // TODO: Remove this once TaskValidation does not use secrets
@@ -2727,10 +2740,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       secretDetails.forEach((key, value) -> {
         char[] secretValue = decryptedRecords.get(value.getEncryptedRecord().getUuid());
-        if (secretValue == null) {
-          throw new UnexpectedException(format("Value for secret [%s] (uuid: [%s]) found null.",
-              value.getEncryptedRecord().getName(), value.getEncryptedRecord().getUuid()));
-        }
         secretUuidToValues.put(key, secretValue);
 
         // Adds secret values from the 3 phase decryption to the list of task secrets to be masked

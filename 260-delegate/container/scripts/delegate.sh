@@ -150,6 +150,7 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: $ACCOUNT_ID" > config-delegate.yml
+  echo "delegateName: $DELEGATE_NAME" > config-delegate.yml
 fi
 test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
 if ! `grep delegateToken config-delegate.yml > /dev/null`; then

@@ -296,6 +296,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
         final var taskGroup = acquireTask(delegateTaskId);
         final var taskResponse = executeTask(taskGroup);
         onTaskResponse(delegateTaskId, taskResponse);
+
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {

@@ -46,6 +46,7 @@ import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+import software.wings.jersey.KryoFeature;
 
 @Slf4j
 public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
@@ -163,6 +164,8 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
 
   private void registerResources(final Environment environment, final Injector injector) {
     environment.jersey().register(injector.getInstance(HealthResource.class));
+    environment.jersey().register(injector.getInstance(ExecutionResponseResource.class));
     environment.jersey().register(injector.getInstance(DelegateAgentMetricResource.class));
+    environment.jersey().register(injector.getInstance(KryoFeature.class));
   }
 }
