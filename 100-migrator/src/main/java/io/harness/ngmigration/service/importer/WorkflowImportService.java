@@ -134,7 +134,7 @@ public class WorkflowImportService implements ImportService {
 
   private void createPipeline(MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
-    String yaml = YamlUtils.write(pipelineConfig);
+    String yaml = YamlUtils.writeYamlString(pipelineConfig);
     try {
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient

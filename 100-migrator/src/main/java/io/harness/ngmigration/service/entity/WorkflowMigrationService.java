@@ -375,7 +375,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
-    String yaml = YamlUtils.write(yamlFile.getYaml());
+    String yaml = YamlUtils.writeYamlString(yamlFile.getYaml());
     if (yamlFile.getYaml() instanceof PipelineConfig) {
       yaml = getYamlString(yamlFile);
       Response<ResponseDTO<PipelineSaveResponse>> resp =

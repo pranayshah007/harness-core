@@ -147,29 +147,19 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     log.info("Starting to Resolve step parameters");
     ExpressionMode expressionMode = planNode.getExpressionMode();
     Object resolvedStepParameters;
-    if (pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
-      // Passing the FeatureFlag.
-      // TODO(archit): Remove feature flag support in engine
-      List<String> enabledFeatureFlags = new LinkedList<>();
-      if (pmsFeatureFlagService.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
-        enabledFeatureFlags.add(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION.name());
-      }
-      if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
-        enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
-      }
-      if (pmsFeatureFlagService.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
-        enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
-      }
-
-      resolvedStepParameters = pmsEngineExpressionService.resolve(
-          ambiance, planNode.getStepParameters(), expressionMode, enabledFeatureFlags);
-    } else {
-      resolvedStepParameters =
-          pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode);
+    // Passing the FeatureFlag.
+    // TODO(archit): Remove feature flag support in engine
+    List<String> enabledFeatureFlags = new LinkedList<>();
+    if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
+      enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
     }
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
+      enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
+    }
+
+    resolvedStepParameters =
+        pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode, enabledFeatureFlags);
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
 

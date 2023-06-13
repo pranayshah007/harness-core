@@ -729,13 +729,8 @@ public class EngineExpressionEvaluator {
         if (value == null) {
           unresolvedExpressions.add(expression);
         }
-        if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
-          // Use the asJson only when the FF is enabled.
-          if (isAnyCollection(value)) {
-            return JsonUtils.asJson(value);
-          }
-        } else if (isAnyCollection(value)) {
-          log.info("[PMS_ENGINE_JSON]: Following expression is referred as json - " + expression);
+        if (isAnyCollection(value)) {
+          return JsonUtils.asJson(value);
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {

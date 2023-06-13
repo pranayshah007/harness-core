@@ -280,7 +280,7 @@ public class ServiceDefinitionPlanCreatorHelper {
   @NotNull
   private YamlField prepareFinalUuidInjectedManifestYamlField(
       YamlNode serviceV2Node, List<ManifestConfigWrapper> finalManifests) throws IOException {
-    YamlField manifestsYamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(finalManifests));
+    YamlField manifestsYamlField = YamlUtils.injectUuidInYamlField(YamlUtils.writeYamlString(finalManifests));
     manifestsYamlField = new YamlField(YamlTypes.MANIFEST_LIST_CONFIG,
         new YamlNode(YamlTypes.MANIFEST_LIST_CONFIG, manifestsYamlField.getNode().getCurrJsonNode(),
             serviceV2Node.getField(YamlTypes.SERVICE_DEFINITION).getNode().getField(YamlTypes.SPEC).getNode()));
@@ -492,7 +492,7 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   private YamlField prepareFinalUuidInjectedApplicationSettingYamlField(
       YamlNode serviceV2Node, ApplicationSettingsConfiguration appSettingsConfig) throws IOException {
-    YamlField appSettingsYamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(appSettingsConfig));
+    YamlField appSettingsYamlField = YamlUtils.injectUuidInYamlField(YamlUtils.writeYamlString(appSettingsConfig));
     appSettingsYamlField = new YamlField(YamlTypes.APPLICATION_SETTINGS,
         new YamlNode(YamlTypes.APPLICATION_SETTINGS, appSettingsYamlField.getNode().getCurrJsonNode(),
             serviceV2Node.getField(YamlTypes.SERVICE_DEFINITION).getNode().getField(YamlTypes.SPEC).getNode()));
@@ -591,7 +591,7 @@ public class ServiceDefinitionPlanCreatorHelper {
   private YamlField prepareFinalUuidInjectedConnectionStringYamlField(
       YamlNode serviceV2Node, ConnectionStringsConfiguration finalConnectionStringsConfig) throws IOException {
     YamlField connectionStringsYamlField =
-        YamlUtils.injectUuidInYamlField(YamlUtils.write(finalConnectionStringsConfig));
+        YamlUtils.injectUuidInYamlField(YamlUtils.writeYamlString(finalConnectionStringsConfig));
     connectionStringsYamlField = new YamlField(YamlTypes.CONNECTION_STRINGS,
         new YamlNode(YamlTypes.CONNECTION_STRINGS, connectionStringsYamlField.getNode().getCurrJsonNode(),
             serviceV2Node.getField(YamlTypes.SERVICE_DEFINITION).getNode().getField(YamlTypes.SPEC).getNode()));

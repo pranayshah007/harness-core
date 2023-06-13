@@ -132,7 +132,7 @@ public class EnvironmentGroupOutboxEventHandlerTest extends CategoryTest {
                        .orgIdentifier("orgId")
                        .projectIdentifier("projectId")
                        .build());
-    assertThat(entry.getNewYaml()).isEqualTo(YamlUtils.write(config_created));
+    assertThat(entry.getNewYaml()).isEqualTo(YamlUtils.writeYamlString(config_created));
   }
 
   @Test
@@ -176,8 +176,8 @@ public class EnvironmentGroupOutboxEventHandlerTest extends CategoryTest {
                        .orgIdentifier("orgId")
                        .projectIdentifier("projectId")
                        .build());
-    assertThat(entry.getNewYaml()).isEqualTo(YamlUtils.write(config_updated));
-    assertThat(entry.getOldYaml()).isEqualTo(YamlUtils.write(config_created));
+    assertThat(entry.getNewYaml()).isEqualTo(YamlUtils.writeYamlString(config_updated));
+    assertThat(entry.getOldYaml()).isEqualTo(YamlUtils.writeYamlString(config_created));
   }
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -219,7 +219,7 @@ public class EnvironmentGroupOutboxEventHandlerTest extends CategoryTest {
                        .orgIdentifier("orgId")
                        .projectIdentifier("projectId")
                        .build());
-    assertThat(entry.getOldYaml()).isEqualTo(YamlUtils.write(config_created));
+    assertThat(entry.getOldYaml()).isEqualTo(YamlUtils.writeYamlString(config_created));
   }
 
   private GlobalContext buildMockGlobalContext() {
@@ -233,7 +233,7 @@ public class EnvironmentGroupOutboxEventHandlerTest extends CategoryTest {
   }
 
   private EnvironmentGroupEntity buildEntity(String accountId, EnvironmentGroupConfig config) {
-    String yaml = YamlUtils.write(config);
+    String yaml = YamlUtils.writeYamlString(config);
     return EnvironmentGroupEntity.builder()
         .accountId(accountId)
         .identifier(config.getIdentifier())
