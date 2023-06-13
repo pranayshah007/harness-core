@@ -14,6 +14,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.ANALYSE_TF_PLAN_SUMMARY;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW;
 import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
@@ -1010,6 +1011,10 @@ public abstract class TerraformProvisionState extends State {
             .encryptedTfPlan(encryptedTfPlan)
             .secretManagerConfig(secretManagerConfig)
             .planName(getEncryptedPlanName(context))
+            .encryptDecryptPlanForHarnessSMOnManager(
+                featureFlagService.isEnabled(
+                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getApp().getAccountId())
+                && isHarnessSecretManager(secretManagerConfig))
             .useTfClient(
                 featureFlagService.isEnabled(FeatureName.USE_TF_CLIENT, executionContext.getApp().getAccountId()))
             .isGitHostConnectivityCheck(
@@ -1380,6 +1385,10 @@ public abstract class TerraformProvisionState extends State {
             .secretManagerConfig(secretManagerConfig)
             .encryptedTfPlan(null)
             .planName(getEncryptedPlanName(context))
+            .encryptDecryptPlanForHarnessSMOnManager(
+                featureFlagService.isEnabled(
+                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getApp().getAccountId())
+                && isHarnessSecretManager(secretManagerConfig))
             .useTfClient(
                 featureFlagService.isEnabled(FeatureName.USE_TF_CLIENT, executionContext.getApp().getAccountId()))
             .isGitHostConnectivityCheck(
@@ -1785,8 +1794,26 @@ public abstract class TerraformProvisionState extends State {
   }
 
   SecretManagerConfig getSecretManagerContainingTfPlan(String secretManagerId, String accountId) {
-    return isEmpty(secretManagerId) ? secretManagerConfigService.getDefaultSecretManager(accountId)
-                                    : secretManagerConfigService.getSecretManager(accountId, secretManagerId, false);
+    SecretManagerConfig secretManagerConfig = isEmpty(secretManagerId)
+        ? secretManagerConfigService.getDefaultSecretManager(accountId)
+        : secretManagerConfigService.getSecretManager(accountId, secretManagerId, false);
+    if (featureFlagService.isEnabled(CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, accountId)
+        && isHarnessSecretManager(secretManagerConfig)) {
+      removeCredFromHarnessSM(secretManagerConfig);
+    }
+    return secretManagerConfig;
+  }
+
+  private boolean isHarnessSecretManager(SecretManagerConfig secretManagerConfig) {
+    if (secretManagerConfig != null) {
+      return secretManagerConfig.isGlobalKms();
+    } else {
+      return false;
+    }
+  }
+
+  private void removeCredFromHarnessSM(SecretManagerConfig secretManagerConfig) {
+    secretManagerConfig.maskSecrets();
   }
 
   protected SettingAttribute resolveAwsConfig(ExecutionContext context) {

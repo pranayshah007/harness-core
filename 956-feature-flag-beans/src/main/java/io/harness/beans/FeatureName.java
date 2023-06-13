@@ -771,6 +771,12 @@ public enum FeatureName {
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
 
   CDS_AUTO_APPROVAL("This FF is for allowing scheduled approval in Harness approval step", HarnessTeam.CDP),
+  CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG(
+      "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for CG",
+      HarnessTeam.CDP),
+  CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG(
+      "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
+      HarnessTeam.CDP),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   PL_FIX_INCONSISTENT_USER_DATA(
       "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",

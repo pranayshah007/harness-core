@@ -53,6 +53,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.cli.CliResponse;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -61,6 +62,7 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -135,6 +137,7 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
   @Inject private DelegateLogService delegateLogService;
   @Inject private TerragruntRunAllTaskHandler terragruntRunAllTaskHandler;
   @Inject private TerragruntApplyDestroyTaskHandler terragruntApplyDestroyTaskHandler;
+  @Inject private HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
 
   public TerragruntProvisionTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -407,8 +410,17 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
               terragruntProvisionTaskHelper.getTerraformPlanFile(terraformConfigFileDirectoryPath, planName);
           wrapUpLogCallBack.saveExecutionLog(color("\nEncrypting terraform plan \n", LogColor.Yellow, LogWeight.Bold),
               INFO, CommandExecutionStatus.RUNNING);
-          encryptedTfPlan = (EncryptedRecordData) encryptDecryptHelper.encryptContent(
-              terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig());
+          SecretManagerConfig secretManagerConfig = parameters.getSecretManagerConfig();
+
+          if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+            encryptedTfPlan = (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(
+                terraformPlanFile, parameters.getSecretManagerConfig(), false);
+
+          } else {
+            encryptedTfPlan = (EncryptedRecordData) encryptDecryptHelper.encryptContent(
+                terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig());
+          }
+
         } else {
           wrapUpLogCallBack.saveExecutionLog(color("\nTerraform plan not found\n", LogColor.Yellow, LogWeight.Bold),
               WARN, CommandExecutionStatus.RUNNING);
