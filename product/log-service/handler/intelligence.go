@@ -15,8 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/harness/harness-core/product/log-service/config"
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
@@ -259,10 +258,9 @@ func fetchKeyLogs(ctx context.Context, store store.Store, key string) (
 		if err == bolt.ErrNotFound {
 			return "", nil
 		}
-		if aerr, ok := err.(awserr.Error); ok {
-			if aerr.Code() == s3.ErrCodeNoSuchKey {
-				return "", nil
-			}
+		var nsk *types.NoSuchKey
+		if errors.As(err, nsk) {
+			return "", nil
 		}
 		return "", err
 	}
