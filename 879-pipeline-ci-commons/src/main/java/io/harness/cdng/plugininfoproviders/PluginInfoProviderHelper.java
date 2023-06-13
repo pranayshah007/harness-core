@@ -62,6 +62,8 @@ public class PluginInfoProviderHelper {
     Integer nextPort = portFinder.getNextPort();
     pluginDetailsBuilder.addPortUsed(nextPort);
 
+    usedPorts.add(nextPort);
+
     pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build());
   }
 
