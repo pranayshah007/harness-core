@@ -313,7 +313,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER,
       CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
-      SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA);
+      SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA, TAS);
   private static final List<String> TERRAGRUNT_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
       SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
   private static final List<String> TERRAFORM_CLOUD_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS,
@@ -325,7 +325,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM,
-      AZURE_WEBAPP, ECS, COMMANDS, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
+      AZURE_WEBAPP, ECS, COMMANDS, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS, TAS);
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
