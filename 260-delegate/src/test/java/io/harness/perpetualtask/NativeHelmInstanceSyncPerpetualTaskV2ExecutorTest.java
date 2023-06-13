@@ -20,12 +20,13 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncV2Request;
-import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
-import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParamsV2;
+import io.harness.perpetualtask.instancesync.helm.NativeHelmDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -49,8 +50,8 @@ import org.mockito.Mock;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
-public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
-  @InjectMocks private K8sInstanceSyncPerpetualTaskV2Executor executor;
+public class NativeHelmInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
+  @InjectMocks private NativeHelmInstanceSyncPerpetualTaskV2Executor executor;
   @Inject private KryoSerializer kryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
@@ -73,7 +74,7 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
 
     PerpetualTaskExecutionParams params =
         PerpetualTaskExecutionParams.newBuilder()
-            .setCustomizedParams(Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
+            .setCustomizedParams(Any.pack(NativeHelmInstanceSyncPerpetualTaskParamsV2.newBuilder()
                                               .setAccountId(ACCOUNT_IDENTIFIER)
                                               .setOrgId(ORG_IDENTIFIER)
                                               .setProjectId(PROJECT_IDENTIFIER)
@@ -81,12 +82,15 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
             .build();
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add("namespace1");
-    K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build();
-    List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
-    k8sDeploymentReleaseDetailsList.add(k8sDeploymentReleaseDetails);
+    NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails = NativeHelmDeploymentReleaseDetails.builder()
+                                                                          .releaseName("releaseName")
+                                                                          .namespaces(namespaces)
+                                                                          .helmVersion("V380")
+                                                                          .build();
+    List<NativeHelmDeploymentReleaseDetails> helmDeploymentReleaseDetailsList = new ArrayList<>();
+    helmDeploymentReleaseDetailsList.add(helmDeploymentReleaseDetails);
     DeploymentReleaseDetails deploymentReleaseDetails =
-        DeploymentReleaseDetails.builder().deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList)).build();
+        DeploymentReleaseDetails.builder().deploymentDetails(new ArrayList<>(helmDeploymentReleaseDetailsList)).build();
     InstanceSyncV2Request instanceSyncV2Request = InstanceSyncV2Request.builder()
                                                       .accountId(ACCOUNT_IDENTIFIER)
                                                       .orgId(ORG_IDENTIFIER)
@@ -95,18 +99,22 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
                                                       .perpetualTaskId(PERPETUAL_TASK)
                                                       .build();
     when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(
-             any(K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest.class)))
-        .thenReturn(List.of(K8sServerInstanceInfo.builder()
-                                .name("instance1")
+             any(NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest.class)))
+        .thenReturn(List.of(NativeHelmServerInstanceInfo.builder()
+                                .podName("instance1")
                                 .namespace("namespace1")
                                 .releaseName("releaseName")
+                                .helmChartInfo(HelmChartInfo.builder().name("helmChart").build())
                                 .build()));
     List<ServerInstanceInfo> serverInstanceInfoList =
         executor.retrieveServiceInstances(instanceSyncV2Request, deploymentReleaseDetails);
 
     assertThat(serverInstanceInfoList.size()).isEqualTo(1);
-    assertThat(((K8sServerInstanceInfo) serverInstanceInfoList.get(0)).getName()).isEqualTo("instance1");
-    assertThat(((K8sServerInstanceInfo) serverInstanceInfoList.get(0)).getNamespace()).isEqualTo("namespace1");
+    assertThat(((NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0)).getPodName()).isEqualTo("instance1");
+    assertThat(((NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0)).getNamespace()).isEqualTo("namespace1");
+    assertThat(((NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0)).getHelmChartInfo()).isNotNull();
+    assertThat(((NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0)).getHelmChartInfo().getName())
+        .isEqualTo("helmChart");
   }
 
   @Test
@@ -118,7 +126,7 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
     PerpetualTaskExecutionParams params =
         PerpetualTaskExecutionParams.newBuilder()
             .setCustomizedParams(
-                Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
+                Any.pack(NativeHelmInstanceSyncPerpetualTaskParamsV2.newBuilder()
                              .setAccountId(ACCOUNT_IDENTIFIER)
                              .setOrgId(ORG_IDENTIFIER)
                              .setProjectId(PROJECT_IDENTIFIER)

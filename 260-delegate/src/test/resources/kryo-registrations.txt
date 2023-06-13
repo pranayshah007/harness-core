@@ -2673,6 +2673,7 @@
 5731607:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployRequest
 5731608:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
+5731610:io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9000313:io.harness.provision.model.TfConfigInspectVersion
