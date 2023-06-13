@@ -41,16 +41,25 @@ public class CCMConnectorDetailsServiceImpl implements CCMConnectorDetailsServic
 
   @Override
   @NonNull
-  public List<ConnectorResponseDTO> listNgConnectors(String accountId, ConnectivityStatus status) {
+  public List<ConnectorResponseDTO> listNgConnectors(String accountId, List<ConnectorType> connectorTypes,
+      List<CEFeatures> ceFeatures, List<ConnectivityStatus> connectivityStatuses) {
     List<ConnectorResponseDTO> nextGenConnectorResponses = new ArrayList<>();
     PageResponse<ConnectorResponseDTO> response = null;
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO = ConnectorFilterPropertiesDTO.builder().build();
+    if (isNotEmpty(connectorTypes)) {
+      connectorFilterPropertiesDTO.setTypes(connectorTypes);
+    }
+    if (isNotEmpty(ceFeatures)) {
+      connectorFilterPropertiesDTO.setCcmConnectorFilter(
+          CcmConnectorFilter.builder().featuresEnabled(ceFeatures).build());
+    }
+    if (isNotEmpty(connectivityStatuses)) {
+      connectorFilterPropertiesDTO.setConnectivityStatuses(connectivityStatuses);
+    }
+    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
+
     int page = 0;
     int size = 100;
-    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder()
-            .ccmConnectorFilter(CcmConnectorFilter.builder().featuresEnabled(Arrays.asList(CEFeatures.BILLING)).build())
-            .build();
-    connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
     do {
       response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
           accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
@@ -65,13 +74,15 @@ public class CCMConnectorDetailsServiceImpl implements CCMConnectorDetailsServic
   @Override
   @Nullable
   public CCMConnectorDetails getFirstConnectorDetails(String accountId) {
-    List<ConnectorResponseDTO> ngHealthyConnectors = listNgConnectors(accountId, ConnectivityStatus.SUCCESS);
+    List<ConnectorResponseDTO> ngHealthyConnectors =
+        listNgConnectors(accountId, null, Arrays.asList(CEFeatures.BILLING), Arrays.asList(ConnectivityStatus.SUCCESS));
     ngHealthyConnectors.sort(Comparator.comparing(ConnectorResponseDTO::getCreatedAt));
     if (!ngHealthyConnectors.isEmpty()) {
       return getConnectorDetails(ngHealthyConnectors.get(0), accountId);
     }
 
-    List<ConnectorResponseDTO> ngUnhealthyConnectors = listNgConnectors(accountId, ConnectivityStatus.FAILURE);
+    List<ConnectorResponseDTO> ngUnhealthyConnectors =
+        listNgConnectors(accountId, null, Arrays.asList(CEFeatures.BILLING), Arrays.asList(ConnectivityStatus.FAILURE));
     ngHealthyConnectors.sort(Comparator.comparing(ConnectorResponseDTO::getCreatedAt));
     if (!ngUnhealthyConnectors.isEmpty()) {
       return getConnectorDetails(ngUnhealthyConnectors.get(0), accountId);
