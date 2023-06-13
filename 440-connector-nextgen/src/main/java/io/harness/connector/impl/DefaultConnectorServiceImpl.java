@@ -913,6 +913,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     ConnectorValidationResult validationResult;
     validationResult = validateSafely(
         connectorResponseDTO, connectorInfo, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    // generate secret usage for connector test
+    connectorEntityReferenceHelper.sendSecretUsageEventForConnectorTest(accountIdentifier, connectorInfo);
     return validationResult;
   }
 

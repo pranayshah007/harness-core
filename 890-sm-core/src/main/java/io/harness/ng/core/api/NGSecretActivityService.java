@@ -10,6 +10,7 @@ package io.harness.ng.core.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 
@@ -17,4 +18,6 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 public interface NGSecretActivityService {
   void create(String accountIdentifier, SecretDTOV2 secret, NGActivityType ngActivityType);
   void deleteAllActivities(String accountIdentifier, String secretFQN);
+
+  void incrementSecretUsageCount(EntityReference entityRef);
 }

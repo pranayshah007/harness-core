@@ -20,6 +20,7 @@ import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.entityusageactivity.EntityUsageEventDetailProtoTORestMapper;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -31,6 +32,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class EntityActivityProtoToRestDTOMapper {
   EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  EntityUsageEventDetailProtoTORestMapper entityUsageEventDetailProtoTORestMapper;
 
   public NGActivityDTO toRestDTO(EntityActivityCreateDTO entityActivityProtoDTO) {
     return NGActivityDTO.builder()
@@ -61,8 +63,10 @@ public class EntityActivityProtoToRestDTOMapper {
             .activityStatusMessage(entityUsageActivityDetailProtoDTO.getActivityStatusMessage())
             .errors(getErrorsList(entityUsageActivityDetailProtoDTO.getErrorsList()))
             .errorSummary(entityUsageActivityDetailProtoDTO.getErrorSummary())
-            .status(getConnecitivityStatus(entityUsageActivityDetailProtoDTO.getStatus()))
-            .build();
+              .activityMetadata(entityUsageActivityDetailProtoDTO.getActivityMetadataMap())
+            .usageDetail(entityUsageEventDetailProtoTORestMapper.getEventDetail(
+                entityUsageActivityDetailProtoDTO.getUsageDetail()))
+                .build();
       default:
         return null;
     }

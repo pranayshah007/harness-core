@@ -8,13 +8,14 @@
 package io.harness.ng.core.activityhistory.entity;
 
 import io.harness.annotations.StoreIn;
-import io.harness.connector.ConnectivityStatus;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ErrorDetail;
+import io.harness.ng.core.entityusageactivity.EntityUsageDetail;
 
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -37,8 +38,9 @@ public class EntityUsageActivityDetail extends NGActivity {
   @NotBlank String referredByEntityFQN;
   @NotBlank String referredByEntityType;
   @NotNull EntityDetail referredByEntity;
+  EntityUsageDetail usageDetail;
   @NotEmpty String activityStatusMessage;
   List<ErrorDetail> errors;
   String errorSummary;
-  ConnectivityStatus status;
+  Map<String, String> activityMetadata;
 }

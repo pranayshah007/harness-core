@@ -9,6 +9,7 @@ package io.harness.ng.core.entityactivity;
 
 import io.harness.EntityType;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
+import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.entityactivity.connector.ConnectorEntityActivityEventHandler;
 
 import com.google.inject.Inject;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class EntityActivityEventHandler {
   @Inject ConnectorEntityActivityEventHandler connectorEntityActivityEventHandler;
+  @Inject NGSecretActivityService ngSecretActivityService;
 
   public void updateActivityResultInEntity(NGActivityDTO ngActivityDTO) {
     // If in future, we need to update the activity for other entities like
@@ -29,6 +31,8 @@ public class EntityActivityEventHandler {
       } catch (Exception ex) {
         log.error("Exception occurred while updating the activity result : ", ex);
       }
+    } else if (ngActivityDTO.getReferredEntity().getType() == EntityType.SECRETS) {
+      ngSecretActivityService.incrementSecretUsageCount(ngActivityDTO.getReferredEntity().getEntityRef());
     }
   }
 }

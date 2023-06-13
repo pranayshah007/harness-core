@@ -242,7 +242,6 @@ public interface EntityTypeConstants {
   String SSCA_ENFORCEMENT = "SscaEnforcement";
   String IDP_CONNECTOR = "IdpConnector";
   String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
-
   String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
 }

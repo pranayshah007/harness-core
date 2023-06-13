@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
@@ -79,4 +80,7 @@ public class NGSecretActivityServiceImpl implements NGSecretActivityService {
   public void deleteAllActivities(String accountIdentifier, String secretFQN) {
     ngActivityService.deleteAllActivitiesOfAnEntity(accountIdentifier, secretFQN, EntityType.SECRETS);
   }
+
+  @Override
+  public void incrementSecretUsageCount(EntityReference entityRef) {}
 }
