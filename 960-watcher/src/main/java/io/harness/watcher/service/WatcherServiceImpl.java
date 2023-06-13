@@ -616,7 +616,7 @@ public class WatcherServiceImpl implements WatcherService {
               if (delegateData.containsKey(DELEGATE_JRE_VERSION) && delegateData.containsKey(MIGRATE_TO_JRE_VERSION)) {
                 String delegateJreVersion = (String) delegateData.get(DELEGATE_JRE_VERSION);
                 String migrateToJreVersion = (String) delegateData.get(MIGRATE_TO_JRE_VERSION);
-                upgradeJre(delegateJreVersion, migrateToJreVersion);
+                // upgradeJre(delegateJreVersion, migrateToJreVersion);
               }
 
               if (UNREGISTERED.equals(DelegateAgentCommonVariables.getDelegateId())) {
