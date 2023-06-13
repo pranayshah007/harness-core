@@ -1112,17 +1112,13 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .handler(dataCollectionTasksPerpetualTaskStatusUpdateHandler)
             .schedulingType(REGULAR)
             .filterExpander(query
-                -> query.and(
-                    query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
-                        query.and(
-                            query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
-                            query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
-                                .lessThan(injector.getInstance(Clock.class)
-                                              .instant()
-                                              .minus(5, ChronoUnit.MINUTES)
-                                              .toEpochMilli()))),
-                    query.criteria(DataCollectionTaskKeys.validAfter)
-                        .lessThan(injector.getInstance(Clock.class).instant().minus(3, ChronoUnit.MINUTES))))
+                -> query.field(DataCollectionTaskKeys.status)
+                       .in(Arrays.asList(DataCollectionExecutionStatus.QUEUED, DataCollectionExecutionStatus.RUNNING))
+                       .field(VerificationTaskBaseKeys.lastUpdatedAt)
+                       .lessThan(
+                           injector.getInstance(Clock.class).instant().minus(5, ChronoUnit.MINUTES).toEpochMilli())
+                       .field(DataCollectionTaskKeys.validAfter)
+                       .lessThan(injector.getInstance(Clock.class).instant().minus(3, ChronoUnit.MINUTES)))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

@@ -379,6 +379,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     roleAssignmentApiUtils.validatePrincipalScopeLevelConditions(roleAssignmentDTO.getPrincipal(), scope.getLevel());
     RoleAssignment roleAssignment =
         roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
+    checkAndAddManagedRoleAssignmentForUserGroup(harnessScopeParams, roleAssignmentDTO);
     roleAssignmentApiUtils.syncDependencies(roleAssignment, scope);
     roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

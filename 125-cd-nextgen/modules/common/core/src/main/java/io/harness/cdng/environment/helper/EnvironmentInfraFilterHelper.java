@@ -15,7 +15,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -246,46 +245,37 @@ public class EnvironmentInfraFilterHelper {
 
   public void processEnvInfraFiltering(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       EnvironmentsYaml environments, EnvironmentGroupYaml environmentGroup, ServiceDefinitionType deploymentType) {
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)) {
-      if (EnvironmentInfraFilterUtils.areFiltersPresent(environments)) {
-        Set<Environment> allPossibleEnvs =
-            getAllEnvironmentsFromAllScopes(accountIdentifier, orgIdentifier, projectIdentifier);
-        List<EnvironmentYamlV2> finalyamlV2List =
-            processFilteringForEnvironmentsLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
-                environments.getFilters(), environments.getValues(), allPossibleEnvs, deploymentType);
-        // Set the filtered envYamlV2 in the environments yaml so normal processing continues
-        environments.setValues(ParameterField.createValueField(finalyamlV2List));
-      }
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(environments)) {
+      Set<Environment> allPossibleEnvs =
+          getAllEnvironmentsFromAllScopes(accountIdentifier, orgIdentifier, projectIdentifier);
+      List<EnvironmentYamlV2> finalyamlV2List =
+          processFilteringForEnvironmentsLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
+              environments.getFilters(), environments.getValues(), allPossibleEnvs, deploymentType);
+      // Set the filtered envYamlV2 in the environments yaml so normal processing continues
+      environments.setValues(ParameterField.createValueField(finalyamlV2List));
+    }
 
-      // If deploying to environment group with filters
-      if (EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroup)) {
-        final Optional<EnvironmentGroupEntity> entity = environmentGroupService.get(
-            accountIdentifier, orgIdentifier, projectIdentifier, environmentGroup.getEnvGroupRef().getValue(), false);
+    // If deploying to environment group with filters
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroup)) {
+      final Optional<EnvironmentGroupEntity> entity = environmentGroupService.get(
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentGroup.getEnvGroupRef().getValue(), false);
 
-        if (entity.isEmpty()) {
-          throw new InvalidRequestException(
-              format("No environment group found with %s identifier in %s project in %s org",
-                  environmentGroup.getEnvGroupRef().getValue(), projectIdentifier, orgIdentifier));
-        }
-
-        List<Environment> allPossibleEnvs =
-            environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountIdentifier,
-                entity.get().getOrgIdentifier(), entity.get().getProjectIdentifier(), entity.get().getEnvIdentifiers());
-
-        updateEnvironmentsWithEnvGroupScope(environmentGroup.getEnvGroupRef(), environmentGroup.getEnvironments());
-        List<EnvironmentYamlV2> finalyamlV2List = processFilteringForEnvironmentsLevelFilters(accountIdentifier,
-            orgIdentifier, projectIdentifier, environmentGroup.getFilters(), environmentGroup.getEnvironments(),
-            new HashSet<>(allPossibleEnvs), deploymentType);
-        // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
-        environmentGroup.setEnvironments(ParameterField.createValueField(finalyamlV2List));
-      }
-    } else {
-      if (EnvironmentInfraFilterUtils.areFiltersPresent(environments)
-          || EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroup)) {
+      if (entity.isEmpty()) {
         throw new InvalidRequestException(
-            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.",
-            WingsException.USER);
+            format("No environment group found with %s identifier in %s project in %s org",
+                environmentGroup.getEnvGroupRef().getValue(), projectIdentifier, orgIdentifier));
       }
+
+      List<Environment> allPossibleEnvs =
+          environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountIdentifier,
+              entity.get().getOrgIdentifier(), entity.get().getProjectIdentifier(), entity.get().getEnvIdentifiers());
+
+      updateEnvironmentsWithEnvGroupScope(environmentGroup.getEnvGroupRef(), environmentGroup.getEnvironments());
+      List<EnvironmentYamlV2> finalyamlV2List = processFilteringForEnvironmentsLevelFilters(accountIdentifier,
+          orgIdentifier, projectIdentifier, environmentGroup.getFilters(), environmentGroup.getEnvironments(),
+          new HashSet<>(allPossibleEnvs), deploymentType);
+      // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
+      environmentGroup.setEnvironments(ParameterField.createValueField(finalyamlV2List));
     }
   }
 

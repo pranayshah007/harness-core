@@ -381,6 +381,8 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
       dockerBuildxEcrConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+      dockerBuildxGcrConfig:
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

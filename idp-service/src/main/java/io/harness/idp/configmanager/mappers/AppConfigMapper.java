@@ -25,7 +25,6 @@ public class AppConfigMapper {
     appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setCreated(appConfigEntity.getCreatedAt());
     appConfig.setUpdated(appConfigEntity.getLastModifiedAt());
-    appConfig.setProxy(appConfigEntity.getProxy());
     return appConfig;
   }
 
@@ -35,7 +34,6 @@ public class AppConfigMapper {
         .configId(appConfig.getConfigId())
         .configs(appConfig.getConfigs())
         .configName(appConfig.getConfigName())
-        .proxy(appConfig.getProxy())
         .build();
   }
 }

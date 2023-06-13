@@ -49,7 +49,6 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -215,7 +214,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
                                   .build();
     doReturn(true).when(secretCrudService).checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, secretDTOV2);
     assertThatThrownBy(() -> secretCrudService.create(accountIdentifier, secretDTOV2))
-        .isInstanceOf(SecretManagementException.class);
+        .isInstanceOf(InvalidRequestException.class);
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -600,7 +599,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteEnabled() {
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
@@ -625,40 +623,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFOFF() {
-    doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(false).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
-    try {
-      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testDelete_withForceDeleteTrue_forceDeleteFFON_settingFFOFF_settingsEnabled() {
-    doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(false).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
-    try {
-      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteFFON_settingFFON_settingDisabled() {
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
     try {
       secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
@@ -674,7 +640,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFON_settingsDisabled() {
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
     try {
       secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
@@ -690,7 +655,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFON_settingsEnabled() {
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
     try {
       secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);

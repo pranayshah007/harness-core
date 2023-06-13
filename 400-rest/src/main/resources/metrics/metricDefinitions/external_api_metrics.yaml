@@ -1,0 +1,8 @@
+name: External API Metrics
+identifier: external_api_metrics
+metricGroup: external_metrics_group
+metrics:
+  - metricName: external_api_request_count
+    metricDefinition: External API request being made per account
+    type: Count
+    unit: "1"

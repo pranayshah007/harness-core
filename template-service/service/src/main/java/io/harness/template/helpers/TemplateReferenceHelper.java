@@ -24,6 +24,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.pms.merger.YamlConfig;
@@ -75,6 +76,31 @@ public class TemplateReferenceHelper {
     templateSetupUsageHelper.deleteExistingSetupUsages(templateEntity);
   }
 
+  public List<EntityDetailProtoDTO> calculateTemplateReferences(TemplateEntity templateEntity) {
+    TemplateCrudHelper templateCrudHelper =
+        templateCrudHelperFactory.getCrudHelperForTemplateType(templateEntity.getTemplateEntityType());
+    if (!templateCrudHelper.supportsReferences()) {
+      return new ArrayList<>();
+    }
+
+    String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
+    try {
+      List<EntityDetailProtoDTO> referredEntities =
+          new ArrayList<>(templateCrudHelper.getReferences(templateEntity, entityYaml));
+      List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =
+          getNestedTemplateReferences(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+              templateEntity.getProjectIdentifier(), entityYaml, true);
+      referredEntities.addAll(referredEntitiesInLinkedTemplates);
+      return referredEntities;
+    } catch (InvalidIdentifierRefException ex) {
+      log.error("Error occurred while calculating template references {}", ex.getMessage());
+      String scope = String.valueOf(templateEntity.getTemplateScope());
+      throw new InvalidIdentifierRefException(String.format(
+          "Unable to save to %s. Template can be saved to %s only when all the referenced entities are available in the scope.",
+          scope, scope));
+    }
+  }
+
   public void populateTemplateReferences(SetupUsageParams setupUsageParams) {
     TemplateEntity templateEntity = setupUsageParams.getTemplateEntity();
     String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
@@ -107,6 +133,23 @@ public class TemplateReferenceHelper {
       throw new InvalidIdentifierRefException(String.format(
           "Unable to save to %s. Template can be saved to %s only when all the referenced entities are available in the scope.",
           scope, scope));
+    }
+  }
+
+  public void publishTemplateReferences(
+      SetupUsageParams setupUsageParams, List<EntityDetailProtoDTO> referredEntities) {
+    String branch = GitAwareContextHelper.getBranchInSCMGitMetadata();
+
+    Map<String, String> metadata = new HashMap<>();
+    if (branch != null) {
+      metadata.put("branch", branch);
+    }
+    try {
+      templateSetupUsageHelper.publishSetupUsageEvent(setupUsageParams, referredEntities, metadata);
+    } catch (Exception ex) {
+      log.error("Error occurred while publishing template references {}", ex.getMessage());
+      throw new NGTemplateException(
+          String.format("Error occurred while publishing template references  %s", ex.getMessage()));
     }
   }
 

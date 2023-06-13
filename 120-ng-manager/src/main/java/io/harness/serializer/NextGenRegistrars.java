@@ -21,7 +21,6 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.serializer.kryo.NGCacheDataKryoRegistrar;
 import io.harness.serializer.morphia.FeedbackMorphiaRegistrars;
 import io.harness.serializer.morphia.InvitesMorphiaRegistrar;
-import io.harness.serializer.morphia.MockRoleAssignmentMorphiaRegistrar;
 import io.harness.serializer.morphia.NGMorphiaRegistrars;
 import io.harness.serializer.morphia.NgUserGroupMorphiaRegistrar;
 import io.harness.serializer.morphia.NgUserMorphiaRegistrar;
@@ -68,7 +67,6 @@ public class NextGenRegistrars {
           .addAll(NGFileServiceRegistrars.morphiaRegistrars)
           .addAll(GitSyncRegistrars.morphiaRegistrars)
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
-          .add(MockRoleAssignmentMorphiaRegistrar.class)
           .add(InvitesMorphiaRegistrar.class)
           .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
           .addAll(LicenseManagerRegistrars.morphiaRegistrars)

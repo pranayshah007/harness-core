@@ -350,7 +350,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
   private void updateNewMemberIds(Set<String> userIdsFromOperation, Set<String> newMemberIds, String accountId) {
     log.info("NGSCIM: User Ids received from SCIM provider are {}, for accountId {}", userIdsFromOperation, accountId);
     for (String userId : userIdsFromOperation) {
-      Optional<UserInfo> userInfoOptional = ngUserService.getUserById(userId);
+      Optional<UserInfo> userInfoOptional = ngUserService.getUserById(userId, false);
       if (userInfoOptional.isPresent()) {
         newMemberIds.add(userId);
       } else {
@@ -457,7 +457,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     if (isNotEmpty(scimGroup.getMembers())) {
       scimGroup.getMembers().forEach(member -> {
         if (!newMemberIds.contains(member.getValue())) {
-          Optional<UserInfo> userInfoOptional = ngUserService.getUserById(member.getValue());
+          Optional<UserInfo> userInfoOptional = ngUserService.getUserById(member.getValue(), false);
           if (userInfoOptional.isPresent()) {
             newMemberIds.add(member.getValue());
           } else {

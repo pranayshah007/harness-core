@@ -54,6 +54,7 @@ import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.outbox.OutboxEventPollService;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -161,6 +162,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
   public static void configureObjectMapper(final ObjectMapper mapper) {
     HObjectMapper.configureObjectMapperForNG(mapper);
     mapper.registerModule(new TemplateServiceJacksonModule());
+    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override

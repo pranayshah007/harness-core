@@ -9,6 +9,7 @@ package io.harness.pms.pipelinestage.plancreator;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -29,6 +30,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.PipelineStageStepParameters.PipelineStageStepParametersBuilder;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -52,6 +54,7 @@ import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.pipelinestage.PipelineStageOutputs;
 import io.harness.utils.PipelineGitXHelper;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
@@ -71,6 +74,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
   @Inject private PMSPipelineService pmsPipelineService;
   @Inject KryoSerializer kryoSerializer;
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Override
   public Class<PipelineStageNode> getFieldClass() {
     return PipelineStageNode.class;
@@ -82,17 +86,23 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.PIPELINE_STAGE));
   }
 
-  public PipelineStageStepParameters getStepParameter(
-      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
-    return PipelineStageStepParameters.builder()
-        .pipeline(config.getPipeline())
-        .org(config.getOrg())
-        .project(config.getProject())
-        .stageNodeId(stageNodeId)
-        .inputSetReferences(config.getInputSetReferences())
-        .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
-        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
-        .build();
+  public PipelineStageStepParameters getStepParameter(PipelineStageConfig config, YamlField pipelineInputs,
+      String stageNodeId, String childPipelineVersion, String accountIdentifier) {
+    PipelineStageStepParametersBuilder builder =
+        PipelineStageStepParameters.builder()
+            .pipeline(config.getPipeline())
+            .org(config.getOrg())
+            .project(config.getProject())
+            .stageNodeId(stageNodeId)
+            .inputSetReferences(config.getInputSetReferences())
+            .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())));
+    if (pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.PIE_PROCESS_ON_JSON_NODE)) {
+      return builder
+          .pipelineInputsJsonNode(pipelineStageHelper.getInputSetJsonNode(pipelineInputs, childPipelineVersion))
+          .build();
+    } else {
+      return builder.pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion)).build();
+    }
   }
 
   public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {
@@ -161,7 +171,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                       .getField(YAMLFieldNameConstants.SPEC)
                       .getNode()
                       .getField(YAMLFieldNameConstants.INPUTS),
-                  planNodeId, childPipelineEntity.get().getHarnessVersion()))
+                  planNodeId, childPipelineEntity.get().getHarnessVersion(), ctx.getAccountIdentifier()))
               .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
               .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
               .facilitatorObtainment(

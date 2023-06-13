@@ -16,6 +16,7 @@ shared_dependencies = [
     "@batch//:com_azure_azure_storage_common",
     "@batch//:com_azure_resourcemanager_azure_resourcemanager_advisor",
     "@batch//:com_azure_resourcemanager_azure_resourcemanager_compute",
+    "@batch//:software_amazon_awssdk_account",
 ] + [
     "//350-event-server:module",
     "//374-ceng-graphql:module",

@@ -1023,6 +1023,19 @@ currencyConversionFactorUserInputTableTableSchema = [
     }
 ]
 
+labelKeysToColumnMappingTableSchema = [
+    {
+        "mode": "REQUIRED",
+        "name": "labelKey",
+        "type": "STRING"
+    },
+    {
+        "mode": "REQUIRED",
+        "name": "columnName",
+        "type": "STRING"
+    }
+]
+
 
 awsEbsInventorySchema = [
     {

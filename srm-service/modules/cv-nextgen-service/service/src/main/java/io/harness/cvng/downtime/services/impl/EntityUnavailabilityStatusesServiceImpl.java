@@ -161,6 +161,22 @@ public class EntityUnavailabilityStatusesServiceImpl
   }
 
   @Override
+  public List<EntityUnavailabilityStatuses> getAllInstancesEntity(
+      ProjectParams projectParams, long startTime, long endTime) {
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .disableValidation()
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(EntityUnavailabilityStatusesKeys.startTime)
+        .lessThanOrEq(endTime)
+        .field(EntityUnavailabilityStatusesKeys.endTime)
+        .greaterThanOrEq(startTime)
+        .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+        .asList();
+  }
+
+  @Override
   public void updateStatusOfEntity(EntityType entityType, String entityId, long startTime, long endTime,
       EntityUnavailabilityStatus prevStatus, EntityUnavailabilityStatus newStatus) {
     Query<EntityUnavailabilityStatuses> entityUnavailabilityStatusesQuery =

@@ -12,9 +12,10 @@ import util
 import requests
 
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
-    PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, MSPMARKUP, update_connector_data_sync_status, \
-    add_currency_preferences_columns_to_schema, add_msp_markup_column_to_schema, CURRENCY_LIST, \
-    BACKUP_CURRENCY_FX_RATES, send_event
+    PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, update_connector_data_sync_status, \
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event, \
+    flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries, add_msp_markup_column_to_schema,\
+    MSPMARKUP
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import storage
@@ -565,8 +566,10 @@ def create_dataset_and_tables(jsonData):
     pre_aggragated_table_ref = dataset.table(PREAGGREGATED)
     unified_table_ref = dataset.table(UNIFIED)
     currencyConversionFactorUserInput_table_ref = dataset.table(CURRENCYCONVERSIONFACTORUSERINPUT)
+    label_keys_to_column_mapping_table_ref = dataset.table(LABELKEYSTOCOLUMNMAPPING)
 
-    for table_ref in [aws_cur_table_ref, pre_aggragated_table_ref, unified_table_ref, currencyConversionFactorUserInput_table_ref]:
+    for table_ref in [aws_cur_table_ref, pre_aggragated_table_ref, unified_table_ref,
+                      currencyConversionFactorUserInput_table_ref, label_keys_to_column_mapping_table_ref]:
         if not if_tbl_exists(client, table_ref):
             print_("%s table does not exists, creating table..." % table_ref)
             createTable(client, table_ref)
@@ -1000,13 +1003,23 @@ def ingest_data_to_unified(jsonData):
             )
         ]
     )
-    query_job = client.query(query, job_config=job_config)
     try:
-        query_job.result()
+        run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e
     print_("Loaded into %s table..." % tableName)
+
+
+def fetch_ingestion_filters(jsonData):
+    year, month = jsonData["reportYear"], jsonData["reportMonth"]
+    date_start = "%s-%s-01" % (year, month)
+    date_end = "%s-%s-%s" % (year, month, monthrange(int(year), int(month))[1])
+
+    return """ DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
+    AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) """ % (date_start, date_end, jsonData["usageaccountid"])
 
 
 def ingest_data_to_costagg(jsonData):

@@ -427,11 +427,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     String inputSetId4 = "inputSet4";
     String overlayId = "overlayId";
     String pipelineYaml = "stages:\n"
-        + "  - name: custom"
-        + "    spec:"
-        + "      type: Http:"
-        + "      spec:"
-        + "        url: google.com";
+        + "  - name: custom\n"
+        + "    spec:\n"
+        + "      type: Http\n"
+        + "      spec:\n"
+        + "        url: google.com\n";
 
     InputSetEntity inputSet1 = InputSetEntity.builder()
                                    .identifier(inputSetId1)

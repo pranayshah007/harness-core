@@ -70,8 +70,8 @@ import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.DownloadManifestsPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
-import io.harness.cdng.plugininfoproviders.ServerlessPrepareRollbackPluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
@@ -210,7 +210,7 @@ public class NGModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
     pluginInfoProviderMultibinder.addBinding().to(AwsSamDeployPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsSamBuildPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(DownloadManifestsPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
-    pluginInfoProviderMultibinder.addBinding().to(ServerlessPrepareRollbackPluginInfoProvider.class);
   }
 }

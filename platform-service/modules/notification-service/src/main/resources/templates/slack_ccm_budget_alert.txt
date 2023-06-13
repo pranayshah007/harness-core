@@ -4,21 +4,43 @@
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": ":bell: The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%."
+				"text": "*Budget Alert for ${PERSPECTIVE_NAME}* \n Hello, The ${CURRENT_SPEND_OR_FORECASTED_SPEND} has *exceeded*${THRESHOLD_PERCENTAGE} it's ${PERIOD}-budget ${BUDGET_NAME}."
 			}
 		},
 		{
-                "type": "actions",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "View Budget"
-                        },
-                        "url": "${BUDGET_URL}"
-                    }
-                ]
-            }
+			"type": "divider"
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Perspective:* ${PERSPECTIVE_NAME} \n *Budget amount:* ${BUDGET_AMOUNT}\n *Current Spend:* ${CURRENT_SPEND}  \n *Forecasted Spend:* ${FORECASTED_SPEND}"
+			}
+		},
+		{
+			"type": "actions",
+			"elements": [
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": "View Budget",
+						"emoji": true
+					},
+					"value": "view_budget",
+					"url": "${BUDGET_URL}"
+				},
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": "View Perspective",
+						"emoji": true
+					},
+					"value": "view_perspective",
+					"url": "${PERSPECTIVE_URL}"
+				}
+			]
+		}
 	]
 }

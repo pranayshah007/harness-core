@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.PlanCreatorUtilsV1;
@@ -36,11 +37,13 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
+import io.harness.utils.PmsFeatureFlagService;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,12 +57,19 @@ public class PipelineStagePlanCreatorV1Test {
   @Mock PipelineStageHelper pipelineStageHelper;
   @Mock KryoSerializer kryoSerializer;
   @Mock PMSPipelineServiceImpl pmsPipelineService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks PipelineStagePlanCreatorV1 pipelineStagePlanCreator;
 
   private String ORG = "org";
   private String PROJ = "proj";
   private String PIPELINE = "pipeline";
   private String ACC = "acc";
+
+  @Before
+  public void setup() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACC, FeatureName.PIE_PROCESS_ON_JSON_NODE);
+  }
+
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
@@ -98,7 +108,7 @@ public class PipelineStagePlanCreatorV1Test {
     doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V1);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V1);
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V1, "acc");
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);

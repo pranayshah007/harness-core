@@ -8,7 +8,6 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -84,7 +83,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
@@ -236,6 +234,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
 
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+
     try {
       // Check if this is template identifier first entry, for marking it as stable template.
       List<TemplateEntity> templates =
@@ -281,8 +281,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
       GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
       if (doPublishSetupUsages(template)) {
-        templateReferenceHelper.populateTemplateReferences(
-            SetupUsageParams.builder().templateEntity(templateEntity).build());
+        templateReferenceHelper.publishTemplateReferences(
+            SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
       }
 
       return template;
@@ -370,6 +370,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getProjectIdentifier(), templateEntity.getRepo(), templateEntity.getConnectorRef());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     TemplateEntity template = null;
 
@@ -382,8 +384,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(
-          SetupUsageParams.builder().templateEntity(templateEntity).build());
+      templateReferenceHelper.publishTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
     return template;
@@ -396,6 +398,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
 
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo != null) {
@@ -426,8 +430,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     if (doPublishSetupUsages(template)) {
-      templateReferenceHelper.populateTemplateReferences(
-          SetupUsageParams.builder().templateEntity(templateEntity).build());
+      templateReferenceHelper.publishTemplateReferences(
+          SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
     return template;
@@ -604,7 +608,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    return isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabledViaSettings(accountIdentifier);
   }
 
   @VisibleForTesting
@@ -613,11 +617,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
-  }
-
-  @VisibleForTesting
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 
   private String getMessageHelper(String accountId, String orgIdentifier, String projectIdentifier) {

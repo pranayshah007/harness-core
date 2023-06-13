@@ -124,22 +124,3 @@ public class ServerlessAwsLambdaPrepareRollbackContainerStepTest extends Categor
     doReturn(unitStep)
         .when(serverlessAwsLambdaPrepareRollbackContainerStep)
         .getUnitStep(any(), any(), any(), any(), any(), any());
-
-    ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters =
-        ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
-            .image(ParameterField.<String>builder().value("sdaf").build())
-            .build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-
-    long timeout = 1000;
-    String parkedTaskId = "parkedTaskId";
-    UnitStep unit = serverlessAwsLambdaPrepareRollbackContainerStep.getSerialisedStep(
-        ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId);
-    assertThat(unit.getContainerPort()).isEqualTo(port);
-    assertThat(unit.getAccountId()).isEqualTo(accountId);
-    assertThat(unit.getCallbackToken()).isEqualTo(callbackToken);
-    assertThat(unit.getDisplayName()).isEqualTo(displayName);
-    assertThat(unit.getId()).isEqualTo(id);
-    assertThat(unit.getLogKey()).isEqualTo(logKey);
-  }
-}

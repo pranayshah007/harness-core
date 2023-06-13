@@ -339,18 +339,21 @@ public class ServiceStepOverrideHelper {
 
   private List<ConfigFileWrapper> prepareFinalConfigFilesV2(
       NGServiceV2InfoConfig serviceV2Config, Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs) {
-    final Map<String, ConfigFileWrapper> finalConfigFiles = getSvcConfigFiles(serviceV2Config);
+    Map<String, ConfigFileWrapper> finalConfigFiles = new HashMap<>(getSvcConfigFiles(serviceV2Config));
 
     for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
       if (overrideV2Configs.containsKey(overridesType)
           && isNotEmpty(overrideV2Configs.get(overridesType).getSpec().getConfigFiles())) {
-        finalConfigFiles.putAll(
+        Map<String, ConfigFileWrapper> configFilesOverrides =
             overrideV2Configs.get(overridesType)
                 .getSpec()
                 .getConfigFiles()
                 .stream()
                 .collect(Collectors.toMap(
-                    configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity())));
+                    configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
+        if (isNotEmpty(configFilesOverrides)) {
+          finalConfigFiles.putAll(configFilesOverrides);
+        }
       }
     }
 

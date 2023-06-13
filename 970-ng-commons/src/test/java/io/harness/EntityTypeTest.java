@@ -246,8 +246,9 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(212, "SSCA_ENFORCEMENT");
     entityTypeOrdinalMapping.put(213, "IDP_CONNECTOR");
     entityTypeOrdinalMapping.put(214, "CD_SSCA_ENFORCEMENT");
-    entityTypeOrdinalMapping.put(215, "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2");
-    entityTypeOrdinalMapping.put(216, "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2");
+    entityTypeOrdinalMapping.put(215, "DOWNLOAD_MANIFESTS");
+    entityTypeOrdinalMapping.put(216, "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2");
+    entityTypeOrdinalMapping.put(217, "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

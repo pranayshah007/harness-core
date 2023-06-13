@@ -236,6 +236,7 @@ public class EntityYamlRootNames {
 
   // AWS SAM
   public static final String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  public static final String DOWNLOAD_MANIFESTS = "DownloadManifests";
   public static final String AWS_SAM_BUILD = "AwsSamBuild";
   public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
