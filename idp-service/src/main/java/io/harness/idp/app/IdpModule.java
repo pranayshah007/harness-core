@@ -33,6 +33,8 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
+import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.resource.MergedPluginsConfigApiImpl;
 import io.harness.idp.configmanager.service.*;
@@ -49,8 +51,6 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsInMemoryCache;
 import io.harness.idp.health.resources.HealthResource;
 import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;

@@ -12,13 +12,10 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
-        "//953-events-api:module",
-        "//953-events-api/src/main/proto:953_events_api_java_proto",
-        "//idp-service/src/main/java/io/harness/idp/envvariable:module",
-        "//idp-service/src/main/java/io/harness/idp/gitintegration/service:module",
-        "//idp-service/src/main/java/io/harness/idp/user:module",
-        "@maven//:com_google_inject_guice",
-        "@maven//:org_apache_logging_log4j_log4j_api",
-        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
+        "//910-delegate-service-driver:module",
+        "//954-connector-beans:module",
+        "//idp-service/src/main/java/io/harness/idp/common:module",
+        "//idp-service/src/main/java/io/harness/idp/gitintegration/beans:module",
+        "//idp-service/src/main/java/io/harness/idp/gitintegration/utils:module",
     ],
 )

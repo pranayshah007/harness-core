@@ -16,6 +16,8 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
+import io.harness.idp.common.delegateselectors.utils.DelegateSelectorsUtils;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
@@ -28,7 +30,6 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -210,7 +211,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   private CatalogConnectorEntity saveOrUpdateConnector(
       ConnectorInfoDTO connectorInfoDTO, String accountIdentifier, String catalogInfraConnectorType) throws Exception {
-    Set<String> delegateSelectors = GitIntegrationUtils.extractDelegateSelectors(connectorInfoDTO);
+    Set<String> delegateSelectors = DelegateSelectorsUtils.extractDelegateSelectors(connectorInfoDTO);
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity =
         ConnectorDetailsMapper.fromDTO(connectorInfoDTO.getIdentifier(), accountIdentifier,

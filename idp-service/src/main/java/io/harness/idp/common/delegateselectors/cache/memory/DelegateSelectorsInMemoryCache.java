@@ -5,10 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.gitintegration.utils.delegateselectors;
+package io.harness.idp.common.delegateselectors.cache.memory;
 
-import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
-import io.harness.idp.gitintegration.service.GitIntegrationService;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCacheLoader;
+import io.harness.idp.common.delegateselectors.cache.factory.DelegateSelectorsCacheLoaderFactory;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -17,7 +18,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
   private static final long EXPIRY_IN_HOURS = 1;
   private static final long MAX_CACHE_SIZE = 1000;
-  @Inject private GitIntegrationService gitIntegrationService;
+  @Inject private DelegateSelectorsCacheLoaderFactory factory;
   LoadingCache<String, Map<String, Set<String>>> cache =
       CacheBuilder.newBuilder()
           .maximumSize(MAX_CACHE_SIZE)
@@ -37,10 +37,9 @@ public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
             @Override
             public Map<String, Set<String>> load(@NotNull String accountIdentifier) {
               Map<String, Set<String>> hostDelegateSelectors = new HashMap<>();
-              List<CatalogConnectorEntity> catalogConnectors =
-                  gitIntegrationService.getAllConnectorDetails(accountIdentifier);
-              catalogConnectors.forEach(catalogConnector
-                  -> hostDelegateSelectors.put(catalogConnector.getHost(), catalogConnector.getDelegateSelectors()));
+              for (DelegateSelectorsCacheLoader cacheLoader : factory.getCacheLoaders()) {
+                hostDelegateSelectors.putAll(cacheLoader.load(accountIdentifier));
+              }
               return hostDelegateSelectors;
             }
           });
