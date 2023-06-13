@@ -346,7 +346,12 @@ public class ArtifactConfigToDelegateReqMapper {
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
     if (isLastPublishedExpression(buildNumber)) {
-      buildNumber = getTagRegex(buildNumber);
+      if (ParameterField.isNotNull(artifactConfig.getBuild())
+          && tagHasInputValidator(artifactConfig.getBuild().getInputSetValidator(), buildNumber)) {
+        buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+      } else {
+        buildNumber = getTagRegex(buildNumber);
+      }
     }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
