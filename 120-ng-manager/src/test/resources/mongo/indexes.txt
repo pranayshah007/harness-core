@@ -148,7 +148,7 @@ projects {"name": "unique_accountIdentifier_organizationIdentifier_projectIdenti
 secrets {"name": "migratedFromManager_1", "background": true} {"migratedFromManager": 1}
 secrets {"name": "unique_identification", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceAccounts {"name": "list_accounts_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
-serviceAccounts {"name": "unique_sa_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1}
+serviceAccounts {"name": "serviceAccountsPrimaryKey", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceOverridesNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_identifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceSequence {"name": "unique_accountId_organizationIdentifier_projectIdentifier_serviceIdentifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1}
 servicesNG {"name": "accountId_orgId_projectId_deleted_collation_en", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "deleted": 1}
