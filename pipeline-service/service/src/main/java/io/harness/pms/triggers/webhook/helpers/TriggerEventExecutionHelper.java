@@ -350,7 +350,7 @@ public class TriggerEventExecutionHelper {
         runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, pseudoEvent);
       }
 
-      Type buildType = ngTriggerEntity.getType() == NGTriggerType.ARTIFACT ? Type.ARTIFACT : Type.MANIFEST;
+      Type buildType = getBuildType(ngTriggerEntity);
       Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
 
       String build = pollingResponse.getBuildInfo().getVersions(0);
@@ -562,5 +562,12 @@ public class TriggerEventExecutionHelper {
     }
     abstractions.put(NG, "true");
     return abstractions;
+  }
+
+  private Type getBuildType(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity.getType() == NGTriggerType.ARTIFACT || ngTriggerEntity.getType() == NGTriggerType.MULTI_REGION_ARTIFACT) {
+      return Type.ARTIFACT;
+    }
+    return Type.MANIFEST;
   }
 }
