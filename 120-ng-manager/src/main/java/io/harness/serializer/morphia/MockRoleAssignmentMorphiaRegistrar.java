@@ -12,23 +12,19 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
-import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
-import io.harness.ng.core.entities.ApiKey;
-import io.harness.ng.core.entities.Token;
+import io.harness.ng.accesscontrol.mockserver.MockRoleAssignment;
 
 import java.util.Set;
 
 @OwnedBy(PL)
-public class NGMorphiaRegistrars implements MorphiaRegistrar {
+public class MockRoleAssignmentMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
-    set.add(ApiKey.class);
-    set.add(Token.class);
-    set.add(AccessControlMigration.class);
+    set.add(MockRoleAssignment.class);
   }
 
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
-    // nothing to register
+    // No class to register
   }
 }
