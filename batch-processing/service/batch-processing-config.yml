@@ -69,6 +69,7 @@ billingDataPipelineConfig:
   clusterDataGcsBucketName: "clusterdata-qa"
   clusterDataGcsBackupBucketName: "clusterdata-qa-backup"
   awsRoleName: harnessContinuousEfficiencyRole
+  bufferSizeInMB: 100
 
 smtp:
   type: SMTP

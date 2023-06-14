@@ -132,6 +132,9 @@ if [[ "" != "$AWS_ROLE_NAME" ]]; then
   export AWS_ROLE_NAME; yq -i '.billingDataPipelineConfig.awsRoleName=env(AWS_ROLE_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BUFFER_SIZE_IN_MB" ]]; then
+  export BUFFER_SIZE_IN_MB; yq -i '.billingDataPipelineConfig.bufferSizeInMB=env(BUFFER_SIZE_IN_MB)' $CONFIG_FILE
+fi
 
 if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
