@@ -19,8 +19,12 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
+import io.harness.k8s.model.HelmVersion;
+import io.harness.perpetualtask.instancesync.helm.NativeHelmDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 
@@ -30,7 +34,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDP)
 
-public class K8sInfrastructureUtilityTest extends InstancesTestBase {
+public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
   private static final String BLUE_GREEN_COLOR = "blueGreenColor";
   private static final String NAMESPACE = "namespace";
   private static final String RELEASE_NAME = "releaseName";
@@ -54,7 +58,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
                                               .build();
 
     K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO);
+        K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO);
     assertThat(k8sDeploymentReleaseDetails).isNotNull();
     assertThat(k8sDeploymentReleaseDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
     assertThat(k8sDeploymentReleaseDetails.getNamespaces()).contains(NAMESPACE);
@@ -62,6 +66,36 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().getResourceGroup()).isEqualTo("resourceGroup");
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().getSubscriptionId()).isEqualTo("subscriptionId");
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetNativeHelmDeploymentReleaseDetails() {
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add(NAMESPACE);
+    DeploymentInfoDTO deploymentInfoDTO = NativeHelmDeploymentInfoDTO.builder()
+                                              .releaseName(RELEASE_NAME)
+                                              .namespaces(namespaces)
+                                              .helmVersion(HelmVersion.V3)
+                                              .helmChartInfo(HelmChartInfo.builder().name("helmChart").build())
+                                              .cloudConfigMetadata(K8sAzureCloudConfigMetadata.builder()
+                                                                       .clusterName("clusterName")
+                                                                       .subscription("subscriptionId")
+                                                                       .resourceGroup("resourceGroup")
+                                                                       .useClusterAdminCredentials(true)
+                                                                       .build())
+                                              .build();
+
+    NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails =
+        K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO);
+    assertThat(helmDeploymentReleaseDetails).isNotNull();
+    assertThat(helmDeploymentReleaseDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
+    assertThat(helmDeploymentReleaseDetails.getNamespaces()).contains(NAMESPACE);
+    assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig()).isNotNull();
+    assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().getResourceGroup()).isEqualTo("resourceGroup");
+    assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().getSubscriptionId()).isEqualTo("subscriptionId");
+    assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
   }
 
   @Test
@@ -76,7 +110,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
                                                       .useClusterAdminCredentials(true)
                                                       .build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sAzureCloudConfigMetadata.class);
     K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata = (K8sAzureCloudConfigMetadata) k8sCloudConfigMetadata;
@@ -93,7 +127,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
     InfrastructureOutcome infrastructureOutcome =
         K8sAwsInfrastructureOutcome.builder().cluster("cluster").namespace(NAMESPACE).build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sAWSCloudConfigMetadata.class);
     K8sAWSCloudConfigMetadata k8sAWSCloudConfigMetadata = (K8sAWSCloudConfigMetadata) k8sCloudConfigMetadata;
@@ -107,7 +141,7 @@ public class K8sInfrastructureUtilityTest extends InstancesTestBase {
     InfrastructureOutcome infrastructureOutcome =
         K8sGcpInfrastructureOutcome.builder().cluster("cluster").namespace(NAMESPACE).build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sGcpCloudConfigMetadata.class);
     K8sGcpCloudConfigMetadata k8sAWSCloudConfigMetadata = (K8sGcpCloudConfigMetadata) k8sCloudConfigMetadata;
