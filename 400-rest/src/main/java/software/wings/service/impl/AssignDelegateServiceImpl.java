@@ -123,7 +123,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   public static final String SCOPE_WILDCARD = "*";
   private static final SecureRandom random = new SecureRandom();
   public static final long MAX_DELEGATE_LAST_HEARTBEAT = (5 * 60 * 1000L) + (15 * 1000L); // 5 minutes 15 seconds
-  public static final long MAX_DELEGATE_LONG_LAST_HEARTBEAT = TimeUnit.MINUTES.toMillis(20);
+  public static final long MAX_DELEGATE_LONG_LAST_HEARTBEAT = TimeUnit.MINUTES.toMillis(8);
 
   public static final String ERROR_MESSAGE =
       "Delegate selection log: Delegate id: %s, Name: %s, Host name: %s, Profile name: %s, %s with note: %s at: %s";
@@ -133,6 +133,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private static final long WHITELIST_REFRESH_INTERVAL = TimeUnit.MINUTES.toMillis(10);
 
   private static final String NO_ACTIVE_DELEGATES = "Account has no active delegates";
+  private static final String NON_CONNECTED_DELEGATES = "Non active delegates";
 
   public static final String PIPELINE = "pipeline";
   public static final String STAGE = "stage";
@@ -905,7 +906,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     List<String> eligibleDelegateIds = new ArrayList<>();
     task.setNonAssignableDelegates(new HashMap<>());
     try {
-      List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
+      List<Delegate> accountDelegates = fetchActiveDelegates(task);
       boolean isTaskNg = task.isNGTask(task.getSetupAbstractions());
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == isTaskNg).collect(toList());
       if (isEmpty(accountDelegates)) {
@@ -953,7 +954,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     List<String> eligibleDelegateIds = new ArrayList<>();
     task.setNonAssignableDelegates(new HashMap<>());
     try {
-      List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
+      List<Delegate> accountDelegates = fetchActiveDelegates(task);
       boolean isTaskNg = task.isNGTask(task.getSetupAbstractions());
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == isTaskNg).collect(toList());
       if (isEmpty(accountDelegates)) {
@@ -1010,7 +1011,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     List<String> eligibleDelegateIds = new ArrayList<>();
     task.setNonAssignableDelegates(new HashMap<>());
     try {
-      List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
+      List<Delegate> accountDelegates = fetchActiveDelegates(task);
       // NG only for new APIs
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == true).collect(toList());
       if (isEmpty(accountDelegates)) {
@@ -1179,9 +1180,19 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   @Override
-  public List<Delegate> fetchActiveDelegates(String accountId) {
-    List<Delegate> accountDelegates = getAccountDelegates(accountId);
+  public List<Delegate> fetchActiveDelegates(DelegateTask delegateTask) {
+    List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
     long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LONG_LAST_HEARTBEAT;
+    List<Delegate> nonConnectedDelegates =
+        accountDelegates.stream()
+            .filter(delegate -> delegate.getLastHeartBeat() < oldestAcceptableHeartBeat)
+            .collect(Collectors.toList());
+    List<String> nonConnectedDelegatesIds =
+        nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());
+    if (isNotEmpty(nonConnectedDelegatesIds)) {
+      delegateTask.getNonAssignableDelegates().putIfAbsent(NON_CONNECTED_DELEGATES, nonConnectedDelegatesIds);
+    }
+
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
