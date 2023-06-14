@@ -142,16 +142,16 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
           .build();
       return serverInstanceInfos;
     } catch (Exception ex) {
-      log.error("Failed to fetch InstanceSyncTaskDetails for perpetual task Id: {} for accountId: {}",
+      log.warn("Failed to fetch InstanceSyncTaskDetails for perpetual task Id: {} for accountId: {}",
           instanceSyncV2Request.getPerpetualTaskId(), instanceSyncV2Request.getAccountId());
       instanceSyncData
-          .setStatus(
-              InstanceSyncStatus.newBuilder()
-                  .setIsSuccessful(false)
-                  .setErrorMessage(format("Failed to fetch serverInstanceInfos for DeploymentReleaseDetails [%s]",
-                      deploymentReleaseDetails))
-                  .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
-                  .build())
+          .setStatus(InstanceSyncStatus.newBuilder()
+                         .setIsSuccessful(false)
+                         .setErrorMessage(
+                             format("Failed to fetch serverInstanceInfos for DeploymentReleaseDetails [%s] due to [%s]",
+                                 deploymentReleaseDetails, ex.getMessage()))
+                         .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
+                         .build())
           .setTaskInfoId(deploymentReleaseDetails.getTaskInfoId())
           .build();
       return Collections.emptyList();
@@ -199,7 +199,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
   protected abstract InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params);
 
   protected abstract List<ServerInstanceInfo> retrieveServiceInstances(
-      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details);
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) throws Exception;
 
   private void publishInstanceSyncResult(PerpetualTaskId taskId, String accountId, InstanceSyncResponseV2 response) {
     try {
@@ -207,7 +207,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
     } catch (Exception e) {
       String errorMsg = format(
           "Failed to publish Instance Sync v2 result PerpetualTaskId [%s], accountId [%s]", taskId.getId(), accountId);
-      log.error(errorMsg + ", InstanceSyncResponseV2: {}", response, e);
+      log.warn(errorMsg + ", InstanceSyncResponseV2: {}", response, e);
     }
   }
 }
