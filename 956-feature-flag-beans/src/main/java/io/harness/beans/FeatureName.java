@@ -84,7 +84,6 @@ public enum FeatureName {
   CFNG_ENABLED,
   CF_CUSTOM_EXTRACTION,
   CF_ROLLBACK_CONFIG_FILTER,
-  CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
   CI_LE_STATUS_REST_ENABLED(
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
@@ -288,7 +287,7 @@ public enum FeatureName {
   CCM_CURRENCY_PREFERENCES("Currency Preferences", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
   CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
-  CCM_LABELS_FLATTENING("Use label's columns in BigQuery", HarnessTeam.CE),
+  CCM_LABELS_FLATTENING("Use flattened label's columns in BigQuery", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,

@@ -24,6 +24,8 @@ import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
+import io.harness.perpetualtask.instancesync.helm.NativeHelmDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 
@@ -33,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 @Slf4j
-public class K8sInfrastructureUtility {
+public class K8sAndHelmInfrastructureUtility {
   public K8sDeploymentReleaseDetails getK8sDeploymentReleaseDetails(DeploymentInfoDTO deploymentInfoDTO) {
     K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
     String subscriptionId = null;
@@ -59,6 +61,35 @@ public class K8sInfrastructureUtility {
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
                                    .build())
+        .build();
+  }
+
+  public NativeHelmDeploymentReleaseDetails getNativeHelmDeploymentReleaseDetails(DeploymentInfoDTO deploymentInfoDTO) {
+    NativeHelmDeploymentInfoDTO nativeHelmDeploymentInfoDTO = (NativeHelmDeploymentInfoDTO) deploymentInfoDTO;
+    String subscriptionId = null;
+    String resourceGroup = null;
+    String clusterName = null;
+    boolean useClusterAdminCredentials = false;
+    if (nativeHelmDeploymentInfoDTO.getCloudConfigMetadata() != null) {
+      clusterName = nativeHelmDeploymentInfoDTO.getCloudConfigMetadata().getClusterName();
+      if (nativeHelmDeploymentInfoDTO.getCloudConfigMetadata() instanceof K8sAzureCloudConfigMetadata) {
+        K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata =
+            (K8sAzureCloudConfigMetadata) nativeHelmDeploymentInfoDTO.getCloudConfigMetadata();
+        subscriptionId = k8sAzureCloudConfigMetadata.getSubscription();
+        resourceGroup = k8sAzureCloudConfigMetadata.getResourceGroup();
+        useClusterAdminCredentials = k8sAzureCloudConfigMetadata.isUseClusterAdminCredentials();
+      }
+    }
+    return NativeHelmDeploymentReleaseDetails.builder()
+        .releaseName(nativeHelmDeploymentInfoDTO.getReleaseName())
+        .namespaces(nativeHelmDeploymentInfoDTO.getNamespaces())
+        .k8sCloudClusterConfig(KubernetesCloudClusterConfig.builder()
+                                   .clusterName(clusterName)
+                                   .subscriptionId(subscriptionId)
+                                   .resourceGroup(resourceGroup)
+                                   .useClusterAdminCredentials(useClusterAdminCredentials)
+                                   .build())
+        .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion().toString())
         .build();
   }
 

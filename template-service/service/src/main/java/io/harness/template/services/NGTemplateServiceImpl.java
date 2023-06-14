@@ -231,6 +231,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       }
     }
 
+    checkForChildTypesInTemplates(templateEntity, "create");
+
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
 
@@ -989,6 +991,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountIdentifier, orgIdentifier, projectIdentifier, importedTemplateYAML);
 
+    checkForChildTypesInTemplates(templateEntity, "import");
+
     TemplateEntity templateEntityToSave = prepareTemplateEntity(templateEntity, repoUrl);
 
     try {
@@ -1008,6 +1012,25 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           format(DUP_KEY_EXP_FORMAT_STRING, templateEntity.getIdentifier(), templateImportRequest.getTemplateVersion(),
               templateEntity.getProjectIdentifier(), templateEntity.getOrgIdentifier()),
           USER_SRE, ex);
+    }
+  }
+
+  private void checkForChildTypesInTemplates(TemplateEntity templateEntity, String action) {
+    Set<TemplateEntityType> templatesWithChildTypes = new HashSet<>();
+    templatesWithChildTypes.add(TemplateEntityType.STAGE_TEMPLATE);
+    templatesWithChildTypes.add(TemplateEntityType.STEP_TEMPLATE);
+    templatesWithChildTypes.add(TemplateEntityType.STEPGROUP_TEMPLATE);
+    String error = "";
+    String actionType = action.equals("create") ? "save" : "import";
+    if (templatesWithChildTypes.contains(templateEntity.getTemplateEntityType())
+        && EmptyPredicate.isEmpty(templateEntity.getChildType())) {
+      if (templateEntity.getTemplateEntityType() == TemplateEntityType.STEPGROUP_TEMPLATE) {
+        error = "Unable to " + actionType + " the template. Missing property [stageType].";
+      } else {
+        error = "Unable to " + actionType + " the template. Missing property [type] for "
+            + templateEntity.getTemplateEntityType().toString() + " template";
+      }
+      throw new InvalidRequestException(error);
     }
   }
 
@@ -1363,6 +1386,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
           templateEntity.getOrgIdentifier(), oldTemplateEntity.getTemplateEntityType()));
     }
+
+    if (EmptyPredicate.isEmpty(oldTemplateEntity.getChildType())
+        && EmptyPredicate.isNotEmpty(templateEntity.getChildType())) {
+      return oldTemplateEntity.withChildType(templateEntity.getChildType());
+    }
+
     if (!((oldTemplateEntity.getChildType() == null && templateEntity.getChildType() == null)
             || oldTemplateEntity.getChildType().equals(templateEntity.getChildType()))) {
       throw new InvalidRequestException(format(
