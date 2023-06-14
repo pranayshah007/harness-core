@@ -14,5 +14,6 @@ import lombok.Data;
 @Builder
 public class Tag {
   private final String key;
+
   private final String value;
 }
