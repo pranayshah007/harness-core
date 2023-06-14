@@ -8,18 +8,24 @@
 package io.harness.ng.webhook.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.AbstractProducer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
 import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.WebhookEventAutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
@@ -36,6 +42,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -75,25 +82,33 @@ public class WebhookEventProcessingServiceImpl
 
   @Override
   public void handle(WebhookEvent event) {
-    log.info("Processing the webhook event with uuid = [{}]", event.getUuid());
-    ParseWebhookResponse parseWebhookResponse = null;
-    SourceRepoType sourceRepoType = webhookHelper.getSourceRepoType(event);
-    if (sourceRepoType != SourceRepoType.UNRECOGNIZED) {
-      parseWebhookResponse = invokeScmService(event);
-    }
+    try (AutoLogContext ignore1 = new AccountLogContext(event.getAccountId(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new WebhookEventAutoLogContext(event.getUuid(), OVERRIDE_ERROR)) {
+      log.info("Processing the webhook event with uuid = [{}]", event.getUuid());
+      ParseWebhookResponse parseWebhookResponse = null;
+      SourceRepoType sourceRepoType = webhookHelper.getSourceRepoType(event);
 
-    try {
-      publishWebhookEvent(event, parseWebhookResponse, sourceRepoType);
-    } catch (Exception e) {
-      log.error(new StringBuilder(128)
-                    .append("Error while publishing Webhook Event: ")
-                    .append(event.getUuid())
-                    .append(", Exception: ")
-                    .append(e)
-                    .toString());
+      if (sourceRepoType != SourceRepoType.UNRECOGNIZED) {
+        parseWebhookResponse = invokeScmService(event);
+      }
 
-    } finally {
-      webhookEventRepository.delete(event);
+      try {
+        if (parseWebhookResponse == null) {
+          log.info("Unsupported webhook event for id {} ", event.getUuid());
+          return;
+        }
+        publishWebhookEvent(event, parseWebhookResponse, sourceRepoType);
+      } catch (Exception e) {
+        log.error(new StringBuilder(128)
+                      .append("Error while publishing Webhook Event: ")
+                      .append(event.getUuid())
+                      .append(", Exception: ")
+                      .append(e)
+                      .toString());
+
+      } finally {
+        webhookEventRepository.delete(event);
+      }
     }
   }
 
