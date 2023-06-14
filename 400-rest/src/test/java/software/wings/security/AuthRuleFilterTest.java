@@ -369,8 +369,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
     Class clazz = UserResourceNG.class;
     when(resourceInfo.getResourceClass()).thenReturn(clazz);
     when(resourceInfo.getResourceMethod()).thenReturn(getNgMockResourceMethod());
-    when(requestContext.getMethod()).thenReturn("GET");
-    mockUriInfo(PATH, uriInfo);
     boolean isNextGenRequest = authRuleFilter.isNextGenManagerRequest();
     assertThat(isNextGenRequest).isTrue();
 
