@@ -599,7 +599,14 @@ public enum EntityType {
   CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.DOWNLOAD_MANIFESTS)
   DOWNLOAD_MANIFESTS(ModuleType.CD, EntityTypeConstants.DOWNLOAD_MANIFESTS, IdentifierRef.class,
-      EntityYamlRootNames.DOWNLOAD_MANIFESTS);
+      EntityYamlRootNames.DOWNLOAD_MANIFESTS),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2(ModuleType.CD,
+      EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2, IdentifierRef.class,
+      EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
 
   private final ModuleType moduleType;
   String yamlName;
