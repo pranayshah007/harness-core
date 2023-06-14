@@ -10,6 +10,8 @@ package io.harness.ng.core.k8s.cluster.resources.rancher;
 import static io.harness.cdng.artifact.utils.ArtifactUtils.getTaskSetupAbstractions;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.ApiUtils.addLinksHeader;
 
 import static software.wings.beans.TaskType.RANCHER_LIST_CLUSTERS_TASK_NG;
 
@@ -44,8 +46,12 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -107,6 +113,30 @@ public class RancherClusterHelper {
     if (taskResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       throw new InvalidRequestException(LIST_CLUSTERS_ERROR_MESSAGE + taskResponse.getErrorMessage());
     }
+  }
+
+  Response generateResponseWithHeaders(RancherClusterListResponseDTO responseDTO, Integer page, Integer limit) {
+    ResponseBuilder responseBuilder = Response.ok().entity(responseDTO);
+    addLinksHeader(
+        responseBuilder, isNotEmpty(responseDTO.getClusters()) ? responseDTO.getClusters().size() : 0, page, limit);
+    return responseBuilder.build();
+  }
+
+  Map<String, String> createPageRequestParamsMap(Integer page, Integer limit, String sort, String order) {
+    Map<String, String> pageRequestParamsMap = new HashMap<>();
+    if (page != null) {
+      pageRequestParamsMap.put("page", String.valueOf(page));
+    }
+    if (limit != null) {
+      pageRequestParamsMap.put("limit", String.valueOf(limit));
+    }
+    if (isNotEmpty(order)) {
+      pageRequestParamsMap.put("order", order);
+    }
+    if (isNotEmpty(sort)) {
+      pageRequestParamsMap.put("sort", sort);
+    }
+    return pageRequestParamsMap;
   }
 
   private static boolean isRancherConnector(ConnectorResponseDTO connectorResponse) {
