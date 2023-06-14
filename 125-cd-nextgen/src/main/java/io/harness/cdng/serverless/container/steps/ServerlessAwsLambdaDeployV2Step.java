@@ -132,10 +132,10 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
 
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
-        String instancesByte64 = stepMapOutput.getMap().get("instances");
+        String instancesByte64 = stepMapOutput.getMap().get("serverlessInstances");
         instances = serverlessStepCommonHelper.convertByte64ToString(instancesByte64);
 
-        String service = stepMapOutput.getMap().get("service");
+        String service = stepMapOutput.getMap().get("serverlessServiceName");
         serviceName = serverlessStepCommonHelper.convertByte64ToString(service);
       }
 
@@ -145,7 +145,7 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
         ServerlessAwsLambdaInfrastructureOutcome infrastructureOutcome = (ServerlessAwsLambdaInfrastructureOutcome) serverlessStepCommonHelper.getInfrastructureOutcome(ambiance);
         serverInstanceInfoList = serverlessStepCommonHelper.getServerlessDeployFunctionInstanceInfo(serverlessAwsLambdaFunctions, infrastructureOutcome.getRegion(), infrastructureOutcome.getStage(), serviceName, infrastructureOutcome.getInfrastructureKey());
       } catch (Exception e) {
-        log.error("Error while parsing Stack Details", e);
+        log.error("Error while parsing serverless instances", e);
       }
 
       if (serverInstanceInfoList != null) {
