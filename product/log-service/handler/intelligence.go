@@ -10,12 +10,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/harness/harness-core/product/log-service/config"
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
