@@ -324,7 +324,7 @@ public class UserGroupResource {
     if (userGroup == null) {
       throw new InvalidRequestException("UserGroup Doesn't Exists", WingsException.GROUP);
     } else if (userGroup.isImportedByScim()) {
-      throw new InvalidRequestException("Cannot Delete Group Imported From SCIM", WingsException.GROUP);
+      log.warn("Deleting a SCIM managed user group- {} from account {}", userGroupId, accountId);
     }
     return new RestResponse<>(userGroupService.delete(accountId, userGroupId, false));
   }

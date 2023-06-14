@@ -253,7 +253,10 @@ public class UserGroupResource {
                       .orgIdentifier(orgIdentifier)
                       .projectIdentifier(projectIdentifier)
                       .build();
-    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
+      log.warn("Deleting an externally managed user group- {} from account- {} org- {} project- {}", identifier,
+          accountIdentifier, orgIdentifier, projectIdentifier);
+    }
     UserGroup userGroup = userGroupService.delete(scope, identifier);
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
@@ -451,7 +454,10 @@ public class UserGroupResource {
                       .orgIdentifier(orgIdentifier)
                       .projectIdentifier(projectIdentifier)
                       .build();
-    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
+      log.warn("Deleting user- {} from an externally managed user group- {} from account- {} org- {} project- {}",
+          userIdentifier, identifier, accountIdentifier, orgIdentifier, projectIdentifier);
+    }
     UserGroup userGroup = userGroupService.removeMember(scope, identifier, userIdentifier);
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
@@ -573,8 +579,13 @@ public class UserGroupResource {
 
   private void checkExternallyManaged(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    if (userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
+    if (isExternallyManaged) {
       throw new InvalidRequestException("This API call is not supported for externally managed group" + identifier);
     }
+  }
+
+  private boolean isExternallyManaged(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)
   }
 }
