@@ -112,6 +112,14 @@ Replace the token and the endpoint with whatever values you’re using. Should b
 curl  -H "X-Harness-Token: token" -v GET http://localhost:8079/token\?accountID\=blah
 ```
 
+# MongoDB usage
+
+Create a database `logsvc-harness` in local mongodb instance and run the following command to create the required collections.
+```
+migrate -source file://product/log-service/migrations/mongodb -database mongodb://localhost:27017/logsvc-harness up 3
+```
+migrate script: https://github.com/golang-migrate/migrate
+
 # Storage
 
 ## Write to store

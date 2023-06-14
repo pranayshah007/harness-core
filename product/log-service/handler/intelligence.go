@@ -309,6 +309,8 @@ func predict(ctx context.Context, client genAIClient, provider, prompt string, t
 	}
 }
 
+// generatePrompt generates prompt for generative AI based on the
+// logs and the step context.
 func generatePrompt(r *http.Request, logs, promptTempl string) string {
 	stepType := r.FormValue(stepTypeParam)
 	command := r.FormValue(commandParam)
