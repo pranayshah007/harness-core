@@ -159,7 +159,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateSecretDoesNotExist(
         accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
     SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
-    secret.setSecretManagerIdentifier("org.kmsjen");
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
