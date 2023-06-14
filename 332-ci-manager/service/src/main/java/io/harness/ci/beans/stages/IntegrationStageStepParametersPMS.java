@@ -36,12 +36,12 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
 
 import java.util.List;
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
-@Builder
+@SuperBuilder
 @TypeAlias("integrationStageStepParameters")
 @OwnedBy(HarnessTeam.CI)
 @RecasterAlias("io.harness.beans.stages.IntegrationStageStepParametersPMS")
@@ -59,7 +59,6 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   CodeBase codeBase;
   TriggerPayload triggerPayload;
   Boolean cloneManually;
-
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
     if (stageNode == null) {
