@@ -12,6 +12,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.exception.WingsException;
 import io.harness.logging.AutoLogContext;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
@@ -86,10 +87,9 @@ public class NotifyEventListenerHelper {
         if (v instanceof ErrorResponseData) {
           if (((ErrorResponseData) v).getException() == null) {
             log.info("Exception is null for responseMap {}", v, new Exception());
-          } else {
-            throw((ErrorResponseData) v).getException();
+            throw new UnsupportedOperationException("Exception is null for responseMap");
           }
-
+          throw((ErrorResponseData) v).getException();
         } else {
           return v;
         }
