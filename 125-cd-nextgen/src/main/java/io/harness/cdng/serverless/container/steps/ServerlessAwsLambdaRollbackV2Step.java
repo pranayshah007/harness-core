@@ -140,7 +140,8 @@ public class ServerlessAwsLambdaRollbackV2Step extends CdTaskExecutable<Serverle
 
       stepResponse = generateStepResponse(ambiance, rollbackResponse, stepResponseBuilder);
     } catch (Exception e) {
-      log.error("Error while processing Serverless Aws Lambda rollback V2 response: {}", ExceptionUtils.getMessage(e), e);
+      log.error(
+          "Error while processing Serverless Aws Lambda rollback V2 response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } finally {
       String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();

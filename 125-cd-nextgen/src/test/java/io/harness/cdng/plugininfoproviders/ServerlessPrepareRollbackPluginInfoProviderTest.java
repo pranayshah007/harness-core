@@ -72,152 +72,152 @@ import org.mockito.junit.MockitoRule;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTest {
-    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock private OutcomeService outcomeService;
-    @Mock private KryoSerializer kryoSerializer;
-    @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-    @Mock private InstanceInfoService instanceInfoService;
-    @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
-    @Mock private CDStepHelper cdStepHelper;
-    @Mock private ServerlessEntityHelper serverlessEntityHelper;
-    @Mock ExecutionSweepingOutputService executionSweepingOutputService;
-    @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
-    @InjectMocks @Spy private ServerlessPrepareRollbackPluginInfoProvider serverlessPrepareRollbackPluginInfoProvider;
+  @Mock private OutcomeService outcomeService;
+  @Mock private KryoSerializer kryoSerializer;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private InstanceInfoService instanceInfoService;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private CDStepHelper cdStepHelper;
+  @Mock private ServerlessEntityHelper serverlessEntityHelper;
+  @Mock ExecutionSweepingOutputService executionSweepingOutputService;
+  @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
+  @InjectMocks @Spy private ServerlessPrepareRollbackPluginInfoProvider serverlessPrepareRollbackPluginInfoProvider;
 
-    @Test
-    @Owner(developers = PIYUSH_BHUWALKA)
-    @Category(UnitTests.class)
-    public void testGetPluginInfo() throws IOException {
-        String accountId = "accountId";
-        Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetPluginInfo() throws IOException {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
-        String jsonNode = "jsonNdod";
-        PluginCreationRequest pluginCreationRequest = PluginCreationRequest.newBuilder().setStepJsonNode(jsonNode).build();
-        CdAbstractStepNode cdAbstractStepNode = mock(CdAbstractStepNode.class);
-        doReturn("identifier").when(cdAbstractStepNode).getIdentifier();
-        doReturn("name").when(cdAbstractStepNode).getName();
-        doReturn("uuid").when(cdAbstractStepNode).getUuid();
+    String jsonNode = "jsonNdod";
+    PluginCreationRequest pluginCreationRequest = PluginCreationRequest.newBuilder().setStepJsonNode(jsonNode).build();
+    CdAbstractStepNode cdAbstractStepNode = mock(CdAbstractStepNode.class);
+    doReturn("identifier").when(cdAbstractStepNode).getIdentifier();
+    doReturn("name").when(cdAbstractStepNode).getName();
+    doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-        ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-                ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder()
-                        .resources(ContainerResource.builder().build())
-                        .runAsUser(ParameterField.<Integer>builder().value(1).build())
-                        .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
-                        .build();
-        doReturn(serverlessAwsLambdaPrepareRollbackContainerStepInfo).when(cdAbstractStepNode).getStepSpecType();
-        doReturn(Collections.emptyMap())
-                .when(serverlessPrepareRollbackPluginInfoProvider)
-                .getEnvironmentVariables(any(), any());
-        PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
-        doReturn(pluginCreationResponseWrapper)
-                .when(serverlessPrepareRollbackPluginInfoProvider)
-                .getPluginCreationResponseWrapper(any(), any());
+    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
+        ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder()
+            .resources(ContainerResource.builder().build())
+            .runAsUser(ParameterField.<Integer>builder().value(1).build())
+            .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
+            .build();
+    doReturn(serverlessAwsLambdaPrepareRollbackContainerStepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(Collections.emptyMap())
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getEnvironmentVariables(any(), any());
+    PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
+    doReturn(pluginCreationResponseWrapper)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getPluginCreationResponseWrapper(any(), any());
 
-        doReturn(mock(ImageDetails.class)).when(serverlessPrepareRollbackPluginInfoProvider).getImageDetails(any());
+    doReturn(mock(ImageDetails.class)).when(serverlessPrepareRollbackPluginInfoProvider).getImageDetails(any());
 
-        PluginDetails.Builder pluginBuilder = PluginDetails.newBuilder();
-        doReturn(pluginBuilder)
-                .when(serverlessPrepareRollbackPluginInfoProvider)
-                .getPluginDetailsBuilder(any(), any(), any());
-        doReturn(cdAbstractStepNode).when(serverlessPrepareRollbackPluginInfoProvider).getRead(jsonNode);
+    PluginDetails.Builder pluginBuilder = PluginDetails.newBuilder();
+    doReturn(pluginBuilder)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getPluginDetailsBuilder(any(), any(), any());
+    doReturn(cdAbstractStepNode).when(serverlessPrepareRollbackPluginInfoProvider).getRead(jsonNode);
 
-        assertThat(serverlessPrepareRollbackPluginInfoProvider.getPluginInfo(
-                pluginCreationRequest, Collections.emptySet(), ambiance))
-                .isEqualTo(pluginCreationResponseWrapper);
-    }
+    assertThat(serverlessPrepareRollbackPluginInfoProvider.getPluginInfo(
+                   pluginCreationRequest, Collections.emptySet(), ambiance))
+        .isEqualTo(pluginCreationResponseWrapper);
+  }
 
-    @Test
-    @Owner(developers = PIYUSH_BHUWALKA)
-    @Category(UnitTests.class)
-    public void testGetEnvironmentVariables() {
-        String accountId = "accountId";
-        Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetEnvironmentVariables() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
-        List<String> paths = Arrays.asList("path1");
-        GithubStore storeConfig = GithubStore.builder()
-                .connectorRef(ParameterField.<String>builder().value("connector").build())
-                .paths(ParameterField.<List<String>>builder().value(paths).build())
-                .build();
-        ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-                ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder().build();
-        ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
-        ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
-                ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();
-        doReturn(manifestsOutcome)
-                .when(serverlessPrepareRollbackPluginInfoProvider)
-                .resolveServerlessManifestsOutcome(any());
-        doReturn(serverlessAwsLambdaManifestOutcome)
-                .when(serverlessPrepareRollbackPluginInfoProvider)
-                .getServerlessManifestOutcome(any());
+    List<String> paths = Arrays.asList("path1");
+    GithubStore storeConfig = GithubStore.builder()
+                                  .connectorRef(ParameterField.<String>builder().value("connector").build())
+                                  .paths(ParameterField.<List<String>>builder().value(paths).build())
+                                  .build();
+    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
+        ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder().build();
+    ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
+    ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
+        ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();
+    doReturn(manifestsOutcome)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .resolveServerlessManifestsOutcome(any());
+    doReturn(serverlessAwsLambdaManifestOutcome)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getServerlessManifestOutcome(any());
 
-        String configOverridePath = "config";
-        doReturn(configOverridePath).when(serverlessPrepareRollbackPluginInfoProvider).getConfigOverridePath(any());
+    String configOverridePath = "config";
+    doReturn(configOverridePath).when(serverlessPrepareRollbackPluginInfoProvider).getConfigOverridePath(any());
 
-        doReturn(paths).when(serverlessPrepareRollbackPluginInfoProvider).getFolderPathsForManifest(any());
+    doReturn(paths).when(serverlessPrepareRollbackPluginInfoProvider).getFolderPathsForManifest(any());
 
-        ServerlessAwsLambdaInfrastructureOutcome infrastructureOutcome =
-                ServerlessAwsLambdaInfrastructureOutcome.builder().connectorRef("connector").build();
+    ServerlessAwsLambdaInfrastructureOutcome infrastructureOutcome =
+        ServerlessAwsLambdaInfrastructureOutcome.builder().connectorRef("connector").build();
 
-        doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
+    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
 
-        ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = mock(ServerlessAwsLambdaInfraConfig.class);
-        doReturn(serverlessAwsLambdaInfraConfig)
-                .when(serverlessPrepareRollbackPluginInfoProvider)
-                .getServerlessInfraConfig(any(), any());
+    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = mock(ServerlessAwsLambdaInfraConfig.class);
+    doReturn(serverlessAwsLambdaInfraConfig)
+        .when(serverlessPrepareRollbackPluginInfoProvider)
+        .getServerlessInfraConfig(any(), any());
 
-        String stage = "stage";
-        String region = "region";
+    String stage = "stage";
+    String region = "region";
 
-        doReturn(stage).when(serverlessAwsLambdaInfraConfig).getStage();
-        doReturn(region).when(serverlessAwsLambdaInfraConfig).getRegion();
+    doReturn(stage).when(serverlessAwsLambdaInfraConfig).getStage();
+    doReturn(region).when(serverlessAwsLambdaInfraConfig).getRegion();
 
-        NGAccess ngAccess = mock(NGAccess.class);
-        doReturn(ngAccess).when(serverlessPrepareRollbackPluginInfoProvider).getNgAccess(any());
+    NGAccess ngAccess = mock(NGAccess.class);
+    doReturn(ngAccess).when(serverlessPrepareRollbackPluginInfoProvider).getNgAccess(any());
 
-        IdentifierRef identifierRef = mock(IdentifierRef.class);
-        doReturn(identifierRef).when(serverlessPrepareRollbackPluginInfoProvider).getIdentifierRef(any(), any());
+    IdentifierRef identifierRef = mock(IdentifierRef.class);
+    doReturn(identifierRef).when(serverlessPrepareRollbackPluginInfoProvider).getIdentifierRef(any(), any());
 
-        ConnectorResponseDTO connectorResponseDTO = mock(ConnectorResponseDTO.class);
-        Optional<ConnectorResponseDTO> optionalConnectorResponseDTO = Optional.of(connectorResponseDTO);
+    ConnectorResponseDTO connectorResponseDTO = mock(ConnectorResponseDTO.class);
+    Optional<ConnectorResponseDTO> optionalConnectorResponseDTO = Optional.of(connectorResponseDTO);
 
-        doReturn(optionalConnectorResponseDTO).when(connectorService).get(any(), any(), any(), any());
+    doReturn(optionalConnectorResponseDTO).when(connectorService).get(any(), any(), any(), any());
 
-        ConnectorInfoDTO connectorInfoDTO = mock(ConnectorInfoDTO.class);
-        doReturn(connectorInfoDTO).when(connectorResponseDTO).getConnector();
+    ConnectorInfoDTO connectorInfoDTO = mock(ConnectorInfoDTO.class);
+    doReturn(connectorInfoDTO).when(connectorResponseDTO).getConnector();
 
-        SecretRefData awsAccess = mock(SecretRefData.class);
-        SecretRefData awsSecret = mock(SecretRefData.class);
-        AwsManualConfigSpecDTO awsCredentialSpecDTO =
-                AwsManualConfigSpecDTO.builder().accessKey("").accessKeyRef(awsAccess).secretKeyRef(awsSecret).build();
-        AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().config(awsCredentialSpecDTO).build();
-        AwsConnectorDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
-        doReturn(connectorConfigDTO).when(connectorInfoDTO).getConnectorConfig();
+    SecretRefData awsAccess = mock(SecretRefData.class);
+    SecretRefData awsSecret = mock(SecretRefData.class);
+    AwsManualConfigSpecDTO awsCredentialSpecDTO =
+        AwsManualConfigSpecDTO.builder().accessKey("").accessKeyRef(awsAccess).secretKeyRef(awsSecret).build();
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().config(awsCredentialSpecDTO).build();
+    AwsConnectorDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    doReturn(connectorConfigDTO).when(connectorInfoDTO).getConnectorConfig();
 
-        String access = "access";
-        String secret = "sercret";
+    String access = "access";
+    String secret = "sercret";
 
-        doReturn(access).when(serverlessPrepareRollbackPluginInfoProvider).getKey(ambiance, awsAccess);
-        doReturn(secret).when(serverlessPrepareRollbackPluginInfoProvider).getKey(ambiance, awsSecret);
+    doReturn(access).when(serverlessPrepareRollbackPluginInfoProvider).getKey(ambiance, awsAccess);
+    doReturn(secret).when(serverlessPrepareRollbackPluginInfoProvider).getKey(ambiance, awsSecret);
 
-        Map<String, String> response = serverlessPrepareRollbackPluginInfoProvider.getEnvironmentVariables(
-                ambiance, serverlessAwsLambdaPrepareRollbackContainerStepInfo);
-        assertThat(response.containsKey("PLUGIN_SERVERLESS_DIR")).isTrue();
-        assertThat(response.get("PLUGIN_SERVERLESS_DIR")).isEqualTo(paths.get(0));
+    Map<String, String> response = serverlessPrepareRollbackPluginInfoProvider.getEnvironmentVariables(
+        ambiance, serverlessAwsLambdaPrepareRollbackContainerStepInfo);
+    assertThat(response.containsKey("PLUGIN_SERVERLESS_DIR")).isTrue();
+    assertThat(response.get("PLUGIN_SERVERLESS_DIR")).isEqualTo(paths.get(0));
 
-        assertThat(response.containsKey("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH")).isTrue();
-        assertThat(response.get("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH")).isEqualTo(configOverridePath);
+    assertThat(response.containsKey("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH")).isTrue();
+    assertThat(response.get("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH")).isEqualTo(configOverridePath);
 
-        assertThat(response.containsKey("PLUGIN_SERVERLESS_STAGE")).isTrue();
-        assertThat(response.get("PLUGIN_SERVERLESS_STAGE")).isEqualTo(stage);
+    assertThat(response.containsKey("PLUGIN_SERVERLESS_STAGE")).isTrue();
+    assertThat(response.get("PLUGIN_SERVERLESS_STAGE")).isEqualTo(stage);
 
-        assertThat(response.containsKey("PLUGIN_AWS_ACCESS_KEY")).isTrue();
-        assertThat(response.get("PLUGIN_AWS_ACCESS_KEY")).isEqualTo(access);
+    assertThat(response.containsKey("PLUGIN_AWS_ACCESS_KEY")).isTrue();
+    assertThat(response.get("PLUGIN_AWS_ACCESS_KEY")).isEqualTo(access);
 
-        assertThat(response.containsKey("PLUGIN_AWS_SECRET_KEY")).isTrue();
-        assertThat(response.get("PLUGIN_AWS_SECRET_KEY")).isEqualTo(secret);
+    assertThat(response.containsKey("PLUGIN_AWS_SECRET_KEY")).isTrue();
+    assertThat(response.get("PLUGIN_AWS_SECRET_KEY")).isEqualTo(secret);
 
-        assertThat(response.containsKey("PLUGIN_REGION")).isTrue();
-        assertThat(response.get("PLUGIN_REGION")).isEqualTo(region);
-    }
+    assertThat(response.containsKey("PLUGIN_REGION")).isTrue();
+    assertThat(response.get("PLUGIN_REGION")).isEqualTo(region);
+  }
 }

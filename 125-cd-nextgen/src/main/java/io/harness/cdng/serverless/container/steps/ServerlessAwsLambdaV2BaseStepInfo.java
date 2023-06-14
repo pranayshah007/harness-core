@@ -43,35 +43,35 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serverlessAwsLambdaV2BaseStepInfo")
 @FieldNameConstants(innerTypeName = "ServerlessAwsLambdaV2BaseStepInfoKeys")
 public class ServerlessAwsLambdaV2BaseStepInfo {
-    @YamlSchemaTypes({expression})
-    @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-    ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-    @NotNull
-    @VariableExpression(skipVariableExpression = true)
-    @YamlSchemaTypes(value = {string})
-    private ParameterField<Map<String, JsonNode>> settings;
+  @NotNull
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {string})
+  private ParameterField<Map<String, JsonNode>> settings;
 
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
 
-    private ContainerResource resources;
+  private ContainerResource resources;
 
-    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-    @ApiModelProperty(hidden = true)
-    private ParameterField<Map<String, String>> envVariables;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<Map<String, String>> envVariables;
 
-    @YamlSchemaTypes({runtime})
-    @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-    private ParameterField<Boolean> privileged;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  private ParameterField<Boolean> privileged;
 
-    @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
 
-    @YamlSchemaTypes({expression})
-    @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
-    private ParameterField<ImagePullPolicy> imagePullPolicy;
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
+  private ParameterField<ImagePullPolicy> imagePullPolicy;
 
-    @YamlSchemaTypes({runtime})
-    @ApiModelProperty(dataType = STRING_CLASSPATH)
-    private ParameterField<String> serverlessVersion;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  private ParameterField<String> serverlessVersion;
 }

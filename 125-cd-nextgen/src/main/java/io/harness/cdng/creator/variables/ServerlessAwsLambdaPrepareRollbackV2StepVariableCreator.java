@@ -18,14 +18,14 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaPrepareRollbackV2StepVariableCreator
-        extends GenericStepVariableCreator<ServerlessAwsLambdaPrepareRollbackV2StepNode> {
-    @Override
-    public Set<String> getSupportedStepTypes() {
-        return Collections.singleton(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
-    }
+    extends GenericStepVariableCreator<ServerlessAwsLambdaPrepareRollbackV2StepNode> {
+  @Override
+  public Set<String> getSupportedStepTypes() {
+    return Collections.singleton(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
+  }
 
-    @Override
-    public Class<ServerlessAwsLambdaPrepareRollbackV2StepNode> getFieldClass() {
-        return ServerlessAwsLambdaPrepareRollbackV2StepNode.class;
-    }
+  @Override
+  public Class<ServerlessAwsLambdaPrepareRollbackV2StepNode> getFieldClass() {
+    return ServerlessAwsLambdaPrepareRollbackV2StepNode.class;
+  }
 }

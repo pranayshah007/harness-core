@@ -34,18 +34,17 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serverlessAwsLambdaPrepareRollbackV2StepParameters")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters")
 public class ServerlessAwsLambdaPrepareRollbackV2StepParameters
-        extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
-    @JsonIgnore String downloadManifestsFqn;
+    extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
+  @JsonIgnore String downloadManifestsFqn;
 
-    @Builder(builderMethodName = "infoBuilder")
-    public ServerlessAwsLambdaPrepareRollbackV2StepParameters(
-            ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Map<String, JsonNode>> settings,
-            ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
-            ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-            ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-            ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
-        super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-                imagePullPolicy, serverlessVersion);
-        this.downloadManifestsFqn = downloadManifestsFqn;
-    }
+  @Builder(builderMethodName = "infoBuilder")
+  public ServerlessAwsLambdaPrepareRollbackV2StepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<String> serverlessVersion, String downloadManifestsFqn) {
+    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
+        imagePullPolicy, serverlessVersion);
+    this.downloadManifestsFqn = downloadManifestsFqn;
+  }
 }

@@ -151,20 +151,19 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
   public ImageDetails getImageDetails(
       ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
-    return PluginInfoProviderHelper.getImageDetails(
-        serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef(),
+    return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef(),
         serverlessAwsLambdaPrepareRollbackV2StepInfo.getImage(),
         serverlessAwsLambdaPrepareRollbackV2StepInfo.getImagePullPolicy());
   }
 
   public PluginDetails.Builder getPluginDetailsBuilder(
-          ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
+      ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
     PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
 
     PluginContainerResources pluginContainerResources = PluginContainerResources.newBuilder()
-            .setCpu(PluginInfoProviderHelper.getCPU(resources))
-            .setMemory(PluginInfoProviderHelper.getMemory(resources))
-            .build();
+                                                            .setCpu(PluginInfoProviderHelper.getCPU(resources))
+                                                            .setMemory(PluginInfoProviderHelper.getMemory(resources))
+                                                            .build();
 
     pluginDetailsBuilder.setResource(pluginContainerResources);
 
@@ -190,10 +189,9 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
     return false;
   }
 
-  public Map<String, String> getEnvironmentVariables(Ambiance ambiance,
-      ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
-    ParameterField<Map<String, String>> envVariables =
-        serverlessAwsLambdaPrepareRollbackV2StepInfo.getEnvVariables();
+  public Map<String, String> getEnvironmentVariables(
+      Ambiance ambiance, ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
+    ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaPrepareRollbackV2StepInfo.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());

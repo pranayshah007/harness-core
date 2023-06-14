@@ -12,13 +12,13 @@ import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 public class ServerlessAwsLambdaPrepareRollbackV2StepInfoVisitorHelper implements ConfigValidator {
-    @Override
-    public Object createDummyVisitableElement(Object originalElement) {
-        return ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder().build();
-    }
+  @Override
+  public Object createDummyVisitableElement(Object originalElement) {
+    return ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder().build();
+  }
 
-    @Override
-    public void validate(Object object, ValidationVisitor visitor) {
-        // nothing to validate
-    }
+  @Override
+  public void validate(Object object, ValidationVisitor visitor) {
+    // nothing to validate
+  }
 }

@@ -35,28 +35,28 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serverlessAwsLambdaPrepareRollbackV2StepNode")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode")
 public class ServerlessAwsLambdaPrepareRollbackV2StepNode extends CdAbstractStepNode {
-    @JsonProperty("type")
-    @NotNull
-    ServerlessAwsLambdaPrepareRollbackV2StepNode.StepType type = StepType.ServerlessAwsLambdaPrepareRollbackV2;
-    @JsonProperty("spec")
-    @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo;
+  @JsonProperty("type")
+  @NotNull
+  ServerlessAwsLambdaPrepareRollbackV2StepNode.StepType type = StepType.ServerlessAwsLambdaPrepareRollbackV2;
+  @JsonProperty("spec")
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+  ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo;
 
-    @Override
-    public String getType() {
-        return StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
-    }
+  @Override
+  public String getType() {
+    return StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
+  }
 
-    @Override
-    public StepSpecType getStepSpecType() {
-        return serverlessAwsLambdaPrepareRollbackV2StepInfo;
-    }
+  @Override
+  public StepSpecType getStepSpecType() {
+    return serverlessAwsLambdaPrepareRollbackV2StepInfo;
+  }
 
-    enum StepType {
-        ServerlessAwsLambdaPrepareRollbackV2(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
-        @Getter String name;
-        StepType(String name) {
-            this.name = name;
-        }
+  enum StepType {
+    ServerlessAwsLambdaPrepareRollbackV2(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
+    @Getter String name;
+    StepType(String name) {
+      this.name = name;
     }
+  }
 }
