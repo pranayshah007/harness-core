@@ -297,7 +297,7 @@ public class STOSettingsUtilsTest {
   }
 
   private static STOYamlLog createLogSettings(STOYamlLogSerializer serializer, STOYamlLogLevel level) {
-    return STOYamlLog.builder().serializer(serializer).level(ParameterField.createValueField(level)).build();
+    return STOYamlLog.builder().serializer(serializer).level(level).build();
   }
 
   private static STOYamlArgs createArgsSettings(String cliParams, String passthroughParams) {
@@ -309,7 +309,7 @@ public class STOSettingsUtilsTest {
 
   private static STOYamlTarget createTarget(STOYamlTargetType type, String name, String variant, String workspace) {
     return STOYamlTarget.builder()
-        .type(ParameterField.createValueField(type))
+        .type(type)
         .variant(ParameterField.createValueField(variant))
         .name(ParameterField.createValueField(name))
         .workspace(ParameterField.createValueField(workspace))
