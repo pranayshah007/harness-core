@@ -26,6 +26,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -71,8 +72,17 @@ public class ContainerStepCleanupHelper {
       Failsafe.with(retryPolicy).run(() -> {
         Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
         closeLogStream(ambiance);
-        ContainerCleanupDetails podCleanupDetails = (ContainerCleanupDetails) executionSweepingOutputService.resolve(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
+        ContainerCleanupDetails podCleanupDetails;
+        OptionalSweepingOutput optionalCleanupSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS));
+        if (!optionalCleanupSweepingOutput.isFound()) {
+          return;
+        } else {
+          podCleanupDetails = (ContainerCleanupDetails) executionSweepingOutputService.resolve(
+              ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
+        }
+
         if (podCleanupDetails == null) {
           return;
         }
