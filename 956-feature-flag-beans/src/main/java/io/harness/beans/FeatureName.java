@@ -639,6 +639,9 @@ public enum FeatureName {
   PL_ENABLE_MULTIPLE_IDP_SUPPORT("Enable support for multiple SSO IDP in an account", HarnessTeam.PL),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
   PIE_EXECUTION_JSON_SUPPORT("Support for storing execution json in mongo", HarnessTeam.PIPELINE),
+
+  PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT(
+      "Support for disabling returning complex objects as json", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_ENGINE_V2("Support for new model of expression engine", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_CONCATENATION(
       "Support for new string concatenation support in expression engine", HarnessTeam.PIPELINE),

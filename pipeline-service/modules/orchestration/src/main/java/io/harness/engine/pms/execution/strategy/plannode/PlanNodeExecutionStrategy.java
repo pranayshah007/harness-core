@@ -156,6 +156,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
       enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
     }
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT)) {
+      enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name());
+    }
 
     resolvedStepParameters =
         pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode, enabledFeatureFlags);
