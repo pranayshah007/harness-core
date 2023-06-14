@@ -48,11 +48,10 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator
       PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackV2StepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
     String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_SERVERLESS_MANIFESTS);
-    ServerlessAwsLambdaPrepareRollbackV2StepParameters
-            serverlessAwsLambdaPrepareRollbackV2StepParameters =
-            (ServerlessAwsLambdaPrepareRollbackV2StepParameters) ((StepElementParameters) stepParameters)
-                .getSpec();
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters =
+        (ServerlessAwsLambdaPrepareRollbackV2StepParameters) ((StepElementParameters) stepParameters).getSpec();
     serverlessAwsLambdaPrepareRollbackV2StepParameters.setDownloadManifestsFqn(downloadManifestsFqn);
+
     serverlessAwsLambdaPrepareRollbackV2StepParameters.setDelegateSelectors(
         stepNode.getServerlessAwsLambdaPrepareRollbackV2StepInfo().getDelegateSelectors());
     return stepParameters;
