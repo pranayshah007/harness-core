@@ -23,7 +23,6 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.FacilitationHelper;
 import io.harness.engine.facilitation.RunPreFacilitationChecker;
-import io.harness.engine.facilitation.SkipPreFacilitationChecker;
 import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPublisher;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
@@ -379,8 +378,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       return ExecutionCheck.builder().proceed(true).reason("Node is retried.").build();
     }
     RunPreFacilitationChecker rChecker = injector.getInstance(RunPreFacilitationChecker.class);
-    SkipPreFacilitationChecker sChecker = injector.getInstance(SkipPreFacilitationChecker.class);
-    rChecker.setNextChecker(sChecker);
     return rChecker.check(ambiance, planNode);
   }
 
