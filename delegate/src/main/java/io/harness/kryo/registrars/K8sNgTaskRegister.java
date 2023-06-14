@@ -158,6 +158,7 @@ import io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
@@ -471,6 +472,7 @@ public class K8sNgTaskRegister implements KryoRegistrar {
     kryo.register(AzureK8sInfraDelegateConfig.class, 563532);
     kryo.register(AwsCliInstallationCapability.class, 563535);
     kryo.register(EksK8sInfraDelegateConfig.class, 563537);
+    kryo.register(RancherK8sInfraDelegateConfig.class, 563538);
     kryo.register(InlineFileConfig.class, 573550);
     kryo.register(InlineStoreDelegateConfig.class, 573551);
     kryo.register(K8sDryRunManifestRequest.class, 573594);

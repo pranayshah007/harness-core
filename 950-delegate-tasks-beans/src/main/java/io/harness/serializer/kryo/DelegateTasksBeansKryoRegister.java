@@ -803,6 +803,7 @@ import io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
@@ -2075,6 +2076,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsCliInstallationCapability.class, 563535);
     kryo.register(ServerlessS3ArtifactConfig.class, 563536);
     kryo.register(EksK8sInfraDelegateConfig.class, 563537);
+    kryo.register(RancherK8sInfraDelegateConfig.class, 563538);
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
     kryo.register(LdapTestResponse.class, 5499);
