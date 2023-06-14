@@ -12,7 +12,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.exception.WingsException;
 import io.harness.logging.AutoLogContext;
 import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
