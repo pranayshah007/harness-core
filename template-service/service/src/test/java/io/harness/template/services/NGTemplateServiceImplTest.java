@@ -1209,6 +1209,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .templateScope(Scope.PROJECT)
                                         .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(yaml)
+                                        .childType("Deployment")
                                         .build();
     ngTemplateService.create(templateEntity, true, "", false);
     doReturn(templateEntity)
@@ -1242,6 +1243,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .deleted(false)
                                         .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(yaml)
+                                        .childType("Deployment")
                                         .build();
     templateService.create(templateEntity, true, "", false);
     when(gitAwareEntityHelper.getRepoUrl(any(), any(), any())).thenReturn("repoUrl");
