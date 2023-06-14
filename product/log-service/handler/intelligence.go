@@ -505,15 +505,20 @@ func getKeys(r *http.Request) ([]string, error) {
 	return keys, nil
 }
 
-func retrieveFromDB(ctx context.Context, id string, mongo *mongodb.MongoDb) (*RCAReport, error) {
+func retrieveFromDB(ctx context.Context, id string, mongoDB *mongodb.MongoDb) (
+	*RCAReport, error) {
 	if id == "" {
 		logrus.Error("id is required field")
 		return nil, errors.New("id is required")
 	}
 
+	if mongoDB == nil {
+		return nil, errors.New("mongo client is not present")
+	}
+
 	entry := new(RCAEntry)
 	filter := bson.M{"log_id": id}
-	if err := mongo.FindOne(ctx, collection, filter, entry); err != nil {
+	if err := mongoDB.FindOne(ctx, collection, filter, entry); err != nil {
 		if err != db.ErrNotFound {
 			logrus.WithError(err).WithField("log_id", id).Warn("failed to find document in mongo")
 		}
@@ -522,19 +527,22 @@ func retrieveFromDB(ctx context.Context, id string, mongo *mongodb.MongoDb) (*RC
 	return &entry.Report, nil
 }
 
-func saveToDB(ctx context.Context, id string, report *RCAReport, mongo *mongodb.MongoDb) error {
+func saveToDB(ctx context.Context, id string, report *RCAReport, mongoDB *mongodb.MongoDb) error {
 	if id == "" {
 		return errors.New("id is required field")
+	}
+	if mongoDB == nil {
+		return errors.New("mongo client is not present")
 	}
 
 	entry := &RCAEntry{
 		LogID:  id,
 		Report: *report,
 	}
-	if _, err := retrieveFromDB(ctx, id, mongo); err != nil {
-		return mongo.Insert(ctx, collection, entry)
+	if _, err := retrieveFromDB(ctx, id, mongoDB); err != nil {
+		return mongoDB.Insert(ctx, collection, entry)
 	}
 
 	filter := bson.M{"log_id": id}
-	return mongo.ReplaceOne(ctx, collection, filter, entry)
+	return mongoDB.ReplaceOne(ctx, collection, filter, entry)
 }

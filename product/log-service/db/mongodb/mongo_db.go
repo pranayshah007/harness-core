@@ -85,7 +85,7 @@ func getMongoClient(username, password, connStr string, primary bool) (*mongo.Cl
 	if err = client.Connect(ctx); err != nil {
 		return nil, err
 	}
-	// Ping mongo server to see if it's accessible. This is a requirement for startup of TI service.
+	// Ping mongo server to see if it's accessible.
 	err = client.Ping(ctx, rf)
 	if err != nil {
 		return nil, err

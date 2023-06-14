@@ -113,7 +113,7 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	mongoDB, err := mongodb.New(config.MongoDb.Username, config.MongoDb.Password,
 		config.MongoDb.ConnStr, config.MongoDb.EnableSecondary)
 	if err != nil {
-		return err
+		logrus.WithError(err).Warnln("failed to connect to mongo")
 	}
 	// create the http server.
 	server := server.Server{
