@@ -125,7 +125,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(parameters);
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
-    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
+    int batchSize = config.getBatchQueryConfig().getBillingDataQueryBatchSize();
 
     BillingDataReader billingDataReader = new BillingDataReader(billingDataService, jobConstants.getAccountId(),
         Instant.ofEpochMilli(jobConstants.getJobStartTime()), Instant.ofEpochMilli(jobConstants.getJobEndTime()),
