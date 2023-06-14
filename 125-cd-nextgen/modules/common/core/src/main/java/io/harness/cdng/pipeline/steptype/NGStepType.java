@@ -312,7 +312,7 @@ public enum NGStepType {
       Collections.singletonList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
       StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN),
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
-  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2("Serverless Prepare Rollback",
+  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2("Serverless Aws Lambda Prepare Rollback V2",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
       StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)

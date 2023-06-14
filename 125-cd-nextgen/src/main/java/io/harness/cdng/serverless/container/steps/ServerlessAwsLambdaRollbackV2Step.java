@@ -92,12 +92,12 @@ public class ServerlessAwsLambdaRollbackV2Step extends CdTaskExecutable<Serverle
     OptionalSweepingOutput serverlessRollbackDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq() + "."
-                + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
+                + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2));
     if (!serverlessRollbackDataOptionalOutput.isFound()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(
               SkipTaskRequest.newBuilder()
-                  .setMessage("Serverless Aws Lambda Prepare Rollback step was not executed. Skipping rollback.")
+                  .setMessage("Serverless Aws Lambda Prepare Rollback V2 step was not executed. Skipping rollback.")
                   .build())
           .build();
     }
@@ -140,7 +140,7 @@ public class ServerlessAwsLambdaRollbackV2Step extends CdTaskExecutable<Serverle
 
       stepResponse = generateStepResponse(ambiance, rollbackResponse, stepResponseBuilder);
     } catch (Exception e) {
-      log.error("Error while processing Serverless Aws Lambda rollback response: {}", ExceptionUtils.getMessage(e), e);
+      log.error("Error while processing Serverless Aws Lambda rollback V2 response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } finally {
       String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();

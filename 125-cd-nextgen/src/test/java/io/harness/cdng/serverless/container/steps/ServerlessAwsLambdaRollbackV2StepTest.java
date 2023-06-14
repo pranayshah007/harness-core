@@ -184,7 +184,7 @@ public class ServerlessAwsLambdaRollbackV2StepTest {
             RefObjectUtils.getSweepingOutputRefObject(
                 ((ServerlessAwsLambdaRollbackV2StepParameters) specParameters)
                     .getServerlessAwsLambdaRollbackFnq()
-                + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
+                + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2));
     TaskRequest taskRequest =
         serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     SkipTaskRequest skipTaskRequest =
@@ -204,7 +204,7 @@ public class ServerlessAwsLambdaRollbackV2StepTest {
             RefObjectUtils.getSweepingOutputRefObject(
                 ((ServerlessAwsLambdaRollbackV2StepParameters) specParameters)
                     .getServerlessAwsLambdaRollbackFnq()
-                + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME));
+                + "." + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2));
     doReturn(infrastructureOutcome)
         .when(outcomeService)
         .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));

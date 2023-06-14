@@ -135,7 +135,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         serverlessAwsLambdaPrepareRollbackDataOutcome =
             ServerlessAwsLambdaPrepareRollbackDataOutcome.builder().stackDetails(stackDetails).build();
         executionSweepingOutputService.consume(ambiance,
-            OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME,
+            OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2,
             serverlessAwsLambdaPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
       }
     }

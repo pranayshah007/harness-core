@@ -38,7 +38,7 @@ public class ServerlessAwsLambdaRollbackV2StepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.ServerlessAwsLambdaRollbackV2;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ServerlessAwsLambdaRollbackV2StepInfo serverlessAwsLambdaCloudFormationRollbackStepInfo;
+  ServerlessAwsLambdaRollbackV2StepInfo serverlessAwsLambdaRollbackV2StepInfo;
 
   @Override
   public String getType() {
@@ -47,7 +47,7 @@ public class ServerlessAwsLambdaRollbackV2StepNode extends CdAbstractStepNode {
 
   @Override
   public StepSpecType getStepSpecType() {
-    return serverlessAwsLambdaCloudFormationRollbackStepInfo;
+    return serverlessAwsLambdaRollbackV2StepInfo;
   }
 
   enum StepType {
