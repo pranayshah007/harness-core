@@ -299,7 +299,7 @@ public class ConnectorResource {
       pageRequest.setSortOrders(List.of(order));
     }
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
-        orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, true,
         getDistinctFromBranches, getPageRequest(pageRequest), version)));
   }
 
