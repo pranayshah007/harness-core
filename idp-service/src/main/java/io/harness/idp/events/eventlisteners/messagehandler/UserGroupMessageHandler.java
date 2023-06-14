@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class UserMessageHandler implements EventMessageHandler {
+public class UserGroupMessageHandler implements EventMessageHandler {
   private UserRefreshServiceImpl userRefreshService;
 
   @Override
@@ -36,7 +36,7 @@ public class UserMessageHandler implements EventMessageHandler {
         userRefreshService.processEntityUpdate(message, entityChangeDTO);
         break;
       default:
-        log.warn("ACTION - {} is not to be handled by IDP connector event handler", action);
+        log.warn("ACTION - {} is not to be handled by IDP user group event handler", action);
     }
   }
 }
