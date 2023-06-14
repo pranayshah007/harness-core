@@ -24,6 +24,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/store/bolt"
 	"github.com/harness/harness-core/product/log-service/stream"
+	utils "github.com/harness/harness-core/product/log-service/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -121,8 +122,9 @@ const (
 
 type (
 	RCAReport struct {
-		Rca     string      `json:"rca" bson:"rca"`
-		Results []RCAResult `json:"detailed_rca" bson:"detailed_rca"`
+		Rca     string         `json:"rca" bson:"rca"`
+		Results []RCAResult    `json:"detailed_rca" bson:"detailed_rca"`
+		Vote    utils.VoteType `json:"vote" bson:"vote"`
 	}
 
 	RCAResult struct {
@@ -204,6 +206,44 @@ func HandleRCA(store store.Store, mongodb *mongodb.MongoDb, cfg config.Config) h
 			WithField("latency", time.Since(st)).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			Infoln("api: successfully retrieved RCA")
+		WriteJSON(w, report, 200)
+	}
+}
+
+func HandleRCAVote(mongodb *mongodb.MongoDb, vote utils.VoteType) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		st := time.Now()
+		h := w.Header()
+		h.Set("Access-Control-Allow-Origin", "*")
+		ctx := r.Context()
+
+		id := r.FormValue(idParams)
+		report, err := retrieveFromDB(ctx, id, mongodb)
+		if err != nil {
+			WriteNotFound(w, err)
+			logger.FromRequest(r).
+				WithError(err).
+				WithField("latency", time.Since(st)).
+				WithField("id", id).
+				Errorln("api: cannot find rca for provided id")
+			return
+		}
+
+		report.Vote = vote
+		if err := saveToDB(ctx, id, report, mongodb); err != nil {
+			WriteInternalError(w, err)
+			logger.FromRequest(r).
+				WithError(err).
+				WithField("latency", time.Since(st)).
+				WithField("keys", id).
+				Errorln("api: failed to update vote in db")
+		}
+
+		logger.FromRequest(r).
+			WithField("keys", id).
+			WithField("latency", time.Since(st)).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: successfully updated vote")
 		WriteJSON(w, report, 200)
 	}
 }
