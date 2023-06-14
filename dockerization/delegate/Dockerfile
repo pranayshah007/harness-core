@@ -70,6 +70,7 @@ ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.3/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.2/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/helm/v3.8.0/:$PATH
 
 RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 
