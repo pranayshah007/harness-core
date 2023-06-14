@@ -112,7 +112,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
                     .build())
             .build();
 
-    when(delegateServiceBlockingStub.submitTaskV2(any()))
+    when(delegateServiceBlockingStub.submitTask(any()))
         .thenReturn(SubmitTaskResponse.newBuilder()
                         .setTotalExpiry(Timestamp.newBuilder().setSeconds(30).build())
                         .setTaskId(TaskId.newBuilder().setId(taskId).build())
@@ -124,7 +124,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
 
     assertThat(actualTaskId).isEqualTo(taskId);
 
-    verify(delegateServiceBlockingStub).submitTaskV2(any());
+    verify(delegateServiceBlockingStub).submitTask(any());
     verify(delegateAsyncService).setupTimeoutForTask(anyString(), anyLong(), anyLong());
     verify(tokenSupplier).get();
 
@@ -190,7 +190,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
                     .build())
             .build();
 
-    when(delegateServiceBlockingStub.submitTaskV2(any()))
+    when(delegateServiceBlockingStub.submitTask(any()))
         .thenReturn(SubmitTaskResponse.newBuilder()
                         .setTotalExpiry(Timestamp.newBuilder().setSeconds(30).build())
                         .setTaskId(TaskId.newBuilder().setId(taskId).build())
@@ -201,7 +201,7 @@ public class NgDelegate2TaskExecutorTest extends CategoryTest {
     ResponseData responseData = ngDelegate2TaskExecutor.executeTask(new HashMap<>(), taskRequest);
     assertThat(responseData).isNotNull();
 
-    verify(delegateServiceBlockingStub).submitTaskV2(any());
+    verify(delegateServiceBlockingStub).submitTask(any());
     verify(delegateSyncService).waitForTask(anyString(), anyString(), any(), any());
     verify(tokenSupplier).get();
     verifyNoMoreInteractions(delegateAsyncService);
