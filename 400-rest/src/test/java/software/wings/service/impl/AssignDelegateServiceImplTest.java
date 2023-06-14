@@ -2192,7 +2192,11 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     List<Delegate> delegates = createAccountDelegates();
     when(accountDelegatesCache.get("ACCOUNT_ID")).thenReturn(delegates);
     List<String> delegateIds = delegates.stream().map(delegate -> delegate.getUuid()).collect(toList());
-    assertThat(assignDelegateService.fetchActiveDelegates("ACCOUNT_ID").size() == 2);
+    assertThat(assignDelegateService
+                   .fetchActiveDelegates(
+                       DelegateTask.builder().nonAssignableDelegates(new HashMap<>()).accountId("ACCOUNT_ID").build())
+                   .size()
+        == 2);
   }
 
   @Test

@@ -30,14 +30,18 @@ public class OrgAndProjectValidationHelper {
   public boolean checkThatTheOrganizationAndProjectExists(
       String orgIdentifier, String projectIdentifier, String accountIdentifier) {
     if (isNotEmpty(orgIdentifier)) {
-      final Optional<Organization> organization = organizationService.get(accountIdentifier, orgIdentifier);
+      // Needed since NG entities are considered unique with case-sensitive identifiers unlike org, project
+      final Optional<Organization> organization =
+          organizationService.getConsideringCase(accountIdentifier, orgIdentifier);
       if (organization.isEmpty()) {
         throw new NotFoundException(String.format("org [%s] not found.", orgIdentifier));
       }
     }
 
     if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
-      final Optional<Project> project = projectService.get(accountIdentifier, orgIdentifier, projectIdentifier);
+      // Needed since NG entities are considered unique with case-sensitive identifiers unlike org, project
+      final Optional<Project> project =
+          projectService.getConsideringCase(accountIdentifier, orgIdentifier, projectIdentifier);
       if (project.isEmpty()) {
         throw new NotFoundException(String.format("project [%s] not found.", projectIdentifier));
       }

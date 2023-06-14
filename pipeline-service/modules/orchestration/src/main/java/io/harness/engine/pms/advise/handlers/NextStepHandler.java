@@ -114,8 +114,9 @@ public class NextStepHandler implements AdviserResponseHandler {
     if (nextNodeExecution.getOldRetry()) {
       // Due to multiple combinations of planNodeId and oldRetry as false, we are adding the third parameters
       // (retryListId) eg -> in strategy
-      NodeExecution nextNonRetriedNodeExecution = nodeExecutionService.fetchNodeExecutionForPlanNodeAndRetriedId(
-          nextNodeExecution.getNodeId(), false, Collections.singletonList(originalNodeExecution.getNextId()));
+      NodeExecution nextNonRetriedNodeExecution =
+          nodeExecutionService.fetchNodeExecutionForPlanNodeAndRetriedId(nextNodeExecution.getPlanExecutionId(),
+              nextNodeExecution.getNodeId(), false, Collections.singletonList(originalNodeExecution.getNextId()));
 
       return nextNonRetriedNodeExecution != null ? nextNonRetriedNodeExecution.getUuid()
                                                  : originalNodeExecution.getNextId();

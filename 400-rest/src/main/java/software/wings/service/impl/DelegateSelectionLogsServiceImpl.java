@@ -174,7 +174,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     if (!delegateTask.isSelectionLogsTrackingEnabled()) {
       return;
     }
-    if (Objects.isNull(nonAssignableDelegates)) {
+    if (isEmpty(nonAssignableDelegates)) {
       return;
     }
     List<String> excludeGroups = Lists.newArrayList(CAN_NOT_ASSIGN_OWNER, CAN_NOT_ASSIGN_CG_NG_TASK_GROUP);

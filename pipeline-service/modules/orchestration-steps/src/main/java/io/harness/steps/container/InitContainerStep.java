@@ -24,7 +24,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
@@ -36,21 +36,20 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InitContainerStep implements TaskExecutableWithRbac<StepElementParameters, K8sTaskExecutionResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.INIT_CONTAINER_STEP_TYPE;
 
-  private final ContainerStepInitHelper containerStepInitHelper;
-  private final ContainerStepRbacHelper containerStepRbacHelper;
-  private final KryoSerializer kryoSerializer;
-  private final InitialiseTaskUtils initialiseTaskUtils;
+  @Inject private ContainerStepInitHelper containerStepInitHelper;
+  @Inject private ContainerStepRbacHelper containerStepRbacHelper;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private InitialiseTaskUtils initialiseTaskUtils;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -75,9 +74,9 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepElementParameters, buildSetupTaskParams);
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, null, true,
-        TaskType.valueOf(taskData.getTaskType()).getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL,
-        false, new ArrayList<>(), false, stageId);
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
+        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
   }
 
   @Override

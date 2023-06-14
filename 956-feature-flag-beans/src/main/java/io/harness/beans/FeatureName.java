@@ -84,7 +84,6 @@ public enum FeatureName {
   CFNG_ENABLED,
   CF_CUSTOM_EXTRACTION,
   CF_ROLLBACK_CONFIG_FILTER,
-  CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
   CI_LE_STATUS_REST_ENABLED(
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
@@ -176,7 +175,6 @@ public enum FeatureName {
   ROLLBACK_NONE_ARTIFACT,
   SEARCH_REQUEST,
   SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
-  SIDE_NAVIGATION,
   SKIP_SWITCH_ACCOUNT_REAUTHENTICATION,
   SLACK_APPROVALS,
   STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_AMI_DEPLOYMENTS,
@@ -289,7 +287,7 @@ public enum FeatureName {
   CCM_CURRENCY_PREFERENCES("Currency Preferences", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
   CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
-  CCM_LABELS_FLATTENING("Use label's columns in BigQuery", HarnessTeam.CE),
+  CCM_LABELS_FLATTENING("Use flattened label's columns in BigQuery", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
@@ -809,7 +807,8 @@ public enum FeatureName {
       PIPELINE),
 
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
-  PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL);
+  PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
+  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

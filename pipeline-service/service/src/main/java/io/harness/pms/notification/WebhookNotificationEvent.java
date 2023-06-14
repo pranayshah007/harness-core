@@ -5,11 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.notification;
+package io.harness.pms.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.PipelineEventType;
+import io.harness.notification.TriggerExecutionInfo;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +20,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class WebhookNotificationEvent {
-  // TODO: Add service, env and infra details.
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
@@ -28,6 +29,7 @@ public class WebhookNotificationEvent {
   String stepIdentifier;
   PipelineEventType eventType;
   TriggerExecutionInfo triggeredBy;
+  ModuleInfo moduleInfo;
   String startTime;
   Long startTs;
   String endTime;

@@ -236,8 +236,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
                                                                     .versionLabel("1")
                                                                     .templateInputs(templateInputsNode)
                                                                     .build();
-    String expectedResponse = "---\n"
-        + "monitoredService:\n"
+    String expectedResponse = "monitoredService:\n"
         + "  template:\n"
         + "    templateRef: abc\n"
         + "    versionLabel: \"1\"\n"

@@ -61,5 +61,5 @@ public interface AssignDelegateService {
 
   boolean canAssignTaskV2(String delegateId, DelegateTask task);
 
-  List<Delegate> fetchActiveDelegates(String accountId);
+  List<Delegate> fetchActiveDelegates(DelegateTask delegateTask);
 }

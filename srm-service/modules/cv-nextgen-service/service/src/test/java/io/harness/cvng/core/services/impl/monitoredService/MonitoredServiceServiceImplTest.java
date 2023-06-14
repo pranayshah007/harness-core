@@ -893,6 +893,48 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreate_validDuplicateConnectorRef() throws IllegalAccessException {
+    NextGenService nextGenService = Mockito.spy(new NextGenServiceImpl());
+    FieldUtils.writeField(monitoredServiceService, "nextGenService", nextGenService, true);
+    when(featureFlagService.isFeatureFlagEnabled(any(), any())).thenReturn(true);
+    ConnectorResponseDTO connectorResponseDTO1 = ConnectorResponseDTO.builder()
+                                                     .connector(ConnectorInfoDTO.builder()
+                                                                    .orgIdentifier("orgId")
+                                                                    .projectIdentifier("projectId")
+                                                                    .identifier("connectorRef")
+                                                                    .build())
+                                                     .build();
+    EnvironmentResponse environmentResponse =
+        EnvironmentResponse.builder()
+            .environment(
+                EnvironmentResponseDTO.builder()
+                    .identifier(builderFactory.getContext().getServiceEnvironmentParams().getEnvironmentIdentifier())
+                    .build())
+            .build();
+    doReturn(null).when(nextGenService).getService(any(), any(), any(), any());
+    doReturn(null).when(nextGenService).getEnvironment(any(), any(), any(), any());
+    doReturn(Arrays.asList(environmentResponse)).when(nextGenService).listEnvironment(any(), any(), any(), any());
+    doReturn(Arrays.asList(connectorResponseDTO1)).when(nextGenService).listConnector(any(), any(), any(), any());
+    HealthSource healthSource1 = builderFactory.createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSource1.setIdentifier("HealthSource1");
+    healthSource1.setSpec(AppDynamicsHealthSourceSpec.builder().connectorRef("connectorRef").build());
+
+    HealthSource healthSource2 = builderFactory.createHealthSource(CVMonitoringCategory.ERRORS);
+    healthSource2.setIdentifier("HealthSource2");
+    healthSource2.setSpec(AppDynamicsHealthSourceSpec.builder().connectorRef("connectorRef").build());
+    Set<HealthSource> healthSources = new HashSet<>(Arrays.asList(healthSource1, healthSource2));
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .sources(Sources.builder().healthSources(healthSources).build())
+                                                  .build();
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier())
+        .isEqualTo(monitoredServiceDTO.getIdentifier());
+  }
+
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testCreate_monitoredServiceNonEmptyHealthSources() {

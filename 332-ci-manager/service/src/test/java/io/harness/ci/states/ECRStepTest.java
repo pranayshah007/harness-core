@@ -23,6 +23,7 @@ import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.K8InitializeStepUtilsHelper;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
@@ -42,6 +43,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
@@ -60,6 +62,8 @@ public class ECRStepTest extends CIExecutionTestBase {
   @InjectMocks ECRStep ecrStep;
   @Mock SerializedResponseDataHelper serializedResponseDataHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
+  @Mock protected CIFeatureFlagService featureFlagService;
+  @Mock protected CIStageOutputRepository ciStageOutputRepository;
 
   public static final String STEP_ID = "ecrStepID";
   private Ambiance ambiance;

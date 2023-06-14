@@ -41,9 +41,15 @@ tags:
   - name: Project Favorites
     description: This contains APIs for project-scoped Favorites.
     x-displayName: 'Project Favorites [Beta]'
-  - name: Rancher Infrastructure
-    description: This contains APIs for Rancher infra entities.
-    x-displayName: 'Rancher Infrastructure [Beta]'
+  - name: Account Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for account level.
+    x-displayName: 'Account Rancher Infrastructure [Beta]'
+  - name: Org Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for org level.
+    x-displayName: 'Org Rancher Infrastructure [Beta]'
+  - name: Project Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for project level.
+    x-displayName: 'Project Rancher Infrastructure [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -1285,7 +1291,7 @@ paths:
     get:
       summary: List rancher clusters using account level connector
       tags:
-        - Rancher Infrastructure
+        - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1306,7 +1312,7 @@ paths:
     get:
       summary: List rancher clusters using org level connector
       tags:
-        - Rancher Infrastructure
+        - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1328,7 +1334,7 @@ paths:
     get:
       summary: List rancher clusters using project level connector
       tags:
-        - Rancher Infrastructure
+        - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1349,7 +1355,7 @@ paths:
     get:
       summary: List rancher clusters using account level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1371,7 +1377,7 @@ paths:
     get:
       summary: List rancher clusters using org level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
@@ -1394,7 +1400,7 @@ paths:
     get:
       summary: List rancher clusters using project level env and infra def
       tags:
-        - Rancher Infrastructure
+        - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
