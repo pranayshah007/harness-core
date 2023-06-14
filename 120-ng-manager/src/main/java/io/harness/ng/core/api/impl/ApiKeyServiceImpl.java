@@ -323,6 +323,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
 
         List<GatewayAccountRequestDTO> userAccounts = userInfo.get().getAccounts();
+        userAccounts.addAll(userInfo.get().getSupportAccounts());
         if (userAccounts == null
             || userAccounts.stream()
                    .filter(account -> account.getUuid().equals(accountIdentifier))
@@ -337,6 +338,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(PlatformResourceTypes.SERVICEACCOUNT, parentIdentifier),
             MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION);
+
         break;
       default:
         throw new InvalidArgumentsException(String.format("Invalid api key type: %s", apiKeyType));
