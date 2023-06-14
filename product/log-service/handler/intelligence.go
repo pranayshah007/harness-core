@@ -172,12 +172,12 @@ func HandleRCA(store store.Store, mongodb *mongodb.MongoDb, cfg config.Config) h
 
 		logs, err := fetchLogs(ctx, store, keys, cfg.GenAI.MaxInputPromptLen)
 		if err != nil {
-			WriteNotFound(w, err)
 			logger.FromRequest(r).
 				WithError(err).
 				WithField("latency", time.Since(st)).
 				WithField("keys", keys).
 				Errorln("api: cannot find logs")
+			WriteNotFound(w, err)
 			return
 		}
 
@@ -188,12 +188,12 @@ func HandleRCA(store store.Store, mongodb *mongodb.MongoDb, cfg config.Config) h
 		report, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret,
 			provider, logs, useJSONResponse, regenerate, r)
 		if err != nil {
-			WriteInternalError(w, err)
 			logger.FromRequest(r).
 				WithError(err).
 				WithField("latency", time.Since(st)).
 				WithField("keys", keys).
 				Errorln("api: failed to predict RCA")
+			WriteInternalError(w, err)
 			return
 		}
 
@@ -220,23 +220,24 @@ func HandleRCAVote(mongodb *mongodb.MongoDb, vote utils.VoteType) http.HandlerFu
 		id := r.FormValue(idParams)
 		report, err := retrieveFromDB(ctx, id, mongodb)
 		if err != nil {
-			WriteNotFound(w, err)
 			logger.FromRequest(r).
 				WithError(err).
 				WithField("latency", time.Since(st)).
 				WithField("id", id).
 				Errorln("api: cannot find rca for provided id")
+			WriteNotFound(w, err)
 			return
 		}
 
 		report.Vote = vote
 		if err := saveToDB(ctx, id, report, mongodb); err != nil {
-			WriteInternalError(w, err)
 			logger.FromRequest(r).
 				WithError(err).
 				WithField("latency", time.Since(st)).
 				WithField("keys", id).
 				Errorln("api: failed to update vote in db")
+			WriteInternalError(w, err)
+			return
 		}
 
 		logger.FromRequest(r).
@@ -248,6 +249,9 @@ func HandleRCAVote(mongodb *mongodb.MongoDb, vote utils.VoteType) http.HandlerFu
 	}
 }
 
+// Retrieves RCA for logs
+// If regenerate is true, it uses higher temperature in genAI call
+// to return with a different response.
 func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	logs string, useJSONResponse, regenerate bool, r *http.Request) (
 	*RCAReport, error) {

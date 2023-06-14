@@ -35,12 +35,12 @@ func New(username, password, connStr string, enableSecondary bool) (*MongoDb, er
 		return nil, err
 	}
 
-	logrus.Infof("Trying to connect to MongoDB")
+	logrus.Infof("trying to connect to MongoDB")
 	primaryClient, err := getMongoClient(username, password, connStr, true)
 	if err != nil {
 		return nil, err
 	}
-	logrus.Infof("Successfully pinged MongoDB Server")
+	logrus.Infof("successfully pinged MongoDB Server")
 
 	var secondaryClient *mongo.Client
 	if enableSecondary {
@@ -48,7 +48,7 @@ func New(username, password, connStr string, enableSecondary bool) (*MongoDb, er
 		if err != nil {
 			return nil, err
 		}
-		logrus.Infof("Successfully pinged MongoDB Analytics Server")
+		logrus.Infof("successfully pinged MongoDB Analytics Server")
 	}
 	tidb := &MongoDb{
 		Client:            primaryClient,
