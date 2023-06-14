@@ -42,12 +42,12 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -160,12 +160,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
 
   @VisibleForTesting
   List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
-    List<Delegate> delegateList = new ArrayList<>();
-    for (String delegateId : eligibleDelegateId) {
-      Delegate delegate = delegateCache.get(accountId, delegateId, false);
-      delegateList.add(delegate);
-    }
-    return delegateList;
+    return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
   }
 
   @VisibleForTesting
