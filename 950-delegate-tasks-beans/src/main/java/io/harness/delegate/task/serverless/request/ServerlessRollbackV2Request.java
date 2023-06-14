@@ -58,10 +58,6 @@ public class ServerlessRollbackV2Request
     if (serverlessInfra instanceof ServerlessAwsLambdaInfraConfig) {
       AwsConnectorDTO awsConnectorDTO = ((ServerlessAwsLambdaInfraConfig) serverlessInfra).getAwsConnectorDTO();
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
-      CrossAccountAccessDTO crossAccountAccess = awsConnectorDTO.getCredential().getCrossAccountAccess();
-      if (crossAccountAccess != null && crossAccountAccess.getCrossAccountRoleArn() != null) {
-        capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS Cli Installed").build());
-      }
     }
 
     return capabilities;
