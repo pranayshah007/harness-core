@@ -32,6 +32,8 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
+import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.DefaultUserGroupService;
@@ -75,6 +77,7 @@ public class NGAccountSetupService {
   private final AccessControlAdminClient accessControlAdminClient;
   private final NgUserService ngUserService;
   private final UserClient userClient;
+  private final AccessControlMigrationService accessControlMigrationService;
   private final HarnessSMManager harnessSMManager;
   private final CIDefaultEntityManager ciDefaultEntityManager;
   private final boolean shouldAssignAdmins;
@@ -88,7 +91,8 @@ public class NGAccountSetupService {
   public NGAccountSetupService(OrganizationService organizationService,
       AccountOrgProjectValidator accountOrgProjectValidator,
       @Named("PRIVILEGED") AccessControlAdminClient accessControlAdminClient, NgUserService ngUserService,
-      UserClient userClient, HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
+      UserClient userClient, AccessControlMigrationService accessControlMigrationService,
+      HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
       NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
       ProjectService projectService, FeatureFlagService featureFlagService,
       SampleManifestFileService sampleManifestFileService, DefaultUserGroupService defaultUserGroupService) {
@@ -97,6 +101,7 @@ public class NGAccountSetupService {
     this.accessControlAdminClient = accessControlAdminClient;
     this.ngUserService = ngUserService;
     this.userClient = userClient;
+    this.accessControlMigrationService = accessControlMigrationService;
     this.harnessSMManager = harnessSMManager;
     this.ciDefaultEntityManager = ciDefaultEntityManager;
     this.shouldAssignAdmins =
@@ -201,6 +206,7 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(accountScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
       }
+      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
     }
 
     Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
@@ -210,6 +216,8 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(orgScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
       }
+      accessControlMigrationService.save(
+          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
 
     Scope projectScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
@@ -219,6 +227,11 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(projectScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", projectScope));
       }
+      accessControlMigrationService.save(AccessControlMigration.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .orgIdentifier(orgIdentifier)
+                                             .projectIdentifier(projectIdentifier)
+                                             .build());
     }
     log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
@@ -239,6 +252,7 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(accountScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
       }
+      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
     }
 
     Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
@@ -248,6 +262,8 @@ public class NGAccountSetupService {
       if (shouldAssignAdmins && !hasAdmin(orgScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
       }
+      accessControlMigrationService.save(
+          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
     log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }

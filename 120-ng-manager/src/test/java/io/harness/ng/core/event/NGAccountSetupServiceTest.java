@@ -31,6 +31,7 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.DefaultUserGroupService;
@@ -73,6 +74,7 @@ public class NGAccountSetupServiceTest extends CategoryTest {
   @Mock private AccessControlAdminClient accessControlAdminClient;
   @Mock private NgUserService ngUserService;
   @Mock private UserClient userClient;
+  @Mock private AccessControlMigrationService accessControlMigrationService;
   @Mock private HarnessSMManager harnessSMManager;
   @Mock private CIDefaultEntityManager ciDefaultEntityManager;
   @Mock private NextGenConfiguration nextGenConfiguration;
@@ -129,9 +131,9 @@ public class NGAccountSetupServiceTest extends CategoryTest {
         .thenReturn(List.of(UserMetadataDTO.builder().build()));
 
     ngAccountSetupService = new NGAccountSetupService(organizationService, accountOrgProjectValidator,
-        accessControlAdminClient, ngUserService, userClient, harnessSMManager, ciDefaultEntityManager,
-        nextGenConfiguration, accountSettingService, projectService, featureFlagService, sampleManifestFileService,
-        defaultUserGroupService);
+        accessControlAdminClient, ngUserService, userClient, accessControlMigrationService, harnessSMManager,
+        ciDefaultEntityManager, nextGenConfiguration, accountSettingService, projectService, featureFlagService,
+        sampleManifestFileService, defaultUserGroupService);
   }
 
   @Test
