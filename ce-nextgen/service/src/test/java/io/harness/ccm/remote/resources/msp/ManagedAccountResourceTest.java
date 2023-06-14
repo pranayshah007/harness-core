@@ -43,7 +43,7 @@ public class ManagedAccountResourceTest {
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
-    when(managedAccountService.save(getDummyManagedAccount())).thenReturn(UUID);
+    when(managedAccountService.save(MSP_ACCOUNT_ID, MANAGED_ACCOUNT_ID)).thenReturn(UUID);
     when(managedAccountService.get(MSP_ACCOUNT_ID, MANAGED_ACCOUNT_ID)).thenReturn(getDummyManagedAccount());
     when(managedAccountService.list(MSP_ACCOUNT_ID)).thenReturn(Collections.singletonList(getDummyManagedAccount()));
     when(managedAccountService.update(getUpdatedDummyManagedAccount())).thenReturn(getUpdatedDummyManagedAccount());
@@ -54,7 +54,7 @@ public class ManagedAccountResourceTest {
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void testSave() {
-    ResponseDTO<String> response = managedAccountResource.save(MSP_ACCOUNT_ID, getDummyManagedAccount());
+    ResponseDTO<String> response = managedAccountResource.save(MSP_ACCOUNT_ID, MANAGED_ACCOUNT_ID);
     assertThat(response.getData()).isEqualTo(UUID);
   }
 
