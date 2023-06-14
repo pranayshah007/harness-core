@@ -960,8 +960,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
-      String planNodeId, boolean oldRetry, List<String> retriedId) {
-    Criteria criteria = Criteria.where(NodeExecutionKeys.nodeId)
+      String planExecutionId, String planNodeId, boolean oldRetry, List<String> retriedId) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.nodeId)
                             .is(planNodeId)
                             .and(NodeExecutionKeys.oldRetry)
                             .is(oldRetry)

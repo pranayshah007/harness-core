@@ -55,22 +55,20 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerStep implements TaskChainExecutableWithRbac<StepElementParameters> {
-  private final ContainerStepInitHelper containerStepInitHelper;
-  @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer;
-  private final ContainerRunStepHelper containerRunStepHelper;
-  private final OutcomeService outcomeService;
-  private final ContainerStepCleanupHelper containerStepCleanupHelper;
-  private final ContainerStepRbacHelper containerStepRbacHelper;
-  private final ContainerStepExecutionResponseHelper executionResponseHelper;
+  @Inject private ContainerStepInitHelper containerStepInitHelper;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
+  @Inject private ContainerRunStepHelper containerRunStepHelper;
+  @Inject private OutcomeService outcomeService;
+  @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
+  @Inject private ContainerStepRbacHelper containerStepRbacHelper;
+  @Inject private ContainerStepExecutionResponseHelper executionResponseHelper;
 
-  private final InitialiseTaskUtils initialiseTaskUtils;
+  @Inject private InitialiseTaskUtils initialiseTaskUtils;
 
   public static final StepType STEP_TYPE = ContainerStepSpecTypeConstants.CONTAINER_STEP_TYPE;
 

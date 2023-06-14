@@ -25,6 +25,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AW
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static software.wings.beans.LogHelper.color;
@@ -49,6 +50,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -564,6 +566,10 @@ public class CDStepHelper {
       case KUBERNETES_AWS:
         K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome = (K8sAwsInfrastructureOutcome) infrastructure;
         releaseName = k8sAwsInfrastructureOutcome.getReleaseName();
+        break;
+      case KUBERNETES_RANCHER:
+        K8sRancherInfrastructureOutcome rancherInfraOutcome = (K8sRancherInfrastructureOutcome) infrastructure;
+        releaseName = rancherInfraOutcome.getReleaseName();
         break;
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));

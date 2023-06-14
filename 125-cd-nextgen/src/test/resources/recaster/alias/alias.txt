@@ -992,3 +992,11 @@ io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
 io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput
 io.harness.cdng.aws.sam.DownloadManifestsStepInfo
 io.harness.cdng.aws.sam.DownloadManifestsStepNode
+io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackDataOutcome
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode
+io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepParameters

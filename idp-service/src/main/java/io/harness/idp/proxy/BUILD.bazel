@@ -22,6 +22,7 @@ java_library(
         "//idp-service/modules/clients:module",
         "//idp-service/src/main/java/io/harness/idp/common:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
+        "//idp-service/src/main/java/io/harness/idp/envvariable:module",
         "@maven//:com_google_inject_guice",
         "@maven//:javax_javaee_api",
     ],

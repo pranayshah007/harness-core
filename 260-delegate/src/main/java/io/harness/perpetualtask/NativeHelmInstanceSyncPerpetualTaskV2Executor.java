@@ -32,7 +32,6 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,7 +70,7 @@ public class NativeHelmInstanceSyncPerpetualTaskV2Executor extends AbstractInsta
 
   @Override
   protected List<ServerInstanceInfo> retrieveServiceInstances(
-      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) {
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) throws Exception {
     List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
 
     Set<NativeHelmDeploymentReleaseDetails> nativeHelmDeploymentReleaseDetailsSet =
@@ -90,10 +89,10 @@ public class NativeHelmInstanceSyncPerpetualTaskV2Executor extends AbstractInsta
         nativeHelmDeploymentReleaseDetailsSet) {
       Set<NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest> distinctPodDetailsRequestList =
           getDistinctPodDetailsRequestList(instanceSyncV2Request, nativeHelmDeploymentReleaseDetails);
-      serverInstanceInfos.addAll(distinctPodDetailsRequestList.stream()
-                                     .map(k8sInstanceSyncV2Helper::getServerInstanceInfoList)
-                                     .flatMap(Collection::stream)
-                                     .collect(Collectors.toList()));
+
+      for (PodDetailsRequest podDetailsRequest : distinctPodDetailsRequestList) {
+        serverInstanceInfos.addAll(k8sInstanceSyncV2Helper.getServerInstanceInfoList(podDetailsRequest));
+      }
     }
     return serverInstanceInfos;
   }

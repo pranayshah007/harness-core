@@ -30,7 +30,8 @@ timescaledb:
   sslRootCert: ""
 
 batchQueryConfig:
-  queryBatchSize: 4000
+  queryBatchSize: 1000
+  billingDataQueryBatchSize: 4000
   instanceDataBatchSize: 5000
   syncJobDisabled: false
 
@@ -69,6 +70,7 @@ billingDataPipelineConfig:
   clusterDataGcsBucketName: "clusterdata-qa"
   clusterDataGcsBackupBucketName: "clusterdata-qa-backup"
   awsRoleName: harnessContinuousEfficiencyRole
+  bufferSizeInMB: 100
 
 smtp:
   type: SMTP

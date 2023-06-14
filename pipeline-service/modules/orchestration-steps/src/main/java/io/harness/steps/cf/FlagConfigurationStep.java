@@ -7,28 +7,48 @@
 
 package io.harness.steps.cf;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.rbac.PipelineRbacHelper.throwAccessDeniedError;
+
 import static java.lang.String.format;
 import static org.joda.time.Minutes.minutes;
 
+import io.harness.EntityType;
 import io.harness.OrchestrationStepConfig;
+import io.harness.accesscontrol.NGAccessDeniedException;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
+import io.harness.beans.IdentifierRef;
 import io.harness.cf.CFApi;
 import io.harness.cf.openapi.ApiException;
 import io.harness.cf.openapi.model.PatchInstruction;
 import io.harness.cf.openapi.model.PatchOperation;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -48,6 +68,7 @@ import io.harness.steps.cf.SetOffVariationYaml.SetOffVariationYamlSpec;
 import io.harness.steps.cf.SetOnVariationYaml.SetOnVariationYamlSpec;
 import io.harness.steps.cf.UpdateRuleYaml.UpdateRuleYamlSpec;
 import io.harness.steps.executables.PipelineSyncExecutable;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -57,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CF)
@@ -71,6 +93,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject @Named("cfPipelineAPI") private CFApi cfApi;
   @Inject OrchestrationStepConfig config;
+  @Inject @Named("PRIVILEGED") AccessControlClient accessControlClient;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -246,8 +269,6 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
 
       addApiKeyHeader(cfApi);
 
-      // cfApi.
-
       cfApi.patchFeature(featureIdentifier, accountID, orgID, projectID,
           flagConfigurationStepParameters.getEnvironment().getValue(), patchOperation);
 
@@ -333,5 +354,95 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
     String uuid = generateRuleUUID(accountID, orgID, projectID, featureID, environmentID, ruleID);
 
     return cfApi.addPercentageRollout(uuid, priority, rule.getServe(), rule.getClauses());
+  }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    List<EntityDetail> entityDetailList = new ArrayList<>();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    FlagConfigurationStepParameters flagConfigurationStepParameters =
+        (FlagConfigurationStepParameters) stepParameters.getSpec();
+    String envRef = flagConfigurationStepParameters.getEnvironment().getValue();
+    ParameterField<List<io.harness.steps.cf.PatchInstruction>> instructions =
+        flagConfigurationStepParameters.getInstructions();
+    List<io.harness.steps.cf.PatchInstruction> patchInstructions = instructions.getValue();
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgIdentifier, projectIdentifier);
+    EntityDetail entityDetail = EntityDetail.builder().type(EntityType.ENVIRONMENT).entityRef(identifierRef).build();
+    entityDetailList.add(entityDetail);
+
+    checkFFRuntimePermissions(ambiance, entityDetailList, patchInstructions);
+  }
+
+  public void checkFFRuntimePermissions(Ambiance ambiance, List<EntityDetail> entityDetails,
+      List<io.harness.steps.cf.PatchInstruction> patchInstructions) {
+    if (isEmpty(entityDetails)) {
+      return;
+    }
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+
+    // NOTE: rbac should not be validated for triggers so this field is set to false for trigger based execution.
+    if (!executionPrincipalInfo.getShouldValidateRbac()) {
+      return;
+    }
+
+    String principal = executionPrincipalInfo.getPrincipal();
+    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    for (EntityDetail entityDetail : entityDetails) {
+      for (io.harness.steps.cf.PatchInstruction patchInstruction : patchInstructions) {
+        EntityReference entityRef = entityDetail.getEntityRef();
+        ResourceScope resourceScope = ResourceScope.builder()
+                                          .accountIdentifier(entityRef.getAccountIdentifier())
+                                          .orgIdentifier(entityRef.getOrgIdentifier())
+                                          .projectIdentifier(entityRef.getProjectIdentifier())
+                                          .build();
+        PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder()
+                                                    .resourceType("ENVIRONMENT")
+                                                    .resourceIdentifier(entityRef.getIdentifier())
+                                                    .resourceScope(resourceScope)
+                                                    .build();
+        PermissionCheckDTO permissionCheckDTOEnvironment = PermissionCheckDTO.builder()
+                                                               .resourceType("ENVIRONMENT")
+                                                               .resourceScope(resourceScope)
+                                                               .permission("core_environment_access")
+                                                               .build();
+        if (patchInstruction.getType() == Type.SET_FEATURE_FLAG_STATE) {
+          permissionCheckDTO.setPermission("ff_featureflag_toggle");
+          permissionCheckDTOEnvironment.setResourceIdentifier(entityRef.getIdentifier());
+        } else {
+          permissionCheckDTO.setPermission("ff_featureflag_edit");
+        }
+        permissionCheckDTOList.add(permissionCheckDTO);
+        permissionCheckDTOList.add(permissionCheckDTOEnvironment);
+      }
+    }
+
+    if (isEmpty(principal)) {
+      throw new NGAccessDeniedException("Execution with empty principal found. Please contact harness customer care.",
+          WingsException.USER, permissionCheckDTOList);
+    }
+
+    PrincipalType principalType = PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+        executionPrincipalInfo.getPrincipalType());
+    if (isNotEmpty(permissionCheckDTOList)) {
+      AccessCheckResponseDTO accessCheckResponseDTO = accessControlClient.checkForAccess(
+          Principal.builder().principalIdentifier(principal).principalType(principalType).build(),
+          permissionCheckDTOList);
+
+      if (accessCheckResponseDTO == null) {
+        return;
+      }
+
+      List<AccessControlDTO> nonPermittedResources = accessCheckResponseDTO.getAccessControlList()
+                                                         .stream()
+                                                         .filter(accessControlDTO -> !accessControlDTO.isPermitted())
+                                                         .collect(Collectors.toList());
+      if (!nonPermittedResources.isEmpty()) {
+        throwAccessDeniedError(nonPermittedResources);
+      }
+    }
   }
 }

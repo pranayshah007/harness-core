@@ -8,6 +8,9 @@
 package io.harness.ng.core.k8s.cluster.resources.rancher;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.utils.ApiUtils.X_PAGE_NUMBER;
+import static io.harness.utils.ApiUtils.X_PAGE_SIZE;
+import static io.harness.utils.ApiUtils.X_TOTAL_ELEMENTS;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -51,7 +54,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import javax.ws.rs.core.Response;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -171,5 +176,27 @@ public class RancherClusterHelperTest extends CategoryTest {
     verify(exceptionManager, times(1))
         .processException(
             any(DelegateServiceDriverException.class), any(WingsException.ExecutionContext.class), any(Logger.class));
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testResponseCreationWithHeaders() {
+    List<String> clusters = List.of("c1", "c2");
+    RancherClusterListResponseDTO responseDTO = RancherClusterListResponseDTO.builder().clusters(clusters).build();
+
+    Response response = rancherClusterHelper.generateResponseWithHeaders(responseDTO, 1, 100);
+    assertThat(response.getHeaderString(X_TOTAL_ELEMENTS)).isEqualTo("2");
+    assertThat(response.getHeaderString(X_PAGE_NUMBER)).isEqualTo("1");
+    assertThat(response.getHeaderString(X_PAGE_SIZE)).isEqualTo("100");
+    assertThat(((RancherClusterListResponseDTO) response.getEntity()).getClusters()).isEqualTo(clusters);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testRancherPageRequestParamsMapCreation() {
+    Map<String, String> params = rancherClusterHelper.createPageRequestParamsMap(1, 10, "field1", "ASC");
+    assertThat(params).containsKeys("page", "limit", "order", "sort").containsValues("1", "10", "field1", "ASC");
   }
 }
