@@ -689,6 +689,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (eligibleListOfDelegates.isEmpty()) {
           addToTaskActivityLog(task, NO_ELIGIBLE_DELEGATES);
           delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
+          delegateSelectionLogsService.logNonSelectedDelegates(task, task.getNonAssignableDelegates());
           delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_NO_ELIGIBLE_DELEGATES);
           StringBuilder errorMessage = new StringBuilder(NO_ELIGIBLE_DELEGATES);
           if (task.getNonAssignableDelegates() != null) {
