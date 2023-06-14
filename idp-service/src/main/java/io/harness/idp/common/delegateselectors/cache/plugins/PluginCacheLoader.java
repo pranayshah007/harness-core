@@ -5,18 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.common.delegateselectors.cache.connector;
-
-import static io.harness.idp.gitintegration.beans.CatalogInfraConnectorType.PROXY;
+package io.harness.idp.common.delegateselectors.cache.plugins;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCacheLoader;
-import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
-import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
+import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
+import io.harness.idp.configmanager.repositories.PluginsProxyInfoRepository;
 
 import com.google.inject.Inject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,16 +23,17 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class ConnectorCacheLoader implements DelegateSelectorsCacheLoader {
-  CatalogConnectorRepository catalogConnectorRepository;
+public class PluginCacheLoader implements DelegateSelectorsCacheLoader {
+  private PluginsProxyInfoRepository pluginsProxyInfoRepository;
+
   @Override
   public Map<String, Set<String>> load(String accountIdentifier) {
     Map<String, Set<String>> hostDelegateSelectors = new HashMap<>();
-    List<CatalogConnectorEntity> connectors =
-        catalogConnectorRepository.findAllHostsByAccountIdentifier(accountIdentifier);
-    connectors.forEach(connector -> {
-      if (PROXY.equals(connector.getType())) {
-        hostDelegateSelectors.put(connector.getHost(), connector.getDelegateSelectors());
+    List<PluginsProxyInfoEntity> pluginsProxies =
+        pluginsProxyInfoRepository.findAllByAccountIdentifier(accountIdentifier);
+    pluginsProxies.forEach(pluginsProxy -> {
+      if (pluginsProxy.getProxy()) {
+        hostDelegateSelectors.put(pluginsProxy.getHost(), new HashSet<>(pluginsProxy.getDelegateSelectors()));
       }
     });
     return hostDelegateSelectors;

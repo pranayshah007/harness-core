@@ -3,18 +3,27 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 
 java_library(
-    name = "module",
+    name = "tests",
+    testonly = True,
     srcs = glob(["**/*.java"]),
-    resources = [],
-    visibility = ["//idp-service:__subpackages__"],
+    data = [
+        "//idp-service/src/test/resources:resource",
+    ],
+    resources = [
+        "//idp-service/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
-        "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
+        "//990-commons-test:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/connector:module",
+        "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/factory:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/plugins:module",
-        "@maven//:com_google_inject_guice",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
     ],
 )
+
+run_tests("**/*Test.java")

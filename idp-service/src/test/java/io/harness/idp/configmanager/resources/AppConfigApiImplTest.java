@@ -26,6 +26,7 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 import io.harness.spec.server.idp.v1.model.AppConfigResponse;
 
+import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -91,7 +92,7 @@ public class AppConfigApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testTogglePluginForAccount() {
+  public void testTogglePluginForAccount() throws ExecutionException {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);
@@ -107,7 +108,7 @@ public class AppConfigApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testTogglePluginForAccountError() {
+  public void testTogglePluginForAccountError() throws ExecutionException {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);

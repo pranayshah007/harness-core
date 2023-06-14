@@ -7,9 +7,13 @@
 
 package io.harness.idp.common.delegateselectors.cache;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import java.util.Map;
 import java.util.Set;
 
+@OwnedBy(HarnessTeam.IDP)
 public interface DelegateSelectorsCacheLoader {
   Map<String, Set<String>> load(String accountIdentifier);
 }

@@ -7,6 +7,8 @@
 
 package io.harness.idp.common.delegateselectors.cache.memory;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCacheLoader;
 import io.harness.idp.common.delegateselectors.cache.factory.DelegateSelectorsCacheLoaderFactory;
@@ -25,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
+@OwnedBy(HarnessTeam.IDP)
 public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
   private static final long EXPIRY_IN_HOURS = 1;
   private static final long MAX_CACHE_SIZE = 1000;
@@ -58,6 +61,13 @@ public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
   public void put(String accountIdentifier, String host, Set<String> delegateSelectors) throws ExecutionException {
     Map<String, Set<String>> hostDelegateSelectorMap = cache.get(accountIdentifier);
     hostDelegateSelectorMap.put(host, delegateSelectors);
+    cache.put(accountIdentifier, hostDelegateSelectorMap);
+  }
+
+  @Override
+  public void remove(String accountIdentifier, Set<String> hosts) throws ExecutionException {
+    Map<String, Set<String>> hostDelegateSelectorMap = cache.get(accountIdentifier);
+    hosts.forEach(hostDelegateSelectorMap::remove);
     cache.put(accountIdentifier, hostDelegateSelectorMap);
   }
 }
