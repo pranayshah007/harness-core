@@ -186,7 +186,7 @@ public class ServerlessAwsLambdaRollbackV2StepTest {
         serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     SkipTaskRequest skipTaskRequest =
         SkipTaskRequest.newBuilder()
-            .setMessage("Serverless Aws Lambda Prepare Rollback step was not executed. Skipping rollback.")
+            .setMessage("Serverless Aws Lambda Prepare Rollback V2 step was not executed. Skipping rollback.")
             .build();
     assertThat(taskRequest.getSkipTaskRequest()).isEqualTo(skipTaskRequest);
   }
