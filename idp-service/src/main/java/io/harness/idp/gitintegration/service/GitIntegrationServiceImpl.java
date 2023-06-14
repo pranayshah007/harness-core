@@ -55,6 +55,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   DelegateSelectorsCache delegateSelectorsCache;
 
   private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
+  private static final String TARGET_TO_REPLACE_IN_CONFIG_FOR_API_BASE_URL = "API_BASE_URL";
 
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
   private static final String SUFFIX_FOR_BITBUCKET_SERVER_PAT = "_Server_Pat";
@@ -190,6 +191,8 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
+    integrationConfigs =
+        integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG_FOR_API_BASE_URL, getApiBaseUrlFromHost(host));
 
     String schemaForIntegrations =
         ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(connectorTypeAsString);
@@ -221,5 +224,13 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
         catalogConnectorEntity.getConnectorIdentifier());
     return savedCatalogConnectorEntity;
+  }
+
+  private String getApiBaseUrlFromHost(String host) {
+    if (host.equals("github.com")) {
+      return String.format("https://api.%s", host);
+    } else {
+      return String.format("https://%s/api/v3", host);
+    }
   }
 }
