@@ -5,6 +5,6 @@ metrics:
   - metricName: orchestration_time
     metricDefinition: Time taken to finish the orchestration.
     type: Duration
-    distribution: [ 0m, 1ms, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    distribution: [ 0m, 1ms, 15s, 30s, 1m]
     unit: "ms"
 

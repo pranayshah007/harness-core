@@ -16,7 +16,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
-import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.proxy.delegate.beans.BackstageProxyRequest;
 import io.harness.security.annotations.NextGenManagerAuth;
 

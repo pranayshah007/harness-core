@@ -18,4 +18,6 @@ import software.wings.beans.DecryptedRecord;
 public interface DelegateManagerEncryptionDecryptionHarnessSMService {
   EncryptedRecordData encryptData(String accountId, byte[] content);
   DecryptedRecord decryptData(String accountId, EncryptedRecordData record);
+  EncryptedRecordData encryptDataNG(String accountId, byte[] content);
+  DecryptedRecord decryptDataNG(String accountId, EncryptedRecordData record);
 }

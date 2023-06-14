@@ -56,7 +56,7 @@ public class UserInfoMigration implements NGMigration {
       while (iterator.hasNext()) {
         UserDBO userDBO = iterator.next();
         try {
-          Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserById(userDBO.getIdentifier()));
+          Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserById(userDBO.getIdentifier(), false));
           if (userInfo.isPresent()) {
             userDBO.setEmail(userInfo.get().getEmail());
             userDBO.setName(userInfo.get().getName());

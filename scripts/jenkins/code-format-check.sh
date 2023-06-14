@@ -107,7 +107,6 @@ bazel run //:buildifier
 git diff --exit-code
 
 echo "-------------------------"
-echo "$(git diff)"
 echo "$(git status --porcelain --untracked-files=no)"
 echo "-------------------------"
 

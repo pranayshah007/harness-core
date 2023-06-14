@@ -27,6 +27,7 @@ public interface MonitoringSourcePerpetualTaskService extends DeleteEntityByHand
 
   List<MonitoringSourcePerpetualTask> listByConnectorIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String connectorIdentifier, Scope scope);
+
   void createPerpetualTask(MonitoringSourcePerpetualTask monitoringSourcePerpetualTask);
   void resetLiveMonitoringPerpetualTask(MonitoringSourcePerpetualTask monitoringSourcePerpetualTask);
   String getLiveMonitoringWorkerId(String accountId, String orgIdentifier, String projectIdentifier,

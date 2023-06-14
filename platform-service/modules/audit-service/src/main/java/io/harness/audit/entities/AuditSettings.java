@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
@@ -45,7 +46,7 @@ public class AuditSettings implements PersistentIterable, PersistentRegularItera
   @Id @dev.morphia.annotations.Id String id;
   @NotBlank String accountIdentifier;
   @NotNull int retentionPeriodInMonths;
-  Long nextIteration;
+  @FdIndex Long nextIteration;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {

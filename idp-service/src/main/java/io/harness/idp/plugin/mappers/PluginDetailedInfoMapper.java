@@ -17,6 +17,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.ExportDetails;
 import io.harness.spec.server.idp.v1.model.Exports;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
+import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PluginDetailedInfoMapper {
   public PluginDetailedInfo toDTO(PluginInfoEntity pluginInfoEntity, AppConfig appConfig,
-      List<BackstageEnvSecretVariable> backstageEnvSecretVariables) {
+      List<BackstageEnvSecretVariable> backstageEnvSecretVariables, List<ProxyHostDetail> proxyHostDetails) {
     PluginDetailedInfo pluginDetailedInfo = new PluginDetailedInfo();
     boolean isConfigSaved = appConfig != null;
     boolean isEnabled = isConfigSaved && appConfig.isEnabled();
@@ -58,6 +59,7 @@ public class PluginDetailedInfoMapper {
     pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);
     pluginDetailedInfo.setEnvVariables(backstageEnvSecretVariables);
+    pluginDetailedInfo.setProxy(proxyHostDetails);
     return pluginDetailedInfo;
   }
 

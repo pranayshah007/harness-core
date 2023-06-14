@@ -291,6 +291,14 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
+  @DefaultOrganization
+  public Optional<Project> getConsideringCase(
+      String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
+    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierAndDeletedNot(
+        accountIdentifier, orgIdentifier, projectIdentifier, true);
+  }
+
+  @Override
   public PageResponse<ProjectDTO> listProjectsForUser(String userId, String accountId, PageRequest pageRequest) {
     Criteria criteria = Criteria.where(UserMembershipKeys.userId)
                             .is(userId)

@@ -73,6 +73,6 @@ public class PolicyStepInfo extends PolicyStepBase implements PMSStepInfo, Visit
 
   @Override
   public ExpressionMode getExpressionMode() {
-    return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+    return ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
   }
 }

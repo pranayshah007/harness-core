@@ -14,16 +14,19 @@ import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
+import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.rest.RestResponse;
+import io.harness.serializer.kryo.KryoResponse;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -57,4 +60,10 @@ public interface DelegateCoreManagerClient {
   @GET("agent/delegates/{delegateId}/task-events")
   Call<DelegateTaskEventsResponse> pollTaskEvents(
       @Path("delegateId") String delegateId, @Query("accountId") String accountId);
+
+  // Support for Kryo task acquire
+  @KryoResponse
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
+  Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
+      @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 }

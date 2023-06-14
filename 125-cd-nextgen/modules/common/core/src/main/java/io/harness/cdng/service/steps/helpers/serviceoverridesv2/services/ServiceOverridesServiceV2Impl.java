@@ -98,7 +98,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   public Optional<NGServiceOverridesEntity> get(@NonNull String accountId, String orgIdentifier,
       String projectIdentifier, @NonNull String serviceOverridesIdentifier) {
     return serviceOverrideRepositoryV2
-        .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
             accountId, orgIdentifier, projectIdentifier, serviceOverridesIdentifier);
   }
 
@@ -109,7 +109,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     modifyRequestedServiceOverride(requestedEntity);
     Optional<NGServiceOverridesEntity> existingEntity =
         serviceOverrideRepositoryV2
-            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
                 requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(),
                 requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
     if (existingEntity.isPresent()) {
@@ -532,7 +532,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       @NonNull String accountId, String orgIdentifier, String projectIdentifier, @NonNull String identifier) {
     Optional<NGServiceOverridesEntity> existingOverrideInDb =
         serviceOverrideRepositoryV2
-            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
                 accountId, orgIdentifier, projectIdentifier, identifier);
     if (existingOverrideInDb.isEmpty()) {
       throw new InvalidRequestException(

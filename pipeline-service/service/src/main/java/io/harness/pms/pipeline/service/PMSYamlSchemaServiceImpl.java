@@ -23,6 +23,7 @@ import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.PipelineServiceConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -62,6 +63,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,7 +101,12 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final SchemaFetcher schemaFetcher;
 
   private ExecutorService yamlSchemaExecutor;
+
+  @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
   Integer allowedParallelStages;
+
+  private final String PIPELINE_JSON = "pipeline.json";
+  private final String TEMPLATE_JSON = "template.json";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -144,8 +151,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {
-        log.error(String.format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s",
-                      accountId, orgId, projectId),
+        log.error(format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s", accountId,
+                      orgId, projectId),
             e);
         // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
         // save/execute).
@@ -173,8 +180,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {
-        log.error(String.format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s",
-                      accountId, orgId, projectId),
+        log.error(format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s", accountId,
+                      orgId, projectId),
             e);
         // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
         // save/execute).
@@ -517,6 +524,47 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       return stepGroupSchema;
     }
     return jsonNode;
+  }
+
+  @Override
+  public JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier,
+      String identifier, EntityType entityType, Scope scope, String version) {
+    // Appending branch and json in url
+    String fileUrl = calculateFileURL(entityType, version);
+
+    try {
+      // Read the JSON file as JsonNode
+      log.info(format("Fetching static schema with file URL %s ", fileUrl));
+      JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(fileUrl));
+
+      return jsonNode;
+    } catch (Exception ex) {
+      log.error(format("Not able to read file from %s path", fileUrl));
+    }
+    return null;
+  }
+
+  /*
+  Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
+  supported env branch will be master
+   */
+  public String calculateFileURL(EntityType entityType, String version) {
+    String fileURL = pipelineServiceConfiguration.getStaticSchemaFileURL();
+
+    String entityTypeJson = "";
+    switch (entityType) {
+      case PIPELINES:
+        entityTypeJson = PIPELINE_JSON;
+        break;
+      case TEMPLATE:
+        entityTypeJson = TEMPLATE_JSON;
+        break;
+      default:
+        entityTypeJson = PIPELINE_JSON;
+        log.error("Code should never reach here {}", entityType);
+    }
+
+    return format(fileURL, version, entityTypeJson);
   }
 
   private String getYamlGroup(String yamlGroup) {

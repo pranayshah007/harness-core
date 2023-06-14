@@ -158,6 +158,16 @@ public class AnnotationServiceImpl implements AnnotationService, SecondaryEventD
                             .filter(AnnotationKeys.sloIdentifier, sloIdentifier));
   }
 
+  @Override
+  public void delete(ProjectParams projectParams, List<String> sloIdentifiers) {
+    hPersistence.delete(hPersistence.createQuery(Annotation.class)
+                            .filter(AnnotationKeys.accountId, projectParams.getAccountIdentifier())
+                            .filter(AnnotationKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                            .filter(AnnotationKeys.projectIdentifier, projectParams.getProjectIdentifier())
+                            .field(AnnotationKeys.sloIdentifier)
+                            .in(sloIdentifiers));
+  }
+
   private Annotation checkIfAnnotationPresent(String annotationId) {
     Optional<Annotation> optionalAnnotation = getOptionalAnnotation(annotationId);
     if (optionalAnnotation.isEmpty()) {

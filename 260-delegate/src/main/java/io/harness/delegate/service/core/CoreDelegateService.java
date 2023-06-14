@@ -13,15 +13,17 @@ import static software.wings.beans.TaskType.INITIALIZATION_PHASE;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.InputData;
-import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
 import io.harness.delegate.service.core.runner.TaskRunner;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
-public class CoreDelegateService extends SimpleDelegateAgent {
+public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksResponse> {
   private final TaskRunner taskRunner;
 
   @Override
@@ -38,7 +40,21 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   }
 
   @Override
-  protected void executeTask(final String groupId, final TaskPayload task) {
+  protected AcquireTasksResponse acquireTask(final String taskId) throws IOException {
+    final var response =
+        executeRestCall(getManagerClient().acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(), taskId,
+            getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
+
+    log.info("Delegate {} received tasks group {} of {} tasks for delegateInstance {}",
+        DelegateAgentCommonVariables.getDelegateId(), response.getExecutionInfraId(), response.getTaskList().size(),
+        DELEGATE_INSTANCE_ID);
+    return response;
+  }
+
+  @Override
+  protected void executeTask(final AcquireTasksResponse acquireResponse) {
+    final var groupId = acquireResponse.getExecutionInfraId();
+    final var task = acquireResponse.getTask(0);
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
     if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {

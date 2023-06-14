@@ -1868,7 +1868,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
 
       setSwitchStorage(receivedDelegateResponse.isUseCdn());
-      updateJreVersion(receivedDelegateResponse.getJreVersion());
+      // updateJreVersion(receivedDelegateResponse.getJreVersion());
 
       lastHeartbeatSentAt.set(clock.millis());
 

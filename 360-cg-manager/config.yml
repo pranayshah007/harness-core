@@ -367,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 9b34bea7
+scmVersion: f1024c6b
 
 ngAuthUIEnabled: false
 
@@ -613,15 +613,15 @@ pipelineConfig:
   envStateTimeout: -1
   approvalStateTimeout: -1
 
-currentJre: openjdk11014_9
-migrateToJre: openjdk11014_9
+currentJre: openjdk11019_7
+migrateToJre: openjdk11019_7
 
 jreConfigs:
-  openjdk11014_9:
-    version: 11.0.14
-    jreDirectory: jdk-11.0.14+9-jre
-    jreMacDirectory: jdk-11.0.14+9-jre
-    jreTarPath: jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
+  openjdk11019_7:
+    version: 11.0.19
+    jreDirectory: jdk-11.0.19+7-jre
+    jreMacDirectory: jdk-11.0.19+7-jre
+    jreTarPath: jre/openjdk-11.0.19_7/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.19_7.tar.gz
 
 cdnConfig:
   url: https://qa.harness.io
@@ -760,7 +760,7 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
-runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-false}
+runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
 
 secretsConfiguration:
   secretResolutionEnabled: false

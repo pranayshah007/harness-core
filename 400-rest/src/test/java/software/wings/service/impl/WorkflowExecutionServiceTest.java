@@ -97,6 +97,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -226,7 +227,6 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -2164,7 +2164,6 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
-  @Ignore("This test need to be fixed by Fernando Dourado")
   public void testGetPreviousApprovalDetails() {
     String approvalId = generateUuid();
     WorkflowExecution currentWorkflowExecution =
@@ -2239,6 +2238,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(query.filter(anyString(), anyString())).thenReturn(query);
     when(query.project(anyString(), anyBoolean())).thenReturn(query);
     when(query.order(any(Sort.class))).thenReturn(query);
+    when(query.limit(anyInt())).thenReturn(query);
     when(query.field(anyString())).thenReturn(fieldEnd);
     when(fieldEnd.lessThan(anyLong())).thenReturn(query);
     when(fieldEnd.in(any())).thenReturn(query);

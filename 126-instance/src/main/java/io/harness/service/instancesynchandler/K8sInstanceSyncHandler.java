@@ -27,8 +27,8 @@ import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helper.K8sAndHelmInfrastructureUtility;
 import io.harness.helper.K8sCloudConfigMetadata;
-import io.harness.helper.K8sInfrastructureUtility;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -98,7 +98,8 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         log.warn("Unexpected type of deploymentInfoDto, expected K8sDeploymentInfoDTO found {}",
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
-        k8sDeploymentReleaseDetailsList.add(K8sInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO));
+        k8sDeploymentReleaseDetailsList.add(
+            K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO));
       }
     }
     return DeploymentReleaseDetails.builder()
@@ -147,7 +148,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     LinkedHashSet<String> namespaces = getNamespaces(serverInstanceInfoList);
 
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
-        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+        K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
 
     return K8sDeploymentInfoDTO.builder()
         .namespaces(namespaces)
@@ -160,7 +161,8 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public InfrastructureOutcome getInfrastructureOutcome(
       String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
-    return K8sInfrastructureUtility.getInfrastructureOutcome(infrastructureKind, deploymentInfoDTO, connectorRef);
+    return K8sAndHelmInfrastructureUtility.getInfrastructureOutcome(
+        infrastructureKind, deploymentInfoDTO, connectorRef);
   }
 
   private LinkedHashSet<String> getNamespaces(@NotNull List<ServerInstanceInfo> serverInstanceInfoList) {

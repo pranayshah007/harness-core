@@ -1202,7 +1202,7 @@ public class K8sTaskHelperBase {
     ProcessExecutor processExecutor = new ProcessExecutor()
                                           .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
                                           .directory(new File(commandDirectory))
-                                          .commandSplit(command)
+                                          .command("/bin/sh", "-c", command)
                                           .readOutput(true)
                                           .redirectError(logErrorStream);
 
@@ -2436,7 +2436,9 @@ public class K8sTaskHelperBase {
       String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin) throws Exception {
     ManifestType manifestType = manifestDelegateConfig.getManifestType();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(timeoutInMin);
-
+    String kubeConfigFile = isNotEmpty(k8sDelegateTaskParams.getKubeconfigPath())
+        ? Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubeconfigPath()).toString()
+        : EMPTY;
     switch (manifestType) {
       case K8S_MANIFEST:
         List<FileData> manifestFiles = readManifestFilesFromDirectory(manifestFilesDirectory);
@@ -2453,7 +2455,7 @@ public class K8sTaskHelperBase {
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest),
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
-            timeoutInMillis, helmChartManifest.getHelmCommandFlag());
+            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), kubeConfigFile);
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
@@ -2488,7 +2490,9 @@ public class K8sTaskHelperBase {
       Integer timeoutInMin, boolean skipRendering) throws Exception {
     ManifestType manifestType = manifestDelegateConfig.getManifestType();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(timeoutInMin);
-
+    String kubeConfigFile = isNotEmpty(k8sDelegateTaskParams.getKubeconfigPath())
+        ? Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubeconfigPath()).toString()
+        : EMPTY;
     switch (manifestType) {
       case K8S_MANIFEST:
         k8sTaskManifestValidator.checkFilesPartOfManifest(
@@ -2510,7 +2514,7 @@ public class K8sTaskHelperBase {
         return renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChartWithSubCharts(manifestFilesDirectory, helmChartManifest), filesList,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
-            timeoutInMillis, helmChartManifest.getHelmCommandFlag());
+            timeoutInMillis, helmChartManifest.getHelmCommandFlag(), kubeConfigFile);
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
@@ -2919,7 +2923,7 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplateForHelm(String helmPath, String manifestFilesDirectory, List<String> valuesFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, HelmVersion helmVersion,
-      long timeoutInMillis, HelmCommandFlag helmCommandFlag) throws Exception {
+      long timeoutInMillis, HelmCommandFlag helmCommandFlag, String kubeConfigPath) throws Exception {
     String valuesFileOptions = createValuesFileOptions(manifestFilesDirectory, valuesFiles, executionLogCallback);
     log.info("Values file options: " + valuesFileOptions);
 
@@ -2929,8 +2933,8 @@ public class K8sTaskHelperBase {
     try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream logErrorStream =
              K8sTaskHelperBase.getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
-      String helmTemplateCommand = getHelmCommandForRender(
-          helmPath, manifestFilesDirectory, releaseName, namespace, valuesFileOptions, helmVersion, helmCommandFlag);
+      String helmTemplateCommand = getHelmCommandForRender(helmPath, manifestFilesDirectory, releaseName, namespace,
+          valuesFileOptions, helmVersion, helmCommandFlag, kubeConfigPath);
       printHelmTemplateCommand(executionLogCallback, helmTemplateCommand);
 
       ProcessResult processResult =
@@ -2993,8 +2997,8 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplateForHelmChartFiles(String helmPath, String manifestFilesDirectory,
       List<String> chartFiles, List<String> valuesFiles, String releaseName, String namespace,
-      LogCallback executionLogCallback, HelmVersion helmVersion, long timeoutInMillis, HelmCommandFlag helmCommandFlag)
-      throws Exception {
+      LogCallback executionLogCallback, HelmVersion helmVersion, long timeoutInMillis, HelmCommandFlag helmCommandFlag,
+      String kubeConfigPath) throws Exception {
     String valuesFileOptions = createValuesFileOptions(manifestFilesDirectory, valuesFiles, executionLogCallback);
     log.info("Values file options: " + valuesFileOptions);
 
@@ -3009,7 +3013,8 @@ public class K8sTaskHelperBase {
              LogOutputStream logErrorStream =
                  K8sTaskHelperBase.getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
           String helmTemplateCommand = getHelmCommandForRender(helmPath, manifestFilesDirectory, releaseName, namespace,
-              valuesFileOptions, chartFile, helmVersion, helmCommandFlag);
+              valuesFileOptions, chartFile, helmVersion, helmCommandFlag, kubeConfigPath);
+
           printHelmTemplateCommand(executionLogCallback, helmTemplateCommand);
 
           ProcessResult processResult =
@@ -3048,7 +3053,8 @@ public class K8sTaskHelperBase {
 
   @VisibleForTesting
   String getHelmCommandForRender(String helmPath, String manifestFilesDirectory, String releaseName, String namespace,
-      String valuesFileOptions, String chartFile, HelmVersion helmVersion, HelmCommandFlag helmCommandFlag) {
+      String valuesFileOptions, String chartFile, HelmVersion helmVersion, HelmCommandFlag helmCommandFlag,
+      String kubeConfigPath) {
     HelmCliCommandType commandType = HelmCliCommandType.RENDER_SPECIFIC_CHART_FILE;
     String helmTemplateCommand = HelmCommandTemplateFactory.getHelmCommandTemplate(commandType, helmVersion);
     String command = replacePlaceHoldersInHelmTemplateCommand(
@@ -3057,12 +3063,12 @@ public class K8sTaskHelperBase {
         helmCommandFlag != null ? helmCommandFlag.getValueMap() : null;
     command =
         HelmCommandFlagsUtils.applyHelmCommandFlags(command, commandType.name(), commandFlagValueMap, helmVersion);
-    return command;
+    return applyKubeConfigToCommand(command, kubeConfigPath);
   }
 
   @VisibleForTesting
   String getHelmCommandForRender(String helmPath, String manifestFilesDirectory, String releaseName, String namespace,
-      String valuesFileOptions, HelmVersion helmVersion, HelmCommandFlag commandFlag) {
+      String valuesFileOptions, HelmVersion helmVersion, HelmCommandFlag commandFlag, String kubeConfigPath) {
     HelmCliCommandType commandType = HelmCliCommandType.RENDER_CHART;
     String helmTemplateCommand = HelmCommandTemplateFactory.getHelmCommandTemplate(commandType, helmVersion);
     String command = replacePlaceHoldersInHelmTemplateCommand(
@@ -3070,7 +3076,7 @@ public class K8sTaskHelperBase {
     Map<HelmSubCommandType, String> commandFlagValueMap = commandFlag != null ? commandFlag.getValueMap() : null;
     command =
         HelmCommandFlagsUtils.applyHelmCommandFlags(command, commandType.name(), commandFlagValueMap, helmVersion);
-    return command;
+    return applyKubeConfigToCommand(command, kubeConfigPath);
   }
 
   private String replacePlaceHoldersInHelmTemplateCommand(String unrenderedCommand, String helmPath,
@@ -3354,6 +3360,14 @@ public class K8sTaskHelperBase {
           new InvalidArgumentsException("Invalid path to openshift template file"));
     }
     return openshiftTemplatePath;
+  }
+
+  public String applyKubeConfigToCommand(String command, String kubeConfigLocation) {
+    if (isNotEmpty(kubeConfigLocation)) {
+      return command.replace("${KUBECONFIG_PATH}", kubeConfigLocation);
+    } else {
+      return command.replace("KUBECONFIG=${KUBECONFIG_PATH}", EMPTY).trim();
+    }
   }
 
   private String getFileName(String path) {

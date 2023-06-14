@@ -68,6 +68,7 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -173,6 +174,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   @Inject private TerraformBaseHelper terraformBaseHelper;
   @Inject private AwsHelperService awsHelperService;
   @Inject private TerraformClient terraformClient;
+  @Inject private HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
 
   @Inject AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
@@ -689,7 +691,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         byte[] terraformPlanFile = getTerraformPlanFile(scriptDirectory, parameters);
         saveExecutionLog(
             color("\nEncrypting terraform plan \n", Yellow, Bold), CommandExecutionStatus.RUNNING, INFO, logCallback);
-
         if (parameters.isUseOptimizedTfPlanJson()) {
           DelegateFile planDelegateFile =
               aDelegateFile()
@@ -700,12 +701,23 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                   .withBucket(FileBucket.TERRAFORM_PLAN)
                   .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, getPlanName(parameters)))
                   .build();
-          encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptFile(
-              terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig(), planDelegateFile);
+          if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+            encryptedTfPlan = (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptFile(
+                terraformPlanFile, parameters.getSecretManagerConfig(), planDelegateFile, false);
 
+          } else {
+            encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptFile(
+                terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig(), planDelegateFile);
+          }
         } else {
-          encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptContent(
-              terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig());
+          if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+            encryptedTfPlan = (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(
+                terraformPlanFile, parameters.getSecretManagerConfig(), false);
+
+          } else {
+            encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptContent(
+                terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig());
+          }
         }
       }
 
@@ -908,6 +920,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             .planLogOutputStream(planLogOutputStream)
             .analyseTfPlanSummary(parameters.isAnalyseTfPlanSummary())
             .timeoutInMillis(parameters.getTimeoutInMillis())
+            .encryptDecryptPlanForHarnessSMOnManager(parameters.isEncryptDecryptPlanForHarnessSMOnManager())
             .accountId(parameters.getAccountId())
             .build();
     switch (parameters.getCommand()) {
@@ -1261,8 +1274,17 @@ and provisioner
       throws IOException {
     File tfPlanFile = Paths.get(scriptDirectory, getPlanName(parameters)).toFile();
     EncryptedRecordData encryptedRecordData = parameters.getEncryptedTfPlan();
-    byte[] decryptedTerraformPlan = planEncryptDecryptHelper.getDecryptedContent(
-        parameters.getSecretManagerConfig(), encryptedRecordData, parameters.getAccountId());
+    byte[] decryptedTerraformPlan;
+
+    if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+      decryptedTerraformPlan = harnessSMEncryptionDecryptionHandler.getDecryptedContent(
+          parameters.getSecretManagerConfig(), encryptedRecordData, parameters.getAccountId(), false);
+
+    } else {
+      decryptedTerraformPlan = planEncryptDecryptHelper.getDecryptedContent(
+          parameters.getSecretManagerConfig(), encryptedRecordData, parameters.getAccountId());
+    }
+
     FileUtils.copyInputStreamToFile(new ByteArrayInputStream(decryptedTerraformPlan), tfPlanFile);
   }
 

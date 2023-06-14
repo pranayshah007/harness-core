@@ -47,7 +47,6 @@ public class FavoritesOrgApiImplTest extends CategoryTest {
   private FavoritesResourceUtils favoritesResourceUtils;
   @Mock private FavoritesService favoriteService;
   private final String userId = "userId";
-  private final String moduleType = "CD";
   private final String accountId = "accountId";
   private final String orgId = "org";
   private final String resourceType_connector = "CONNECTOR";
@@ -60,7 +59,7 @@ public class FavoritesOrgApiImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     favoritesResourceUtils = new FavoritesResourceUtils();
     orgFavoriteApi = new OrgFavoritesApiImpl(favoriteService, favoritesResourceUtils);
-    favoriteDTO = favoriteDTO.module(io.harness.spec.server.ng.v1.model.ModuleType.fromValue(moduleType))
+    favoriteDTO = favoriteDTO.module(io.harness.spec.server.ng.v1.model.ModuleType.CD)
                       .userId(userId)
                       .resourceType(FavoritesResourceType.fromValue(resourceType_connector))
                       .resourceId(resourceId);
@@ -88,8 +87,7 @@ public class FavoritesOrgApiImplTest extends CategoryTest {
     favoriteEntity.setOrgIdentifier(orgId);
     when(favoriteService.getFavorites(anyString(), anyString(), any(), anyString(), any()))
         .thenReturn(Collections.singletonList(favoriteEntity));
-    Response orgFavoriteResponse = orgFavoriteApi.getOrgFavorites(
-        orgId, userId, accountId, FavoritesResourceType.fromValue(resourceType_connector));
+    Response orgFavoriteResponse = orgFavoriteApi.getOrgFavorites(orgId, userId, accountId, resourceType_connector);
     assertThat(orgFavoriteResponse).isNotNull();
     assertThat(orgFavoriteResponse.getStatus()).isEqualTo(200);
     assertThat(orgFavoriteResponse.getEntity())
@@ -115,8 +113,8 @@ public class FavoritesOrgApiImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteOrgScopedFavorite() {
-    Response deleteAccountFavorite = orgFavoriteApi.deleteOrgFavorite(
-        orgId, userId, accountId, FavoritesResourceType.fromValue(resourceType_connector), resourceId);
+    Response deleteAccountFavorite =
+        orgFavoriteApi.deleteOrgFavorite(orgId, userId, accountId, resourceType_connector, resourceId);
     assertThat(deleteAccountFavorite).isNotNull();
     assertThat(deleteAccountFavorite.getStatus()).isEqualTo(204);
     assertThat(deleteAccountFavorite.getEntity()).isNull();
@@ -126,11 +124,10 @@ public class FavoritesOrgApiImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteOrgScopedFavoriteInvalidResourceTypeThrowException() {
-    FavoritesResourceType favoritesResourceType = FavoritesResourceType.fromValue("Random");
     doThrow(new InvalidRequestException("Please provide a valid resource Type"))
         .when(favoriteService)
-        .deleteFavorite(accountId, orgId, null, userId, favoritesResourceType, resourceId);
-    Response response = orgFavoriteApi.deleteOrgFavorite(orgId, userId, accountId, favoritesResourceType, resourceId);
+        .deleteFavorite(accountId, orgId, null, userId, "Random", resourceId);
+    Response response = orgFavoriteApi.deleteOrgFavorite(orgId, userId, accountId, "Random", resourceId);
     ResponseMessage errorResponse = ResponseMessage.builder()
                                         .code(ErrorCode.INVALID_REQUEST)
                                         .level(Level.ERROR)
@@ -146,9 +143,8 @@ public class FavoritesOrgApiImplTest extends CategoryTest {
   public void testDeleteOrgScopedFavoriteNullResourceTypeThrowException() {
     doThrow(new InvalidRequestException("Please provide a valid resource Type"))
         .when(favoriteService)
-        .deleteFavorite(accountId, orgId, null, userId, null, resourceId);
-    Response response = orgFavoriteApi.deleteOrgFavorite(
-        orgId, userId, accountId, FavoritesResourceType.fromValue("Random"), resourceId);
+        .deleteFavorite(accountId, orgId, null, userId, "Random", resourceId);
+    Response response = orgFavoriteApi.deleteOrgFavorite(orgId, userId, accountId, "Random", resourceId);
     ResponseMessage errorResponse = ResponseMessage.builder()
                                         .code(ErrorCode.INVALID_REQUEST)
                                         .level(Level.ERROR)

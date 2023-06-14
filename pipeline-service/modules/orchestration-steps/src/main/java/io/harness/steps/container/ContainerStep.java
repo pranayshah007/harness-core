@@ -35,6 +35,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
 import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
@@ -50,6 +51,7 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerStep implements TaskChainExecutableWithRbac<StepElementParameters> {
   private final ContainerStepInitHelper containerStepInitHelper;
-  private final KryoSerializer kryoSerializer;
+  @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer;
   private final ContainerRunStepHelper containerRunStepHelper;
   private final OutcomeService outcomeService;
   private final ContainerStepCleanupHelper containerStepCleanupHelper;
@@ -115,7 +117,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
         taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
 
@@ -156,7 +158,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeoutForDelegateTask, null);
     String stageId = ambiance.getStageExecutionId();
 
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(runStepTaskData.getTaskType()).getDisplayName(),
         new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
     return TaskChainResponse.builder()

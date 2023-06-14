@@ -21,6 +21,7 @@ import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -34,6 +35,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.client.SSCAServiceUtils;
@@ -58,6 +60,8 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
   @Mock private SerializedResponseDataHelper serializedResponseDataHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Mock private SSCAServiceUtils sscaServiceUtils;
+  @Mock protected CIFeatureFlagService featureFlagService;
+  @Mock protected CIStageOutputRepository ciStageOutputRepository;
 
   @Test
   @Owner(developers = INDER)

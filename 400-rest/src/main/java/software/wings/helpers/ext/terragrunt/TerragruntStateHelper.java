@@ -24,12 +24,14 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
@@ -98,6 +100,7 @@ public class TerragruntStateHelper {
   @Inject private GitFileConfigHelperService gitFileConfigHelperService;
   @Inject private SecretManager secretManager;
   @Inject protected WingsPersistence wingsPersistence;
+  @Inject protected FeatureFlagService featureFlagService;
 
   private static final String DUPLICATE_VAR_MSG_PREFIX =
       "variable names should be unique, duplicate variable(s) found: ";
@@ -190,8 +193,27 @@ public class TerragruntStateHelper {
   }
 
   public SecretManagerConfig getSecretManagerContainingTfPlan(String secretManagerId, String accountId) {
-    return isEmpty(secretManagerId) ? secretManagerConfigService.getDefaultSecretManager(accountId)
-                                    : secretManagerConfigService.getSecretManager(accountId, secretManagerId, false);
+    SecretManagerConfig secretManagerConfig = isEmpty(secretManagerId)
+        ? secretManagerConfigService.getDefaultSecretManager(accountId)
+        : secretManagerConfigService.getSecretManager(accountId, secretManagerId, false);
+
+    if (featureFlagService.isEnabled(FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, accountId)
+        && isHarnessSecretManager(secretManagerConfig)) {
+      removeCredFromHarnessSM(secretManagerConfig);
+    }
+    return secretManagerConfig;
+  }
+
+  public boolean isHarnessSecretManager(SecretManagerConfig secretManagerConfig) {
+    if (secretManagerConfig != null) {
+      return secretManagerConfig.isGlobalKms();
+    } else {
+      return false;
+    }
+  }
+
+  private void removeCredFromHarnessSM(SecretManagerConfig secretManagerConfig) {
+    secretManagerConfig.maskSecrets();
   }
 
   public static List<String> getRenderedTaskTags(String rawTag, ExecutionContextImpl executionContext) {

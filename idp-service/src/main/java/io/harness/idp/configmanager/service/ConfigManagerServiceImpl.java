@@ -49,6 +49,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private ConfigEnvVariablesService configEnvVariablesService;
 
   private BackstageEnvVariableService backstageEnvVariableService;
+  private PluginsProxyInfoService pluginsProxyInfoService;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
@@ -100,6 +101,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
     appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
+
+    List<ProxyHostDetail> pluginProxyHostDetails =
+        pluginsProxyInfoService.insertProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
     if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
@@ -108,6 +113,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
     AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    returnedConfig.setProxy(pluginProxyHostDetails);
     return returnedConfig;
   }
 
@@ -116,6 +122,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       throws Exception {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
+
+    List<ProxyHostDetail> proxyHostDetailList =
+        pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
@@ -124,6 +134,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    returnedConfig.setProxy(proxyHostDetailList);
     return returnedConfig;
   }
 
@@ -142,7 +153,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity updatedData = null;
     Boolean createdNewConfig = false;
 
-    if (isEnabled == true) {
+    if (isEnabled) {
       AppConfigEntity appConfigEntity =
           appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, configId);
 
@@ -166,8 +177,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       updatedData = appConfigRepository.updateConfigEnablement(accountIdentifier, configId, isEnabled, configType);
     }
 
-    if (isEnabled == false) {
+    if (!isEnabled) {
       configEnvVariablesService.deleteConfigEnvVariables(accountIdentifier, configId);
+      pluginsProxyInfoService.deleteProxyHostDetailsForPlugin(accountIdentifier, configId);
     }
 
     if (isPluginWithNoConfig(accountIdentifier, configId)) {
@@ -222,8 +234,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
             accountIdentifier, envVariablesForEnabledPlugins);
 
+    List<ProxyHostDetail> proxyHostDetailForEnabledPlugins =
+        pluginsProxyInfoService.getProxyHostDetailsForMultiplePluginIds(accountIdentifier, enabledPluginIdsForAccount);
+
     return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()))
-        .envVariables(envVariableAndSecretList);
+        .envVariables(envVariableAndSecretList)
+        .proxy(proxyHostDetailForEnabledPlugins);
   }
 
   @Override

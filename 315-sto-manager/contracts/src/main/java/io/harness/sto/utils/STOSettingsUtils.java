@@ -122,9 +122,23 @@ public final class STOSettingsUtils {
     }
   }
 
-  private static Integer resolveIntegerParameter(ParameterField<Integer> parameterField, Integer defaultValue) {
-    if (parameterField == null || parameterField.isExpression() || parameterField.getValue() == null) {
+  @SuppressWarnings("unchecked")
+  private static <E extends Enum<E>> E resolveEnumParameter(ParameterField<E> enumParameterField, E defaultValue) {
+    if (enumParameterField == null || enumParameterField.getValue() == null
+        || enumParameterField.fetchFinalValue() == null) {
       return defaultValue;
+    } else {
+      try {
+        return Enum.valueOf(defaultValue.getDeclaringClass(), ((E) enumParameterField.fetchFinalValue()).name());
+      } catch (IllegalArgumentException e) {
+        return defaultValue;
+      }
+    }
+  }
+
+  private static Integer resolveIntegerParameter(ParameterField<Integer> parameterField) {
+    if (parameterField == null || parameterField.isExpression() || parameterField.getValue() == null) {
+      return null;
     } else {
       try {
         return Integer.parseInt(parameterField.fetchFinalValue().toString());
@@ -171,16 +185,14 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     if (authData != null) {
-      ParameterField<STOYamlAuthType> authType = authData.getType();
-
       map.put(getSTOKey("product_auth_type"),
-          authType != null ? authType.getValue().getYamlName() : STOYamlAuthType.API_KEY.getYamlName());
+          resolveEnumParameter(authData.getType(), STOYamlAuthType.API_KEY).getYamlName());
 
-      Boolean authSsl = resolveBooleanParameter(authData.getSsl(), Boolean.TRUE);
+      boolean authSsl = resolveBooleanParameter(authData.getSsl(), Boolean.TRUE);
 
       String authFieldPrefix = "product";
-      ParameterField<STOYamlTargetType> targetParam = target.getType();
-      if (targetParam != null && targetParam.getValue() == STOYamlTargetType.CONFIGURATION) {
+      STOYamlTargetType targetParam = resolveEnumParameter(target.getType(), STOYamlTargetType.REPOSITORY);
+      if (targetParam == STOYamlTargetType.CONFIGURATION) {
         authFieldPrefix = "configuration";
       }
 
@@ -204,10 +216,8 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     if (imageData != null) {
-      ParameterField<STOYamlImageType> imageType = imageData.getType();
-
       map.put(getSTOKey("container_type"),
-          imageType != null ? imageType.getValue().getYamlName() : STOYamlImageType.DOCKER_V2.getYamlName());
+          resolveEnumParameter(imageData.getType(), STOYamlImageType.DOCKER_V2).getYamlName());
       map.put(getSTOKey("container_domain"),
           resolveStringParameter("image.domain", stepType, identifier, imageData.getDomain(), false));
       map.put(getSTOKey("container_region"),
@@ -241,7 +251,7 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("instance_password"),
           resolveStringParameter("instance.password", stepType, identifier, instanceData.getPassword(), false));
 
-      Integer port = resolveIntegerParameter(instanceData.getPort(), null);
+      Integer port = resolveIntegerParameter(instanceData.getPort());
       if (port != null) {
         map.put(getSTOKey("instance_port"), String.valueOf(port));
       }
@@ -256,9 +266,10 @@ public final class STOSettingsUtils {
     if (target != null) {
       map.put(getSTOKey("workspace"),
           resolveStringParameter("target.workspace", stepType, identifier, target.getWorkspace(), false));
-      ParameterField<STOYamlTargetType> targetType = target.getType();
-      map.put(getSTOKey("scan_type"),
-          targetType != null ? targetType.getValue().getYamlName() : STOYamlTargetType.REPOSITORY.getYamlName());
+
+      STOYamlTargetType targetType = resolveEnumParameter(target.getType(), STOYamlTargetType.REPOSITORY);
+
+      map.put(getSTOKey("scan_type"), targetType.getYamlName());
 
       String targetName = resolveStringParameter("target.name", stepType, identifier, target.getName(), true);
       String targetVariant = resolveStringParameter("target.variant", stepType, identifier, target.getVariant(), true);
@@ -266,7 +277,7 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("target_name"), targetName);
       map.put(getSTOKey("target_variant"), targetVariant);
 
-      switch (target.getType().getValue()) {
+      switch (targetType) {
         case INSTANCE:
           map.put(getSTOKey("instance_identifier"), targetName);
           map.put(getSTOKey("instance_environment"), targetVariant);
@@ -293,11 +304,10 @@ public final class STOSettingsUtils {
     if (advancedSettings != null) {
       STOYamlLog logData = advancedSettings.getLog();
       if (logData != null) {
-        ParameterField<STOYamlLogLevel> logLevel = logData.getLevel();
         STOYamlLogSerializer logSerializer = logData.getSerializer();
 
-        map.put(getSTOKey("log_level"),
-            logLevel != null ? logLevel.getValue().getYamlName() : STOYamlLogLevel.INFO.getYamlName());
+        map.put(getSTOKey("log_level"), resolveEnumParameter(logData.getLevel(), STOYamlLogLevel.INFO).getYamlName());
+
         map.put(getSTOKey("log_serializer"),
             logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
       }
@@ -310,9 +320,8 @@ public final class STOSettingsUtils {
             resolveStringParameter("args.passthrough", stepType, identifier, argsData.getPassthrough(), false));
       }
 
-      ParameterField<STOYamlFailOnSeverity> failOnSeverity = advancedSettings.getFailOnSeverity();
       map.put(getSTOKey("fail_on_severity"),
-          failOnSeverity != null ? failOnSeverity.getValue().getYamlName() : STOYamlFailOnSeverity.NONE.getYamlName());
+          resolveEnumParameter(advancedSettings.getFailOnSeverity(), STOYamlFailOnSeverity.NONE).getYamlName());
       map.put(getSTOKey("include_raw"),
           String.valueOf(resolveBooleanParameter(advancedSettings.getIncludeRaw(), Boolean.TRUE)));
     }
@@ -637,7 +646,7 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("product_context"),
           resolveStringParameter("tool.context", stepType, identifier, toolData.getContext(), false));
 
-      Integer port = resolveIntegerParameter(toolData.getPort(), null);
+      Integer port = resolveIntegerParameter(toolData.getPort());
       if (port != null) {
         map.put(getSTOKey("zap_custom_port"), String.valueOf(port));
       }

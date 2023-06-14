@@ -48,6 +48,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.channelDetails.NotificationChannelType;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.channeldetails.WebhookChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationClientImpl;
 import io.harness.plan.PlanNode;
@@ -180,6 +181,10 @@ public class NotificationHelperTest extends CategoryTest {
       "{\"__recast\":\"java.util.ArrayList\",\"__encodedValue\":[{\"__recast\":\"io.harness.notification.bean.NotificationRules\",\"name\":\"N2\",\"enabled\":true,\"pipelineEvents\":[{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"ALL_EVENTS\",\"forStages\":null},{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"STAGE_FAILED\",\"forStages\":[\"stage1\"]}],\"notificationChannelWrapper\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expressionValue\":null,\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":{\"__recast\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"type\":\"Email\",\"notificationChannel\":{\"__recast\":\"io.harness.notification.channelDetails.PmsEmailChannel\",\"userGroups\":[],\"recipients\":[\"admin@harness.io\",\"test@harness.io\"]}}},\"valueClass\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false,\"responseField\":null}}}]}";
   Map<String, Object> notificationRulesMap =
       RecastOrchestrationUtils.toMap(RecastOrchestrationUtils.fromJson(notificationRulesString));
+  String webhookNotificationRulesString =
+      "{\"__recast\":\"java.util.ArrayList\",\"__encodedValue\":[{\"__recast\":\"io.harness.notification.bean.NotificationRules\",\"name\":\"N2\",\"enabled\":true,\"pipelineEvents\":[{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"PIPELINE_SUCCESS\"},{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"STAGE_FAILED\",\"forStages\":[\"stage1\"]}],\"notificationChannelWrapper\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":{\"__recast\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"type\":\"Webhook\",\"notificationChannel\":{\"__recast\":\"io.harness.notification.channelDetails.PmsWebhookChannel\",\"webhookUrl\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"https://www.google.com\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}}},\"valueClass\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}]}";
+  Map<String, Object> webhookNotificationRulesMap =
+      RecastOrchestrationUtils.toMap(RecastOrchestrationUtils.fromJson(webhookNotificationRulesString));
 
   @Before
   public void setup() {
@@ -303,6 +308,38 @@ public class NotificationHelperTest extends CategoryTest {
     EmailChannel notificationChannel = (EmailChannel) notificationChannelArgumentCaptor.getValue();
     assertTrue(notificationChannel.getRecipients().contains("admin@harness.io"));
     assertTrue(notificationChannel.getRecipients().contains("test@harness.io"));
+  }
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testWebhookNotification() {
+    PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
+        .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
+    when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(webhookNotificationYaml).build()));
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+    ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+        ArgumentCaptor.forClass(NotificationChannel.class);
+    doReturn(webhookNotificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+
+    notificationHelper.sendNotification(ambiance, PipelineEventType.PIPELINE_SUCCESS, nodeExecution, 1L);
+    verify(notificationClient, times(1)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    WebhookChannel webhookChannel = (WebhookChannel) notificationChannelArgumentCaptor.getValue();
+    assertThat(webhookChannel.getWebhookUrls().size()).isEqualTo(1);
+    assertThat(webhookChannel.getWebhookUrls().get(0)).isEqualTo("https://www.google.com");
   }
 
   @Test

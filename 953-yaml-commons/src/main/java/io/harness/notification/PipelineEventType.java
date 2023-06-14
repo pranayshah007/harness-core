@@ -35,6 +35,9 @@ public enum PipelineEventType {
 
   private String level;
   private String displayName;
+  public static String PIPELINE_LEVEL = "Pipeline";
+  public static String STAGE_LEVEL = "Stage";
+  public static String STEP_LEVEL = "Step";
   public static List<PipelineEventType> notifyOnlyUserEvents =
       Arrays.asList(PipelineEventType.PIPELINE_START, PipelineEventType.PIPELINE_END);
   public static List<PipelineEventType> startEvents = Arrays.asList(PIPELINE_START, STAGE_START);
@@ -48,6 +51,15 @@ public enum PipelineEventType {
     return level;
   }
 
+  public boolean isPipelineLevelEvent() {
+    return PIPELINE_LEVEL.equals(level);
+  }
+  public boolean isStageLevelEvent() {
+    return STAGE_LEVEL.equals(level);
+  }
+  public boolean isStepLevelEvent() {
+    return STEP_LEVEL.equals(level);
+  }
   public String getDisplayName() {
     return displayName;
   }
