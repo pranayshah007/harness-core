@@ -89,6 +89,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
@@ -120,6 +121,7 @@ import retrofit2.http.Body;
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
     })
 @NextGenManagerAuth
+@Slf4j
 public class UserGroupResource {
   private final UserGroupService userGroupService;
   private final AccessControlClient accessControlClient;
@@ -579,13 +581,13 @@ public class UserGroupResource {
 
   private void checkExternallyManaged(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    if (isExternallyManaged) {
+    if (isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
       throw new InvalidRequestException("This API call is not supported for externally managed group" + identifier);
     }
   }
 
   private boolean isExternallyManaged(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)
+    return userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 }
