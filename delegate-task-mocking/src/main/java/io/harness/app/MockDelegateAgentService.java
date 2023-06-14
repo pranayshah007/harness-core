@@ -5,21 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service.mock;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
+package io.harness.app;
 
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
-
+import lombok.extern.slf4j.Slf4j;
 import software.wings.beans.TaskType;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 @Slf4j
 public class MockDelegateAgentService extends SimpleDelegateAgent<DelegateTaskPackage> {
@@ -40,7 +39,7 @@ public class MockDelegateAgentService extends SimpleDelegateAgent<DelegateTaskPa
 
   @Override
   protected void executeTask(final DelegateTaskPackage delegateTaskPackage) {
-    throw new UnsupportedOperationException("Operation Not supported yet");
+    System.out.println("Not supported");
   }
 
   @Override

@@ -1,13 +1,18 @@
 package io.harness.util;
 
 import com.google.common.io.Resources;
+import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.serializer.YamlUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Slf4j
 public class CSVParser {
@@ -40,6 +45,19 @@ public class CSVParser {
         }
         System.out.println(testCases);
         return testCases;
+    }
+
+    public static DelegateConfiguration readConfigFile(String filePath) {
+        try {
+            byte[] bytes = Resources.toByteArray(CSVParser.class.getClassLoader().getResource(filePath));
+            csvData = new String(bytes);
+            return new YamlUtils().read(csvData, DelegateConfiguration.class);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static List<DataConfiguration> readFromString(String fileContent) {

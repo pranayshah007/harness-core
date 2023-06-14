@@ -9,7 +9,7 @@ LABEL name="harness/delegate" \
       vendor="Harness" \
       maintainer="Harness"
 
-RUN microdnf update --nodocs \
+RUN microdnf update --nodocs --setopt=install_weak_deps=0 \
   && microdnf install --nodocs \
     procps \
     hostname \

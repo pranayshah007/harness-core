@@ -1,0 +1,20 @@
+accountId: BrV1FxjjQN-ITiIOlMZGVA
+delegateToken: b010e0e04fbaa8f219dea6f052f92500
+dynamicHandlingOfRequestEnabled: false
+managerUrl: https://qa.harness.io/api/
+verificationServiceUrl: https://qa.harness.io/verification/
+cvNextGenUrl: https://qa.harness.io/cv/api/
+watcherCheckLocation: https://qa.harness.io/public/pr/premium/watchers/current.version
+heartbeatIntervalMs: 50000
+doUpgrade: true
+localDiskPath: /tmp
+maxCachedArtifacts: 2
+pollForTasks: false
+useCdn: true
+cdnUrl: https://qa.harness.io
+grpcServiceEnabled:
+grpcServiceConnectorPort:
+logStreamingServiceBaseUrl: https://qa.harness.io/log-service/
+clientToolsDownloadDisabled: false
+installClientToolsInBackground: true
+isLocalNgDelegate: true

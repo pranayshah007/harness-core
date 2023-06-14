@@ -7,7 +7,9 @@ import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateTaskEvent;
+import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.service.mock.MockDelegateAgentService;
 import io.harness.security.TokenGenerator;
 import io.harness.security.X509TrustManagerBuilder;
 
@@ -48,7 +50,7 @@ import java.util.concurrent.Future;
 
 
 @Slf4j
-public class Websocket{
+public class Websocket extends MockDelegateAgentService {
     private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
     private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
     private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
@@ -221,8 +223,8 @@ public class Websocket{
         try {
         currentlyAcquiringTasks.add(delegateTaskId);
 
-        request.acquireTask(env,delegateTaskId,delegateId,accountId,strToken);
-        executeTask(delegateTaskEvent);
+        acquireTask(delegateTaskId);
+        //executeTask(delegateTaskEvent);
         System.out.println("threadPoolExecutor.getCompletedTaskCount() : " + threadPoolExecutor.getCompletedTaskCount());
     } catch (Exception ex) {
         log.error("Exception while acquiring task {}",ex);
@@ -231,16 +233,17 @@ public class Websocket{
         currentlyExecutingFutures.remove(delegateTaskId);
     }
     }
-    private void executeTask(DelegateTaskEvent delegateTaskEvent) throws Exception{
-        taskResponse = new TaskResponse();
-        final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
-        String strToken = tokenGenerator.getToken("https", "localhost", 9090, "test-0");
-        delegateTaskResponse = taskResponse.getTaskResponse(delegateTaskEvent, delegateId);
-        Thread.sleep(waitTime*1000);
-        if (delegateTaskResponse != null) {
-            request.executeTask(delegateTaskResponse,delegateTaskId,delegateId,accountId,strToken, injector, env);
-        }
-    }
+
+//    private void executeTask(DelegateTaskEvent delegateTaskEvent) throws Exception{
+//        taskResponse = new TaskResponse();
+//        final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
+//        String strToken = tokenGenerator.getToken("https", "localhost", 9090, "test-0");
+//        delegateTaskResponse = taskResponse.getTaskResponse(delegateTaskEvent, delegateId);
+//        Thread.sleep(waitTime*1000);
+//        if (delegateTaskResponse != null) {
+//            request.executeTask(delegateTaskResponse,delegateTaskId,delegateId,accountId,strToken, injector, env);
+//        }
+//    }
 
     private RequestBuilder prepareRequestBuilder (String accountId, String delegateId, String
             delegateTokenName, String delegateConnectionId, String version) throws Exception {
