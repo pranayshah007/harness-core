@@ -167,7 +167,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       instanceBillingDataList = billingDataReader.getNext();
       List<ClusterBillingData> clusterBillingDataList =
           getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
-      log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
+      log.info("clusterBillingDataList size: {}", clusterBillingDataList.size());
       writeDataToAvro(
           jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
       avroFileWithSchemaExists = true;
