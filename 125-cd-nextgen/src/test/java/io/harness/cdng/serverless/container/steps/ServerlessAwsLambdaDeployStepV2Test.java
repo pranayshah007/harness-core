@@ -81,8 +81,8 @@ public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
     public void testGetAnyOutComeForStep() {
         String accountId = "accountId";
         Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-        ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters =
-                ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
+        ServerlessAwsLambdaDeployStepV2Parameters stepParameters =
+                ServerlessAwsLambdaDeployStepV2Parameters.infoBuilder()
                         .image(ParameterField.<String>builder().value("sdaf").build())
                         .build();
         StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
@@ -152,8 +152,8 @@ public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
                 .when(serverlessAwsLambdaDeployV2Step)
                 .getUnitStep(any(), any(), any(), any(), any(), any());
 
-        ServerlessAwsLambdaPrepareRollbackContainerStepParameters stepParameters =
-                ServerlessAwsLambdaPrepareRollbackContainerStepParameters.infoBuilder()
+        ServerlessAwsLambdaDeployStepV2Parameters stepParameters =
+                ServerlessAwsLambdaDeployStepV2Parameters.infoBuilder()
                         .image(ParameterField.<String>builder().value("sdaf").build())
                         .build();
         StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();

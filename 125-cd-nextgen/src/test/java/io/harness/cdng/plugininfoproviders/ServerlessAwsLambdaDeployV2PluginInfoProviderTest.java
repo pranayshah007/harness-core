@@ -99,13 +99,13 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-        ServerlessAwsLambdaPrepareRollbackContainerStepInfo.infoBuilder()
+    ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info =
+            ServerlessAwsLambdaDeployStepV2Info.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
-    doReturn(serverlessAwsLambdaPrepareRollbackContainerStepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(serverlessAwsLambdaDeployStepV2Info).when(cdAbstractStepNode).getStepSpecType();
     doReturn(Collections.emptyMap())
         .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
         .getEnvironmentVariables(any(), any());
@@ -140,7 +140,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
                                   .paths(ParameterField.<List<String>>builder().value(paths).build())
                                   .build();
     ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info =
-            ServerlessAwsLambdaDeployStepV2Info.infoBuilder().build();
+            ServerlessAwsLambdaDeployStepV2Info.infoBuilder().deployCommandOptions(ParameterField.createValueField(Collections.emptyList())).build();
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
         ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();
