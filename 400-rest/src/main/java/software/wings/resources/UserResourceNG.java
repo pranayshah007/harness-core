@@ -358,7 +358,7 @@ public class UserResourceNG {
   @GET
   @Path("/{userId}")
   public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
-      @QueryParam("includeSupportAccounts") @DefaultValue("false") boolean includeSupportAccounts) {
+      @QueryParam("includeSupportAccounts") @DefaultValue("false") Boolean includeSupportAccounts) {
     try {
       User user = userService.get(userId);
       if (includeSupportAccounts) {
