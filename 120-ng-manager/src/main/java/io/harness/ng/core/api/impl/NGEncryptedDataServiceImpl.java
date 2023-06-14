@@ -81,6 +81,7 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.BaseVaultConfig;
@@ -158,7 +159,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     validateSecretDoesNotExist(
         accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier());
     SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
-    secret.setSecretManagerIdentifier("org."+ secret.getSecretManagerIdentifier());
+    secret.setSecretManagerIdentifier("org.kmsjen");
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), secret.getSecretManagerIdentifier(), false);
 
@@ -882,8 +883,13 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     if (identifier == null) {
       return getLocalEncryptionConfig(accountIdentifier);
     }
-    return ngConnectorSecretManagerService.getUsingIdentifier(
-        accountIdentifier, orgIdentifier, projectIdentifier, identifier, maskSecrets);
+    // abstract scope from secret identifier
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getConnectorIdentifierRef(identifier, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    return ngConnectorSecretManagerService.getUsingIdentifier(connectorRef.getAccountIdentifier(),
+        connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier(),
+        maskSecrets);
   }
 
   private boolean isReadOnlySecretManager(SecretManagerConfigDTO secretManager) {
