@@ -56,6 +56,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   ProxyEnvVariableUtils proxyEnvVariableUtils;
 
   private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
+  private static final String TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL = "API_BASE_URL";
 
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
   private static final String SUFFIX_FOR_BITBUCKET_SERVER_PAT = "_Server_Pat";
@@ -149,8 +150,21 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     ConnectorType connectorType = connectorInfoDTO.getConnectorType();
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     String connectorTypeAsString = connectorType.toString();
+    String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
+    log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
+    integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
+
     if (connectorType == ConnectorType.GITHUB && GitIntegrationUtils.checkIfGithubAppConnector(connectorInfoDTO)) {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
+    }
+
+    if (connectorType == ConnectorType.GITHUB) {
+      integrationConfigs = integrationConfigs.replace(
+          TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL, getGithubApiBaseUrlFromHost(host));
+
+      if (GitIntegrationUtils.checkIfGithubAppConnector(connectorInfoDTO)) {
+        connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
+      }
     }
 
     if (connectorType == ConnectorType.BITBUCKET
@@ -166,10 +180,6 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     if (connectorType == ConnectorType.BITBUCKET && host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_CLOUD;
     }
-
-    String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
-    log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
-    integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
 
     String schemaForIntegrations =
         ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(connectorTypeAsString);
@@ -213,5 +223,10 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
         catalogConnectorEntity.getConnectorIdentifier());
     return savedCatalogConnectorEntity;
+  }
+
+  private String getGithubApiBaseUrlFromHost(String host) {
+    return (host.equals("github.com")) ? String.format("https://api.%s", host)
+                                       : String.format("https://%s/api/v3", host);
   }
 }

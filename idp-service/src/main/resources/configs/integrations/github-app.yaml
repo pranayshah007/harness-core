@@ -1,7 +1,7 @@
 integrations:
   github:
     - host: HOST_VALUE
-      apiBaseUrl: https://HOST_VALUE/api/v3
+      apiBaseUrl: API_BASE_URL
       apps:
         - appId: ${HARNESS_GITHUB_APP_APPLICATION_ID}
           clientId: dummy
