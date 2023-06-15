@@ -15,8 +15,10 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -25,7 +27,7 @@ public class JsonFunctorTest extends CategoryTest {
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void shouldNotResolveObjectsViaJsonSelect() {
-    JsonFunctor jsonFunctor = new JsonFunctor(false);
+    JsonFunctor jsonFunctor = new JsonFunctor(buildContextMap(false));
     assertThat(
         jsonFunctor.select("[0].releaseCommitId", "[{\"releaseCommitId\":\"6a68065\"},{\"releaseCommitId\":123}]"))
         .isEqualTo("6a68065");
@@ -44,7 +46,7 @@ public class JsonFunctorTest extends CategoryTest {
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void shouldResolveObjectsViaJsonSelect() {
-    JsonFunctor jsonFunctor = new JsonFunctor(true);
+    JsonFunctor jsonFunctor = new JsonFunctor(buildContextMap(true));
     List<Object> values = new LinkedList<>();
     values.add("6a68065");
     values.add(123);
@@ -60,5 +62,14 @@ public class JsonFunctorTest extends CategoryTest {
     assertThat(
         jsonFunctor.select(".[1].releaseCommitId", "[{\"releaseCommitId\":\"6a68065\"},{\"releaseCommitId\":123}]"))
         .isEqualTo(values);
+  }
+
+  private Map<String, Object> buildContextMap(boolean resolveObjectsViaJSONSelect) {
+    if (resolveObjectsViaJSONSelect) {
+      Map<String, Object> contextMap = new HashMap<>();
+      contextMap.put("resolveObjectsViaJSONSelect", String.valueOf(true));
+      return contextMap;
+    }
+    return null;
   }
 }
