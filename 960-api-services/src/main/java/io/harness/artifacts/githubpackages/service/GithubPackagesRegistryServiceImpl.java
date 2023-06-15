@@ -36,6 +36,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
+import io.harness.network.Http;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -44,6 +45,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,14 +54,21 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Credentials;
 import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
+  private static final int HTTP_CLIENT_TIMEOUT_SECONDS = 600;
+
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
   @Inject private DockerRegistryUtils dockerRegistryUtils;
   @Inject private DockerRegistryServiceImpl dockerRegistryService;
@@ -215,6 +224,31 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     return "";
   }
+
+  @Override
+  public Pair<String, InputStream> downloadArtifactByUrl(
+      GithubPackagesInternalConfig githubPackagesInternalConfig, String artifactName, String artifactUrl) {
+    try {
+      if (githubPackagesInternalConfig.hasCredentials()) {
+        OkHttpClient okHttpClient =
+            Http.getUnsafeOkHttpClient(artifactUrl, HTTP_CLIENT_TIMEOUT_SECONDS, HTTP_CLIENT_TIMEOUT_SECONDS);
+        Request request = new Request.Builder()
+                              .url(artifactUrl)
+                              .header("Authorization",
+                                  Credentials.basic(githubPackagesInternalConfig.getUsername(),
+                                      new String(githubPackagesInternalConfig.getToken())))
+                              .build();
+
+        return ImmutablePair.of(artifactName, okHttpClient.newCall(request).execute().body().byteStream());
+      }
+
+      return ImmutablePair.of(artifactName,
+          Http.getResponseStreamFromUrl(artifactUrl, HTTP_CLIENT_TIMEOUT_SECONDS, HTTP_CLIENT_TIMEOUT_SECONDS));
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ExceptionUtils.getMessage(ex), ex);
+    }
+  }
+
   private List<Map<String, String>> getPackages(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org) throws IOException {
     GithubPackagesRestClient githubPackagesRestClient =
