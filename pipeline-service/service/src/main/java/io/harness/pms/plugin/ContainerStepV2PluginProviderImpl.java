@@ -27,9 +27,7 @@ import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
 import io.harness.pms.contracts.plan.PortDetails;
-import io.harness.pms.contracts.steps.SdkStep;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -58,7 +56,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginProvider {
-  @Inject PmsSdkInstanceService pmsSdkInstanceService;
   @Inject
   Map<ModuleType, PluginInfoProviderServiceGrpc.PluginInfoProviderServiceBlockingStub>
       pluginInfoProviderServiceBlockingStubMap;
@@ -200,14 +197,12 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
     if (isEmpty(type)) {
       return Optional.empty();
     }
-    Map<String, Set<SdkStep>> sdkSteps = pmsSdkInstanceService.getSdkSteps();
+    Map<String, List<String>> sdkSteps = containerExecutionConfig.getModuleToSupportedSteps();
     return sdkSteps.entrySet()
         .stream()
         .map(moduleSdkStepMap -> {
-          Optional<SdkStep> step = moduleSdkStepMap.getValue()
-                                       .stream()
-                                       .filter(sdkStep -> sdkStep.getStepType().getType().equals(type))
-                                       .findFirst();
+          Optional<String> step =
+              moduleSdkStepMap.getValue().stream().filter(sdkStep -> sdkStep.equals(type)).findFirst();
           if (step.isPresent()) {
             return moduleSdkStepMap.getKey();
           }
