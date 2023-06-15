@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -80,8 +81,13 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
     }
     return new DescribeRepositoriesResult();
   }
-  private Repository getRepository(AwsInternalConfig awsConfig, String region, String repositoryName) {
+
+  private Repository getRepository(
+      AwsInternalConfig awsConfig, String registryId, String region, String repositoryName) {
     DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
+    if (StringUtils.isNotBlank(registryId)) {
+      describeRepositoriesRequest.setRegistryId(registryId);
+    }
     describeRepositoriesRequest.setRepositoryNames(Lists.newArrayList(repositoryName));
     DescribeRepositoriesResult describeRepositoriesResult =
         listRepositories(awsConfig, describeRepositoriesRequest, region);
@@ -92,10 +98,11 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
     return null;
   }
 
-  public String getEcrImageUrl(AwsInternalConfig awsConfig, String region, String imageName) {
-    Repository repository = getRepository(awsConfig, region, imageName);
+  public String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
+    Repository repository = getRepository(awsConfig, registryId, region, imageName);
     return repository != null ? repository.getRepositoryUri() : null;
   }
+
   public String getAmazonEcrAuthToken(AwsInternalConfig awsConfig, String awsAccount, String region) {
     try (CloseableAmazonWebServiceClient<AmazonECRClient> closeableAmazonECRClient =
              new CloseableAmazonWebServiceClient(getAmazonEcrClient(awsConfig, region))) {

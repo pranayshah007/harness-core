@@ -8,27 +8,25 @@
 package io.harness.idp.configmanager.resource;
 
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
-import static io.harness.idp.common.Constants.IDP_PERMISSION;
-import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
-import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.service.PluginsProxyInfoService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigResponse;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
+import io.harness.spec.server.idp.v1.model.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.List;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
   private final ConfigManagerService configManagerService;
+  BackstageEnvVariableService backstageEnvVariableService;
+
+  PluginsProxyInfoService pluginsProxyInfoService;
   private final IdpCommonService idpCommonService;
   private final NamespaceService namespaceService;
   private final String backstageAppBaseUrl;
@@ -47,21 +48,23 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
   public MergedPluginsConfigApiImpl(@Named("backstageAppBaseUrl") String backstageAppBaseUrl,
       @Named("backstagePostgresHost") String backstagePostgresHost,
       @Named("backstageHttpClientConfig") ServiceHttpClientConfig backstageHttpClientConfig,
-      NamespaceService namespaceService, IdpCommonService idpCommonService, ConfigManagerService configManagerService) {
+      NamespaceService namespaceService, IdpCommonService idpCommonService, ConfigManagerService configManagerService,
+      BackstageEnvVariableService backstageEnvVariableService, PluginsProxyInfoService pluginsProxyInfoService) {
     this.backstageAppBaseUrl = backstageAppBaseUrl;
     this.backstageBackendBaseUrl = backstageHttpClientConfig.getBaseUrl();
     this.backstagePostgresHost = backstagePostgresHost;
     this.namespaceService = namespaceService;
     this.idpCommonService = idpCommonService;
     this.configManagerService = configManagerService;
+    this.backstageEnvVariableService = backstageEnvVariableService;
+    this.pluginsProxyInfoService = pluginsProxyInfoService;
   }
   private static final String APP_CONFIG_PATH = "app-config.yml";
   private static final String BASE_CONFIG_NAME = "backstage-base-config";
   private static final String OVERRIDE_CONFIG_NAME = "backstage-override-config";
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getMergedPluginsConfig(@AccountIdentifier String accountIdentifier) {
+  public Response getMergedPluginsConfig(String accountIdentifier) {
     try {
       MergedPluginConfigs mergedEnabledPluginAppConfigsForAccount =
           configManagerService.mergeEnabledPluginConfigsForAccount(accountIdentifier);
@@ -103,5 +106,26 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
           .build();
     }
     return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @Override
+  public Response updateConfigurationEntities(ConfigurationEntities body, String accountIdentifier) {
+    try {
+      List<BackstageEnvVariable> resposneBackstageEnvVariablesList =
+          backstageEnvVariableService.createOrUpdate(body.getEnvVariables(), accountIdentifier);
+
+      List<ProxyHostDetail> responseProxyHostDetailList =
+          pluginsProxyInfoService.updateProxyHostDetailsForHostValues(body.getProxy(), accountIdentifier);
+
+      ConfigurationEntities configurationEntities = new ConfigurationEntities();
+      configurationEntities.setEnvVariables(resposneBackstageEnvVariablesList);
+      configurationEntities.setProxy(responseProxyHostDetailList);
+      return Response.status(Response.Status.OK).entity(configurationEntities).build();
+    } catch (Exception e) {
+      log.error("Error in updating the configuration entities - {}", accountIdentifier, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 }

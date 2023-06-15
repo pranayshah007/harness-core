@@ -9,6 +9,7 @@ package software.wings.sm.states.rancher;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.exception.ExceptionUtils.getMessage;
@@ -27,8 +28,10 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.tasks.ResponseData;
 
@@ -89,6 +92,7 @@ public class RancherResolveState extends State {
   @Inject private transient InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private transient ActivityService activityService;
   @Inject private SecretManager secretManager;
+  @Inject private FeatureFlagService featureFlagService;
   @Inject K8sStateHelper k8sStateHelper;
   @Getter @Setter @Attributes(title = "Timeout (Minutes)") @DefaultValue("10") private Integer stateTimeoutInMinutes;
 
@@ -148,11 +152,15 @@ public class RancherResolveState extends State {
 
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManager.getEncryptionDetails(rancherConfig, context.getAppId(), context.getWorkflowExecutionId());
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
 
     RancherResolveClustersTaskParameters rancherResolveClustersTaskParameters =
         RancherResolveClustersTaskParameters.builder()
             .rancherConfig(rancherConfig)
             .encryptedDataDetails(encryptedDataDetails)
+            .timeout(stateTimeoutInMinutes)
+            .timeoutSupported(isTimeoutFailureSupported)
             .clusterSelectionCriteria(((RancherKubernetesInfrastructure) infrastructureDefinition.getInfrastructure())
                                           .getClusterSelectionCriteria())
             .activityId(activityId)
@@ -230,6 +238,14 @@ public class RancherResolveState extends State {
         context.getAppId(), executionResponse.getExecutionStatus());
 
     if (ExecutionStatus.FAILED == executionResponse.getExecutionStatus()) {
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionResponse.getExecutionStatus())
+            .failureTypes(FailureType.TIMEOUT)
+            .stateExecutionData(context.getStateExecutionData())
+            .errorMessage("Timed out while waiting for task to complete")
+            .build();
+      }
       return ExecutionResponse.builder()
           .executionStatus(executionResponse.getExecutionStatus())
           .stateExecutionData(context.getStateExecutionData())

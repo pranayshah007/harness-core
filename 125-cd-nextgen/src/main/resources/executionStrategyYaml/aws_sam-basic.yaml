@@ -1,0 +1,65 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          steps:
+            - step:
+                type: Background
+                name: dind
+                identifier: dind
+                spec:
+                  connectorRef: account.harnessImage
+                  image: docker:dind
+                  shell: Sh
+                  privileged: true
+                when:
+                  stageStatus: Success
+                failureStrategies: []
+            - step:
+                type: DownloadManifests
+                name: DownloadManifests
+                identifier: DownloadManifests
+                spec: {}
+                failureStrategies: []
+            - step:
+                type: AwsSamBuild
+                name: SAM Build
+                identifier: SAM_Build
+                spec:
+                  connectorRef: account.harnessImage
+                  image: harnessdev/sam-build:1.82.0-latest
+                  imagePullPolicy: Always
+                  samBuildDockerRegistryConnectorRef: account.harnessImage
+                  settings: {}
+                when:
+                  stageStatus: Success
+                failureStrategies: []
+            - step:
+                type: AwsSamDeploy
+                name: SAM Deploy
+                identifier: SAM_Deploy
+                spec:
+                  connectorRef: account.harnessImage
+                  image: harnessdev/sam-deploy:1.82.0-latest
+                  stackName: "stack-name"
+                  imagePullPolicy: Always
+                  settings: {}
+                when:
+                  stageStatus: Success
+                failureStrategies: []
+          name: SAM Step Group
+          identifier: sam_step_group
+          stepGroupInfra:
+            type: KubernetesDirect
+            spec:
+              connectorRef: ""
+              namespace: ""
+              harnessImageConnectorRef: ""
+              resources: {}
+    rollbackSteps: []

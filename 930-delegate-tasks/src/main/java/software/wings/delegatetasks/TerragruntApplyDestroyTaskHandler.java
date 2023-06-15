@@ -29,6 +29,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.cli.CliResponse;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.provision.TerragruntConstants;
@@ -58,6 +59,7 @@ import org.jetbrains.annotations.NotNull;
 public class TerragruntApplyDestroyTaskHandler {
   @Inject private TerragruntClient terragruntClient;
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
+  @Inject private HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
 
   public TerragruntDelegateTaskOutput executeApplyTask(TerragruntProvisionParameters provisionParameters,
       TerragruntCliCommandRequestParams cliCommandRequestParams, DelegateLogService delegateLogService, String planName,
@@ -229,8 +231,15 @@ public class TerragruntApplyDestroyTaskHandler {
       TerragruntProvisionParameters parameters, String scriptDirectory, String planName) throws IOException {
     File tfPlanFile = Paths.get(scriptDirectory, planName).toFile();
 
-    byte[] decryptedTerraformPlan =
-        encryptDecryptHelper.getDecryptedContent(parameters.getSecretManagerConfig(), parameters.getEncryptedTfPlan());
+    byte[] decryptedTerraformPlan;
+
+    if (parameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+      decryptedTerraformPlan = harnessSMEncryptionDecryptionHandler.getDecryptedContent(
+          parameters.getSecretManagerConfig(), parameters.getEncryptedTfPlan(), false);
+    } else {
+      decryptedTerraformPlan = encryptDecryptHelper.getDecryptedContent(
+          parameters.getSecretManagerConfig(), parameters.getEncryptedTfPlan());
+    }
 
     FileUtils.copyInputStreamToFile(new ByteArrayInputStream(decryptedTerraformPlan), tfPlanFile);
   }

@@ -58,8 +58,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         original, POST_EXECUTION_ROLLBACK, null, Collections.singletonList("s1"));
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
   }
 
@@ -80,8 +80,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
   }
 
@@ -112,13 +112,13 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s3\"\n"
-        + "  - parallel:\n"
         + "    - stage:\n"
-        + "        identifier: \"s1\"\n"
-        + "    - stage:\n"
-        + "        identifier: \"s2\"\n";
+        + "        identifier: s3\n"
+        + "    - parallel:\n"
+        + "        - stage:\n"
+        + "            identifier: s1\n"
+        + "        - stage:\n"
+        + "            identifier: s2\n";
     assertThat(transformedYaml).isEqualTo(expected);
   }
 
@@ -140,11 +140,11 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "  - parallel:\n"
-        + "    - stage:\n"
-        + "        identifier: \"s1\"\n"
-        + "    - stage:\n"
-        + "        identifier: \"s2\"\n";
+        + "    - parallel:\n"
+        + "        - stage:\n"
+        + "            identifier: s1\n"
+        + "        - stage:\n"
+        + "            identifier: s2\n";
     assertThat(transformedYaml).isEqualTo(expected);
   }
 }

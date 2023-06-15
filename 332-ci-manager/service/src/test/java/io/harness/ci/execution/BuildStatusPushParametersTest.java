@@ -27,10 +27,12 @@ import static org.mockito.Mockito.when;
 import io.harness.PipelineUtils;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -66,6 +68,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Mock AzureRepoConnectorDTO azureGitConfigDTO;
   @Mock private PipelineUtils pipelineUtils;
   @Mock private ConnectorDetails connectorDetails;
+  @Mock CIFeatureFlagService featureFlagService;
   @InjectMocks private GitBuildStatusUtility gitBuildStatusUtility;
   private Ambiance ambiance = Ambiance.newBuilder()
                                   .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
@@ -80,6 +83,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Before
   public void setup() {
     on(gitBuildStatusUtility).set("ngBaseUrl", "https://app.harness.io/ng/#");
+    when(featureFlagService.isEnabled(FeatureName.CI_BITBUCKET_STATUS_KEY_HASH, "accountId")).thenReturn(false);
   }
 
   @Test
@@ -177,6 +181,33 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
             "Execution status of Pipeline - longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline (executionuuid) Stage - longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongName was SUCCEEDED");
 
     assertThat(pushParameters.getIdentifier()).isEqualTo("longlonglonglong...-longlonglonglong...");
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testIdentifierGenerationBBSaasFFEnabled() throws IOException {
+    when(featureFlagService.isEnabled(FeatureName.CI_BITBUCKET_STATUS_KEY_HASH, "accountId")).thenReturn(true);
+    prepareRepoLevelConnector("https://bitbucket.org/invastsecjp/sumo-report-batch-worker", null);
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder()
+            .setExecutionUuid("executionuuid")
+            .setPipelineIdentifier(
+                "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline")
+            .build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter = getBuildStatusUpdateParameter(
+        "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongId",
+        "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongName");
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getDesc())
+        .isEqualTo(
+            "Execution status of Pipeline - longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline (executionuuid) Stage - longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongName was SUCCEEDED");
+
+    assertThat(pushParameters.getIdentifier()).isEqualTo("longlonglonglong...-longlonglon...2ae61");
   }
 
   @Test

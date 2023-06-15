@@ -54,7 +54,8 @@ public class FavoritesValidator {
   }
 
   private void checkIfUserExist(FavoriteDTO favoriteDTO, String accountIdentifier) {
-    Optional<UserInfo> userInfoOptional = CGRestUtils.getResponse(userClient.getUserById(favoriteDTO.getUserId()));
+    Optional<UserInfo> userInfoOptional =
+        CGRestUtils.getResponse(userClient.getUserById(favoriteDTO.getUserId(), false));
     if (userInfoOptional.isEmpty()) {
       log.error("User doesn't exist, for the user {}, in account {}", favoriteDTO.getUserId(), accountIdentifier);
       throw new InvalidRequestException("User doesn't exist");
@@ -93,7 +94,7 @@ public class FavoritesValidator {
     checkIfUserExist(favoriteDTO, accountIdentifier);
     // Resource existence check
     boolean resourceExist = true;
-    switch (EnumUtils.getEnum(ResourceType.class, favoriteDTO.getResourceType())) {
+    switch (EnumUtils.getEnum(ResourceType.class, favoriteDTO.getResourceType().toString())) {
       case CONNECTOR:
         resourceExist = doesConnectorExist(favoriteDTO, accountIdentifier);
         break;
@@ -114,7 +115,9 @@ public class FavoritesValidator {
     if (!resourceExist) {
       log.error("The Resource with ID {} and type {}, which is being marked as favorite does not exist in account {}",
           favoriteDTO.getResourceId(), favoriteDTO.getResourceType(), accountIdentifier);
-      throw new InvalidRequestException("The resource does not exist");
+      throw new InvalidRequestException(String.format(
+          "The Resource with ID [%s] and type [%s], which is being marked as favorite does not exist in account [%s]",
+          favoriteDTO.getResourceId(), favoriteDTO.getResourceType(), accountIdentifier));
     }
   }
 }

@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -47,13 +48,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private K8sClient k8sClient;
   private NamespaceService namespaceService;
   private ConfigEnvVariablesService configEnvVariablesService;
-
   private BackstageEnvVariableService backstageEnvVariableService;
+  private PluginsProxyInfoService pluginsProxyInfoService;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
-  private static final String PLUGIN_SAVE_UNSUCCESSFUL =
-      "Plugin config saving is unsuccessful for plugin - % in account - %s";
   private static final String NO_PLUGIN_ENABLED_FOR_ACCOUNT = "No plugin is enabled for account - %s";
   private static final String BASE_APP_CONFIG_PATH = "baseappconfig.yaml";
   private static final String BASE_APP_CONFIG_PATH_QA = "baseappconfig-qa.yaml";
@@ -73,6 +72,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       "Invalid schema for merged app-config.yaml for account - %s";
 
   private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+  private static final String HARNESS_CI_CD_PLUGIN_IDENTIFIER = "harness-ci-cd";
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
@@ -83,13 +83,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
-    Optional<AppConfigEntity> pluginConfig = appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
-        accountIdentifier, pluginId, ConfigType.PLUGIN);
-    if (pluginConfig.isEmpty()) {
+  public AppConfig getAppConfig(String accountIdentifier, String configId, ConfigType configType) {
+    Optional<AppConfigEntity> config =
+        appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(accountIdentifier, configId, configType);
+    if (config.isEmpty()) {
       return null;
     }
-    return pluginConfig.map(AppConfigMapper::toDTO).get();
+    return config.map(AppConfigMapper::toDTO).get();
   }
 
   @Override
@@ -99,11 +99,19 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
     appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
+
+    List<ProxyHostDetail> pluginProxyHostDetails =
+        pluginsProxyInfoService.insertProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
+    if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
+      appConfigEntity.setEnabled(true);
+    }
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
     AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    returnedConfig.setProxy(pluginProxyHostDetails);
     return returnedConfig;
   }
 
@@ -112,6 +120,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       throws Exception {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
+
+    List<ProxyHostDetail> proxyHostDetailList =
+        pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
@@ -120,6 +132,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    returnedConfig.setProxy(proxyHostDetailList);
     return returnedConfig;
   }
 
@@ -134,11 +147,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   @Override
   public AppConfig toggleConfigForAccount(
-      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) {
+      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) throws ExecutionException {
     AppConfigEntity updatedData = null;
     Boolean createdNewConfig = false;
 
-    if (isEnabled == true) {
+    if (isEnabled) {
       AppConfigEntity appConfigEntity =
           appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, configId);
 
@@ -162,8 +175,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       updatedData = appConfigRepository.updateConfigEnablement(accountIdentifier, configId, isEnabled, configType);
     }
 
-    if (isEnabled == false) {
+    if (!isEnabled) {
       configEnvVariablesService.deleteConfigEnvVariables(accountIdentifier, configId);
+      pluginsProxyInfoService.deleteProxyHostDetailsForPlugin(accountIdentifier, configId);
     }
 
     if (isPluginWithNoConfig(accountIdentifier, configId)) {
@@ -218,8 +232,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
             accountIdentifier, envVariablesForEnabledPlugins);
 
+    List<ProxyHostDetail> proxyHostDetailForEnabledPlugins =
+        pluginsProxyInfoService.getProxyHostDetailsForMultiplePluginIds(accountIdentifier, enabledPluginIdsForAccount);
+
     return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()))
-        .envVariables(envVariableAndSecretList);
+        .envVariables(envVariableAndSecretList)
+        .proxy(proxyHostDetailForEnabledPlugins);
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.cvng.verificationjob.services.impl;
 
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
+import static io.harness.cvng.beans.activity.ActivityVerificationStatus.IN_PROGRESS;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.VERIFICATION_FAILED;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.VERIFICATION_PASSED;
 import static io.harness.cvng.beans.job.VerificationJobType.CANARY;
@@ -1044,6 +1045,29 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(Date.from(expectedBaselineVerificationValidUntil));
   }
 
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetDeploymentVerificationJobInstanceSummary_verificationTypeIsSimple() {
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance("dev", ExecutionStatus.SUCCESS, VerificationJobType.SIMPLE);
+    DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =
+        verificationJobInstanceService.getDeploymentVerificationJobInstanceSummary(
+            Lists.newArrayList(verificationJobInstance.getUuid()));
+    assertThat(deploymentVerificationJobInstanceSummary.getEnvironmentName()).isEqualTo("Harness dev");
+    assertThat(deploymentVerificationJobInstanceSummary.getVerificationJobInstanceId())
+        .isEqualTo(verificationJobInstance.getUuid());
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityId()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityStartTime()).isZero();
+    assertThat(deploymentVerificationJobInstanceSummary.getJobName())
+        .isEqualTo(verificationJobInstance.getResolvedJob().getJobName());
+    assertThat(deploymentVerificationJobInstanceSummary.getProgressPercentage()).isEqualTo(100);
+    assertThat(deploymentVerificationJobInstanceSummary.getRisk()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getStatus()).isEqualTo(IN_PROGRESS);
+    assertThat(deploymentVerificationJobInstanceSummary.getAdditionalInfo().getType())
+        .isEqualTo(VerificationJobType.SIMPLE);
+  }
+
   private CVConfig newCVConfig() {
     return builderFactory.splunkCVConfigBuilder()
         .connectorIdentifier(connectorId)
@@ -1131,6 +1155,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         return builderFactory.testVerificationJobBuilder().build();
       case CANARY:
         return builderFactory.canaryVerificationJobBuilder().build();
+      case SIMPLE:
+        return builderFactory.simpleVerificationJobBuilder().build();
       default:
         throw new IllegalStateException("Not implemented: " + verificationJobType);
     }

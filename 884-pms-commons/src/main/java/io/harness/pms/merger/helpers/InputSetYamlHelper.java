@@ -8,6 +8,7 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityYamlRootNames;
@@ -36,6 +37,23 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class InputSetYamlHelper {
+  public JsonNode getPipelineComponent(JsonNode inputSetYaml) {
+    if (isEmpty(inputSetYaml)) {
+      return inputSetYaml;
+    }
+    JsonNode node = inputSetYaml;
+    ObjectNode innerMap = (ObjectNode) node.get("inputSet");
+    if (innerMap == null) {
+      log.error("Yaml provided is not an input set yaml. Yaml:\n" + inputSetYaml);
+      throw new InvalidRequestException("Yaml provided is not an input set yaml.");
+    }
+    JsonNode pipelineNode = innerMap.get("pipeline");
+    innerMap.removeAll();
+    innerMap.putObject("pipeline");
+    innerMap.set("pipeline", pipelineNode);
+    return innerMap;
+  }
+
   public String getPipelineComponent(String inputSetYaml) {
     try {
       if (EmptyPredicate.isEmpty(inputSetYaml)) {
@@ -51,7 +69,7 @@ public class InputSetYamlHelper {
       innerMap.removeAll();
       innerMap.putObject("pipeline");
       innerMap.set("pipeline", pipelineNode);
-      return YamlUtils.write(innerMap).replace("---\n", "");
+      return YamlUtils.writeYamlString(innerMap);
     } catch (IOException e) {
       log.error("Input set yaml is invalid. Yaml:\n" + inputSetYaml);
       throw new InvalidYamlException("Input set yaml is invalid", e);
@@ -70,7 +88,7 @@ public class InputSetYamlHelper {
         throw new InvalidRequestException("Yaml provided is not an input set yaml.");
       }
       innerMap.set("pipeline", YamlUtils.readTree(pipelineComponent).getNode().getCurrJsonNode().get("pipeline"));
-      return YamlUtils.write(node).replace("---\n", "");
+      return YamlUtils.writeYamlString(node);
     } catch (IOException e) {
       log.error("Input set yaml is invalid. Yaml:\n" + inputSetYaml);
       throw new InvalidYamlException("Input set yaml is invalid", e);
@@ -80,7 +98,7 @@ public class InputSetYamlHelper {
   public String getStringField(String yaml, String fieldName, String rootNode) {
     YamlConfig config;
     try {
-      config = new YamlConfig(yaml, true);
+      config = new YamlConfig(yaml);
     } catch (Exception e) {
       log.error("Input set yaml is invalid. Yaml:\n" + yaml);
       throw new InvalidRequestException("Input set yaml is invalid", e);
@@ -178,7 +196,7 @@ public class InputSetYamlHelper {
     }
     ObjectNode innerJsonNode = (ObjectNode) rootLevelNode.get(EntityYamlRootNames.OVERLAY_INPUT_SET);
     innerJsonNode.set(YAMLFieldNameConstants.INPUT_SET_REFERENCES, newReferencesNode);
-    return YamlUtils.write(rootLevelNode).replace("---\n", "");
+    return YamlUtils.writeYamlString(rootLevelNode);
   }
 
   public void confirmPipelineIdentifierInInputSet(String inputSetYaml, String pipelineIdentifier) {

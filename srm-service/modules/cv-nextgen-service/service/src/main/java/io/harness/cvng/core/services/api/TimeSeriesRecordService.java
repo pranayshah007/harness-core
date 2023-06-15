@@ -39,6 +39,8 @@ public interface TimeSeriesRecordService {
    * @return
    */
   List<TimeSeriesRecordDTO> getTimeSeriesRecordDTOs(String verificationTaskId, Instant startTime, Instant endTime);
+
+  List<TimeSeriesRecord> getLatestTimeSeriesRecords(String verificationTaskId, int count);
   List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts);
   TimeSeriesTestDataDTO getMetricGroupDataForRange(

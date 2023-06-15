@@ -57,7 +57,6 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
   public StepResponse executeSync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     PolicyStepSpecParameters policyStepSpecParameters = (PolicyStepSpecParameters) stepParameters.getSpec();
-    // todo(@NamanVerma): Check for unresolved expressions
     List<String> policySets = policyStepSpecParameters.getPolicySets().getValue();
     if (EmptyPredicate.isEmpty(policySets)) {
       return PolicyEvalUtils.buildFailureStepResponse(ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION,
@@ -69,8 +68,14 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
     switch (policyStepType) {
       case PolicyStepConstants.CUSTOM_POLICY_STEP_TYPE:
         CustomPolicyStepSpec customPolicySpec = (CustomPolicyStepSpec) policyStepSpecParameters.getPolicySpec();
-        // todo(@NamanVerma): Check for unresolved expressions
+        // We don't need to handle the case for unresolved expressions as expressionMode for PolicyStep is set to
+        // THROW_EXCEPTION_IF_UNRESOLVED.
         payload = customPolicySpec.getPayload().getValue();
+        if (EmptyPredicate.isEmpty(payload)) {
+          log.error("Empty custom payload is not allowed.");
+          return PolicyEvalUtils.buildFailureStepResponse(
+              ErrorCode.INVALID_JSON_PAYLOAD, "Empty custom payload is not allowed.", FailureType.UNKNOWN_FAILURE);
+        }
         if (PolicyEvalUtils.isInvalidPayload(payload)) {
           log.error("Custom payload is not a valid JSON:\n" + payload);
           return PolicyEvalUtils.buildFailureStepResponse(

@@ -9,10 +9,12 @@
     "app",
     "backend",
     "proxy",
+    "auth",
     "kubernetes",
     "kafka",
     "integrations",
-    "lighthouse"
+    "lighthouse",
+    "jenkins"
   ],
   "properties": {
     "app": {
@@ -26,6 +28,10 @@
     "proxy": {
       "$id": "#root/proxy",
       "title": "Proxy"
+    },
+    "auth": {
+      "$id": "#root/auth",
+      "title": "Auth"
     },
     "kubernetes": {
       "$id": "#root/kubernetes",
@@ -42,6 +48,10 @@
     "lighthouse": {
       "$id": "#root/lighthouse",
       "title": "Lighthouse"
+    },
+    "jenkins": {
+      "$id": "#root/jenkins",
+      "title": "Jenkins"
     }
   }
 }

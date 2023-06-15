@@ -8,7 +8,6 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -922,9 +921,6 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo toTerraformBackendFileInfo(
       TerraformBackendConfig backendConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
-      return null;
-    }
     if (backendConfig != null) {
       TerraformBackendConfigSpec spec = backendConfig.getTerraformBackendConfigSpec();
       if (spec instanceof InlineTerraformBackendConfigSpec) {
@@ -1136,9 +1132,6 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo prepareTerraformBackendConfigFileInfo(
       TerraformBackendConfigFileConfig bcFileConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
-      return null;
-    }
     if (bcFileConfig != null) {
       if (bcFileConfig instanceof TerraformInlineBackendConfigFileConfig) {
         fileInfo = InlineTerraformBackendConfigFileInfo.builder()

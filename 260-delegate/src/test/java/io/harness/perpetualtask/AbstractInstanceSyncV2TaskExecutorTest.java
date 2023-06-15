@@ -84,7 +84,7 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void runOnceTest() {
+  public void runOnceTest() throws Exception {
     MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK).build();
     ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
@@ -126,7 +126,8 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
                                      .build())
             .build();
     aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(instanceSyncTaskDetails);
-    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
+    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(
+             any(K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest.class)))
         .thenReturn(
             List.of(K8sServerInstanceInfo.builder().namespace("namespace1").releaseName("releaseName").build()));
     k8sInstanceSyncPerpetualTaskV2Executor.runOnce(
@@ -137,15 +138,25 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void runOnceFailureTest() {
+  public void runOnceFailureTest() throws Exception {
     MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
     PerpetualTaskExecutionParams params =
         PerpetualTaskExecutionParams.newBuilder()
-            .setCustomizedParams(Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
-                                              .setAccountId(ACCOUNT_IDENTIFIER)
-                                              .setOrgId(ORG_IDENTIFIER)
-                                              .setProjectId(PROJECT_IDENTIFIER)
-                                              .build()))
+            .setCustomizedParams(
+                Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
+                             .setAccountId(ACCOUNT_IDENTIFIER)
+                             .setOrgId(ORG_IDENTIFIER)
+                             .setProjectId(PROJECT_IDENTIFIER)
+                             .setEncryptedData(encryptionDetailsBytes)
+                             .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(
+                                 ConnectorInfoDTO.builder()
+                                     .connectorConfig(KubernetesClusterConfigDTO.builder()
+                                                          .credential(KubernetesCredentialDTO.builder().build())
+                                                          .build())
+
+                                     .build())))
+                             .build()))
             .build();
 
     InstanceSyncTaskDetails instanceSyncTaskDetails =
@@ -157,7 +168,8 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
                                      .build())
             .build();
     aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(instanceSyncTaskDetails);
-    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
+    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(
+             any(K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest.class)))
         .thenReturn(
             Arrays.asList(K8sServerInstanceInfo.builder().namespace("namespace1").releaseName("releaseName").build()));
     k8sInstanceSyncPerpetualTaskV2Executor.runOnce(

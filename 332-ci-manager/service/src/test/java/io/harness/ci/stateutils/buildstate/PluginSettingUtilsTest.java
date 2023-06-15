@@ -11,6 +11,7 @@ import static io.harness.ci.buildstate.PluginSettingUtils.TAG_BUILD_EVENT;
 import static io.harness.ci.buildstate.PluginSettingUtils.getRepoNameFromRepoUrl;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
@@ -602,6 +603,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_COMMIT_BRANCH, "");
     expected.put(DRONE_REMOTE_URL, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
@@ -651,6 +653,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, cloneDir);
     expected.put("PLUGIN_DEPTH", depth.toString());
+    expected.put(DRONE_COMMIT_REF, "");
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
@@ -696,6 +699,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_TAG, "");
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
     expected.putAll(gitEnvVars);
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
@@ -746,6 +750,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_TAG, "");
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
     expected.putAll(gitEnvVars);
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
@@ -819,6 +824,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_REMOTE_URL, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
     expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
@@ -975,6 +981,21 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
+  public void testBuildxRequired() {
+    DockerStepInfo dockerStepInfo1 = DockerStepInfo.builder().caching(ParameterField.createValueField(true)).build();
+    DockerStepInfo dockerStepInfo2 =
+        DockerStepInfo.builder().cacheFrom(ParameterField.createValueField(asList("cacheFrom"))).build();
+    DockerStepInfo dockerStepInfo3 =
+        DockerStepInfo.builder().cacheTo(ParameterField.createValueField("cacheTo")).build();
+
+    assertThat(pluginSettingUtils.buildxRequired(dockerStepInfo1)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(dockerStepInfo2)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(dockerStepInfo3)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
   public void testDlcSetupRequiredEcr() {
     ECRStepInfo ecrStepInfo =
         ECRStepInfo.builder()
@@ -1070,6 +1091,20 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
     assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
     assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testBuildxRequiredEcr() {
+    ECRStepInfo ecrStepInfo1 = ECRStepInfo.builder().caching(ParameterField.createValueField(true)).build();
+    ECRStepInfo ecrStepInfo2 =
+        ECRStepInfo.builder().cacheFrom(ParameterField.createValueField(asList("cacheFrom"))).build();
+    ECRStepInfo ecrStepInfo3 = ECRStepInfo.builder().cacheTo(ParameterField.createValueField("cacheTo")).build();
+
+    assertThat(pluginSettingUtils.buildxRequired(ecrStepInfo1)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(ecrStepInfo2)).isTrue();
+    assertThat(pluginSettingUtils.buildxRequired(ecrStepInfo3)).isTrue();
   }
 
   @Test

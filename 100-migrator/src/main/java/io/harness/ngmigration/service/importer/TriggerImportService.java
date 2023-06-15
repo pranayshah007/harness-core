@@ -131,8 +131,8 @@ public class TriggerImportService implements ImportService {
                                                              .build(),
                                                       yamlFile -> yamlFile));
 
-    PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
+    PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
     workflowImportService.createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO);
 
     List<Trigger> triggers = discoveryResult.getEntities()

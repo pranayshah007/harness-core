@@ -556,6 +556,37 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testDeleteSetupUsage() {
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .enabled(Boolean.TRUE)
+            .deleted(Boolean.FALSE)
+            .identifier(IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("Gitlab").build()).build())
+            .triggerStatus(TriggerStatus.builder()
+                               .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                                  .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                                                                  .build())
+                               .webhookInfo(WebhookInfo.builder().webhookId(WEBHOOK_ID).build())
+                               .build())
+            .build();
+    when(ngTriggerRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot(
+                 ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, true))
+        .thenReturn(Optional.ofNullable(ngTrigger));
+    when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.acknowledged(1));
+    ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, 2L);
+    verify(triggerSetupUsageHelper, times(1)).deleteExistingSetupUsages(ngTrigger);
+  }
+
+  @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalog() {
@@ -769,7 +800,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     ObjectNode innerMap = (ObjectNode) node.get("trigger");
     JsonNode inputYaml = innerMap.get("inputYaml");
     JsonNode pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
-    String triggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
+    String triggerPipelineYaml = YamlUtils.writeYamlString(pipelineNode);
 
     assertThat(ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, triggerPipelineYaml, ACCOUNT_ID).size())
         .isEqualTo(0);
@@ -783,7 +814,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     innerMap = (ObjectNode) node.get("trigger");
     inputYaml = innerMap.get("inputYaml");
     pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
-    String extraInputTriggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
+    String extraInputTriggerPipelineYaml = YamlUtils.writeYamlString(pipelineNode);
 
     Map<FQN, String> extraInputResult =
         ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, extraInputTriggerPipelineYaml, ACCOUNT_ID);

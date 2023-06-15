@@ -81,7 +81,7 @@ public class UserMetadataTwoFactorAuthenticationMigration implements NGMigration
   }
 
   private boolean get2FAStatus(String userId) {
-    Optional<UserInfo> userInfoOptional = CGRestUtils.getResponse(userClient.getUserById(userId));
+    Optional<UserInfo> userInfoOptional = CGRestUtils.getResponse(userClient.getUserById(userId, false));
     if (userInfoOptional.isPresent()) {
       UserInfo userInfo = userInfoOptional.get();
       return userInfo.isTwoFactorAuthenticationEnabled();

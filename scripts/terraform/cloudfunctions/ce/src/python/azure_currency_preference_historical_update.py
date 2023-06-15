@@ -91,7 +91,7 @@ def main(request):
         create_fx_rate_query(jsonData, "azureSubscriptionGuid", "startTime")
         update_costs_in_preagg_table("%s.%s" % (ds, "preAggregated"), jsonData)
 
-        ingest_data_to_costagg(jsonData)
+        # ingest_data_to_costagg(jsonData)
 
         unset_historical_update_flag_in_bq(jsonData)
 

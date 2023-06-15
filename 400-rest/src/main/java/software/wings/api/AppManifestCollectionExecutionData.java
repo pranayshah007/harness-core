@@ -44,6 +44,7 @@ public class AppManifestCollectionExecutionData extends StateExecutionData imple
   private EntityType entityType;
   private String entityId;
   private String serviceId;
+  private boolean timeoutSupported;
 
   @Override
   public Map<String, ExecutionDataValue> getExecutionSummary() {

@@ -109,7 +109,7 @@ public class JsonExpander {
   }
 
   ByteString convertToByteString(JsonNode fieldValue) {
-    String s = YamlUtils.write(fieldValue);
+    String s = YamlUtils.writeYamlString(fieldValue);
     return ByteString.copyFromUtf8(s);
   }
 }

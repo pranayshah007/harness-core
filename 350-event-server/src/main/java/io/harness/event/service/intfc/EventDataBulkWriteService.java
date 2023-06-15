@@ -7,10 +7,14 @@
 
 package io.harness.event.service.intfc;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 
 import java.util.List;
 
+@OwnedBy(CE)
 public interface EventDataBulkWriteService {
   boolean bulkInsertPublishedMessages(List<PublishedMessage> publishedMessages);
 }

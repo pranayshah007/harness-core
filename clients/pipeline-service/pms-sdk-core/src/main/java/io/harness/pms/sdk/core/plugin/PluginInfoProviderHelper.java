@@ -11,6 +11,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
@@ -27,7 +28,8 @@ public class PluginInfoProviderHelper {
   @Inject private DefaultPluginInfoProvider defaultPluginInfoProvider;
   @Inject(optional = true) private Set<PluginInfoProvider> pluginInfoProviderSet;
 
-  public PluginCreationResponseList getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseList getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     Optional<PluginInfoProvider> pluginInfoProvider = emptyIfNull(pluginInfoProviderSet)
                                                           .stream()
                                                           .map(provider -> {
@@ -41,12 +43,12 @@ public class PluginInfoProviderHelper {
                                                           .findFirst();
     if (pluginInfoProvider.isPresent()) {
       if (pluginInfoProvider.get().willReturnMultipleContainers()) {
-        return pluginInfoProvider.get().getPluginInfoList(request, usedPorts);
+        return pluginInfoProvider.get().getPluginInfoList(request, usedPorts, ambiance);
       }
-      return convertToList(pluginInfoProvider.get().getPluginInfo(request, usedPorts));
+      return convertToList(pluginInfoProvider.get().getPluginInfo(request, usedPorts, ambiance));
     }
 
-    return convertToList(defaultPluginInfoProvider.getPluginInfo(request, usedPorts));
+    return convertToList(defaultPluginInfoProvider.getPluginInfo(request, usedPorts, ambiance));
   }
 
   private PluginCreationResponseList convertToList(PluginCreationResponseWrapper response) {

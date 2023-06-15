@@ -7,7 +7,7 @@
 
 package io.harness.ccm.views.dto;
 
-import io.harness.ccm.views.entities.RecommendatioAdhocDTO;
+import io.harness.ccm.views.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 
 import java.util.List;
@@ -21,7 +21,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GovernanceAdhocEnqueueDTO {
-  Map<String, RecommendatioAdhocDTO> targetAccountDetails;
+  Map<String, RecommendationAdhocDTO> targetAccountDetails;
   List<String> targetAccounts;
   List<String> targetRegions;
   String ruleId;

@@ -1,18 +1,18 @@
 pipeline:
-  identifier: "pipeline1"
+  identifier: pipeline1
   stages:
-  - stage:
-      identifier: "sd"
-      type: "Approval"
-      description: "<+input>.executionInput()"
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: "ss"
-              type: "<+input>.executionInput()"
-              spec:
-                source:
-                  type: "Inline"
+    - stage:
+        identifier: sd
+        type: Approval
+        description: <+input>.executionInput()
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: ss
+                  type: <+input>.executionInput()
                   spec:
-                    script: "<+input>.executionInput()"
+                    source:
+                      type: Inline
+                      spec:
+                        script: <+input>.executionInput()

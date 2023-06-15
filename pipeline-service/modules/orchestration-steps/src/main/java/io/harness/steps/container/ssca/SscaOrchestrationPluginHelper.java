@@ -54,7 +54,7 @@ public class SscaOrchestrationPluginHelper {
     String format = getFormat(stepInfo);
     String sbomSource = null;
     if (stepInfo.getSource().getType().equals(SbomSourceType.IMAGE)) {
-      sbomSource = resolveStringParameter("source", SscaConstants.SSCA_ORCHESTRATION_STEP, identifier,
+      sbomSource = resolveStringParameter("source", SscaConstants.CD_SSCA_ORCHESTRATION, identifier,
           ((ImageSbomSource) stepInfo.getSource().getSbomSourceSpec()).getImage(), true);
     }
 

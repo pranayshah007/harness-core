@@ -3,3 +3,4 @@ identifier: analysis_state_machine
 labels:
   - accountId
   - analysisStateType
+  - verificationTaskId

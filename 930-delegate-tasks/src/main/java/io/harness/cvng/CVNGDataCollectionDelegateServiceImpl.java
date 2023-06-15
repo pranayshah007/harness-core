@@ -8,6 +8,9 @@
 package io.harness.cvng;
 
 import static io.harness.annotations.dev.HarnessTeam.CV;
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.REQUEST_HEADERS;
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.REQUEST_METHOD;
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.REQUEST_URL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -34,6 +37,7 @@ import com.google.inject.name.Named;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,6 +92,7 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
         log.info("Starting execution of DSL ");
         String response = JsonUtils.asJson(dataCollectionDSLService.execute(dsl, runtimeParameters, callDetails -> {
           // TODO: write unit test case for this lambda expression.
+          // TODO : Add a test case asserting entries in the cvngLog
           if (dataCollectionRequest.getTracingId() != null) {
             final ApiCallLogDTO cvngLogDTO = ApiCallLogDTO.builder()
                                                  .traceableId(dataCollectionRequest.getTracingId())
@@ -99,16 +104,31 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
                                                  .responseTime(callDetails.getResponseTime().toEpochMilli())
                                                  .build();
             cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
-                                             .name("url")
+                                             .name(REQUEST_URL)
                                              .type(ApiCallLogDTO.FieldType.URL)
                                              .value(callDetails.getRequest().request().url().toString())
                                              .build());
-
-            cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(),
-                (callDetails.getResponse() != null && callDetails.getResponse().body() != null)
-                    ? callDetails.getResponse().body()
-                    : callDetails.getResponse(),
-                ApiCallLogDTO.FieldType.JSON);
+            String method = callDetails.getRequest().request().method();
+            cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
+                                             .type(ApiCallLogDTO.FieldType.TEXT)
+                                             .name(REQUEST_METHOD)
+                                             .value(method)
+                                             .build());
+            Set<String> headerNames = callDetails.getRequest().request().headers().names();
+            if (headerNames.size() > 0) {
+              cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
+                                               .type(ApiCallLogDTO.FieldType.TEXT)
+                                               .name(REQUEST_HEADERS)
+                                               .value(JsonUtils.asJson(headerNames))
+                                               .build());
+            }
+            if (callDetails.getRequest().request().body() != null) {
+              cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
+            }
+            Object responseObj = (callDetails.getResponse() != null && callDetails.getResponse().body() != null)
+                ? callDetails.getResponse().body()
+                : callDetails.getResponse();
+            cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), responseObj, ApiCallLogDTO.FieldType.JSON);
             delegateLogService.save(accountId, cvngLogDTO);
           }
         }));

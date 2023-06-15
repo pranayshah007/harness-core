@@ -354,7 +354,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     }
 
     // resize app (upsize in swap rollback, downsize in swap state)
-    cfDeploymentManager.resizeApplication(cfRequestConfig);
+    cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
 
     return appAutoscalarRequestData;
   }

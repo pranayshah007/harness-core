@@ -244,6 +244,15 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String accountId, @NotEmpty String userId);
 
+  /**
+   * Gets the user and loads the user groups for the given account.
+   *
+   * @param userId the user id
+   * @param includeSupportAccounts include supportAccounts
+   * @return the user
+   */
+  User get(@NotEmpty String userId, boolean includeSupportAccounts);
+
   void loadSupportAccounts(User user);
 
   void loadSupportAccounts(User user, Set<String> fieldsToBeIncluded);
@@ -436,6 +445,8 @@ public interface UserService extends OwnedByAccount {
    * @return the logged-in user
    */
   User completeNGInviteAndSignIn(UserInviteDTO userInvite);
+
+  User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId);
 
   /**
    * Complete the trial user signup. Both the trial account and the account admin user will be created

@@ -71,6 +71,10 @@ public class Kubectl {
     return new ScaleCommand(this);
   }
 
+  public CreateCommand create(String manifestName) {
+    return new CreateCommand(this, manifestName);
+  }
+
   public String command() {
     StringBuilder command = new StringBuilder(128);
     if (StringUtils.isNotBlank(kubectlPath)) {

@@ -157,21 +157,21 @@ public class VmPluginStepSerializer {
       setEnvVariablesForHostedCachingSteps(stageInfraDetails, identifier, envVars, accountID);
       if (isGitCloneStep(identifier, pluginStepInfo)
           && CIStepInfoUtils.canRunVmStepOnHost(
-              GIT_CLONE, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
-        String name = ciExecutionConfigService.getContainerlessPluginNameForVM(GIT_CLONE);
+              GIT_CLONE, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService, null)) {
+        String name = ciExecutionConfigService.getContainerlessPluginNameForVM(GIT_CLONE, null);
         List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
         return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
       }
       if (identifier.equals(SAVE_CACHE_STEP_ID) || identifier.equals(RESTORE_CACHE_STEP_ID)) {
         if (CIStepInfoUtils.canRunVmStepOnHost(
-                SAVE_CACHE_S3, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)
+                SAVE_CACHE_S3, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService, null)
             && featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountID)) {
-          String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_S3);
+          String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_S3, null);
           List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
           return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
-        } else if (CIStepInfoUtils.canRunVmStepOnHost(
-                       SAVE_CACHE_GCS, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService)) {
-          String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_GCS);
+        } else if (CIStepInfoUtils.canRunVmStepOnHost(SAVE_CACHE_GCS, stageInfraDetails, accountID,
+                       ciExecutionConfigService, featureFlagService, null)) {
+          String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_GCS, null);
           List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
           return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
         }

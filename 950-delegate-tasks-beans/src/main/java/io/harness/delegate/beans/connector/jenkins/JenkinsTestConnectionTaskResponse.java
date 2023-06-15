@@ -9,14 +9,14 @@ package io.harness.delegate.beans.connector.jenkins;
 
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class JenkinsTestConnectionTaskResponse implements DelegateResponseData {
+public class JenkinsTestConnectionTaskResponse implements ConnectorValidationResponseData {
   private ConnectorValidationResult connectorValidationResult;
   private DelegateMetaInfo delegateMetaInfo;
 }

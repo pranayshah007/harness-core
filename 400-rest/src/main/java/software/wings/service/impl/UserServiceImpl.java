@@ -21,6 +21,7 @@ import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
 import static io.harness.ng.core.common.beans.Generation.CG;
 import static io.harness.ng.core.common.beans.Generation.NG;
+import static io.harness.ng.core.common.beans.UserSource.JIT;
 import static io.harness.ng.core.common.beans.UserSource.LDAP;
 import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.common.beans.UserSource.SCIM;
@@ -2135,6 +2136,29 @@ public class UserServiceImpl implements UserService {
     NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
   }
 
+  @Override
+  public User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId) {
+    User user = getUserByEmail(email);
+    if (user == null) {
+      user = anUser().build();
+      user.setEmail(email.trim().toLowerCase());
+      user.setName(email.trim().toLowerCase());
+      user.setRoles(new ArrayList<>());
+      user.setEmailVerified(true);
+      user.setAppId(GLOBAL_APP_ID);
+      user.setAccounts(new ArrayList<>());
+    }
+    user = createUser(user, accountId);
+    try {
+      NGRestUtils.getResponse(ngInviteClient.completeUserCreationForJIT(email, accountId));
+      addUserToAccount(user.getUuid(), accountId, JIT);
+    } catch (Exception ex) {
+      log.info("JIT Error: User creation call in Ng failed while provisioning user.", ex);
+      throw new WingsException("Something went wrong. Please re-try login or contact Harness Support");
+    }
+    return user;
+  }
+
   private UserSource getUserSource(boolean isScimInvite, boolean isLDAPInvite) {
     UserSource userSource = MANUAL;
     if (isScimInvite) {
@@ -3287,6 +3311,11 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
+    return get(userId, false);
+  }
+
+  @Override
+  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
@@ -3295,6 +3324,9 @@ public class UserServiceImpl implements UserService {
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {
       accounts.forEach(account -> software.wings.service.impl.LicenseUtils.decryptLicenseInfo(account, false));
+    }
+    if (includeSupportAccounts) {
+      loadSupportAccounts(user);
     }
 
     return user;
@@ -4549,12 +4581,14 @@ public class UserServiceImpl implements UserService {
     }
   }
   private void filterListForGeneration(String accountId, List<User> userList, Generation generation) {
-    Iterator<User> i = userList.iterator();
-    while (i.hasNext()) {
-      User user = i.next();
-      if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
-          && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
-        i.remove();
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      Iterator<User> i = userList.iterator();
+      while (i.hasNext()) {
+        User user = i.next();
+        if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
+            && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
+          i.remove();
+        }
       }
     }
   }

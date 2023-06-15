@@ -1,0 +1,44 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
+        "//120-ng-manager/modules/favorites/contracts/src/main/java/io/harness/favorites:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/entities:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/utils:module",
+        "//440-connector-nextgen:module",
+        "//930-ng-core-clients:module",
+        "//940-secret-manager-client:module",
+        "//950-delegate-tasks-beans:module",
+        "//950-ng-project-n-orgs:module",
+        "//954-connector-beans:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/user:module",
+        "//970-ng-commons/src/main/java/io/harness/entities:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/rest:module",
+        "//990-commons-test:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//clients/pipeline-service/pms-client:module",
+        "//pipeline-service/modules/pms-contracts:module",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)
+
+run_analysis_per_module(test_only = True)
+
+run_tests("*Test.java")

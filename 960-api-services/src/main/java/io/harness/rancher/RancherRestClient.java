@@ -10,14 +10,16 @@ package io.harness.rancher;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.QueryMap;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface RancherRestClient {
-  @GET("/v3/clusters") Call<RancherListClustersResponse> listClusters();
+  @GET("/v3/clusters") Call<RancherListClustersResponse> listClusters(@QueryMap Map<String, String> pageRequestParams);
 
   @POST("/v3/clusters/{clusterName}?action=generateKubeconfig")
   Call<RancherGenerateKubeconfigResponse> generateKubeconfig(

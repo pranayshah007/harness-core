@@ -12,6 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
+import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
+import static io.harness.k8s.model.Kind.BG_STAGE_DELETE_WORKLOAD_KINDS;
+import static io.harness.k8s.model.Kind.BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS;
+import static io.harness.k8s.model.Kind.BG_STAGE_WORKLOAD_KINDS;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.BLUE_GREEN_COLORS;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -21,7 +25,6 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.configuration.KubernetesCliCommandType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -30,11 +33,11 @@ import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -44,11 +47,9 @@ import io.harness.k8s.releasehistory.K8sRelease;
 import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,13 +66,6 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
   private Kubectl client;
   private K8sReleaseHandler releaseHandler;
   private List<KubernetesResourceId> resourceIdsToScale;
-
-  private static final Set<String> WORKLOAD_KINDS = ImmutableSet.of(
-      "Deployment", "StatefulSet", "DaemonSet", "DeploymentConfig", "HorizontalPodAutoscaler", "PodDisruptionBudget");
-  private static final Set<String> SCALE_DOWN_WORKLOAD_KINDS =
-      ImmutableSet.of("Deployment", "StatefulSet", "DaemonSet", "DeploymentConfig");
-  private static final Set<String> DELETE_WORKLOAD_KINDS =
-      ImmutableSet.of("HorizontalPodAutoscaler", "PodDisruptionBudget");
   private static final int TARGET_REPLICA_COUNT = 0;
 
   @Override
@@ -98,7 +92,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
     if (isNotEmpty(resourceIdsToScale)) {
       stageScaleDown(k8sDelegateTaskParams, scaleLogCallback);
     } else {
-      scaleLogCallback.saveExecutionLog("\nSkipping the Blue Green Stage Scale Down Step", INFO);
+      scaleLogCallback.saveExecutionLog("\nSkipping the Blue Green Stage Scale Down Step", INFO, SUCCESS);
     }
     return K8sDeployResponse.builder().commandExecutionStatus(SUCCESS).build();
   }
@@ -115,9 +109,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
 
     resourceIdsToScale = getResourceIdsToScaleDownStageEnvironment(
         releaseHistory.getLatestSuccessfulBlueGreenRelease(), k8sDelegateTaskParams, executionLogCallback);
-    if (isEmpty(resourceIdsToScale)) {
-      executionLogCallback.saveExecutionLog("\nNo Stage environment found to scale down", INFO);
-    } else {
+    if (isNotEmpty(resourceIdsToScale)) {
       executionLogCallback.saveExecutionLog(
           "Found following resources from stage release which are eligible for scale down: \n"
           + k8sTaskHelperBase.getResourcesIdsInTableFormat(resourceIdsToScale));
@@ -135,7 +127,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     List<KubernetesResourceId> resourcesToDelete =
         resourceIdsToScale.stream()
-            .filter(resourceId -> DELETE_WORKLOAD_KINDS.contains(resourceId.getKind()))
+            .filter(resourceId -> BG_STAGE_DELETE_WORKLOAD_KINDS.contains(Kind.fromString(resourceId.getKind())))
             .collect(Collectors.toList());
     List<KubernetesResourceId> deletedResources = k8sTaskHelperBase.executeDeleteHandlingPartialExecution(
         client, k8sDelegateTaskParams, resourcesToDelete, executionLogCallback, false);
@@ -147,35 +139,43 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
 
   private void scaleDownStageEnvironmentResources(
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
-    resourceIdsToScale.stream()
-        .filter(resourceId -> SCALE_DOWN_WORKLOAD_KINDS.contains(resourceId.getKind()))
-        .forEach(resourceId -> {
-          try {
-            k8sTaskHelperBase.scale(
-                client, k8sDelegateTaskParams, resourceId, TARGET_REPLICA_COUNT, executionLogCallback, true);
-          } catch (Exception ex) {
-            throw new KubernetesCliTaskRuntimeException(ex.getMessage(), KubernetesCliCommandType.SCALE);
-          }
-        });
+    for (KubernetesResourceId resourceId : resourceIdsToScale) {
+      if (BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS.contains(Kind.fromString(resourceId.getKind()))) {
+        k8sTaskHelperBase.scale(
+            client, k8sDelegateTaskParams, resourceId, TARGET_REPLICA_COUNT, executionLogCallback, true);
+      }
+    }
   }
 
   private List<KubernetesResourceId> getResourceIdsToScaleDownStageEnvironment(
       IK8sRelease release, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) {
     if (release == null) {
+      executionLogCallback.saveExecutionLog("\nNo Stage environment found to scale down", INFO);
+      return Collections.emptyList();
+    }
+    if (bgStageEnv.equals(release.getBgEnvironment())) {
+      executionLogCallback.saveExecutionLog(
+          "\nSkipping scaling down the stage environment as no primary deployment found", INFO);
       return Collections.emptyList();
     }
     String stageColor = getStageColor(release);
     if (isEmpty(stageColor)) {
+      executionLogCallback.saveExecutionLog(
+          "\nSkipping scaling down the stage environment as the release has invalid BG color", INFO);
       return Collections.emptyList();
     }
-    String regex = k8sBGBaseHandler.getInverseColor(stageColor) + "$";
+    String primaryColor = k8sBGBaseHandler.getInverseColor(stageColor);
+    String regex = primaryColor + "$";
     return release.getResourceIds()
         .stream()
-        .filter(k8sResourceId -> WORKLOAD_KINDS.contains(k8sResourceId.getKind()))
+        .filter(k8sResourceId
+            -> BG_STAGE_WORKLOAD_KINDS.contains(Kind.fromString(k8sResourceId.getKind()))
+                && k8sResourceId.getName().endsWith(primaryColor))
         .peek(k8sResourceId -> k8sResourceId.setName(k8sResourceId.getName().replaceAll(regex, stageColor)))
         .filter(k8sResourceId
-            -> k8sTaskHelperBase.checkIfResourceExists(
+            -> k8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(
                 client, k8sDelegateTaskParams, k8sResourceId, executionLogCallback))
+        .distinct()
         .collect(Collectors.toList());
   }
 

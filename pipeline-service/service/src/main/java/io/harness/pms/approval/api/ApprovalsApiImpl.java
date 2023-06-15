@@ -16,10 +16,12 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalResourceService;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.ApprovalsApi;
 import io.harness.spec.server.pipeline.v1.model.ApprovalInstanceResponseBody;
@@ -42,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApprovalsApiImpl implements ApprovalsApi {
   private final ApprovalResourceService approvalResourceService;
+  private final PMSExecutionService pmsExecutionService;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
@@ -73,6 +76,19 @@ public class ApprovalsApiImpl implements ApprovalsApi {
             String.format("approval_status param value should be one of %s", Arrays.toString(ApprovalStatus.values())));
       }
     }
+
+    try {
+      pmsExecutionService.getPipelineExecutionSummaryEntity(harnessAccount, org, project, executionId, false);
+    } catch (EntityNotFoundException ex) {
+      log.warn("Invalid execution id provided", ex);
+      throw new InvalidRequestException(String.format(
+          "execution_id param value provided doesn't belong to Account: %s, Org: %s, Project: %s or the pipeline has been deleted",
+          harnessAccount, org, project));
+    } catch (Exception ex) {
+      log.warn("An error occurred validating execution_id param", ex);
+      throw new InvalidRequestException("An unexpected error occurred while validating execution_id param");
+    }
+
     List<ApprovalInstanceResponseDTO> approvalInstances = approvalResourceService.getApprovalInstancesByExecutionId(
         executionId, approvalStatusEnum, approvalTypeEnum, nodeExecutionId);
 

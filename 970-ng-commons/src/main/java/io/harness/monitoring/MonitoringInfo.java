@@ -17,6 +17,7 @@ import lombok.Data;
 public class MonitoringInfo {
   String metricPrefix;
   Long createdAt;
+  Long readTs;
   ThreadAutoLogContext metricContext;
   String accountId;
 }

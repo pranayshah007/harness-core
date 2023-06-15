@@ -1,20 +1,20 @@
 a:
   b:
-  - parallel:
+    - parallel:
+        - s:
+            identifier: s1
+            a: b
+        - s:
+            identifier: s2
+            a: c
     - s:
-        identifier: s1
-        a: b
-    - s:
-        identifier: s2
-        a: c
-  - s:
-      identifier: s3
-      a: d
-  - parallel:
-    - s:
-        identifier: s4
-        b:
-        - parallel:
-          - s:
-              identifier: s1
-              st: stval
+        identifier: s3
+        a: d
+    - parallel:
+        - s:
+            identifier: s4
+            b:
+              - parallel:
+                  - s:
+                      identifier: s1
+                      st: stval

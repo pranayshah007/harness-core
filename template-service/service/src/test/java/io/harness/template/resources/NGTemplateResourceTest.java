@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static junit.framework.TestCase.assertEquals;
@@ -34,10 +35,12 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitx.USER_FLOW;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -52,6 +55,7 @@ import io.harness.pms.contracts.service.VariableResponseMapValueProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -209,6 +213,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testCreateTemplate() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
     doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "", false);
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
         templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "", false);
@@ -219,6 +226,25 @@ public class NGTemplateResourceTest extends CategoryTest {
     assertThat(responseDTO.getData().isValid()).isTrue();
     assertThat(responseDTO.getData().getTemplateResponseDTO().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getTemplateResponseDTO().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testCreateTemplateForPolicyDeny() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
+    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "", false);
+    ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
+        templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "", false);
+    assertThat(responseDTO.getData()).isNotNull();
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    assertThat(responseDTO.getData().isValid()).isTrue();
+    assertThat(responseDTO.getData().getTemplateResponseDTO()).isNull();
+    assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
   }
 
   @Test
@@ -258,6 +284,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpdateTemplate() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
     doReturn(entityWithMongoVersion).when(templateService).updateTemplateEntity(entity, ChangeType.MODIFY, false, "");
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO = templateResource.updateExistingTemplateLabel("", ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, yaml, false, "");
@@ -267,6 +296,25 @@ public class NGTemplateResourceTest extends CategoryTest {
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     assertThat(responseDTO.getData().isValid()).isTrue();
     assertThat(responseDTO.getData().getTemplateResponseDTO().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateTemplateForPolicyDeny() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
+    doReturn(entityWithMongoVersion).when(templateService).updateTemplateEntity(entity, ChangeType.MODIFY, false, "");
+    ResponseDTO<TemplateWrapperResponseDTO> responseDTO = templateResource.updateExistingTemplateLabel("", ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, yaml, false, "");
+    assertThat(responseDTO.getData()).isNotNull();
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    assertThat(responseDTO.getData().isValid()).isTrue();
+    assertThat(responseDTO.getData().getTemplateResponseDTO()).isNull();
+    assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
   }
 
   @Test
@@ -404,7 +452,8 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+        .applyTemplatesToYamlV2(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false, false, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -455,6 +504,13 @@ public class NGTemplateResourceTest extends CategoryTest {
     CacheResponse cacheResponse =
         CacheResponse.builder().cacheState(CacheState.VALID_CACHE).lastUpdatedAt(987654L).build();
 
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
+                                      .repoName("repoName")
+                                      .storeType(StoreType.REMOTE)
+                                      .isDefaultBranch(true)
+                                      .branch("branch")
+                                      .build();
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
     GitAwareContextHelper.updateScmGitMetaData(
         ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
     entityWithMongoVersion = entityWithMongoVersion.withStoreType(StoreType.REMOTE);
@@ -480,7 +536,8 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true, false);
+        .applyTemplatesToYamlV2(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false, true, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -501,7 +558,8 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true, false);
+        .applyTemplatesToYamlV2(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false, true, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,

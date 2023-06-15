@@ -36,6 +36,7 @@ public class EcrRequestResponseMapper {
       artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
     }
     return EcrArtifactDelegateResponse.builder()
+        .registryId(request.getRegistryId())
         .buildDetails(artifactBuildDetailsNG)
         .imagePath(request.getImagePath())
         .tag(buildDetailsInternal.getNumber())

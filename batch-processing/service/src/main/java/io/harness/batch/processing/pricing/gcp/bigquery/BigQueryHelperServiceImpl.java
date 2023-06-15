@@ -461,13 +461,31 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   @Override
+  public void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime,
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) {
+    BigQuery bigQueryService = getBigQueryService();
+    String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
+    String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
+    String query = format(BQConst.COST_CATEGORY_SET, tableName, BQConst.costCategory, costCategoriesStatement,
+        startTime, endTime, cloudAccountIdColumn, cloudProviderAccountIdsString);
+    log.info("Update cost category column query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      bigQueryService.query(queryConfig);
+      log.info("costCategory updated");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.error("Error: ", bigQueryException);
+    }
+  }
+
+  @Override
   public void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
       CloudProvider cloudProvider, List<String> cloudProviderAccountIds) {
     BigQuery bigQueryService = getBigQueryService();
     String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
     String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
-    String query = format(BQConst.COST_CATEGORY_UPDATE, tableName, BQConst.costCategory, costCategoriesStatement,
-        startTime, endTime, cloudAccountIdColumn, cloudProviderAccountIdsString);
+    String query = format(BQConst.COST_CATEGORY_ADD, tableName, BQConst.costCategory, BQConst.costCategory,
+        costCategoriesStatement, startTime, endTime, cloudAccountIdColumn, cloudProviderAccountIdsString);
     log.info("Update cost category column query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {

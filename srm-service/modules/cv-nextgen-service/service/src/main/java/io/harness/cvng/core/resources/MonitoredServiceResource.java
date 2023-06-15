@@ -33,6 +33,7 @@ import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceChangeDetailSLO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServicePlatformResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceWithHealthSources;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
@@ -238,7 +239,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "list monitored service data ", nickname = "listMonitoredService")
+  @ApiOperation(value = "list monitored service data", nickname = "listMonitoredService")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MonitoredServiceListItemDTO>> list(
       @NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
@@ -246,12 +247,13 @@ public class MonitoredServiceResource {
       @QueryParam("environmentIdentifiers") List<String> environmentIdentifiers,
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
       @QueryParam("filter") String filter,
+      @QueryParam("monitoredServiceType") MonitoredServiceType monitoredServiceType,
       @NotNull @QueryParam("servicesAtRiskFilter") @ApiParam(defaultValue = "false") boolean servicesAtRiskFilter) {
     if (isNotEmpty(environmentIdentifier)) {
       environmentIdentifiers = Collections.singletonList(environmentIdentifier);
     }
-    return ResponseDTO.newResponse(monitoredServiceService.list(
-        projectParams.getProjectParams(), environmentIdentifiers, offset, pageSize, filter, servicesAtRiskFilter));
+    return ResponseDTO.newResponse(monitoredServiceService.list(projectParams.getProjectParams(),
+        environmentIdentifiers, offset, pageSize, filter, monitoredServiceType, servicesAtRiskFilter));
   }
 
   @GET
@@ -295,8 +297,25 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @Path("/platform/list")
+  @ApiOperation(value = "get list of monitored service data", nickname = "getMonitoredServicePlatformList")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<MonitoredServicePlatformResponse>> getListV2(
+      @NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
+      @QueryParam("environmentIdentifiers") List<String> environmentIdentifiers,
+      @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
+      @QueryParam("filter") String filter,
+      @QueryParam("monitoredServiceType") MonitoredServiceType monitoredServiceType,
+      @QueryParam("hideNotConfiguredServices") @NotNull boolean hideNotConfiguredServices) {
+    return ResponseDTO.newResponse(monitoredServiceService.getMSPlatformList(projectParams.getProjectParams(),
+        environmentIdentifiers, offset, pageSize, filter, monitoredServiceType, hideNotConfiguredServices));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
   @Path("/all/time-series-health-sources")
-  @ApiOperation(value = "get all of monitored service data with time series health sources ",
+  @ApiOperation(value = "get all of monitored service data with time series health sources",
       nickname = "getAllMonitoredServicesWithTimeSeriesHealthSources")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<List<MonitoredServiceWithHealthSources>>

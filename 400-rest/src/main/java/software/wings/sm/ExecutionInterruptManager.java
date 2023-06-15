@@ -53,6 +53,7 @@ import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.alert.AlertType.ApprovalNeeded;
@@ -430,6 +431,7 @@ public class ExecutionInterruptManager {
         .order(Sort.descending(ExecutionInterruptKeys.createdAt))
         .project(ExecutionInterruptKeys.uuid, true)
         .project(ExecutionInterruptKeys.executionInterruptType, true)
+        .limit(NO_LIMIT)
         .asList();
   }
 

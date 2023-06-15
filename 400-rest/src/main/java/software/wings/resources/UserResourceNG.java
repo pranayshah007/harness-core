@@ -344,7 +344,7 @@ public class UserResourceNG {
     Integer pageSize = pageRequest.getPageSize();
 
     List<User> userList = userService.listUsers(
-        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, true);
+        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, false);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
@@ -352,21 +352,22 @@ public class UserResourceNG {
                                               .withResponse(convertUserToNgUser(userList, requireAdminStatus))
                                               .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                               .build();
-
     return new RestResponse<>(pageResponse);
   }
 
   @GET
   @Path("/{userId}")
-  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId) {
+  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
+      @QueryParam("includeSupportAccounts") @DefaultValue("false") boolean includeSupportAccounts) {
     try {
-      User user = userService.get(userId);
+      User user = userService.get(userId, includeSupportAccounts);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
     } catch (UnauthorizedException ex) {
       log.warn("User is not found in database {}", userId);
       return new RestResponse<>(Optional.empty());
     }
   }
+
   @GET
   @Path("/{userId}/{accountId}")
   public RestResponse<Optional<UserInfo>> getUserByIdAndAccountId(
@@ -624,6 +625,10 @@ public class UserResourceNG {
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))
                       .collect(Collectors.toList()))
+        .supportAccounts(user.getSupportAccounts()
+                             .stream()
+                             .map(account -> AccountMapper.toGatewayAccountRequest(account))
+                             .collect(Collectors.toList()))
         .token(user.getToken())
         .admin(
             Optional.ofNullable(user.getUserGroups())

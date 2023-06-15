@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.configuration.KubernetesCliCommandType.APPLY;
 import static io.harness.configuration.KubernetesCliCommandType.DELETE;
 import static io.harness.configuration.KubernetesCliCommandType.DRY_RUN;
+import static io.harness.configuration.KubernetesCliCommandType.GENERATE_HASH;
 import static io.harness.configuration.KubernetesCliCommandType.SCALE;
 import static io.harness.configuration.KubernetesCliCommandType.STEADY_STATE_CHECK;
 import static io.harness.rule.OwnerRule.ABHINAV2;
@@ -329,6 +330,20 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
     assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
     assertThat(handledException.getCause().getCause()).isInstanceOf(ExplanationException.class);
     assertThat(handledException.getCause().getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void handleHashGenerationFailure() {
+    KubernetesCliTaskRuntimeException exception =
+        new KubernetesCliTaskRuntimeException(createProcessResponse(CliErrorMessages.DUMMY_MESSAGE), GENERATE_HASH);
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).contains(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    assertThat(handledException.getCause().getCause().getMessage()).contains(CliErrorMessages.DUMMY_MESSAGE);
   }
 
   private ProcessResponse createProcessResponse(String cliErrorMessage) {

@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 22
+version : 24
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -347,7 +347,7 @@ settings :
     category: CD
     defaultValue: false
     valueType: BOOLEAN
-    allowOverrides: false
+    allowOverrides: true
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
@@ -355,6 +355,27 @@ settings :
   - identifier: email_to_non_harness_users
     name: Enable Emails to be sent to non-Harness Users
     category: CD
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: enable_expression_engine_v2
+    name: Enable Json Support for expressions
+    category: PMS
+    groupIdentifier: pms_execution_settings
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - PROJECT
+      - ACCOUNT
+      - ORGANIZATION
+  - identifier: export_service_variables_as_env_variables
+    name: Export service variables as ENV variables in shell script
+    category: PMS
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true

@@ -11,6 +11,7 @@ import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,8 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -70,6 +73,16 @@ public class ConfigManagerUtils {
   private static final String JIRA_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jira-schema.json";
   private static final String FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/firehydrant-schema.json";
   private static final String HARNESS_CI_CD_JSON_SCHEMA_PATH = "configs/json-schemas/harness-ci-cd-schema.json";
+
+  private static final String KUBERNETES_JSON_SCHEMA_PATH = "configs/json-schemas/kubernetes-schema.json";
+  private static final String HARNESS_CI_CD_CONFIG_PATH = "configs/plugins/harness-ci-cd.yaml";
+  private static final String HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE = "configs/plugins/harness-ci-cd-compliance.yaml";
+  private static final String HARNESS_CI_CD_CONFIG_PATH_PRE_QA = "configs/plugins/harness-ci-cd-preqa.yaml";
+  private static final String HARNESS_CI_CD_CONFIG_PATH_QA = "configs/plugins/harness-ci-cd-qa.yaml";
+  private static final String GITHUB_AUTH_CONFIG_FILE = "configs/auth/github-auth.yaml";
+  private static final String GITHUB_AUTH_JSON_SCHEMA_FILE = "configs/auth/json-schemas/github-auth-schema.json";
+  private static final String GOOGLE_AUTH_CONFIG_FILE = "configs/auth/google-auth.yaml";
+  private static final String GOOGLE_AUTH_JSON_SCHEMA_FILE = "configs/auth/json-schemas/google-auth-schema.json";
 
   public String asYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
@@ -186,8 +199,70 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH);
       case "harness-ci-cd":
         return readFileFromClassPath(HARNESS_CI_CD_JSON_SCHEMA_PATH);
+      case "kubernetes":
+        return readFileFromClassPath(KUBERNETES_JSON_SCHEMA_PATH);
       default:
         return null;
     }
+  }
+
+  public String getAuthConfig(String authId) {
+    switch (authId) {
+      case Constants.GITHUB_AUTH:
+        return readFileFromClassPath(GITHUB_AUTH_CONFIG_FILE);
+      case Constants.GOOGLE_AUTH:
+        return readFileFromClassPath(GOOGLE_AUTH_CONFIG_FILE);
+      default:
+        return null;
+    }
+  }
+
+  public String getAuthConfigSchema(String authId) {
+    switch (authId) {
+      case Constants.GITHUB_AUTH:
+        return readFileFromClassPath(GITHUB_AUTH_JSON_SCHEMA_FILE);
+      case Constants.GOOGLE_AUTH:
+        return readFileFromClassPath(GOOGLE_AUTH_JSON_SCHEMA_FILE);
+      default:
+        return null;
+    }
+  }
+
+  public String getHarnessCiCdAppConfig(String env) {
+    switch (env) {
+      case "qa":
+        return readFileFromClassPath(HARNESS_CI_CD_CONFIG_PATH_QA);
+      case "stress":
+        return readFileFromClassPath(HARNESS_CI_CD_CONFIG_PATH_PRE_QA);
+      case "compliance":
+        return readFileFromClassPath(HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE);
+      default:
+        return readFileFromClassPath(HARNESS_CI_CD_CONFIG_PATH);
+    }
+  }
+
+  public JsonNode getNodeByName(JsonNode node, String name) {
+    if (node.isObject()) {
+      Iterator<Map.Entry<String, JsonNode>> fieldsIterator = node.fields();
+      while (fieldsIterator.hasNext()) {
+        Map.Entry<String, JsonNode> entry = fieldsIterator.next();
+        if (entry.getKey().equals(name)) {
+          return entry.getValue();
+        } else {
+          JsonNode result = getNodeByName(entry.getValue(), name);
+          if (result != null) {
+            return result;
+          }
+        }
+      }
+    } else if (node.isArray()) {
+      for (JsonNode childNode : node) {
+        JsonNode result = getNodeByName(childNode, name);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    return null;
   }
 }

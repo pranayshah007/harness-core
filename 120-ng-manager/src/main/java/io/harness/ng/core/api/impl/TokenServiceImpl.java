@@ -216,7 +216,7 @@ public class TokenServiceImpl implements TokenService {
         tokenDTO.setEncodedPassword(optionalToken.get().getEncodedPassword());
       }
       if (ApiKeyType.USER == tokenDTO.getApiKeyType()) {
-        Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(tokenDTO.getParentIdentifier());
+        Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(tokenDTO.getParentIdentifier(), false);
         if (optionalUserInfo.isPresent()) {
           UserInfo userInfo = optionalUserInfo.get();
           tokenDTO.setEmail(userInfo.getEmail());
@@ -372,5 +372,10 @@ public class TokenServiceImpl implements TokenService {
       tokenDTO.setEncodedPassword(null);
       return tokenDTO;
     }
+  }
+
+  @Override
+  public Long countApiTokens(String accountIdentifier) {
+    return tokenRepository.countByAccountIdentifier(accountIdentifier);
   }
 }

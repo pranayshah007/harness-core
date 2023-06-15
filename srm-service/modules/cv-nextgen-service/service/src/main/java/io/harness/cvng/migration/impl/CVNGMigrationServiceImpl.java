@@ -15,6 +15,7 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.migration.CVNGBackgroundMigrationList;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.CVNGSchema;
+import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.persistence.HPersistence;
 
@@ -50,6 +51,10 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
 
     log.info("[Migration] - Checking for new backgroundMigrations");
     if (cvngSchemaVersion < maxBackgroundVersion) {
+      hPersistence.update(hPersistence.createQuery(CVNGSchema.class),
+          hPersistence.createUpdateOperations(CVNGSchema.class)
+              .set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.RUNNING));
+      log.info("Enqueuing CVNGSchema");
       executorService.submit(() -> {
         try {
           callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
@@ -62,6 +67,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                   injector.getInstance(migration).migrate();
                 } catch (Exception ex) {
                   log.error("Error while running migration {}", migration.getSimpleName(), ex);
+                  onFailure();
                   break;
                 }
                 final UpdateOperations<CVNGSchema> updateOperations =
@@ -70,14 +76,30 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                 hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
               }
             }
+            onCompletion();
             log.info("[Migration] - Migration complete");
             return true;
           });
         } catch (Exception ex) {
           log.warn("background work", ex);
+          onFailure();
         }
       });
     }
+  }
+
+  private void onCompletion() {
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+    log.info("Done enqueuing CVNGSchema");
+  }
+
+  private void onFailure() {
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.ERROR);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+    log.info("Done enqueuing CVNGSchema");
   }
 
   private int initializeGlobalDbEntriesIfNeededAndGetVersion() {

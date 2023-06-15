@@ -32,18 +32,20 @@ public class HttpConnectionExecutionCapabilityCheck implements CapabilityCheck, 
     boolean isNextGen =
         isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN"));
     if (isNextGen) {
-      valid = Http.connectableHttpUrlWithoutFollowingRedirect(
-          httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
+      valid = Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl(),
+          httpConnectionExecutionCapability.getHeaders(), httpConnectionExecutionCapability.isIgnoreResponseCode());
     } else {
       if (httpConnectionExecutionCapability.getHeaders() != null) {
-        valid = Http.connectableHttpUrlWithHeaders(
-            httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
+        valid = Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability.fetchConnectableUrl(),
+            httpConnectionExecutionCapability.getHeaders(), httpConnectionExecutionCapability.isIgnoreResponseCode());
       } else {
         if (httpConnectionExecutionCapability.isIgnoreRedirect()) {
           valid = Http.connectableHttpUrlWithoutFollowingRedirect(
-              httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
+              httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders(),
+              httpConnectionExecutionCapability.isIgnoreResponseCode());
         } else {
-          valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl());
+          valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl(),
+              httpConnectionExecutionCapability.isIgnoreResponseCode());
         }
       }
     }
@@ -66,13 +68,15 @@ public class HttpConnectionExecutionCapabilityCheck implements CapabilityCheck, 
                   httpConnectionParameters.getHeadersList()
                       .stream()
                       .map(entry -> KeyValuePair.builder().key(entry.getKey()).value(entry.getValue()).build())
-                      .collect(Collectors.toList()))
+                      .collect(Collectors.toList()),
+                  httpConnectionParameters.getIgnoreResponseCode())
                   ? PermissionResult.ALLOWED
                   : PermissionResult.DENIED)
           .build();
     } else {
       return builder
-          .permissionResult(Http.connectableHttpUrl(parameters.getHttpConnectionParameters().getUrl())
+          .permissionResult(Http.connectableHttpUrl(parameters.getHttpConnectionParameters().getUrl(),
+                                httpConnectionParameters.getIgnoreResponseCode())
                   ? PermissionResult.ALLOWED
                   : PermissionResult.DENIED)
           .build();

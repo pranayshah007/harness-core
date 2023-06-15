@@ -13,7 +13,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -42,6 +41,16 @@ public class GitAwareContextHelper {
       return GitEntityInfo.builder().build();
     }
     return gitSyncBranchContext.getGitBranchInfo();
+  }
+
+  public void initDefaultScmGitMetaDataAndRequestParams() {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(
+        GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build());
+    GlobalContextManager.upsertGlobalContextRecord(
+        ScmGitMetaDataContext.builder().scmGitMetaData(ScmGitMetaData.builder().build()).build());
   }
 
   public void initDefaultScmGitMetaData() {
@@ -111,7 +120,7 @@ public class GitAwareContextHelper {
   }
 
   public boolean isNullOrDefault(String val) {
-    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+    return isEmpty(val) || val.equals(DEFAULT);
   }
 
   public void updateGitEntityContext(GitEntityInfo branchInfo) {
@@ -185,5 +194,51 @@ public class GitAwareContextHelper {
 
   public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
     return gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
+  }
+
+  public boolean isDefaultBranch() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null && gitEntityInfo.getIsDefaultBranch() != null) {
+      return gitEntityInfo.getIsDefaultBranch();
+    }
+    return false;
+  }
+
+  public String getBranchFromGitContext() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.getBranch();
+    }
+    return "";
+  }
+
+  public StoreType getStoreTypeFromGitContext() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.getStoreType();
+    }
+    return null;
+  }
+
+  public boolean isTransientBranchSet() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      return isPresent(gitEntityInfo.getTransientBranch());
+    }
+    return false;
+  }
+
+  public void setTransientBranch(String transientBranch) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    gitEntityInfo.setTransientBranch(transientBranch);
+    updateGitEntityContext(gitEntityInfo);
+  }
+
+  public void resetTransientBranch() {
+    setTransientBranch(null);
+  }
+
+  private boolean isPresent(String val) {
+    return !isEmpty(val) && !DEFAULT.equals(val);
   }
 }

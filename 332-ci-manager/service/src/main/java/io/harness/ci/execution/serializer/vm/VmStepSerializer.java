@@ -55,8 +55,8 @@ public class VmStepSerializer {
     String stepName = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
-        return vmRunStepSerializer.serialize(
-            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName, registries, delegateId);
+        return vmRunStepSerializer.serialize((RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout,
+            stepName, registries, delegateId, stageInfraDetails);
       case BACKGROUND:
         return vmBackgroundStepSerializer.serialize(
             (BackgroundStepInfo) stepInfo, ambiance, identifier, registries, delegateId);
@@ -106,9 +106,9 @@ public class VmStepSerializer {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
       case ECR:
+      case GCR:
         return vmPluginCompatibleStepSerializer.preProcessStep(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
-      case GCR:
       case ACR:
       default:
         return new HashSet<>();

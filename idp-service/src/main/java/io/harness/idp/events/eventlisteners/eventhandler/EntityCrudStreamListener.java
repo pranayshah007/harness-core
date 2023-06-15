@@ -17,13 +17,17 @@ import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.events.eventlisteners.eventhandler.utils.ResourceLocker;
 import io.harness.idp.events.eventlisteners.factory.EventMessageHandlerFactory;
 import io.harness.idp.events.eventlisteners.messagehandler.EventMessageHandler;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.redis.RedisPersistentLocker;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.time.Duration;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EntityCrudStreamListener implements MessageListener {
   EventMessageHandlerFactory eventMessageHandlerFactory;
+  ResourceLocker resourceLocker;
 
   @Override
   public boolean handleMessage(Message message) {
@@ -58,6 +63,7 @@ public class EntityCrudStreamListener implements MessageListener {
       }
       EntityChangeDTO entityChangeDTO;
       EventMessageHandler eventMessageHandler = eventMessageHandlerFactory.getEventMessageHandler(entityType);
+
       if (eventMessageHandler != null) {
         try {
           entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
@@ -65,16 +71,25 @@ public class EntityCrudStreamListener implements MessageListener {
           throw new InvalidRequestException(
               String.format("Exception in unpacking EntityChangeDTO for id %s", messageId), e);
         }
+
         if (entityChangeDTO != null) {
-          eventMessageHandler.handleMessage(message, entityChangeDTO, action);
-          log.info("Completed processing the crud event with the id {}", messageId);
+          String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
+          String resourceIdentifier = entityChangeDTO.getIdentifier().getValue();
+
+          AcquiredLock lock = resourceLocker.acquireLock(entityType, messageId, accountIdentifier, resourceIdentifier);
+          try {
+            eventMessageHandler.handleMessage(message, entityChangeDTO, action);
+            log.info("Completed processing the crud event with the id {}", messageId);
+          } catch (Exception e) {
+            log.error("Error in handling the crud event with the id {} for entity type {}", messageId, entityType, e);
+          } finally {
+            resourceLocker.releaseLock(lock, entityType, messageId, accountIdentifier, resourceIdentifier);
+          }
+          return true;
         }
       }
-
-      return true;
-    } catch (Exception e) {
-      log.error("Error processing the crud event with the id {} for entity type {}", messageId,
-          message.getMessage().getMetadataMap().get(ENTITY_TYPE), e);
+    } catch (InterruptedException e) {
+      log.error("Error in acquiring lock for message processing. Message {}", messageId, e);
     }
     return true;
   }

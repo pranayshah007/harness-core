@@ -26,6 +26,8 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
+import io.harness.delegate.beans.connector.ConnectorValidationResponseTaskIdDecorator;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
@@ -42,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.DX)
 @Slf4j
@@ -53,7 +56,16 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
   @Inject Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
   @Inject ExceptionManager exceptionManager;
 
-  public <T extends ConnectorConfigDTO> DelegateResponseData validateConnector(
+  public <T extends ConnectorConfigDTO> ConnectorValidationResponseData validateConnector(
+      T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    var responseDataPair =
+        validateConnectorReturnPair(connectorConfig, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    ConnectorValidationResponseData validationResponse = (ConnectorValidationResponseData) responseDataPair.getValue();
+    String taskId = responseDataPair.getKey();
+    return ConnectorValidationResponseTaskIdDecorator.builder().response(validationResponse).taskId(taskId).build();
+  }
+
+  public <T extends ConnectorConfigDTO> Pair<String, DelegateResponseData> validateConnectorReturnPair(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     TaskParameters taskParameters =
         getTaskParameters(connectorConfig, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -62,8 +74,11 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
         taskParameters, connectorConfig, getTaskType(), accountIdentifier, orgIdentifier, projectIdentifier);
 
     DelegateResponseData responseData;
+    String taskId;
     try {
-      responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      var responseEntry = delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(delegateTaskRequest);
+      responseData = responseEntry.getValue();
+      taskId = responseEntry.getKey();
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
@@ -79,7 +94,7 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
           ((InvalidRequestException) ((RemoteMethodReturnValueData) responseData).getException()).getMessage();
       throw new ConnectorValidationException(errorMessage);
     }
-    return responseData;
+    return Pair.of(taskId, responseData);
   }
 
   public ConnectorValidationResult validateConnectorViaManager(ConnectorConfigDTO connectorConfigDTO,

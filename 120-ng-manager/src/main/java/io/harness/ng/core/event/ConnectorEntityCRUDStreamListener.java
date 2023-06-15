@@ -20,7 +20,6 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTOR
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.connector.eventHandlers.ConnectorEntityCRUDEventHandler;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
@@ -123,15 +122,11 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   private boolean processOrganizationCreateEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
     String accountIdentifier = organizationEntityChangeDTO.getAccountIdentifier();
 
-    Boolean isBuiltInSMDisabled = false;
-
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
-      isBuiltInSMDisabled = parseBoolean(
-          NGRestUtils
-              .getResponse(settingsClient.getSetting(
-                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
-              .getValue());
-    }
+    Boolean isBuiltInSMDisabled =
+        parseBoolean(NGRestUtils
+                         .getResponse(settingsClient.getSetting(
+                             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+                         .getValue());
 
     if (!isBuiltInSMDisabled) {
       harnessSMManager.createHarnessSecretManager(
@@ -174,15 +169,11 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
 
   private boolean processProjectCreateEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
     String accountIdentifier = projectEntityChangeDTO.getAccountIdentifier();
-    Boolean isBuiltInSMDisabled = false;
-
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
-      isBuiltInSMDisabled = parseBoolean(
-          NGRestUtils
-              .getResponse(settingsClient.getSetting(
-                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
-              .getValue());
-    }
+    Boolean isBuiltInSMDisabled =
+        parseBoolean(NGRestUtils
+                         .getResponse(settingsClient.getSetting(
+                             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+                         .getValue());
 
     if (!isBuiltInSMDisabled) {
       harnessSMManager.createHarnessSecretManager(projectEntityChangeDTO.getAccountIdentifier(),

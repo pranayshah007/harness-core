@@ -25,6 +25,7 @@ import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -128,6 +129,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.GovernanceRuleService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
@@ -140,6 +142,7 @@ import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
+import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
 import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.RuleSetServiceImpl;
@@ -392,6 +395,8 @@ public class CENextGenModule extends AbstractModule {
     install(new NGSettingsClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
+    install(new AccountClientModule(
+        configuration.getManagerClientConfig(), configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(YamlSdkModule.getInstance());
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
@@ -441,6 +446,7 @@ public class CENextGenModule extends AbstractModule {
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+      bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     }
 
     try {

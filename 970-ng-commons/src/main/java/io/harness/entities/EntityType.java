@@ -592,7 +592,23 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SEMGREP)
   SEMGREP(ModuleType.STO, EntityTypeConstants.SEMGREP, IdentifierRef.class, EntityYamlRootNames.SEMGREP),
   @JsonProperty(EntityTypeConstants.SSCA_ENFORCEMENT)
-  SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class);
+  SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.IDP_CONNECTOR)
+  IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.CD_SSCA_ENFORCEMENT)
+  CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.DOWNLOAD_MANIFESTS)
+  DOWNLOAD_MANIFESTS(ModuleType.CD, EntityTypeConstants.DOWNLOAD_MANIFESTS, IdentifierRef.class,
+      EntityYamlRootNames.DOWNLOAD_MANIFESTS),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2(ModuleType.CD,
+      EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2, IdentifierRef.class,
+      EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.COVERITY)
+  COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY);
 
   private final ModuleType moduleType;
   String yamlName;

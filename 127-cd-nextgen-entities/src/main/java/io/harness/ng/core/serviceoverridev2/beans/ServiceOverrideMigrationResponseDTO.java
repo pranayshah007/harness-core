@@ -30,4 +30,5 @@ public class ServiceOverrideMigrationResponseDTO {
   AccountLevelOverrideMigrationResponseDTO accountLevelMigrationInfo;
   List<OrgLevelOverrideMigrationResponseDTO> orgLevelMigrationInfo;
   List<ProjectLevelOverrideMigrationResponseDTO> projectLevelMigrationInfo;
+  OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO;
 }

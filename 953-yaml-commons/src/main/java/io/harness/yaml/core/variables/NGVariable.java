@@ -7,7 +7,7 @@
 
 package io.harness.yaml.core.variables;
 
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXISTING_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.pms.yaml.ParameterField;
@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 
-@JsonTypeInfo(use = NAME, property = "type", include = PROPERTY, visible = true)
+@JsonTypeInfo(use = NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
 @JsonSubTypes({
   @Type(value = NumberNGVariable.class, name = NGVariableConstants.NUMBER_TYPE)
   , @Type(value = StringNGVariable.class, name = NGVariableConstants.STRING_TYPE),

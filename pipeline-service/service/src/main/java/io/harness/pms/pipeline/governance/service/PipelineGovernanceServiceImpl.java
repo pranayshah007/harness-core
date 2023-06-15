@@ -61,9 +61,9 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
   public GovernanceMetadata validateGovernanceRules(
       String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates) {
     String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
-        yamlWithResolvedTemplates, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE);
+        yamlWithResolvedTemplates, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
-        projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "", PipelineVersion.V0);
+        projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_SAVE, "", PipelineVersion.V0);
   }
 
   @Override

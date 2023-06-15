@@ -17,6 +17,9 @@ import java.util.Optional;
 public interface MonitoringSourcePerpetualTaskService extends DeleteEntityByHandler<MonitoringSourcePerpetualTask> {
   void createTask(String accountId, String orgIdentifier, String projectIdentifier, String connectorIdentifier,
       String monitoringSourceIdentifier, boolean isDemo);
+
+  void createDeploymentTaskAndPerpetualTaskInSyncForTemplateCV(String accountId, String orgIdentifier,
+      String projectIdentifier, String connectorIdentifier, String monitoringSourceIdentifier, boolean isDemo);
   void deleteTask(String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier);
 
   void deleteTask(String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier,
@@ -24,6 +27,7 @@ public interface MonitoringSourcePerpetualTaskService extends DeleteEntityByHand
 
   List<MonitoringSourcePerpetualTask> listByConnectorIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String connectorIdentifier, Scope scope);
+
   void createPerpetualTask(MonitoringSourcePerpetualTask monitoringSourcePerpetualTask);
   void resetLiveMonitoringPerpetualTask(MonitoringSourcePerpetualTask monitoringSourcePerpetualTask);
   String getLiveMonitoringWorkerId(String accountId, String orgIdentifier, String projectIdentifier,
