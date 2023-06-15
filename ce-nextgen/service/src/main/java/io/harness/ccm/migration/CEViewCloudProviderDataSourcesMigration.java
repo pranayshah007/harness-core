@@ -7,6 +7,8 @@
 
 package io.harness.ccm.migration;
 
+import static io.harness.persistence.HQuery.excludeAuthority;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.constants.ViewFieldConstants;
@@ -30,16 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class CEViewCloudProviderDataSourcesMigration implements NGMigration {
-  private static final String T_MOBILE_ACCOUNT_ID = "k9C6xngtS06yOSMV7hPGlQ";
-
   @Inject private CEViewDao ceViewDao;
   @Inject private HPersistence hPersistence;
 
   @Override
   public void migrate() {
     try {
-      log.info("Starting migration (updates) of Perspective's dataSources for T-Mobile account");
-      final List<CEView> ceViewList = ceViewDao.list(T_MOBILE_ACCOUNT_ID);
+      log.info("Starting migration (updates) of all CE Views DataSources for Cloud Provider Common field");
+      final List<CEView> ceViewList = hPersistence.createQuery(CEView.class, excludeAuthority).asList();
       for (final CEView ceView : ceViewList) {
         try {
           migrateCEViewDataSources(ceView);
