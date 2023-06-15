@@ -756,7 +756,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     catalogConnectorEntity.setDelegateSelectors(delegateSelectors);
 
     catalogConnectorRepository.save(catalogConnectorEntity);
-    delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
+    if (!delegateSelectors.isEmpty()) {
+      delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
+    }
     log.info("Saved catalogConnector to DB. Account = {}", accountIdentifier);
   }
 

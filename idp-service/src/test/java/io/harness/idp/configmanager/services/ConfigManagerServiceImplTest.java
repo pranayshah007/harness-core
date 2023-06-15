@@ -52,9 +52,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private K8sClient k8sClient;
 
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
-
   @Mock private NamespaceService namespaceService;
-
   @Mock private PluginsProxyInfoService pluginsProxyInfoService;
   String env = "prod";
   @InjectMocks ConfigManagerServiceImpl configManagerServiceImpl;
@@ -119,17 +117,6 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testGetAllPluginIdsMap() {
-    AppConfigEntity appConfigEntity = getTestAppConfigEntity();
-    when(appConfigRepository.findAllByAccountIdentifierAndConfigType(TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE))
-        .thenReturn(Arrays.asList(appConfigEntity));
-    Map<String, Boolean> pluginIdMap = configManagerServiceImpl.getAllPluginIdsMap(TEST_ACCOUNT_IDENTIFIER);
-    assertEquals(pluginIdMap.get(TEST_CONFIG_ID), TEST_ENABLED);
-  }
-
-  @Test
-  @Owner(developers = DEVESH)
-  @Category(UnitTests.class)
   public void testGetPluginConfig() {
     AppConfigEntity appConfigEntity = getTestAppConfigEntity();
     when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
@@ -146,6 +133,17 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertNotNull(appConfig);
     assertEquals(appConfig.getConfigId(), TEST_CONFIG_ID);
     assertEquals(appConfig.getConfigName(), TEST_CONFIG_NAME);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetAllPluginIdsMap() {
+    AppConfigEntity appConfigEntity = getTestAppConfigEntity();
+    when(appConfigRepository.findAllByAccountIdentifierAndConfigType(TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE))
+        .thenReturn(Arrays.asList(appConfigEntity));
+    Map<String, Boolean> pluginIdMap = configManagerServiceImpl.getAllPluginIdsMap(TEST_ACCOUNT_IDENTIFIER);
+    assertEquals(pluginIdMap.get(TEST_CONFIG_ID), TEST_ENABLED);
   }
 
   @Test

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GAURAV_NANDA;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -77,6 +78,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
 
   private static final String TEST_PRINCIPAL = "TEST_PRINCIPAL";
   private static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
+  private static final String TEST_ACCOUNT_ID2 = "TEST_ACCOUNT_ID2";
   private static final String TEST_USER_EMAIL = "test.user@harness.io";
 
   @Before
@@ -244,6 +246,23 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
         .getUserById(any(), anyBoolean());
 
     // Act
+    apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void validateParentIdentifier_WithSupportUser_noExceptionThrown() {
+    doReturn(
+        Optional.of(UserInfo.builder()
+                        .email(TEST_USER_EMAIL)
+                        .uuid(TEST_PRINCIPAL)
+                        .accounts(List.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID).build()))
+                        .supportAccounts(List.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID2).build()))
+                        .build()))
+        .when(ngUserService)
+        .getUserById(any(), anyBoolean());
+
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
   }
 }

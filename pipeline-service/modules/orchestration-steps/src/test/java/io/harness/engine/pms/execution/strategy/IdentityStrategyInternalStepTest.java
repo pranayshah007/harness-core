@@ -13,7 +13,9 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -26,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
@@ -38,6 +41,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -68,6 +72,7 @@ import org.springframework.data.util.CloseableIterator;
 public class IdentityStrategyInternalStepTest extends CategoryTest {
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PlanService planService;
+  @Mock private PmsOutcomeService pmsOutcomeService;
   @Inject @InjectMocks private IdentityStrategyInternalStep identityStrategyInternalStep;
 
   private Ambiance buildAmbiance() {
@@ -327,7 +332,16 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandleChildResponse() {
-    StepResponse stepResponse = identityStrategyInternalStep.handleChildResponse(null, null, new HashMap<>());
-    assertNotNull(stepResponse);
+    Ambiance ambiance = buildAmbiance();
+    IdentityStepParameters identityParams =
+        IdentityStepParameters.builder().originalNodeExecutionId("nodeUuid").build();
+
+    // nodeExecution formation
+    NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
+    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
+
+    StepResponse stepResponse = identityStrategyInternalStep.handleChildResponse(ambiance, identityParams, null);
+    verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.ABORTED);
   }
 }

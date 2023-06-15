@@ -132,4 +132,7 @@ public interface StepSpecTypeConstants {
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
+  String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
 }

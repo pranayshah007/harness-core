@@ -69,7 +69,7 @@ public class NativeHelmInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBase
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void retrieveServiceInstancesTest() {
+  public void retrieveServiceInstancesTest() throws Exception {
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK).build();
 
     PerpetualTaskExecutionParams params =

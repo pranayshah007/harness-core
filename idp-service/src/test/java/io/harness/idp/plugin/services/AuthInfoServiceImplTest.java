@@ -25,6 +25,8 @@ import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.After;
@@ -43,6 +45,7 @@ public class AuthInfoServiceImplTest {
   private static final String ACCOUNT_ID = "123";
   private static final String GOOGLE_AUTH = "google-auth";
   private static final String GITHUB_AUTH = "github-auth";
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Before
   public void setUp() {
@@ -76,11 +79,15 @@ public class AuthInfoServiceImplTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testSaveAuthEnvVariables() throws Exception {
+  public void testSaveGoogleAuthEnvVariables() throws Exception {
+    String jsonString =
+        "{\"auth\":{\"environment\":\"development\",\"providers\":{\"github\":{\"development\":{\"clientId\":\"${AUTH_GOOGLE_CLIENT_ID}\",\"clientSecret\":\"${AUTH_GOOGLE_CLIENT_SECRET}\"}}}}}";
+    JsonNode rootNode = objectMapper.readTree(jsonString);
     when(backstageEnvVariableService.createOrUpdate(buildGoogleAuthEnvVariables(), ACCOUNT_ID))
         .thenReturn(buildGoogleAuthEnvVariables());
     MockedStatic<ConfigManagerUtils> mockStatic = Mockito.mockStatic(ConfigManagerUtils.class);
     when(ConfigManagerUtils.getAuthConfig(any())).thenReturn("");
+    when(ConfigManagerUtils.asJsonNode(any())).thenReturn(rootNode);
     when(ConfigManagerUtils.getAuthConfigSchema(any())).thenReturn("");
     when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(true);
     when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
@@ -88,6 +95,32 @@ public class AuthInfoServiceImplTest {
     List<BackstageEnvVariable> backstageEnvVariables =
         authInfoServiceImpl.saveAuthEnvVariables(GOOGLE_AUTH, buildGoogleAuthEnvVariables(), ACCOUNT_ID);
     assertEquals(backstageEnvVariables.size(), 2);
+    verify(configManagerService, times(1)).saveOrUpdateConfigForAccount(any(), any(), any());
+    mockStatic.close();
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  public void testSaveGithubAuthEnvVariables() throws Exception {
+    String jsonString =
+        "{\"auth\":{\"environment\":\"development\",\"providers\":{\"github\":{\"development\":{\"clientId\":\"${AUTH_GITHUB_CLIENT_ID}\",\"clientSecret\":\"${AUTH_GITHUB_CLIENT_SECRET}\"}}}}}";
+    String development =
+        "{\"development\":{\"clientId\":\"${AUTH_GITHUB_CLIENT_ID}\",\"clientSecret\":\"${AUTH_GITHUB_CLIENT_SECRET}\"}}";
+    JsonNode rootNode = objectMapper.readTree(jsonString);
+    JsonNode developmentNode = objectMapper.readTree(development);
+    when(backstageEnvVariableService.createOrUpdate(buildGithubAuthEnvVariables(), ACCOUNT_ID))
+        .thenReturn(buildGithubAuthEnvVariables());
+    MockedStatic<ConfigManagerUtils> mockStatic = Mockito.mockStatic(ConfigManagerUtils.class);
+    when(ConfigManagerUtils.getAuthConfig(any())).thenReturn("");
+    when(ConfigManagerUtils.asJsonNode(any())).thenReturn(rootNode);
+    when(ConfigManagerUtils.getAuthConfigSchema(any())).thenReturn("");
+    when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(true);
+    when(ConfigManagerUtils.getNodeByName(any(), any())).thenReturn(developmentNode);
+    when(configManagerService.saveOrUpdateConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
+    when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
+    List<BackstageEnvVariable> backstageEnvVariables =
+        authInfoServiceImpl.saveAuthEnvVariables(GITHUB_AUTH, buildGithubAuthEnvVariables(), ACCOUNT_ID);
+    assertEquals(backstageEnvVariables.size(), 3);
     verify(configManagerService, times(1)).saveOrUpdateConfigForAccount(any(), any(), any());
     mockStatic.close();
   }

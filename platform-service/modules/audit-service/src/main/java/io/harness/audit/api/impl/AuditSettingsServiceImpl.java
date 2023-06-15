@@ -18,6 +18,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @OwnedBy(PL)
 public class AuditSettingsServiceImpl implements AuditSettingsService {
@@ -42,8 +43,12 @@ public class AuditSettingsServiceImpl implements AuditSettingsService {
 
   @Override
   public AuditSettings create(String accountIdentifier, int months) {
-    AuditSettings auditSettings =
-        AuditSettings.builder().accountIdentifier(accountIdentifier).retentionPeriodInMonths(months).build();
+    Long now = System.currentTimeMillis();
+    AuditSettings auditSettings = AuditSettings.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .retentionPeriodInMonths(months)
+                                      .nextIteration(now + TimeUnit.HOURS.toMillis(12))
+                                      .build();
     return auditRetentionRepository.save(auditSettings);
   }
 

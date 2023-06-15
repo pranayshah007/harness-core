@@ -76,6 +76,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.GovernanceRuleService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
@@ -86,6 +87,7 @@ import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
+import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.PerspectiveAnomalyServiceImpl;
 import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
@@ -264,6 +266,7 @@ public class BatchProcessingModule extends AbstractModule {
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+      bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     }
 
     bindPricingServices();

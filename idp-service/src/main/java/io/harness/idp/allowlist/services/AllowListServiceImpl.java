@@ -18,6 +18,7 @@ import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.YamlUtils;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.HostInfo;
 
@@ -41,7 +42,6 @@ public class AllowListServiceImpl implements AllowListService {
   private static final String INVALID_SCHEMA_FOR_ALLOW_LIST =
       "Invalid json schema for allow list config for account - %s";
   private static final String ALLOW_LIST = "allow-list";
-  private static final String BACKEND_PROPERTY = "backend";
   private static final String READING_PROPERTY = "reading";
   private static final String ALLOW_PROPERTY = "allow";
 
@@ -50,7 +50,8 @@ public class AllowListServiceImpl implements AllowListService {
     AppConfig appConfig = configManagerService.getAppConfig(harnessAccount, ALLOW_LIST, ConfigType.BACKEND);
     if (appConfig != null) {
       JsonNode jsonNode = asJsonNode(appConfig.getConfigs());
-      return Arrays.asList(YamlUtils.read(getReadingNode(jsonNode).get(ALLOW_PROPERTY).toString(), HostInfo[].class));
+      JsonNode readingNode = ConfigManagerUtils.getNodeByName(jsonNode, READING_PROPERTY);
+      return Arrays.asList(YamlUtils.read(readingNode.get(ALLOW_PROPERTY).toString(), HostInfo[].class));
     }
     return new ArrayList<>();
   }
@@ -60,15 +61,11 @@ public class AllowListServiceImpl implements AllowListService {
     JsonNode allowListNode = asJsonNode(YamlUtils.writeObjectAsYaml(hostInfoList));
     String yamlString = CommonUtils.readFileFromClassPath(ALLOW_LIST_CONFIG_FILE);
     JsonNode rootNode = asJsonNode(yamlString);
-    getReadingNode(rootNode).put(ALLOW_PROPERTY, allowListNode);
+    JsonNode readingNode = ConfigManagerUtils.getNodeByName(rootNode, READING_PROPERTY);
+    ((ObjectNode) readingNode).put(ALLOW_PROPERTY, allowListNode);
     String config = asYaml(rootNode.toString());
     createOrUpdateAllowListAppConfig(config, harnessAccount);
     return hostInfoList;
-  }
-
-  private ObjectNode getReadingNode(JsonNode rootNode) {
-    JsonNode backendNode = rootNode.get(BACKEND_PROPERTY);
-    return (ObjectNode) backendNode.get(READING_PROPERTY);
   }
 
   private void createOrUpdateAllowListAppConfig(String config, String accountIdentifier) throws Exception {

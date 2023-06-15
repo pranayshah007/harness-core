@@ -44,7 +44,9 @@ public final class AzureRecommendationConstants {
     REGION_ID_TO_REGION.put("useast2", "eastus2");
     REGION_ID_TO_REGION.put("uswest", "westus");
     REGION_ID_TO_REGION.put("uswest2", "westus2");
+    REGION_ID_TO_REGION.put("uswest3", "westus3");
     REGION_ID_TO_REGION.put("uscentral", "centralus");
+    REGION_ID_TO_REGION.put("usnorth", "northus");
     REGION_ID_TO_REGION.put("usnorthcentral", "northcentralus");
     REGION_ID_TO_REGION.put("ussouthcentral", "southcentralus");
     REGION_ID_TO_REGION.put("ussouth", "southcentralus");

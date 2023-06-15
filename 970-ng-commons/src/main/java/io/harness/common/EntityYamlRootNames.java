@@ -106,6 +106,7 @@ public class EntityYamlRootNames {
   public static final String CHECKMARX = "Checkmarx";
   public static final String CLAIR = "Clair";
   public static final String CODEQL = "CodeQL";
+  public static final String COVERITY = "Coverity";
   public static final String CUSTOM_INGEST = "CustomIngest";
   public static final String DATA_THEOREM = "DataTheorem";
   public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";
@@ -242,4 +243,7 @@ public class EntityYamlRootNames {
 
   public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   public static final String TAS_ROUTE_MAPPING = "RouteMapping";
+
+  public static final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
+  public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
 }

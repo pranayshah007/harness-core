@@ -81,10 +81,10 @@ public enum FeatureName {
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
+  CCM_GOVERNANCE_GENAI_ENABLE("Genai feature for cloud asset governance", HarnessTeam.CE),
   CFNG_ENABLED,
   CF_CUSTOM_EXTRACTION,
   CF_ROLLBACK_CONFIG_FILTER,
-  CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
   CI_LE_STATUS_REST_ENABLED(
       "Used for sending step status for CI via REST APIs instead of gRPC from Lite Engine to manager", HarnessTeam.CI),
@@ -176,7 +176,6 @@ public enum FeatureName {
   ROLLBACK_NONE_ARTIFACT,
   SEARCH_REQUEST,
   SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
-  SIDE_NAVIGATION,
   SKIP_SWITCH_ACCOUNT_REAUTHENTICATION,
   SLACK_APPROVALS,
   STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_AMI_DEPLOYMENTS,
@@ -289,7 +288,7 @@ public enum FeatureName {
   CCM_CURRENCY_PREFERENCES("Currency Preferences", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
   CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
-  CCM_LABELS_FLATTENING("Use label's columns in BigQuery", HarnessTeam.CE),
+  CCM_LABELS_FLATTENING("Use flattened label's columns in BigQuery", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
@@ -391,13 +390,15 @@ public enum FeatureName {
 
   STO_STEP_PALETTE_CODEQL("Enable CodeQL step for STO", HarnessTeam.STO),
 
+  STO_STEP_PALETTE_COVERITY("Enable Coverity step for STO", HarnessTeam.STO),
+
   STO_STEP_PALETTE_SYSDIG("Enable Sysdig step for STO", HarnessTeam.STO),
 
   STO_STEP_PALETTE_GIT_LEAKS("Enable Gitleaks step for STO", HarnessTeam.STO),
 
   STO_STEP_PALETTE_SEMGREP("Enable Semgrep step for STO", HarnessTeam.STO),
   STO_STEPS_TEST_MODE(
-      "Enable the rest of STO Steps Q2 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
+      "Enable the rest of STO Steps Q3 2023 and beyond, NOT READY for use in PRODUCTION", HarnessTeam.STO),
 
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   STO_BASELINE_REGEX("Enable selection of baselines by RegEx from Test Targets page", HarnessTeam.STO),

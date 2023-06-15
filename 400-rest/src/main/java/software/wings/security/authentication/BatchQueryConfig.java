@@ -16,6 +16,7 @@ import lombok.Data;
 @Singleton
 public class BatchQueryConfig {
   private int queryBatchSize;
+  private int billingDataQueryBatchSize;
   private int instanceDataBatchSize;
   private boolean syncJobDisabled;
 }

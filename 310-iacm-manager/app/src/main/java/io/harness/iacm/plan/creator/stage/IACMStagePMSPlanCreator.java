@@ -23,18 +23,18 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.stages.IntegrationStageNode;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.states.CISpecStep;
-import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
+import io.harness.iacm.execution.IACMIntegrationStageStepPMS;
+import io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -146,7 +146,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspace);
     PlanNode specPlanNode = getSpecPlanNode(specField,
-        IntegrationStageStepParametersPMS.getStepParameters(
+        IACMIntegrationStageStepParametersPMS.getStepParameters(
             getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx));
     planCreationResponseMap.put(
         specPlanNode.getUuid(), PlanCreationResponse.builder().node(specPlanNode.getUuid(), specPlanNode).build());
@@ -185,19 +185,19 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
   @Override
   public StepType getStepType(IACMStageNode stageNode) {
-    return IntegrationStageStepPMS.STEP_TYPE;
+    return IACMIntegrationStageStepPMS.STEP_TYPE;
   }
 
   @Override
   /*
    * This function creates the spec parameters for the Stage. The stage is treated as if it were another step, so this
-   * function basically identifies the spec under the stage and returns it as IntegrationStageStepParametersPMS
+   * function basically identifies the spec under the stage and returns it as IACMIntegrationStageStepParametersPMS
    * */
   public SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, IACMStageNode stageNode) {
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
     BuildStatusUpdateParameter buildStatusUpdateParameter = obtainBuildStatusUpdateParameter(
         ctx, stageNode, executionSource, stageNode.getIacmStageConfig().getWorkspace().getValue());
-    return IntegrationStageStepParametersPMS.getStepParameters(
+    return IACMIntegrationStageStepParametersPMS.getStepParameters(
         getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx);
   }
 
@@ -276,14 +276,14 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     }
     IntegrationStageNode integrationStageNode = getIntegrationStageNode(stageNode);
     return ciIntegrationStageModifier.modifyExecutionPlan(executionElementConfig, integrationStageNode, ctx, codeBase,
-        IntegrationStageStepParametersPMS.getInfrastructure(integrationStageNode, ctx), executionSource);
+        IACMIntegrationStageStepParametersPMS.getInfrastructure(integrationStageNode, ctx), executionSource);
   }
 
   /**
   This is one of the functions that I think that we really need to understand. This function creates a PlanNode for a
   step and the step is the CISpecStep, but I don't understand what is this step doing. Is this the
    */
-  private PlanNode getSpecPlanNode(YamlField specField, IntegrationStageStepParametersPMS stepParameters) {
+  private PlanNode getSpecPlanNode(YamlField specField, IACMIntegrationStageStepParametersPMS stepParameters) {
     return PlanNode.builder()
         .uuid(specField.getNode().getUuid())
         .identifier(YAMLFieldNameConstants.SPEC)

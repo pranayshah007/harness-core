@@ -30,4 +30,5 @@ public class InstanceSyncPerpetualTaskInfoDTO {
   String connectorIdentifier;
   long createdAt;
   long lastUpdatedAt;
+  Long lastSuccessfulRun;
 }

@@ -75,7 +75,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 		sr := chi.NewRouter()
 		// Validate the accountID in URL with the token generated above and authorize the request
 		if !config.Auth.DisableAuth {
-			sr.Use(AuthMiddleware(config, ngClient))
+			sr.Use(AuthMiddleware(config, ngClient, false))
 		}
 
 		sr.Post("/", HandleOpen(stream))
@@ -92,7 +92,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 	r.Mount("/blob", func() http.Handler {
 		sr := chi.NewRouter()
 		if !config.Auth.DisableAuth {
-			sr.Use(AuthMiddleware(config, ngClient))
+			sr.Use(AuthMiddleware(config, ngClient, false))
 		}
 
 		sr.Post("/", HandleUpload(store))
@@ -109,7 +109,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 	r.Mount("/rca", func() http.Handler {
 		sr := chi.NewRouter()
 		if !config.Auth.DisableAuth {
-			sr.Use(AuthMiddleware(config, ngClient))
+			sr.Use(AuthMiddleware(config, ngClient, true))
 		}
 
 		sr.Post("/", HandleRCA(store, config))

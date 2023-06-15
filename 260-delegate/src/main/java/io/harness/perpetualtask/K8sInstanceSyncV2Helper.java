@@ -43,7 +43,6 @@ import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -125,32 +124,22 @@ public class K8sInstanceSyncV2Helper {
   }
 
   public List<ServerInstanceInfo> getServerInstanceInfoList(
-      K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) {
+      K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {
     long timeoutMillis =
         K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
-    try {
-      List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
-          requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
-      return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
-    } catch (Exception ex) {
-      log.warn("Unable to get list of server instances, namespace: {}, releaseName: {}", requestData.getNamespace(),
-          requestData.getReleaseName(), ex);
-      return Collections.emptyList();
-    }
+
+    List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
+        requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
+    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
   }
   public List<ServerInstanceInfo> getServerInstanceInfoList(
-      NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) {
+      NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {
     long timeoutMillis =
         K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
-    try {
-      List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(
-          requestData.getKubernetesConfig(), requestData.getReleaseName(), requestData.getNamespace(), timeoutMillis);
-      return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
-          containerInfoList, requestData.getHelmChartInfo(), HelmVersion.valueOf(requestData.getHelmVersion()));
-    } catch (Exception ex) {
-      log.warn("Unable to get list of server instances, namespace: {}, releaseName: {}", requestData.getNamespace(),
-          requestData.getReleaseName(), ex);
-      return Collections.emptyList();
-    }
+
+    List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(
+        requestData.getKubernetesConfig(), requestData.getReleaseName(), requestData.getNamespace(), timeoutMillis);
+    return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
+        containerInfoList, requestData.getHelmChartInfo(), HelmVersion.valueOf(requestData.getHelmVersion()));
   }
 }
