@@ -11,14 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
-import io.harness.ModuleType;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.licensing.entities.modules.ModuleLicense;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
@@ -26,7 +22,6 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -34,11 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 public class CiTelemetryPublisher {
   @Inject CIOverviewDashboardService ciOverviewDashboardService;
   @Inject TelemetryReporter telemetryReporter;
-  @Inject AccountClient accountClient;
+  @Inject AccountUtils accountUtils;
   @Inject CITelemetryStatusRepository ciTelemetryStatusRepository;
   @Inject ModuleLicenseRepository moduleLicenseRepository;
 
   String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
+  String COUNT_HOSTED_CREDITS_USED = "ci_credits_used";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
   static final long A_DAY_MINUS_TEN_MINS = 85800000;
@@ -50,7 +46,7 @@ public class CiTelemetryPublisher {
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
-      List<String> accountIdentifiers = getAllAccounts();
+      List<String> accountIdentifiers = accountUtils.getAllNGAccountIds();
       log.info("Memory before telemetry is {} ", getMemoryUse());
       log.info("Size of the account list is {} ", accountIdentifiers.size());
 
@@ -58,24 +54,17 @@ public class CiTelemetryPublisher {
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
           if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(
                   accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
-            List<ModuleLicense> existing =
-                moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountId, ModuleType.CI);
             HashMap<String, Object> map = new HashMap<>();
             map.put(GROUP_TYPE, ACCOUNT);
             map.put(GROUP_ID, accountId);
             map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-            long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
-            if (existing.size() != 0 || developersCount != 0) {
-              map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
-              telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                  TelemetryOption.builder().sendForCommunity(true).build());
-              log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
-            } else {
-              map.put(COUNT_ACTIVE_DEVELOPERS, null);
-              telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                  TelemetryOption.builder().sendForCommunity(true).build());
-              log.info("Account {} does not have CI Module, sending null as count", accountId);
-            }
+            populateDeveloperCount(map, accountId);
+            populateCreditUsage(map, accountId);
+
+            telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
+                TelemetryOption.builder().sendForCommunity(true).build());
+            log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
+
           } else {
             log.info("Skipping already sent account {} in past 24 hours", accountId);
           }
@@ -89,12 +78,24 @@ public class CiTelemetryPublisher {
     }
   }
 
-  List<String> getAllAccounts() {
-    List<AccountDTO> accountDTOList = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    return accountDTOList.stream()
-        .filter(AccountDTO::isNextGenEnabled)
-        .map(AccountDTO::getIdentifier)
-        .collect(Collectors.toList());
+  private void populateDeveloperCount(HashMap<String, Object> map, String accountId) {
+    long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
+    if (developersCount >= 0) {
+      map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
+    } else {
+      log.warn(String.format("Active developers count is %s for account id %s", developersCount, accountId));
+      map.put(COUNT_ACTIVE_DEVELOPERS, 0);
+    }
+  }
+
+  private void populateCreditUsage(HashMap<String, Object> map, String accountId) {
+    long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId);
+    if (hostedCreditUsage >= 0) {
+      map.put(COUNT_HOSTED_CREDITS_USED, hostedCreditUsage);
+    } else {
+      log.warn(String.format("Hosted credit usage is %s for account id %s", hostedCreditUsage, accountId));
+      map.put(COUNT_HOSTED_CREDITS_USED, 0);
+    }
   }
 
   private long getMemoryUse() {

@@ -28,22 +28,23 @@ public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendationRc(String accountIdentifier, RecommendationRequest recommendationRequest);
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
-  void payInvoice(String invoiceId);
+  void payInvoice(String invoiceId, String accountIdentifier);
 
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
-  void cancelSubscription(String accountIdentifier, String subscriptionId);
+  void cancelSubscription(String accountIdentifier, String subscriptionId, ModuleType moduleType);
   void cancelAllSubscriptions(String accountIdentifier);
   SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
   boolean checkSubscriptionExists(String subscriptionId);
-  List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);
+  List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier);
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
   CustomerDetailDTO getStripeCustomer(String accountIdentifier);
   CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
+  String createClientSecret(String accountIdentifier, String billingEmail);
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier);
 
   void syncStripeEvent(String event);

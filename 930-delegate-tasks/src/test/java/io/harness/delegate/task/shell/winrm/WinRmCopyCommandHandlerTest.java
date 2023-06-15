@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -102,6 +103,22 @@ public class WinRmCopyCommandHandlerTest {
                                             CommandUnitsProgress.builder().build(), taskContext)
                                         .getStatus();
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldCopyConfigWithWinRmExecutorProcessError() {
+    List<String> outputVariables = Collections.singletonList("variable");
+    WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyConfigCommandUnit, outputVariables);
+    when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
+        .thenReturn(CommandExecutionStatus.FAILURE);
+
+    assertThatThrownBy(()
+                           -> winRmCopyCommandHandler.handle(winrmTaskParameters, copyConfigCommandUnit,
+                               iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT);
   }
 
   @Test

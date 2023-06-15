@@ -57,7 +57,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
   public void notify(Map<String, ResponseData> response) {
     String lockName = String.format(EXECUTION_START_PREFIX, parentNodeExecutionId);
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
         log.error("Could not acquire lock for nodeExecutionId: [{}]", parentNodeExecutionId);
         throw new UnexpectedException("Unable to occupy lock therefore throwing the exception");

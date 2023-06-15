@@ -9,7 +9,7 @@ LABEL name="harness/delegate" \
       vendor="Harness" \
       maintainer="Harness"
 
-RUN microdnf update --nodocs \
+RUN microdnf update --nodocs --setopt=install_weak_deps=0 \
   && microdnf install --nodocs \
     procps \
     hostname \
@@ -19,6 +19,7 @@ RUN microdnf update --nodocs \
     gzip \
     git \
     shadow-utils \
+    glibc-langpack-en \
   && useradd -u 1001 -g 0 harness \
   && microdnf remove shadow-utils \
   && microdnf clean all \
@@ -29,7 +30,7 @@ COPY immutable-scripts /opt/harness-delegate/
 
 WORKDIR /opt/harness-delegate
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV LANG=en_US.UTF-8
 ENV HOME=/opt/harness-delegate
@@ -62,8 +63,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/ef2d02fb \
-  && curl -s -L -o client-tools/scm/ef2d02fb/scm https://app.harness.io/public/shared/tools/scm/release/ef2d02fb/bin/linux/$TARGETARCH/scm \
+  && mkdir -m 777 -p client-tools/scm/f1024c6b \
+  && curl -s -L -o client-tools/scm/f1024c6b/scm https://app.harness.io/public/shared/tools/scm/release/f1024c6b/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate  \
   && chown -R 1001 /opt/harness-delegate

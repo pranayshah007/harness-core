@@ -35,6 +35,7 @@ public class TimeSeriesMetricDataDTO implements Comparable<TimeSeriesMetricDataD
 
   String groupName;
   String metricName;
+  String deeplinkURL;
 
   @Builder.Default Integer totalRisk = 0;
 

@@ -65,7 +65,7 @@ public class RetryHelper {
     Ambiance finalAmbiance =
         ambiance.toBuilder()
             .addLevels(PmsLevelUtils.buildLevelFromNode(newUuid, newRetryIndex, node,
-                currentLevel.getStrategyMetadata(), ambiance.getMetadata().getUseMatrixFieldName()))
+                currentLevel.getStrategyMetadata(), AmbianceUtils.shouldUseMatrixFieldName(ambiance)))
             .build();
     NodeExecution newNodeExecution =
         cloneForRetry(updatedRetriedNode, newUuid, finalAmbiance, interruptConfig, interruptId);

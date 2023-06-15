@@ -36,6 +36,11 @@ public class SAMLSettings extends NGAuthSettings {
   private String samlProviderType;
   private String clientId;
   private String clientSecret;
+  private String friendlySamlName;
+  private Boolean authenticationEnabled;
+  private Boolean jitEnabled;
+  private String jitValidationKey;
+  private String jitValidationValue;
 
   public SAMLSettings(@JsonProperty("origin") String origin, @JsonProperty("identifier") String identifier,
       @JsonProperty("logoutUrl") String logoutUrl, @JsonProperty("groupMembershipAttr") String groupMembershipAttr,
@@ -43,7 +48,10 @@ public class SAMLSettings extends NGAuthSettings {
       @JsonProperty("authorizationEnabled") Boolean authorizationEnabled,
       @JsonProperty("entityIdentifier") String entityIdentifier,
       @JsonProperty("samlProviderType") String samlProviderType, @JsonProperty("clientId") String clientId,
-      @JsonProperty("clientSecret") String clientSecret) {
+      @JsonProperty("clientSecret") String clientSecret, @JsonProperty("friendlySamlName") String friendlySamlName,
+      @JsonProperty("authenticationEnabled") Boolean authenticationEnabled,
+      @JsonProperty("jitEnabled") Boolean jitEnabled, @JsonProperty("jitValidationKey") String jitValidationKey,
+      @JsonProperty("jitValidationValue") String jitValidationValue) {
     super(AuthenticationMechanism.SAML);
     this.identifier = identifier;
     this.displayName = displayName;
@@ -55,6 +63,11 @@ public class SAMLSettings extends NGAuthSettings {
     this.samlProviderType = samlProviderType;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.friendlySamlName = friendlySamlName;
+    this.authenticationEnabled = authenticationEnabled;
+    this.jitEnabled = jitEnabled;
+    this.jitValidationKey = jitValidationKey;
+    this.jitValidationValue = jitValidationValue;
   }
 
   @Override

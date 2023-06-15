@@ -231,7 +231,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
                                    .build();
 
     doReturn(detail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any(), any());
 
     List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
     List<CfServiceData> cfServiceDataList = new ArrayList<>();
@@ -265,7 +265,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
                                    .build();
 
     doReturn(detail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any(), any());
 
     List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
     List<CfServiceData> cfServiceDataList = new ArrayList<>();
@@ -369,7 +369,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     assertThat(cfServiceDataList.get(0).getName()).isEqualTo("app");
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any(), any());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
     pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, executionLogCallback, cfServiceDataList, 1,
@@ -448,7 +448,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any(), any());
     doReturn(true).when(pcfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
@@ -534,7 +534,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any(), any());
     doThrow(new PivotalClientApiException("Throwing exception to test if flow stops or not"))
         .when(pcfCommandTaskHelper)
         .disableAutoscalar(any(), any());
@@ -622,34 +622,6 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     ApplicationSummary currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(null, null, null);
     assertThat(currentActiveApplication).isNull();
 
-    doReturn(false).when(pcfDeploymentManager).isActiveApplication(any(), any());
-    final List<ApplicationSummary> previousReleases = Arrays.asList(ApplicationSummary.builder()
-                                                                        .name("a_s_e__4")
-                                                                        .diskQuota(1)
-                                                                        .requestedState(RUNNING)
-                                                                        .id("1")
-                                                                        .urls(new String[] {"url1", "url2"})
-                                                                        .instances(2)
-                                                                        .memoryLimit(1)
-                                                                        .runningInstances(0)
-                                                                        .build(),
-        ApplicationSummary.builder()
-            .name("a_s_e__5")
-            .diskQuota(1)
-            .requestedState(RUNNING)
-            .id("1")
-            .urls(new String[] {"url3", "url4"})
-            .instances(2)
-            .memoryLimit(1)
-            .runningInstances(0)
-            .build());
-
-    currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(
-        previousReleases, CfRequestConfig.builder().build(), executionLogCallback);
-    assertThat(currentActiveApplication).isNotNull();
-    assertThat(currentActiveApplication.getName()).isEqualTo("a_s_e__5");
-    assertThat(currentActiveApplication.getUrls()).containsExactly("url3", "url4");
-
     doReturn(true).when(pcfDeploymentManager).isActiveApplication(any(), any());
     final List<ApplicationSummary> previousReleases1 = Arrays.asList(ApplicationSummary.builder()
                                                                          .name("a_s_e__6")
@@ -673,8 +645,8 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
             .build());
 
     assertThatThrownBy(()
-                           -> pcfCommandTaskHelper.findCurrentActiveApplication(
-                               previousReleases1, CfRequestConfig.builder().build(), executionLogCallback))
+                           -> pcfCommandTaskHelper.findCurrentActiveApplication(previousReleases1,
+                               CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback))
         .isInstanceOf(InvalidPcfStateException.class);
 
     doReturn(false).doReturn(true).when(pcfDeploymentManager).isActiveApplication(any(), any());
@@ -700,9 +672,39 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
             .build());
 
     currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(
-        previousReleases2, CfRequestConfig.builder().build(), executionLogCallback);
+        previousReleases2, CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback);
     assertThat(currentActiveApplication).isNotNull();
     assertThat(currentActiveApplication.getName()).isEqualTo("a_s_e__6");
+    assertThat(currentActiveApplication.getUrls()).containsExactly("url5", "url6");
+
+    // when none of the releases have Active Env Variable set, then pick the application which has same name as release
+    // name
+    doReturn(false).doReturn(false).when(pcfDeploymentManager).isActiveApplication(any(), any());
+    final List<ApplicationSummary> previousReleases3 = Arrays.asList(ApplicationSummary.builder()
+                                                                         .name("a_s_e")
+                                                                         .diskQuota(1)
+                                                                         .requestedState(RUNNING)
+                                                                         .id("1")
+                                                                         .urls(new String[] {"url5", "url6"})
+                                                                         .instances(2)
+                                                                         .memoryLimit(1)
+                                                                         .runningInstances(0)
+                                                                         .build(),
+        ApplicationSummary.builder()
+            .name("a_s_e__7")
+            .diskQuota(1)
+            .requestedState(RUNNING)
+            .id("1")
+            .urls(new String[] {"url7", "url8"})
+            .instances(2)
+            .memoryLimit(1)
+            .runningInstances(0)
+            .build());
+
+    currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(
+        previousReleases3, CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback);
+    assertThat(currentActiveApplication).isNotNull();
+    assertThat(currentActiveApplication.getName()).isEqualTo("a_s_e");
     assertThat(currentActiveApplication.getUrls()).containsExactly("url5", "url6");
   }
 

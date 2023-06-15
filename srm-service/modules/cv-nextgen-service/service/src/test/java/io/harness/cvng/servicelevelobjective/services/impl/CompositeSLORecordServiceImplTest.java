@@ -13,14 +13,15 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.offset;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -28,6 +29,7 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObj
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
@@ -60,9 +62,13 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   private Instant endTime;
   private String verificationTaskId;
 
+  private String leastPerformantVerificationTaskId;
+
   private String requestVerificationTaskId;
   ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO;
   CompositeServiceLevelObjective compositeServiceLevelObjective;
+
+  CompositeServiceLevelObjective leastPerformantCompositeServiceLevelObjective;
   ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1;
   ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2;
   SimpleServiceLevelObjective simpleServiceLevelObjective1;
@@ -136,6 +142,33 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
 
+    serviceLevelObjectiveV2DTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .identifier("leastPerformantCompositeServiceLevelObjectiveIdentifier")
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .sloFormulaType(CompositeSLOFormulaType.LEAST_PERFORMANCE)
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(100.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                  .weightagePercentage(30.0)
+                                  .accountId(simpleServiceLevelObjective2.getAccountId())
+                                  .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                  .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    leastPerformantCompositeServiceLevelObjective =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+
     requestSimpleServiceLevelObjectiveDTO1 =
         builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("requestSloIdentifier").build();
     simpleServiceLevelObjectiveSpec1 =
@@ -185,6 +218,7 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
         builderFactory.getProjectParams(), requestServiceLevelObjectiveV2DTO.getIdentifier());
 
     verificationTaskId = compositeServiceLevelObjective.getUuid();
+    leastPerformantVerificationTaskId = leastPerformantCompositeServiceLevelObjective.getUuid();
     requestVerificationTaskId = requestCompositeServiceLevelObjective.getUuid();
     startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
     endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
@@ -194,10 +228,10 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testCreate_multipleSaves() {
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.GOOD);
     String sliId1 = serviceLevelIndicatorService
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
@@ -206,40 +240,52 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList1 = createSLIRecords(sliId1, sliStateList1);
-    List<SLIRecord> sliRecordList2 = createSLIRecords(sliId2, sliStateList2);
-
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList1);
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), SLIMissingDataType.GOOD);
-    objectivesDetailSLIMissingDataTypeMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), SLIMissingDataType.BAD);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0,
-        verificationTaskId, startTime, endTime, SLIEvaluationType.WINDOW);
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
     assertThat(sloRecords.size()).isEqualTo(5);
-    assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(2.25);
-    assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(2.75);
+    assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(2.0);
+    assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(3.0);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateLeastPerformant_multipleSaves() {
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.GOOD);
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(
+        leastPerformantCompositeServiceLevelObjective, startTime, endTime, leastPerformantVerificationTaskId);
+    List<CompositeSLORecord> sloRecords =
+        sloRecordService.getSLORecords(leastPerformantVerificationTaskId, startTime, endTime);
+    assertThat(sloRecords.size()).isEqualTo(5);
+    assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(2.6, offset(0.001));
+    assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(2.4, offset(0.001));
+  }
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testCreate_multipleSaves_request() {
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts1 = Arrays.asList(100l, 200l, 300l, 0l, 100l);
     List<Long> badCounts1 = Arrays.asList(10l, 20l, 30l, 0l, 10l);
 
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts2 = Arrays.asList(100l, 200l, 300l, 0l, 100l);
     List<Long> badCounts2 = Arrays.asList(0l, 0l, 10l, 0l, 0l);
 
@@ -251,23 +297,10 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             requestSimpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList1 = createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
-    List<SLIRecord> sliRecordList2 = createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
+    createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
+    createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
+    sloRecordService.create(requestCompositeServiceLevelObjective, startTime, endTime, verificationTaskId);
 
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList1);
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), null);
-    objectivesDetailSLIMissingDataTypeMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), null);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0,
-        requestVerificationTaskId, startTime, endTime, SLIEvaluationType.REQUEST);
     List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
     assertThat(sloRecords.size()).isEqualTo(5);
     assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(0);
@@ -291,10 +324,10 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testCreate_SkipData() {
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.SKIP_DATA);
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.SKIP_DATA,
-        SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.SKIP_DATA);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.BAD, SLIState.SKIP_DATA, SLIState.NO_DATA, SLIState.BAD, SLIState.GOOD);
     String sliId1 = serviceLevelIndicatorService
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
@@ -303,40 +336,26 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList1 = createSLIRecords(sliId1, sliStateList1);
-    List<SLIRecord> sliRecordList2 = createSLIRecords(sliId2, sliStateList2);
-
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList1);
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), SLIMissingDataType.GOOD);
-    objectivesDetailSLIMissingDataTypeMap.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), SLIMissingDataType.BAD);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0,
-        verificationTaskId, startTime, endTime, SLIEvaluationType.WINDOW);
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
     assertThat(sloRecords.size()).isEqualTo(3);
-    assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.5);
-    assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.5);
+    assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.25);
+    assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.75);
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testCreate_SkipData_request() {
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.SKIP_DATA, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.SKIP_DATA, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts1 = Arrays.asList(100l, 200l, 0l, 0l, 100l);
     List<Long> badCounts1 = Arrays.asList(10l, 20l, 0l, 0l, 10l);
 
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.SKIP_DATA);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.SKIP_DATA);
     List<Long> goodCounts2 = Arrays.asList(100l, 200l, 300l, 0l, 0l);
     List<Long> badCounts2 = Arrays.asList(0l, 0l, 10l, 0l, 0l);
 
@@ -348,23 +367,9 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             requestSimpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList1 = createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
-    List<SLIRecord> sliRecordList2 = createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
-
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList1);
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), null);
-    objectivesDetailSLIMissingDataTypeMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), null);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0,
-        requestVerificationTaskId, startTime, endTime, SLIEvaluationType.REQUEST);
+    createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
+    createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
+    sloRecordService.create(requestCompositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
     assertThat(sloRecords.size()).isEqualTo(3);
     assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(0);
@@ -396,10 +401,10 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(2.25);
     assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(2.75);
 
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.GOOD);
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.GOOD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.BAD);
     String sliId1 = serviceLevelIndicatorService
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
@@ -408,29 +413,51 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList3 = createSLIRecords(sliId1, sliStateList1);
-    List<SLIRecord> sliRecordList4 = createSLIRecords(sliId2, sliStateList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap1 = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList3);
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList4);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap1 = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), SLIMissingDataType.GOOD);
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), SLIMissingDataType.GOOD);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap1, objectivesDetailSLIMissingDataTypeMap1,
-        1, verificationTaskId, startTime, endTime, SLIEvaluationType.WINDOW);
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords1 = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
     assertThat(sloRecords1.size()).isEqualTo(5);
     assertThat(sloRecords1.get(4).getRunningBadCount()).isEqualTo(2.0);
     assertThat(sloRecords1.get(4).getRunningGoodCount()).isEqualTo(3.0);
-    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(1);
+    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(0);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateLeastPerformant_completeOverlap() {
+    List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75, 2.5, 2.75);
+    List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25, 1.5, 2.25);
+    createSLORecords(startTime, endTime, runningGoodCount, runningBadCount);
+    List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
+    assertThat(sloRecords.size()).isEqualTo(5);
+    assertThat(sloRecords.get(4).getRunningBadCount()).isEqualTo(2.25);
+    assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(2.75);
+
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.GOOD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.BAD);
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(
+        leastPerformantCompositeServiceLevelObjective, startTime, endTime, leastPerformantVerificationTaskId);
+    List<CompositeSLORecord> sloRecords1 =
+        sloRecordService.getSLORecords(leastPerformantVerificationTaskId, startTime, endTime);
+    assertThat(sloRecords1.size()).isEqualTo(5);
+    assertThat(sloRecords1.get(4).getRunningBadCount()).isEqualTo(2.6, offset(0.01));
+    assertThat(sloRecords1.get(4).getRunningGoodCount()).isEqualTo(2.4, offset(0.01));
+    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(0);
+  }
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
@@ -443,13 +470,13 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords.get(4).getRunningGoodCount()).isEqualTo(0);
     assertThat(Objects.isNull(sloRecords.get(4).getScopedIdentifierSLIRecordMap())).isEqualTo(true);
 
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts1 = Arrays.asList(100l, 200l, 0l, 0l, 100l);
     List<Long> badCounts1 = Arrays.asList(10l, 20l, 0l, 0l, 10l);
 
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts2 = Arrays.asList(100l, 200l, 300l, 0l, 0l);
     List<Long> badCounts2 = Arrays.asList(0l, 0l, 10l, 0l, 0l);
 
@@ -461,22 +488,10 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             requestSimpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList1 = createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
-    List<SLIRecord> sliRecordList2 = createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList1);
-    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), null);
-    objectivesDetailSLIMissingDataTypeMap.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), null);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 1,
-        requestVerificationTaskId, startTime, endTime, SLIEvaluationType.REQUEST);
+    createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
+    createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
+
+    sloRecordService.create(requestCompositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords1 =
         sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
     assertThat(sloRecords1.size()).isEqualTo(5);
@@ -509,10 +524,10 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.25);
     assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.75);
 
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.GOOD);
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.GOOD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.BAD);
     String sliId1 = serviceLevelIndicatorService
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
@@ -521,29 +536,51 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList3 = createSLIRecords(sliId1, sliStateList1);
-    List<SLIRecord> sliRecordList4 = createSLIRecords(sliId2, sliStateList2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap1 = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList3);
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList4);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap1 = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), SLIMissingDataType.GOOD);
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), SLIMissingDataType.GOOD);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap1, objectivesDetailSLIMissingDataTypeMap1,
-        1, verificationTaskId, startTime, endTime, SLIEvaluationType.WINDOW);
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords1 = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
     assertThat(sloRecords1.size()).isEqualTo(5);
     assertThat(sloRecords1.get(4).getRunningBadCount()).isEqualTo(2.0);
     assertThat(sloRecords1.get(4).getRunningGoodCount()).isEqualTo(3.0);
-    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(1);
+    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(0);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdateLeastPerformant_partialOverlap() {
+    List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75);
+    List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25);
+    createSLORecords(startTime, endTime.minusSeconds(120), runningGoodCount, runningBadCount);
+    List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
+    assertThat(sloRecords.size()).isEqualTo(3);
+    assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.25);
+    assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.75);
+
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.SKIP_DATA, SLIState.GOOD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD, SLIState.BAD);
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    createSLIRecords(sliId1, sliStateList1);
+    createSLIRecords(sliId2, sliStateList2);
+    sloRecordService.create(
+        leastPerformantCompositeServiceLevelObjective, startTime, endTime, leastPerformantVerificationTaskId);
+    List<CompositeSLORecord> sloRecords1 =
+        sloRecordService.getSLORecords(leastPerformantVerificationTaskId, startTime, endTime);
+    assertThat(sloRecords1.size()).isEqualTo(4);
+    assertThat(sloRecords1.get(3).getRunningBadCount()).isEqualTo(2.3, offset(0.01));
+    assertThat(sloRecords1.get(3).getRunningGoodCount()).isEqualTo(1.7, offset(0.01));
+    assertThat(sloRecords1.get(3).getSloVersion()).isEqualTo(0);
+  }
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
@@ -556,12 +593,12 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(0);
     assertThat(Objects.isNull(sloRecords.get(2).getScopedIdentifierSLIRecordMap())).isEqualTo(true);
 
-    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts1 = Arrays.asList(100l, 200l, 0l, 0l, 100l);
     List<Long> badCounts1 = Arrays.asList(10l, 20l, 0l, 0l, 10l);
-    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.GOOD, SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.BAD);
     List<Long> goodCounts2 = Arrays.asList(100l, 200l, 300l, 0l, 0l);
     List<Long> badCounts2 = Arrays.asList(0l, 0l, 10l, 0l, 0l);
     String sliId1 = serviceLevelIndicatorService
@@ -572,28 +609,15 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             requestSimpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord> sliRecordList3 = createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
-    List<SLIRecord> sliRecordList4 = createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
-        serviceLevelObjectivesDetailCompositeSLORecordMap1 = new HashMap<>();
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList3);
-    serviceLevelObjectivesDetailCompositeSLORecordMap1.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList4);
-    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
-        objectivesDetailSLIMissingDataTypeMap1 = new HashMap<>();
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), null);
-    objectivesDetailSLIMissingDataTypeMap1.put(
-        requestCompositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), null);
-    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap1, objectivesDetailSLIMissingDataTypeMap1,
-        1, requestVerificationTaskId, startTime, endTime, SLIEvaluationType.REQUEST);
+    createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1);
+    createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2);
+    sloRecordService.create(requestCompositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     List<CompositeSLORecord> sloRecords1 =
         sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
     assertThat(sloRecords1.size()).isEqualTo(5);
     assertThat(sloRecords1.get(4).getRunningBadCount()).isEqualTo(0.0);
     assertThat(sloRecords1.get(4).getRunningGoodCount()).isEqualTo(0.0);
-    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(1);
+    assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(0);
     assertThat(sloRecords1.get(2)
                    .getScopedIdentifierSLIRecordMap()
                    .get(serviceLevelObjectiveV2Service.getScopedIdentifier(
@@ -608,7 +632,7 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(300);
   }
 
-  private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {
+  private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states) {
     int index = 0;
     List<SLIRecord> sliRecords = new ArrayList<>();
     for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
@@ -625,11 +649,12 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
       sliRecords.add(sliRecord);
       index++;
     }
+    hPersistence.saveBatch(sliRecords);
     return sliRecords;
   }
 
   private List<SLIRecord> createSLIRecords(
-      String sliId, List<SLIRecord.SLIState> states, List<Long> goodCounts, List<Long> badCounts) {
+      String sliId, List<SLIState> states, List<Long> goodCounts, List<Long> badCounts) {
     int index = 0;
     List<SLIRecord> sliRecords = new ArrayList<>();
     long runningGoodCount = 0;
@@ -638,7 +663,7 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
       runningGoodCount += goodCounts.get(index);
       runningBadCount += badCounts.get(index);
       SLIRecord sliRecord = SLIRecord.builder()
-                                .verificationTaskId(requestVerificationTaskId)
+                                .verificationTaskId(sliId)
                                 .sliId(sliId)
                                 .version(0)
                                 .sliState(states.get(index))
@@ -650,6 +675,7 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
       sliRecords.add(sliRecord);
       index++;
     }
+    hPersistence.saveBatch(sliRecords);
     return sliRecords;
   }
 

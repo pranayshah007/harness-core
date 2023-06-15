@@ -9,6 +9,7 @@ package io.harness.ipallowlist.service;
 
 import io.harness.ipallowlist.dto.IPAllowlistFilterDTO;
 import io.harness.ipallowlist.entity.IPAllowlistEntity;
+import io.harness.spec.server.ng.v1.model.IPAllowlistConfigValidateResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +24,7 @@ public interface IPAllowlistService {
   boolean validateUniqueness(String accountIdentifier, String identifier);
 
   Page<IPAllowlistEntity> list(String harnessAccount, Pageable pageable, IPAllowlistFilterDTO ipAllowlistFilterDTO);
+
+  IPAllowlistConfigValidateResponse validateIpAddressAllowlistedOrNot(
+      String ipAddress, String harnessAccount, String customIpAddressBlock);
 }

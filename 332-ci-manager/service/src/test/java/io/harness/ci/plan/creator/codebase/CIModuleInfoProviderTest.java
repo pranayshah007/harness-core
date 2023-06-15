@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,6 +37,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
@@ -104,6 +106,10 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
                                     .tag("tag")
                                     .prNumber("1")
                                     .repoUrl("https://github.com/test/repo-name")
+                                    .gitUserId("userId")
+                                    .gitUser("userId")
+                                    .gitUserAvatar("avatar")
+                                    .gitUserEmail("email")
                                     .build())
                         .build());
     CILicenseSummaryDTO ciLicenseSummaryDTO =
@@ -116,6 +122,12 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getTag()).isEqualTo("tag");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getSourceBranch()).isEqualTo("test");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
+
+    CIBuildAuthor author = ciPipelineModuleInfo.getCiExecutionInfoDTO().getAuthor();
+    assertThat(author.getId()).isEqualTo("userId");
+    assertThat(author.getName()).isEqualTo("userId");
+    assertThat(author.getAvatar()).isEqualTo("avatar");
+    assertThat(author.getEmail()).isEqualTo("email");
 
     assertThat(ciPipelineModuleInfo.getScmDetailsList().size()).isEqualTo(0);
     assertThat(ciPipelineModuleInfo.getInfraDetailsList().size()).isEqualTo(0);
@@ -147,7 +159,8 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().build());
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ciExecutionPlanTestHelper.getGitConnector());
+    when(connectorUtils.getConnectorDetails(any(), any(), eq(true)))
+        .thenReturn(ciExecutionPlanTestHelper.getGitConnector());
     CIPipelineModuleInfo ciPipelineModuleInfo =
         (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
 

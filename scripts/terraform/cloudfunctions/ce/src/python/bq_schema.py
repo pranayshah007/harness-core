@@ -137,6 +137,11 @@ aws_cur_table_schema = [
         "type": "STRING"
     },
     {
+        "mode": "NULLABLE",
+        "name": "mspMarkupMultiplier",
+        "type": "FLOAT64"
+    },
+    {
         "fields": [
             {
                 "mode": "NULLABLE",
@@ -216,6 +221,11 @@ preAggreagtedTableSchema = [
         "mode": "NULLABLE",
         "name": "ccmPreferredCurrency",
         "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "mspMarkupMultiplier",
+        "type": "FLOAT64"
     },
     {
         "mode": "NULLABLE",
@@ -576,6 +586,16 @@ unifiedTableTableSchema = [
     },
     {
         "mode": "NULLABLE",
+        "name": "gcpInvoiceMonth",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "gcpCostType",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
         "name": "region",
         "type": "STRING"
     },
@@ -606,6 +626,11 @@ unifiedTableTableSchema = [
     },
     {
         "mode": "NULLABLE",
+        "name": "mspMarkupMultiplier",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
         "name": "awsBlendedRate",
         "type": "STRING"
     },
@@ -623,6 +648,26 @@ unifiedTableTableSchema = [
         "mode": "NULLABLE",
         "name": "awsUnblendedCost",
         "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsEffectiveCost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsAmortisedCost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsNetAmortisedCost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "awsLineItemType",
+        "type": "STRING"
     },
     {
         "mode": "NULLABLE",
@@ -975,6 +1020,19 @@ currencyConversionFactorUserInputTableTableSchema = [
         "mode": "NULLABLE",
         "name": "isHistoricalUpdateRequired",
         "type": "BOOLEAN"
+    }
+]
+
+labelKeysToColumnMappingTableSchema = [
+    {
+        "mode": "REQUIRED",
+        "name": "labelKey",
+        "type": "STRING"
+    },
+    {
+        "mode": "REQUIRED",
+        "name": "columnName",
+        "type": "STRING"
     }
 ]
 
@@ -1335,10 +1393,10 @@ clusterDataAggregatedFields = [{'mode': 'REQUIRED', 'name': 'starttime', 'type':
                                }] # Added manually
 
 costAggregatedSchema = [{'mode': 'REQUIRED', 'name': 'accountId', 'type': 'STRING'},
-                  {'mode': 'REQUIRED', 'name': 'cloudProvider', 'type': 'STRING'},
-                  {'mode': 'REQUIRED', 'name': 'cost', 'type': 'FLOAT'},
-                  {'mode': 'REQUIRED', 'name': 'day', 'type': 'TIMESTAMP'}
-                  ]
+                        {'mode': 'REQUIRED', 'name': 'cloudProvider', 'type': 'STRING'},
+                        {'mode': 'REQUIRED', 'name': 'cost', 'type': 'FLOAT'},
+                        {'mode': 'REQUIRED', 'name': 'day', 'type': 'TIMESTAMP'}
+                        ]
 
 gcp_cost_export_table_schema = [
     {

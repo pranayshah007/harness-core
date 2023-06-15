@@ -23,7 +23,6 @@ import io.harness.execution.export.request.ExportExecutionsRequest.OutputFormat;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.WorkflowExecution;
@@ -74,7 +73,7 @@ public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = GARVIT)
-  @RealMongo
+
   @Category(UnitTests.class)
   public void testQueueExportExecutionRequest() {
     saveWorkflowExecution();
@@ -116,7 +115,7 @@ public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = GARVIT)
-  @RealMongo
+
   @Category(UnitTests.class)
   public void testPrepareLimitChecks() {
     saveWorkflowExecution();

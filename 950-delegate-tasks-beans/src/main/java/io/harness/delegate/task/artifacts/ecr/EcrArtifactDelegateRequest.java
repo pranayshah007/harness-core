@@ -34,15 +34,29 @@ import lombok.Value;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EcrArtifactDelegateRequest implements ArtifactSourceDelegateRequest {
-  /** Images in repos need to be referenced via a path. */
+  /**
+   * RegistryId of the image.
+   */
+  String registryId;
+  /**
+   * Images in repos need to be referenced via a path.
+   */
   String imagePath;
-  /** Tag refers to exact tag number. */
+  /**
+   * Tag refers to exact tag number.
+   */
   String tag;
-  /** Tag regex is used to get latest build from builds matching regex. */
+  /**
+   * Tag regex is used to get latest build from builds matching regex.
+   */
   String tagRegex;
-  /** List of buildNumbers/tags */
+  /**
+   * List of buildNumbers/tags
+   */
   List<String> tagsList;
-  /** Region */
+  /**
+   * Region
+   */
   String region;
   String connectorRef;
   /** aws Connector*/

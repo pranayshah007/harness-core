@@ -53,8 +53,11 @@ public class SLODashboardWidget {
   @NotNull double sloTargetPercentage;
   @NotNull List<Point> errorBudgetBurndown;
   @NotNull List<Point> sloPerformanceTrend;
+  @NotNull boolean isTotalErrorBudgetApplicable;
   @NotNull boolean isRecalculatingSLI;
   @NotNull boolean isCalculatingSLI;
+
+  SLOError sloError;
   @Value
   @Builder
   public static class BurnRate {

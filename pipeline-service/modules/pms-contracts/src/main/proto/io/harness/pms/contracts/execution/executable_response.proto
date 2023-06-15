@@ -22,6 +22,7 @@ message ExecutableResponse {
     TaskChainExecutableResponse taskChain = 6;
     SyncExecutableResponse sync = 7;
     SkipTaskExecutableResponse skipTask = 8;
+    AsyncChainExecutableResponse asyncChain = 9;
   }
 }
 
@@ -30,12 +31,22 @@ message SyncExecutableResponse {
   repeated string units = 2;
 }
 
+message AsyncChainExecutableResponse {
+  bool chainEnd = 1;
+  string callbackId = 2;
+  repeated string logKeys = 3;
+  repeated string units = 4;
+  int32 timeout = 5;
+  Status status = 6;
+}
+
 message AsyncExecutableResponse {
   repeated string callbackIds = 1;
   repeated string logKeys = 2;
   repeated string units = 3;
   int32 timeout = 5;
-  Status status = 9;  // Async step can send the status they want to set for their step
+  Status status = 9;  // Async step can send the status they want to set for their step. This status is only for
+                      // non-final status (StatusUtils.RESUMABLE_STATUSES())
 }
 
 message ChildExecutableResponse {
@@ -73,6 +84,7 @@ message MatrixMetadata {
   map<string, string> matrixValues = 1;
   repeated int32 matrixCombination = 2;
   string subType = 3;
+  repeated string matrixKeysToSkipInName = 4;
 }
 
 message ChildChainExecutableResponse {

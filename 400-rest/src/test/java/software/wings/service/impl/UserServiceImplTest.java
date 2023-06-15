@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.HAS;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -42,6 +43,8 @@ import static software.wings.utils.WingsTestConstants.USER_EMAIL;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
+import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -115,6 +118,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.http.client.utils.URIBuilder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -187,7 +191,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(account);
     User user = anUser().pendingAccounts(Arrays.asList(account)).build();
     wingsPersistence.save(user);
-    assertThat(userServiceImpl.getTotalUserCount("ACCOUNT_ID", true)).isEqualTo(1);
+    assertThat(userServiceImpl.getTotalUserCount("ACCOUNT_ID", true, true, true)).isEqualTo(1);
   }
 
   private void setup() {
@@ -437,6 +441,34 @@ public class UserServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_completeUserCreationOrAdditionViaJitAndSignIn() throws Exception {
+    Account account = anAccount()
+                          .withAccountName("harness")
+                          .withCompanyName("harness")
+                          .withAppId(GLOBAL_APP_ID)
+                          .withUuid(UUID)
+                          .withAuthenticationMechanism(AuthenticationMechanism.SAML)
+                          .build();
+    String email = "newUser@gmail.com";
+    wingsPersistence.save(account);
+    when(accountService.get(ACCOUNT_ID)).thenReturn(account);
+    retrofit2.Call<ResponseDTO<Boolean>> req = mock(retrofit2.Call.class);
+    when(ngInviteClient.completeUserCreationForJIT(anyString(), anyString())).thenReturn(req);
+    when(req.execute()).thenReturn(Response.success(ResponseDTO.newResponse()));
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
+    User user = userServiceImpl.completeUserCreationOrAdditionViaJitAndSignIn(email, ACCOUNT_ID);
+    assertNotNull(user);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(ngInviteClient, times(1)).completeUserCreationForJIT(argumentCaptor.capture(), any());
+    assertThat(email).isEqualTo(argumentCaptor.getValue());
+  }
+
+  @Test
   @Owner(developers = RAJ)
   @Category(UnitTests.class)
   public void test_CompleteNgInvite_2FA() throws Exception {
@@ -577,12 +609,12 @@ public class UserServiceImplTest extends WingsBaseTest {
     map.put("sort[0][direction]", Arrays.asList("ASC"));
     map.put("sort[0][field]", Arrays.asList("name"));
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 1, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 1, 30, false, true, false, true);
     assertThat(userList.get(1).getName()).isEqualTo("pqr");
 
     map.put("sort[0][field]", Arrays.asList("email"));
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true, false);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true, false, true);
     assertThat(userList.get(2).getName()).isEqualTo("eFg");
   }
 
@@ -598,11 +630,11 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(1);
     assertThat(userList.get(0).getName()).isEqualTo("pqr");
 
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(2);
   }
 
@@ -635,10 +667,10 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     map.put("sort[0][direction]", Arrays.asList("DESC"));
     map.put("sort[0][field]", Arrays.asList("email"));
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false, true);
     assertThat(userList.get(1).getName()).isEqualTo("pqr");
 
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "fgh", 0, 30, false, true, false);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "fgh", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(0);
   }
 
@@ -672,7 +704,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(1);
     assertThat(userList.get(0).getName()).isEqualTo("pqr1");
     assertThat(userList.get(0).isDisabled()).isEqualTo(false);
@@ -708,7 +740,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, true);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, true, true);
     assertThat(userList.size()).isEqualTo(2);
     assertThat(userList.get(0).getName()).isEqualTo("user-1");
     assertThat(userList.get(0).getDisabled()).isEqualTo(true);
@@ -814,8 +846,28 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 1, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 1, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldReturnPendingInvitesForMatchingGroup() {
+    String uuidString = generateUuid();
+    UserInvite userInvite = anUserInvite()
+                                .withUuid(UUIDGenerator.generateUuid())
+                                .withAccountId(ACCOUNT_ID)
+                                .withEmail(USER_EMAIL)
+                                .withName(USER_NAME)
+                                .withCompleted(Boolean.FALSE)
+                                .withUserGroups(asList(UserGroup.builder().uuid(uuidString).build()))
+                                .build();
+    wingsPersistence.save(userInvite);
+
+    List<UserInvite> inviteList = userServiceImpl.getInvitesFromAccountIdAndUserGroupId(ACCOUNT_ID, uuidString);
+    assertThat(inviteList).isNotNull();
+    assertThat(inviteList.size()).isEqualTo(1);
   }
 
   @Test

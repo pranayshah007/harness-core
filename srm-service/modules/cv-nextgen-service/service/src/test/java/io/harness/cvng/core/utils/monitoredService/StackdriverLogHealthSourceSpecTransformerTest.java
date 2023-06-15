@@ -18,7 +18,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec.QueryDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec.StackdriverLogHealthSourceQueryDTO;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.rule.Owner;
 
@@ -35,7 +35,7 @@ import org.junit.experimental.categories.Category;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StackdriverLogHealthSourceSpecTransformerTest extends CvNextGenTestBase {
-  List<QueryDTO> queryDTOS;
+  List<StackdriverLogHealthSourceQueryDTO> queryDTOS;
   String envIdentifier;
   String connectorIdentifier;
   String productName;
@@ -51,13 +51,13 @@ public class StackdriverLogHealthSourceSpecTransformerTest extends CvNextGenTest
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
-    queryDTOS = Lists.newArrayList(QueryDTO.builder()
+    queryDTOS = Lists.newArrayList(StackdriverLogHealthSourceQueryDTO.builder()
                                        .name(randomAlphabetic(10))
                                        .query(randomAlphabetic(10))
                                        .messageIdentifier(randomAlphabetic(10))
                                        .serviceInstanceIdentifier(randomAlphabetic(10))
                                        .build(),
-        QueryDTO.builder()
+        StackdriverLogHealthSourceQueryDTO.builder()
             .name(randomAlphabetic(10))
             .query(randomAlphabetic(10))
             .messageIdentifier(randomAlphabetic(10))

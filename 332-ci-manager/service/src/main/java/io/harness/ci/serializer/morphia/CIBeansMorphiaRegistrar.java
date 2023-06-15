@@ -12,6 +12,7 @@ import io.harness.app.beans.entities.ExecutionQueueLimit;
 import io.harness.app.beans.entities.PluginMetadataConfig;
 import io.harness.app.beans.entities.PluginMetadataStatus;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
@@ -54,6 +55,7 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CIExecutionMetadata.class);
     set.add(PluginMetadataConfig.class);
     set.add(PluginMetadataStatus.class);
+    set.add(CIStageOutput.class);
   }
 
   @Override

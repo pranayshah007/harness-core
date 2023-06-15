@@ -32,6 +32,7 @@ import io.harness.connector.heartbeat.NexusValidationParamsProvider;
 import io.harness.connector.heartbeat.NoOpConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.OciHelmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.RancherConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
 import io.harness.connector.heartbeat.SpotValidationParamsProvider;
@@ -106,6 +107,8 @@ import io.harness.connector.mappers.pdcconnector.PhysicalDataCenterDTOToEntity;
 import io.harness.connector.mappers.pdcconnector.PhysicalDataCenterEntityToDTO;
 import io.harness.connector.mappers.prometheusmapper.PrometheusDTOToEntity;
 import io.harness.connector.mappers.prometheusmapper.PrometheusEntityToDTO;
+import io.harness.connector.mappers.rancherMapper.RancherDTOToEntity;
+import io.harness.connector.mappers.rancherMapper.RancherEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.AwsKmsDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.AwsKmsEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.AwsSecretManagerDTOToEntity;
@@ -124,6 +127,8 @@ import io.harness.connector.mappers.secretmanagermapper.VaultDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.VaultEntityToDTO;
 import io.harness.connector.mappers.servicenow.ServiceNowDTOtoEntity;
 import io.harness.connector.mappers.servicenow.ServiceNowEntityToDTO;
+import io.harness.connector.mappers.signalfxmapper.SignalFXDTOToEntity;
+import io.harness.connector.mappers.signalfxmapper.SignalFXEntityToDTO;
 import io.harness.connector.mappers.splunkconnectormapper.SplunkDTOToEntity;
 import io.harness.connector.mappers.splunkconnectormapper.SplunkEntityToDTO;
 import io.harness.connector.mappers.spotmapper.SpotDTOToEntity;
@@ -142,6 +147,7 @@ import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
+import io.harness.connector.task.rancher.RancherValidationHandler;
 import io.harness.connector.task.spot.SpotValidationHandler;
 import io.harness.connector.task.tas.TasValidationHandler;
 import io.harness.connector.task.terraformcloud.TerraformCloudValidationHandler;
@@ -165,6 +171,7 @@ import io.harness.connector.validator.KubernetesConnectionValidator;
 import io.harness.connector.validator.NexusConnectorValidator;
 import io.harness.connector.validator.OciHelmRepoConnectionValidator;
 import io.harness.connector.validator.PhysicalDataCenterConnectorValidator;
+import io.harness.connector.validator.RancherConnectionValidator;
 import io.harness.connector.validator.SecretManagerConnectorValidator;
 import io.harness.connector.validator.ServiceNowConnectorValidator;
 import io.harness.connector.validator.SpotConnectorValidator;
@@ -294,6 +301,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GithubConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GithubDTOToEntity.class, GithubEntityToDTO.class,
             GitValidationHandler.class));
+    registrar.put(ConnectorType.HARNESS,
+        new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GithubConnectorValidator.class,
+            ScmConnectorValidationParamsProvider.class, GithubDTOToEntity.class, GithubEntityToDTO.class,
+            GitValidationHandler.class));
     registrar.put(ConnectorType.GITLAB,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GitlabConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GitlabDTOToEntity.class, GitlabEntityToDTO.class,
@@ -374,6 +385,14 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TerraformCloudConnectorValidator.class,
             TerraformCloudValidationParamsProvider.class, TerraformCloudDTOToEntity.class,
             TerraformCloudEntityToDTO.class, TerraformCloudValidationHandler.class));
+    registrar.put(ConnectorType.SIGNALFX,
+        new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
+            CVConnectorParamsProvider.class, SignalFXDTOToEntity.class, SignalFXEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.RANCHER,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, RancherConnectionValidator.class,
+            RancherConnectorValidationParamsProvider.class, RancherDTOToEntity.class, RancherEntityToDTO.class,
+            RancherValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

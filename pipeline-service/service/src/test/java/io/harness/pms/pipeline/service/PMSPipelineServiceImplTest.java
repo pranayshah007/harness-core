@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.git.model.ChangeType;
@@ -68,6 +71,7 @@ import io.harness.pms.pipeline.SourceIdentifierConfig;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepData;
 import io.harness.pms.pipeline.StepPalleteInfo;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -95,6 +99,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -647,5 +652,33 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         .thenThrow(InvalidRequestException.class);
     final Throwable ex = catchThrowable(() -> pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true));
     assertThat(ex).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testApplyGitXSettingsIfApplicable() {
+    pmsPipelineService.applyGitXSettingsIfApplicable(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    InOrder inOrder = inOrder(gitXSettingsHelper);
+    inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testUpdateGitMetadata() {
+    PMSUpdateGitDetailsParams pmsUpdateGitDetailsParams = PMSUpdateGitDetailsParams.builder()
+                                                              .connectorRef("newConnectorRef")
+                                                              .filePath("newFilePath")
+                                                              .repoName("repoName")
+                                                              .build();
+    doReturn(null).when(pmsPipelineRepositoryMock).updateEntity(any(), any());
+    assertThatThrownBy(()
+                           -> pmsPipelineService.updateGitMetadata(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, pmsUpdateGitDetailsParams))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessageContaining("Pipeline with id [myPipeline] is not present or has been deleted");
   }
 }

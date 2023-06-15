@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.InstanceType;
+import io.harness.entities.RollbackStatus;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.execution.Status;
 
@@ -49,8 +50,10 @@ public class InstanceDTO {
   @NonFinal @Setter long lastDeployedAt;
   @NonFinal @Setter String lastPipelineExecutionId;
   @NonFinal @Setter String lastPipelineExecutionName;
-  String stageNodeExecutionId;
-  Status stageStatus;
+  @NonFinal @Setter String stageNodeExecutionId;
+  @NonFinal @Setter Status stageStatus;
+  @NonFinal @Setter String stageSetupId;
+  @NonFinal @Setter @Builder.Default RollbackStatus rollbackStatus;
   @NonFinal @Setter InstanceInfoDTO instanceInfoDTO;
   boolean isDeleted;
   long deletedAt;

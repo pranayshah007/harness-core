@@ -199,16 +199,16 @@ public class NGVaultServiceImpl implements NGVaultService {
           secretEngineSummaries.add(secretEngineSummary);
         }
       }
+    } catch (DelegateServiceDriverException ex) {
+      if (ex.getMessage() != null) {
+        throw ex;
+      } else {
+        throw new WingsException(
+            "Listing secret engines failed. Please check if active delegates are available in the account", ex);
+      }
     } catch (WingsException wingsException) {
       log.error("Listing secret engines failed for account Id {}", baseVaultConfig.getAccountId());
       throw wingsException;
-    } catch (DelegateServiceDriverException ex) {
-      if (ex.getMessage() != null) {
-        throw new WingsException(ex.getMessage(), ex);
-      } else {
-        throw new WingsException(String.format(
-            "Listing secret engines failed. Please check if active delegates are available in the account"));
-      }
     } catch (Exception e) {
       log.error("Listing vault engines failed for account Id {}", baseVaultConfig.getAccountId(), e);
       throw new InvalidRequestException("Failed to list Vault engines", INVALID_CREDENTIAL, USER);
@@ -697,12 +697,6 @@ public class NGVaultServiceImpl implements NGVaultService {
     } catch (WingsException wingsException) {
       log.error("Listing vaults failed for account Id {}", accountIdentifier);
       throw wingsException; // for error handling framework
-    } catch (DelegateServiceDriverException ex) {
-      if (ex.getCause() != null) {
-        throw new WingsException(ex.getCause().getMessage(), ex);
-      } else {
-        throw new WingsException(ex);
-      }
     } catch (Exception e) {
       log.error("Listing vaults failed for account Id {}", accountIdentifier, e);
       throw new AzureServiceException("Failed to list vaults.", INVALID_AZURE_VAULT_CONFIGURATION, USER);

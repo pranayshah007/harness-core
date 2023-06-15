@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.ng.core.common.beans.Generation.CG;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
@@ -83,11 +84,13 @@ import software.wings.security.annotations.IdentityServiceAuth;
 import software.wings.security.annotations.Scope;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.LoginTypeResponse;
+import software.wings.security.authentication.LoginTypeResponseV2;
 import software.wings.security.authentication.SsoRedirectRequest;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
 import software.wings.security.authentication.TwoFactorAuthenticationSettings;
 import software.wings.service.impl.MarketplaceTypeLogContext;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.HarnessUserGroupService;
@@ -146,6 +149,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
+import retrofit2.http.Body;
 
 /**
  * Users Resource class.
@@ -175,6 +179,7 @@ public class UserResource {
   private AccountPasswordExpirationJob accountPasswordExpirationJob;
   private ReCaptchaVerifier reCaptchaVerifier;
   private FeatureFlagService featureFlagService;
+  private UserServiceHelper userServiceHelper;
 
   private static final String BASIC = "Basic";
   private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
@@ -188,7 +193,7 @@ public class UserResource {
       TwoFactorAuthenticationManager twoFactorAuthenticationManager, Map<String, Cache<?, ?>> caches,
       HarnessUserGroupService harnessUserGroupService, UserGroupService userGroupService,
       MainConfiguration mainConfiguration, AccountPasswordExpirationJob accountPasswordExpirationJob,
-      ReCaptchaVerifier reCaptchaVerifier, FeatureFlagService featureFlagService) {
+      ReCaptchaVerifier reCaptchaVerifier, FeatureFlagService featureFlagService, UserServiceHelper userServiceHelper) {
     this.userService = userService;
     this.authService = authService;
     this.accountService = accountService;
@@ -202,6 +207,7 @@ public class UserResource {
     this.accountPasswordExpirationJob = accountPasswordExpirationJob;
     this.reCaptchaVerifier = reCaptchaVerifier;
     this.featureFlagService = featureFlagService;
+    this.userServiceHelper = userServiceHelper;
   }
 
   /**
@@ -230,14 +236,14 @@ public class UserResource {
     }
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true, showDisabledUsers);
+    List<User> userList = userService.listUsers(
+        pageRequest, accountId, searchTerm, offset, pageSize, true, true, showDisabledUsers, true);
 
     PageResponse<PublicUser> pageResponse = aPageResponse()
                                                 .withOffset(offset.toString())
                                                 .withLimit(pageSize.toString())
                                                 .withResponse(getPublicUsers(userList, accountId))
-                                                .withTotal(userService.getTotalUserCount(accountId, true))
+                                                .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                                 .build();
 
     return new RestResponse<>(pageResponse);
@@ -433,13 +439,20 @@ public class UserResource {
   @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
   public RestResponse delete(@QueryParam("accountId") @NotEmpty String accountId, @PathParam("userId") String userId) {
     User user = userService.get(userId);
-    // If user doesn't exists, userService.get throws exception, so we don't have to handle it.
-    if (user.isImported()) {
-      throw new InvalidRequestException("Can not delete user added via SCIM", USER);
+    InvalidRequestException exception = new InvalidRequestException("Can not delete user added via SCIM", USER);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (userServiceHelper.isSCIMManagedUser(accountId, user, CG)) {
+        log.warn("Externally managed user with userId: {} is being deleted from account: {}", userId, accountId);
+      }
+    } else if (user.isImported()) {
+      log.warn("Externally managed user with userId: {} is being deleted from account: {}", userId, accountId);
     }
     userService.delete(accountId, userId);
-    if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId) && userService.isUserPresent(userId)
-        && !userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      return new RestResponse();
+    } else if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)
+        && userService.isUserPresent(userId) && !userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
       throw new InvalidRequestException(
           "User is part of NG, hence the userGroups are removed for the user. Please delete the user from NG to remove the user from Harness.");
     }
@@ -786,6 +799,14 @@ public class UserResource {
   public RestResponse<LoginTypeResponse> getLoginType(
       @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(authenticationManager.getLoginTypeResponse(loginTypeRequest.getUserName(), accountId));
+  }
+
+  @POST
+  @Path("v2/logintype")
+  @PublicApi
+  public RestResponse<LoginTypeResponseV2> getLoginTypeV2(
+      @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(authenticationManager.getLoginTypeResponseV2(loginTypeRequest.getUserName(), accountId));
   }
 
   @GET
@@ -1296,7 +1317,7 @@ public class UserResource {
   @ExceptionMetered
   public RestResponse<User> completeInviteAndSignIn(@QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("generation") Generation gen, @NotNull UserInviteDTO userInviteDTO) {
-    if (gen != null && gen.equals(Generation.CG)) {
+    if (gen != null && gen.equals(CG)) {
       Account account = accountService.get(accountId);
       String inviteId = userService.getInviteIdFromToken(userInviteDTO.getToken());
       UserInvite userInvite = UserInviteBuilder.anUserInvite()
@@ -1344,7 +1365,7 @@ public class UserResource {
     userInvite.setAccountId(accountId);
     userInvite.setEmail(decodedEmail);
     userInvite.setUuid(inviteId);
-    InviteOperationResponse inviteResponse = userService.checkInviteStatus(userInvite, Generation.CG);
+    InviteOperationResponse inviteResponse = userService.checkInviteStatus(userInvite, CG);
     URI redirectURL = null;
     try {
       redirectURL = userService.getInviteAcceptRedirectURL(inviteResponse, userInvite, jwtToken);
@@ -1422,6 +1443,27 @@ public class UserResource {
   public RestResponse<User> unlockUser(
       @NotEmpty @QueryParam("email") String email, @NotEmpty @QueryParam("accountId") String accountId) {
     return new RestResponse<>(userService.unlockUser(email, accountId));
+  }
+
+  @PUT
+  @Path("update-externally-managed/{userId}")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateScimStatusNG(@PathParam("userId") String userId,
+      @QueryParam("generation") Generation generation, @Body Boolean externallyManaged) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(userService.updateExternallyManaged(userId, generation, externallyManaged));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account product-led status").build()))
+          .build();
+    }
   }
 
   private RestResponse<UserInvite> getPublicUserInvite(UserInvite userInvite) {

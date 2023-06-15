@@ -34,18 +34,19 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.steps.http.HttpStepParameters")
 public class HttpStepParameters extends HttpBaseStepInfo implements SpecParameters {
   @SkipAutoEvaluation ParameterField<Map<String, Object>> outputVariables;
+  ParameterField<Map<String, Object>> inputVariables;
   Map<String, String> headers;
   ParameterField<String> certificate;
   ParameterField<String> certificateKey;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-
   @Builder(builderMethodName = "infoBuilder")
   public HttpStepParameters(ParameterField<String> url, ParameterField<String> method,
       ParameterField<String> requestBody, ParameterField<String> assertion, Map<String, Object> outputVariables,
       Map<String, String> headers, ParameterField<String> certificate, ParameterField<String> certificateKey,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> inputVariables) {
     super(url, method, requestBody, assertion);
     this.outputVariables = ParameterField.createValueField(outputVariables);
+    this.inputVariables = ParameterField.createValueField(inputVariables);
     this.headers = headers;
     this.certificate = certificate;
     this.certificateKey = certificateKey;

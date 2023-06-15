@@ -8,9 +8,18 @@
 package io.harness.ngmigration.expressions.step;
 
 import io.harness.expression.LateBindingMap;
+import io.harness.ngmigration.beans.StepOutput;
+
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class StepExpressionFunctor extends LateBindingMap {
   private String currentStageIdentifier;
+  private StepOutput stepOutput;
+
+  protected StepExpressionFunctor(StepOutput stepOutput) {
+    this.stepOutput = stepOutput;
+    this.currentStageIdentifier = null;
+  }
 
   public String getCurrentStageIdentifier() {
     return currentStageIdentifier;
@@ -20,5 +29,30 @@ public abstract class StepExpressionFunctor extends LateBindingMap {
     this.currentStageIdentifier = currentStageIdentifier;
   }
 
-  public abstract String getCgExpression();
+  public String getCgExpression() {
+    return stepOutput.getExpression();
+  }
+
+  public StepOutput getStepOutput() {
+    return stepOutput;
+  }
+
+  public String getStepFQN() {
+    StringBuilder builder = new StringBuilder("<+execution.steps.");
+    if (StringUtils.isNotBlank(stepOutput.getStepGroupIdentifier())) {
+      builder.append(String.format("%s.steps.", stepOutput.getStepGroupIdentifier()));
+    }
+
+    return builder.append(stepOutput.getStepIdentifier()).toString();
+  }
+
+  public String getStageFQN() {
+    StringBuilder builder =
+        new StringBuilder(String.format("<+pipeline.stages.%s.spec.execution.steps.", stepOutput.getStageIdentifier()));
+    if (StringUtils.isNotBlank(stepOutput.getStepGroupIdentifier())) {
+      builder.append(String.format("%s.steps.", stepOutput.getStepGroupIdentifier()));
+    }
+
+    return builder.append(stepOutput.getStepIdentifier()).toString();
+  }
 }

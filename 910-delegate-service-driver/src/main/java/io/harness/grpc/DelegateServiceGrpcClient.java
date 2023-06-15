@@ -74,6 +74,7 @@ import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -86,6 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
@@ -153,24 +155,26 @@ public class DelegateServiceGrpcClient {
    * @param <T>
    * @return
    */
-  public <T extends ResponseData> T executeSyncTaskReturningResponseData(
+  public <T extends ResponseData> Pair<String, T> executeSyncTaskReturningResponseData(
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
-    return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
+    return Pair.of(taskId,
+        delegateSyncService.waitForTask(taskId,
+            Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+            Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
   }
 
-  public <T extends ResponseData> T executeSyncTaskReturningResponseDataV2(
+  public <T extends ResponseData> Pair<String, T> executeSyncTaskReturningResponseDataV2(
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternalV2(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
-    return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
+    return Pair.of(taskId,
+        delegateSyncService.waitForTask(taskId,
+            Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+            Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
   }
 
   public SubmitTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
@@ -253,7 +257,7 @@ public class DelegateServiceGrpcClient {
       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
       List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
-      String stageId, Boolean delegateSelectionTrackingLogEnabled) {
+      String stageId, Boolean delegateSelectionTrackingLogEnabled, List<TaskSelector> selectors) {
     try {
       if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
         Map<String, String> setupAbstractions = new HashMap<>();
@@ -296,7 +300,9 @@ public class DelegateServiceGrpcClient {
                 .collect(toList()));
       }
 
-      if (isNotEmpty(taskSelectors)) {
+      if (isNotEmpty(selectors)) {
+        submitTaskRequestBuilder.addAllSelectors(selectors);
+      } else if (isNotEmpty(taskSelectors)) {
         submitTaskRequestBuilder.addAllSelectors(
             taskSelectors.stream()
                 .map(selector -> TaskSelector.newBuilder().setSelector(selector).build())
@@ -402,7 +408,7 @@ public class DelegateServiceGrpcClient {
         builder.build(), taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
         taskRequest.isForceExecute(), taskRequest.isExecuteOnHarnessHostedDelegates(),
         taskRequest.getEligibleToExecuteDelegateIds(), taskRequest.isEmitEvent(), taskRequest.getStageId(),
-        delegateSelectionTrackingLogEnabled);
+        delegateSelectionTrackingLogEnabled, taskRequest.getSelectors());
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {
@@ -545,6 +551,6 @@ public class DelegateServiceGrpcClient {
         .entrySet()
         .stream()
         .filter(entry -> !Objects.isNull(entry.getValue()))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
   }
 }

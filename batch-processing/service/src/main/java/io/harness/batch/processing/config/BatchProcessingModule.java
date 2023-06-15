@@ -28,6 +28,7 @@ import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelperImpl;
 import io.harness.ccm.CENGGraphQLModule;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
+import io.harness.ccm.azurevmpricing.AzureVmPricingClientModule;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
@@ -51,8 +52,18 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.graphql.core.msp.impl.ManagedAccountDataServiceImpl;
+import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
+import io.harness.ccm.msp.service.impl.ManagedAccountServiceImpl;
+import io.harness.ccm.msp.service.impl.MarginDetailsBqServiceImpl;
+import io.harness.ccm.msp.service.impl.MarginDetailsServiceImpl;
+import io.harness.ccm.msp.service.impl.MspValidationServiceImpl;
+import io.harness.ccm.msp.service.intf.ManagedAccountService;
+import io.harness.ccm.msp.service.intf.MarginDetailsBqService;
+import io.harness.ccm.msp.service.intf.MarginDetailsService;
+import io.harness.ccm.msp.service.intf.MspValidationService;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
@@ -65,6 +76,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.GovernanceRuleService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
@@ -75,6 +87,7 @@ import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
+import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.PerspectiveAnomalyServiceImpl;
 import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
@@ -202,6 +215,11 @@ public class BatchProcessingModule extends AbstractModule {
     bind(GovernanceRuleService.class).to(GovernanceRuleServiceImpl.class);
     bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
+    bind(ManagedAccountService.class).to(ManagedAccountServiceImpl.class);
+    bind(MarginDetailsService.class).to(MarginDetailsServiceImpl.class);
+    bind(ManagedAccountDataService.class).to(ManagedAccountDataServiceImpl.class);
+    bind(MarginDetailsBqService.class).to(MarginDetailsBqServiceImpl.class);
+    bind(MspValidationService.class).to(MspValidationServiceImpl.class);
     install(new ConnectorResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new InstanceNGResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
@@ -212,6 +230,7 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new SecretNGManagerClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId()));
+    install(new AzureVmPricingClientModule(batchMainConfig.getAzureVmPricingConfig()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
@@ -247,6 +266,7 @@ public class BatchProcessingModule extends AbstractModule {
     } else {
       bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
       bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+      bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     }
 
     bindPricingServices();

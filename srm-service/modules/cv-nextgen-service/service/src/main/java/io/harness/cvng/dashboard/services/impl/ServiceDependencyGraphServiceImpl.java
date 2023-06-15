@@ -63,7 +63,7 @@ public class ServiceDependencyGraphServiceImpl implements ServiceDependencyGraph
   public ServiceDependencyGraphDTO getDependencyGraph(@NonNull ProjectParams projectParams,
       @Nullable List<String> monitoredServiceIdentifiers, @NonNull boolean servicesAtRiskFilter,
       @Nullable String filter) {
-    List<MonitoredService> monitoredServices = new ArrayList<>();
+    List<MonitoredService> monitoredServices;
     if (!Objects.isNull(filter)) {
       monitoredServices = monitoredServiceService.listWithFilter(projectParams, monitoredServiceIdentifiers, filter);
     } else {

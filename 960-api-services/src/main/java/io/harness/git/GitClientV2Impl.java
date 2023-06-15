@@ -284,9 +284,6 @@ public class GitClientV2Impl implements GitClientV2 {
         cloneCommand.setNoCheckout(true);
       }
     }
-    if (request.getCloneDepth() != null) {
-      cloneCommand.setDepth(request.getCloneDepth());
-    }
     try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
       log.error(GIT_YAML_LOG_PREFIX + "Error in cloning repo: " + ExceptionSanitizer.sanitizeForLogging(ex));
@@ -356,7 +353,8 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.info(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
 
       if (e instanceof InvalidRemoteException || e.getCause() instanceof NoRemoteRepositoryException) {
         return "Invalid git repo " + repoUrl;
@@ -397,12 +395,18 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.error(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
         String message = e.getMessage();
-        if (containsUrlError(message)) {
+        if (message.contains("not authorized")) {
+          throw SCMRuntimeException.builder()
+              .message("Please check your credentials (potential token expiration issue)")
+              .errorCode(ErrorCode.SCM_UNAUTHORIZED)
+              .build();
+        } else if (containsUrlError(message)) {
           throw SCMRuntimeException.builder()
               .message("Couldn't connect to given repo")
               .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
@@ -431,8 +435,20 @@ public class GitClientV2Impl implements GitClientV2 {
         .handle(Exception.class)
         .withMaxAttempts(GIT_COMMAND_RETRY)
         .withBackoff(5, 10, ChronoUnit.SECONDS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event -> {
+          if (event.getLastFailure() instanceof TransportException) {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure().getMessage());
+          } else {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          }
+        })
+        .onFailure(event -> {
+          if (event.getFailure() instanceof TransportException) {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure().getMessage());
+          } else {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure());
+          }
+        });
   }
   @Override
   public DiffResult diff(DiffRequest request) {

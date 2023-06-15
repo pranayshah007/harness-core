@@ -18,7 +18,9 @@ import io.harness.eraro.Level;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -32,6 +34,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance.HarnessApprovalInstanceKeys;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -39,6 +42,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +73,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent
 public abstract class ApprovalInstance implements PersistentEntity, PersistentRegularIterable {
+  public static final long TTL_MONTHS = 6;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -81,12 +88,34 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                  .field(ApprovalInstanceKeys.type)
                  .descSortField(ApprovalInstanceKeys.nextIteration)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("planExecutionId_status_type_nodeExecutionId")
+                 .field(ApprovalInstanceKeys.planExecutionId)
+                 .field(ApprovalInstanceKeys.status)
+                 .field(ApprovalInstanceKeys.type)
+                 .field(ApprovalInstanceKeys.nodeExecutionId)
+                 .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled")
+                .field(ApprovalInstanceKeys.accountId)
+                .field(ApprovalInstanceKeys.orgIdentifier)
+                .field(ApprovalInstanceKeys.projectIdentifier)
+                .field(ApprovalInstanceKeys.pipelineIdentifier)
+                .field(HarnessApprovalInstanceKeys.approvalKey)
+                .field(ApprovalInstanceKeys.status)
+                .field(HarnessApprovalInstanceKeys.isAutoRejectEnabled)
+                .build())
         .build();
   }
 
   @Id @dev.morphia.annotations.Id String id;
 
   @NotNull Ambiance ambiance;
+
+  // TTL index
+  @FdTtlIndex Date validUntil;
 
   // preferably use these ambiance fields saved at first-level
   @FdIndex @NotNull String nodeExecutionId;
@@ -143,6 +172,7 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
     setType(ApprovalType.fromName(stepParameters.getType()));
     setStatus(ApprovalStatus.WAITING);
     setDeadline(calculateDeadline(stepParameters.getTimeout()));
+    setValidUntil(Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant()));
   }
 
   @Override

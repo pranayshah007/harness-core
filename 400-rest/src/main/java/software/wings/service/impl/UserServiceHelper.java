@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.common.beans.Generation.NG;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
@@ -88,7 +89,7 @@ public class UserServiceHelper {
         && validationForUserAccountLevelDataFlow(user, accountId)) {
       return isNotEmpty(user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo());
     }
-    return true;
+    return false;
   }
 
   public boolean isUserPartOfDeletedAccount(User user, String deletedAccountId) {
@@ -183,6 +184,33 @@ public class UserServiceHelper {
 
     userAccountLevelDataMapping.put(accountId, userAccountLevelData);
     user.setUserAccountLevelDataMap(userAccountLevelDataMapping);
+  }
+
+  public boolean isSCIMManagedUser(String accountId, User user, Generation generation) {
+    if (validationForUserAccountLevelDataFlow(user, accountId)) {
+      UserSource userSource =
+          user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(generation);
+      if (SCIM.equals(userSource)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public void processForSCIMUsers(String accountId, List<User> userList, Generation generation) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      for (User user : userList) {
+        if (validationForUserAccountLevelDataFlow(user, accountId)) {
+          UserSource userSource =
+              user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(generation);
+          if (SCIM.equals(userSource)) {
+            user.setImported(true);
+          } else {
+            user.setImported(false);
+          }
+        }
+      }
+    }
   }
 
   public UserPreferenceData mapUserPreferenceDTOToData(UserPreferenceDataDTO userPreferenceDataDTO) {

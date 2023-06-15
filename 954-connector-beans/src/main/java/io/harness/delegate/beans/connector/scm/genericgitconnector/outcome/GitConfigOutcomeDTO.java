@@ -9,7 +9,6 @@ package io.harness.delegate.beans.connector.scm.genericgitconnector.outcome;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
@@ -18,8 +17,6 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -64,10 +61,5 @@ public class GitConfigOutcomeDTO extends ConnectorConfigOutcomeDTO implements De
     this.branchName = branchName;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
-  }
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    return Collections.singletonList(spec);
   }
 }

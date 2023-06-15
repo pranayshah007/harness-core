@@ -16,6 +16,7 @@ import io.harness.telemetry.TelemetryReporter;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Card;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
@@ -24,24 +25,33 @@ import com.stripe.model.PaymentMethodCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.PriceSearchResult;
+import com.stripe.model.SetupIntent;
 import com.stripe.model.Subscription;
+import com.stripe.model.SubscriptionSearchResult;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.InvoiceUpdateParams;
 import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
+import com.stripe.param.SubscriptionSearchParams;
 import com.stripe.param.SubscriptionUpdateParams;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StripeHandlerImpl {
   private final TelemetryReporter telemetryReporter;
   private static final String SUBSCRIPTION = "subscription";
+  private static final String SUBSCRIPTION_PAYMENT_SUCCEEDED = "Subscription Payment Succeeded";
+  private static final String SUBSCRIPTION_PAYMENT_FAILED = "Subscription Payment Failed";
 
   @Inject
   StripeHandlerImpl(TelemetryReporter telemetryReporter) {
@@ -141,6 +151,14 @@ public class StripeHandlerImpl {
     }
   }
 
+  SubscriptionSearchResult searchSubscriptions(SubscriptionSearchParams subscriptionSearchParams) {
+    try {
+      return Subscription.search(subscriptionSearchParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to list subscriptions", e);
+    }
+  }
+
   PriceSearchResult searchPrices(PriceSearchParams priceSearchParams) {
     try {
       return Price.search(priceSearchParams);
@@ -189,13 +207,26 @@ public class StripeHandlerImpl {
     }
   }
 
-  Invoice payInvoice(String invoiceId) {
+  Invoice payInvoice(String invoiceId, String accountIdentifier) {
     try {
       Invoice invoice = Invoice.retrieve(invoiceId);
 
+      sendTelemetryEvent(SUBSCRIPTION_PAYMENT_SUCCEEDED, invoice.getCustomerEmail(), accountIdentifier, null);
       return invoice.pay();
     } catch (StripeException e) {
+      log.error(SUBSCRIPTION_PAYMENT_FAILED + ": {} at {}", e.getMessage(), e.getStackTrace());
+      sendTelemetryEvent(SUBSCRIPTION_PAYMENT_FAILED, null, accountIdentifier, null);
       throw new InvalidRequestException("Unable to preview upcoming invoice", e);
+    }
+  }
+
+  Invoice putInvoiceMetadata(String invoiceId, String key, String value) {
+    try {
+      Invoice invoice = retrieveInvoice(invoiceId);
+      InvoiceUpdateParams invoiceUpdateParams = InvoiceUpdateParams.builder().putMetadata(key, value).build();
+      return invoice.update(invoiceUpdateParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to retrieve invoice", e);
     }
   }
 
@@ -228,10 +259,36 @@ public class StripeHandlerImpl {
     }
   }
 
+  public Card deleteCard(String customerIdentifier, String cardIdentifier) {
+    try {
+      Map<String, Object> retrieveParams = new HashMap<>();
+      List<String> expandList = new ArrayList<>();
+      expandList.add("sources");
+      retrieveParams.put("expand", expandList);
+      Customer customer = Customer.retrieve(customerIdentifier, retrieveParams, null);
+
+      Card card = (Card) customer.getSources().retrieve(cardIdentifier);
+
+      return card.delete();
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to delete card", e);
+    }
+  }
+
   private void sendTelemetryEvent(String event, String email, String accountId, String module) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("module", module);
     telemetryReporter.sendTrackEvent(event, email, accountId, properties,
         ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), SUBSCRIPTION);
+  }
+
+  public SetupIntent retrieveSetupIntent(String customerId) {
+    try {
+      Map<String, Object> params = Map.of("customer", customerId);
+
+      return SetupIntent.create(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to create setup intent", e);
+    }
   }
 }

@@ -60,6 +60,6 @@ public class PcfConnectivityCapabilityCheck implements CapabilityCheck, ProtoCap
   }
 
   boolean isEndpointConnectable(String endpointUrl, String urlScheme) {
-    return Http.connectableHttpUrl(urlScheme + endpointUrl);
+    return Http.connectableHttpUrl(urlScheme + endpointUrl, false);
   }
 }

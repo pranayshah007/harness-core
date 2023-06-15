@@ -44,7 +44,7 @@ public class ExecuteLdapGroupsSearchRequest implements Function<LdapListGroupsRe
       String defaultErrorMessage =
           String.format("LdapException occurred while searchGroupbyName for base %s and searchQuery %s",
               ldapSearch.getBaseDN(), ldapSearch.getSearchFilter());
-      log.error(defaultErrorMessage, le);
+      log.warn(defaultErrorMessage + " with exception: " + le.getMessage());
       searchStatusMessage = isNull(le.getMessage()) ? defaultErrorMessage : le.getMessage();
     }
 

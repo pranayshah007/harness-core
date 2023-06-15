@@ -353,7 +353,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         infrastructureMapper.toOutcome(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(),
             new ProvisionerExpressionEvaluator(Collections.emptyMap()), EnvironmentOutcome.builder().build(),
             ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
-            infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier());
+            infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(),
+            infrastructureConfig.getInfrastructureDefinitionConfig().getTags());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);

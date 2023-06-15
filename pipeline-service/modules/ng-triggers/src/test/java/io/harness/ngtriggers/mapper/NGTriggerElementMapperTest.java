@@ -14,6 +14,7 @@ import static io.harness.ngtriggers.beans.source.webhook.WebhookAction.OPENED;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookEvent.PULL_REQUEST;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -228,5 +229,28 @@ public class NGTriggerElementMapperTest extends CategoryTest {
     assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity2).get().getTargetIdentifier())
         .isEqualTo(ngTriggerEntity2.getTargetIdentifier());
     assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity3).isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testUpdateEntityYmlWithEnabledValue() throws IOException {
+    String fileNameForCustomPayloadTrigger1 = "ng-custom-trigger-v0.yaml";
+    ClassLoader classLoader = getClass().getClassLoader();
+
+    String ngCustomTriggerYaml1 = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource(fileNameForCustomPayloadTrigger1)), StandardCharsets.UTF_8);
+    NGTriggerEntity ngTriggerEntity1 = NGTriggerEntity.builder()
+                                           .accountId("account")
+                                           .orgIdentifier("org")
+                                           .projectIdentifier("project")
+                                           .targetIdentifier("pipeline1")
+                                           .identifier("id1")
+                                           .yaml(ngCustomTriggerYaml1)
+                                           .enabled(false)
+                                           .build();
+    ngTriggerElementMapper.updateEntityYmlWithEnabledValue(ngTriggerEntity1);
+    assertThat(ngTriggerEntity1.getYaml()).startsWith("trigger");
+    assertThat(ngTriggerEntity1.getYaml()).doesNotStartWith("---");
   }
 }

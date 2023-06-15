@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
@@ -239,6 +240,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     List<String> routeMaps =
         tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage().getManifestYml(),
             getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
+    TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
     TaskParameters taskParameters =
         CfRollingDeployRequestNG.builder()
             .applicationName(executionPassThroughData.getApplicationName())
@@ -246,7 +248,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_DEPLOY)
             .commandName(CfCommandUnitConstants.Deploy)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .tasInfraConfig(cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance))
+            .tasInfraConfig(tasInfraConfig)
             .useCfCLI(true)
             .routeMaps(routeMaps)
             .tasArtifactConfig(tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome))
@@ -257,11 +259,15 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .desiredCount(executionPassThroughData.getDesiredCountInFinalYaml())
             .build();
 
+    TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(
+        ambiance, tasInfraConfig, executionPassThroughData.getApplicationName());
+
     TasRollingDeployOutcome tasRollingDeployOutcome =
         TasRollingDeployOutcome.builder()
             .appName(executionPassThroughData.getApplicationName())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .cfCliVersion(executionPassThroughData.getCfCliVersion())
+            .tasStageExecutionDetails(tasStageExecutionDetails)
             .build();
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
         tasRollingDeployOutcome, StepCategory.STEP.name());

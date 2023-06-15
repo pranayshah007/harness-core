@@ -17,9 +17,11 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class GoogleCloudStorageServiceImpl {
     BillingDataPipelineConfig dataPipelineConfig = config.getBillingDataPipelineConfig();
     boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
     GoogleCredentials sourceCredentials;
+
     if (!usingWorkloadIdentity) {
       log.info("WI: In uploadObject. using older way");
       sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
@@ -54,7 +57,20 @@ public class GoogleCloudStorageServiceImpl {
     for (String bucket : new String[] {bucketName, backupBucketName}) {
       BlobId blobId = BlobId.of(bucket, objectName);
       BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-      storage.create(blobInfo, Files.readAllBytes(Paths.get(filePath)));
+      try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
+        log.info("avro fileSize: {}MB", fileChannel.size() / (1024 * 1024));
+        try (WritableByteChannel writableChannel = storage.writer(blobInfo)) {
+          ByteBuffer buffer = ByteBuffer.allocate(dataPipelineConfig.getBufferSizeInMB() * 1024 * 1024);
+          int i = 0;
+          while (fileChannel.read(buffer) != -1) {
+            log.info("Buffer Size: {}MB. Processing chunk :: {}", buffer.capacity() / (1024 * 1024), i);
+            buffer.flip();
+            writableChannel.write(buffer);
+            buffer.clear();
+            i++;
+          }
+        }
+      }
       log.info("File " + filePath + " uploaded to bucket " + bucket + " as " + objectName);
     }
   }

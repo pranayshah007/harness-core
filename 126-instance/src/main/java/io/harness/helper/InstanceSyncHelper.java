@@ -41,9 +41,18 @@ public class InstanceSyncHelper {
   private final EnvironmentService environmentService;
   private final AccountClient accountClient;
 
-  public void cleanUpInstanceSyncPerpetualTaskInfo(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
-    instanceSyncPerpetualTaskService.deletePerpetualTask(
-        instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
+  public void cleanUpInstanceSyncPerpetualTaskInfo(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, boolean isInstanceSyncV2) {
+    instanceSyncPerpetualTaskInfoService.deleteById(
+        instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
+    if (!isInstanceSyncV2 && instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId() != null) {
+      instanceSyncPerpetualTaskService.deletePerpetualTask(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(),
+          instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
+    }
+  }
+
+  public void cleanUpOnlyInstanceSyncPerpetualTaskInfo(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
     instanceSyncPerpetualTaskInfoService.deleteById(
         instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
   }

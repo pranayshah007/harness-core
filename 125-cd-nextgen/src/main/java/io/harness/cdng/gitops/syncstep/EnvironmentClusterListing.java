@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops.syncstep;
 
+import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +16,5 @@ import lombok.Data;
 @Builder
 public class EnvironmentClusterListing {
   Set<String> environmentIds;
-  Set<String> clusterIds;
+  Map<String, Set<String>> clusterIds;
 }

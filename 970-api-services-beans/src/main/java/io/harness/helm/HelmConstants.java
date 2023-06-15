@@ -65,7 +65,7 @@ public final class HelmConstants {
     public static final String HELM_DELETE_RELEASE_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} delete ${COMMAND_FLAGS} ${FLAGS} ${RELEASE_NAME}";
     public static final String HELM_TEMPLATE_COMMAND_FOR_KUBERNETES_TEMPLATE =
-        "${HELM_PATH} template ${CHART_LOCATION} ${COMMAND_FLAGS} --name ${RELEASE_NAME} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
+        "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} template ${CHART_LOCATION} ${COMMAND_FLAGS} --name ${RELEASE_NAME} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_SEARCH_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} search ${CHART_INFO}";
     public static final String HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM =
@@ -78,11 +78,13 @@ public final class HelmConstants {
         "${HELM_PATH} repo remove ${REPO_NAME} ${HELM_HOME_PATH_FLAG}";
     public static final String HELM_INIT_COMMAND = "${HELM_PATH} init -c --skip-refresh ${HELM_HOME_PATH_FLAG}";
     public static final String HELM_RENDER_SPECIFIC_TEMPLATE =
-        "${HELM_PATH} template ${CHART_LOCATION} ${COMMAND_FLAGS} -x ${CHART_FILE} --name ${RELEASE_NAME} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
+        "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} template ${CHART_LOCATION} ${COMMAND_FLAGS} -x ${CHART_FILE} --name ${RELEASE_NAME} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_VERSION_COMMAND_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} version --short ${COMMAND_FLAGS}";
     public static final String HELM_FETCH_ALL_VERSIONS_COMMAND_TEMPLATE =
         "${HELM_PATH} search ${REPO_NAME}/${CHART_NAME} -l ${HELM_HOME_PATH_FLAG} --col-width 300";
+    public static final String HELM_GET_MANIFEST =
+        "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} get manifest ${RELEASE_NAME}";
   }
 
   public static final class V3Commands {
@@ -103,7 +105,7 @@ public final class HelmConstants {
     public static final String HELM_DELETE_RELEASE_TEMPLATE =
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} uninstall ${RELEASE_NAME} ${COMMAND_FLAGS}";
     public static final String HELM_TEMPLATE_COMMAND_FOR_KUBERNETES_TEMPLATE =
-        "${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
+        "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_SEARCH_COMMAND_TEMPLATE = "${HELM_PATH} search repo ${CHART_INFO}";
     public static final String HELM_REPO_ADD_COMMAND_FOR_CHART_MUSEUM =
         "${HELM_PATH} repo add ${REPO_NAME} ${REPO_URL} ${COMMAND_FLAGS}";
@@ -114,17 +116,22 @@ public final class HelmConstants {
     public static final String HELM_REPO_REMOVE_COMMAND = "${HELM_PATH} repo remove ${REPO_NAME}";
     public static final String HELM_INIT_COMMAND = EMPTY;
     public static final String HELM_RENDER_SPECIFIC_TEMPLATE =
-        "${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} -s ${CHART_FILE} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
+        "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} -s ${CHART_FILE} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_VERSION_COMMAND_TEMPLATE = "${HELM_PATH} version --short ${COMMAND_FLAGS}";
     public static final String HELM_OCI_REGISTRY_LOGIN_COMMAND_TEMPLATE =
         "${HELM_PATH} registry login ${REGISTRY_URL} ${USERNAME} ${PASSWORD}";
     public static final String HELM_FETCH_ALL_VERSIONS_COMMAND_TEMPLATE =
         "${HELM_PATH} search repo ${REPO_NAME}/${CHART_NAME} -l --devel --max-col-width 300";
+    public static final String HELM_GET_MANIFEST =
+        "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} get manifest ${RELEASE_NAME} --namespace=${NAMESPACE}";
+
     public static final String HELM_REPO_FLAGS = " --repository-config ${HELM_CACHE_HOME}/repo-${REPO_NAME}.yaml";
     public static final String HELM_CACHE_HOME = "XDG_CACHE_HOME";
     public static final String HELM_CACHE_HOME_PATH = "${HELM_CACHE_HOME}/repo-${REPO_NAME}";
     public static final String HELM_CHART_VERSION_FLAG = " --version ${CHART_VERSION}";
     public static final String HELM_REPO_ADD_FORCE_UPDATE = " --force-update";
+    public static final String REGISTRY_CONFIG_SUFFIX = "--registry-config ${REGISTRY_CONFIG}";
+    public static final String REGISTRY_CONFIG = "${REGISTRY_CONFIG}";
 
     private V3Commands() {
       throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

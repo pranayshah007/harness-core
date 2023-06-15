@@ -6,12 +6,18 @@
  */
 
 package io.harness.ccm.views.dao;
-
 import static io.harness.persistence.HQuery.excludeValidate;
 
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
+import io.harness.ccm.views.entities.RuleExecutionSortType;
+import io.harness.ccm.views.entities.RuleRecommendation;
+import io.harness.ccm.views.entities.RuleRecommendation.RuleRecommendationId;
+import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.OverviewExecutionDetails;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
 import io.harness.exception.InvalidRequestException;
@@ -23,12 +29,17 @@ import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
+import java.util.Objects;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 
 @Slf4j
 @Singleton
 public class RuleExecutionDAO {
   @Inject private HPersistence hPersistence;
+  @Inject private RuleDAO ruleDAO;
+  @Inject private RuleEnforcementDAO ruleEnforcementDAO;
 
   public String save(RuleExecution ruleExecution) {
     return hPersistence.save(ruleExecution);
@@ -42,13 +53,33 @@ public class RuleExecutionDAO {
     query.field(RuleExecutionKeys.accountId).equal(accountId).field(RuleExecutionKeys.uuid).equal(uuid);
     return query.get();
   }
+  public RuleExecutionList filterExecutionInternal(RuleExecutionFilter ruleExecutionFilter) {
+    RuleExecutionList ruleExecutionList = RuleExecutionList.builder().build();
+    Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class)
+                                     .field(RuleExecutionKeys.accountId)
+                                     .equal(ruleExecutionFilter.getAccountId());
+    if (ruleExecutionFilter.getExecutionIds() != null) {
+      query.field(RuleExecutionKeys.uuid).in(ruleExecutionFilter.getExecutionIds());
+    }
+    ruleExecutionList.setTotalItems(query.asList().size());
+    ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
+                                           .offset(ruleExecutionFilter.getOffset())
+                                           .order(Sort.descending(RuleExecutionKeys.lastUpdatedAt))
+                                           .asList());
 
+    return ruleExecutionList;
+  }
   public RuleExecutionList filterExecution(RuleExecutionFilter ruleExecutionFilter) {
     RuleExecutionList ruleExecutionList = RuleExecutionList.builder().build();
     Query<RuleExecution> query = hPersistence.createQuery(RuleExecution.class);
     CriteriaContainer criteria = query.or(query.criteria(RuleExecutionKeys.executionType).notEqual("INTERNAL"),
         query.criteria(RuleExecutionKeys.executionType).doesNotExist());
     query.and(criteria, query.criteria(RuleExecutionKeys.accountId).equal(ruleExecutionFilter.getAccountId()));
+    if (ruleExecutionFilter.getSavings() != null) {
+      CriteriaContainer criteriaSort =
+          query.criteria(RuleExecutionKeys.cost).greaterThanOrEq(ruleExecutionFilter.getSavings());
+      query.and(criteriaSort);
+    }
     if (ruleExecutionFilter.getTargetAccount() != null) {
       query.field(RuleExecutionKeys.targetAccount).in(ruleExecutionFilter.getTargetAccount());
     }
@@ -88,11 +119,32 @@ public class RuleExecutionDAO {
       }
     }
     ruleExecutionList.setTotalItems(query.asList().size());
-    ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
-                                           .offset(ruleExecutionFilter.getOffset())
-                                           .order(Sort.descending(RuleExecutionKeys.lastUpdatedAt))
-                                           .asList());
-
+    final RuleExecutionSortType modifiedSortType = Objects.isNull(ruleExecutionFilter.getRuleExecutionSortType())
+        ? RuleExecutionSortType.COST
+        : ruleExecutionFilter.getRuleExecutionSortType();
+    final Sort sort = (Objects.isNull(ruleExecutionFilter.getSortOrder())
+                          || ruleExecutionFilter.getSortOrder() == CCMSortOrder.DESCENDING)
+        ? Sort.descending(modifiedSortType.getColumnName())
+        : Sort.ascending(modifiedSortType.getColumnName());
+    ruleExecutionList.setRuleExecution(
+        query.limit(ruleExecutionFilter.getLimit()).offset(ruleExecutionFilter.getOffset()).order(sort).asList());
     return ruleExecutionList;
+  }
+
+  public OverviewExecutionDetails getOverviewExecutionDetails(
+      String accountId, RuleExecutionFilter ruleExecutionFilter) {
+    OverviewExecutionDetails overviewExecutionDetails = OverviewExecutionDetails.builder().build();
+    overviewExecutionDetails.setTotalRules(
+        ruleDAO.list(GovernanceRuleFilter.builder().accountId(accountId).build()).getRules().size());
+    overviewExecutionDetails.setTotalRuleEnforcements(ruleEnforcementDAO.list(accountId).size());
+    return overviewExecutionDetails;
+  }
+  public void updateJiraInGovernanceRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
+    hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
+                            .filter(RuleRecommendationId.accountId, accountId)
+                            .filter(RuleRecommendationId.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(RuleRecommendation.class)
+            .set(RuleRecommendationId.jiraDetails, jiraDetails));
   }
 }

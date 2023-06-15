@@ -110,6 +110,11 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
           .toInstance(GitAwareRedisProducer.of(EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT, redissonClient,
               pipelineRedisEventsConfig.getOrchestrationNotifyEvent().getMaxTopicSize(),
               PIPELINE_SERVICE.getServiceId(), redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM, redissonClient,
+              EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM_MAX_TOPIC_SIZE, PIPELINE_SERVICE.getServiceId(),
+              redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, PIPELINE_SERVICE.getServiceId(),
@@ -141,6 +146,12 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
               PIPELINE_SERVICE.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
               debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getBatchSize(),
               redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM,
+              PIPELINE_SERVICE.getServiceId(), redissonClient,
+              EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM_BATCH_SIZE, redisConfig.getEnvNamespace()));
       if (shouldUseEventsFrameworkSnapshotDebezium) {
         RedisConfig redisConfigSnapshot = this.eventsFrameworkSnapshotConfiguration.getRedisConfig();
         RedissonClient redissonClientSnapshot = RedissonClientFactory.getClient(redisConfigSnapshot);

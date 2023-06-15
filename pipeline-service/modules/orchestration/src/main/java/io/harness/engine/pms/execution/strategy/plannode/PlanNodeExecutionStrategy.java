@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
@@ -22,7 +23,6 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.FacilitationHelper;
 import io.harness.engine.facilitation.RunPreFacilitationChecker;
-import io.harness.engine.facilitation.SkipPreFacilitationChecker;
 import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPublisher;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
@@ -40,6 +40,8 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -71,6 +73,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -141,8 +144,21 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   void resolveParameters(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     log.info("Starting to Resolve step parameters");
-    Object resolvedStepParameters =
-        pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
+    ExpressionMode expressionMode = planNode.getExpressionMode();
+    Object resolvedStepParameters;
+    // Passing the FeatureFlag.
+    // TODO(archit): Remove feature flag support in engine
+    List<String> enabledFeatureFlags = new LinkedList<>();
+    if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
+      enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
+    }
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_CONCATENATION)) {
+      enabledFeatureFlags.add(FeatureName.PIE_EXPRESSION_CONCATENATION.name());
+    }
+
+    resolvedStepParameters =
+        pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode, enabledFeatureFlags);
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
 
@@ -362,8 +378,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       return ExecutionCheck.builder().proceed(true).reason("Node is retried.").build();
     }
     RunPreFacilitationChecker rChecker = injector.getInstance(RunPreFacilitationChecker.class);
-    SkipPreFacilitationChecker sChecker = injector.getInstance(SkipPreFacilitationChecker.class);
-    rChecker.setNextChecker(sChecker);
     return rChecker.check(ambiance, planNode);
   }
 

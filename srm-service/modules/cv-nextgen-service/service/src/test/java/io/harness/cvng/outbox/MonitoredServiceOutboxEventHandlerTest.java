@@ -198,8 +198,8 @@ public class MonitoredServiceOutboxEventHandlerTest extends CvNextGenTestBase {
         .sources(MonitoredServiceDTO.Sources.builder()
                      .healthSources(Stream.of(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
                                         .collect(Collectors.toSet()))
-                     .changeSources(new HashSet<>(
-                         Collections.singletonList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())))
+                     .changeSources(new HashSet<>(Collections.singletonList(
+                         builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build())))
                      .build())
         .build();
   }

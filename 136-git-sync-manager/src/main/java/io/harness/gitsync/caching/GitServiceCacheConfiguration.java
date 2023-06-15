@@ -22,4 +22,5 @@ public class GitServiceCacheConfiguration {
   @JsonProperty("validCacheDurationInMillis") long validCacheDurationInMillis;
   @JsonProperty("maxCacheDurationInMillis") long maxCacheDurationInMillis;
   @JsonProperty("backgroundUpdateThreadPool") ThreadPoolConfig backgroundUpdateThreadPoolConfig;
+  @JsonProperty("defaultBranchCacheDurationTimeInMinutes") long defaultBranchCacheDurationTimeInMinutes;
 }

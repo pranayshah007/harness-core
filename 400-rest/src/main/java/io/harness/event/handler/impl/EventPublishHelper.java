@@ -42,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -52,6 +53,7 @@ import io.harness.event.model.Event;
 import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
@@ -88,6 +90,7 @@ import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.verification.CVConfiguration;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Arrays;
@@ -127,6 +130,7 @@ public class EventPublishHelper {
 
   @Inject private ContinuousVerificationService continuousVerificationService;
   @Inject private VerificationService learningEngineService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public void publishLicenseChangeEvent(String accountId, String oldAccountType, String newAccountType) {
     if (!checkIfMarketoOrSegmentIsEnabled()) {
@@ -837,24 +841,27 @@ public class EventPublishHelper {
     });
   }
 
-  private void publishIfFirstDeployment(
-      String workflowExecutionId, List<String> appIds, String accountId, String userEmail) {
-    PageRequest<WorkflowExecution> executionPageRequest = aPageRequest()
-                                                              .addFilter("accountId", Operator.EQ, accountId)
-                                                              .addFilter("createdBy.email", Operator.EQ, userEmail)
-                                                              .addOrder(WorkflowExecutionKeys.createdAt, OrderType.ASC)
-                                                              .withLimit("1")
-                                                              .build();
-    executionPageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
+  @VisibleForTesting
+  void publishIfFirstDeployment(String workflowExecutionId, List<String> appIds, String accountId, String userEmail) {
+    if (featureFlagService.isNotEnabled(FeatureName.SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT, accountId)) {
+      PageRequest<WorkflowExecution> executionPageRequest =
+          aPageRequest()
+              .addFilter("accountId", Operator.EQ, accountId)
+              .addFilter("createdBy.email", Operator.EQ, userEmail)
+              .addOrder(WorkflowExecutionKeys.createdAt, OrderType.ASC)
+              .withLimit("1")
+              .build();
+      executionPageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
 
-    PageResponse<WorkflowExecution> executionPageResponse =
-        workflowExecutionService.listExecutions(executionPageRequest, false);
-    List<WorkflowExecution> workflowExecutions = executionPageResponse.getResponse();
+      PageResponse<WorkflowExecution> executionPageResponse =
+          workflowExecutionService.listExecutions(executionPageRequest, false);
+      List<WorkflowExecution> workflowExecutions = executionPageResponse.getResponse();
 
-    if (isNotEmpty(workflowExecutions)) {
-      WorkflowExecution workflowExecution = workflowExecutions.get(0);
-      if (workflowExecutionId.equals(workflowExecution.getUuid())) {
-        publishEvent(EventType.FIRST_DEPLOYMENT_EXECUTED, getProperties(accountId, userEmail));
+      if (isNotEmpty(workflowExecutions)) {
+        WorkflowExecution workflowExecution = workflowExecutions.get(0);
+        if (workflowExecutionId.equals(workflowExecution.getUuid())) {
+          publishEvent(EventType.FIRST_DEPLOYMENT_EXECUTED, getProperties(accountId, userEmail));
+        }
       }
     }
   }

@@ -8,9 +8,7 @@ iconUrl: https://seeklogo.com/images/G/google-lighthouse-logo-1C7FA08580-seeklog
 imageUrl: ''
 config: |-
   lighthouse:
-    baseUrl: ${LIGHTHOUSE_BASE_URL}
-environmentVariables:
-  - LIGHTHOUSE_BASE_URL
+    baseUrl: http://your-service-url
 exports:
   defaultEntityTypes:
     - service

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -71,7 +72,7 @@ public class CodeBaseStepTest extends CategoryTest {
             .build();
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().executeOnDelegate(Boolean.TRUE).build();
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetails(any(), any(), eq(true))).thenReturn(connectorDetails);
     when(connectorUtils.hasApiAccess(any())).thenReturn(true);
     ChildExecutableResponse childExecutableResponse =
         codeBaseStep.obtainChild(ambiance, codeBaseStepParameters, stepInputPackage);
@@ -90,7 +91,7 @@ public class CodeBaseStepTest extends CategoryTest {
             .executionSource(ManualExecutionSource.builder().prNumber("1").build())
             .build();
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetails(any(), any(), eq(true))).thenReturn(connectorDetails);
     when(connectorUtils.hasApiAccess(any())).thenReturn(true);
     ChildExecutableResponse childExecutableResponse =
         codeBaseStep.obtainChild(ambiance, codeBaseStepParameters, stepInputPackage);

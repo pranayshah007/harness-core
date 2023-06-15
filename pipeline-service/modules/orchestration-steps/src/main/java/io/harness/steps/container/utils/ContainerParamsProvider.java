@@ -14,6 +14,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_EXECUTION_ID_VARIABLE;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_LE_STATUS_REST_ENABLED;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_LOG_PREFIX_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_ORG_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
@@ -28,11 +29,13 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.SH_COMMA
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.WIN_SETUP_ADDON_ARGS;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 
 import io.harness.beans.FeatureName;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -53,15 +56,21 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ContainerParamsProvider {
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject PmsFeatureFlagHelper featureFlagHelper;
+
   public CIK8ContainerParams getLiteEngineContainerParams(ConnectorDetails harnessInternalImageConnector,
       ContainerDetailsSweepingOutput k8PodDetails, Integer stageCpuRequest, Integer stageMemoryRequest,
       Map<String, String> logEnvVars, Map<String, String> volumeToMountPath, String workDirPath,
-      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance) {
-    String imageName = containerExecutionConfig.getLiteEngineImage();
+      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance,
+      CIExecutionImages overridenExecutionImages, String imagePullPolicy) {
+    String imageName = overridenExecutionImages == null || isEmpty(overridenExecutionImages.getLiteEngineTag())
+        ? containerExecutionConfig.getLiteEngineImage()
+        : overridenExecutionImages.getLiteEngineTag();
 
     return CIK8ContainerParams.builder()
         .name(LITE_ENGINE_CONTAINER_NAME)
@@ -77,6 +86,7 @@ public class ContainerParamsProvider {
         .volumeToMountPath(volumeToMountPath)
         .securityContext(ctrSecurityContext)
         .workingDir(workDirPath)
+        .imagePullPolicy(imagePullPolicy)
         .build();
   }
 
@@ -117,10 +127,10 @@ public class ContainerParamsProvider {
     if (featureFlagHelper.isEnabled(accountID, FeatureName.CI_INDIRECT_LOG_UPLOAD)) {
       envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
     }
-    // Check whether FF is enabled to send LE to manager status update via rest
-    //    if (featureFlagHelper.isEnabled(accountID, FeatureName.CI_LE_STATUS_REST_ENABLED)) {
-    //      envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
-    //    }
+    //     Check whether FF is enabled to send LE to manager status update via rest
+    if (featureFlagHelper.isEnabled(accountID, FeatureName.CI_LE_STATUS_REST_ENABLED)) {
+      envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
+    }
 
     // Add environment variables that need to be used inside the lite engine container
     envVars.put(HARNESS_WORKSPACE, workDirPath);
@@ -150,13 +160,14 @@ public class ContainerParamsProvider {
   }
 
   public CIK8ContainerParams getSetupAddonContainerParams(ConnectorDetails harnessInternalImageConnector,
-      Map<String, String> volumeToMountPath, String workDir, ContainerSecurityContext ctrSecurityContext,
-      String accountIdentifier, OSType os) {
+      Map<String, String> volumeToMountPath, String workDir, ContainerSecurityContext ctrSecurityContext, OSType os,
+      CIExecutionImages overridenExecutionImages, String imagePullPolicy) {
     Map<String, String> envVars = new HashMap<>();
     envVars.put(HARNESS_WORKSPACE, workDir);
 
-    // todo(abhinav): check if we want account id based pinning.
-    String imageName = containerExecutionConfig.getAddonImage();
+    final String imageName = overridenExecutionImages == null || isEmpty(overridenExecutionImages.getAddonTag())
+        ? containerExecutionConfig.getAddonImage()
+        : overridenExecutionImages.getAddonTag();
     List<String> commands = SH_COMMAND;
     List<String> args = Arrays.asList(UNIX_SETUP_ADDON_ARGS);
     if (os == OSType.Windows) {
@@ -177,6 +188,7 @@ public class ContainerParamsProvider {
         .args(args)
         .securityContext(ctrSecurityContext)
         .containerResourceParams(getAddonResourceParams())
+        .imagePullPolicy(imagePullPolicy)
         .build();
   }
 }

@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.notification.PipelineEventType.STAGE_FAILED;
 import static io.harness.notification.PipelineEventType.STAGE_SUCCESS;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -47,18 +48,25 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.channelDetails.NotificationChannelType;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.channeldetails.WebhookChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationClientImpl;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,6 +88,8 @@ public class NotificationHelperTest extends CategoryTest {
   PmsEngineExpressionService pmsEngineExpressionService;
   PMSPipelineService pmsPipelineService;
   PipelineExpressionHelper pipelineExpressionHelper;
+  HtmlInputSanitizer htmlInputSanitizer;
+  PMSExecutionService pmsExecutionService;
   String executionUrl =
       "http:127.0.0.1:8080/account/dummyAccount/cd/orgs/dummyOrg/projects/dummyProject/pipelines/dummyPipeline/executions/dummyPlanExecutionId/pipeline";
   Ambiance ambiance =
@@ -136,6 +146,21 @@ public class NotificationHelperTest extends CategoryTest {
       + "                    - admin@harness.io \n"
       + "                    - test@harness.io \n"
       + "          enabled: true\n";
+  String webhookNotificationYaml = "pipeline:\n"
+      + "    name: DockerTest\n"
+      + "    identifier: DockerTest\n"
+      + "    notificationRules:\n"
+      + "        - name: N2\n"
+      + "          pipelineEvents:\n"
+      + "              - type: PipelineSuccess\n"
+      + "              - type: StageFailed\n"
+      + "                forStages:\n"
+      + "                    - stage1\n"
+      + "          notificationMethod:\n"
+      + "              type: Webhook\n"
+      + "              spec:\n"
+      + "                  webhookUrl: https://www.google.com\n"
+      + "          enabled: true\n";
   String allEventsYaml = "pipeline:\n"
       + "    name: DockerTest\n"
       + "    identifier: DockerTest\n"
@@ -156,6 +181,10 @@ public class NotificationHelperTest extends CategoryTest {
       "{\"__recast\":\"java.util.ArrayList\",\"__encodedValue\":[{\"__recast\":\"io.harness.notification.bean.NotificationRules\",\"name\":\"N2\",\"enabled\":true,\"pipelineEvents\":[{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"ALL_EVENTS\",\"forStages\":null},{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"STAGE_FAILED\",\"forStages\":[\"stage1\"]}],\"notificationChannelWrapper\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expressionValue\":null,\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":{\"__recast\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"type\":\"Email\",\"notificationChannel\":{\"__recast\":\"io.harness.notification.channelDetails.PmsEmailChannel\",\"userGroups\":[],\"recipients\":[\"admin@harness.io\",\"test@harness.io\"]}}},\"valueClass\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false,\"responseField\":null}}}]}";
   Map<String, Object> notificationRulesMap =
       RecastOrchestrationUtils.toMap(RecastOrchestrationUtils.fromJson(notificationRulesString));
+  String webhookNotificationRulesString =
+      "{\"__recast\":\"java.util.ArrayList\",\"__encodedValue\":[{\"__recast\":\"io.harness.notification.bean.NotificationRules\",\"name\":\"N2\",\"enabled\":true,\"pipelineEvents\":[{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"PIPELINE_SUCCESS\"},{\"__recast\":\"io.harness.notification.bean.PipelineEvent\",\"type\":\"STAGE_FAILED\",\"forStages\":[\"stage1\"]}],\"notificationChannelWrapper\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":{\"__recast\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"type\":\"Webhook\",\"notificationChannel\":{\"__recast\":\"io.harness.notification.channelDetails.PmsWebhookChannel\",\"webhookUrl\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"https://www.google.com\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}}},\"valueClass\":\"io.harness.notification.bean.NotificationChannelWrapper\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}]}";
+  Map<String, Object> webhookNotificationRulesMap =
+      RecastOrchestrationUtils.toMap(RecastOrchestrationUtils.fromJson(webhookNotificationRulesString));
 
   @Before
   public void setup() {
@@ -166,6 +195,8 @@ public class NotificationHelperTest extends CategoryTest {
     pmsEngineExpressionService = mock(PmsEngineExpressionService.class);
     pmsPipelineService = mock(PMSPipelineService.class);
     pipelineExpressionHelper = mock(PipelineExpressionHelper.class);
+    htmlInputSanitizer = mock(HtmlInputSanitizer.class);
+    pmsExecutionService = mock(PMSExecutionService.class);
     notificationHelper = spy(new NotificationHelper());
     notificationHelper.notificationClient = notificationClient;
     notificationHelper.planExecutionService = planExecutionService;
@@ -174,6 +205,8 @@ public class NotificationHelperTest extends CategoryTest {
     notificationHelper.pmsEngineExpressionService = pmsEngineExpressionService;
     notificationHelper.pmsPipelineService = pmsPipelineService;
     notificationHelper.pipelineExpressionHelper = pipelineExpressionHelper;
+    notificationHelper.userNameSanitizer = htmlInputSanitizer;
+    notificationHelper.pmsExecutionService = pmsExecutionService;
   }
 
   @Test
@@ -243,6 +276,7 @@ public class NotificationHelperTest extends CategoryTest {
     assertEquals(notificationHelper.getEventTypeForStage(nodeExecutionBuilder.build()), Optional.empty());
   }
 
+  // TODO: Add ut for webhookNotification once PL PR is merged.
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
@@ -254,6 +288,17 @@ public class NotificationHelperTest extends CategoryTest {
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(emailNotificationYaml).build()));
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
     ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
         ArgumentCaptor.forClass(NotificationChannel.class);
     doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
@@ -263,6 +308,38 @@ public class NotificationHelperTest extends CategoryTest {
     EmailChannel notificationChannel = (EmailChannel) notificationChannelArgumentCaptor.getValue();
     assertTrue(notificationChannel.getRecipients().contains("admin@harness.io"));
     assertTrue(notificationChannel.getRecipients().contains("test@harness.io"));
+  }
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testWebhookNotification() {
+    PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
+        .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
+    when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(webhookNotificationYaml).build()));
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+    ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+        ArgumentCaptor.forClass(NotificationChannel.class);
+    doReturn(webhookNotificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+
+    notificationHelper.sendNotification(ambiance, PipelineEventType.PIPELINE_SUCCESS, nodeExecution, 1L);
+    verify(notificationClient, times(1)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+    WebhookChannel webhookChannel = (WebhookChannel) notificationChannelArgumentCaptor.getValue();
+    assertThat(webhookChannel.getWebhookUrls().size()).isEqualTo(1);
+    assertThat(webhookChannel.getWebhookUrls().get(0)).isEqualTo("https://www.google.com");
   }
 
   @Test
@@ -288,6 +365,18 @@ public class NotificationHelperTest extends CategoryTest {
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
     doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+    when(htmlInputSanitizer.sanitizeInput(anyString())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+
     for (int idx = 0; idx < pipelineEventTypeList.size(); idx++) {
       notificationHelper.sendNotification(ambiance, pipelineEventTypeList.get(idx), nodeExecution, 1L);
       verify(notificationClient, times(idx + 1)).sendNotificationAsync(any());
@@ -319,5 +408,30 @@ public class NotificationHelperTest extends CategoryTest {
     verify(notificationHelper, times(1)).createNotificationRules(any(), any());
     verify(notificationHelper, times(1))
         .sendNotificationInternal(any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetStageIdentifier() {
+    String planExecutionId = generateUuid();
+    PlanNode stagePlanNode = PlanNode.builder()
+                                 .uuid(generateUuid())
+                                 .stepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                 .identifier("dummyIdentifier_0")
+                                 .build();
+    PlanNode strategyPlanNode = PlanNode.builder()
+                                    .uuid(generateUuid())
+                                    .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                                    .identifier("dummyIdentifier")
+                                    .build();
+    Ambiance.Builder ambianceBuilder = Ambiance.newBuilder()
+                                           .setPlanExecutionId(planExecutionId)
+                                           .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagePlanNode));
+    NodeExecutionBuilder nodeExecutionBuilder = NodeExecution.builder().ambiance(ambianceBuilder.build());
+    assertEquals(notificationHelper.getStageIdentifier(nodeExecutionBuilder.build()), "dummyIdentifier_0");
+    ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode));
+    nodeExecutionBuilder.ambiance(ambianceBuilder.build());
+    assertEquals(notificationHelper.getStageIdentifier(nodeExecutionBuilder.build()), "dummyIdentifier");
   }
 }

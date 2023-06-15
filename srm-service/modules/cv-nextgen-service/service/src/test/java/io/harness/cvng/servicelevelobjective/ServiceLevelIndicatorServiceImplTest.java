@@ -56,10 +56,12 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -468,13 +470,13 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     serviceLevelIndicatorDTO.setSpec(serviceLevelIndicatorSpec);
     List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList = Collections.singletonList(serviceLevelIndicatorDTO);
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    List<SLIRecord.SLIState> sliStateList = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
     String sliId =
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
             .getUuid();
-    createSLIRecords(sliId, sliStateList);
+    createSLIRecords(sliId, sliStateList, startTime);
     serviceLevelIndicatorService.update(projectParams, serviceLevelIndicatorDTOList, "sloId",
         Collections.singletonList(serviceLevelIndicatorDTO.getIdentifier()), monitoredServiceIdentifier,
         "healthSourceId",
@@ -500,7 +502,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
                 .getSpec())
             .getConsiderAllConsecutiveMinutesFromStartAsBad())
         .isEqualTo(false);
-    verify(orchestrationService, times(1)).queueAnalysis(any(), any(), any());
+    verify(orchestrationService, times(1)).queueAnalysis(any());
   }
 
   @Test
@@ -548,21 +550,35 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
             serviceLevelObjectiveIdentifier, monitoredServiceIdentifier, healthSourceIdentifier);
-    List<SLIRecord.SLIState> sliStateList = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
-        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
+    List<SLIState> sliStateList =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
     String sliId =
         serviceLevelIndicatorService
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
             .getUuid();
-    createSLIRecords(sliId, sliStateList);
+    createSLIRecords(sliId, sliStateList, startTime.minus(2, ChronoUnit.DAYS));
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
-    verify(orchestrationService, times(1)).queueAnalysis(sliId, startTime, endTime);
+    verify(orchestrationService, times(1))
+        .queueAnalysis(AnalysisInput.builder()
+                           .verificationTaskId(sliId)
+                           .startTime(startTime.minus(2, ChronoUnit.DAYS))
+                           .endTime(startTime.minus(36, ChronoUnit.HOURS))
+                           .build());
+    verify(orchestrationService, times(1)).queueAnalysis(any());
+    verify(orchestrationService, times(4)).queueAnalysisWithoutEventPublish(any(), any());
     ((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec())
         .setEventType(RatioSLIMetricEventType.BAD);
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
-    verify(orchestrationService, times(2)).queueAnalysis(sliId, startTime, endTime);
+    verify(orchestrationService, times(2))
+        .queueAnalysis(AnalysisInput.builder()
+                           .verificationTaskId(sliId)
+                           .startTime(startTime.minus(2, ChronoUnit.DAYS))
+                           .endTime(startTime.minus(36, ChronoUnit.HOURS))
+                           .build());
+    verify(orchestrationService, times(2)).queueAnalysis(any());
+    verify(orchestrationService, times(8)).queueAnalysisWithoutEventPublish(any(), any());
   }
 
   private void updateSLI(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
@@ -668,10 +684,10 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .build();
   }
 
-  private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {
-    int index = 0;
+  private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states, Instant startTime) {
     List<SLIRecord> sliRecords = new ArrayList<>();
-    for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+    for (int index = 0; index < states.size(); index += 1) {
+      Instant instant = startTime.plus(index, ChronoUnit.MINUTES);
       SLIRecord sliRecord = SLIRecord.builder()
                                 .verificationTaskId(sliId)
                                 .sliId(sliId)

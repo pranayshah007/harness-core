@@ -41,8 +41,10 @@ import software.wings.api.DeploymentSummary;
 import software.wings.api.K8sDeploymentInfo;
 import software.wings.api.PcfDeploymentInfo;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
+import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
@@ -56,7 +58,9 @@ import software.wings.service.impl.instance.ContainerInstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.impl.instance.Status;
+import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
@@ -74,6 +78,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -99,6 +104,8 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   @Mock private DelegateTaskService delegateTaskService;
+  @Mock EnvironmentService environmentService;
+  @Mock ServiceResourceService serviceResourceService;
 
   @Before
   public void setup() {
@@ -345,7 +352,8 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
                                .build()))
         .when(taskDetailsService)
         .fetchAllForPerpetualTask(anyString(), anyString());
-
+    doReturn(Mockito.mock(Service.class)).when(serviceResourceService).getWithDetails("appId", "svcId");
+    doReturn(Mockito.mock(Environment.class)).when(environmentService).get("appId", "envId", false);
     doReturn(SettingAttribute.Builder.aSettingAttribute()
                  .withAccountId("accountId")
                  .withAppId("appId")
@@ -355,6 +363,9 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .get(anyString());
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
     infraMapping.setComputeProviderSettingId("varID");
+    infraMapping.setServiceId("svcId");
+    infraMapping.setAppId("appId");
+    infraMapping.setEnvId("envId");
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     doReturn(Status.builder().success(true).build()).when(containerInstanceHandler).getStatus(any(), any());

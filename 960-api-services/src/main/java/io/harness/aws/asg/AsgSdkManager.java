@@ -104,7 +104,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -244,14 +243,16 @@ public class AsgSdkManager {
 
   public void updateASG(
       String asgName, String launchTemplateVersion, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
-    LaunchTemplateSpecification launchTemplateSpecification =
-        new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
-
     UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
         createAsgRequestToUpdateAsgRequestMapper(createAutoScalingGroupRequest);
 
     updateAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
-    updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+
+    if (isNotEmpty(launchTemplateVersion)) {
+      LaunchTemplateSpecification launchTemplateSpecification =
+          new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
+      updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+    }
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
 
     updateTags(asgName, createAutoScalingGroupRequest);
@@ -811,7 +812,9 @@ public class AsgSdkManager {
           .filter(rule -> rule.ruleArn().equalsIgnoreCase(listenerRuleArn))
           .map(Rule::actions)
           .flatMap(Collection::stream)
-          .map(Action::targetGroupArn)
+          .map(action -> action.forwardConfig().targetGroups())
+          .flatMap(Collection::stream)
+          .map(TargetGroupTuple::targetGroupArn)
           .collect(Collectors.toList());
     }
     throw new InvalidRequestException(
@@ -824,7 +827,7 @@ public class AsgSdkManager {
       return true;
     }
 
-    Set<String> instanceIdsRegistered = new HashSet<>();
+    boolean allTargetsRegistered = true;
 
     for (String targetGroupARN : targetGroupARNList) {
       DescribeTargetHealthRequest describeTargetHealthRequest =
@@ -834,19 +837,32 @@ public class AsgSdkManager {
           elbV2Client.describeTargetHealth(awsInternalConfig, describeTargetHealthRequest, region);
 
       List<TargetHealthDescription> healthDescriptions = response.targetHealthDescriptions();
-      if (isNotEmpty(healthDescriptions)) {
-        instanceIdsRegistered.addAll(
-            healthDescriptions.stream()
-                .filter(description -> description.targetHealth().stateAsString().equalsIgnoreCase("Healthy"))
-                .map(description -> description.target().id())
-                .filter(targetIds::contains)
-                .collect(toSet()));
-      }
+      Set<String> healthyTargetIdsRegistered = getHealthyTargetIdsRegistered(healthDescriptions, targetIds, true);
+      Set<String> unhealthyTargetIdsRegistered = getHealthyTargetIdsRegistered(healthDescriptions, targetIds, false);
+      int totalNrOfTargetIds = healthyTargetIdsRegistered.size() + unhealthyTargetIdsRegistered.size();
+
+      info("For targetGroup %s registered and in healthy state are [%d] out of [%d] targets", targetGroupARN,
+          healthyTargetIdsRegistered.size(), totalNrOfTargetIds);
+
+      allTargetsRegistered = allTargetsRegistered && !healthyTargetIdsRegistered.isEmpty()
+          && healthyTargetIdsRegistered.size() == totalNrOfTargetIds;
     }
 
-    info("[%d] out of [%d] targets registered and in healthy state", instanceIdsRegistered.size(), targetIds.size());
-    return instanceIdsRegistered.containsAll(targetIds);
+    return allTargetsRegistered;
   }
+
+  private Set<String> getHealthyTargetIdsRegistered(
+      List<TargetHealthDescription> healthDescriptions, List<String> targetIds, boolean isHealthy) {
+    Predicate<TargetHealthDescription> healthyPredicate =
+        decr -> decr.targetHealth().stateAsString().equalsIgnoreCase("Healthy");
+
+    return healthDescriptions.stream()
+        .filter(isHealthy ? healthyPredicate : Predicate.not(healthyPredicate))
+        .map(description -> description.target().id())
+        .filter(targetIds::contains)
+        .collect(toSet());
+  }
+
   public String describeBGTags(String asgName) {
     Filter filter1 = new Filter().withName("auto-scaling-group").withValues(asgName);
     Filter filter2 = new Filter().withName("key").withValues(BG_VERSION);

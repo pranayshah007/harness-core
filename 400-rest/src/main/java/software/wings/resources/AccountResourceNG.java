@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.PageResponse;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
@@ -84,8 +85,17 @@ public class AccountResourceNG {
 
   @GET
   @Path("/list")
+  @Deprecated
   public RestResponse<List<AccountDTO>> getAllAccounts() {
     List<AccountDTO> accountList = accountService.getAllAccounts();
+    return new RestResponse<>(accountList);
+  }
+
+  @GET
+  @Path("/listV2")
+  public RestResponse<PageResponse<AccountDTO>> listAccounts(
+      @QueryParam("offset") int offset, @QueryParam("pageSize") int pageSize) {
+    PageResponse<AccountDTO> accountList = accountService.listAccounts(offset, pageSize);
     return new RestResponse<>(accountList);
   }
   @GET

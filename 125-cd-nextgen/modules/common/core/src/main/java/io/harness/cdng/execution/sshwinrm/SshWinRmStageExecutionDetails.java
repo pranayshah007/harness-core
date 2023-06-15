@@ -17,6 +17,7 @@ import io.harness.cdng.execution.ExecutionDetails;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 
@@ -29,4 +30,22 @@ public class SshWinRmStageExecutionDetails implements ExecutionDetails {
   private Map<String, ConfigFileOutcome> configFilesOutcome;
   private Map<String, Object> envVariables;
   private Map<String, Object> outVariables;
+  private Set<String> secretOutVariableNames;
+
+  @Override
+  public List<ArtifactOutcome> getArtifactsOutcome() {
+    return artifactsOutcome;
+  }
+  @Override
+  public Map<String, ConfigFileOutcome> getConfigFilesOutcome() {
+    return configFilesOutcome;
+  }
+  @Override
+  public Map<String, Object> getEnvVariables() {
+    return envVariables;
+  }
+  @Override
+  public Map<String, Object> getOutVariables() {
+    return outVariables;
+  }
 }

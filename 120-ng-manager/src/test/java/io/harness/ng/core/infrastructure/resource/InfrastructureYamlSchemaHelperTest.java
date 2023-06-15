@@ -22,8 +22,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
 import io.harness.rule.Owner;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.InvalidYamlException;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
@@ -40,7 +41,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureYamlSchemaHelperTest extends CategoryTest {
-  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock CDFeatureFlagHelper featureFlagHelperService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
   @InjectMocks InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
   private final String ACCOUNT_ID = "account_id";

@@ -1,0 +1,77 @@
+pipeline:
+  name: "temppipeline"
+  identifier: "temppipeline"
+  projectIdentifier: "dev"
+  orgIdentifier: "default"
+  tags: {}
+  stages:
+    - stage:
+        name: "customstage"
+        identifier: "customstage"
+        type: "Custom"
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "ShellScript_1"
+                  type: "ShellScript"
+                  name: "ShellScript_1"
+                  spec:
+                    shell: "Bash"
+                    onDelegate: true
+                    source:
+                      type: "Inline"
+                      spec:
+                        script: "echo hello"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: "10m"
+    - stage:
+        name: "cistage1"
+        identifier: "cistage1"
+        type: "CI"
+        spec:
+          cloneCodebase: true
+          platform:
+            os: "Linux"
+            arch: "Amd64"
+          runtime:
+            type: "Cloud"
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  identifier: "Run_1"
+                  type: "Run"
+                  name: "Run_1"
+                  spec:
+                    shell: "Sh"
+                    command: "echo hello"
+    - stage:
+        name: "cistage2"
+        identifier: "cistage2"
+        type: "CI"
+        spec:
+          cloneCodebase: false
+          platform:
+            os: "Linux"
+            arch: "Amd64"
+          runtime:
+            type: "Cloud"
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: "Run"
+                  name: "Run_1"
+                  identifier: "Run_1"
+                  spec:
+                    shell: "Sh"
+                    command: "echo hello"
+  allowStageExecutions: true
+  properties:
+    ci:
+      codebase:
+        connectorRef: "github"
+        repoName: "<+input>"
+        build: "<+input>"

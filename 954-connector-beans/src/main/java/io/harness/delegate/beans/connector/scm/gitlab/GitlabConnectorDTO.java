@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.gitlab;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -44,6 +45,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
@@ -130,6 +132,11 @@ public class GitlabConnectorDTO
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
     if (GitConnectionType.REPO.equals(connectionType)) {
+      GitRepositoryDTO gitRepositoryDTO = getRepositoryFromApiUrl();
+      if (gitRepositoryDTO != null) {
+        return gitRepositoryDTO;
+      }
+
       return GitRepositoryDTO.builder()
           .name(GitClientHelper.getGitRepo(url))
           .org(GitClientHelper.getGitOwner(url, false))
@@ -140,12 +147,13 @@ public class GitlabConnectorDTO
 
   @Override
   public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
+    String pathIdentifier = isEmpty(branchName) ? commitId : branchName;
     final String FILE_URL_FORMAT = "%s/-/blob/%s/%s";
-    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    ScmConnectorHelper.validateGetFileUrlParams(pathIdentifier, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format(FILE_URL_FORMAT, httpRepoUrl, branchName, filePath);
+    return String.format(FILE_URL_FORMAT, httpRepoUrl, pathIdentifier, filePath);
   }
 
   @Override
@@ -164,5 +172,30 @@ public class GitlabConnectorDTO
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
         .build();
+  }
+
+  private GitRepositoryDTO getRepositoryFromApiUrl() {
+    if (!GitConnectionType.REPO.equals(connectionType) || !GitAuthType.HTTP.equals(authentication.getAuthType())) {
+      return null;
+    }
+    if (apiAccess == null || !(apiAccess.getSpec() instanceof GitlabTokenSpecDTO)) {
+      return null;
+    }
+    GitlabTokenSpecDTO gitlabTokenSpecDTO = (GitlabTokenSpecDTO) apiAccess.getSpec();
+    String apiUrl = gitlabTokenSpecDTO.getApiUrl();
+    if (StringUtils.isBlank(apiUrl)) {
+      return null;
+    }
+    apiUrl = StringUtils.removeEnd(apiUrl, "/") + "/";
+    String ownerAndRepo = StringUtils.removeStart(url, apiUrl);
+    ownerAndRepo = StringUtils.removeEnd(ownerAndRepo, ".git");
+    if (ownerAndRepo.contains("/")) {
+      String[] parts = ownerAndRepo.split("/");
+      String repo = parts[parts.length - 1];
+      String owner = StringUtils.removeEnd(ownerAndRepo, "/" + repo);
+      return GitRepositoryDTO.builder().name(repo).org(owner).build();
+    }
+
+    return null;
   }
 }

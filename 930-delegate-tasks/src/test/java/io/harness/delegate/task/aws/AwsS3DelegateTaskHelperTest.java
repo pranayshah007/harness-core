@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.VED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -67,7 +68,10 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private AwsApiHelperService awsApiHelperService;
   @InjectMocks private AwsS3DelegateTaskHelper taskHelper;
+  @InjectMocks private AwsApiHelperService awsApiHelperService1;
 
+  private static final char[] accessKey = "abcd".toCharArray();
+  private static final char[] secretKey = "pqrs".toCharArray();
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -340,7 +344,7 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
     ArgumentCaptor<String> regionArgumentCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> bucketArgumentCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> versionRegexArgumentCaptor = ArgumentCaptor.forClass(String.class);
-
+    ArgumentCaptor<Boolean> fetchObjectMetadata = ArgumentCaptor.forClass(Boolean.class);
     List<BuildDetails> builds = new ArrayList<>();
 
     BuildDetails build1 = new BuildDetails();
@@ -374,7 +378,7 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
     doReturn(builds)
         .when(awsApiHelperService)
         .listBuilds(internalConfigArgumentCaptor.capture(), regionArgumentCaptor.capture(),
-            bucketArgumentCaptor.capture(), versionRegexArgumentCaptor.capture());
+            bucketArgumentCaptor.capture(), versionRegexArgumentCaptor.capture(), fetchObjectMetadata.capture());
 
     DelegateResponseData responseData = taskHelper.getBuilds(awsTaskParams);
 
@@ -404,7 +408,7 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
 
     verify(secretDecryptionService, times(1)).decrypt(any(), any());
 
-    verify(awsApiHelperService, times(1)).listBuilds(any(), any(), any(), any());
+    verify(awsApiHelperService, times(1)).listBuilds(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -529,13 +533,14 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
     ArgumentCaptor<String> regionArgumentCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> bucketArgumentCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> filePathCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<Boolean> fetchObjectMetadata = ArgumentCaptor.forClass(Boolean.class);
 
     doReturn(null).when(secretDecryptionService).decrypt(any(), any());
 
     doReturn(builds)
         .when(awsApiHelperService)
         .listBuilds(internalConfigArgumentCaptor.capture(), regionArgumentCaptor.capture(),
-            bucketArgumentCaptor.capture(), filePathCaptor.capture());
+            bucketArgumentCaptor.capture(), filePathCaptor.capture(), fetchObjectMetadata.capture());
 
     DelegateResponseData responseData = taskHelper.getLastSuccessfulBuild(awsTaskParams);
 
@@ -555,7 +560,7 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
 
     verify(secretDecryptionService, times(1)).decrypt(any(), any());
 
-    verify(awsApiHelperService, times(1)).listBuilds(any(), any(), any(), any());
+    verify(awsApiHelperService, times(1)).listBuilds(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test

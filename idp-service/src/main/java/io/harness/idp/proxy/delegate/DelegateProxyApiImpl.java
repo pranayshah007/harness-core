@@ -8,55 +8,72 @@
 package io.harness.idp.proxy.delegate;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
+import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.http.HttpStepResponse;
+import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.http.HttpHeaderConfig;
-import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
-import io.harness.idp.gitintegration.service.GitIntegrationService;
-import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
+import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
+import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.proxy.delegate.beans.BackstageProxyRequest;
+import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import java.util.concurrent.ExecutionException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(IDP)
+@NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DelegateProxyApiImpl implements DelegateProxyApi {
+  private static final String HEADER_STRING_PATTERN = "%s:%s; ";
   private final DelegateProxyRequestForwarder delegateProxyRequestForwarder;
-  private final GitIntegrationService gitIntegrationService;
+  private final DelegateSelectorsCache delegateSelectorsCache;
 
+  @IdpServiceAuthIfHasApiKey
+  @Override
   @POST
   public Response forwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers,
-      @PathParam("url") String urlString, String body) throws JsonProcessingException {
-    var accountIdentifier = headers.getHeaderString("accountId");
+      @PathParam("url") String urlString, String body) throws JsonProcessingException, ExecutionException {
+    var accountIdentifier = headers.getHeaderString("Harness-Account");
     BackstageProxyRequest backstageProxyRequest;
     try {
       ObjectMapper mapper = new ObjectMapper();
       backstageProxyRequest = mapper.readValue(body, BackstageProxyRequest.class);
     } catch (Exception err) {
-      log.info("Error parsing backstageProxyRequest ", err);
+      log.info("Error parsing backstageProxyRequest. Request: {}", body, err);
       throw err;
     }
-    log.info("Parsed request body: {}", backstageProxyRequest);
+    log.info("Parsed request body url: {}", backstageProxyRequest.getUrl());
+    log.info("Parsed request body method: {}", backstageProxyRequest.getMethod());
+    StringBuilder headerString = new StringBuilder();
+    backstageProxyRequest.getHeaders().forEach((key, value) -> {
+      if (!key.equals(AUTHORIZATION)) {
+        headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
+      } else {
+        log.debug("Skipped logging {} header", AUTHORIZATION);
+      }
+    });
+    log.info("Parsed request body headers: {}", headerString);
 
+    Set<String> delegateSelectors = getDelegateSelectors(backstageProxyRequest.getUrl(), accountIdentifier);
     List<HttpHeaderConfig> headerList =
         delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders());
-    String providerType = getProviderTypeFromUrl(urlString);
-    Set<String> delegateSelectors = getDelegateSelectorForProvider(accountIdentifier, providerType);
 
     HttpStepResponse httpResponse =
         delegateProxyRequestForwarder.forwardRequestToDelegate(accountIdentifier, backstageProxyRequest.getUrl(),
@@ -64,45 +81,30 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
 
     if (httpResponse == null) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message("Did not receive response from Delegate").build())
+          .entity(ResponseMessage.builder()
+                      .message("Did not receive response from Delegate")
+                      .code(ErrorCode.INTERNAL_SERVER_ERROR)
+                      .build())
           .build();
     }
 
     return Response.status(httpResponse.getHttpResponseCode()).entity(httpResponse.getHttpResponseBody()).build();
   }
 
-  private Set<String> getDelegateSelectorForProvider(String accountIdentifier, String providerType) {
-    Set<String> delegateSelectors = new HashSet<>();
-    Optional<CatalogConnectorEntity> catalogConnectorOpt =
-        gitIntegrationService.findByAccountIdAndProviderType(accountIdentifier, providerType);
-    if (catalogConnectorOpt.isPresent()) {
-      delegateSelectors = catalogConnectorOpt.get().getDelegateSelectors();
-    }
-    return delegateSelectors;
-  }
-
-  private String getProviderTypeFromUrl(String urlString) {
-    // TODO: This logic assumes the url would have the respective integration name somewhere.
-    //  This logic needs to be improved as there are chances that the url might not have the integration name
-    //  and also especially when we start supporting multiple connectors per type.
+  private Set<String> getDelegateSelectors(String urlString, String accountIdentifier) throws ExecutionException {
     URL url;
     try {
       url = new URL(urlString);
     } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error parsing the url while fetching the delegate selectors", e);
     }
-    if (url.getHost().contains(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE.toLowerCase())
-        || url.getHost().contains(GitIntegrationConstants.GITHUB_ENTERPRISE_URL_PREFIX.toLowerCase())) {
-      return GitIntegrationConstants.GITHUB_CONNECTOR_TYPE;
-    } else if (url.getHost().contains(GitIntegrationConstants.GITLAB_CONNECTOR_TYPE.toLowerCase())) {
-      return GitIntegrationConstants.GITLAB_CONNECTOR_TYPE;
-    } else if (url.getHost().contains(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE.toLowerCase())) {
-      return GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE;
-    } else if (url.getHost().contains(GitIntegrationConstants.AZURE_HOST.toLowerCase())) {
-      return GitIntegrationConstants.AZURE_REPO_CONNECTOR_TYPE;
-    } else {
-      throw new UnsupportedOperationException(
-          String.format("URL host %s does not match any provider type", url.getHost()));
+    String host = url.getHost();
+
+    // Remove the api. prefix in api.github.com calls
+    if (url.getHost().startsWith("api.")) {
+      host = host.replace("api.", "");
     }
+
+    return delegateSelectorsCache.get(accountIdentifier, host);
   }
 }

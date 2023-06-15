@@ -107,9 +107,11 @@ import io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswo
 import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
+import io.harness.connector.entities.embedded.rancherconnector.RancherConfig;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
+import io.harness.connector.entities.embedded.signalfxconnector.SignalFXConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
@@ -173,6 +175,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureArtifactsConnector.class);
     set.add(BambooConnector.class);
     set.add(TerraformCloudConfig.class);
+    set.add(SignalFXConnector.class);
+    set.add(RancherConfig.class);
   }
 
   @Override

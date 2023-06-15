@@ -9,6 +9,7 @@ package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient;
+import static io.harness.azure.utility.AzureUtils.executeRestCall;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.exception.WingsException.USER;
 
@@ -39,7 +40,6 @@ import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
-import retrofit2.Response;
 
 @OwnedBy(CDP)
 @Singleton
@@ -100,15 +100,9 @@ public class AzureArtifactsDownloadHelper {
     AzureArtifactsRestClient azureArtifactsRegistryRestClient = getAzureArtifactsRestClient(
         azureArtifactsInternalConfig.getAzureArtifactsRegistryUrl(), azureArtifactsInternalConfig.getProject());
     String authHeader = getAuthHeader(azureArtifactsInternalConfig);
-    Response<AzureArtifactsPackageVersion> packageVersionResponse;
 
-    try {
-      packageVersionResponse =
-          azureArtifactsRegistryRestClient.getPackageVersion(authHeader, feed, packageId, versionId).execute();
-    } catch (IOException e) {
-      throw new HintException("Failed to get the Build.");
-    }
-    return packageVersionResponse != null ? packageVersionResponse.body() : null;
+    return executeRestCall(azureArtifactsRegistryRestClient.getPackageVersion(authHeader, feed, packageId, versionId),
+        new HintException("Failed to get the Build."));
   }
 
   public static boolean shouldDownloadFile(String artifactFileName) {

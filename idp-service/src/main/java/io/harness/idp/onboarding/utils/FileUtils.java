@@ -47,7 +47,7 @@ public class FileUtils {
 
   public static void writeObjectAsYamlInFile(Object object, String filePath) {
     try {
-      String yaml = YamlPipelineUtils.writeString(object);
+      String yaml = YamlPipelineUtils.writeYamlString(object);
       Path file = Paths.get(filePath);
       Files.write(file, Collections.singletonList(yaml), StandardCharsets.UTF_8);
     } catch (IOException e) {
@@ -61,7 +61,6 @@ public class FileUtils {
         org.apache.commons.io.FileUtils.deleteDirectory(new File(dir));
       } catch (IOException e) {
         log.error("Error in cleaning up directories. Exception = {}", e.getMessage(), e);
-        throw new UnexpectedException("Error while cleaning up directories");
       }
     }
   }

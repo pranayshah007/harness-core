@@ -18,7 +18,6 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -61,6 +60,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.utils.ParameterFieldUtils;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
@@ -69,6 +69,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +87,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
+  public static final List<String> SKIP_KEYS_LIST_FROM_STAGE_NAME =
+      Arrays.asList("environmentInputs", "serviceInputs", "infraInputs");
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
 
@@ -167,9 +170,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     String childNodeId = stepParameters.getChildNodeId();
 
     // Separate handling as parallelism works differently when filters are present with service.tags expression
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-        && (environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironments())
-            || environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironmentGroup()))) {
+    if (environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironments())
+        || environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironmentGroup())) {
       return getChildrenExecutableResponse(
           ambiance, stepParameters, children, accountIdentifier, orgIdentifier, projectIdentifier, childNodeId);
     }
@@ -201,9 +203,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int totalIterations = servicesMap.size();
       int maxConcurrency = 0;
       if (stepParameters.getServices().getServicesMetadata() != null
-          && stepParameters.getServices().getServicesMetadata().getParallel() != null
-          && !stepParameters.getServices().getServicesMetadata().getParallel()) {
-        maxConcurrency = 1;
+          && ParameterField.isNotNull(stepParameters.getServices().getServicesMetadata().getParallel())) {
+        if (stepParameters.getServices().getServicesMetadata().getParallel().isExpression()) {
+          throw new InvalidYamlException("services parallel value could not be resolved: "
+              + stepParameters.getServices().getServicesMetadata().getParallel().getExpressionValue());
+        }
+        if (!ParameterFieldUtils.getBooleanValue(stepParameters.getServices().getServicesMetadata().getParallel())) {
+          maxConcurrency = 1;
+        }
       }
       for (Map<String, String> serviceMap : servicesMap) {
         String serviceRef = MultiDeploymentSpawnerUtils.getServiceRef(serviceMap);
@@ -346,8 +353,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     int maxConcurrency = 0;
     // If Both service and env are non-parallel
     if (stepParameters.getServices() != null && stepParameters.getServices().getServicesMetadata() != null
-        && stepParameters.getServices().getServicesMetadata().getParallel() != null
-        && !stepParameters.getServices().getServicesMetadata().getParallel()
+        && ParameterField.isNotNull(stepParameters.getServices().getServicesMetadata().getParallel())
+        && !stepParameters.getServices().getServicesMetadata().getParallel().getValue()
         && ((stepParameters.getEnvironments() != null
                 && stepParameters.getEnvironments().getEnvironmentsMetadata() != null
                 && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
@@ -462,13 +469,16 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       String childNodeId, int currentIteration, int totalIterations, Map<String, String> serviceMap, String subType) {
     return ChildrenExecutableResponse.Child.newBuilder()
         .setChildNodeId(childNodeId)
-        .setStrategyMetadata(
-            StrategyMetadata.newBuilder()
-                .setCurrentIteration(currentIteration)
-                .setTotalIterations(totalIterations)
-                .setMatrixMetadata(
-                    MatrixMetadata.newBuilder().setSubType(subType).putAllMatrixValues(serviceMap).build())
-                .build())
+        .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                 .setCurrentIteration(currentIteration)
+                                 .setTotalIterations(totalIterations)
+                                 .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                                        .setSubType(subType)
+                                                        .addMatrixCombination(currentIteration)
+                                                        .addAllMatrixKeysToSkipInName(SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                                        .putAllMatrixValues(serviceMap)
+                                                        .build())
+                                 .build())
         .build();
   }
 
@@ -479,7 +489,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   private boolean shouldDeployInParallel(ServicesMetadata metadata) {
     // If metadata is not provided, we assume parallel by default.
-    return metadata == null || Boolean.TRUE == metadata.getParallel();
+    return metadata == null || ParameterFieldUtils.getBooleanValue(metadata.getParallel());
   }
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,

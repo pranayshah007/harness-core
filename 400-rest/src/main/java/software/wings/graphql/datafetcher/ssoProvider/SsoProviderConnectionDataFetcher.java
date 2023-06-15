@@ -44,7 +44,8 @@ public class SsoProviderConnectionDataFetcher
   @AuthRule(permissionType = MANAGE_AUTHENTICATION_SETTINGS)
   public QLSSOProviderConnection fetchConnection(List<QLSSOProviderFilter> appFilters,
       QLPageQueryParameters pageQueryParameters, List<QLNoOpSortCriteria> sortCriteria) {
-    List<SSOSettings> ssoSettings = ssoService.getAccountAccessManagementSettings(getAccountId()).getSsoSettings();
+    List<SSOSettings> ssoSettings =
+        ssoService.getAccountAccessManagementSettings(getAccountId(), false).getSsoSettings();
     List<QLSSOProvider> nodes = new ArrayList<>();
     int total = 0;
     for (SSOSettings setting : ssoSettings) {

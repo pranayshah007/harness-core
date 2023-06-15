@@ -1,1 +1,1 @@
-You have been invited to join the ${(company)?capitalize} account at Harness
+Invitation to join the account ${accountname} on Harness

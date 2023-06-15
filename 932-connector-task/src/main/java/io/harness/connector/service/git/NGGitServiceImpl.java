@@ -41,9 +41,9 @@ import com.jcraft.jsch.Session;
 import java.io.IOException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jgit.transport.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
-import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 
 @Singleton
@@ -56,24 +56,27 @@ public class NGGitServiceImpl implements NGGitService {
   @Override
   public void validate(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig) {
     final GitBaseRequest gitBaseRequest = GitBaseRequest.builder().build();
-    setGitBaseRequest(gitConfig, accountId, gitBaseRequest, YAML, sshSessionConfig);
+    setGitBaseRequest(gitConfig, accountId, gitBaseRequest, YAML, sshSessionConfig, true);
     gitClientV2.validate(gitBaseRequest);
   }
   @Override
   public void validateOrThrow(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig) {
     final GitBaseRequest gitBaseRequest = GitBaseRequest.builder().build();
-    setGitBaseRequest(gitConfig, accountId, gitBaseRequest, YAML, sshSessionConfig);
+    setGitBaseRequest(gitConfig, accountId, gitBaseRequest, YAML, sshSessionConfig, true);
     gitClientV2.validateOrThrow(gitBaseRequest);
   }
 
   @VisibleForTesting
   void setGitBaseRequest(GitConfigDTO gitConfig, String accountId, GitBaseRequest gitBaseRequest,
-      GitRepositoryType repositoryType, SshSessionConfig sshSessionConfig) {
+      GitRepositoryType repositoryType, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
     gitBaseRequest.setAuthRequest(getAuthRequest(gitConfig, sshSessionConfig));
-    gitBaseRequest.setBranch(gitConfig.getBranchName());
     gitBaseRequest.setRepoType(repositoryType);
-    gitBaseRequest.setRepoUrl(gitConfig.getUrl());
     gitBaseRequest.setAccountId(accountId);
+
+    if (overrideFromGitConfig) {
+      gitBaseRequest.setBranch(gitConfig.getBranchName());
+      gitBaseRequest.setRepoUrl(gitConfig.getUrl());
+    }
   }
 
   public AuthRequest getAuthRequest(GitConfigDTO gitConfig, SshSessionConfig sshSessionConfig) {
@@ -114,8 +117,8 @@ public class NGGitServiceImpl implements NGGitService {
 
   @Override
   public CommitAndPushResult commitAndPush(GitConfigDTO gitConfig, CommitAndPushRequest commitAndPushRequest,
-      String accountId, SshSessionConfig sshSessionConfig) {
-    setGitBaseRequest(gitConfig, accountId, commitAndPushRequest, YAML, sshSessionConfig);
+      String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
+    setGitBaseRequest(gitConfig, accountId, commitAndPushRequest, YAML, sshSessionConfig, overrideFromGitConfig);
     return gitClientV2.commitAndPush(commitAndPushRequest);
   }
 

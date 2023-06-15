@@ -7,6 +7,7 @@
 
 package io.harness.connector.mappers.ceazure;
 
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +51,15 @@ public class CEAzureDTOToEntityTest extends CategoryTest {
     final CEAzureConfig ceAzureConfig =
         ceAzureDTOToEntity.toConnectorEntity(AzureConnectorTestHelper.createCEAzureConnectorDTOBillingOnly());
     assertThat(ceAzureConfig).isEqualTo(AzureConnectorTestHelper.createCEAzureConfigBillingOnly());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGovernanceOnly() {
+    final CEAzureConfig ceAzureConfig =
+        ceAzureDTOToEntity.toConnectorEntity(AzureConnectorTestHelper.createCEAzureConnectorDTOGovernanceOnly());
+    assertThat(ceAzureConfig).isEqualTo(AzureConnectorTestHelper.createCEAzureConfigGovernanceOnly());
   }
 
   @Test

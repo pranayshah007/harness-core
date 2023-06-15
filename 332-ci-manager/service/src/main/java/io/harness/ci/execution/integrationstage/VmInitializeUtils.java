@@ -20,6 +20,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ORG_ID_
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_USER_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ORG_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_ADDON_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
@@ -36,6 +37,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
+import static io.harness.ci.utils.UsageUtils.getExecutionUser;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -188,6 +190,7 @@ public class VmInitializeUtils {
   public Map<String, String> getCommonStepEnvVariables(String stageID, Ambiance ambiance) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String userID = getExecutionUser(ambiance.getMetadata().getPrincipalInfo());
     final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
     final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
     final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
@@ -195,6 +198,7 @@ public class VmInitializeUtils {
     final String executionID = ambiance.getPlanExecutionId();
 
     envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
+    envVars.put(HARNESS_USER_ID_VARIABLE, userID);
     envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);

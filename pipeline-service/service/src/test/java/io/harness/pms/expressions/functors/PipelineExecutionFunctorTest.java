@@ -7,6 +7,7 @@
 
 package io.harness.pms.expressions.functors;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -19,6 +20,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.retry.RetryExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -28,7 +32,9 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +46,102 @@ import org.mockito.MockitoAnnotations;
 public class PipelineExecutionFunctorTest extends CategoryTest {
   @Mock private PMSExecutionService pmsExecutionService;
   @Mock PipelineExpressionHelper pipelineExpressionHelper;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
   @InjectMocks private PipelineExecutionFunctor triggeredByFunctor;
+
+  String sampleYaml = "pipeline:\n"
+      + "  identifier: \"trialselective\"\n"
+      + "  name: \"trialselective\"\n"
+      + "  projectIdentifier: \"test\"\n"
+      + "  orgIdentifier: \"default\"\n"
+      + "  tags: {}\n"
+      + "  stages:\n"
+      + "  - stage:\n"
+      + "      identifier: \"Test1\"\n"
+      + "      type: \"Custom\"\n"
+      + "      name: \"Test1\"\n"
+      + "      description: \"\"\n"
+      + "      spec:\n"
+      + "        execution:\n"
+      + "          steps:\n"
+      + "          - step:\n"
+      + "              identifier: \"Wait_1\"\n"
+      + "              type: \"Wait\"\n"
+      + "              name: \"Wait_1\"\n"
+      + "              spec:\n"
+      + "                duration: \"1m\"\n"
+      + "          - step:\n"
+      + "              identifier: \"ShellScript_1\"\n"
+      + "              type: \"ShellScript\"\n"
+      + "              name: \"ShellScript_1\"\n"
+      + "              spec:\n"
+      + "                shell: \"Bash\"\n"
+      + "                onDelegate: true\n"
+      + "                source:\n"
+      + "                  type: \"Inline\"\n"
+      + "                  spec:\n"
+      + "                    script: \"echo \\\"hi\\\"\\necho <+pipeline.pipeline.triggeredBy.email>\\n\\\n"
+      + "                      \\necho <+pipeline.selectedStages>\\n\\necho <+inputSet>\"\n"
+      + "                environmentVariables: []\n"
+      + "                outputVariables:\n"
+      + "                - name: \"selectedStages\"\n"
+      + "                  type: \"String\"\n"
+      + "                  value: \"<+pipeline.selectedStages>\"\n"
+      + "                delegateSelectors:\n"
+      + "                - \"localdelegate\"\n"
+      + "              timeout: \"10m\"\n"
+      + "              failureStrategies: []\n"
+      + "      tags: {}\n"
+      + "  - parallel:\n"
+      + "    - stage:\n"
+      + "        identifier: \"test2\"\n"
+      + "        type: \"Custom\"\n"
+      + "        name: \"test2\"\n"
+      + "        description: \"\"\n"
+      + "        spec:\n"
+      + "          execution:\n"
+      + "            steps:\n"
+      + "            - step:\n"
+      + "                identifier: \"Wait_1\"\n"
+      + "                type: \"Wait\"\n"
+      + "                name: \"Wait_1\"\n"
+      + "                spec:\n"
+      + "                  duration: \"1m\"\n"
+      + "        tags: {}\n"
+      + "    - stage:\n"
+      + "        identifier: \"test3\"\n"
+      + "        type: \"Custom\"\n"
+      + "        name: \"test3\"\n"
+      + "        description: \"\"\n"
+      + "        spec:\n"
+      + "          execution:\n"
+      + "            steps:\n"
+      + "            - step:\n"
+      + "                identifier: \"Wait_1_3\"\n"
+      + "                type: \"Wait\"\n"
+      + "                name: \"Wait_1_3\"\n"
+      + "                spec:\n"
+      + "                  duration: \"1m\"\n"
+      + "        tags: {}\n"
+      + "  - stage:\n"
+      + "      identifier: \"Test4\"\n"
+      + "      type: \"Custom\"\n"
+      + "      name: \"Test4\"\n"
+      + "      description: \"\"\n"
+      + "      spec:\n"
+      + "        execution:\n"
+      + "          steps:\n"
+      + "          - step:\n"
+      + "              identifier: \"Wait_1_4\"\n"
+      + "              type: \"Wait\"\n"
+      + "              name: \"Wait_1_4\"\n"
+      + "              spec:\n"
+      + "                duration: \"10m\"\n"
+      + "      tags: {}\n"
+      + "      strategy:\n"
+      + "        parallelism: 2\n"
+      + "  allowStageExecutions: true\n";
+
   Ambiance ambiance = Ambiance.newBuilder()
                           .putSetupAbstractions("accountId", "accountId")
                           .putSetupAbstractions("projectIdentifier", "projectId")
@@ -62,11 +163,22 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     on(triggeredByFunctor).set("ambiance", ambiance);
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
+            .planExecutionId(generateUuid())
+            .allowStagesExecution(false)
+            .runSequence(32)
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
                                       .setTriggerType(TriggerType.WEBHOOK)
                                       .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("system").build())
                                       .build())
             .build();
+
+    Optional<PlanExecutionMetadata> planExecutionMetadataOptional =
+        Optional.of(PlanExecutionMetadata.builder().planExecutionId("123234345").yaml(sampleYaml).build());
+
+    doReturn(planExecutionMetadataOptional)
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(ambiance.getPlanExecutionId());
+
     doReturn(pipelineExecutionSummaryEntity)
         .when(pmsExecutionService)
         .getPipelineExecutionSummaryEntity(any(), any(), any(), any());
@@ -76,9 +188,14 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     Map<String, String> triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertNull(triggeredByMap.get("email"));
     assertEquals(triggeredByMap.get("name"), "system");
+    assertEquals(response.get("resumedExecutionId"),
+        pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
 
     pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
+            .allowStagesExecution(false)
+            .planExecutionId(generateUuid())
+            .retryExecutionMetadata(RetryExecutionMetadata.builder().rootExecutionId(generateUuid()).build())
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
                                       .setTriggerType(TriggerType.MANUAL)
                                       .setTriggeredBy(TriggeredBy.newBuilder()
@@ -94,6 +211,8 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(any(), any(), any(), any());
 
     response = (Map<String, Object>) triggeredByFunctor.bind();
+    assertEquals(response.get("resumedExecutionId"),
+        pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
     assertEquals(response.get("triggerType"), TriggerType.MANUAL.toString());
     triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertEquals(triggeredByMap.get("email"), "admin@harness.io");
@@ -101,5 +220,11 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     Map<String, String> executionMap = (Map<String, String>) response.get("execution");
     assertEquals(executionMap.size(), 1);
     assertEquals(executionMap.get("url"), executionUrl);
+
+    ArrayList<String> selectedStages = (ArrayList<String>) response.get("selectedStages");
+    assertEquals(selectedStages.size(), 4);
+    assertEquals(selectedStages.get(0), "Test1");
+
+    assertEquals(response.get("sequenceId"), pipelineExecutionSummaryEntity.getRunSequence());
   }
 }

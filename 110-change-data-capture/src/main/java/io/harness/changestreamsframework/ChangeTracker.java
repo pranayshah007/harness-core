@@ -79,6 +79,9 @@ public class ChangeTracker {
       case "ng-harness":
         mongoClientUrl = mainConfiguration.getNgMongo().getUri();
         break;
+      case "cvng":
+        mongoClientUrl = mainConfiguration.getCvngMongo().getUri();
+        break;
       default:
         mongoClientUrl = mainConfiguration.getHarnessMongo().getUri();
         break;

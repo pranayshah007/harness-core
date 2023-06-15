@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.github.reinert.jjschema.SchemaIgnore;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,4 +40,5 @@ public class SmtpConfig {
   @JsonProperty("username") @ConfigSecret private String username;
   @JsonProperty("password") @ConfigSecret private char[] password;
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;
+  @JsonProperty("delegateSelectors") private Set<String> delegateSelectors;
 }

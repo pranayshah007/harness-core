@@ -1,0 +1,76 @@
+{
+  "definitions": {
+
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1683797515.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "jenkins"
+  ],
+  "properties": {
+    "jenkins": {
+      "$id": "#root/jenkins",
+      "title": "Jenkins",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instances"
+      ],
+      "properties": {
+        "instances": {
+          "$id": "#root/jenkins/instances",
+          "title": "Instances",
+          "type": "array",
+          "default": [
+
+          ],
+          "items": {
+            "$id": "#root/jenkins/instances/items",
+            "title": "Items",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "baseUrl",
+              "username",
+              "apiKey"
+            ],
+            "properties": {
+              "name": {
+                "$id": "#root/jenkins/instances/items/name",
+                "title": "Name",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "baseUrl": {
+                "$id": "#root/jenkins/instances/items/baseUrl",
+                "title": "Baseurl",
+                "type": "string",
+                "default": "",
+                "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+              },
+              "username": {
+                "$id": "#root/jenkins/instances/items/username",
+                "title": "Username",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "apiKey": {
+                "$id": "#root/jenkins/instances/items/apiKey",
+                "title": "Apikey",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

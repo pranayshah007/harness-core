@@ -25,6 +25,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AW
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static software.wings.beans.LogHelper.color;
@@ -49,6 +50,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -565,6 +567,10 @@ public class CDStepHelper {
         K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome = (K8sAwsInfrastructureOutcome) infrastructure;
         releaseName = k8sAwsInfrastructureOutcome.getReleaseName();
         break;
+      case KUBERNETES_RANCHER:
+        K8sRancherInfrastructureOutcome rancherInfraOutcome = (K8sRancherInfrastructureOutcome) infrastructure;
+        releaseName = rancherInfraOutcome.getReleaseName();
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));
     }
@@ -727,6 +733,14 @@ public class CDStepHelper {
 
   public boolean isSkipAddingTrackSelectorToDeployment(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
+  }
+
+  public boolean isEnabledSupportHPAAndPDB(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_HPA_AND_PDB_NG);
+  }
+
+  public boolean isSkipUnchangedManifest(String accountId, boolean value) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG) && value;
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
@@ -1043,8 +1057,14 @@ public class CDStepHelper {
       case GIT:
         delegateSelectors = ((GitConfigDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
         break;
+      case BITBUCKET:
+        delegateSelectors = ((BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case GITLAB:
+        delegateSelectors = ((GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
       default:
-        throw new UnsupportedOperationException(format("Unknown Connector Config for delegate selectors"));
+        throw new UnsupportedOperationException("Unknown Connector Config for delegate selectors");
     }
 
     return TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)

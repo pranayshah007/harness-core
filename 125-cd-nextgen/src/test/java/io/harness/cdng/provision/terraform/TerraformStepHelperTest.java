@@ -41,6 +41,7 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -95,9 +96,12 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -159,6 +163,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private TerraformConfigDAL terraformConfigDAL;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private NGEncryptedDataService ngEncryptedDataService;
   @InjectMocks private TerraformStepHelper helper;
 
   private Ambiance getAmbiance() {
@@ -1104,6 +1109,40 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(config.getConfigFiles().toGitStoreConfig().getConnectorRef().getValue()).isEqualTo("terraform");
     assertThat(config.getConfigFiles().toGitStoreConfig().getBranch().getValue()).isEqualTo("master");
     assertThat(config.getFileStoreConfig()).isEqualTo(artifactoryStoreConfig);
+    assertThat(config.getPipelineExecutionId()).isEqualTo("exec_id");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testSaveTerraformConfigForPipelineRollbackMode() {
+    Ambiance ambiance = getAmbiance()
+                            .toBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK)
+                                             .setOriginalPlanExecutionIdForRollbackMode("original_exec_id")
+                                             .build())
+                            .build();
+
+    ArgumentCaptor<TerraformConfig> captor = ArgumentCaptor.forClass(TerraformConfig.class);
+    GitStoreConfigDTO configFiles = GithubStoreDTO.builder().branch("master").connectorRef("terraform").build();
+    ArtifactoryStorageConfigDTO artifactoryStoreConfig = ArtifactoryStorageConfigDTO.builder().build();
+    TerraformConfig terraformConfig = TerraformConfig.builder()
+                                          .backendConfig("back-content")
+                                          .workspace("w1")
+                                          .fileStoreConfig(artifactoryStoreConfig)
+                                          .configFiles(configFiles)
+                                          .build();
+    helper.saveTerraformConfig(terraformConfig, ambiance);
+    then(terraformConfigDAL).should(times(1)).saveTerraformConfig(captor.capture());
+    System.out.println("");
+    TerraformConfig config = captor.getValue();
+    assertThat(config.getVarFileConfigs()).isNull();
+    assertThat(config.getAccountId()).isEqualTo("test-account");
+    assertThat(config.getConfigFiles().toGitStoreConfig().getConnectorRef().getValue()).isEqualTo("terraform");
+    assertThat(config.getConfigFiles().toGitStoreConfig().getBranch().getValue()).isEqualTo("master");
+    assertThat(config.getFileStoreConfig()).isEqualTo(artifactoryStoreConfig);
+    assertThat(config.getPipelineExecutionId()).isEqualTo("original_exec_id");
   }
 
   @Test
@@ -1969,6 +2008,45 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(configBEFiles.getBucket()).isEqualTo("bucket");
     assertThat(configBEFiles.getFolderPath()).isEqualTo("terraformBe");
     assertThat(configBEFiles.getVersions().get("terraform/backend.tf")).isEqualTo("444");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testValidateSecretManager() {
+    Ambiance ambiance = getAmbiance();
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountIdentifier")
+                                      .orgIdentifier("orgIdentifier")
+                                      .projectIdentifier("projectIdentifier")
+                                      .identifier("identifier")
+                                      .build();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(false).when(ngEncryptedDataService).isSecretManagerReadOnly(any(), any(), any(), any());
+
+    helper.validateSecretManager(ambiance, identifierRef);
+    verify(ngEncryptedDataService)
+        .isSecretManagerReadOnly(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+            identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testValidateSecretManagerExceptionThrown() {
+    Ambiance ambiance = getAmbiance();
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountIdentifier")
+                                      .orgIdentifier("orgIdentifier")
+                                      .projectIdentifier("projectIdentifier")
+                                      .identifier("identifier")
+                                      .build();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(true).when(ngEncryptedDataService).isSecretManagerReadOnly(any(), any(), any(), any());
+
+    assertThatThrownBy(() -> helper.validateSecretManager(ambiance, identifierRef))
+        .hasMessage(
+            "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
   }
 
   private TerraformPlanExecutionDetails createTfPlanExecutionDetails(String encryptionConfigName, String configId,

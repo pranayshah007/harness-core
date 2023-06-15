@@ -194,7 +194,6 @@ public class ServiceNowStepMapperImpl extends StepMapper {
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
             .ticketType(ParameterField.createValueField(params.getTicketType()))
             .ticketNumber(ParameterField.createValueField(getSafeNotEmptyString(params.getIssueNumber())))
-            .templateName(RUNTIME_INPUT)
             .useServiceNowTemplate(ParameterField.createValueField(false))
             .fields(getFields(params))
             .build();

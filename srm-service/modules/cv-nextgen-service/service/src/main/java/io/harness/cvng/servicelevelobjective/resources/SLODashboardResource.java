@@ -21,7 +21,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
@@ -191,25 +190,6 @@ public class SLODashboardResource {
   public ResponseDTO<PageResponse<MSDropdownResponse>>
   getSLOAssociatedMonitoredServices(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(sloDashboardService.getSLOAssociatedMonitoredServices(projectParams, pageParams));
-  }
-
-  @GET
-  @Timed
-  @ExceptionMetered
-  @Path("/unavailable-instances/{identifier}")
-  @ApiOperation(value = "Get Unavailability Instances for SLO", nickname = "getUnavailabilityInstances")
-  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
-  /*  @Operation(operationId = "get Unavailability Instances", summary = "Get Unavailability Instances for SLO",
-        responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Get Unavailability Instances
-     for SLO")
-     })*/
-  public ResponseDTO<List<UnavailabilityInstancesResponse>> getUnavailabilityInstances(
-      @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
-          "identifier") @ResourceIdentifier String identifier,
-      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime,
-      @Valid @BeanParam ProjectParams projectParams) {
-    return ResponseDTO.newResponse(
-        sloDashboardService.getUnavailabilityInstances(projectParams, startTime, endTime, identifier));
   }
 
   @GET

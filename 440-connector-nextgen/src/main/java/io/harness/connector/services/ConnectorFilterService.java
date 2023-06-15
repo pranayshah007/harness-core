@@ -24,5 +24,5 @@ public interface ConnectorFilterService {
 
   Criteria createCriteriaFromConnectorListQueryParams(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String filterIdentifier, String searchTerm, FilterPropertiesDTO filterProperties,
-      Boolean includeAllConnectorsAccessibleAtScope, boolean isBuiltInSMDisabled);
+      Boolean includeAllConnectorsAccessibleAtScope, boolean isBuiltInSMDisabled, String version);
 }

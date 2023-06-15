@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
@@ -124,6 +125,10 @@ public abstract class VerificationJob
   public abstract VerificationJobType getType();
 
   public abstract Sensitivity getSensitivity();
+
+  public String getBaselineVerificationJobInstanceId() {
+    return null;
+  }
 
   public void validate() {
     Preconditions.checkNotNull(accountId, generateErrorMessageFromParam(VerificationJobKeys.accountId));
@@ -242,7 +247,8 @@ public abstract class VerificationJob
   }
 
   public abstract void resolveJobParams(Map<String, String> runtimeParameters);
-  public VerificationJob resolveAdditionsFields(VerificationJobInstanceService verificationJobInstanceService) {
+  public VerificationJob resolveAdditionsFields(
+      VerificationJobInstanceService verificationJobInstanceService, BaselineType value) {
     // no-op by default. Designed to override.
     return this;
   }

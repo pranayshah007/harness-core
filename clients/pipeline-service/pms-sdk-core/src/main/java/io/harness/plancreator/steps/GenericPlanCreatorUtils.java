@@ -118,6 +118,8 @@ public class GenericPlanCreatorUtils {
         return RepairActionCode.RETRY;
       case MARK_AS_FAILURE:
         return RepairActionCode.MARK_AS_FAILURE;
+      case PIPELINE_ROLLBACK:
+        return RepairActionCode.PIPELINE_ROLLBACK;
       default:
         throw new InvalidRequestException(
 

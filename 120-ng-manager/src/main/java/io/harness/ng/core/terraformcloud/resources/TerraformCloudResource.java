@@ -15,10 +15,10 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.provision.terraformcloud.resources.dtos.OrganizationsDTO;
 import io.harness.cdng.provision.terraformcloud.resources.dtos.WorkspacesDTO;
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceService;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -59,8 +59,8 @@ public class TerraformCloudResource {
   public ResponseDTO<OrganizationsDTO> getOrganizations(
       @NotNull @QueryParam("connectorRef") String terraformCloudConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         terraformCloudConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -73,8 +73,8 @@ public class TerraformCloudResource {
   @ApiOperation(value = "Gets terraform cloud workspaces", nickname = "getTerraformCloudWorkspaces")
   public ResponseDTO<WorkspacesDTO> getWorkspaces(@QueryParam("connectorRef") String terraformCloudConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotEmpty @NotNull @QueryParam("organization") String organization) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(

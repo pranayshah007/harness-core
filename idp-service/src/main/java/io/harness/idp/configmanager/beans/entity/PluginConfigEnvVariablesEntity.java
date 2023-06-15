@@ -45,6 +45,11 @@ public class PluginConfigEnvVariablesEntity implements PersistentEntity {
                  .field(PluginsConfigEnvVariablesEntityKeys.accountIdentifier)
                  .field(PluginsConfigEnvVariablesEntityKeys.envName)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("compound_account_plugin_id")
+                 .field(PluginsConfigEnvVariablesEntityKeys.accountIdentifier)
+                 .field(PluginsConfigEnvVariablesEntityKeys.pluginId)
+                 .build())
         .build();
   }
 

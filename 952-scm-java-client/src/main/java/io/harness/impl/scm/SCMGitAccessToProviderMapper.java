@@ -9,13 +9,19 @@ package io.harness.impl.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.SecretRefData;
 import io.harness.gitsync.common.dtos.gitAccess.AzureRepoAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketOAuthAccessDTO;
+import io.harness.gitsync.common.dtos.gitAccess.BitbucketUsernameTokenAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAccessTokenDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GithubAppAccessDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitlabAccessDTO;
+import io.harness.product.ci.scm.proto.AuthType;
 import io.harness.product.ci.scm.proto.AzureProvider;
+import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
 import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.GitlabProvider;
 import io.harness.product.ci.scm.proto.Provider;
@@ -34,6 +40,8 @@ public class SCMGitAccessToProviderMapper {
       return mapToGitLabProvider((GitlabAccessDTO) gitAccessDTO);
     } else if (gitAccessDTO instanceof AzureRepoAccessDTO) {
       return mapToAzureRepoProvider((AzureRepoAccessDTO) gitAccessDTO);
+    } else if (gitAccessDTO instanceof BitbucketAccessDTO) {
+      return mapToBitbucketProvider((BitbucketAccessDTO) gitAccessDTO);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", gitAccessDTO.getClass()));
@@ -51,7 +59,9 @@ public class SCMGitAccessToProviderMapper {
           .setIsGithubApp(true)
           .build();
     } else {
-      return GithubProvider.newBuilder().setAccessToken(getToken(githubAccessDTO)).build();
+      return GithubProvider.newBuilder()
+          .setAccessToken(getToken(((GithubAccessTokenDTO) githubAccessDTO).getTokenRef()))
+          .build();
     }
   }
 
@@ -62,13 +72,12 @@ public class SCMGitAccessToProviderMapper {
         githubAppAccessDTO.getInstallationIdRef(), githubAppAccessDTO.getPrivateKeyRef(), "https://api.github.com/");
   }
 
-  private String getToken(GithubAccessDTO githubAccessDTO) {
-    GithubAccessTokenDTO githubAccessTokenDTO = (GithubAccessTokenDTO) githubAccessDTO;
-    return scmGitProviderHelper.getToken(githubAccessTokenDTO.getTokenRef());
+  private String getToken(SecretRefData tokenRef) {
+    return scmGitProviderHelper.getToken(tokenRef);
   }
 
   private Provider mapToAzureRepoProvider(AzureRepoAccessDTO azureRepoAccessDTO) {
-    String personalAccessToken = String.valueOf(azureRepoAccessDTO.getTokenRef().getDecryptedValue());
+    String personalAccessToken = getToken(azureRepoAccessDTO.getTokenRef());
     AzureProvider azureProvider = AzureProvider.newBuilder().setPersonalAccessToken(personalAccessToken).build();
     return Provider.newBuilder().setAzure(azureProvider).build();
   }
@@ -77,9 +86,28 @@ public class SCMGitAccessToProviderMapper {
     return Provider.newBuilder().setGitlab(createGitLabProvider(gitlabAccessDTO)).build();
   }
 
+  private Provider mapToBitbucketProvider(BitbucketAccessDTO bitbucketAccessDTO) {
+    return Provider.newBuilder().setBitbucketCloud(createBitbucketProvider(bitbucketAccessDTO)).build();
+  }
+
+  private BitbucketCloudProvider createBitbucketProvider(BitbucketAccessDTO bitbucketAccessDTO) {
+    if (bitbucketAccessDTO instanceof BitbucketUsernameTokenAccessDTO) {
+      BitbucketUsernameTokenAccessDTO bitbucketUsernameTokenAccessDTO =
+          (BitbucketUsernameTokenAccessDTO) bitbucketAccessDTO;
+      return BitbucketCloudProvider.newBuilder()
+          .setUsername(getToken(bitbucketUsernameTokenAccessDTO.getUsernameRef()))
+          .setAppPassword(getToken(bitbucketUsernameTokenAccessDTO.getTokenRef()))
+          .build();
+    } else {
+      BitbucketOAuthAccessDTO bitbucketOAuthAccessDTO = (BitbucketOAuthAccessDTO) bitbucketAccessDTO;
+      return BitbucketCloudProvider.newBuilder()
+          .setOauthToken(getToken(bitbucketOAuthAccessDTO.getTokenRef()))
+          .setAuthType(AuthType.OAUTH)
+          .build();
+    }
+  }
+
   private GitlabProvider createGitLabProvider(GitlabAccessDTO gitlabAccessDTO) {
-    return GitlabProvider.newBuilder()
-        .setAccessToken(String.valueOf(gitlabAccessDTO.getTokenRef().getDecryptedValue()))
-        .build();
+    return GitlabProvider.newBuilder().setAccessToken(getToken(gitlabAccessDTO.getTokenRef())).build();
   }
 }

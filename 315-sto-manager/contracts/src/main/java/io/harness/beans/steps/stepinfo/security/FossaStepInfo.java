@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlFossaToolData;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -22,9 +23,13 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName("Fossa")
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -37,4 +42,6 @@ public class FossaStepInfo extends STOGenericStepInfo {
   protected STOYamlGenericConfig config;
 
   @JsonProperty protected STOYamlAuth auth;
+
+  protected STOYamlFossaToolData tool;
 }

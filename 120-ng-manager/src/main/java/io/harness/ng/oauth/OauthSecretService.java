@@ -9,23 +9,30 @@ package io.harness.ng.oauth;
 
 import static java.lang.String.format;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OauthSecretService {
   @Inject SecretCrudService ngSecretService;
+  @Inject NgUserService ngUserService;
 
   String oauthAccessTokenSecretName = "harnessoauthaccesstoken_%s_%s";
   String oauthRefreshTokenSecretName = "harnessoauthsecrettoken_%s_%s";
@@ -53,9 +60,16 @@ public class OauthSecretService {
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
             .build();
+    Optional<UserMetadataDTO> userMetadataDTO = Optional.empty();
     if (isPrivateSecret) {
-      accessTokenSecretDTOV2.setOwner(new UserPrincipal(userDetailsDTO.getUserIdentifier(),
-          userDetailsDTO.getUserEmail(), userDetailsDTO.getUserName(), accountIdentifier));
+      userMetadataDTO = ngUserService.getUserByEmail(userDetailsDTO.getUserEmail(), false);
+      if (!userMetadataDTO.isPresent()) {
+        log.error("Failed to get user details for user email: {}", userDetailsDTO.getUserEmail());
+        throw new InvalidRequestException(
+            String.format("Failed to get user details for user email: %s", userDetailsDTO.getUserEmail()));
+      }
+      accessTokenSecretDTOV2.setOwner(new UserPrincipal(userMetadataDTO.get().getUuid(), userDetailsDTO.getUserEmail(),
+          userMetadataDTO.get().getName(), accountIdentifier));
     }
     SecretResponseWrapper accessTokenResponse = ngSecretService.create(accountIdentifier, accessTokenSecretDTOV2);
 
@@ -76,8 +90,8 @@ public class OauthSecretService {
             .projectIdentifier(projectIdentifier)
             .build();
     if (isPrivateSecret) {
-      refreshTokenSecretDTOV2.setOwner(new UserPrincipal(userDetailsDTO.getUserIdentifier(),
-          userDetailsDTO.getUserEmail(), userDetailsDTO.getUserName(), accountIdentifier));
+      refreshTokenSecretDTOV2.setOwner(new UserPrincipal(userMetadataDTO.get().getUuid(), userDetailsDTO.getUserEmail(),
+          userMetadataDTO.get().getName(), accountIdentifier));
     }
     SecretResponseWrapper refreshTokenResponse = ngSecretService.create(accountIdentifier, refreshTokenSecretDTOV2);
     return OauthAccessTokenResponseDTO.builder()

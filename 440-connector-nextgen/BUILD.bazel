@@ -49,6 +49,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
         "//clients/ngsettings:module",
+        "//clients/template-service:module",
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )

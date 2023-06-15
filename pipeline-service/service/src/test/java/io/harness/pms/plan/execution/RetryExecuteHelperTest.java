@@ -892,6 +892,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(strategyNodes.get(0).getIdentifier()).isEqualTo(planNode3.getIdentifier());
     assertThat(strategyNodes.get(0).getName()).isEqualTo(planNode3.getName());
     assertThat(strategyNodes.get(0).getUuid()).isEqualTo(planNode3.getUuid());
+    assertThat(((IdentityPlanNode) strategyNodes.get(0)).getUseAdviserObtainments()).isTrue();
+    assertThat(strategyNodes.get(0).getAdviserObtainments()).isEqualTo(planNode3.getAdviserObtainments());
   }
 
   @Test
@@ -905,7 +907,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
     // entities are <=1. Checking error message
     when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
         .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
-    RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
+    RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId, "planExecutionId");
     assertThat(retryHistory.getErrorMessage()).isNotNull();
 
     pipelineExecutionSummaryEntities = Arrays.asList(PipelineExecutionSummaryEntity.builder()
@@ -929,7 +931,10 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
         .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
-    retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
+    doReturn(Optional.of(PlanExecutionMetadata.builder().build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId("planExecutionId");
+    retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId, "planExecutionId");
     assertThat(retryHistory.getErrorMessage()).isNull();
     assertThat(retryHistory.getLatestExecutionId()).isEqualTo("uuid1");
     assertThat(retryHistory.getExecutionInfos().size()).isEqualTo(3);

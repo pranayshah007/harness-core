@@ -94,8 +94,7 @@ public class PreflightServiceImpl implements PreflightService {
     }
     List<EntityDetail> entityDetails = pipelineSetupUsageHelper.getReferencesOfPipeline(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineYaml, null);
-    pipelineRbacServiceImpl.validateStaticallyReferredEntities(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineYaml, entityDetails);
+    pipelineRbacServiceImpl.validateStaticallyReferredEntities(entityDetails);
 
     Map<String, InputSetErrorResponseDTOPMS> errorResponseMap = isEmpty(inputSetPipelineYaml)
         ? null

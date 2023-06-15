@@ -33,7 +33,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
@@ -170,7 +169,7 @@ public class HarnessTagServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = PUNEET)
-  @RealMongo
+
   @Category(UnitTests.class)
   public void updateTest() {
     harnessTagService.create(colorTag);
@@ -517,7 +516,7 @@ public class HarnessTagServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = ANSHUL)
-  @RealMongo
+
   @Category(UnitTests.class)
   public void testUpdateTagAllowedValues() {
     harnessTagService.create(colorTag);

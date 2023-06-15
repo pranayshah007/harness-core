@@ -14,7 +14,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("io.harness.connector.entities.embedded.bitbucketconnector.BitbucketUsernamePasswordApiAccess")
-public class BitbucketUsernamePasswordApiAccess {
+public class BitbucketUsernamePasswordApiAccess implements BitbucketApiAccess {
   String username;
   String usernameRef;
   String tokenRef;

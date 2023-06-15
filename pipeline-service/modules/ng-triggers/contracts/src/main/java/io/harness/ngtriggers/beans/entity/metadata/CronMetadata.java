@@ -14,4 +14,5 @@ import lombok.Data;
 @Builder
 public class CronMetadata {
   String expression;
+  String type;
 }

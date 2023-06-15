@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_CG_LIST_RESUMED_PIPELINES;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
@@ -97,7 +98,7 @@ public class WorkflowExecutionServiceHelper {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private PipelineService pipelineService;
-  @Inject private FeatureFlagService featureFlagService;
+  @Inject static FeatureFlagService featureFlagService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private StateExecutionService stateExecutionService;
 
@@ -372,9 +373,9 @@ public class WorkflowExecutionServiceHelper {
   }
 
   public static boolean calculateCdPageCandidate(
-      String pipelineExecutionId, String pipelineResumeId, boolean latestPipelineResume) {
+      String pipelineExecutionId, String pipelineResumeId, boolean latestPipelineResume, String accountId) {
     boolean cdPageCandidate;
-    if (isNotEmpty(pipelineResumeId)) {
+    if (isNotEmpty(pipelineResumeId) && verifyResumedPipelinesFF(accountId)) {
       cdPageCandidate = latestPipelineResume;
     } else {
       // For a pipeline which is not resumed at all LatestPipelineResume is false and pipelineResumeId is null.
@@ -385,6 +386,15 @@ public class WorkflowExecutionServiceHelper {
       cdPageCandidate = false;
     }
     return cdPageCandidate;
+  }
+
+  private static boolean verifyResumedPipelinesFF(String accountId) {
+    // KEEP THE SAME BEHAVIOR AS BEFORE THE FF
+    if (featureFlagService == null) {
+      return true;
+    }
+    // EVALUATE THE FF
+    return featureFlagService.isNotEnabled(SPG_CG_LIST_RESUMED_PIPELINES, accountId);
   }
 
   public WorkflowVariablesMetadata fetchWorkflowVariablesForRunningExecution(

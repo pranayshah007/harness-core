@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGJsonFunctor implements ExpressionFunctor {
@@ -25,6 +26,10 @@ public class NGJsonFunctor implements ExpressionFunctor {
 
   public Object list(String path, String json) {
     return JsonUtils.jsonPath(json, path);
+  }
+
+  public Object list(String path, Map map) {
+    return JsonUtils.jsonPath(JsonUtils.asJson(map), path);
   }
 
   public String format(Object object) {

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.notification.resources;
 
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
 
@@ -29,17 +30,14 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.yaml.snakeyaml.Yaml;
 
 public class NotificationRuleResourceTest extends CvNextGenTestBase {
   @Inject private NotificationRuleService notificationRuleService;
@@ -94,9 +92,34 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(500);
     assertThat(response.readEntity(String.class))
         .contains(
-            "\"ERROR\",\"message\":\"io.harness.exception.DuplicateFieldException: NotificationRule with identifier rule and orgIdentifier "
+            "\"ERROR\",\"message\":\"io.harness.exception.DuplicateFieldException: NotificationRule with identifier rule, accountId "
+            + builderFactory.getContext().getAccountId() + ", orgIdentifier "
             + builderFactory.getContext().getOrgIdentifier() + " and projectIdentifier "
             + builderFactory.getContext().getProjectIdentifier() + " is already present\"");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSaveNotificationRuleData_withDuplicateEntity_AccountLevel() throws IOException {
+    String notificationYaml = getYAML("notification/notification-rule-account-level.yaml");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/notification-rule/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/notification-rule/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(
+            "\"ERROR\",\"message\":\"io.harness.exception.DuplicateFieldException: NotificationRule with identifier rule, accountId "
+            + builderFactory.getContext().getAccountId() + " is already present\"");
   }
 
   @Test
@@ -326,13 +349,5 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
     sloYaml = sloYaml.replace(
         "$healthSourceRef", monitoredServiceDTO.getSources().getHealthSources().iterator().next().getIdentifier());
     return sloYaml;
-  }
-
-  private static String convertToJson(String yamlString) {
-    Yaml yaml = new Yaml();
-    Map<String, Object> map = yaml.load(yamlString);
-
-    JSONObject jsonObject = new JSONObject(map);
-    return jsonObject.toString();
   }
 }

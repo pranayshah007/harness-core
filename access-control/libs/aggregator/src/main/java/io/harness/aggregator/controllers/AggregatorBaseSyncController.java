@@ -18,12 +18,13 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.accesscontrol.roles.persistence.RoleDBO;
 import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.aggregator.DebeziumConfig;
 import io.harness.aggregator.MongoOffsetBackingStore;
+import io.harness.aggregator.consumers.ACLGeneratorService;
 import io.harness.aggregator.consumers.AccessControlDebeziumChangeConsumer;
 import io.harness.aggregator.consumers.ChangeConsumer;
-import io.harness.aggregator.consumers.ChangeConsumerService;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;
 import io.harness.aggregator.consumers.ResourceGroupChangeConsumerImpl;
 import io.harness.aggregator.consumers.RoleAssignmentCRUDEventHandler;
@@ -65,6 +66,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   protected final AggregatorConfiguration aggregatorConfiguration;
   protected final ExecutorService executorService;
   private final ChangeEventFailureHandler changeEventFailureHandler;
+  private final AccessControlAdminService accessControlAdminService;
   private final PersistentLocker persistentLocker;
   private final AtomicLong hostSelectorIndex;
 
@@ -102,6 +104,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private static final String USER_GROUPS = "usergroups";
   private static final String UNKNOWN_PROPERTIES_IGNORED = "unknown.properties.ignored";
   private static final String MAX_STREAM_BATCH_SIZE = "max.batch.size";
+  private static final String MONGODB_CONNECTION_PROTOCOL = "mongodbConnectionProtocol";
+  private static final String MONGODB_CONNECTION_URL = "mongodbConnectionUrl";
 
   public enum AggregatorJobType {
     PRIMARY,
@@ -112,18 +116,19 @@ public abstract class AggregatorBaseSyncController implements Runnable {
       RoleRepository roleRepository, ResourceGroupRepository resourceGroupRepository,
       UserGroupRepository userGroupRepository, AggregatorConfiguration aggregatorConfiguration,
       PersistentLocker persistentLocker, ChangeEventFailureHandler changeEventFailureHandler,
-      AggregatorJobType aggregatorJobType, ChangeConsumerService changeConsumerService,
+      AggregatorJobType aggregatorJobType, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
-      UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService) {
+      UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
+      AccessControlAdminService accessControlAdminService) {
     ChangeConsumer<RoleAssignmentDBO> roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
-        aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
+        aclRepository, roleAssignmentRepository, aclGeneratorService, roleAssignmentCRUDEventHandler);
     ChangeConsumer<RoleDBO> roleChangeConsumer = new RoleChangeConsumerImpl(
-        aclRepository, roleAssignmentRepository, roleRepository, aggregatorJobType.name(), changeConsumerService);
+        aclRepository, roleAssignmentRepository, roleRepository, aggregatorJobType.name(), aclGeneratorService);
     ChangeConsumer<ResourceGroupDBO> resourceGroupChangeConsumer = new ResourceGroupChangeConsumerImpl(aclRepository,
-        roleAssignmentRepository, resourceGroupRepository, aggregatorJobType.name(), changeConsumerService);
+        roleAssignmentRepository, resourceGroupRepository, aggregatorJobType.name(), aclGeneratorService);
     ChangeConsumer<UserGroupDBO> userGroupChangeConsumer =
         new UserGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository, userGroupRepository,
-            aggregatorJobType.name(), changeConsumerService, scopeService, userGroupCRUDEventHandler);
+            aggregatorJobType.name(), aclGeneratorService, scopeService, userGroupCRUDEventHandler);
     collectionToConsumerMap = new HashMap<>();
     collectionToConsumerMap.put(ROLE_ASSIGNMENTS, roleAssignmentChangeConsumer);
     collectionToConsumerMap.put(ROLES, roleChangeConsumer);
@@ -135,6 +140,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     this.persistentLocker = persistentLocker;
     this.changeEventFailureHandler = changeEventFailureHandler;
     this.hostSelectorIndex = new AtomicLong(-1);
+    this.accessControlAdminService = accessControlAdminService;
   }
 
   protected DebeziumEngine<ChangeEvent<String, String>> getEngine(
@@ -143,7 +149,6 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     String offsetCollection = getOffsetStorageCollection();
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, MongoOffsetBackingStore.class.getName());
-    props.setProperty(OFFSET_STORAGE_FILE_FILENAME, debeziumConfig.getOffsetStorageFileName());
     props.setProperty(OFFSET_STORAGE_COLLECTION, offsetCollection);
     props.setProperty(KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
     props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
@@ -173,6 +178,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     props.setProperty(TRANSFORMS_UNWRAP_ADD_HEADERS, "op");
     props.setProperty(SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
     props.setProperty(MAX_STREAM_BATCH_SIZE, debeziumConfig.getMaxStreamBatchSize());
+    props.setProperty(MONGODB_CONNECTION_PROTOCOL, debeziumConfig.getMongodbConnectionProtocol());
+    props.setProperty(MONGODB_CONNECTION_URL, debeziumConfig.getMongodbConnectionUrl());
 
     return DebeziumEngine.create(Json.class).using(props).notifying(changeConsumer).build();
   }
@@ -225,8 +232,8 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     collectionToDeserializerMap.put(USER_GROUPS, userGroupSerde.deserializer());
 
     // configuring debezium
-    return new AccessControlDebeziumChangeConsumer(
-        idDeserializer, collectionToDeserializerMap, collectionToConsumerMap, changeEventFailureHandler);
+    return new AccessControlDebeziumChangeConsumer(idDeserializer, collectionToDeserializerMap, collectionToConsumerMap,
+        changeEventFailureHandler, accessControlAdminService);
   }
 
   public abstract String getLockName();

@@ -14,6 +14,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.core.utils.ErrorMessageUtils;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
@@ -94,10 +95,8 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
         String.format(
             "Identifier %s does not match with path identifier %s", notificationRuleDTO.getIdentifier(), identifier));
     if (getEntity(projectParams, notificationRuleDTO.getIdentifier()) == null) {
-      throw new InvalidRequestException(String.format(
-          "NotificationRule  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
-          notificationRuleDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-          projectParams.getProjectIdentifier()));
+      throw new InvalidRequestException(String.format("NotificationRule  with identifier %s, %s is not present",
+          notificationRuleDTO.getIdentifier(), ErrorMessageUtils.generateErrorMessageFromProjectParam(projectParams)));
     }
     NotificationRule notificationRule = getEntity(projectParams, identifier);
     UpdateOperations<NotificationRule> updateOperations = hPersistence.createUpdateOperations(NotificationRule.class);
@@ -115,10 +114,8 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
   public Boolean delete(ProjectParams projectParams, String identifier) {
     List<NotificationRule> notificationRules = getEntities(projectParams, Arrays.asList(identifier));
     if (isEmpty(notificationRules)) {
-      throw new InvalidRequestException(String.format(
-          "NotificationRule  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
-          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-          projectParams.getProjectIdentifier()));
+      throw new InvalidRequestException(String.format("NotificationRule  with identifier %s, %s  is not present",
+          identifier, ErrorMessageUtils.generateErrorMessageFromProjectParam(projectParams)));
     }
     serviceLevelObjectiveV2Service.beforeNotificationRuleDelete(projectParams, identifier);
     monitoredServiceService.beforeNotificationRuleDelete(projectParams, identifier);
@@ -247,10 +244,6 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
                                                   .map(notificationRule -> notificationRule.getIdentifier())
                                                   .collect(Collectors.toSet());
 
-    inputNotificationIdentifierList.forEach(notificationIdentifier -> {
-      if (!dbNotificationIdentifierSet.contains(notificationIdentifier)) {
-      }
-    });
     inputNotificationIdentifierList =
         inputNotificationIdentifierList.stream()
             .filter(notificationIdentifier -> !dbNotificationIdentifierSet.contains(notificationIdentifier))
@@ -264,9 +257,8 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
   private void validateCreate(ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {
     NotificationRule notificationRule = getEntity(projectParams, notificationRuleDTO.getIdentifier());
     if (notificationRule != null) {
-      throw new DuplicateFieldException(String.format(
-          "NotificationRule with identifier %s and orgIdentifier %s and projectIdentifier %s is already present",
-          notificationRuleDTO.getIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
+      throw new DuplicateFieldException(String.format("NotificationRule with identifier %s, %s is already present",
+          notificationRuleDTO.getIdentifier(), ErrorMessageUtils.generateErrorMessageFromProjectParam(projectParams)));
     }
   }
 

@@ -7,6 +7,7 @@
 
 package io.harness.app.CIDashboard;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -693,5 +694,29 @@ public class CIDashboardsApisTest extends CategoryTest {
     when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
 
     assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitterCount("accountId"));
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetHostedCreditUsage() throws SQLException {
+    final long expectedResult = 100L;
+    ResultSet resultSet = mock(ResultSet.class);
+    Connection connection = mock(Connection.class);
+    PreparedStatement statement = mock(PreparedStatement.class);
+    when(statement.executeQuery()).thenReturn(resultSet);
+    when(connection.prepareStatement(any())).thenReturn(statement);
+    when(timeScaleDBService.getDBConnection()).thenReturn(connection);
+    final int[] count = {0};
+    when(resultSet.next()).then((Answer<Boolean>) invocation -> {
+      if (count[0] <= 1) {
+        count[0]++;
+        return true;
+      }
+      return false;
+    });
+    when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
+
+    assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getHostedCreditUsage("accountId"));
   }
 }

@@ -30,6 +30,8 @@ public interface ProjectService {
 
   Optional<Project> get(String accountIdentifier, String orgIdentifier, String identifier);
 
+  Optional<Project> getConsideringCase(String accountIdentifier, String orgIdentifier, String identifier);
+
   Project update(String accountIdentifier, String orgIdentifier, String identifier, ProjectDTO project);
 
   PageResponse<ProjectDTO> listProjectsForUser(String userId, String accountId, PageRequest pageRequest);

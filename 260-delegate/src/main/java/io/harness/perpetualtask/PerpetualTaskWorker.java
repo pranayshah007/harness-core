@@ -7,6 +7,7 @@
 
 package io.harness.perpetualtask;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -187,8 +188,12 @@ public class PerpetualTaskWorker {
     }
     List<PerpetualTaskAssignDetails> assignedTasks =
         perpetualTaskServiceAgentClient.perpetualTaskList(delegateId, accountId);
-    List<String> taskIdList = assignedTasks.stream().map(at -> at.getTaskId().getId()).collect(Collectors.toList());
-    log.info("Refreshed list of assigned perpetual tasks for accountId {}, {} ", accountId, taskIdList);
+    if (isNotEmpty(assignedTasks)) {
+      List<String> taskIdList = assignedTasks.stream().map(at -> at.getTaskId().getId()).collect(Collectors.toList());
+      log.info("Refreshed list of assigned perpetual tasks for accountId {}, {} ", accountId, taskIdList);
+    } else {
+      log.info("Refreshed list of assigned perpetual tasks for accountId {} is empty ", accountId);
+    }
     return assignedTasks;
   }
 

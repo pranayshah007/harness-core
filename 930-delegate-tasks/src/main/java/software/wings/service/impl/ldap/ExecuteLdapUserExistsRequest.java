@@ -45,7 +45,7 @@ public class ExecuteLdapUserExistsRequest implements Function<LdapUserExistsRequ
       String defaultErrorMessage = String.format(
           "LdapException exception occurred when executing user exists request for baseDN = %s, searchFilter = %s",
           ldapUserConfig.getBaseDN(), ldapUserConfig.getSearchFilter());
-      log.error(defaultErrorMessage, le);
+      log.warn(defaultErrorMessage + " with exception: " + le.getMessage());
       searchStatus = Status.FAILURE;
       searchStatusMessage = isNull(le.getMessage()) ? defaultErrorMessage : le.getMessage();
     }

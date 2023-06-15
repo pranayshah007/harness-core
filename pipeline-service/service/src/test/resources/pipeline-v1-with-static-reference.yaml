@@ -17,12 +17,14 @@ inputs:
     desc: docker password
     enums: [secret1, secret2]
     required: true
-repository:
-  connector: connector
-  name: harness-core
-  reference:
-    type: tag
-    value: v1
+options:
+  repository:
+    connector: connector
+    name: harness-core
+  clone:
+    ref:
+      type: tag
+      name: v1
 stages:
   - name: output variable
     type: ci

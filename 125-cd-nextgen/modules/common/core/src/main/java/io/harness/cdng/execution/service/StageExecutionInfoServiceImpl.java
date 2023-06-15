@@ -174,6 +174,9 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
             .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
             .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
             .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
+            .stageIdentifier(stageElementParameters.getIdentifier())
+            .stageName(stageElementParameters.getName())
             .status(Status.RUNNING)
             .stageStatus(StageStatus.IN_PROGRESS);
     final List<String> tags = new LinkedList<>();
@@ -208,6 +211,16 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
       update(scope, stageExecutionId, updates);
     }
     return stageExecutionInfoRepository.findByStageExecutionId(stageExecutionId, scope);
+  }
+
+  @Override
+  public Optional<StageExecutionInfo> findById(String id) {
+    return stageExecutionInfoRepository.findById(id);
+  }
+
+  @Override
+  public void delete(String id) {
+    stageExecutionInfoRepository.deleteById(id);
   }
 
   private void updateStageExecutionInfoFromStageExecutionInfoUpdateDTO(

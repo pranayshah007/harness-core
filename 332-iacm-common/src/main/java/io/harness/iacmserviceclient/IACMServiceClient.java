@@ -23,13 +23,13 @@ import retrofit2.http.Query;
 public interface IACMServiceClient {
   @GET(IACMCommonEndpointConstants.IACM_SERVICE_TOKEN_ENDPOINT)
   Call<JsonObject> generateToken(@Query("accountId") String accountId, @Header("Harness-Token") String globalToken);
-  @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_STACK_ENDPOINT)
-  Call<JsonObject> getStackInfo(@Path("org") String org, @Path("project") String project,
-      @Path("stackId") String stackId, @Header("Harness-Token") String globalToken,
+  @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_WORKSPACE_ENDPOINT)
+  Call<JsonObject> getWorkspaceInfo(@Path("org") String org, @Path("project") String project,
+      @Path("workspaceId") String workspaceId, @Header("Harness-Token") String globalToken,
       @Header("Harness-Account") String accountId);
-  @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_STACK_VARIABLES_ENDPOINT)
-  Call<JsonArray> getStackVariables(@Path("org") String org, @Path("project") String project,
-      @Path("stackId") String stackId, @Header("Harness-Token") String globalToken,
+  @GET(IACMCommonEndpointConstants.IACM_SERVICE_GET_WORKSPACE_VARIABLES_ENDPOINT)
+  Call<JsonArray> getWorkspaceVariables(@Path("org") String org, @Path("project") String project,
+      @Path("workspaceId") String workspaceId, @Header("Harness-Token") String globalToken,
       @Header("Harness-Account") String accountId);
 
   @POST(IACMCommonEndpointConstants.IACM_SERVICE_POST_EXECUTION)

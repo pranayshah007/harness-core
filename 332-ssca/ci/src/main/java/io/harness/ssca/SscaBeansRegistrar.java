@@ -16,6 +16,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.stepnode.SscaEnforcementStepNode;
 import io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -23,7 +24,6 @@ import io.harness.yaml.schema.beans.YamlSchemaMetadata;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Collections;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaBeansRegistrar {
@@ -39,7 +39,18 @@ public class SscaBeansRegistrar {
                                            .namespace(SchemaNamespaceConstants.CI)
                                            .modulesSupported(ImmutableList.of(ModuleType.CI))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .featureFlags(Collections.singletonList(FeatureName.SSCA_ENABLED.name()))
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SSCA_ENFORCEMENT)
+                   .clazz(SscaEnforcementStepNode.class)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CI)
+                                           .modulesSupported(ImmutableList.of(ModuleType.CI))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
           .build();
@@ -49,6 +60,13 @@ public class SscaBeansRegistrar {
           .add(StepInfo.newBuilder()
                    .setName(SscaConstants.SSCA_ORCHESTRATION_STEP)
                    .setType(SscaConstants.SSCA_ORCHESTRATION_STEP)
+                   .setStepMetaData(
+                       StepMetaData.newBuilder().addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME).build())
+                   .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
+                   .build())
+          .add(StepInfo.newBuilder()
+                   .setName(SscaConstants.SSCA_ENFORCEMENT)
+                   .setType(SscaConstants.SSCA_ENFORCEMENT)
                    .setStepMetaData(
                        StepMetaData.newBuilder().addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME).build())
                    .setFeatureFlag(FeatureName.SSCA_ENABLED.name())

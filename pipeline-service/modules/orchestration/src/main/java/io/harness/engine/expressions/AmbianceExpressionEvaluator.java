@@ -97,7 +97,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   private final Set<NodeExecutionEntityType> entityTypes;
   private final boolean refObjectSpecific;
   private final Map<String, String> groupAliases;
-  private NodeExecutionsCache nodeExecutionsCache;
+  protected NodeExecutionsCache nodeExecutionsCache;
   private final String SECRETS = "secrets";
 
   private boolean contextMapProvided = false;
@@ -111,7 +111,11 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     this.refObjectSpecific = refObjectSpecific;
     this.groupAliases = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(contextMap)) {
-      contextMapProvided = true;
+      // TODO(REMOVE): ENABLED_FEATURE_FLAGS_KEY is not a real contextMap entry. This we added to pass the FF to
+      // engineExpressionEvaluator.
+      if (contextMap.size() > 1 || !contextMap.containsKey(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY)) {
+        contextMapProvided = true;
+      }
       contextMap.forEach(this::addToContext);
     }
   }
@@ -273,9 +277,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
       // Currently we use RefObjectSpecific only when the call is from PmsOutcomeServiceImpl or
       // PmsSweepingOutputServiceImpl. We will use new functor if RefObjectSpecific is used because we need recast
       // additions in our map.
-      if (!refObjectSpecific
-          && pmsFeatureFlagService.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
+      if (!refObjectSpecific && AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
         String normalizedExpression = applyStaticAliases(expressionBlock);
         // Apply all the prefixes and return first one that evaluates successfully.
         List<String> finalExpressions = fetchExpressionsV2(normalizedExpression);

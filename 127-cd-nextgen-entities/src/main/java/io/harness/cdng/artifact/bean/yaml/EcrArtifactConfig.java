@@ -58,6 +58,10 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**
+   * ECR Registry ID
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> registryId;
+  /**
    * Region in which the artifact source is located.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
@@ -73,7 +77,10 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
    * Tag regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
-
+  /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
   /**
    * Identifier for artifact.
    */
@@ -106,6 +113,9 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     if (!ParameterField.isNull(ecrArtifactSpecConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(ecrArtifactSpecConfig.getConnectorRef());
     }
+    if (!ParameterField.isNull(ecrArtifactSpecConfig.getRegistryId())) {
+      resultantConfig = resultantConfig.withRegistryId(ecrArtifactSpecConfig.getRegistryId());
+    }
     if (!ParameterField.isNull(ecrArtifactSpecConfig.getImagePath())) {
       resultantConfig = resultantConfig.withImagePath(ecrArtifactSpecConfig.getImagePath());
     }
@@ -118,6 +128,9 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     if (!ParameterField.isNull(ecrArtifactSpecConfig.getTagRegex())) {
       resultantConfig = resultantConfig.withTagRegex(ecrArtifactSpecConfig.getTagRegex());
     }
+    if (!ParameterField.isNull(ecrArtifactSpecConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(ecrArtifactSpecConfig.getDigest());
+    }
     return resultantConfig;
   }
 
@@ -126,5 +139,10 @@ public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkTagAndTagRegex(tag, tagRegex);
   }
 }

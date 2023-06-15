@@ -16,7 +16,6 @@ import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.ServiceFilter;
 import io.harness.ngmigration.service.DiscoveryService;
-import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 
 import software.wings.beans.Service;
 import software.wings.ngmigration.DiscoveryResult;
@@ -32,22 +31,25 @@ public class ServiceImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject ServiceResourceService serviceResourceService;
 
-  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
-    ServiceFilter filter = (ServiceFilter) importConnectorDTO.getFilter();
-    String accountId = importConnectorDTO.getAccountIdentifier();
+  public DiscoveryResult discover(ImportDTO importDTO) {
+    ServiceFilter filter = (ServiceFilter) importDTO.getFilter();
+    String accountId = importDTO.getAccountIdentifier();
     String appId = filter.getAppId();
 
-    List<Service> services = serviceResourceService.findServicesByAppInternal(appId);
-    if (EmptyPredicate.isEmpty(services)) {
-      throw new InvalidRequestException("No services found for given app");
+    List<String> serviceIds = filter.getIds();
+    if (EmptyPredicate.isEmpty(serviceIds)) {
+      List<Service> services = serviceResourceService.findServicesByAppInternal(appId);
+      if (EmptyPredicate.isEmpty(services)) {
+        throw new InvalidRequestException("No services found for given app");
+      }
+      serviceIds = services.stream().map(Service::getUuid).collect(Collectors.toList());
     }
     return discoveryService.discoverMulti(accountId,
         DiscoveryInput.builder()
-            .entities(services.stream()
-                          .filter(service -> ServiceV2Factory.getService2Mapper(service, false).isMigrationSupported())
-                          .map(service
+            .entities(serviceIds.stream()
+                          .map(id
                               -> DiscoverEntityInput.builder()
-                                     .entityId(service.getUuid())
+                                     .entityId(id)
                                      .appId(appId)
                                      .type(NGMigrationEntityType.SERVICE)
                                      .build())

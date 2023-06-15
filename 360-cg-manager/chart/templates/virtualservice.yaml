@@ -1,0 +1,61 @@
+{{- if .Values.global.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "access-control.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  tcp:
+    - match:
+        - port: 9879
+      route:
+        - destination:
+            host: harness-manager
+            port:
+              number: 9879
+  http:
+    - name: harness-manager-api
+      match:
+        - uri:
+            prefix: "/api"
+      route:
+        - destination:
+            port:
+              number: 9090
+            host: harness-manager
+
+    - name: harness-manager-stream
+      match:
+        - uri:
+            prefix: "/stream"
+      route:
+        - destination:
+            port:
+              number: 9090
+            host: harness-manager
+    - name: blocking-swagger-api
+      match:
+        - uri:
+            prefix: /api/swagger
+      rewrite:
+        uri: /
+      route:
+      - destination:
+          host: dne
+          port:
+            number: 9999
+  {{ end }}

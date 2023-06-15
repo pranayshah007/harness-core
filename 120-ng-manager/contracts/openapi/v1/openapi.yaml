@@ -10,7 +10,7 @@ servers:
     description: Harness host URL.
 tags:
   - name: Organization
-    description: Create and manage organizations in your account. You use organizations to group together related projects. For example, you can use an organization to group together projects within a business unit or division.
+    description: 'Create and manage organizations in your account. You use organizations to group together related projects. For example, you can use an organization to group together projects within a business unit or division.'
   - name: Org Project
     description: This contains APIs for projects.
     x-displayName: 'Project [Beta]'
@@ -32,6 +32,24 @@ tags:
   - name: Project Services
     description: This contains APIs for project-scoped services.
     x-displayName: 'Project Services [Beta]'
+  - name: Account Favorites
+    description: This contains APIs for account-scoped Favorites.
+    x-displayName: 'Account Favorites [Beta]'
+  - name: Org Favorites
+    description: This contains APIs for organization-scoped Favorites.
+    x-displayName: 'Organization Favorites [Beta]'
+  - name: Project Favorites
+    description: This contains APIs for project-scoped Favorites.
+    x-displayName: 'Project Favorites [Beta]'
+  - name: Account Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for account level.
+    x-displayName: 'Account Rancher Infrastructure [Beta]'
+  - name: Org Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for org level.
+    x-displayName: 'Org Rancher Infrastructure [Beta]'
+  - name: Project Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities for project level.
+    x-displayName: 'Project Rancher Infrastructure [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -542,7 +560,7 @@ paths:
         $ref: '#/components/requestBodies/IPAllowlistConfigRequest'
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     get:
       summary: List IP Allowlist Configs
       operationId: get-ip-allowlist-configs
@@ -566,7 +584,7 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters: []
   '/v1/ip-allowlist/{ip-config-identifier}':
     get:
@@ -582,7 +600,7 @@ paths:
           $ref: '#/components/responses/IPAllowlistConfigResponse'
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters:
       - schema:
           type: string
@@ -604,7 +622,7 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     delete:
       summary: Delete an IP Allowlist config
       operationId: delete-ip-allowlist-config
@@ -618,14 +636,11 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
   '/v1/ip-allowlist/validate-unique-identifier/{ip-config-identifier}':
     get:
       summary: Validate unique IP Allowlist config identifier
       operationId: validate-unique-ip-allowlist-config-identifier
-      responses:
-        '200':
-          $ref: '#/components/responses/IPAllowlistConfigValidateResponse'
       description: Checks whether the IP Allowlist config identifier is unique or not
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -633,14 +648,17 @@ paths:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
+      responses:
+        '200':
+          $ref: '#/components/responses/IPAllowlistValidateUniqueIdentifierResponse'
     parameters:
       - schema:
           type: string
         name: ip-config-identifier
         in: path
         required: true
-  /v1/ip-allowlist/validate:
+  /v1/ip-allowlist/validate/ip-address:
     get:
       summary: Validate IP address lies in a specified range or not
       operationId: validate-ip-address-allowlisted-or-not
@@ -659,13 +677,13 @@ paths:
         - schema:
             type: string
           in: query
-          name: ip_address_block
-          description: This is the IP address or block of IP address against which we need to verify if a given IP address is allowed or not
+          name: custom_ip_address_block
+          description: This is the IP address or block of IP address against which we need to verify if a given IP address is allowed or not. If not passed we do the validation against the IP configs within Harness.
       security:
         - x-api-key: []
       tags:
         - IP Allowlist
-      x-internal: true
+      x-internal: false
     parameters: []
   /v1/secrets:
     post:
@@ -1090,6 +1108,167 @@ paths:
         - Project Secret
       security:
         - x-api-key: []
+  /v1/favorites:
+    post:
+      summary: Create a favorite at account level
+      operationId: create-account-favorite
+      description: Creates favorite resource of a user at account level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Account Favorites
+      x-internal: true
+  '/v1/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resources of a user at account level
+      operationId: get-account-favorites
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at account level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Account Favorites
+      x-internal: true
+    delete:
+      summary: Delete a account level favorite
+      operationId: delete-account-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Favorites
+      description: Deletes the requested favorite at account level.
+      x-internal: true
+  '/v1/orgs/{org}/favorites':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+    post:
+      summary: Create a favorite at org level
+      operationId: create-org-favorite
+      description: Creates favorite resource of a user at organisation level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Org Favorites
+      x-internal: true
+  '/v1/orgs/{org}/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resources of a user at organization level
+      operationId: get-org-favorites
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at organization level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Org Favorites
+      x-internal: true
+    delete:
+      summary: Delete a org level favorite
+      operationId: delete-org-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      description: Deletes the requested favorite at organization level.
+      security:
+        - x-api-key: []
+      tags:
+        - Org Favorites
+      x-internal: true
+  '/v1/orgs/{org}/projects/{project}/favorites':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    post:
+      summary: Create a favorite at project level
+      operationId: create-project-favorite
+      description: Creates favorite resource of a user at project level
+      requestBody:
+        $ref: '#/components/requestBodies/FavoriteRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      responses:
+        '201':
+          $ref: '#/components/responses/FavoriteResponse'
+      tags:
+        - Project Favorites
+      x-internal: true
+  '/v1/orgs/{org}/projects/{project}/favorites/{user-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/UserIdPathParam'
+    get:
+      summary: Retrieve a favorite resources of a user at project level
+      operationId: get-project-favorites
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+      description: Retrieves the favorite resource of a user at project level
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/FavoriteListResponse'
+      tags:
+        - Project Favorites
+      x-internal: true
+    delete:
+      summary: Delete a project level favorite
+      operationId: delete-project-favorite
+      responses:
+        '204':
+          description: No Content
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ResourceType'
+        - $ref: '#/components/parameters/ResourceId'
+      description: Deletes the requested favorite at project level.
+      security:
+        - x-api-key: []
+      tags:
+        - Project Favorites
+      x-internal: true
   /v1/module-versions:
     get:
       summary: List Module Versions
@@ -1106,6 +1285,135 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       x-internal: true
+  '/v1/rancher/connectors/{connector}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/ConnectorPathParam'
+    get:
+      summary: List rancher clusters using account level connector
+      tags:
+        - Account Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-account-scoped-rancher-clusters-using-connector
+      description: List rancher clusters using the given account level rancher connector
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/rancher/connectors/{connector}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ConnectorPathParam'
+    get:
+      summary: List rancher clusters using org level connector
+      tags:
+        - Org Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-org-scoped-rancher-clusters-using-connector
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given org level rancher connector
+  '/v1/orgs/{org}/projects/{project}/rancher/connectors/{connector}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/ConnectorPathParam'
+    get:
+      summary: List rancher clusters using project level connector
+      tags:
+        - Project Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-project-scoped-rancher-clusters-using-connector
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given project level rancher connector
+  '/v1/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/EnvironmentPathParam'
+      - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
+    get:
+      summary: List rancher clusters using account level env and infra def
+      tags:
+        - Account Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-account-scoped-rancher-clusters-using-env-and-infra
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given account level environment and infrastructure definition.
+  '/v1/orgs/{org}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/EnvironmentPathParam'
+      - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
+    get:
+      summary: List rancher clusters using org level env and infra def
+      tags:
+        - Org Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-org-scoped-rancher-clusters-using-env-and-infra
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given org level environment and infrastructure definition.
+  '/v1/orgs/{org}/projects/{project}/environments/{environment}/rancher/infrastructure-definitions/{infrastructure-definition}/clusters':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/EnvironmentPathParam'
+      - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
+    get:
+      summary: List rancher clusters using project level env and infra def
+      tags:
+        - Project Rancher Infrastructure
+      responses:
+        '200':
+          $ref: '#/components/responses/RancherListClustersResponse'
+      operationId: list-project-scoped-rancher-clusters-using-env-and-infra
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      description: List rancher clusters using the given project level environment and infrastructure definition.
 components:
   schemas:
     Service:
@@ -1175,6 +1483,70 @@ components:
       required:
         - identifier
         - name
+    FavoriteDTO:
+      type: object
+      x-examples:
+        example-1:
+          org: sample_organization
+          project: sample_project
+          user_id: example_userId
+          module: example_module
+          resource_type: example_resourceType
+          resource_id: example_resourceId
+      description: This is the favorite entity defined in Harness
+      title: FavoriteDTO
+      properties:
+        org:
+          type: string
+          description: Organization Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        project:
+          type: string
+          description: Project Identifier for the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        user_id:
+          type: string
+          description: Identifier of the user.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        module:
+          $ref: '#/components/schemas/ModuleType'
+        resource_type:
+          $ref: '#/components/schemas/FavoritesResourceType'
+          description: Type of resource
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        resource_id:
+          type: string
+          description: Resource Identifier of the Entity.
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+    FavoriteResponse:
+      type: object
+      x-examples:
+        example-1:
+          FavoriteDTO:
+            user_id: example_userId
+            org: sample_organization
+            project: sample_project
+            resource_type: Example_resourceType
+            resource_id: This is a example resource
+          created: 1234567890
+      title: FavoriteResponse
+      properties:
+        Favorite:
+          $ref: '#/components/schemas/FavoriteDTO'
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for favorite.
     ServiceResponse:
       type: object
       x-examples:
@@ -1307,6 +1679,14 @@ components:
         - GOVERNANCE
         - CHAOS
         - CET
+    FavoritesResourceType:
+      type: string
+      enum:
+        - CONNECTOR
+        - DELEGATE
+        - PIPELINE
+        - SECRET
+        - PROJECT
     CreateProjectRequest:
       description: Create project request
       type: object
@@ -1647,6 +2027,12 @@ components:
             value:
               type: string
               description: Value of the Secret
+            additional_metadata:
+              type: object
+              properties:
+                values:
+                  type: object
+              description: Additional metadata of the secret if any exist
           required:
             - type
             - secret_manager_identifier
@@ -1913,7 +2299,7 @@ components:
         name:
           type: string
           description: Name of the IP Config defined in Harness
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          pattern: '^[0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
           maxLength: 128
         identifier:
@@ -1980,6 +2366,31 @@ components:
           type: integer
           format: int64
           description: Last modification timestamp for IP Allowlist config.
+      required:
+        - ip_allowlist_config
+        - created
+        - updated
+    IPAllowlistConfigValidateResponse:
+      title: IPAllowlistConfigValidateResponse
+      x-stoplight:
+        id: ll7dxdbr3e2yg
+      type: object
+      properties:
+        allowed_for_custom_block:
+          type: boolean
+          description: This indicates if given IP Address lies in range of custome IP block or not.
+        allowlisted_configs:
+          type: array
+          description: |
+            This is the list of IP configs configured in Harness from which IP address is allowed. This is empty in case of custom IP address block.
+          items:
+            $ref: '#/components/schemas/IPAllowlistConfigResponse'
+        allowed_for_ui:
+          type: boolean
+          description: This indicates if a given IP is allowlisted in Harness for UI requests
+        allowed_for_api:
+          type: boolean
+          description: This indicates if a given IP is allowlisted in Harness for API requests
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2177,6 +2588,54 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+    FavoriteResponse:
+      description: Favorite response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-response-json:
+              value:
+                Favorite:
+                  org: sample_organization
+                  project: sample_project
+                  user_id: example_userId
+                  resource_type: Example_resourceType
+                  resource_id: Example_resourceId
+                created: 1234567890
+    FavoriteListResponse:
+      description: Favorite list response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/FavoriteResponse'
+          examples:
+            example-Favorite-list-response-json:
+              value:
+                - Favorite:
+                    account: sample_account
+                    org: sample_organization
+                    project: sample_project
+                    user_id: example_userId
+                    resource_type: Example_resourceType
+                    resource_id: Example_resourceId
+                  created: 1234567890
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     ProjectListResponse:
       description: Project list response
       content:
@@ -2467,7 +2926,39 @@ components:
       content:
         application/json:
           schema:
+            $ref: '#/components/schemas/IPAllowlistConfigValidateResponse'
+    IPAllowlistValidateUniqueIdentifierResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
             type: boolean
+    RancherListClustersResponse:
+      description: Response containing list of rancher cluster names
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: string
+          examples:
+            Example 1:
+              value:
+                - cluster1
+                - cluster2
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     ServiceRequest:
       content:
@@ -2993,7 +3484,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SecretValidationMetadata'
+            $ref: '#/components/schemas/SecretRequest'
           examples:
             Example 1:
               value:
@@ -3005,6 +3496,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/IPAllowlistConfigRequest'
+    FavoriteRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FavoriteDTO'
+          examples:
+            ProjectFavConnector:
+              value:
+                org: org_id
+                project: project_id
+                user_id: user_id
+                module: CD
+                resource_type: CONNECTOR
+                resource_id: resource_id
   parameters:
     Page:
       name: page
@@ -3030,6 +3535,13 @@ components:
       schema:
         type: string
       description: This would be used to filter resources having attributes matching with search term.
+    ResourceId:
+      name: resource_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to do operations on the favorite entity.
     AccountHeader:
       name: Harness-Account
       in: header
@@ -3069,6 +3581,13 @@ components:
       schema:
         type: string
       description: Identifier field of the organization the resource is scoped to
+    UserIdPathParam:
+      name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: This would be used to fetch the Favorites of the user.
     PrivateSecret:
       name: private_secret
       in: query
@@ -3122,3 +3641,37 @@ components:
           - ASC
           - DESC
       description: Order on the basis of which sorting is done.
+    ResourceType:
+      name: resource_type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - CONNECTOR
+          - DELEGATE
+          - PIPELINE
+          - SECRET
+          - PROJECT
+      description: Determines the type of favorite entity requested.
+    ConnectorPathParam:
+      name: connector
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the scoped connector entity to be used for this operation.
+    EnvironmentPathParam:
+      name: environment
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the scoped environment entity to be used for the selected operation.
+    InfrastructureDefinitionPathParam:
+      name: infrastructure-definition
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the scoped infrastructure definition entity to be used in the selected operation.

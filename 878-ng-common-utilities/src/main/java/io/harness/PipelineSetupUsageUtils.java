@@ -21,6 +21,7 @@ import io.harness.pms.yaml.utils.ParameterFieldUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -37,14 +38,20 @@ import lombok.experimental.UtilityClass;
 public class PipelineSetupUsageUtils {
   public List<EntityDetail> extractInputReferredEntityFromYaml(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineYaml, List<EntitySetupUsageDTO> allReferredUsages) {
-    Map<String, Object> fqnToObjectMapMergedYaml = new HashMap<>();
     try {
-      Map<FQN, Object> fqnObjectMap =
-          FQNMapGenerator.generateFQNMap(YamlUtils.readTree(pipelineYaml).getNode().getCurrJsonNode());
-      fqnObjectMap.keySet().forEach(fqn -> fqnToObjectMapMergedYaml.put(fqn.getExpressionFqn(), fqnObjectMap.get(fqn)));
+      JsonNode pipelineJsonNode = YamlUtils.readTree(pipelineYaml).getNode().getCurrJsonNode();
+      return extractInputReferredEntityFromYaml(
+          accountIdentifier, orgIdentifier, projectIdentifier, pipelineJsonNode, allReferredUsages);
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid merged pipeline yaml");
     }
+  }
+
+  public List<EntityDetail> extractInputReferredEntityFromYaml(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, JsonNode pipelineJsonNode, List<EntitySetupUsageDTO> allReferredUsages) {
+    Map<String, Object> fqnToObjectMapMergedYaml = new HashMap<>();
+    Map<FQN, Object> fqnObjectMap = FQNMapGenerator.generateFQNMap(pipelineJsonNode);
+    fqnObjectMap.keySet().forEach(fqn -> fqnToObjectMapMergedYaml.put(fqn.getExpressionFqn(), fqnObjectMap.get(fqn)));
 
     List<EntityDetail> entityDetails = new ArrayList<>();
     for (EntitySetupUsageDTO referredUsage : allReferredUsages) {
@@ -80,12 +87,11 @@ public class PipelineSetupUsageUtils {
       String accountIdentifier, TextNode node, EntitySetupUsageDTO referredUsage, Map<String, String> metadata,
       String fqnForNode) {
     String finalValue = node.asText();
-    if (NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
+    if (EmptyPredicate.isEmpty(finalValue) || NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
       return null;
     }
-    if (ParameterFieldUtils.containsInputSetValidator(finalValue, fqnForNode)) {
-      finalValue = ParameterFieldUtils.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
-    }
+    finalValue = ParameterFieldUtils.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
+
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(finalValue, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
     return EntityDetail.builder()

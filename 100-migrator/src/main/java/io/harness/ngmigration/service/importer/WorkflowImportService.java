@@ -39,7 +39,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.template.stage.TemplateStageNode;
-import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -133,8 +133,8 @@ public class WorkflowImportService implements ImportService {
   }
 
   private void createPipeline(MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
-    PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
-    String yaml = YamlUtils.write(pipelineConfig);
+    PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
+    String yaml = YamlUtils.writeYamlString(pipelineConfig);
     try {
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient

@@ -60,7 +60,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
     HelmChartConfig helmChartConfig = applicationManifest.getHelmChartConfig();
     CgEntityId connectorId =
         CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build();
-    if (!migratedEntities.containsKey(connectorId)) {
+    if (!entities.containsKey(connectorId)) {
       log.error(
           String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
               applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
@@ -76,6 +76,11 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
                 CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(applicationManifest.getServiceId()).build())
             .getEntity();
     String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
+    ParameterField<String> chartVersion = MigratorUtility.RUNTIME_INPUT;
+    if (StringUtils.isNotBlank(helmChartConfig.getChartVersion())) {
+      chartVersion = ParameterField.createValueField(helmChartConfig.getChartVersion());
+    }
+
     HelmChartManifestBuilder helmChartManifest =
         HelmChartManifest.builder()
             .identifier(identifier)
@@ -83,13 +88,19 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
-            .chartVersion(ParameterField.createValueField("<+input>"));
+            .chartVersion(chartVersion);
 
     helmChartManifest.commandFlags(getCommandFlags(applicationManifest));
 
     if (HTTP_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
       NGYamlFile connectorYamlFile = migratedEntities.get(
           CgEntityId.builder().id(settingAttribute.getUuid()).type(NGMigrationEntityType.CONNECTOR).build());
+      if (connectorYamlFile == null) {
+        log.error(
+            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+                applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
+        return Collections.emptyList();
+      }
       NgEntityDetail connector = connectorYamlFile.getNgEntityDetail();
       helmChartManifest
           .store(ParameterField.createValueField(StoreConfigWrapper.builder()
@@ -101,10 +112,16 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
                                                      .build()))
           .build();
     }
-    if (settingAttribute.getValue().getSettingType().equals(AMAZON_S3_HELM_REPO)) {
+    if (AMAZON_S3_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
       AmazonS3HelmRepoConfig repoConfig = (AmazonS3HelmRepoConfig) settingAttribute.getValue();
       NGYamlFile connectorYamlFile = migratedEntities.get(
           CgEntityId.builder().id(repoConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
+      if (connectorYamlFile == null) {
+        log.error(
+            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+                applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
+        return Collections.emptyList();
+      }
       helmChartManifest
           .store(ParameterField.createValueField(
               StoreConfigWrapper.builder()
@@ -120,10 +137,16 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
           .build();
     }
 
-    if (settingAttribute.getValue().getSettingType().equals(GCS_HELM_REPO)) {
+    if (GCS_HELM_REPO.equals(settingAttribute.getValue().getSettingType())) {
       GCSHelmRepoConfig repoConfig = (GCSHelmRepoConfig) settingAttribute.getValue();
       NGYamlFile connectorYamlFile = migratedEntities.get(
           CgEntityId.builder().id(repoConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
+      if (connectorYamlFile == null) {
+        log.error(
+            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+                applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
+        return Collections.emptyList();
+      }
       helmChartManifest
           .store(ParameterField.createValueField(
               StoreConfigWrapper.builder()

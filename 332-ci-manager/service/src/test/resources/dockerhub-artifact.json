@@ -1,0 +1,13 @@
+{
+  "kind": "docker/v1",
+  "data": {
+    "registryType": "Docker",
+    "registryUrl": "https://index.docker.io/v1/",
+    "images": [
+      {
+        "image": "test/test-repo:1.0",
+        "digest": "sha256:digest"
+      }
+    ]
+  }
+}

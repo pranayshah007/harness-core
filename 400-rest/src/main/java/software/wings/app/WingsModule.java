@@ -89,6 +89,7 @@ import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
@@ -96,6 +97,7 @@ import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
@@ -160,6 +162,8 @@ import io.harness.event.timeseries.processor.instanceeventprocessor.instancereco
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconServiceImpl;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.executionInfra.ExecutionInfrastructureService;
+import io.harness.executionInfra.ExecutionInfrastructureServiceImpl;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.file.FileServiceModule;
 import io.harness.git.GitClientV2;
@@ -269,6 +273,8 @@ import io.harness.service.intfc.AccountDataProvider;
 import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 import io.harness.service.intfc.DelegateTokenService;
+import io.harness.taskclient.TaskClient;
+import io.harness.taskclient.TaskClientImpl;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.templatizedsm.RuntimeCredentialsInjector;
@@ -394,7 +400,6 @@ import software.wings.licensing.LicenseService;
 import software.wings.licensing.LicenseServiceImpl;
 import software.wings.provider.NoopDelegateConfigurationServiceProviderImpl;
 import software.wings.provider.NoopDelegatePropertiesServiceProviderImpl;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.resources.graphql.GraphQLRateLimiter;
 import software.wings.resources.graphql.GraphQLUtils;
 import software.wings.scheduler.BackgroundJobScheduler;
@@ -951,6 +956,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  public int maxDocumentsToBeFetchedByMongoQueries() {
+    return configuration.getMongoConnectionFactory().getMaxDocumentsToBeFetched();
+  }
+
+  @Provides
+  @Singleton
   @Named("gcpConfig")
   public io.harness.ccm.commons.beans.config.GcpConfig noOpDummyConfig() {
     return io.harness.ccm.commons.beans.config.GcpConfig.builder().build();
@@ -1095,6 +1106,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateStackdriverLogService.class).to(DelegateStackdriverLogServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
+    bind(TaskClient.class).to(TaskClientImpl.class);
+    bind(ExecutionInfrastructureService.class).to(ExecutionInfrastructureServiceImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);
     bind(CloudWatchService.class).to(CloudWatchServiceImpl.class);
@@ -1227,7 +1240,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     bind(GraphQLRateLimiter.class);
     bind(GraphQLUtils.class);
-    bind(DelegateRequestRateLimiter.class);
     bind(SamlUserGroupSync.class);
     bind(ScimUserService.class).to(ScimUserServiceImpl.class);
     bind(ScimGroupService.class).to(ScimGroupServiceImpl.class);
@@ -1244,6 +1256,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+    bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);

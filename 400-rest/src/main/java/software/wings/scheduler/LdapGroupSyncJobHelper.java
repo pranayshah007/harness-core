@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.MongoUtils.setUnset;
+import static io.harness.ng.core.common.beans.Generation.CG;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
@@ -278,7 +279,7 @@ public class LdapGroupSyncJobHelper {
           }
           log.info("LDAPIterator: user found from system is {}", user);
 
-          if (user != null && userService.isUserAssignedToAccount(user, accountId)) {
+          if (user != null && userService.isUserAssignedToAccountInGeneration(user, accountId, CG)) {
             log.info("LDAPIterator: user {} already assigned to account {}", user.getEmail(), accountId);
             userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
             log.info("LDAPIterator: adding existing user {} to groups {}  in accountId {}", user.getUuid(),
@@ -296,6 +297,8 @@ public class LdapGroupSyncJobHelper {
                 "LDAPIterator: creating user invite for account {} and user Invite {} and user Groups {} and externalUserId {}",
                 accountId, userInvite.getEmail(), Lists.newArrayList(userGroups), ldapUserResponse.getUserId());
             userService.inviteUser(userInvite, false, true);
+            // Get the newly added user and add them to this user group
+            user = userService.getUserByEmail(ldapUserResponse.getEmail());
             userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
             log.info("LDAPIterator: adding new user {} to groups {}  in accountId {}", user.getUuid(),
                 Lists.newArrayList(userGroups), accountId);

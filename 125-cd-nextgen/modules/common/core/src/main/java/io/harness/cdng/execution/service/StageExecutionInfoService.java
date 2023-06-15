@@ -106,4 +106,8 @@ public interface StageExecutionInfoService {
 
   StageExecutionInfo updateStageExecutionInfo(
       Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO);
+
+  Optional<StageExecutionInfo> findById(String id);
+
+  void delete(String id);
 }

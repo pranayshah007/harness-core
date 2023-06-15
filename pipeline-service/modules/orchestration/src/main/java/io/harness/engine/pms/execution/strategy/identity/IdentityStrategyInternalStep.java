@@ -14,8 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -33,6 +35,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +59,7 @@ import org.springframework.data.util.CloseableIterator;
 public class IdentityStrategyInternalStep
     implements ChildExecutable<IdentityStepParameters>, ChildrenExecutable<IdentityStepParameters> {
   @Inject PlanService planService;
+  @Inject private PmsOutcomeService pmsOutcomeService;
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(NGCommonUtilPlanCreationConstants.IDENTITY_STRATEGY_INTERNAL)
                                                .setStepCategory(StepCategory.STRATEGY)
@@ -90,7 +94,11 @@ public class IdentityStrategyInternalStep
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    return createStepResponseFromChildResponse(responseDataMap);
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.status));
+    // Copying the outcomes
+    pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 
   @Override

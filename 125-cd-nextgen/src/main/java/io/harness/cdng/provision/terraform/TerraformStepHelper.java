@@ -8,7 +8,6 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -714,7 +713,7 @@ public class TerraformStepHelper {
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .entityId(
                 generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
             .configFiles(
                 inheritOutput.getConfigFiles() != null ? inheritOutput.getConfigFiles().toGitStoreConfigDTO() : null)
             .useConnectorCredentials(inheritOutput.isUseConnectorCredentials())
@@ -781,7 +780,7 @@ public class TerraformStepHelper {
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .entityId(
                 generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId());
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance));
 
     StoreConfigWrapper store = spec.getConfigFiles().getStore();
     StoreConfigType storeConfigType = store.getType();
@@ -877,21 +876,22 @@ public class TerraformStepHelper {
   }
 
   public void saveTerraformConfig(TerraformConfig rollbackConfig, Ambiance ambiance) {
-    TerraformConfig terraformConfig = TerraformConfig.builder()
-                                          .accountId(AmbianceUtils.getAccountId(ambiance))
-                                          .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
-                                          .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-                                          .entityId(rollbackConfig.getEntityId())
-                                          .pipelineExecutionId(ambiance.getPlanExecutionId())
-                                          .configFiles(rollbackConfig.getConfigFiles())
-                                          .fileStoreConfig(rollbackConfig.getFileStoreConfig())
-                                          .varFileConfigs(rollbackConfig.getVarFileConfigs())
-                                          .backendConfig(rollbackConfig.getBackendConfig())
-                                          .environmentVariables(rollbackConfig.getEnvironmentVariables())
-                                          .workspace(rollbackConfig.getWorkspace())
-                                          .targets(rollbackConfig.getTargets())
-                                          .isTerraformCloudCli(rollbackConfig.isTerraformCloudCli)
-                                          .build();
+    TerraformConfig terraformConfig =
+        TerraformConfig.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+            .entityId(rollbackConfig.getEntityId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
+            .configFiles(rollbackConfig.getConfigFiles())
+            .fileStoreConfig(rollbackConfig.getFileStoreConfig())
+            .varFileConfigs(rollbackConfig.getVarFileConfigs())
+            .backendConfig(rollbackConfig.getBackendConfig())
+            .environmentVariables(rollbackConfig.getEnvironmentVariables())
+            .workspace(rollbackConfig.getWorkspace())
+            .targets(rollbackConfig.getTargets())
+            .isTerraformCloudCli(rollbackConfig.isTerraformCloudCli)
+            .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
   }
@@ -921,9 +921,6 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo toTerraformBackendFileInfo(
       TerraformBackendConfig backendConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
-      return null;
-    }
     if (backendConfig != null) {
       TerraformBackendConfigSpec spec = backendConfig.getTerraformBackendConfigSpec();
       if (spec instanceof InlineTerraformBackendConfigSpec) {
@@ -1135,9 +1132,6 @@ public class TerraformStepHelper {
   public TerraformBackendConfigFileInfo prepareTerraformBackendConfigFileInfo(
       TerraformBackendConfigFileConfig bcFileConfig, Ambiance ambiance) {
     TerraformBackendConfigFileInfo fileInfo = null;
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_REMOTE_BACKEND_CONFIG_NG)) {
-      return null;
-    }
     if (bcFileConfig != null) {
       if (bcFileConfig instanceof TerraformInlineBackendConfigFileConfig) {
         fileInfo = InlineTerraformBackendConfigFileInfo.builder()
@@ -1289,12 +1283,12 @@ public class TerraformStepHelper {
     cdStepHelper.validateManifest(storeKind, connectorDTO, validationMessage);
   }
 
-  public void validateSecretManager(
-      Ambiance ambiance, String accountId, String orgIdentifier, String projectIdentifier, String secretManagerRef) {
+  public void validateSecretManager(Ambiance ambiance, IdentifierRef identifierRef) {
     if (cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN)) {
       boolean isSecretManagerReadOnly =
-          ngEncryptedDataService.isSecretManagerReadOnly(accountId, orgIdentifier, projectIdentifier, secretManagerRef);
+          ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
+              identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
       if (isSecretManagerReadOnly) {
         throw new InvalidRequestException(
             "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");

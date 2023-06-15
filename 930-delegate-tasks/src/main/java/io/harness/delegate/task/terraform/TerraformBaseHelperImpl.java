@@ -75,6 +75,7 @@ import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
 import io.harness.delegate.clienttools.TerraformConfigInspectVersion;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -178,6 +179,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Inject ArtifactoryRequestMapper artifactoryRequestMapper;
   @Inject AwsApiHelperService awsApiHelperService;
   @Inject AwsNgConfigMapper awsNgConfigMapper;
+  @Inject HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
 
   @Override
   public void downloadTfStateFile(String workspace, String accountId, String currentStateFileId, String scriptDirectory)
@@ -308,7 +310,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           CommandExecutionStatus.RUNNING);
       saveTerraformPlanContentToFile(terraformExecuteStepRequest.getEncryptionConfig(),
           terraformExecuteStepRequest.getEncryptedTfPlan(), terraformExecuteStepRequest.getScriptDirectory(),
-          terraformExecuteStepRequest.getAccountId(), TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+          terraformExecuteStepRequest.getAccountId(), TERRAFORM_PLAN_FILE_OUTPUT_NAME,
+          terraformExecuteStepRequest.isEncryptDecryptPlanForHarnessSMOnManager(), terraformExecuteStepRequest.isNG());
       terraformPlanSummary =
           analyseTerraformPlanSummaryWithTfClient(terraformExecuteStepRequest.isAnalyseTfPlanSummary(),
               terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
@@ -343,25 +346,27 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                 terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
                 terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
                 terraformExecuteStepRequest.isUseOptimizedTfPlan());
-
-        // Generating Human Readable Representation of the tfplan
-        if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()) {
-          executeTerraformHumanReadableShowCommandWithTfClient(
-              terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
-              terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-              terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-              terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
-              terraformExecuteStepRequest.isUseOptimizedTfPlan());
-        }
-
-        terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
-            terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
-            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
-            terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
-                                                          : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
       }
+
+      // Generating Human Readable Representation of the tfplan
+      if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()
+          && !terraformExecuteStepRequest.isTerraformCloudCli()) {
+        executeTerraformHumanReadableShowCommandWithTfClient(
+            terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+            terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
+            terraformExecuteStepRequest.isUseOptimizedTfPlan());
+      }
+
+      terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
+          terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
+          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
+          terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
+          terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
+                                                        : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
     }
+
     return TerraformStepResponse.builder().cliResponse(response).terraformPlanSummary(terraformPlanSummary).build();
   }
 
@@ -501,7 +506,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       } else {
         saveTerraformPlanContentToFile(terraformExecuteStepRequest.getEncryptionConfig(),
             terraformExecuteStepRequest.getEncryptedTfPlan(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getAccountId(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME);
+            terraformExecuteStepRequest.getAccountId(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME,
+            terraformExecuteStepRequest.isEncryptDecryptPlanForHarnessSMOnManager(),
+            terraformExecuteStepRequest.isNG());
 
         terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
             terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
@@ -616,10 +623,18 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   @VisibleForTesting
   public void saveTerraformPlanContentToFile(EncryptionConfig encryptionConfig, EncryptedRecordData encryptedTfPlan,
-      String scriptDirectory, String accountId, String terraformOutputFileName) throws IOException {
+      String scriptDirectory, String accountId, String terraformOutputFileName,
+      boolean encryptDecryptPlanForHarnessSMOnManager, boolean isNG) throws IOException {
     File tfPlanFile = Paths.get(scriptDirectory, terraformOutputFileName).toFile();
-    byte[] decryptedTerraformPlan =
-        encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+
+    byte[] decryptedTerraformPlan;
+
+    if (encryptDecryptPlanForHarnessSMOnManager) {
+      decryptedTerraformPlan =
+          harnessSMEncryptionDecryptionHandler.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId, isNG);
+    } else {
+      decryptedTerraformPlan = encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+    }
     FileUtils.copyInputStreamToFile(new ByteArrayInputStream(decryptedTerraformPlan), tfPlanFile);
   }
 
@@ -642,8 +657,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       return (EncryptedRecordData) encryptDecryptHelper.encryptFile(
           content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig(), planDelegateFile);
     }
-
     return encryptPlan(content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig());
+  }
+
+  private EncryptedRecordData encryptPlanForHarnessSM(byte[] content, EncryptionConfig encryptionConfig, boolean isNG) {
+    return (EncryptedRecordData) harnessSMEncryptionDecryptionHandler.encryptContent(content, encryptionConfig, isNG);
   }
 
   @NotNull

@@ -27,6 +27,7 @@ import io.harness.rest.RestResponse;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 
 import java.util.List;
@@ -45,11 +46,13 @@ public interface UserClient {
   String SEARCH_TERM_KEY = "searchTerm";
   String USERS_SEARCH_API = "ng/user/search";
   String USERS_API = "ng/user";
+  String USERS_API_INCLUDE_SUPPORT_USER = "ng/user/support-users";
 
   String USERS_AGGREGATE_API = "user";
   String USERS_API_OAUTH = "ng/user/oauth";
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
   String USER_SIGNUP_COMMUNITY = "ng/user/signup-invite/community";
+  String USER_SIGNUP_MARKETPLACE = "ng/user/signup-invite/marketplace";
   String USER_BATCH_LIST_API = "ng/user/batch";
   String USER_EMAILS_BATCH_LIST_API = "ng/user/batch-emails";
   String SCIM_USER_SEARCH = "ng/user/scim/search";
@@ -104,6 +107,11 @@ public interface UserClient {
   Call<RestResponse<Boolean>> updateUserDisabled(@Query(value = "accountId") String accountId,
       @Query(value = "userId") String userId, @Query("disabled") boolean disabled);
 
+  @POST(USER_SIGNUP_MARKETPLACE)
+  Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(@Query("inviteId") String inviteId,
+      @Query("marketPlaceToken") String marketPlaceToken, @Query("email") String email,
+      @Query("password") String password, @Body SignupDTO dto);
+
   @POST(USER_SIGNUP_COMMUNITY)
   Call<RestResponse<UserInfo>> createCommunityUserAndCompleteSignup(@Body SignupInviteDTO userRequest);
 
@@ -112,7 +120,13 @@ public interface UserClient {
       @Query("offset") String offset, @Query("limit") String limit, @Query("searchTerm") String searchTerm,
       @Query("requireAdminStatus") boolean requireAdminStatus);
 
-  @GET(USERS_API + "/{userId}") Call<RestResponse<Optional<UserInfo>>> getUserById(@Path("userId") String userId);
+  @GET(USERS_API + "/{userId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserById(
+      @Path("userId") String userId, @Query("includeSupportAccounts") boolean includeSupportAccounts);
+
+  @GET(USERS_API + "/{userId}/{accountId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserByIdAndAccount(
+      @Path("userId") String userId, @Path(value = "accountId") String accountId);
 
   @GET(USERS_API + "/email/{emailId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByEmailId(@Path("emailId") String emailId);

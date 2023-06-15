@@ -24,6 +24,7 @@ import static io.harness.ng.core.invites.mapper.InviteMapper.toInviteList;
 import static io.harness.ng.core.invites.mapper.InviteMapper.writeDTO;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.sanitizeRoleBindings;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.ACCEPTED_INVITE;
+import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
 import static io.harness.springdata.PersistenceUtils.getRetryPolicy;
 
 import static java.lang.Boolean.FALSE;
@@ -335,7 +336,7 @@ public class InviteServiceImpl implements InviteService {
         return getUserInfoSubmitUrl(baseUrl, resourceUrl, email, jwtToken, inviteAcceptResponse);
       } else {
         createAndInviteNonPasswordUser(
-            accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null, null, MANUAL);
+            accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null, null, null, MANUAL);
         return resourceUrl;
       }
     } else {
@@ -395,12 +396,12 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
-      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String givenName, String familyName,
-      String externalId, UserSource userSource) {
+      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String displayName, String givenName,
+      String familyName, String externalId, UserSource userSource) {
     UserInviteDTOBuilder userInviteDTOBuilder = UserInviteDTO.builder()
                                                     .accountId(accountIdentifier)
                                                     .email(email)
-                                                    .name(email)
+                                                    .name(displayName != null ? displayName : email)
                                                     .givenName(givenName)
                                                     .familyName(familyName)
                                                     .externalId(externalId)
@@ -621,12 +622,12 @@ public class InviteServiceImpl implements InviteService {
       String email = invite.getEmail().trim();
 
       if (scimLdapArray[0]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false, invite.getGivenName(),
-            invite.getFamilyName(), invite.getExternalId(), SCIM);
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false, invite.getName(),
+            invite.getGivenName(), invite.getFamilyName(), invite.getExternalId(), SCIM);
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
-            invite.getFamilyName(), invite.getExternalId(), scimLdapArray[1] ? LDAP : MANUAL);
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getName(),
+            invite.getGivenName(), invite.getFamilyName(), invite.getExternalId(), scimLdapArray[1] ? LDAP : MANUAL);
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       }
 
@@ -734,6 +735,7 @@ public class InviteServiceImpl implements InviteService {
       templateData.put(TOTP_URL, twoFactorAuthSettingsInfo.getTotpqrurl());
     }
 
+    templateData.put("name", invite.getEmail());
     templateData.put("url", url);
     if (!isBlank(invite.getProjectIdentifier())) {
       templateData.put("projectname",
@@ -834,6 +836,18 @@ public class InviteServiceImpl implements InviteService {
     markInviteApprovedAndDeleted(invite);
     // telemetry for adding user to an account
     sendInviteAcceptTelemetryEvents(user, invite);
+    ngUserService.waitForRbacSetup(scope, user.getUuid(), email);
+    return true;
+  }
+
+  @Override
+  public boolean completeUserNgSetupWithoutInvite(String email, String accountId) {
+    Optional<UserMetadataDTO> userOpt = ngUserService.getUserByEmail(email, true);
+    Preconditions.checkState(userOpt.isPresent(), "Illegal state: user doesn't exists");
+    UserMetadataDTO user = userOpt.get();
+    Scope scope = Scope.builder().accountIdentifier(accountId).orgIdentifier(null).projectIdentifier(null).build();
+    ngUserService.addUserToScope(user.getUuid(), scope, new ArrayList<>(), new ArrayList<>(), USER);
+    ngUserService.waitForRbacSetup(scope, user.getUuid(), email);
     return true;
   }
 

@@ -21,10 +21,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.EnvironmentValidationHelper;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 

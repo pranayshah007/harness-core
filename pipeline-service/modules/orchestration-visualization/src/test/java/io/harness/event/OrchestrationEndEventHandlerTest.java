@@ -30,7 +30,6 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
-import io.harness.testlib.RealMongo;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -75,7 +74,7 @@ public class OrchestrationEndEventHandlerTest extends OrchestrationVisualization
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
+
   @Ignore("Ignoring till injection issue is fixed")
   public void shouldUpdateGraphWithStatusAndEndTs() {
     PlanExecution planExecution = PlanExecution.builder()

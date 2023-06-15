@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.Repository;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.steps.CIAbstractStepNode;
@@ -39,6 +40,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.CiIntegrationStageUtils;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -246,7 +248,7 @@ public class IntegrationStageUtilsTest {
   public void shouldNotFailForAzureOnPremUrl() {
     String accountUrl = "https://tfs.azureonprem.com/Org/Project/";
     String actualUrl =
-        IntegrationStageUtils.retrieveGenericGitConnectorURL("repo", GitConnectionType.PROJECT, accountUrl);
+        CiIntegrationStageUtils.retrieveGenericGitConnectorURL("repo", GitConnectionType.PROJECT, accountUrl);
     assertThat(actualUrl).isEqualTo(accountUrl + "_git/repo");
   }
 
@@ -279,6 +281,16 @@ public class IntegrationStageUtilsTest {
             WebhookExecutionSource.builder()
                 .webhookEvent(
                     PRWebhookEvent.builder()
+                        .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
+                        .build())
+                .build(),
+            "https://github.com/Devkimittal/Harness-core"))
+        .isTrue();
+    assertThat(
+        IntegrationStageUtils.isURLSame(
+            WebhookExecutionSource.builder()
+                .webhookEvent(
+                    ReleaseWebhookEvent.builder()
                         .repository(Repository.builder().httpURL("https://github.com/devkimittal/harness-core").build())
                         .build())
                 .build(),

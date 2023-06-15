@@ -19,6 +19,7 @@ import io.harness.shell.AccessType;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.client.SshClient;
 import io.harness.shell.ssh.client.jsch.JschClient;
+import io.harness.shell.ssh.client.sshj.SshjClient;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -33,9 +34,9 @@ public class SshFactory {
   public static SshClient getSshClient(SshSessionConfig config, LogCallback logCallback) {
     init(config);
 
-    if (config.isVaultSSH()) {
-      // this flow is planned to be migrated to SSHJ flows
-      return new JschClient(config, logCallback);
+    if (config.isUseSshClient() && config.isUseSshj() && config.isVaultSSH()) {
+      // this flow is planned to be migrated to SSHJ flows only for Vault initially
+      return new SshjClient(config, logCallback);
     } else {
       return new JschClient(config, logCallback);
     }

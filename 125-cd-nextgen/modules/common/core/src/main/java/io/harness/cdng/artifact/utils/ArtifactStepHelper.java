@@ -767,16 +767,16 @@ public class ArtifactStepHelper {
     return resultantArtifact;
   }
 
-  public String getArtifactProcessedServiceYaml(Ambiance ambiance, String serviceYaml) {
+  public ArtifactsProcessedResponse getArtifactProcessedServiceYaml(Ambiance ambiance, String serviceYaml) {
     try {
-      YamlField yamlField = processArtifactsInYaml(ambiance, serviceYaml);
-      return YamlUtils.writeYamlString(yamlField);
+      return processArtifactsInYaml(ambiance, serviceYaml);
     } catch (IOException ex) {
       throw new InvalidRequestException("Error processing artifact sources in service Yaml", ex);
     }
   }
 
-  public YamlField processArtifactsInYaml(Ambiance ambiance, String serviceEntityYaml) throws IOException {
+  public ArtifactsProcessedResponse processArtifactsInYaml(Ambiance ambiance, String serviceEntityYaml)
+      throws IOException {
     YamlField yamlField = YamlUtils.readTree(serviceEntityYaml);
     YamlField serviceDefField =
         yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
@@ -793,27 +793,30 @@ public class ArtifactStepHelper {
 
     YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
     if (artifactsField == null) {
-      return yamlField;
+      return ArtifactsProcessedResponse.builder().serviceYaml(YamlUtils.writeYamlString(yamlField)).build();
     }
 
     YamlField primaryArtifactField = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
     if (primaryArtifactField == null) {
-      return yamlField;
+      return ArtifactsProcessedResponse.builder().serviceYaml(YamlUtils.writeYamlString(yamlField)).build();
     }
 
     YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
 
     YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+    String primaryArtifactRefValue = null;
 
     if (artifactSourcesField != null && artifactSourcesField.getNode().isArray()) {
       ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
       List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
 
       ObjectNode primaryNode = null;
-      String primaryArtifactRefValue = null;
       // If there is only 1 artifact source, default to that
       if (artifactSources.size() == 1) {
         if (artifactSources.get(0).isObject()) {
+          // primary artifact ref is by default chosen
+          primaryArtifactRefValue = artifactSources.get(0).getIdentifier();
+
           primaryNode = (ObjectNode) artifactSources.get(0).getCurrJsonNode();
           primaryNode.remove(YamlTypes.IDENTIFIER);
         }
@@ -847,7 +850,10 @@ public class ArtifactStepHelper {
             String.format("No artifact source exists with the identifier %s inside service", primaryArtifactRefValue));
       }
     }
-    return yamlField;
+    return ArtifactsProcessedResponse.builder()
+        .serviceYaml(YamlUtils.writeYamlString(yamlField))
+        .primaryArtifactRef(primaryArtifactRefValue)
+        .build();
   }
 
   private String resolvePrimaryArtifactRef(Ambiance ambiance, String primaryArtifactRefValue) {

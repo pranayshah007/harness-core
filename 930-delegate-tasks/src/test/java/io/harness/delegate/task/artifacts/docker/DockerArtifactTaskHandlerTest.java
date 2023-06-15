@@ -48,6 +48,12 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
   @Mock DockerRegistryService dockerRegistryService;
   @InjectMocks DockerArtifactTaskHandler dockerArtifactService;
 
+  private static final String SHA = "sha256:1234";
+  private static final String SHA_V2 = "sha256:5678";
+  private static final Map<String, String> LABELS = Collections.singletonMap("author", "docker");
+  private static final ArtifactMetaInfo ARTIFACT_META_INFO =
+      ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).labels(LABELS).build();
+
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
@@ -316,9 +322,9 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(dockerRegistryService)
         .verifyBuildNumber(dockerInternalConfig, "imagePath", "tag");
-    doReturn(Collections.singletonList(Collections.singletonMap("author", "docker")))
+    doReturn(ARTIFACT_META_INFO)
         .when(dockerRegistryService)
-        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+        .getArtifactMetaInfo(dockerInternalConfig, "imagePath", "tag", true);
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
@@ -342,7 +348,10 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
         (DockerArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
     assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
     assertThat(attributes.getTag()).isEqualTo(sourceAttributes.getTag());
-    assertThat(attributes.getLabel().get("author").equals("docker"));
+    assertThat(attributes.getLabel()).isSameAs(LABELS);
+    Map<String, String> metadata = attributes.getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
   }
 
   @Test
@@ -355,9 +364,9 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(dockerRegistryService)
         .verifyBuildNumber(dockerInternalConfig, "imagePath", "tag");
-    doReturn(Collections.EMPTY_LIST)
+    doReturn(ArtifactMetaInfo.builder().sha(SHA).shaV2(SHA_V2).build())
         .when(dockerRegistryService)
-        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+        .getArtifactMetaInfo(dockerInternalConfig, "imagePath", "tag", true);
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
@@ -382,6 +391,9 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
     assertThat(attributes.getTag()).isEqualTo(sourceAttributes.getTag());
     assertThat(attributes.getLabel()).isNull();
+    Map<String, String> metadata = attributes.getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
   }
 
   @Test
@@ -394,9 +406,9 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     doReturn(buildDetailsInternal)
         .when(dockerRegistryService)
         .getLastSuccessfulBuildFromRegex(dockerInternalConfig, "imagePath", "tagRegex");
-    doReturn(Collections.singletonList(Collections.singletonMap("author", "docker")))
+    doReturn(ARTIFACT_META_INFO)
         .when(dockerRegistryService)
-        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+        .getArtifactMetaInfo(dockerInternalConfig, "imagePath", "tag", true);
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
@@ -420,6 +432,9 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
         (DockerArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
     assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
     assertThat(attributes.getTag()).isEqualTo("tag");
-    assertThat(attributes.getLabel().get("author").equals("docker"));
+    assertThat(attributes.getLabel()).isSameAs(LABELS);
+    Map<String, String> metadata = attributes.getBuildDetails().getMetadata();
+    assertThat(metadata.get(ArtifactMetadataKeys.SHA)).isEqualTo(SHA);
+    assertThat(metadata.get(ArtifactMetadataKeys.SHAV2)).isEqualTo(SHA_V2);
   }
 }

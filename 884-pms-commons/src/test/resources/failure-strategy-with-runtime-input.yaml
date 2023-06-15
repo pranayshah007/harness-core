@@ -57,11 +57,11 @@ pipeline:
                     method: GET
                     url: <+input>
             rollbackSteps:
-            - step:
-                name: http rollback step 1
-                identifier: httpStepRollback1
-                type: Http
-                spec:
-                  socketTimeoutMillis: 1000
-                  method: GET
-                  url: <+input>
+              - step:
+                  name: http rollback step 1
+                  identifier: httpStepRollback1
+                  type: Http
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: <+input>

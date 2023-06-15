@@ -17,8 +17,10 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.secretmanagerclient.SecretType.SSHKey;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secretmanagerclient.SecretType.WinRmCredentials;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
@@ -259,15 +261,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
 
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
-    Boolean isBuiltInSMDisabled = false;
-
-    if (isNgSettingsFFEnabled(accountIdentifier)) {
-      isBuiltInSMDisabled = parseBoolean(
-          NGRestUtils
-              .getResponse(settingsClient.getSetting(
-                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
-              .getValue());
-    }
+    Boolean isBuiltInSMDisabled =
+        parseBoolean(NGRestUtils
+                         .getResponse(settingsClient.getSetting(
+                             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+                         .getValue());
 
     if (isBuiltInSMDisabled && isHarnessManaged) {
       throw new InvalidRequestException(
@@ -297,6 +295,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @VisibleForTesting
   public boolean checkIfSecretManagerUsedIsHarnessManaged(String accountIdentifier, SecretDTOV2 dto) {
+    /**
+     * SSH and WinRm are special kind of secrets and are not associated to any secret manager, therefore return false in
+     * such a case.
+     */
+    if (dto.getType() == SSHKey || dto.getType() == WinRmCredentials) {
+      return false;
+    }
+
     final String secretManagerIdentifier = getSecretManagerIdentifier(dto);
     /**
      * Using scope identifiers of secret because as of now Secrets can be created using SM at same scope. This should
@@ -319,10 +325,10 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
+    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
     secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
-    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     return getResponseWrapper(secret);
   }
 
@@ -424,7 +430,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     } else {
       List<Secret> allMatchingSecrets =
           ngSecretService
-              .list(criteria, getPageRequest(PageRequest.builder().sortOrders(pageRequest.getSortOrders()).build()))
+              .list(criteria,
+                  getPageRequest(PageRequest.builder()
+                                     .pageIndex(0)
+                                     .pageSize(50000) // keeping the default max supported value
+                                     .sortOrders(pageRequest.getSortOrders())
+                                     .build()))
               .getContent();
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
       return ngSecretService
@@ -884,15 +895,10 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledViaSettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    boolean isForceDeleteEnabledViaSettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
     return isForceDeleteFFEnabled && isForceDeleteEnabledViaSettings;
   }
 
-  @VisibleForTesting
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
-  }
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
     return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET);

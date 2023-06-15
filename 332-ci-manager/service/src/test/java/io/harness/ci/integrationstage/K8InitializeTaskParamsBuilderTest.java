@@ -32,6 +32,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
@@ -40,6 +41,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
+import io.harness.ssca.client.SSCAServiceUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +66,8 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock private SecretUtils secretUtils;
   @Mock private CodebaseUtils codebaseUtils;
   @Mock private K8InitializeTaskUtils k8InitializeTaskUtils;
+  @Mock private SSCAServiceUtils sscaServiceUtils;
+  @Mock private CIFeatureFlagService featureFlagService;
 
   private Ambiance ambiance;
   private static final String accountId = "test";
@@ -112,7 +116,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(internalContainerParamsProvider.getSetupAddonContainerParams(any(), any(), any(), any(), any(), any()))
         .thenReturn(getAddonContainer());
     when(internalContainerParamsProvider.getLiteEngineContainerParams(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(getLiteEngineContainer());
     when(k8InitializeStepUtils.getStageRequest(any(), any())).thenReturn(Pair.of(1024, 1024));
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());

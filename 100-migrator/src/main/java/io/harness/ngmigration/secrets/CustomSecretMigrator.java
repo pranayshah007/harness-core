@@ -27,7 +27,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.serializer.JsonUtils;
-import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 
 import software.wings.beans.NameValuePairWithDefault;
 import software.wings.ngmigration.CgEntityId;

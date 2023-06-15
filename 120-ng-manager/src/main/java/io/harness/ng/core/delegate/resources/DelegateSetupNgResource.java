@@ -10,6 +10,7 @@ package io.harness.ng.core.delegate.resources;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_DELETE_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
 
 import static software.wings.service.impl.DelegateServiceImpl.HARNESS_DELEGATE_VALUES_YAML;
 
@@ -19,8 +20,10 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.SupportedDelegateVersion;
+import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.utilities.DelegateDeleteResponse;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.exception.InvalidRequestException;
@@ -45,6 +48,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -61,6 +65,7 @@ import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.hibernate.validator.constraints.Range;
+import retrofit2.http.Body;
 
 @Api("delegate-setup")
 @Path("/delegate-setup")
@@ -237,5 +242,28 @@ public class DelegateSetupNgResource {
     String delegateImage = CGRestUtils.getResponse(delegateNgManagerCgManagerClient.overrideDelegateImage(
         accountId, delegateTag, validTillNextRelease, validForDays));
     return new RestResponse<>(String.format("Updated Delegate image tag to %s", delegateImage));
+  }
+
+  @POST
+  @Timed
+  @Path("listDelegates")
+  @ExceptionMetered
+  @ApiOperation(value = "Lists all delegates in NG", nickname = "listDelegates")
+  @Operation(operationId = "listDelegates", summary = "Lists all delegates in NG filtered by provided conditions",
+      responses = { @ApiResponse(responseCode = "default", description = "Lists all delegates in NG") })
+  public RestResponse<List<DelegateListResponse>>
+  listDelegates(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                    NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body @RequestBody(description = "Details of the Delegate filter properties to be applied")
+      DelegateFilterPropertiesDTO delegateFilterPropertiesDTO) throws IOException {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+
+    return new RestResponse<>(CGRestUtils.getResponse(delegateNgManagerCgManagerClient.getDelegates(
+        accountIdentifier, orgIdentifier, projectIdentifier, delegateFilterPropertiesDTO)));
   }
 }

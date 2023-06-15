@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -99,7 +100,9 @@ public class NGGitCommandTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGitCommitAndPush() {
     CommitAndPushResult gitCommitAndPushResult = CommitAndPushResult.builder().build();
-    doReturn(gitCommitAndPushResult).when(gitService).commitAndPush(any(GitConfigDTO.class), any(), anyString(), any());
+    doReturn(gitCommitAndPushResult)
+        .when(gitService)
+        .commitAndPush(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
     TaskParameters params = GitCommandParams.builder()
                                 .gitConfig(GitConfigDTO.builder().build())
                                 .gitCommandType(GitCommandType.COMMIT_AND_PUSH)

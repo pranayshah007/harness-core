@@ -8,6 +8,7 @@
 package software.wings.scheduler;
 
 import static io.harness.beans.FeatureName.PL_LDAP_PARALLEL_GROUP_SYNC;
+import static io.harness.ng.core.common.beans.Generation.CG;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -392,6 +393,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
     when(userService.getUserByUserId(any(), any())).thenReturn(user);
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    when(userService.isUserAssignedToAccountInGeneration(user, "ACCOUNT_ID", CG)).thenReturn(true);
 
     try {
       ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
@@ -436,6 +438,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
     when(userService.getUserByUserId(any(), any())).thenReturn(user);
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    when(userService.isUserAssignedToAccountInGeneration(user, "ACCOUNT_ID", CG)).thenReturn(true);
 
     try {
       ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);

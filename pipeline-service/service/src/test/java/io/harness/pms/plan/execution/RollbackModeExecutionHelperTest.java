@@ -19,7 +19,6 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
-import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
@@ -48,7 +47,6 @@ import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,6 +68,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PrincipalInfoHelper principalInfoHelper;
+  @Mock RollbackModeYamlTransformer rollbackModeYamlTransformer;
 
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -79,8 +78,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    rollbackModeExecutionHelper =
-        new RollbackModeExecutionHelper(nodeExecutionService, pipelineMetadataService, principalInfoHelper);
+    rollbackModeExecutionHelper = new RollbackModeExecutionHelper(
+        nodeExecutionService, pipelineMetadataService, principalInfoHelper, rollbackModeYamlTransformer);
   }
 
   @Test
@@ -115,6 +114,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     assertThat(newMetadata.getExecutionMode()).isEqualTo(POST_EXECUTION_ROLLBACK);
     assertThat(newMetadata.getPipelineStageInfo().getHasParentPipeline()).isTrue();
     assertThat(newMetadata.getPostExecutionRollbackInfoCount()).isEqualTo(0);
+    assertThat(newMetadata.getOriginalPlanExecutionIdForRollbackMode()).isEqualTo("oldId");
     assertThat(rollbackModeExecutionHelper
                    .transformExecutionMetadata(oldExecutionMetadata, newId, newTriggerInfo, account, org, project,
                        POST_EXECUTION_ROLLBACK, null, null)
@@ -124,15 +124,17 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
 
     List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
 
-    doReturn(
-        Collections.singletonList(
-            NodeExecution.builder()
-                .ambiance(Ambiance.newBuilder()
-                              .addLevels(
-                                  Level.newBuilder().setStrategyMetadata(StrategyMetadata.newBuilder().build()).build())
-                              .build())
-                .planNode(PlanNode.builder().uuid("planNodeUuid").build())
-                .build()))
+    doReturn(Collections.singletonList(
+                 NodeExecution.builder()
+                     .ambiance(Ambiance.newBuilder()
+                                   .addLevels(Level.newBuilder()
+                                                  .setSetupId("setupId")
+                                                  .setRuntimeId("runtime123")
+                                                  .setStrategyMetadata(StrategyMetadata.newBuilder().build())
+                                                  .build())
+                                   .build())
+                     .planNode(PlanNode.builder().uuid("planNodeUuid").build())
+                     .build()))
         .when(nodeExecutionService)
         .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForNodeAndAmbiance);
 
@@ -141,6 +143,10 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         PipelineStageInfo.newBuilder().setHasParentPipeline(true).build(), stageNodeExecutionIds);
 
     assertThat(newMetadata.getPostExecutionRollbackInfoCount()).isEqualTo(1);
+    assertThat(newMetadata.getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId()).isEqualTo("setupId");
+    assertThat(newMetadata.getPostExecutionRollbackInfo(0).getRollbackStageStrategyMetadata())
+        .isEqualTo(StrategyMetadata.newBuilder().build());
+    assertThat(newMetadata.getPostExecutionRollbackInfo(0).getOriginalStageExecutionId()).isEqualTo("runtime123");
   }
 
   @Test
@@ -159,11 +165,14 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         + "      identifier: \"s2\"\n"
         + "  - stage:\n"
         + "      identifier: \"s1\"\n";
+    doReturn(transformed)
+        .when(rollbackModeYamlTransformer)
+        .transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "oldPlanId", null);
     PlanExecutionMetadata oldPlanExecutionMetadata =
         PlanExecutionMetadata.builder().uuid("randomId").planExecutionId("oldPlanId").processedYaml(original).build();
     String newId = "newId";
     PlanExecutionMetadata newMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
-        oldPlanExecutionMetadata, newId, POST_EXECUTION_ROLLBACK, null);
+        oldPlanExecutionMetadata, newId, POST_EXECUTION_ROLLBACK, null, null);
     assertThat(newMetadata.getUuid()).isNull();
     assertThat(newMetadata.getPlanExecutionId()).isEqualTo(newId);
     assertThat(newMetadata.getStagesExecutionMetadata()).isNull();
@@ -176,87 +185,9 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         .when(nodeExecutionService)
         .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode));
     newMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
-        oldPlanExecutionMetadata, newId, POST_EXECUTION_ROLLBACK, stageNodeExecutionIds);
+        oldPlanExecutionMetadata, newId, POST_EXECUTION_ROLLBACK, stageNodeExecutionIds, null);
     assertThat(newMetadata.getStagesExecutionMetadata().getStageIdentifiers().size()).isEqualTo(1);
     assertThat(newMetadata.getStagesExecutionMetadata().getStageIdentifiers().get(0)).isEqualTo(stageFqn);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testTransformProcessedYaml() {
-    String original = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n";
-    String transformedYaml =
-        rollbackModeExecutionHelper.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, null);
-    String expected = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n";
-    assertThat(transformedYaml).isEqualTo(expected);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testTransformProcessedYamlForPipelineRollback() {
-    String original = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n";
-    doReturn(Collections.singletonList(RetryStageInfo.builder().identifier("s1").name("s1").build()))
-        .when(nodeExecutionService)
-        .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeExecutionHelper.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
-    String expected = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n";
-    assertThat(transformedYaml).isEqualTo(expected);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testTransformProcessedYamlForPipelineRollbackWithParallelStages() {
-    String original = "pipeline:\n"
-        + "  stages:\n"
-        + "  - parallel:\n"
-        + "    - stage:\n"
-        + "        identifier: \"s1\"\n"
-        + "    - stage:\n"
-        + "        identifier: \"s2\"\n"
-        + "  - stage:\n"
-        + "      identifier: \"s3\"\n"
-        + "  - parallel:\n"
-        + "    - stage:\n"
-        + "        identifier: \"s4\"\n"
-        + "    - stage:\n"
-        + "        identifier: \"s5\"\n";
-    doReturn(Arrays.asList(RetryStageInfo.builder().identifier("s1").name("s1").build(),
-                 RetryStageInfo.builder().identifier("s2").name("s2").build(),
-                 RetryStageInfo.builder().identifier("s3").name("s3").build()))
-        .when(nodeExecutionService)
-        .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeExecutionHelper.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
-    String expected = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s3\"\n"
-        + "  - parallel:\n"
-        + "    - stage:\n"
-        + "        identifier: \"s1\"\n"
-        + "    - stage:\n"
-        + "        identifier: \"s2\"\n";
-    assertThat(transformedYaml).isEqualTo(expected);
   }
 
   @Test

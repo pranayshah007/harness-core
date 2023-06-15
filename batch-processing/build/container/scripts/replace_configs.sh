@@ -76,6 +76,14 @@ if [[ "" != "$QUERY_BATCH_SIZE" ]]; then
   export QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.queryBatchSize=env(QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BILLING_DATA_QUERY_BATCH_SIZE" ]]; then
+  export BILLING_DATA_QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.billingDataQueryBatchSize=env(BILLING_DATA_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
+  export BULK_OPERATION_QUERY_BATCH_SIZE; yq -i '.bulkOperationBatchQueryConfig.queryBatchSize=env(BULK_OPERATION_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SYNC_JOB_DISABLED" ]]; then
   export SYNC_JOB_DISABLED; yq -i '.batchQueryConfig.syncJobDisabled=env(SYNC_JOB_DISABLED)' $CONFIG_FILE
 fi
@@ -128,6 +136,9 @@ if [[ "" != "$AWS_ROLE_NAME" ]]; then
   export AWS_ROLE_NAME; yq -i '.billingDataPipelineConfig.awsRoleName=env(AWS_ROLE_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BUFFER_SIZE_IN_MB" ]]; then
+  export BUFFER_SIZE_IN_MB; yq -i '.billingDataPipelineConfig.bufferSizeInMB=env(BUFFER_SIZE_IN_MB)' $CONFIG_FILE
+fi
 
 if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
@@ -202,7 +213,19 @@ if [[ "" != "$AWS_ACCOUNT_TAGS_COLLECTION_CRON" ]]; then
 fi
 
 if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON" ]]; then
-  export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCron=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
+  export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCronAws=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON_AZURE" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_CRON_AZURE; yq -i '.scheduler-jobs-config.governanceRecommendationJobCronAzure=env(GOVERNANCE_RECOMMENDATION_JOB_CRON_AZURE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED; yq -i '.recommendationConfig.governanceRecommendationEnabledAws=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED_AZURE" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED_AZURE; yq -i '.recommendationConfig.governanceRecommendationEnabledAzure=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED_AZURE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HARNESS_CE_AZURE_CLIENTID" ]]; then

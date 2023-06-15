@@ -51,14 +51,18 @@ public class JiraConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO jiraConnectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    JiraTestConnectionTaskNGResponse delegateResponseData = (JiraTestConnectionTaskNGResponse) super.validateConnector(
+    var responseEntry = super.validateConnectorReturnPair(
         jiraConnectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+
+    JiraTestConnectionTaskNGResponse delegateResponseData = (JiraTestConnectionTaskNGResponse) responseEntry.getValue();
+    String taskId = responseEntry.getKey();
     return ConnectorValidationResult.builder()
         .delegateId(delegateResponseData.getDelegateMetaInfo() == null
                 ? null
                 : delegateResponseData.getDelegateMetaInfo().getId())
         .status(delegateResponseData.getCanConnect() ? ConnectivityStatus.SUCCESS : ConnectivityStatus.FAILURE)
         .errorSummary(delegateResponseData.getErrorMessage())
+        .taskId(taskId)
         .build();
   }
 

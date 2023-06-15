@@ -234,10 +234,8 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
           .downloadArtifacts(configRequest, "repository", requestDetails.toMetadata(),
               ArtifactMetadataKeys.artifactPath, ArtifactMetadataKeys.artifactName);
 
-      TasArtifactDownloadResponse downloadResponse =
-          cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback);
-      assertThat(downloadResponse.getArtifactFile()).isNull();
-      assertThat(downloadResponse.getArtifactType()).isEqualTo(ZIP);
+      assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+          .hasMessage("Use supported artifact registry");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }
@@ -1350,7 +1348,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
     doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
 
     request.setStandardBlueGreen(true);
-    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any(), any());
     request.setDownSizeCount(2);
     doReturn(applicationDetail).when(pcfCommandTaskHelper).printApplicationDetail(any(), any());
     cfCommandTaskHelperNG.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 2,
@@ -1369,7 +1367,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
     assertThat(cfServiceDataList.get(0).getName()).isEqualTo("app");
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any(), any());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
     cfCommandTaskHelperNG.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 1,
@@ -1451,7 +1449,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
     doReturn(applicationDetail).when(cfDeploymentManager).getApplicationByName(any());
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(cfDeploymentManager).resizeApplication(any(), any());
     doReturn(true).when(cfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
@@ -1544,7 +1542,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
                                    .build();
 
     doReturn(detail).when(cfDeploymentManager).getApplicationByName(any());
-    doReturn(detail).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(detail).when(cfDeploymentManager).resizeApplication(any(), any());
 
     List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
     List<CfServiceData> cfServiceDataList = new ArrayList<>();
@@ -1575,7 +1573,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
                                    .build();
 
     doReturn(detail).when(cfDeploymentManager).getApplicationByName(any());
-    doReturn(detail).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(detail).when(cfDeploymentManager).resizeApplication(any(), any());
 
     List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
     List<CfServiceData> cfServiceDataList = new ArrayList<>();

@@ -79,6 +79,7 @@ public class NGFreezeDtoMapper {
     oldFreezeConfigEntity.setStatus(newFreezeConfigEntity.getStatus());
     oldFreezeConfigEntity.setTags(newFreezeConfigEntity.getTags());
     oldFreezeConfigEntity.setYaml(newFreezeConfigEntity.getYaml());
+    oldFreezeConfigEntity.setShouldSendNotification(true);
     return oldFreezeConfigEntity;
   }
 
@@ -271,12 +272,6 @@ public class NGFreezeDtoMapper {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
     }
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
-    if (!Scope.ACCOUNT.equals(freezeScope) && freezeInfoConfig.getOrgIdentifier() == null) {
-      throw new InvalidRequestException("Org Identifier can not be null.");
-    }
-    if (Scope.PROJECT.equals(freezeScope) && freezeInfoConfig.getProjectIdentifier() == null) {
-      throw new InvalidRequestException("Project Identifier can not be null.");
-    }
     List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
     List<FreezeWindow> windows = freezeInfoConfig.getWindows();
     if (FreezeType.MANUAL.equals(type)) {

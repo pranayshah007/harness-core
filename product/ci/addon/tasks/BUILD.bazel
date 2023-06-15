@@ -28,6 +28,7 @@ go_library(
         "//product/ci/addon/testintelligence",
         "//product/ci/addon/testintelligence/csharp",
         "//product/ci/addon/testintelligence/java",
+        "//product/ci/addon/testintelligence/python",
         "//product/ci/addon/testreports",
         "//product/ci/addon/testreports/junit",
         "//product/ci/common/external",

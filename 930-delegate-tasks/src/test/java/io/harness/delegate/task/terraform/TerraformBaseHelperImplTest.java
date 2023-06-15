@@ -496,8 +496,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     doReturn(planContent).when(encryptDecryptHelper).getDecryptedContent(any(), any(), any());
 
-    terraformBaseHelper.saveTerraformPlanContentToFile(
-        encryptionConfig, encryptedPlanContent, scriptDirectory, "accountId", TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+    terraformBaseHelper.saveTerraformPlanContentToFile(encryptionConfig, encryptedPlanContent, scriptDirectory,
+        "accountId", TERRAFORM_PLAN_FILE_OUTPUT_NAME, false, false);
     List<FileData> fileDataList = FileIo.getFilesUnderPath(scriptDirectory);
     assertThat(fileDataList.size()).isEqualTo(1);
     assertThat(fileDataList.get(0).getFileBytes()).isEqualTo(planContent);

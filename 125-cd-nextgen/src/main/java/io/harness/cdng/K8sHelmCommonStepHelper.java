@@ -585,10 +585,9 @@ public class K8sHelmCommonStepHelper {
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
-            .subChartPath(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
-                    ? getParameterFieldValue(helmChartManifestOutcome.getSubChartPath())
-                    : "")
+            .subChartPath(getParameterFieldValue(helmChartManifestOutcome.getSubChartPath()))
+            .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
             .build();
 
       case ManifestType.Kustomize:
@@ -1297,7 +1296,7 @@ public class K8sHelmCommonStepHelper {
     if (kustomizeManifestCommandFlags != null) {
       Map<String, String> commandFlags = new HashMap<>();
       for (KustomizeManifestCommandFlag kustomizeManifestCommandFlag : kustomizeManifestCommandFlags) {
-        commandFlags.put(kustomizeManifestCommandFlag.getKustomizeCommandFlagType().toKustomizeCommandName(),
+        commandFlags.put(kustomizeManifestCommandFlag.getCommandType().toKustomizeCommandName(),
             getParameterFieldValue(kustomizeManifestCommandFlag.getFlag()));
       }
       return commandFlags;

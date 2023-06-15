@@ -16,8 +16,10 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.CPU_LIMIT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CPU_REQUEST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_DOUBLE_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_GRID_ENTRY_NAME;
+import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_MARKUP_IDENTIFIER;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_STRING_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ID_SEPARATOR;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.MAX_CPU_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.MAX_MEMORY_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.MEMORY_LIMIT;
@@ -159,6 +161,10 @@ public class PerspectiveTimeSeriesHelper {
               case COST:
               case BILLING_AMOUNT:
                 value += getNumericValue(row, field);
+                break;
+              case MARKUP_AMOUNT:
+                value += getNumericValue(row, field);
+                stringValue = DEFAULT_MARKUP_IDENTIFIER;
                 break;
               case TIME_AGGREGATED_CPU_LIMIT:
                 cpuLimit = getNumericValue(row, field) / (timePeriod * 1024);
@@ -502,7 +508,9 @@ public class PerspectiveTimeSeriesHelper {
         double sharedCostForGivenTimestamp = sharedCostsPerTimestamp.getOrDefault(timestamp, 0.0D);
         switch (sharedCostBucket.getStrategy()) {
           case PROPORTIONAL:
-            sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            if (Double.compare(sharedCostParameters.getTotalCost(), 0.0D) != 0) {
+              sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            }
             break;
           case EQUAL:
             sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
@@ -600,6 +608,9 @@ public class PerspectiveTimeSeriesHelper {
   }
 
   private Reference getReference(String id, String name, String type) {
+    if (id.isEmpty()) {
+      id = name;
+    }
     return Reference.builder().id(id).name(name).type(type).build();
   }
 

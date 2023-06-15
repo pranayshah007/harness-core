@@ -87,7 +87,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isTrue();
 
     verify(k8sTaskHelperBase, times(1))
@@ -126,7 +126,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isTrue();
 
     verify(k8sTaskHelperBase, times(1))
@@ -172,7 +172,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isTrue();
 
     verify(k8sTaskHelperBase, times(1))
@@ -217,7 +217,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isFalse();
 
     verify(k8sTaskHelperBase, times(1))
@@ -262,7 +262,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isFalse();
 
     verify(k8sTaskHelperBase, times(1))
@@ -286,7 +286,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     config.setCustomWorkloads(Collections.emptyList());
 
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isTrue();
   }
 
@@ -308,7 +308,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     config.setCustomWorkloads(customWorkloads);
 
     boolean result = baseHandler.steadyStateCheck(
-        true, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
+        true, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false, true);
     assertThat(result).isTrue();
   }
 

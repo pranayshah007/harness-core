@@ -9,9 +9,12 @@ package io.harness.ngmigration.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.ImportMechanism;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,5 +23,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SERVICE")
 public class ServiceFilter extends Filter {
+  @Parameter(description = "ALL: To migrate all services. ID: TO migrate only specific services.")
+  @NotNull
+  private ImportMechanism importType;
   @Parameter(description = "All services from Application to import") private String appId;
+  @Parameter(description = "To be provided if mechanism is ID") private List<String> ids;
 }

@@ -12,6 +12,7 @@ import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBu
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetInstanceDetails;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
@@ -32,7 +33,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -54,11 +54,10 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
         projectParams, sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
     Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
         sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
-    Preconditions.checkArgument(serviceLevelObjectiveV2Service
-                                    .getEvaluationType(projectParams, Collections.singletonList(serviceLevelObjective))
-                                    .get(serviceLevelObjective)
-            == SLIEvaluationType.WINDOW,
-        "ServiceLevelObjective Should be of type Window.");
+    Preconditions.checkArgument(serviceLevelObjective.getSliEvaluationType() == SLIEvaluationType.WINDOW,
+        "ServiceLevelObjective Should be of type Window");
+    Preconditions.checkArgument(
+        serviceLevelObjective.getTarget().getType() == SLOTargetType.CALENDER, "SLO Target should be of type Calender");
     SLOErrorBudgetReset sloErrorBudgetReset = entityFromDTO(projectParams, sloErrorBudgetResetDTO,
         serviceLevelObjective
             .getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset()))
@@ -133,6 +132,11 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
     hPersistence.delete(getErrorBudgetResetQuery(projectParams, sloIdentifier));
   }
 
+  @Override
+  public void clearErrorBudgetResets(ProjectParams projectParams, List<String> sloIdentifiers) {
+    hPersistence.delete(getErrorBudgetResetQuery(projectParams, sloIdentifiers));
+  }
+
   private SLOErrorBudgetResetDTO dtoFromEntity(SLOErrorBudgetReset sloErrorBudgetReset) {
     return SLOErrorBudgetResetDTO.builder()
         .serviceLevelObjectiveIdentifier(sloErrorBudgetReset.getServiceLevelObjectiveIdentifier())
@@ -168,6 +172,16 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
         .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
         .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .filter(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier, sloIdentifier);
+  }
+
+  private Query<SLOErrorBudgetReset> getErrorBudgetResetQuery(
+      ProjectParams projectParams, List<String> sloIdentifiers) {
+    return hPersistence.createQuery(SLOErrorBudgetReset.class)
+        .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier)
+        .in(sloIdentifiers);
   }
 
   @VisibleForTesting

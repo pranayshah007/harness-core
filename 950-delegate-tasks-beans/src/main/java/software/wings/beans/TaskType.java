@@ -12,14 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
-import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -318,7 +311,7 @@ public enum TaskType {
   HELM_COLLECT_CHART(TaskGroup.HELM),
   SLACK(TaskGroup.SLACK),
   INITIALIZATION_PHASE(TaskGroup.CI),
-  CI_LE_STATUS(TaskGroup.CI, null, StepStatusTaskResponseData.class, false),
+  CI_LE_STATUS(TaskGroup.CI, false),
   EXECUTE_COMMAND(TaskGroup.CI),
   CI_CLEANUP(TaskGroup.CI),
   CI_EXECUTE_STEP(TaskGroup.CI),
@@ -381,9 +374,9 @@ public enum TaskType {
   RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
   NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
-  DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
-  DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
-  DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
+  DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, true),
+  DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, true),
+  DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, true),
   NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
   AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
@@ -470,8 +463,8 @@ public enum TaskType {
   ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
   ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task"),
 
-  BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO, "Bamboo Connection Task", true),
-  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task", true),
+  BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO, "Bamboo Connection Task"),
+  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task"),
   AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Prepare Rollback Task NG"),
   AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Rollback Task NG"),
   TERRAFORM_TASK_NG_V3(TaskGroup.TERRAFORM_NG, "Terraform Task NG V3"),
@@ -488,12 +481,17 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V6(TaskGroup.TERRAFORM_NG, "Terraform Task NG V6"),
   K8S_COMMAND_TASK_NG_V2(TaskGroup.K8S_NG, "K8s Task with service Hooks"),
   HELM_COMMAND_TASK_NG_V2(TaskGroup.HELM, "Helm Command Task with service Hooks"),
-  INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG");
+  INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG"),
+  COMMAND_TASK_NG_WITH_GIT_CONFIGS(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK(TaskGroup.K8S_NG, "K8s Task with Blue Green Stage Scale down step", false),
+  RANCHER_TEST_CONNECTION_TASK_NG(TaskGroup.K8S_NG, "Rancher connector test connection task for NG"),
+  RANCHER_LIST_CLUSTERS_TASK_NG(TaskGroup.K8S_NG, "Rancher list clusters task for NG"),
+  COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  NOTIFY_WEBHOOK(TaskGroup.NOTIFICATION),
+  SERVERLESS_ROLLBACK_V2_TASK(TaskGroup.SERVERLESS_NG, "Serverless Rollback V2 Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
-  private final Class<? extends TaskParameters> request;
-  private final Class<? extends DelegateResponseData> response;
   // Flag to denote whether the java based delegate supports this task or not
   // All unsupported tasks will be removed from the supported task types on initialization
   // of the java delegate.
@@ -502,31 +500,22 @@ public enum TaskType {
   TaskType(TaskGroup taskGroup) {
     this.taskGroup = taskGroup;
     this.displayName = null;
-    this.request = null;
-    this.response = null;
     this.unsupported = false;
   }
   TaskType(TaskGroup taskGroup, String displayName) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
-    this.request = null;
-    this.response = null;
     this.unsupported = false;
   }
 
   TaskType(TaskGroup taskGroup, String displayName, boolean unsupported) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
-    this.request = null;
-    this.response = null;
     this.unsupported = unsupported;
   }
 
-  TaskType(TaskGroup taskGroup, Class<? extends TaskParameters> request, Class<? extends DelegateResponseData> response,
-      boolean unsupported) {
+  TaskType(TaskGroup taskGroup, boolean unsupported) {
     this.taskGroup = taskGroup;
-    this.request = request;
-    this.response = response;
     this.displayName = null;
     this.unsupported = unsupported;
   }
@@ -536,12 +525,6 @@ public enum TaskType {
   }
   public String getDisplayName() {
     return displayName != null ? displayName : name();
-  }
-  public Class<? extends TaskParameters> getRequest() {
-    return this.request;
-  }
-  public Class<? extends DelegateResponseData> getResponse() {
-    return this.response;
   }
   public boolean isUnsupported() {
     return this.unsupported;

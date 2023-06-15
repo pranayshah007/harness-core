@@ -63,7 +63,7 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
     return mongoTemplate.findAllAndRemove(query, AppConfigEntity.class);
   }
 
-  private Criteria getCriteriaForConfig(String accountIdentifier, String configId, ConfigType configType) {
+  protected Criteria getCriteriaForConfig(String accountIdentifier, String configId, ConfigType configType) {
     return Criteria.where(AppConfigEntityKeys.accountIdentifier)
         .is(accountIdentifier)
         .and(AppConfigEntityKeys.configId)

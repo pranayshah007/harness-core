@@ -112,6 +112,7 @@ import io.harness.pms.event.PMSEventConsumerService;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumer;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumerSnapshot;
 import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
+import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamConsumer;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.inputset.gitsync.InputSetEntityGitSyncHelper;
@@ -170,6 +171,7 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.springdata.HMongoTemplate;
+import io.harness.steps.PodCleanupUpdateEventHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
@@ -515,6 +517,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(PipelineExecutionSummaryFailureInfoUpdateHandler.class)));
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(NodeExecutionOutboxHandler.class)));
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
+        injector.getInstance(Key.get(PodCleanupUpdateEventHandler.class)));
 
     // NodeExecutionDeleteObserver
     nodeExecutionService.getNodeDeleteObserverSubject().register(
@@ -709,9 +713,9 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     aliases.put(OrchestrationConstants.STAGE_SUCCESS,
         "<+stage.currentStatus> == \"SUCCEEDED\" || <+stage.currentStatus> == \"IGNORE_FAILED\"");
     aliases.put(OrchestrationConstants.STAGE_FAILURE,
-        "<+stage.currentStatus> == \"FAILED\" || <+stage.currentStatus> == \"ERRORED\" || <+stage.currentStatus> == \"EXPIRED\"");
+        "<+stage.currentStatus> == \"FAILED\" || <+stage.currentStatus> == \"ERRORED\" || <+stage.currentStatus> == \"EXPIRED\" || <+stage.currentStatus> == \"APPROVAL_REJECTED\"");
     aliases.put(OrchestrationConstants.PIPELINE_FAILURE,
-        "<+pipeline.currentStatus> == \"FAILED\" || <+pipeline.currentStatus> == \"ERRORED\" || <+pipeline.currentStatus> == \"EXPIRED\"");
+        "<+pipeline.currentStatus> == \"FAILED\" || <+pipeline.currentStatus> == \"ERRORED\" || <+pipeline.currentStatus> == \"EXPIRED\" || <+pipeline.currentStatus> == \"APPROVAL_REJECTED\"");
     aliases.put(OrchestrationConstants.PIPELINE_SUCCESS,
         "<+pipeline.currentStatus> == \"SUCCEEDED\" || <+pipeline.currentStatus> == \"IGNORE_FAILED\"");
     aliases.put(OrchestrationConstants.ROLLBACK_MODE_EXECUTION,
@@ -789,6 +793,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getInitiateNode().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(PollingEventStreamConsumer.class),
         pipelineServiceConsumersConfig.getPollingEvent().getThreads());
+    pipelineEventConsumerController.register(injector.getInstance(TriggerExecutionEventStreamConsumer.class),
+        pipelineServiceConsumersConfig.getTriggerExecutionEvent().getThreads());
   }
 
   /**-----------------------------Git sync --------------------------------------*/

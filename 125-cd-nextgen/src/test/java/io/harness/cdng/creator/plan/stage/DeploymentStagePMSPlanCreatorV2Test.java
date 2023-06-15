@@ -262,7 +262,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                     .build();
     String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
     FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", null, null, yaml, FreezeType.GLOBAL);
+        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", "orgId", "projId", yaml, FreezeType.GLOBAL);
     return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 
@@ -476,9 +476,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   //  @Parameters(method = "getDeploymentStageConfigForMultiSvcMultiEvs")
   //  public void testCreatePlanForChildrenNodesWithFilters_0(DeploymentStageNode node) {
   //    when(environmentInfraFilterHelper.areFiltersPresent(any())).thenReturn(true);
-  //
-  //    doReturn(true).when(featureFlagHelperService).isEnabled("accountId",
-  //    FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
   //
   //    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
   //                                          .onFailure(OnFailureConfig.builder()

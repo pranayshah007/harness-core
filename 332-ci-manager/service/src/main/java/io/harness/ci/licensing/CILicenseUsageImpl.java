@@ -7,6 +7,7 @@
 
 package io.harness.licensing;
 
+import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
 import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -54,6 +55,8 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Singleton
 @Slf4j
@@ -66,6 +69,13 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
   private static final String COLUMN_NAME_LAST_BUILD = "buildtime";
   private static final String COLUMN_NAME_TOTAL = "total";
   private static final String QUERY_END = ";";
+  private static final String SORT_DEVELOPER_ID = "identifier";
+  private static final String SORT_ORG_ID = "orgIdentifier";
+  private static final String SORT_PROJECT_ID = "projectIdentifier";
+  private static final String SORT_LAST_BUILD = "lastBuild";
+  private static final String ASCENDING = "ASC";
+  private static final String DECENDING = "DESC";
+
   private static final String QUERY_COLUMN_WITH_TOTAL =
       String.format("select %s, %s, %s, max(startts) as %s, count(*) over () as %s", COLUMN_NAME_AUTHOR_ID,
           COLUMN_NAME_PROJECT_ID, COLUMN_NAME_ORG_ID, COLUMN_NAME_LAST_BUILD, COLUMN_NAME_TOTAL);
@@ -77,10 +87,11 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
           + " where accountid=? and moduleinfo_type ='CI'"
           + " and %s is not null"
           + " and moduleinfo_is_private=true"
-          + " and trigger_type='%s'"
+          + " and (trigger_type='%s' OR (trigger_type='%s' AND user_source='GIT'))"
           + " and startts<=? and startts>=?",
-      COLUMN_NAME_AUTHOR_ID, WEBHOOK);
+      COLUMN_NAME_AUTHOR_ID, WEBHOOK, MANUAL);
   private static final String DEVELOPER_QUERY_BODY = QUERY_COLUMN_WITH_TOTAL + QUERY_BODY;
+  private static final String ORDER_BY_CLAUSE = " order by %s";
   private static final String PAGER_OFFSET = " offset ? rows fetch next ? rows only";
   private static final String GROUP_BY_QUERY =
       String.format(" group by %s, %s, %s", COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_PROJECT_ID, COLUMN_NAME_ORG_ID);
@@ -96,9 +107,18 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
           + " and moduleinfo_type ='CI'"
           + " and %s is not null"
           + " and moduleinfo_is_private=true"
-          + " and trigger_type='" + WEBHOOK + "'"
+          + " and (trigger_type='%s' OR (trigger_type='%s' AND user_source='GIT'))"
           + " and startts<=? and startts>=?;",
-      COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_AUTHOR_ID);
+      COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_AUTHOR_ID, WEBHOOK, MANUAL);
+
+  private static final Map<String, String> sortToColumnMap = new HashMap<>() {
+    {
+      put(SORT_DEVELOPER_ID, COLUMN_NAME_AUTHOR_ID);
+      put(SORT_PROJECT_ID, COLUMN_NAME_PROJECT_ID);
+      put(SORT_ORG_ID, COLUMN_NAME_ORG_ID);
+      put(SORT_LAST_BUILD, COLUMN_NAME_LAST_BUILD);
+    }
+  };
 
   @Inject TimeScaleDBService timeScaleDBService;
 
@@ -152,12 +172,22 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
     validateInput(accountIdentifier, module, currentTsInMs);
     int pageNumber = 1;
     int pageSize = 30;
-    if (usageRequestParams.getPageRequest() != null) {
-      pageNumber = usageRequestParams.getPageRequest().getPageNumber();
+    String sortQuery = null;
+    if (usageRequestParams != null && usageRequestParams.getPageRequest() != null) {
+      Pageable pageable = usageRequestParams.getPageRequest();
+      pageNumber = pageable.getPageNumber();
       if (pageNumber == 0) {
         pageNumber = 1;
       }
-      pageSize = usageRequestParams.getPageRequest().getPageSize();
+      pageSize = pageable.getPageSize();
+      List<String> orderByFields = new ArrayList<>();
+      for (Map.Entry<String, String> entry : sortToColumnMap.entrySet()) {
+        Sort.Order sort = pageable.getSort().getOrderFor(entry.getKey());
+        if (sort != null) {
+          orderByFields.add(entry.getValue() + " " + (sort.isAscending() ? ASCENDING : DECENDING));
+        }
+      }
+      sortQuery = format(ORDER_BY_CLAUSE, String.join(", ", orderByFields));
     }
     String query = DEVELOPER_QUERY_BODY;
     CIDevelopersFilterParams filterParams =
@@ -177,10 +207,14 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
         query = query + PROJECT_ID_CONDITION;
       }
     }
+    String groupAndOrder = GROUP_BY_QUERY;
+    if (sortQuery != null) {
+      groupAndOrder = groupAndOrder + sortQuery;
+    }
     if (usageRequestParams.getPageRequest() != null && usageRequestParams.getPageRequest().isPaged()) {
-      query = query + GROUP_BY_QUERY + PAGER_OFFSET + QUERY_END;
+      query = query + groupAndOrder + PAGER_OFFSET + QUERY_END;
     } else {
-      query = query + GROUP_BY_QUERY + QUERY_END;
+      query = query + groupAndOrder + QUERY_END;
     }
     ResultSet resultSet = null;
     try (Connection connection = timeScaleDBService.getDBConnection();

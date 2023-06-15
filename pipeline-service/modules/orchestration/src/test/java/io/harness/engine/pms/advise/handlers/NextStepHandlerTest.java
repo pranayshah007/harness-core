@@ -147,9 +147,7 @@ public class NextStepHandlerTest extends CategoryTest {
                             .name("nodeName")
                             .stepType(StepType.newBuilder().build())
                             .build();
-    // node already of identityType. Same will be returned.
-    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build(), NORMAL))
-        .isEqualTo(identityPlanNode);
+
     // NodeExecution.parentId is empty. Same node will be returned.
     assertThat(nextStepHandler.createIdentityNodeIfRequired(planNode,
                    NodeExecution.builder()
@@ -187,6 +185,12 @@ public class NextStepHandlerTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
+
+    doReturn(
+        NodeExecution.builder().planNode(IdentityPlanNode.builder().build()).uuid("nextId").oldRetry(false).build())
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded(eq("nextId"), any());
+
     // Since currentNode is of type planNode and parentNodeExecution.nodeType is identityPlanNode. So identityNode will
     // be created for current node.
     Node savedIdentityNode = nextStepHandler.createIdentityNodeIfRequired(planNode,

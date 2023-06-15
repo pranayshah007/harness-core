@@ -151,7 +151,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
                 ExecutionMetadata.newBuilder()
                     .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
                     .addPostExecutionRollbackInfo(PostExecutionRollbackInfo.newBuilder()
-                                                      .setPostExecutionRollbackStageId(child1Id)
+                                                      .setPostExecutionRollbackStageId(planNodeId)
                                                       .setRollbackStageStrategyMetadata(rollbackSTrategyMetadata)
                                                       .build())
                     .build())

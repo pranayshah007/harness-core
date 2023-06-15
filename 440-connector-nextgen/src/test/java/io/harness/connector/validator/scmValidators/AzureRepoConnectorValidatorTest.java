@@ -44,6 +44,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -113,15 +114,18 @@ public class AzureRepoConnectorValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void validateTestViaDelegate() {
     AzureRepoConnectorDTO azureRepoConnectorDTO = getConnector(true);
+    final String taskId = "xxxxxx";
 
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(GitCommandExecutionResponse.builder()
-                        .connectorValidationResult(
-                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of(taskId,
+            GitCommandExecutionResponse.builder()
+                .connectorValidationResult(
+                    ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                .build()));
 
     ConnectorValidationResult validationResult = azureRepoConnectorValidator.validate(
         azureRepoConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
+    assertThat(validationResult.getTaskId()).isEqualTo(taskId);
     assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
   }
 

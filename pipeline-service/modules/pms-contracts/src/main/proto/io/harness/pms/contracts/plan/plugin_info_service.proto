@@ -14,7 +14,33 @@ import "io/harness/pms/contracts/ambiance/ambiance.proto";
 import "google/protobuf/wrappers.proto";
 
 service PluginInfoProviderService {
-  rpc getPluginInfos(PluginCreationRequest) returns (PluginCreationResponse);
+  rpc getPluginInfosList(PluginCreationBatchRequest) returns (PluginCreationBatchResponse);
+}
+
+message PluginCreationBatchRequest {
+  repeated PluginCreationRequest pluginCreationRequest = 1;
+  PortDetails usedPortDetails = 2;
+  io.harness.pms.contracts.ambiance.Ambiance ambiance = 3;
+}
+
+message PluginCreationBatchResponse {
+  map<string, PluginCreationResponseList> requestIdToResponse = 1;
+}
+
+message PluginCreationResponseList {
+  repeated PluginCreationResponseWrapper response = 1;
+  bool isParallel = 2;
+}
+
+message PluginCreationResponseWrapper {
+  StepInfoProto stepInfo = 1;
+  PluginCreationResponse response = 2;
+}
+
+message StepInfoProto {
+  string name = 1;
+  string identifier = 2;
+  string uuid = 3;
 }
 
 message PluginCreationRequest {
@@ -24,6 +50,7 @@ message PluginCreationRequest {
   string accountId = 4;
   string osType = 5;
   PortDetails usedPortDetails = 6;
+  string requestId = 7;
 }
 
 message PluginCreationResponse {
@@ -44,6 +71,7 @@ message PluginDetails {
   PortDetails totalPortUsedDetails = 6;
   repeated int32 portUsed = 7;
   repeated SecretVariable secretVariable = 8;
+  repeated ConnectorDetails connectors_for_step = 9;
 }
 
 message PluginContainerResources {
@@ -69,6 +97,7 @@ message ImageInformation {
 
 message ConnectorDetails {
   string connectorRef = 1;
+  map<string, string> connector_secret_env_map = 2;
 }
 
 message PortDetails {

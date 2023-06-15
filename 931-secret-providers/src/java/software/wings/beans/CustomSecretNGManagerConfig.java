@@ -30,7 +30,6 @@ import io.harness.security.encryption.SecretManagerType;
 import com.google.common.collect.Lists;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -109,15 +108,11 @@ public class CustomSecretNGManagerConfig extends SecretManagerConfig {
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    if (onDelegate) {
-      List<ExecutionCapability> executionCapabilities = new ArrayList<>();
-      if (isNotEmpty(getDelegateSelectors())) {
-        executionCapabilities.add(
-            SelectorCapability.builder().selectors(getDelegateSelectors()).selectorOrigin(TASK_SELECTORS).build());
-      }
-      return executionCapabilities;
+    List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+    if (isNotEmpty(getDelegateSelectors())) {
+      executionCapabilities.add(
+          SelectorCapability.builder().selectors(getDelegateSelectors()).selectorOrigin(TASK_SELECTORS).build());
     }
-    // TODO: Get the right execution capability
-    return Collections.emptyList();
+    return executionCapabilities;
   }
 }

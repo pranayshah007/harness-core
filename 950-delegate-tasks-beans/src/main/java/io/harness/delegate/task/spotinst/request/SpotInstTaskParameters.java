@@ -30,6 +30,7 @@ public class SpotInstTaskParameters implements TaskParameters {
   private Integer timeoutIntervalInMin;
   @NotEmpty private SpotInstTaskType commandType;
   @NotEmpty private String awsRegion;
+  private boolean timeoutSupported;
 
   public enum SpotInstTaskType {
     SPOT_INST_SETUP,

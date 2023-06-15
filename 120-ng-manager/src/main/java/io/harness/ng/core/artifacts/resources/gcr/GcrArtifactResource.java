@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
@@ -127,8 +128,9 @@ public class GcrArtifactResource {
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets gcr last successful build", nickname = "getLastSuccessfulBuildForGcr")
-  public ResponseDTO<GcrBuildDetailsDTO> getLastSuccessfulBuild(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("connectorRef") String gcrConnectorIdentifier,
+  public ResponseDTO<GcrBuildDetailsDTO> getLastSuccessfulBuild(
+      @NotNull @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @NotNull @QueryParam(NGArtifactConstants.CONNECTOR_REF) String gcrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, GcrRequestDTO requestDTO) {
@@ -136,6 +138,26 @@ public class GcrArtifactResource {
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     GcrBuildDetailsDTO buildDetails =
         gcrResourceService.getSuccessfulBuild(connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(
+      value = "Gets gcr last successful build with Yaml expression", nickname = "getLastSuccessfulBuildForGcrV2")
+  public ResponseDTO<GcrBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String gcrConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull GcrRequestDTO gcrRequestDTO) {
+    GcrBuildDetailsDTO buildDetails =
+        artifactResourceUtils.getSuccessfulBuildV2GCR(imagePath, gcrConnectorIdentifier, accountId, orgIdentifier,
+            projectIdentifier, fqnPath, serviceRef, pipelineIdentifier, gitEntityBasicInfo, gcrRequestDTO);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -178,8 +200,8 @@ public class GcrArtifactResource {
       @NotNull @QueryParam("registryHostname") String registryHostname,
       @NotNull @QueryParam("connectorRef") String gcrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, GcrRequestDTO requestDTO) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, GcrRequestDTO requestDTO) {
     if (NGExpressionUtils.isRuntimeOrExpressionField(gcrConnectorIdentifier)) {
       throw new InvalidRequestException("ConnectorRef is an expression/runtime input, please send fixed value.");
     }

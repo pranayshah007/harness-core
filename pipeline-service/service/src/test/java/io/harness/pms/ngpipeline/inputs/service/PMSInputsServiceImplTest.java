@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.ngpipeline.inputs.beans.entity.InputEntity;
-import io.harness.pms.ngpipeline.inputs.beans.entity.RepositoryInput;
+import io.harness.pms.ngpipeline.inputs.beans.entity.OptionsInput;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -71,23 +71,22 @@ public class PMSInputsServiceImplTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  public void testGetRepositoryInput() throws JsonProcessingException {
-    Optional<RepositoryInput> optionalRepositoryEntityMap = pmsInputsService.getRepository(pipelineYaml);
-    assertThat(optionalRepositoryEntityMap.isEmpty()).isFalse();
-    RepositoryInput repositoryInput = optionalRepositoryEntityMap.get();
-    assertThat(repositoryInput.getReference()).isNotNull();
+  public void testGetOptionsInput() throws JsonProcessingException {
+    Optional<OptionsInput> optionalOptionsInput = pmsInputsService.getOptions(pipelineYaml);
+    assertThat(optionalOptionsInput.isEmpty()).isFalse();
+    OptionsInput optionsInput = optionalOptionsInput.get();
+    assertThat(optionsInput.getClone()).isNotNull();
     String expectedResponse = readFile("get-inputs-expected-response.json");
     JsonNode jsonNode = objectMapper.readTree(expectedResponse);
-    assertThat(objectMapper.readTree(objectMapper.writeValueAsString(repositoryInput)))
-        .isEqualTo(jsonNode.get("repository"));
+    assertThat(objectMapper.readTree(objectMapper.writeValueAsString(optionsInput))).isEqualTo(jsonNode.get("options"));
   }
 
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  public void testGetRepositoryInputIfCloneDisabled() {
+  public void testGetOptionsInputIfCloneDisabled() {
     String yaml = readFile("pipeline-v1-disabled-clone.yaml");
-    Optional<RepositoryInput> optionalRepositoryEntityMap = pmsInputsService.getRepository(yaml);
-    assertThat(optionalRepositoryEntityMap.isEmpty()).isTrue();
+    Optional<OptionsInput> optionalOptionsInput = pmsInputsService.getOptions(yaml);
+    assertThat(optionalOptionsInput.isEmpty()).isTrue();
   }
 }

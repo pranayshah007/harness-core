@@ -8,14 +8,11 @@
 package io.harness.delegate.cf.apprenaming;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.pcf.PcfUtils.encodeColor;
 
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
-import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
@@ -109,40 +106,14 @@ public interface AppRenamingOperator {
   }
 
   default void renameApp(ApplicationSummary app, PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper,
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, @NotNull String newName, Logger log) {
-    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(
-                String.format("Failed to rename application - [%s]", encodeColor(cfRequestConfig.getApplicationName())))
-            .finalErrorMessage(String.format("Failed to rename application - [%s] even after retrying ",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .retry(5)
-            .throwError(true)
-            .build();
-
-    retryAbleTaskExecutor.execute(
-        ()
-            -> pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName),
-        executionLogCallback, log, retryPolicy);
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, @NotNull String newName, Logger log)
+      throws PivotalClientApiException {
+    pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName);
   }
 
   default void renameApp(ApplicationSummary app, PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, @NotNull String newName,
-      @NotNull String oldName, Logger log) {
-    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(String.format("Failed to rename application - [%s]", encodeColor(oldName)))
-            .finalErrorMessage(
-                String.format("Failed to rename application - [%s] even after retrying ", encodeColor(oldName)))
-            .retry(5)
-            .throwError(true)
-            .build();
-
-    retryAbleTaskExecutor.execute(
-        ()
-            -> pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName, oldName),
-        executionLogCallback, log, retryPolicy);
+      @NotNull String oldName, Logger log) throws PivotalClientApiException {
+    pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName, oldName);
   }
 }

@@ -73,6 +73,10 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
    */
   String image;
   /**
+   * imagePath
+   */
+  String imagePath;
+  /**
    * imagePullSecret for artifactory credentials base encoded.
    */
   String imagePullSecret;
@@ -82,6 +86,8 @@ public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
   String dockerConfigJsonSecret;
 
   String registryHostname;
+
+  String digest;
 
   Map<String, String> metadata;
 

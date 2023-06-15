@@ -148,11 +148,9 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
       rollingRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
-      Map<String, String> k8sCommandFlag =
-          k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
-      rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
-    }
+    Map<String, String> k8sCommandFlag =
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
+    rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sRollingDeployRequest k8sRollingDeployRequest = rollingRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     TaskChainResponse response =

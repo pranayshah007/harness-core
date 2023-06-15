@@ -7,6 +7,7 @@
 
 package software.wings.delegatetasks.buildsource;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.HARSH;
 
@@ -256,6 +257,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
+    when(query.limit(NO_LIMIT)).thenReturn(query);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -273,6 +275,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
+    when(query.limit(NO_LIMIT)).thenReturn(query);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -290,6 +293,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
+    when(query.limit(NO_LIMIT)).thenReturn(query);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -307,6 +311,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
+    when(query.limit(NO_LIMIT)).thenReturn(query);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -367,6 +372,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
     buildSourceCleanupCallback.setArtifactStreamId(ARTIFACT_STREAM_ID_8);
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
+    when(query.limit(NO_LIMIT)).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);

@@ -49,8 +49,8 @@ public interface NGEncryptedDataService {
   DecryptedSecretValue decryptSecret(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
-  boolean validateSecretRef(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String secretManagerId, String secretRefPath);
+  boolean validateSecretRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO);
 
   boolean isSecretManagerReadOnly(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretManagerId);

@@ -7,10 +7,28 @@
 
 package io.harness.cvng.core.utils;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
+
+import java.util.Objects;
+
 public class ErrorMessageUtils {
   private ErrorMessageUtils() {}
 
   public static String generateErrorMessageFromParam(String paramName) {
     return paramName + " should not be null";
+  }
+
+  public static String generateErrorMessageFromProjectParam(ProjectParams projectParams) {
+    String errorText = "";
+    if (Objects.nonNull(projectParams.getAccountIdentifier())) {
+      errorText += String.format("accountId %s", projectParams.getAccountIdentifier());
+    }
+    if (Objects.nonNull(projectParams.getOrgIdentifier())) {
+      errorText += String.format(", orgIdentifier %s", projectParams.getOrgIdentifier());
+    }
+    if (Objects.nonNull(projectParams.getProjectIdentifier())) {
+      errorText += String.format(" and projectIdentifier %s", projectParams.getProjectIdentifier());
+    }
+    return errorText;
   }
 }

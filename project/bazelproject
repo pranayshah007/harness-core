@@ -36,3 +36,4 @@ import_run_configurations:
   project/run-configurations/DashboardApplication.xml
   project/run-configurations/MigratorApp.xml
   project/run-configurations/IDPService.xml
+  project/run-configurations/IACMManagerApplication.xml

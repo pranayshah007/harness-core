@@ -19,8 +19,11 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -50,10 +53,18 @@ public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
         k8sSwapServiceSelectorsRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(),
         logCallback);
 
+    boolean useDeclarativeRollback = k8sSwapServiceSelectorsRequest.isUseDeclarativeRollback();
+    K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
+    IK8sReleaseHistory releaseHistory =
+        releaseHandler.getReleaseHistory(kubernetesConfig, k8sSwapServiceSelectorsRequest.getReleaseName());
+    IK8sRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+
     k8sSwapServiceSelectorsBaseHandler.swapServiceSelectors(kubernetesConfig,
         k8sSwapServiceSelectorsRequest.getService1(), k8sSwapServiceSelectorsRequest.getService2(), logCallback,
         isErrorFrameworkSupported());
-
+    k8sSwapServiceSelectorsBaseHandler.updateReleaseHistory(release);
+    k8sTaskHelperBase.saveRelease(useDeclarativeRollback, false, kubernetesConfig, release, releaseHistory,
+        k8sSwapServiceSelectorsRequest.getReleaseName());
     return K8sDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
   }
 }

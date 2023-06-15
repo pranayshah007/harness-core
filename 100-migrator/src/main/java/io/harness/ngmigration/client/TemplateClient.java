@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.template.beans.TemplateWrapperResponseDTO;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 
 import okhttp3.RequestBody;
 import retrofit2.Call;

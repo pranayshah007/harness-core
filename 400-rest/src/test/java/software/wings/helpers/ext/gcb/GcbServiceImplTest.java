@@ -86,7 +86,7 @@ public class GcbServiceImplTest extends CategoryTest {
   private final GcbServiceImpl gcbService = spy(new GcbServiceImpl(gcpHelperService, encryptionService));
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws IOException, InterruptedException {
     doReturn(gcbRestClient).when(gcbService).getRestClient(GcbRestClient.class, GCB_BASE_URL);
     doReturn(gcsRestClient).when(gcbService).getRestClient(GcsRestClient.class, GCS_BASE_URL);
     doReturn(VALID_AUTH_TOKEN).when(gcbService).getBasicAuthHeader(any(), any());

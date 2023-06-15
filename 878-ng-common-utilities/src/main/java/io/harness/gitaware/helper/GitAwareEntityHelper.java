@@ -7,11 +7,12 @@
 
 package io.harness.gitaware.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
@@ -38,8 +39,10 @@ import groovy.lang.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.log4j.Log4j;
 
 @OwnedBy(HarnessTeam.PL)
+@Log4j
 @Singleton
 public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
@@ -57,6 +60,11 @@ public class GitAwareEntityHelper {
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+    String commitId =
+        isNullOrDefault(gitContextRequestParams.getCommitId()) ? "" : gitContextRequestParams.getCommitId();
+
+    GitAwareContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(branch);
+
     String filePath = gitContextRequestParams.getFilePath();
     if (isNullOrDefault(filePath)) {
       throw new InvalidRequestException("No file path provided.");
@@ -66,13 +74,15 @@ public class GitAwareEntityHelper {
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
     EntityType entityType = gitContextRequestParams.getEntityType();
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
-    ScmGetFileResponse scmGetFileResponse =
-        scmGitSyncHelper.getFileByBranch(Scope.builder()
-                                             .accountIdentifier(scope.getAccountIdentifier())
-                                             .orgIdentifier(scope.getOrgIdentifier())
-                                             .projectIdentifier(scope.getProjectIdentifier())
-                                             .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
+
+    log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
+    ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
+        Scope.builder()
+            .accountIdentifier(scope.getAccountIdentifier())
+            .orgIdentifier(scope.getOrgIdentifier())
+            .projectIdentifier(scope.getProjectIdentifier())
+            .build(),
+        repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
@@ -100,6 +110,8 @@ public class GitAwareEntityHelper {
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
     String branch =
         isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+    String commitId =
+        isNullOrDefault(gitContextRequestParams.getCommitId()) ? "" : gitContextRequestParams.getCommitId();
     String filePath = gitContextRequestParams.getFilePath();
     if (isNullOrDefault(filePath)) {
       throw new InvalidRequestException("No file path provided.");
@@ -116,7 +128,7 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
+            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }
@@ -242,6 +254,10 @@ public class GitAwareEntityHelper {
       String branchName = isNullOrDefault(getFileGitContextRequestParams.getBranchName())
           ? ""
           : getFileGitContextRequestParams.getBranchName();
+
+      String commitId = isNullOrDefault(getFileGitContextRequestParams.getCommitId())
+          ? ""
+          : getFileGitContextRequestParams.getCommitId();
       String filePath = getFileGitContextRequestParams.getFilePath();
       if (isNullOrDefault(filePath)) {
         throw new InvalidRequestException("No file path provided.");
@@ -252,7 +268,7 @@ public class GitAwareEntityHelper {
       EntityType entityType = getFileGitContextRequestParams.getEntityType();
       boolean getOnlyFileContent = getFileGitContextRequestParams.isGetOnlyFileContent();
       contextMap = GitSyncLogContextHelper.setContextMap(
-          scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
+          scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
 
       ScmGetFileRequest scmGetFileRequest = ScmGetFileRequest.builder()
                                                 .scope(scope)
@@ -286,7 +302,7 @@ public class GitAwareEntityHelper {
   }
 
   private boolean isNullOrDefault(String val) {
-    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+    return isEmpty(val) || val.equals(DEFAULT);
   }
 
   public String getRepoUrl(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -308,6 +324,10 @@ public class GitAwareEntityHelper {
 
   public String getWorkingBranch(String repoName) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    // If there's static branch present for any template, then it takes highest precedence
+    if (GitAwareContextHelper.isTransientBranchSet()) {
+      return gitEntityInfo.getTransientBranch();
+    }
     String branchName = gitEntityInfo.getBranch();
     if (gitEntityInfo.isNewBranch()) {
       branchName = gitEntityInfo.getBaseBranch();

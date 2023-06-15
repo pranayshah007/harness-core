@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 public class ApprovalFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
   public ApprovalFunctor(StepOutput stepOutput) {
+    super(stepOutput);
     this.stepOutput = stepOutput;
   }
 
@@ -42,16 +43,9 @@ public class ApprovalFunctor extends StepExpressionFunctor {
     }
 
     if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
-      return String.format("<+execution.steps.%s.steps.%s.output.approvalActivities[0].%s>",
-          stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), newKey);
+      return String.format("%s.output.approvalActivities[0].%s>", getStepFQN(), newKey);
     }
 
-    return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.output.approvalActivities[0].%s>",
-        stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), newKey);
-  }
-
-  @Override
-  public String getCgExpression() {
-    return stepOutput.getExpression();
+    return String.format("%s.output.approvalActivities[0].%s>", getStageFQN(), newKey);
   }
 }

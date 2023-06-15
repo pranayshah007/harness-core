@@ -18,6 +18,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/exception/exceptionmanager/exceptionhandler:module",
         "//980-commons/src/main/java/io/harness/exception/runtime:module",
+        "//980-commons/src/main/java/io/harness/exception/runtime/utils:module",
         "//980-commons/src/main/java/io/harness/k8s:module",
         "//980-commons/src/main/java/io/harness/reflection:module",
         "@maven//:com_google_guava_guava",

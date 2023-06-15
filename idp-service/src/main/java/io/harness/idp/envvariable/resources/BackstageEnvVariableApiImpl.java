@@ -7,6 +7,11 @@
 
 package io.harness.idp.envvariable.resources;
 
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
@@ -53,11 +58,12 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
-  public Response createBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response createBackstageEnvVariables(
+      @Valid BackstageEnvVariableBatchRequest body, @AccountIdentifier String harnessAccount) {
     List<BackstageEnvVariable> responseSecrets;
     try {
-      responseSecrets = backstageEnvVariableService.createMulti(body.getEnvVariables(), harnessAccount);
+      responseSecrets = backstageEnvVariableService.createOrUpdate(body.getEnvVariables(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not create all environment variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -121,9 +127,8 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   @Override
   public Response syncBackstageEnvVariables(String harnessAccount) {
     idpCommonService.checkUserAuthorization();
-    List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(harnessAccount);
     try {
-      backstageEnvVariableService.sync(secrets, harnessAccount);
+      backstageEnvVariableService.findAndSync(harnessAccount);
     } catch (Exception e) {
       log.error("Could not sync all backstage env variables", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -155,7 +160,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
     idpCommonService.checkUserAuthorization();
     try {
       List<BackstageEnvVariable> responseVariables =
-          backstageEnvVariableService.updateMulti(body.getEnvVariables(), accountIdentifier);
+          backstageEnvVariableService.createOrUpdate(body.getEnvVariables(), accountIdentifier);
       return Response.status(Response.Status.OK)
           .entity(BackstageEnvVariableMapper.toResponseList(responseVariables))
           .build();

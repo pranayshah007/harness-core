@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
@@ -45,9 +46,9 @@ import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -169,6 +170,34 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCheckIfSecretManagerUsedIsHarnessManagedForSSHSecret() {
+    SecretDTOV2 secretDTO = SecretDTOV2.builder()
+                                .name(randomAlphabetic(10))
+                                .identifier(randomAlphabetic(10))
+                                .type(SecretType.SSHKey)
+                                .spec(SSHKeySpecDTO.builder().auth(SSHAuthDTO.builder().build()).build())
+                                .build();
+    boolean response = secretCrudServiceSpy.checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, secretDTO);
+    assertThat(response).isFalse();
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCheckIfSecretManagerUsedIsHarnessManagedForWinRmSecret() {
+    SecretDTOV2 secretDTO = SecretDTOV2.builder()
+                                .name(randomAlphabetic(10))
+                                .identifier(randomAlphabetic(10))
+                                .type(SecretType.WinRmCredentials)
+                                .spec(WinRmCredentialsSpecDTO.builder().auth(WinRmAuthDTO.builder().build()).build())
+                                .build();
+    boolean response = secretCrudServiceSpy.checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, secretDTO);
+    assertThat(response).isFalse();
+  }
+
+  @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
   public void testCreateSecretWhenDefaultSMIsDisabled() throws IOException {
@@ -185,7 +214,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
                                   .build();
     doReturn(true).when(secretCrudService).checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, secretDTOV2);
     assertThatThrownBy(() -> secretCrudService.create(accountIdentifier, secretDTOV2))
-        .isInstanceOf(SecretManagementException.class);
+        .isInstanceOf(InvalidRequestException.class);
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -233,6 +262,28 @@ public class SecretCrudServiceImplTest extends CategoryTest {
 
     verify(encryptedDataService).createSecretText(any(), any());
     verify(ngSecretServiceV2).create(any(), any(), eq(false));
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCreateSshWithExistingIdentifierShouldNotCreateSetupUsage() {
+    String exMessage = "Duplicate identifier, please try again with a new identifier";
+    when(ngSecretServiceV2.create(any(), any(), eq(false))).thenThrow(new DuplicateFieldException(exMessage));
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.SSHKey)
+                                  .spec(SSHKeySpecDTO.builder().auth(SSHAuthDTO.builder().build()).build())
+                                  .identifier(randomAlphabetic(10))
+                                  .name(randomAlphabetic(10))
+                                  .build();
+    assertThatThrownBy(() -> secretCrudService.create(accountIdentifier, secretDTOV2))
+        .isInstanceOf(DuplicateFieldException.class)
+        .hasMessage(exMessage);
+
+    verify(ngSecretServiceV2).create(any(), any(), eq(false));
+    verify(secretEntityReferenceHelper, times(0))
+        .createSetupUsageForSecretManager(anyString(), any(), any(), anyString(), anyString(), any());
+    verify(secretEntityReferenceHelper, times(0)).createSetupUsageForSecret(anyString(), any());
   }
 
   @Test
@@ -548,7 +599,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteEnabled() {
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
@@ -573,40 +623,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFOFF() {
-    doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(false).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
-    try {
-      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testDelete_withForceDeleteTrue_forceDeleteFFON_settingFFOFF_settingsEnabled() {
-    doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(false).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
-    try {
-      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage())
-          .isEqualTo(
-              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
-    }
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteFFON_settingFFON_settingDisabled() {
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
     try {
       secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
@@ -622,7 +640,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFON_settingsDisabled() {
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
     try {
       secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
@@ -638,7 +655,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFON_settingsEnabled() {
     doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
-    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
     doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
     try {
       secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);

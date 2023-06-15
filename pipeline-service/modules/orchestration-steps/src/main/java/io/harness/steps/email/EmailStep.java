@@ -22,6 +22,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -36,6 +37,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
@@ -59,9 +61,12 @@ import retrofit2.Response;
 public class EmailStep extends PipelineSyncExecutable {
   @Inject private NotificationClient notificationClient;
   public static final StepType STEP_TYPE = StepSpecTypeConstants.EMAIL_STEP_TYPE;
+  static final String EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY = "email_to_non_harness_users";
+  static final String EMAIL_TO_NON_HARNESS_USERS_TRUE_VALUE = "true";
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private NGSettingsClient settingsClient;
 
   @Override
   public List<String> getLogKeys(Ambiance ambiance) {
@@ -94,6 +99,18 @@ public class EmailStep extends PipelineSyncExecutable {
     if (emailStepParameters.body == null || StringUtils.isBlank(emailStepParameters.body.getValue())) {
       throw new InvalidRequestException("Email body cannot be blank");
     }
+
+    String settingValue = "";
+    try {
+      settingValue = NGRestUtils
+                         .getResponse(settingsClient.getSetting(EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY,
+                             AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                             AmbianceUtils.getProjectIdentifier(ambiance)))
+                         .getValue();
+    } catch (Exception ex) {
+      log.error("Failed to fetch setting value for {}", EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY, ex);
+    }
+
     EmailDTO emailDTO = EmailDTO.builder()
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
@@ -101,6 +118,7 @@ public class EmailStep extends PipelineSyncExecutable {
                             .subject(emailStepParameters.subject.getValue())
                             .accountId(accountId)
                             .notificationId(notificationId)
+                            .sendToNonHarnessRecipients(EMAIL_TO_NON_HARNESS_USERS_TRUE_VALUE.equals(settingValue))
                             .build();
     logCallback.saveExecutionLog(String.format("Email step execution started"));
     try {

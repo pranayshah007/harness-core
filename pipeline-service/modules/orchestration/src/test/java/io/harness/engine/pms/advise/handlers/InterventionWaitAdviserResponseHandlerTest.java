@@ -35,7 +35,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.TimeoutInstanceRepository;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 import io.harness.timeout.TimeoutCallback;
 import io.harness.timeout.TimeoutInstance;
 import io.harness.timeout.TimeoutTracker;
@@ -101,7 +100,7 @@ public class InterventionWaitAdviserResponseHandlerTest extends OrchestrationTes
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void shouldTestHandleAdvise() {

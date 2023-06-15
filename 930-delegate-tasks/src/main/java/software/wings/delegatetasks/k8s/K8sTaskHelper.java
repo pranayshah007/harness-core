@@ -9,6 +9,7 @@ package software.wings.delegatetasks.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -28,6 +29,7 @@ import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFiles
 import static software.wings.delegatetasks.helm.HelmTaskHelper.handleIncorrectConfiguration;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -48,6 +50,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesResource;
@@ -159,6 +162,9 @@ public class K8sTaskHelper {
     StoreType storeType = k8sDelegateManifestConfig.getManifestStoreTypes();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(k8sTaskParameters.getTimeoutIntervalInMin());
     HelmCommandFlag helmCommandFlag = k8sDelegateManifestConfig.getHelmCommandFlag();
+    String kubeConfigFile = isNotEmpty(k8sDelegateTaskParams.getKubeconfigPath())
+        ? Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubeconfigPath()).toString()
+        : EMPTY;
 
     switch (storeType) {
       case Local:
@@ -175,7 +181,7 @@ public class K8sTaskHelper {
         }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag);
+            timeoutInMillis, helmCommandFlag, kubeConfigFile);
 
       case HelmChartRepo:
         manifestFilesDirectory = Paths
@@ -189,7 +195,7 @@ public class K8sTaskHelper {
         }
         return k8sTaskHelperBase.renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(), manifestFilesDirectory,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, k8sTaskParameters.getHelmVersion(),
-            timeoutInMillis, helmCommandFlag);
+            timeoutInMillis, helmCommandFlag, kubeConfigFile);
 
       case KustomizeSourceRepo:
         KustomizeConfig kustomizeConfig = k8sDelegateManifestConfig.getKustomizeConfig();
@@ -240,7 +246,9 @@ public class K8sTaskHelper {
     StoreType storeType = k8sDelegateManifestConfig.getManifestStoreTypes();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(k8sTaskParameters.getTimeoutIntervalInMin());
     HelmCommandFlag helmCommandFlag = k8sDelegateManifestConfig.getHelmCommandFlag();
-
+    String kubeConfigFile = isNotEmpty(k8sDelegateTaskParams.getKubeconfigPath())
+        ? Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubeconfigPath()).toString()
+        : EMPTY;
     switch (storeType) {
       case Local:
       case Remote:
@@ -255,7 +263,7 @@ public class K8sTaskHelper {
       case HelmSourceRepo:
         return k8sTaskHelperBase.renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
             manifestFilesDirectory, filesList, manifestOverrideFiles, releaseName, namespace, executionLogCallback,
-            k8sTaskParameters.getHelmVersion(), timeoutInMillis, helmCommandFlag);
+            k8sTaskParameters.getHelmVersion(), timeoutInMillis, helmCommandFlag, kubeConfigFile);
 
       case HelmChartRepo:
         manifestFilesDirectory =
@@ -263,7 +271,7 @@ public class K8sTaskHelper {
                 .toString();
         return k8sTaskHelperBase.renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
             manifestFilesDirectory, filesList, manifestOverrideFiles, releaseName, namespace, executionLogCallback,
-            k8sTaskParameters.getHelmVersion(), timeoutInMillis, helmCommandFlag);
+            k8sTaskParameters.getHelmVersion(), timeoutInMillis, helmCommandFlag, kubeConfigFile);
       case KustomizeSourceRepo:
         KustomizeConfig kustomizeConfig = k8sDelegateManifestConfig.getKustomizeConfig();
         String pluginRootDir = kustomizeConfig != null ? kustomizeConfig.getPluginRootDir() : null;
@@ -543,8 +551,8 @@ public class K8sTaskHelper {
       executionLogCallback.saveExecutionLog("Restoring inherited resources: \n");
       executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(kubernetesResources));
       k8sHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(clusterConfig, false));
-      k8sHandlerConfig.setClient(
-          Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+      k8sHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
       k8sHandlerConfig.setResources(kubernetesResources);
       executionLogCallback.saveExecutionLog("Done.. \n", INFO, SUCCESS);
     } catch (Exception e) {

@@ -10,11 +10,13 @@ package io.harness.ci.execution;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
+import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
@@ -35,6 +37,7 @@ import org.apache.logging.log4j.util.Strings;
 public class CIExecutionConfigService {
   @Inject CIExecutionConfigRepository configRepository;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private PluginSettingUtils pluginSettingUtils;
 
   private static final String UNEXPECTED_ERR_FORMAT = "Unexpected value: %s";
   public CIExecutionServiceConfig getCiExecutionServiceConfig() {
@@ -130,6 +133,9 @@ public class CIExecutionConfigService {
         break;
       case SSCA_ORCHESTRATION:
         executionConfig.setSscaOrchestrationTag(value);
+        break;
+      case SSCA_ENFORCEMENT:
+        executionConfig.setSscaEnforcementTag(value);
         break;
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
@@ -282,6 +288,7 @@ public class CIExecutionConfigService {
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
         .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
+        .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
         .build();
   }
 
@@ -331,6 +338,7 @@ public class CIExecutionConfigService {
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
         .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
+        .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
         .build();
   }
 
@@ -353,6 +361,7 @@ public class CIExecutionConfigService {
         .cacheS3Tag(config.getCacheS3Config().getImage())
         .securityTag(config.getSecurityConfig().getImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
+        .sscaEnforcementTag(config.getSscaEnforcementConfig().getImage())
         .build();
   }
 
@@ -372,6 +381,7 @@ public class CIExecutionConfigService {
         .cacheS3Tag(config.getCacheS3Tag())
         .securityTag(config.getSecurityImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationTag())
+        .sscaEnforcementTag(config.getSscaEnforcementTag())
         .build();
   }
 
@@ -510,6 +520,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getSscaOrchestrationTag();
         }
         break;
+      case SSCA_ENFORCEMENT:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaEnforcementTag())) {
+          image = ciExecutionConfig.getSscaEnforcementTag();
+        }
+        break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -549,6 +564,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
       case SSCA_ORCHESTRATION:
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
+      case SSCA_ENFORCEMENT:
+        return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -635,13 +652,19 @@ public class CIExecutionConfigService {
           image = vmImageConfig.getSscaOrchestration();
         }
         break;
+      case SSCA_ENFORCEMENT:
+        if (Strings.isNotBlank(vmImageConfig.getSscaEnforcement())) {
+          image = vmImageConfig.getSscaEnforcement();
+        }
+        break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
     return image;
   }
 
-  public String getContainerlessPluginNameForVM(CIStepInfoType stepInfoType) {
+  public String getContainerlessPluginNameForVM(
+      CIStepInfoType stepInfoType, PluginCompatibleStep pluginCompatibleStep) {
     VmContainerlessStepConfig vmContainerlessStepConfig =
         ciExecutionServiceConfig.getStepConfig().getVmContainerlessStepConfig();
     String name = null;
@@ -664,15 +687,26 @@ public class CIExecutionConfigService {
         name = vmContainerlessStepConfig.getGitCloneConfig().getName();
         break;
       case DOCKER:
-        name = vmContainerlessStepConfig.getDockerBuildxConfig().getName();
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxConfig().getName();
+        }
+        break;
+      case ECR:
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxEcrConfig().getName();
+        }
         break;
       case GCR:
-      case ECR:
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxGcrConfig().getName();
+        }
+        break;
       case ACR:
       case SECURITY:
       case UPLOAD_ARTIFACTORY:
       case IACM:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
@@ -708,10 +742,12 @@ public class CIExecutionConfigService {
         return vmImageConfig.getArtifactoryUpload();
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
-      case IACM_TERRAFORM:
+      case IACM_TERRAFORM_PLUGIN:
         return vmImageConfig.getIacmTerraform();
       case SSCA_ORCHESTRATION:
         return vmImageConfig.getSscaOrchestration();
+      case SSCA_ENFORCEMENT:
+        return vmImageConfig.getSscaEnforcement();
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }

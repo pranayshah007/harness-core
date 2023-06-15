@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.executions.steps.StepSpecTypeConstants.COMMAND;
 import static io.harness.pms.yaml.ParameterField.isNull;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.REPEAT;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
@@ -61,6 +62,9 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
 
     boolean isStepInsideRollback = YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     commandStepParameters.setRollback(isStepInsideRollback);
+
+    String commandDeployFqn = getExecutionStepFqn(ctx.getCurrentField(), COMMAND);
+    commandStepParameters.setCommandDeployFqn(commandDeployFqn);
 
     return stepParameters;
   }

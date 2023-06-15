@@ -1,0 +1,37 @@
+{{- if .Values.global.istio.enabled }}
+{{- $fullName := include "event-service.fullname" . -}}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: event-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  http:
+  - name: event-service
+    match:
+    - uri:
+        prefix: /ccmevent
+    - uri:
+        prefix: /ccmevent/
+    rewrite:
+      uri: /ccmevent
+    route:
+    - destination:
+        port:
+          number: {{ .Values.service.port }}
+        host: event-service
+{{ end }}

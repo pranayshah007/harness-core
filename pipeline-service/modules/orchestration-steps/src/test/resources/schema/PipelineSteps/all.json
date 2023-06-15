@@ -215,6 +215,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AutoApprovalParams": {
+      "type": "object",
+      "required": [
+        "action",
+        "scheduledDeadline"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "APPROVE"
+          ]
+        },
+        "comments": {
+          "type": "string"
+        },
+        "scheduledDeadline": {
+          "$ref": "#/definitions/ScheduledDeadline"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BarrierStepInfo": {
       "allOf": [
         {
@@ -232,6 +254,21 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CIVolume": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "EmptyDir",
+            "PersistentVolumeClaim",
+            "HostPath"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Capabilities": {
@@ -354,8 +391,7 @@
       "type": "object",
       "required": [
         "connectorRef",
-        "namespace",
-        "resources"
+        "namespace"
       ],
       "properties": {
         "annotations": {
@@ -400,6 +436,21 @@
         },
         "harnessImageConnectorRef": {
           "type": "string"
+        },
+        "hostNames": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "initTimeout": {
           "type": "string"
@@ -494,7 +545,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ContainerVolume"
+                "$ref": "#/definitions/CIVolume"
               }
             },
             {
@@ -693,21 +744,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ContainerVolume": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "EmptyDir",
-            "PersistentVolumeClaim",
-            "HostPath"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "CriteriaSpec": {
       "type": "object",
       "discriminator": "type",
@@ -792,7 +828,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -945,7 +981,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -964,7 +1000,7 @@
     "EmptyDirYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -1085,7 +1121,20 @@
             "approvers": {
               "$ref": "#/definitions/Approvers"
             },
+            "autoApproval": {
+              "$ref": "#/definitions/AutoApprovalParams"
+            },
             "includePipelineExecutionHistory": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "isAutoRejectEnabled": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -1119,7 +1168,7 @@
     "HostPathYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -1206,7 +1255,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1215,6 +1264,22 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/HttpHeaderConfig"
+              }
+            },
+            "inputVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
               }
             },
             "method": {
@@ -1367,7 +1432,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1415,7 +1480,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1478,7 +1543,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1780,7 +1845,7 @@
     "PersistentVolumeClaimYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -2012,6 +2077,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ScheduledDeadline": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecretNGVariable": {
       "allOf": [
         {
@@ -2173,7 +2250,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2234,7 +2311,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2301,7 +2378,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2344,7 +2421,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2640,7 +2717,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]

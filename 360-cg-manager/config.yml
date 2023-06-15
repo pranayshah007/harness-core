@@ -216,6 +216,7 @@ smtp:
   port: 465
   fromAddress: noreply@harness.io
   useSSL: true
+  startTLS: false
   username: smtp_username_placeholder
   password: "smtp_password_placeholder"
 
@@ -326,7 +327,7 @@ mongo:
     mongoTagValue: none
   aliasDBName: harness
   maxOperationTimeInMillis: 300000
-  maxDocumentsToBeFetched: 2147483647
+  maxDocumentsToBeFetched: 100000000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -366,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: ef2d02fb
+scmVersion: f1024c6b
 
 ngAuthUIEnabled: false
 
@@ -612,15 +613,15 @@ pipelineConfig:
   envStateTimeout: -1
   approvalStateTimeout: -1
 
-currentJre: openjdk11014_9
-migrateToJre: openjdk11014_9
+currentJre: openjdk11019_7
+migrateToJre: openjdk11019_7
 
 jreConfigs:
-  openjdk11014_9:
-    version: 11.0.14
-    jreDirectory: jdk-11.0.14+9-jre
-    jreMacDirectory: jdk-11.0.14+9-jre
-    jreTarPath: jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
+  openjdk11019_7:
+    version: 11.0.19
+    jreDirectory: jdk-11.0.19+7-jre
+    jreMacDirectory: jdk-11.0.19+7-jre
+    jreTarPath: jre/openjdk-11.0.19_7/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.19_7.tar.gz
 
 cdnConfig:
   url: https://qa.harness.io
@@ -759,6 +760,8 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
+runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground
@@ -779,3 +782,4 @@ disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
 redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
 
 lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}
+moveGitPollingToRunnable: ${MOVE_GIT_POLLING_TO_RUNNABLE:-true}

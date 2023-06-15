@@ -12,28 +12,30 @@ import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.SRMPersistence;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.beans.FeatureName;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.FeatureFlagService;
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
-import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -45,19 +47,20 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 
 @Slf4j
 public class SLIRecordServiceImpl implements SLIRecordService {
-  @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;
   private static final int RETRY_COUNT = 3;
 
   @Inject private SRMPersistence hPersistence;
-  @Inject Clock clock;
-
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+
+  @Inject private SLIRecordBucketService sliRecordBucketService;
+
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void create(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId, int sliVersion) {
@@ -83,6 +86,12 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     } else {
       createSLIRecords(
           sliRecordParamList, sliId, verificationTaskId, sliVersion, runningGoodCount, runningBadCount, sliRecordList);
+    }
+
+    try {
+      sliRecordBucketService.create(sliRecordParamList, sliId, sliVersion);
+    } catch (Exception exception) {
+      log.error(String.format("[SLI Record Bucketing Error] sliId: %s ", sliId), exception);
     }
   }
 
@@ -111,8 +120,12 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       long runningBadCount, String verificationTaskId) {
     List<SLIRecord> toBeUpdatedSLIRecords = getSLIRecords(
         sliId, firstSLIRecordParam.getTimeStamp(), lastSLIRecordParam.getTimeStamp().plus(1, ChronoUnit.MINUTES));
-    Map<Instant, SLIRecord> sliRecordMap =
-        toBeUpdatedSLIRecords.stream().collect(Collectors.toMap(SLIRecord::getTimestamp, Function.identity()));
+    Map<Instant, SLIRecord> sliRecordMap = toBeUpdatedSLIRecords.stream().collect(
+        Collectors.toMap(SLIRecord::getTimestamp, Function.identity(), (sliRecord1, sliRecord2) -> {
+          log.info("Duplicate SLI Key detected sliId: {}, timeStamp: {}", sliId, sliRecord1.getTimestamp());
+          return sliRecord1.getLastUpdatedAt() > sliRecord2.getLastUpdatedAt() ? sliRecord1 : sliRecord2;
+        }));
+
     List<SLIRecord> updateOrCreateSLIRecords = new ArrayList<>();
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
       SLIRecord sliRecord = sliRecordMap.get(sliRecordParam.getTimeStamp());
@@ -154,30 +167,6 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   @Override
-  public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
-    SLIRecord latestSLIRecord = getLatestSLIRecord(sliId);
-    if (latestSLIRecord == null) {
-      return new ArrayList<>();
-    }
-    Instant endTime = latestSLIRecord.getTimestamp();
-    Instant startTime = endTime.minusMillis(lookBackDuration).plus(1, ChronoUnit.MINUTES);
-    List<Instant> minutes = new ArrayList<>();
-    minutes.add(startTime);
-    List<SLIRecord> sliRecords = getSLIRecordsOfMinutes(sliId, minutes);
-    sliRecords.add(latestSLIRecord);
-    return sliRecords;
-  }
-
-  @Override
-  public double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes) {
-    List<SLIRecord> sliRecords = getSLIRecordsForLookBackDuration(sliId, lookBackDuration);
-    return sliRecords.size() < 2
-        ? 0
-        : (((double) (sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount()) * 100)
-            / totalErrorBudgetMinutes);
-  }
-
-  @Override
   public List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
@@ -192,31 +181,39 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   @Override
   public List<SLIRecord> getSLIRecordsWithSLIVersion(
       String sliId, Instant startTimeStamp, Instant endTimeStamp, int sliVersion) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .field(SLIRecordKeys.timestamp)
-        .greaterThanOrEq(startTimeStamp)
-        .field(SLIRecordKeys.sliVersion)
-        .equal(sliVersion)
-        .field(SLIRecordKeys.timestamp)
-        .lessThan(endTimeStamp)
-        .order(Sort.ascending(SLIRecordKeys.timestamp))
-        .asList();
-  }
-  @Override
-  public void delete(List<String> sliIds) {
-    hPersistence.delete(hPersistence.createQuery(SLIRecord.class).field(SLIRecordKeys.sliId).in(sliIds));
+    List<SLIRecord> sliRecords = hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+                                     .filter(SLIRecordKeys.sliId, sliId)
+                                     .field(SLIRecordKeys.timestamp)
+                                     .greaterThanOrEq(startTimeStamp)
+                                     .field(SLIRecordKeys.sliVersion)
+                                     .equal(sliVersion)
+                                     .field(SLIRecordKeys.timestamp)
+                                     .lessThan(endTimeStamp)
+                                     .order(Sort.ascending(SLIRecordKeys.timestamp))
+                                     .asList();
+    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      List<SLIRecordBucket> sliRecordBuckets =
+          sliRecordBucketService.getSLIRecordsWithSLIVersion(sliId, startTimeStamp, endTimeStamp, sliVersion);
+      validateListOfSLIRecordsWithBuckets(sliId, sliRecords, sliRecordBuckets);
+    }
+    return sliRecords;
   }
 
   @Override
   public List<SLIRecord> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .field(SLIRecordKeys.timestamp)
-        .in(minutes)
-        .order(Sort.ascending(SLIRecordKeys.timestamp))
-        .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+    List<SLIRecord> sliRecords = hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+                                     .filter(SLIRecordKeys.sliId, sliId)
+                                     .field(SLIRecordKeys.timestamp)
+                                     .in(minutes)
+                                     .order(Sort.ascending(SLIRecordKeys.timestamp))
+                                     .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      List<SLIRecordBucket> sliRecordBuckets = sliRecordBucketService.getSLIRecordsOfMinutes(sliId, minutes);
+      validateListOfSLIRecordsWithBuckets(sliId, sliRecords, sliRecordBuckets);
+    }
+    return sliRecords;
   }
+  @Override
   public Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
   getSLODetailsSLIRecordsAndSLIMissingDataType(
       List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
@@ -262,42 +259,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
       }
     }
-    return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
-  }
-
-  @Override
-  public Map<String, SLIRecord> getLastCompositeSLOsSLIRecord(
-      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
-      Instant startTime) {
-    Map<String, SLIRecord> scopedIdentifierSLIRecordMap = new HashMap<>();
-    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
-        serviceLevelObjectivesDetailList) {
-      SimpleServiceLevelObjective simpleServiceLevelObjective =
-          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(objectivesDetail);
-      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
-          "Only one service level indicator is supported");
-      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-          ProjectParams.builder()
-              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
-              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
-              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
-              .build(),
-          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
-      String sliId = serviceLevelIndicator.getUuid();
-      int sliVersion = serviceLevelIndicator.getVersion();
-      SLIRecord sliRecord = getLastSLIRecord(sliId, startTime);
-      if (Objects.isNull(sliRecord)) {
-        sliRecord = SLIRecord.builder()
-                        .sliState(SLIRecord.SLIState.GOOD)
-                        .runningBadCount(0)
-                        .runningGoodCount(0)
-                        .sliVersion(sliVersion)
-                        .timestamp(startTime.minus(Duration.ofMinutes(1)))
-                        .build();
-      }
-      scopedIdentifierSLIRecordMap.put(serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecord);
-    }
-    return scopedIdentifierSLIRecordMap;
+    return Pair.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
   }
 
   private SLIRecord getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {
@@ -311,28 +273,94 @@ public class SLIRecordServiceImpl implements SLIRecordService {
 
   @Override
   public SLIRecord getLastSLIRecord(String sliId, Instant startTimeStamp) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .field(SLIRecordKeys.timestamp)
-        .lessThan(startTimeStamp)
-        .order(Sort.descending(SLIRecordKeys.timestamp))
-        .get();
+    SLIRecord lastSLIRecord = hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+                                  .filter(SLIRecordKeys.sliId, sliId)
+                                  .field(SLIRecordKeys.timestamp)
+                                  .lessThan(startTimeStamp)
+                                  .order(Sort.descending(SLIRecordKeys.timestamp))
+                                  .get();
+    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      SLIRecordBucket lastSLIRecordBucket = sliRecordBucketService.getLastSLIRecord(sliId, startTimeStamp);
+      if (lastSLIRecord != null && lastSLIRecordBucket != null
+          && !DateTimeUtils.roundDownTo5MinBoundary(lastSLIRecord.getTimestamp())
+                  .equals(lastSLIRecordBucket.getBucketStartTime())) {
+        log.error(String.format(
+            "[SLI Record Bucketing Error] Last SLI Record timestamp before %s doesn't match for sliRecord and Bucket, sliId: %s, lastSLIRecord timestamp: %s, lastSLIRecordBucket timestamp: %s",
+            startTimeStamp, sliId, lastSLIRecord.getTimestamp(), lastSLIRecordBucket.getBucketStartTime()));
+      }
+    }
+    return lastSLIRecord;
   }
   @Override
   public SLIRecord getFirstSLIRecord(String sliId, Instant timestampInclusive) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .field(SLIRecordKeys.timestamp)
-        .greaterThanOrEq(timestampInclusive)
-        .order(Sort.ascending(SLIRecordKeys.timestamp))
-        .get();
+    SLIRecord firstRecord = hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+                                .filter(SLIRecordKeys.sliId, sliId)
+                                .field(SLIRecordKeys.timestamp)
+                                .greaterThanOrEq(timestampInclusive)
+                                .order(Sort.ascending(SLIRecordKeys.timestamp))
+                                .get();
+    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      SLIRecordBucket firstRecordBucket = sliRecordBucketService.getFirstSLIRecord(sliId, timestampInclusive);
+      if (firstRecord != null && firstRecordBucket != null
+          && !DateTimeUtils.roundUpTo5MinBoundary(firstRecord.getTimestamp())
+                  .equals(firstRecordBucket.getBucketStartTime())) {
+        log.error(String.format(
+            "[SLI Record Bucketing Error] First SLI Record timestamp after %s doesn't match for sliRecord and Bucket, sliId: %s, firstSLIRecord timestamp: %s, firstSLIRecordBucket timestamp: %s",
+            timestampInclusive, sliId, firstRecord.getTimestamp(), firstRecordBucket.getBucketStartTime()));
+      }
+    }
+    return firstRecord;
   }
 
   @Override
   public SLIRecord getLatestSLIRecord(String sliId) {
-    return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
-        .filter(SLIRecordKeys.sliId, sliId)
-        .order(Sort.descending(SLIRecordKeys.timestamp))
-        .get();
+    SLIRecord latestSLIRecord = hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
+                                    .filter(SLIRecordKeys.sliId, sliId)
+                                    .order(Sort.descending(SLIRecordKeys.timestamp))
+                                    .get();
+    SLIRecordBucket latestSLIRecordBucket = sliRecordBucketService.getLatestSLIRecord(sliId);
+    if (featureFlagService.isGlobalFlagEnabled(FeatureName.SRM_ENABLE_SLI_BUCKET.toString())) {
+      if (latestSLIRecord != null && latestSLIRecordBucket != null
+          && !DateTimeUtils.roundDownTo5MinBoundary(latestSLIRecord.getTimestamp())
+                  .equals(latestSLIRecordBucket.getBucketStartTime())) {
+        log.error(String.format(
+            "[SLI Record Bucketing Error] Latest SLI Record timestamp doesn't match for sliRecord and Bucket, sliId: %s, latestSLIRecord timestamp: %s, latestSLIRecordBucket timestamp: %s",
+            sliId, latestSLIRecord.getTimestamp(), latestSLIRecordBucket.getBucketStartTime()));
+      }
+    }
+    return latestSLIRecord;
+  }
+
+  private void validateListOfSLIRecordsWithBuckets(
+      String sliId, List<SLIRecord> sliRecords, List<SLIRecordBucket> sliRecordBuckets) {
+    Map<Instant, SLIRecord> sliRecordMap = sliRecords.stream().collect(Collectors.toMap(SLIRecord::getTimestamp,
+        sliRecord
+        -> sliRecord,
+        (record1, record2) -> record1.getLastUpdatedAt() > record2.getLastUpdatedAt() ? record1 : record2));
+    Map<Instant, SLIRecordBucket> sliRecordBucketMap =
+        sliRecordBuckets.stream().collect(Collectors.toMap(SLIRecordBucket::getBucketStartTime,
+            sliRecord
+            -> sliRecord,
+            (record1, record2) -> record1.getLastUpdatedAt() > record2.getLastUpdatedAt() ? record1 : record2));
+    for (Instant instant : sliRecordBucketMap.keySet()) {
+      if (!sliRecordMap.containsKey(instant)) {
+        log.error(String.format(
+            "[SLI Record Bucketing Error] SLI record doesn't contain this minute data, while sli bucket does. sliId: %s,timestamp: %s",
+            sliId, instant));
+      } else {
+        SLIRecord sliRecord = sliRecordMap.get(instant);
+        SLIRecordBucket sliRecordBucket = sliRecordBucketMap.get(instant);
+        if (sliRecord.getRunningGoodCount() != sliRecordBucket.getRunningGoodCount()) {
+          log.error(String.format(
+              "[SLI Record Bucketing Error] SLI record and SLI Record Bucket good count doesn't match. sliId: %s,timestamp: %s",
+              sliId, instant));
+        }
+        if (sliRecord.getRunningBadCount() != sliRecordBucket.getRunningBadCount()) {
+          log.error(String.format(
+              "[SLI Record Bucketing Error] SLI record and SLI Record Bucket bad count doesn't match. sliId: %s, timestamp: %s",
+              sliId, instant));
+        }
+      }
+    }
   }
 }

@@ -66,7 +66,9 @@ public class InternalChangeActivity extends Activity {
 
     public Query<InternalChangeActivity> populateKeyQuery(
         Query<InternalChangeActivity> query, InternalChangeActivity activity) {
-      return super.populateKeyQuery(query, activity).filter(ActivityKeys.eventTime, activity.getEventTime());
+      return super.populateKeyQuery(query, activity)
+          .filter(ActivityKeys.eventTime, activity.getEventTime())
+          .filter(ActivityKeys.type, activity.getType());
     }
 
     @Override

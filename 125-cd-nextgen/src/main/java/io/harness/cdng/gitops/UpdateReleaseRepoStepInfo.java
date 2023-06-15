@@ -81,4 +81,10 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
         .variables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(variables))
         .build();
   }
+
+  // commenting this since we manually evaluate and override expressions
+  //  @Override
+  //  public ExpressionMode getExpressionMode() {
+  //    return ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
+  //  }
 }

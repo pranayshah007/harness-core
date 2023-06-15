@@ -43,6 +43,7 @@ import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
@@ -60,6 +61,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.connector.ConnectorHearbeatPublisher;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
@@ -74,7 +76,6 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
@@ -117,10 +118,10 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(DEL)
 @BreakDependencyOn("software.wings.service.impl.instance.InstanceHelper")
 public class DelegateAgentResource {
+  private static final String PT_LOG_ERROR_TEMPLATE = "Failed to process results for perpetual task: [{}] due to [{}]";
   private DelegateService delegateService;
   private AccountService accountService;
   private HPersistence persistence;
-  private DelegateRequestRateLimiter delegateRequestRateLimiter;
   private SubdomainUrlHelperIntfc subdomainUrlHelper;
   private ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
   private InstanceHelper instanceHelper;
@@ -137,9 +138,8 @@ public class DelegateAgentResource {
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
-      DelegateRequestRateLimiter delegateRequestRateLimiter, SubdomainUrlHelperIntfc subdomainUrlHelper,
-      ArtifactCollectionResponseHandler artifactCollectionResponseHandler, InstanceHelper instanceHelper,
-      ManifestCollectionResponseHandler manifestCollectionResponseHandler,
+      SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
+      InstanceHelper instanceHelper, ManifestCollectionResponseHandler manifestCollectionResponseHandler,
       ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
@@ -150,7 +150,6 @@ public class DelegateAgentResource {
     this.delegateService = delegateService;
     this.accountService = accountService;
     this.persistence = persistence;
-    this.delegateRequestRateLimiter = delegateRequestRateLimiter;
     this.subdomainUrlHelper = subdomainUrlHelper;
     this.artifactCollectionResponseHandler = artifactCollectionResponseHandler;
     this.manifestCollectionResponseHandler = manifestCollectionResponseHandler;
@@ -317,9 +316,6 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
-      if (delegateRequestRateLimiter.isOverRateLimit(accountId, delegateId)) {
-        return null;
-      }
       return delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     }
   }
@@ -521,7 +517,7 @@ public class DelegateAgentResource {
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
       instanceHelper.processInstanceSyncResponseFromPerpetualTask(perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
-      log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }
@@ -537,7 +533,23 @@ public class DelegateAgentResource {
       instanceSyncResponsePublisher.publishInstanceSyncResponseToNG(
           accountId, perpetualTaskId.replaceAll("[\r\n]", ""), response);
     } catch (Exception e) {
-      log.error("Failed to process results for perpetual task: [{}]", perpetualTaskId.replaceAll("[\r\n]", ""), e);
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
+    }
+    return new RestResponse<>(true);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("instance-sync-ng-v2/{perpetualTaskId}")
+  public RestResponse<Boolean> processInstanceSyncNGResultV2(
+      @PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
+      @QueryParam("accountId") @NotEmpty String accountId, InstanceSyncResponseV2 instanceSyncResponseV2) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
+      instanceSyncResponsePublisher.publishInstanceSyncResponseV2ToNG(
+          accountId, perpetualTaskId.replaceAll("[\r\n]", ""), instanceSyncResponseV2);
+    } catch (Exception e) {
+      log.warn(PT_LOG_ERROR_TEMPLATE, perpetualTaskId.replaceAll("[\r\n]", ""), ExceptionUtils.getMessage(e));
     }
     return new RestResponse<>(true);
   }

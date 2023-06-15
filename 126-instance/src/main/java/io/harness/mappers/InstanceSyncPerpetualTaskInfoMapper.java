@@ -25,9 +25,11 @@ public class InstanceSyncPerpetualTaskInfoMapper {
         .deploymentInfoDetailsDTOList(DeploymentInfoDetailsMapper.toDeploymentInfoDetailsDTOList(
             instanceSyncPerpetualTaskInfo.getDeploymentInfoDetailsList()))
         .perpetualTaskId(instanceSyncPerpetualTaskInfo.getPerpetualTaskId())
+        .perpetualTaskIdV2(instanceSyncPerpetualTaskInfo.getPerpetualTaskIdV2())
         .createdAt(instanceSyncPerpetualTaskInfo.getCreatedAt())
         .lastUpdatedAt(instanceSyncPerpetualTaskInfo.getLastUpdatedAt())
         .connectorIdentifier(instanceSyncPerpetualTaskInfo.getConnectorIdentifier())
+        .lastSuccessfulRun(instanceSyncPerpetualTaskInfo.getLastSuccessfulRun())
         .build();
   }
 
@@ -39,7 +41,9 @@ public class InstanceSyncPerpetualTaskInfoMapper {
         .deploymentInfoDetailsList(DeploymentInfoDetailsMapper.toDeploymentInfoDetailsEntityList(
             instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()))
         .perpetualTaskId(instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId())
+        .perpetualTaskIdV2(instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2())
         .connectorIdentifier(instanceSyncPerpetualTaskInfoDTO.getConnectorIdentifier())
+        .lastSuccessfulRun(instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun())
         .build();
   }
 }

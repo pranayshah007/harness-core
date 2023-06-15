@@ -130,6 +130,9 @@ public class PreferenceServiceImpl implements PreferenceService {
     if (featureFlagService.isEnabled(SPG_ENABLE_SHARING_FILTERS, accountId)) {
       SearchFilter userIdFilter =
           SearchFilter.builder().fieldName(PreferenceKeys.userId).fieldValues(new String[] {userId}).op(EQ).build();
+      if (l.isEmpty()) {
+        pageRequest.addFilter(userIdFilter);
+      }
       for (String s : l) {
         pageRequest.addFilter("", SearchFilter.Operator.OR,
             SearchFilter.builder()

@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.ng.DbAliases;
 
 import dev.morphia.annotations.Entity;
@@ -28,4 +29,31 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Persistent
 @TypeAlias("io.harness.credit.entities.CICredit")
-public class CICredit extends Credit {}
+public class CICredit extends Credit implements PersistentRegularIterable {
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (CreditsKeys.creditExpiryCheckIteration.equals(fieldName)) {
+      return creditExpiryCheckIteration;
+    } else if (CreditsKeys.creditsSendToSegmentIteration.equals(fieldName)) {
+      return creditsSendToSegmentIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public String getUuid() {
+    return this.id;
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (CreditsKeys.creditExpiryCheckIteration.equals(fieldName)) {
+      this.creditExpiryCheckIteration = nextIteration;
+      return;
+    } else if (CreditsKeys.creditsSendToSegmentIteration.equals(fieldName)) {
+      this.creditsSendToSegmentIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+}

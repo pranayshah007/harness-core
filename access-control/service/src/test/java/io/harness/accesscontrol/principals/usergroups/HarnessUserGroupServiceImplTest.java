@@ -26,6 +26,7 @@ import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.rule.Owner;
@@ -78,7 +79,7 @@ public class HarnessUserGroupServiceImplTest extends AccessControlTestBase {
     Scope scope =
         Scope.builder().level(HarnessScopeLevel.ACCOUNT).parentScope(null).instanceId(accountIdentifier).build();
     when(userGroupClient.getUserGroup(identifier, accountIdentifier, null, null).execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(null)));
+        .thenThrow(InvalidRequestException.class);
     doNothing().when(userGroupService).deleteIfPresent(identifier, scope.toString());
     harnessUserGroupService.sync(identifier, scope);
     verify(userGroupClient, atLeastOnce()).getUserGroup(identifier, accountIdentifier, null, null);

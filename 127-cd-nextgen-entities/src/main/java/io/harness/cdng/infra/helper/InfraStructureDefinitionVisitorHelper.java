@@ -25,7 +25,6 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
-import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.ParameterField;
@@ -37,6 +36,7 @@ import io.harness.walktree.visitor.entityreference.EntityReferenceExtractor;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -115,7 +115,7 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
 
           Map<String, Object> map = new LinkedHashMap<>();
           map.put("infrastructureDefinition", infraYaml.getInputs().getValue());
-          Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(CDYamlUtils.getMapper().valueToTree(map));
+          Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(JsonPipelineUtils.asTree(map));
           Map<String, Object> fqnStringToValueMap = new HashMap<>();
           fqnToValueMap.forEach((fqn, value) -> fqnStringToValueMap.put(fqn.getExpressionFqn(), value));
 
@@ -149,16 +149,20 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
   }
 
   private EntityDetailProtoDTO getEntityDetailProtoDTO(String infraRef, IdentifierRef envIdentifierRef) {
-    InfraDefinitionReferenceProtoDTO infraDefinitionReferenceProtoDTO =
+    InfraDefinitionReferenceProtoDTO.Builder infraDefinitionReferenceProtoDTO =
         InfraDefinitionReferenceProtoDTO.newBuilder()
             .setAccountIdentifier(StringValue.of(envIdentifierRef.getAccountIdentifier()))
             .setOrgIdentifier(StringValue.of(defaultIfBlank(envIdentifierRef.getOrgIdentifier(), "")))
             .setProjectIdentifier(StringValue.of(defaultIfBlank(envIdentifierRef.getProjectIdentifier(), "")))
             .setIdentifier(StringValue.of(infraRef))
-            .setEnvIdentifier(StringValue.of(envIdentifierRef.getIdentifier()))
-            .build();
+            .setEnvIdentifier(StringValue.of(envIdentifierRef.getIdentifier()));
+
+    if (EmptyPredicate.isNotEmpty(envIdentifierRef.getMetadata())) {
+      infraDefinitionReferenceProtoDTO.putAllMetadata(envIdentifierRef.getMetadata());
+    }
+
     return EntityDetailProtoDTO.newBuilder()
-        .setInfraDefRef(infraDefinitionReferenceProtoDTO)
+        .setInfraDefRef(infraDefinitionReferenceProtoDTO.build())
         .setType(EntityTypeProtoEnum.INFRASTRUCTURE)
         .build();
   }

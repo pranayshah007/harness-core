@@ -18,6 +18,7 @@ import io.harness.ccm.views.dto.CreateRuleExecutionDTO;
 import io.harness.ccm.views.dto.CreateRuleExecutionFilterDTO;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.helper.FilterValues;
+import io.harness.ccm.views.helper.OverviewExecutionDetails;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
@@ -45,6 +46,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -65,7 +67,6 @@ import org.springframework.stereotype.Service;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
-
 @Service
 @OwnedBy(CE)
 @Slf4j
@@ -268,5 +269,68 @@ public class GovernanceRuleExecutionResource {
       log.error("Bucket type is not GCS or execution is not yet completed");
       return null;
     }
+  }
+
+  @POST
+  @Path("overview/executionDetails")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return rule execution Details", nickname = "getExecutionDetails")
+  @Operation(operationId = "getExecutionDetails", summary = "Return  rule execution Details ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "Return  rule Details", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+
+  public ResponseDTO<OverviewExecutionDetails>
+  getExecutionDetails(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true, description = "Request body containing CreateRuleExecutionFilterDTO object")
+      @Valid CreateRuleExecutionFilterDTO createRuleExecutionFilterDTO) {
+    RuleExecutionFilter ruleExecutionFilter = createRuleExecutionFilterDTO.getRuleExecutionFilter();
+    ruleExecutionFilter.setAccountId(accountId);
+    return ResponseDTO.newResponse(ruleExecutionService.getOverviewExecutionDetails(accountId, ruleExecutionFilter));
+  }
+
+  @POST
+  @Path("overview/executionCostDetails")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return rule execution Cost Details", nickname = "executionCostDetails")
+  @Operation(operationId = "executionCostDetails", summary = "Return  rule execution Cost Details ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "Return  rule Details", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+
+  public ResponseDTO<Map<String, Double>>
+  getExecutionCostDetails(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(required = true, description = "Request body containing CreateRuleExecutionFilterDTO object")
+      @Valid CreateRuleExecutionFilterDTO createRuleExecutionFilterDTO) {
+    RuleExecutionFilter ruleExecutionFilter = createRuleExecutionFilterDTO.getRuleExecutionFilter();
+    ruleExecutionFilter.setAccountId(accountId);
+    return ResponseDTO.newResponse(ruleExecutionService.getExecutionCostDetails(accountId, ruleExecutionFilter));
+  }
+
+  @GET
+  @Path("recommendation/{recommendationId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return getRuleRecommendation details", nickname = "getRuleRecommendation")
+  @Operation(operationId = "getRuleRecommendation", summary = "Return getRuleRecommendation details",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description = "getRuleRecommendation", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+
+  public ResponseDTO<RuleExecutionList>
+  getRuleRecommendation(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("recommendationId") @NotNull @Valid String recommendationId) {
+    return ResponseDTO.newResponse(ruleExecutionService.getRuleRecommendationDetails(recommendationId, accountId));
   }
 }

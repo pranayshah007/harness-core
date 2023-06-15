@@ -26,12 +26,11 @@ import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
 import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
 import io.harness.logstreaming.LogStreamingModule;
+import io.harness.managerclient.DelegateManagerEncryptionDecryptionHarnessSMModule;
 import io.harness.managerclient.VerificationServiceClientModule;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.perpetualtask.PerpetualTaskWorkerModule;
 import io.harness.serializer.KryoModule;
-
-import software.wings.delegatetasks.k8s.client.KubernetesClientFactoryModule;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
@@ -73,10 +72,10 @@ public class DelegateAgentModule extends AbstractModule {
     configureCcmEventPublishing();
     install(new PerpetualTaskWorkerModule());
 
-    install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());
     install(new CITaskFactoryModule());
     install(new DelegateModule(configuration));
+    install(new DelegateManagerEncryptionDecryptionHarnessSMModule(configuration));
 
     if (configuration.isGrpcServiceEnabled()) {
       install(DelegateServiceGrpcAgentClientModule.getInstance());

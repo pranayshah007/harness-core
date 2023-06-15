@@ -40,6 +40,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
@@ -118,6 +119,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -177,9 +179,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     infrastructureValidator.validate(infrastructure);
 
-    final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(ambiance, infrastructure, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome = infrastructureOutcomeProvider.getOutcome(ambiance,
+        infrastructure, environmentOutcome, serviceOutcome, ngAccess.getAccountIdentifier(),
+        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), new HashMap<>());
 
     if (environmentOutcome != null) {
       if (isNotEmpty(environmentOutcome.getName())) {
@@ -263,7 +265,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
         || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sRancherInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
           cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
 

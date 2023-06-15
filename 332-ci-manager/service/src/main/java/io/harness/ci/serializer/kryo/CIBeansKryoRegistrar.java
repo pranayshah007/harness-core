@@ -28,6 +28,7 @@ import io.harness.beans.execution.CustomExecutionSource;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
+import io.harness.beans.execution.ReleaseWebhookEvent;
 import io.harness.beans.execution.Repository;
 import io.harness.beans.execution.WebhookBaseAttributes;
 import io.harness.beans.execution.WebhookEvent;
@@ -112,5 +113,6 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(BuildStatusUpdateParameter.class, 390004);
     kryo.register(PluginMetadataConfig.class, 110143);
     kryo.register(PluginMetadataStatus.class, 110144);
+    kryo.register(ReleaseWebhookEvent.class, 110149);
   }
 }

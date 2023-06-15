@@ -13,8 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateParams.DelegateParamsBuilder;
 import static io.harness.delegate.beans.DelegateParams.builder;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
+import static io.harness.delegate.metrics.DelegateMetric.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
@@ -46,7 +45,6 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
-import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
@@ -111,9 +109,9 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @Slf4j
-public abstract class AbstractDelegateAgentService implements DelegateAgentService {
+public abstract class AbstractDelegateAgentService<AcquireResponse> implements DelegateAgentService {
   protected static final String HOST_NAME = getLocalHostName();
-  private static final String DELEGATE_INSTANCE_ID = generateUuid();
+  protected static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
@@ -144,7 +142,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   @Inject @Getter(AccessLevel.PROTECTED) private DelegateConfiguration delegateConfiguration;
   @Inject @Getter(AccessLevel.PROTECTED) private HarnessMetricRegistry metricRegistry;
   @Inject @Getter(AccessLevel.PROTECTED) private Clock clock;
-  @Inject private DelegateCoreManagerClient managerClient;
+  @Inject @Getter(AccessLevel.PROTECTED) private DelegateCoreManagerClient managerClient;
   @Inject private RestartableServiceManager restartableServiceManager;
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private AsyncHttpClient asyncHttpClient;
@@ -169,7 +167,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(@NonNull TaskDescriptor task);
+  protected abstract AcquireResponse acquireTask(String taskId) throws IOException;
+  protected abstract void executeTask(AcquireResponse acquireResponse);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -237,10 +236,9 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
 
   @Override
   public void recordMetrics() {
-    final int tasksInQueueCount = taskExecutor.getQueue().size();
     final long tasksExecutionCount = taskExecutor.getActiveCount();
-    metricRegistry.recordGaugeValue(TASKS_IN_QUEUE, new String[] {DELEGATE_NAME}, tasksInQueueCount);
-    metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
+    metricRegistry.recordGaugeValue(
+        TASKS_CURRENTLY_EXECUTING.getMetricName(), new String[] {DELEGATE_NAME}, tasksExecutionCount);
   }
 
   @Override
@@ -294,8 +292,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         currentlyAcquiringTasks.add(delegateTaskId);
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
-        final var pluginDescriptors = acquireTask(delegateTaskId);
-        pluginDescriptors.forEach(this::executeTask);
+        final var taskGroup = acquireTask(delegateTaskId);
+        executeTask(taskGroup);
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {
@@ -305,16 +303,6 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         onPostExecute(delegateTaskId);
       }
     }
-  }
-
-  protected List<TaskDescriptor> acquireTask(final String delegateTaskId) throws IOException {
-    final var response = executeRestCall(managerClient.acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(),
-        delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
-
-    final var pluginDescriptors = response.getTasksList();
-    log.info("Delegate {} received tasks {} for delegateInstance {}", DelegateAgentCommonVariables.getDelegateId(),
-        pluginDescriptors, DELEGATE_INSTANCE_ID);
-    return pluginDescriptors;
   }
 
   private void shutdownExecutors() throws InterruptedException {
@@ -349,7 +337,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     }
   }
 
-  private <T> T executeRestCall(Call<T> call) throws IOException {
+  protected <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
     try {
       response = call.execute();

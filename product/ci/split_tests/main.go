@@ -9,12 +9,12 @@ import (
 	"context"
 	"fmt"
 	arg "github.com/alexflint/go-arg"
-	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/split_tests/ti"
 	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
 	"os"
+	"strconv"
 	"strings"
 
 	junit "github.com/harness/harness-core/product/ci/split_tests/junit"
@@ -55,16 +55,23 @@ func parseArgs() {
 	args.DefaultTime = 1
 	arg.MustParse(&args)
 
+	var err error
 	if args.SplitTotal == -1 {
-		args.SplitTotal, _ = external.GetStepStrategyIterationsFromEnv()
+		args.SplitTotal, err = strconv.Atoi(os.Getenv("HARNESS_NODE_TOTAL"))
+		if err != nil {
+			args.SplitTotal = -1
+		}
 	}
 
 	if args.SplitIndex == -1 {
-		args.SplitIndex, _ = external.GetStepStrategyIterationFromEnv()
+		args.SplitIndex, err = strconv.Atoi(os.Getenv("HARNESS_NODE_INDEX"))
+		if err != nil {
+			args.SplitIndex = -1
+		}
 	}
 
-	if args.SplitTotal == 0 || args.SplitIndex < 0 || args.SplitIndex > args.SplitTotal {
-		fmt.Fprintf(os.Stderr, "--split-index and --split-total (and environment variables) are missing or invalid")
+	if args.SplitTotal < 1 || args.SplitIndex >= args.SplitTotal {
+		fmt.Fprintf(os.Stderr, "--split-index and --split-total (and environment variables) are missing or invalid\n")
 		os.Exit(1)
 	}
 

@@ -7,6 +7,7 @@
 
 package io.harness.ng.authenticationsettings.impl;
 
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
@@ -15,6 +16,7 @@ import static io.harness.remote.client.CGRestUtils.getResponse;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authenticationservice.beans.SAMLProviderType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -32,12 +34,13 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
+import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.validator.NGVariableNameValidator;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
-import software.wings.beans.sso.SAMLProviderType;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlSettings;
@@ -48,7 +51,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,26 +69,31 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   private final AuthSettingsManagerClient managerClient;
   private final EnforcementClientService enforcementClientService;
   private final UserGroupService userGroupService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private static final String ALLOWED_CHARS_STRING_DEFAULT =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ";
 
   @Override
   public AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier) {
+    // when FF is enabled, avoid using this API which can result in discrepancy of SAML setting update
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      throw new InvalidRequestException(String.format(
+          "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s. Please use v2 version of API endpoint: "
+              + "'authentication-settings/v2' to list all configured authentication settings on account",
+          accountIdentifier));
+    }
     Set<String> whitelistedDomains = getResponse(managerClient.getWhitelistedDomains(accountIdentifier));
     log.info("Whitelisted domains for accountId {}: {}", accountIdentifier, whitelistedDomains);
     SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
+    return buildAndReturnAuthenticationSettingsResponse(ssoConfig, accountIdentifier, whitelistedDomains);
+  }
 
-    List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
-    log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
-
-    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
-    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
-
-    return AuthenticationSettingsResponse.builder()
-        .whitelistedDomains(whitelistedDomains)
-        .ngAuthSettings(settingsList)
-        .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
-        .twoFactorEnabled(twoFactorEnabled)
-        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
-        .build();
+  @Override
+  public AuthenticationSettingsResponse getAuthenticationSettingsV2(String accountIdentifier) {
+    Set<String> whitelistedDomains = getResponse(managerClient.getWhitelistedDomains(accountIdentifier));
+    log.info("Whitelisted domains for accountId {}: {}", accountIdentifier, whitelistedDomains);
+    SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettingsV2(accountIdentifier));
+    return buildAndReturnAuthenticationSettingsResponse(ssoConfig, accountIdentifier, whitelistedDomains);
   }
 
   @Override
@@ -99,6 +110,24 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   @Override
   public void updateAuthMechanism(String accountId, AuthenticationMechanism authenticationMechanism) {
     checkLicenseEnforcement(accountId, authenticationMechanism);
+    boolean updateAuth = true;
+    if (AuthenticationMechanism.SAML == authenticationMechanism
+        && ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettingsV2(accountId));
+      if (null != ssoConfig && isNotEmpty(ssoConfig.getSsoSettings())) {
+        updateAuth = ssoConfig.getSsoSettings()
+                         .stream()
+                         .filter(Objects::nonNull)
+                         .filter(ssoSetting -> ssoSetting.getType() == SSOType.SAML)
+                         .anyMatch(setting -> ((SamlSettings) setting).isAuthenticationEnabled());
+      }
+    }
+    if (!updateAuth) {
+      throw new InvalidRequestException(String.format(
+          "Cannot update authentication mechanism for account %s to SAML as no SAML SSO setting has authentication enabled. Please enable authentication for at least one SAML setting"
+              + " and then update account level authentication mechanism to SAML",
+          accountId));
+    }
     getResponse(managerClient.updateAuthMechanism(accountId, authenticationMechanism));
   }
 
@@ -154,6 +183,9 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     for (SSOSettings ssoSetting : ssoSettings) {
       if (ssoSetting.getType().equals(SSOType.SAML)) {
         SamlSettings samlSettings = (SamlSettings) ssoSetting;
+        final String friendlySAMLName = isNotEmpty(samlSettings.getFriendlySamlName())
+            ? samlSettings.getFriendlySamlName()
+            : samlSettings.getDisplayName();
         SAMLSettings samlSettingsBuilt = SAMLSettings.builder()
                                              .identifier(samlSettings.getUuid())
                                              .groupMembershipAttr(samlSettings.getGroupMembershipAttr())
@@ -162,6 +194,11 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .displayName(samlSettings.getDisplayName())
                                              .authorizationEnabled(samlSettings.isAuthorizationEnabled())
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
+                                             .friendlySamlName(friendlySAMLName)
+                                             .authenticationEnabled(samlSettings.isAuthenticationEnabled())
+                                             .jitEnabled(samlSettings.isJitEnabled())
+                                             .jitValidationKey(samlSettings.getJitValidationKey())
+                                             .jitValidationValue(samlSettings.getJitValidationValue())
                                              .build();
 
         if (null != samlSettings.getSamlProviderType()) {
@@ -209,12 +246,49 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     return RequestBody.create(MultipartBody.FORM, string);
   }
 
+  private boolean isValidLogoutUrl(String logoutUrl) {
+    String pattern = "^(https?://)[^\\s/$.?#-].[^\\s]*$";
+    Pattern urlPattern = Pattern.compile(pattern);
+    Matcher urlMatcher = urlPattern.matcher(logoutUrl);
+    return urlMatcher.matches();
+  }
+
+  public static boolean isValidString(String inputString) {
+    String regexPattern = "^[" + Pattern.quote(ALLOWED_CHARS_STRING_DEFAULT) + "]+$";
+    return inputString.trim().matches(regexPattern);
+  }
+
+  private void validateStringLengthAndFormat(String value, String fieldName) {
+    if (value != null && (value.length() > NGVariableNameValidator.MAX_ALLOWED_LENGTH || !isValidString(value))) {
+      throw new InvalidRequestException(
+          fieldName + " can be 128 characters long and can contain alphanumeric characters.,-_");
+    }
+  }
+  private void validateLogoutUrl(String logoutUrl) {
+    if (logoutUrl != null && !isValidLogoutUrl(logoutUrl)) {
+      throw new InvalidRequestException("Invalid logoutUrl " + logoutUrl);
+    }
+  }
+
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public SSOConfig uploadSAMLMetadata(@NotNull @AccountIdentifier String accountId,
       @NotNull MultipartBody.Part inputStream, @NotNull String displayName, String groupMembershipAttr,
       @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
-      String clientId, String clientSecret) {
+      String clientId, String clientSecret, String friendlySamlName, @NotNull Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue) {
+    SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountId));
+    if (samlSettings != null && !ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      throw new InvalidRequestException(String.format(
+          "Multiple Saml settings cannot be created for account %s. Please enable FF PL_ENABLE_MULTIPLE_IDP_SUPPORT on account"
+              + " for Multiple IdP support",
+          accountId));
+    }
+    validateLogoutUrl(logoutUrl);
+
+    validateStringLengthAndFormat(displayName, "Name");
+    validateStringLengthAndFormat(friendlySamlName, "Display Name");
+
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -223,16 +297,33 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
-    return getResponse(managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart,
-        groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart));
+    RequestBody friendlySamlNamePart = createPartFromString(friendlySamlName);
+    RequestBody jitEnabledPart = createPartFromString(String.valueOf(jitEnabled));
+    RequestBody jitValidationKeyPart = createPartFromString(jitValidationKey);
+    RequestBody jitValidationValuePart = createPartFromString(jitValidationValue);
+    return getResponse(
+        managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart, groupMembershipAttrPart,
+            authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart, clientIdPart,
+            clientSecretPart, friendlySamlNamePart, jitEnabledPart, jitValidationKeyPart, jitValidationValuePart));
   }
 
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, MultipartBody.Part inputStream,
       String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, String clientSecret) {
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret,
+      @NotNull Boolean jitEnabled, String jitValidationKey, String jitValidationValue) {
+    // when FF is enabled, avoid using this API, which can result in discrepancy of SAML setting update
+    checkMultipleIdpSupportFF(accountId, "update");
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      throw new InvalidRequestException(String.format(
+          "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s. Please update on a samlSSOId API endpoint: "
+              + "'saml-metadata-upload/{samlSSOId}' to update a SAML setting when Multiple IdP support is enabled on account",
+          accountId));
+    }
+    validateLogoutUrl(logoutUrl);
+    validateStringLengthAndFormat(displayName, "Name");
+
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -241,13 +332,47 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
+    RequestBody jitEnabledPart = createPartFromString(String.valueOf(jitEnabled));
+    RequestBody jitValidationKeyPart = createPartFromString(jitValidationKey);
+    RequestBody jitValidationValuePart = createPartFromString(jitValidationValue);
     return getResponse(managerClient.updateSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart));
+        clientIdPart, clientSecretPart, jitEnabledPart, jitValidationKeyPart, jitValidationValuePart));
+  }
+
+  @Override
+  @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
+  public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, @NotNull String samlSSOId,
+      MultipartBody.Part inputStream, String displayName, String groupMembershipAttr,
+      @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
+      String clientId, String clientSecret, String friendlySamlName, @NotNull Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue) {
+    validateLogoutUrl(logoutUrl);
+    validateStringLengthAndFormat(displayName, "Name");
+    validateStringLengthAndFormat(friendlySamlName, "Display Name");
+
+    RequestBody displayNamePart = createPartFromString(displayName);
+    RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
+    RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
+    RequestBody logoutUrlPart = createPartFromString(logoutUrl);
+    RequestBody entityIdentifierPart = createPartFromString(entityIdentifier);
+    RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
+    RequestBody clientIdPart = createPartFromString(clientId);
+    RequestBody clientSecretPart = createPartFromString(clientSecret);
+    RequestBody friendlySamlNamePart = createPartFromString(friendlySamlName);
+    RequestBody jitEnabledPart = createPartFromString(String.valueOf(jitEnabled));
+    RequestBody jitValidationKeyPart = createPartFromString(jitValidationKey);
+    RequestBody jitValidationValuePart = createPartFromString(jitValidationValue);
+    return getResponse(
+        managerClient.updateSAMLMetadata(accountId, samlSSOId, inputStream, displayNamePart, groupMembershipAttrPart,
+            authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart, clientIdPart,
+            clientSecretPart, friendlySamlNamePart, jitEnabledPart, jitValidationKeyPart, jitValidationValuePart));
   }
 
   @Override
   public SSOConfig deleteSAMLMetadata(@NotNull @AccountIdentifier String accountIdentifier) {
+    // when FF is enabled, avoid using this API, which can result in discrepancy of SAML setting update
+    checkMultipleIdpSupportFF(accountIdentifier, "delete");
     SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountIdentifier));
     if (samlSettings == null) {
       throw new InvalidRequestException("No Saml Metadata found for this account");
@@ -260,9 +385,31 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
+  public SSOConfig deleteSAMLMetadata(@NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+    SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountIdentifier, samlSSOId));
+    if (samlSettings == null) {
+      throw new InvalidRequestException(
+          String.format("No Saml Metadata found for account %s and saml sso id %s", accountIdentifier, samlSSOId));
+    }
+    if (isNotEmpty(userGroupService.getUserGroupsBySsoId(accountIdentifier, samlSSOId))) {
+      throw new InvalidRequestException(String.format(
+          "Deleting Saml setting having id %s with linked user groups is not allowed in account %s. Unlink the user groups first",
+          samlSSOId, accountIdentifier));
+    }
+    return getResponse(managerClient.deleteSAMLMetadata(accountIdentifier, samlSSOId));
+  }
+
+  @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public LoginTypeResponse getSAMLLoginTest(@NotNull @AccountIdentifier String accountIdentifier) {
     return getResponse(managerClient.getSAMLLoginTest(accountIdentifier));
+  }
+
+  @Override
+  @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
+  public LoginTypeResponse getSAMLLoginTestV2(
+      @NotNull @AccountIdentifier String accountIdentifier, @NotNull String samlSSOId) {
+    return getResponse(managerClient.getSAMLLoginTestV2(accountIdentifier, samlSSOId));
   }
 
   @Override
@@ -321,6 +468,22 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     getResponse(managerClient.deleteLdapSettings(accountIdentifier));
   }
 
+  @Override
+  public void updateAuthenticationForSAMLSetting(String accountId, String samlSSOId, Boolean enable) {
+    if (Boolean.FALSE.equals(enable)) { // check for disable case conflict
+      SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettingsV2(accountId));
+      if (ssoConfig != null && !checkIfSAMLSSOIdAuthenticationCanBeDisabled(ssoConfig)) {
+        throw new InvalidRequestException(String.format(
+            "SAML setting with SSO Id %s can not be disabled for authentication, as account's %s current authentication mechanism is SAML, "
+                + "and this is the only SAML setting with authentication setting enabled. Please enable authentication on other configured SAML"
+                + " setting(s) first or switch account authentication mechanism to other before disabling authentication for this SAML.",
+            samlSSOId, accountId));
+      }
+    }
+    getResponse(
+        managerClient.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, Boolean.TRUE.equals(enable)));
+  }
+
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {
     return LDAPSettings.builder()
         .identifier(ldapSettings.getUuid())
@@ -348,5 +511,47 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     toLdapSettings.setCronExpression(ldapSettings.getCronExpression());
     toLdapSettings.setDisabled(ldapSettings.isDisabled());
     return toLdapSettings;
+  }
+
+  private AuthenticationSettingsResponse buildAndReturnAuthenticationSettingsResponse(
+      SSOConfig ssoConfig, String accountIdentifier, Set<String> whitelistedDomains) {
+    List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
+    log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
+
+    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
+    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
+
+    return AuthenticationSettingsResponse.builder()
+        .whitelistedDomains(whitelistedDomains)
+        .ngAuthSettings(settingsList)
+        .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
+        .twoFactorEnabled(twoFactorEnabled)
+        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
+        .build();
+  }
+
+  private boolean checkIfSAMLSSOIdAuthenticationCanBeDisabled(SSOConfig ssoConfig) {
+    if (ssoConfig.getAuthenticationMechanism() != AuthenticationMechanism.SAML) {
+      return true;
+    }
+    if (isNotEmpty(ssoConfig.getSsoSettings())) {
+      return ssoConfig.getSsoSettings()
+                 .stream()
+                 .filter(Objects::nonNull)
+                 .filter(ssoSetting -> ssoSetting.getType() == SSOType.SAML)
+                 .filter(setting -> ((SamlSettings) setting).isAuthenticationEnabled())
+                 .count()
+          > 1;
+    }
+    return false;
+  }
+
+  private void checkMultipleIdpSupportFF(final String accountId, final String operation) {
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
+      throw new InvalidRequestException(String.format(
+          "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s. Please %s on a given samlSSOId API endpoint"
+              + " to %s a SAML setting when Multiple IdP support is enabled on account",
+          accountId, operation, operation));
+    }
   }
 }

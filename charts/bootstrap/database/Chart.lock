@@ -1,0 +1,18 @@
+dependencies:
+- name: minio
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.9.1
+- name: mongodb
+  repository: https://charts.bitnami.com/bitnami
+  version: 13.1.2
+- name: timescaledb
+  repository: file://./timescaledb
+  version: 0.2.19
+- name: redis
+  repository: file://./redis
+  version: 0.2.7
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.4.2
+digest: sha256:2267630149ceec19aa6496e8c65e645aa2073fe2120c70879267047b1a654230
+generated: "2023-05-18T21:13:53.498544+05:30"

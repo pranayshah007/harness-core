@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.time.Duration;
 import java.util.List;
 import lombok.Builder;
@@ -43,5 +45,16 @@ public class ProcessExecutorCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Failed to execute command [args,args] on following delegate(s) : [h1,h2]
+    return isNotEmpty(processExecutorArguments)
+        ? String.format("Failed to execute command %s on following delegate(s)", processExecutorArguments)
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

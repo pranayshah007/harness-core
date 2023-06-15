@@ -8,6 +8,7 @@
 package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -25,7 +26,6 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
-import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
@@ -46,22 +46,21 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class EntityChangeEventMessageProcessor implements ConsumerMessageProcessor {
-  @VisibleForTesting
-  static final Map<Class<? extends PersistentEntity>, Class<? extends DeleteEntityByHandler>> ENTITIES_MAP;
+  public static final Map<Class<? extends PersistentEntity>, Class<? extends DeleteEntityByHandler>> ENTITIES_MAP;
   @VisibleForTesting static final Set<Class<? extends PersistentEntity>> EXCEPTIONS;
 
   static {
     // Add the service for project level default deletion
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
-        Arrays.asList(VerificationJob.class, Activity.class, MetricPack.class, HeatMap.class, TimeSeriesThreshold.class,
-            CVNGStepTask.class, UserJourney.class, Webhook.class, ServiceDependency.class, SLOHealthIndicator.class,
-            SLOErrorBudgetReset.class, NotificationRule.class, EntityUnavailabilityStatuses.class);
+        Arrays.asList(VerificationJob.class, Activity.class, ActivityBucket.class, MetricPack.class, HeatMap.class,
+            TimeSeriesThreshold.class, CVNGStepTask.class, UserJourney.class, Webhook.class, ServiceDependency.class,
+            SLOHealthIndicator.class, SLOErrorBudgetReset.class, NotificationRule.class,
+            EntityUnavailabilityStatuses.class, Downtime.class);
     ENTITIES_MAP = new LinkedHashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 
     // Add the service for project level custom deletion
     ENTITIES_MAP.put(MonitoringSourcePerpetualTask.class, MonitoringSourcePerpetualTaskService.class);
-    ENTITIES_MAP.put(Downtime.class, DowntimeService.class);
     ENTITIES_MAP.put(AbstractServiceLevelObjective.class, ServiceLevelObjectiveV2Service.class);
     ENTITIES_MAP.put(MonitoredService.class, MonitoredServiceService.class);
     ENTITIES_MAP.put(CVConfig.class, CVConfigService.class);

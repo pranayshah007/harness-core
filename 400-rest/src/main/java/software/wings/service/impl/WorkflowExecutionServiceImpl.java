@@ -63,6 +63,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.threading.Morpheus.quietSleep;
 import static io.harness.validation.Validator.notNullCheck;
@@ -510,7 +511,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       includeOnlyFields.forEach(field -> query.project(field, true));
     }
 
-    return new HIterator<>(query.fetch());
+    return new HIterator<>(query.limit(NO_LIMIT).fetch());
   }
 
   /**
@@ -2736,6 +2737,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
     boolean shouldReduceKeywords =
         featureFlagService.isEnabled(SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS, accountId);
+    boolean shouldCollectArtifactVariablesData =
+        featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId);
+
     if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
       populateHelmChartsInWorkflowExecution(
           workflowExecution, keywords, executionArgs, accountId, shouldReduceKeywords);
@@ -2758,8 +2762,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         log.error("artifactIds from executionArgs contains invalid artifacts");
         throw new InvalidRequestException("Invalid artifact");
       }
-    } else if (featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId)
-        && isNotEmpty(executionArgs.getArtifactVariables())) {
+    } else if (shouldCollectArtifactVariablesData && isNotEmpty(executionArgs.getArtifactVariables())) {
       List<List<Artifact>> tempArts = executionArgs.getArtifactVariables()
                                           .stream()
                                           .map(artifactVar
@@ -2793,8 +2796,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
     }
 
-    executionArgs.setArtifactIdNames(
-        filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
+    if (shouldCollectArtifactVariablesData) {
+      executionArgs.setArtifactIdNames(filteredArtifacts.stream().collect(
+          toMap(Artifact::getUuid, Artifact::getDisplayName, (artifact1, artifact2) -> artifact1)));
+    } else {
+      executionArgs.setArtifactIdNames(
+          filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
+    }
     filteredArtifacts.forEach(artifact -> {
       artifact.setArtifactFiles(null);
       artifact.setCreatedBy(null);
@@ -3321,7 +3329,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
 
       boolean firstEntry = true;
-      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(findOptions))) {
+      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch(findOptions))) {
         for (WorkflowExecution wfExecution : iterator) {
           if (firstEntry) {
             firstEntry = false;
@@ -3890,6 +3898,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                              .in(ExecutionStatus.activeStatuses())
                                              .project(WorkflowExecutionKeys.uuid, true)
                                              .project(WorkflowExecutionKeys.name, true)
+                                             .limit(NO_LIMIT)
                                              .asList();
     if (isEmpty(executions)) {
       return emptyList();
@@ -3905,6 +3914,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                              .in(ExecutionStatus.activeStatuses())
                                              .project(WorkflowExecutionKeys.uuid, true)
                                              .project(WorkflowExecutionKeys.name, true)
+                                             .limit(NO_LIMIT)
                                              .asList();
     if (isEmpty(executions)) {
       return emptyList();
@@ -3921,6 +3931,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                              .in(ExecutionStatus.activeStatuses())
                                              .project(WorkflowExecutionKeys.uuid, true)
                                              .project(WorkflowExecutionKeys.name, true)
+                                             .limit(NO_LIMIT)
                                              .asList();
     if (isEmpty(executions)) {
       return emptyList();
@@ -3939,6 +3950,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .project(WorkflowExecutionKeys.uuid, true)
         .project(WorkflowExecutionKeys.name, true)
         .project(WorkflowExecutionKeys.status, true)
+        .limit(NO_LIMIT)
         .asList();
   }
 
@@ -4441,6 +4453,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                                     .field(WorkflowExecutionKeys.status)
                                                     .in(ExecutionStatus.activeStatuses())
                                                     .project(WorkflowExecutionKeys.uuid, true)
+                                                    .limit(NO_LIMIT)
                                                     .asList();
     return !isEmpty(runningExecutions);
   }
@@ -5612,10 +5625,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public List<WorkflowExecution> obtainWorkflowExecutions(
-      List<String> appIds, long fromDateEpochMilli, String[] projectedKeys) {
+      String accountId, List<String> appIds, long fromDateEpochMilli, String[] projectedKeys) {
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
     try (HIterator<WorkflowExecution> iterator =
-             obtainWorkflowExecutionIterator(appIds, fromDateEpochMilli, projectedKeys)) {
+             obtainWorkflowExecutionIterator(accountId, appIds, fromDateEpochMilli, projectedKeys)) {
       while (iterator.hasNext()) {
         workflowExecutions.add(iterator.next());
       }
@@ -5639,8 +5652,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public HIterator<WorkflowExecution> obtainWorkflowExecutionIterator(
-      List<String> appIds, long epochMilli, String[] projectedKeys) {
+      String accountId, List<String> appIds, long epochMilli, String[] projectedKeys) {
     Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
+                                         .filter(WorkflowExecutionKeys.accountId, accountId)
                                          .field(WorkflowExecutionKeys.appId)
                                          .in(appIds)
                                          .field(WorkflowExecutionKeys.createdAt)
@@ -5651,7 +5665,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       query.project(projectedKey, true);
     }
 
-    return new HIterator<>(query.fetch());
+    FindOptions findOptions = new FindOptions();
+    findOptions.hint(BasicDBUtils.getIndexObject(
+        WorkflowExecution.mongoIndexes(), WorkflowExecution.ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID));
+    return new HIterator<>(query.limit(NO_LIMIT).fetch(findOptions));
   }
 
   private HIterator<WorkflowExecution> obtainWorkflowExecutionIterator(
@@ -5666,7 +5683,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     for (String projectedKey : projectedKeys) {
       query.project(projectedKey, true);
     }
-    return new HIterator<>(query.fetch());
+    FindOptions findOptions = new FindOptions();
+    findOptions.hint(BasicDBUtils.getIndexObject(
+        WorkflowExecution.mongoIndexes(), WorkflowExecution.ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID));
+    return new HIterator<>(query.limit(NO_LIMIT).fetch(findOptions));
   }
 
   @Override
@@ -6273,7 +6293,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                          .in(entityIds);
 
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
-    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
+    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
       for (WorkflowExecution workflowExecution : iterator) {
         workflowExecutions.add(workflowExecution);
       }
@@ -6512,7 +6532,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       query.field(WorkflowExecutionKeys.tags + ".value").equal(value);
     }
 
-    List<WorkflowExecution> workflowExecutions = query.project("_id", true).asList();
+    List<WorkflowExecution> workflowExecutions = query.project("_id", true).limit(NO_LIMIT).asList();
     return workflowExecutions.stream().map(WorkflowExecution::getUuid).collect(toSet());
   }
 
@@ -6625,6 +6645,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                                    .field(WorkflowExecutionKeys.createdAt)
                                                    .lessThan(currentExecution.getCreatedAt())
                                                    .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+                                                   .limit(NO_LIMIT)
                                                    .asList();
 
     List<String> serviceIds = currentExecution.getServiceIds();

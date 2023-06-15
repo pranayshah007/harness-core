@@ -1,0 +1,20 @@
+pipeline:
+  identifier: AMI
+  stages:
+    - stage:
+        identifier: AMI
+        type: Deployment
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: Asg
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: AMI
+                      sources:
+                        - identifier: AMI
+                          type: AmazonMachineImage
+                          spec:
+                            version: <+input>

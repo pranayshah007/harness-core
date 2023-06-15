@@ -15,7 +15,6 @@ import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
-import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.validation.Validator.nullCheckForInvalidRequest;
@@ -48,6 +47,7 @@ import io.harness.exception.WingsException;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
@@ -105,8 +105,11 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     beforePodList = k8sTaskHelperBase.getPodDetails(kubernetesConfig, resourceIdToScale.getNamespace(),
         k8sScaleRequest.getReleaseName(), steadyStateTimeoutInMillis);
 
-    k8sTaskHelperBase.scale(
+    boolean success = k8sTaskHelperBase.scale(
         client, k8SDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, true);
+    if (success) {
+      scaleLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
+    }
 
     if (!k8sScaleRequest.isSkipSteadyStateCheck()) {
       K8sSteadyStateDTO k8sSteadyStateDTO =
@@ -119,6 +122,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
               .namespace(resourceIdToScale.getNamespace())
               .denoteOverallSuccess(true)
               .isErrorFrameworkEnabled(true)
+              .kubernetesConfig(kubernetesConfig)
               .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sScaleRequest.isUseK8sApiForSteadyStateCheck());
@@ -159,7 +163,8 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog(
         color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
 
-    client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
     if (StringUtils.isEmpty(request.getWorkload())) {
       executionLogCallback.saveExecutionLog("\nNo Workload found to scale.");
@@ -168,7 +173,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     try {
-      resourceIdToScale = createKubernetesResourceIdFromNamespaceKindName(request.getWorkload());
+      resourceIdToScale = k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(request.getWorkload());
     } catch (WingsException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           format(

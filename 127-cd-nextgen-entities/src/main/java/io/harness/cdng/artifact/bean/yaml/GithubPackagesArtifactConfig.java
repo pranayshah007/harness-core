@@ -94,6 +94,10 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
    * Version Regex
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
+  /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
 
   /**
    * Identifier for artifact.
@@ -104,6 +108,16 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
    * Whether this config corresponds to primary artifact.
    */
   @VariableExpression(skipVariableExpression = true) boolean primaryArtifact;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> groupId;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactId;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> repository;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> user;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> extension;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -149,6 +163,10 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
       resultantConfig = resultantConfig.withVersionRegex(githubPackagesArtifactConfig.getVersionRegex());
     }
 
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(githubPackagesArtifactConfig.getDigest());
+    }
+
     return resultantConfig;
   }
 
@@ -159,5 +177,10 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
 
     return connectorRefMap;
+  }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkVersionAndVersionRegex(version, versionRegex);
   }
 }

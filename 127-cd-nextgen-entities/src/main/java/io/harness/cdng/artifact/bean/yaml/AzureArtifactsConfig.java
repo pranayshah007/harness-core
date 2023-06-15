@@ -67,7 +67,7 @@ public class AzureArtifactsConfig implements ArtifactConfig, Visitable, WithConn
    * PackageType - maven/nuget.
    */
   @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "maven, nuget")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "maven, nuget, upack")
   @Wither
   ParameterField<String> packageType;
 
@@ -187,5 +187,10 @@ public class AzureArtifactsConfig implements ArtifactConfig, Visitable, WithConn
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
 
     return connectorRefMap;
+  }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkVersionAndVersionRegex(version, versionRegex);
   }
 }

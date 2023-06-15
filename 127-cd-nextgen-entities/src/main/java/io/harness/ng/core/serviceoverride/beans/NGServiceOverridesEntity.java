@@ -12,11 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.ScopeAware;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -47,13 +50,12 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_accountId_organizationIdentifier_projectIdentifier_environmentRef_serviceRef")
+                 .name("unique_accountId_organizationIdentifier_projectIdentifier_identifier")
                  .unique(true)
                  .field(NGServiceOverridesEntityKeys.accountId)
                  .field(NGServiceOverridesEntityKeys.orgIdentifier)
                  .field(NGServiceOverridesEntityKeys.projectIdentifier)
-                 .field(NGServiceOverridesEntityKeys.environmentRef)
-                 .field(NGServiceOverridesEntityKeys.serviceRef)
+                 .field(NGServiceOverridesEntityKeys.identifier)
                  .build())
         .build();
   }
@@ -63,10 +65,19 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
 
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
-  @NotNull @Trimmed String serviceRef;
+  @Trimmed String serviceRef;
   @NotNull @Trimmed String environmentRef;
 
   String yaml;
+
+  // for Override 2.0
+  @EntityIdentifier String identifier;
+  @Trimmed String infraIdentifier;
+  @Trimmed String clusterIdentifier; // will infer scope of the cluster from environment
+  ServiceOverridesSpec spec;
+  ServiceOverridesType type;
+
+  @Builder.Default Boolean isV2 = Boolean.FALSE;
 
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;

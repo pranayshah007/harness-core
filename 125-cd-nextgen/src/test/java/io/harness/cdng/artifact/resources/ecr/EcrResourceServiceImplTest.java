@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.resources.ecr;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +41,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
@@ -66,8 +68,23 @@ public class EcrResourceServiceImplTest extends CategoryTest {
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
   private static final String ACCOUNT_ID = "accountId";
+  private static final String REGISTRY_ID = "registryId";
   private static final String IMAGE_PATH = "imagePath";
   private static final String REGION = "region";
+  private static final String IDENTIFIER = "identifier";
+  private static final String INPUT = "<+input>-abc";
+  private static final String TAG = "tag";
+  private static final IdentifierRef IDENTIFIER_REF = IdentifierRef.builder()
+                                                          .accountIdentifier(ACCOUNT_ID)
+                                                          .identifier(IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .scope(Scope.PROJECT)
+                                                          .build();
+  private static final EcrRequestDTO ECR_REQUEST_DTO = EcrRequestDTO.builder().region(REGION).build();
+  private static final String IMAGE_PATH_MESSAGE = "value for imagePath is empty or not provided";
+  private static final String REGION_MESSAGE = "value for region is empty or not provided";
+  private static final String TAG_TAG_REGEX_MESSAGE = "value for tag, tagRegex is empty or not provided";
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ConnectorService connectorService;
   @Mock AwsResourceServiceHelper serviceHelper;
@@ -126,7 +143,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
+        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null, null);
 
     when(serviceHelper.getResponseData(any(), any(), any(), any()))
         .thenReturn(ArtifactTaskResponse.builder()
@@ -137,8 +154,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                                 .build())
                         .build());
 
-    EcrResponseDTO ecrResponseDTO =
-        ecrResourceService.getBuildDetails(connectorRef, IMAGE_PATH, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    EcrResponseDTO ecrResponseDTO = ecrResourceService.getBuildDetails(
+        connectorRef, REGISTRY_ID, IMAGE_PATH, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(ecrResponseDTO).isNotNull();
     assertThat(ecrResponseDTO.getBuildDetailsList().get(0).getTag()).isEqualTo("tag");
   }
@@ -178,8 +195,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                             ArtifactTaskExecutionResponse.builder().isArtifactServerValid(true).build())
                         .build());
 
-    Boolean res =
-        ecrResourceService.validateArtifactServer(connectorRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, REGION);
+    Boolean res = ecrResourceService.validateArtifactServer(
+        connectorRef, REGISTRY_ID, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, REGION);
 
     assertThat(res).isTrue();
   }
@@ -219,8 +236,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                             ArtifactTaskExecutionResponse.builder().isArtifactServerValid(true).build())
                         .build());
 
-    Boolean res =
-        ecrResourceService.validateArtifactSource(IMAGE_PATH, connectorRef, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    Boolean res = ecrResourceService.validateArtifactSource(
+        REGISTRY_ID, IMAGE_PATH, connectorRef, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
 
     assertThat(res).isTrue();
   }
@@ -266,7 +283,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                 .build());
 
     EcrListImagesDTO ecrListImagesDTO =
-        ecrResourceService.getImages(connectorRef, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        ecrResourceService.getImages(connectorRef, REGISTRY_ID, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
 
     assertThat(ecrListImagesDTO.getImages()).isEqualTo(ls);
   }
@@ -275,18 +292,10 @@ public class EcrResourceServiceImplTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testgetSuccessfulBuild() {
-    IdentifierRef connectorRef = IdentifierRef.builder()
-                                     .accountIdentifier(ACCOUNT_ID)
-                                     .identifier("identifier")
-                                     .projectIdentifier(PROJECT_IDENTIFIER)
-                                     .orgIdentifier(ORG_IDENTIFIER)
-                                     .scope(Scope.PROJECT)
-                                     .build();
-
-    EcrRequestDTO ecrRequestDTO = EcrRequestDTO.builder().region(REGION).build();
+    EcrRequestDTO ecrRequestDTO = EcrRequestDTO.builder().region(REGION).tag(TAG).build();
 
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
@@ -300,10 +309,10 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                         .orgIdentifier(ORG_IDENTIFIER)
                         .projectIdentifier(PROJECT_IDENTIFIER)
                         .build());
-    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
+    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number(TAG).build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
+        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null, null);
 
     when(serviceHelper.getResponseData(any(), any(), any(), any()))
         .thenReturn(ArtifactTaskResponse.builder()
@@ -315,28 +324,20 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                         .build());
 
     EcrBuildDetailsDTO ecrResponseDTO = ecrResourceService.getSuccessfulBuild(
-        connectorRef, IMAGE_PATH, ecrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH, ecrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
 
     assertThat(ecrResponseDTO).isNotNull();
 
-    assertThat(ecrResponseDTO.getTag()).isEqualTo("tag");
+    assertThat(ecrResponseDTO.getTag()).isEqualTo(TAG);
   }
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testgetSuccessfulBuildException() {
-    IdentifierRef connectorRef = IdentifierRef.builder()
-                                     .accountIdentifier(ACCOUNT_ID)
-                                     .identifier("identifier")
-                                     .projectIdentifier(PROJECT_IDENTIFIER)
-                                     .orgIdentifier(ORG_IDENTIFIER)
-                                     .scope(Scope.PROJECT)
-                                     .build();
-
-    EcrRequestDTO ecrRequestDTO = EcrRequestDTO.builder().region(REGION).build();
+    EcrRequestDTO ecrRequestDTO = EcrRequestDTO.builder().region(REGION).tag(TAG).build();
 
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
@@ -350,10 +351,10 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                         .orgIdentifier(ORG_IDENTIFIER)
                         .projectIdentifier(PROJECT_IDENTIFIER)
                         .build());
-    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
+    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number(TAG).build();
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
-        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
+        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null, null);
 
     when(serviceHelper.getResponseData(any(), any(), any(), any()))
         .thenReturn(
@@ -363,9 +364,145 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                     ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(Collections.emptyList()).build())
                 .build());
     assertThatThrownBy(()
-                           -> ecrResourceService.getSuccessfulBuild(
-                               connectorRef, IMAGE_PATH, ecrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                               ecrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("Ecr get last successful build task failure.");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_Null() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, REGISTRY_ID, null, ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_Empty() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, REGISTRY_ID, "", ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_Input() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, REGISTRY_ID, INPUT, ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Region_Null() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                               EcrRequestDTO.builder().build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Region_Empty() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                               EcrRequestDTO.builder().region("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Region_Input() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                               EcrRequestDTO.builder().region(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Null() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                               ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Empty() {
+    assertThatThrownBy(
+        ()
+            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                EcrRequestDTO.builder().region(REGION).tag("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Input() {
+    assertThatThrownBy(
+        ()
+            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                EcrRequestDTO.builder().region(REGION).tag(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Null() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                               ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Empty() {
+    assertThatThrownBy(
+        ()
+            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                EcrRequestDTO.builder().region(REGION).tagRegex("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Input() {
+    assertThatThrownBy(
+        ()
+            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH,
+                EcrRequestDTO.builder().region(REGION).tagRegex(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 }

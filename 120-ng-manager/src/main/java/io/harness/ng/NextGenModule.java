@@ -26,6 +26,7 @@ import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
 import static io.harness.authorization.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.SERVICE_DISCOVERY_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
@@ -56,6 +57,8 @@ import io.harness.FreezeOutboxEventHandler;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
+import io.harness.PluginConfiguration;
+import io.harness.PluginModule;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -252,10 +255,13 @@ import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
+import io.harness.ng.rollback.PostProdRollbackService;
+import io.harness.ng.rollback.PostProdRollbackServiceImpl;
 import io.harness.ng.scim.NGScimGroupServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
+import io.harness.ng.servicediscovery.AbstractServiceDiscoveryModule;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM.AwsCodeCommitSCMMapper;
 import io.harness.ng.userprofile.entities.AzureRepoSCM.AzureRepoSCMMapper;
@@ -655,7 +661,8 @@ public class NextGenModule extends AbstractModule {
     install(new InviteModule(appConfig.isNgAuthUIEnabled()));
     install(new SignupModule(this.appConfig.getManagerClientConfig(),
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId(),
-        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration()));
+        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration(),
+        appConfig.getSignupDomainDenylistConfiguration()));
     install(GitopsModule.getInstance());
     install(new AbstractWaiterModule() {
       @Override
@@ -673,6 +680,8 @@ public class NextGenModule extends AbstractModule {
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
     install(NGModule.getInstance());
+    install(PluginModule.getInstance(
+        PluginConfiguration.builder().pluginExecutionConfig(appConfig.getPluginExecutionConfig()).build()));
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
         this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumersConfigs()));
@@ -777,6 +786,7 @@ public class NextGenModule extends AbstractModule {
     install(new NGLdapModule(appConfig));
     install(new NgVariableModule(appConfig));
     install(new NGIpAllowlistModule(appConfig));
+    install(new NGFavoriteModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -825,6 +835,23 @@ public class NextGenModule extends AbstractModule {
       @Override
       public String clientId() {
         return CHAOS_SERVICE.name();
+      }
+    });
+
+    install(new AbstractServiceDiscoveryModule() {
+      @Override
+      public ServiceHttpClientConfig serviceDiscoveryClientConfig() {
+        return appConfig.getServiceDiscoveryServiceClientConfig();
+      }
+
+      @Override
+      public String serviceSecret() {
+        return appConfig.getNextGenConfig().getServiceDiscoveryServiceSecret();
+      }
+
+      @Override
+      public String clientId() {
+        return SERVICE_DISCOVERY_SERVICE.name();
       }
     });
 
@@ -1022,6 +1049,7 @@ public class NextGenModule extends AbstractModule {
         .annotatedWith(Names.named(TEMPLATE_ENTITY + ENTITY_CRUD))
         .to(CustomDeploymentEntityCRUDStreamEventListener.class);
     bind(MessageListener.class).annotatedWith(Names.named(INSTANCE_STATS)).to(InstanceStatsEventListener.class);
+    bind(PostProdRollbackService.class).to(PostProdRollbackServiceImpl.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);

@@ -50,4 +50,17 @@ public class GitConnectionNGCapability implements ExecutionCapability {
   public String getCapabilityToString() {
     return isNotEmpty(gitConfig.getUrl()) ? String.format("Capability reach url : %s ", gitConfig.getUrl()) : null;
   }
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) unable to connect to {url}, make sure to provide the connectivity with the
+    // following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format(
+            "Delegate(s) unable to connect to %s, make sure to provide the connectivity with the following delegates",
+            fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }

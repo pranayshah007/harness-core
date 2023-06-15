@@ -17,5 +17,7 @@ import javax.ws.rs.core.Response;
 public interface AwsMarketPlaceApiHandler {
   Response processAWSMarktPlaceOrder(String token);
 
+  boolean isDimensionV2Provisionable(String dimension, Integer quantity);
+
   Integer getDimensionQuantity(String dimension);
 }

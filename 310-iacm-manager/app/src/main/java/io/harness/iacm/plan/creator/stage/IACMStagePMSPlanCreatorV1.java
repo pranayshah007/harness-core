@@ -18,10 +18,9 @@ import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entities.Stack;
+import io.harness.beans.entities.Workspace;
 import io.harness.beans.stages.IACMStageConfigImplV1;
 import io.harness.beans.stages.IACMStageNodeV1;
-import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -33,10 +32,11 @@ import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
-import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;
+import io.harness.iacm.execution.IACMIntegrationStageStepPMS;
+import io.harness.iacm.execution.IACMIntegrationStageStepParametersPMS;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
@@ -62,14 +62,15 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
+import io.harness.yaml.clone.Clone;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
+import io.harness.yaml.options.Options;
 import io.harness.yaml.registry.Registry;
-import io.harness.yaml.repository.Repository;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -123,20 +124,20 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     }
   }
 
-  private CodeBase getIACMCodebase(PlanCreationContext ctx, String stackId) {
+  private CodeBase getIACMCodebase(PlanCreationContext ctx, String workspaceId) {
     try {
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
-      Stack stack = serviceUtils.getIACMStackInfo(
-          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
+      Workspace workspace = serviceUtils.getIACMWorkspaceInfo(
+          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspaceId);
       // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
       // defined
-      if (!Objects.equals(stack.getRepository(), "") && stack.getRepository() != null) {
-        iacmCodeBase.repoName(ParameterField.<String>builder().value(stack.getRepository()).build());
+      if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
+        iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
       } else {
         iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
       }
 
-      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(stack.getRepository_connector()).build());
+      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(workspace.getRepository_connector()).build());
       iacmCodeBase.depth(ParameterField.<Integer>builder().value(50).build());
       iacmCodeBase.prCloneStrategy(ParameterField.<PRCloneStrategy>builder().value(null).build());
       iacmCodeBase.sslVerify(ParameterField.<Boolean>builder().value(null).build());
@@ -146,20 +147,20 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
       // We support 2,
 
       BuildBuilder buildObject = builder();
-      if (!Objects.equals(stack.getRepository_branch(), "") && stack.getRepository_branch() != null) {
+      if (!Objects.equals(workspace.getRepository_branch(), "") && workspace.getRepository_branch() != null) {
         buildObject.type(BuildType.BRANCH);
         buildObject.spec(BranchBuildSpec.builder()
-                             .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
+                             .branch(ParameterField.<String>builder().value(workspace.getRepository_branch()).build())
                              .build());
-      } else if (!Objects.equals(stack.getRepository_commit(), "") && stack.getRepository_commit() != null) {
+      } else if (!Objects.equals(workspace.getRepository_commit(), "") && workspace.getRepository_commit() != null) {
         buildObject.type(BuildType.TAG);
         buildObject.spec(TagBuildSpec.builder()
-                             .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
+                             .tag(ParameterField.<String>builder().value(workspace.getRepository_commit()).build())
                              .build());
       } else {
         throw new IACMStageExecutionException(
-            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the stack "
-            + stackId);
+            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
+            + workspaceId);
       }
 
       return iacmCodeBase.build(ParameterField.<Build>builder().value(buildObject.build()).build()).build();
@@ -167,8 +168,8 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve iacmCodeBase from pipeline");
-      throw new IACMStageExecutionException(
-          "Unexpected error building the connector information from the stack: " + stackId + " ." + ex.getMessage());
+      throw new IACMStageExecutionException("Unexpected error building the connector information from the workspace: "
+          + workspaceId + " ." + ex.getMessage());
     }
   }
 
@@ -191,10 +192,11 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     switch (ctx.getTriggerInfo().getTriggerType()) {
       case WEBHOOK:
         Dependency globalDependency = ctx.getMetadata().getGlobalDependency();
-        Optional<Object> optionalRepository =
-            getDeserializedObjectFromDependency(globalDependency, YAMLFieldNameConstants.REPOSITORY);
-        Repository repository = (Repository) optionalRepository.orElse(Repository.builder().build());
-        if (ParameterField.isNull(repository.getReference())) {
+        Optional<Object> optionalOptions =
+            getDeserializedObjectFromDependency(globalDependency, YAMLFieldNameConstants.OPTIONS);
+        Options options = (Options) optionalOptions.orElse(Options.builder().build());
+        Clone clone = options.getClone();
+        if (clone == null || ParameterField.isNull(clone.getRef())) {
           return false;
         }
         break;
@@ -214,20 +216,21 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     IACMStageConfigImplV1 stageConfig = stageNode.getStageConfig();
     Infrastructure infrastructure = getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
-    String stackId = specField.getNode().getField("stack").getNode().getCurrJsonNode().asText();
+    String workspaceId = specField.getNode().getFieldOrThrow("workspace").getNode().getCurrJsonNode().asText();
 
-    CodeBase codeBase = getIACMCodebase(ctx, stackId);
-    Optional<Object> optionalRegistry =
-        getDeserializedObjectFromDependency(ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.REGISTRY);
-    Registry registry = (Registry) optionalRegistry.orElse(Registry.builder().build());
-    IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
-                                                   .infrastructure(infrastructure)
-                                                   .childNodeID(childrenNodeIds.get(0))
-                                                   .codeBase(codeBase)
-                                                   .triggerPayload(ctx.getTriggerPayload())
-                                                   .registry(registry)
-                                                   .cloneManually(shouldCloneManually(ctx, codeBase))
-                                                   .build();
+    CodeBase codeBase = getIACMCodebase(ctx, workspaceId);
+    Optional<Object> optionalOptions =
+        getDeserializedObjectFromDependency(ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.OPTIONS);
+    Options options = (Options) optionalOptions.orElse(Options.builder().build());
+    Registry registry = options.getRegistry() == null ? Registry.builder().build() : options.getRegistry();
+    IACMIntegrationStageStepParametersPMS params = IACMIntegrationStageStepParametersPMS.builder()
+                                                       .infrastructure(infrastructure)
+                                                       .childNodeID(childrenNodeIds.get(0))
+                                                       .codeBase(codeBase)
+                                                       .triggerPayload(ctx.getTriggerPayload())
+                                                       .registry(registry)
+                                                       .cloneManually(shouldCloneManually(ctx, codeBase))
+                                                       .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
@@ -239,7 +242,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
                                 .name(stageNode.getName())
                                 .specConfig(params)
                                 .build())
-            .stepType(IntegrationStageStepPMS.STEP_TYPE)
+            .stepType(IACMIntegrationStageStepPMS.STEP_TYPE)
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
@@ -302,21 +305,19 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     YamlField field = ctx.getCurrentField();
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
-    String stackId = specField.getNode().getField("stack").getNode().getCurrJsonNode().asText();
-    String workflow = specField.getNode().getField("workflow").getNode().getCurrJsonNode().asText();
+    String workspaceId = specField.getNode().getFieldOrThrow("workspace").getNode().getCurrJsonNode().asText();
     YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
 
     IACMStageConfigImplV1 stageConfigImpl = stageNode.getStageConfig();
     Infrastructure infrastructure = getInfrastructure(stageConfigImpl.getRuntime(), stageConfigImpl.getPlatform());
-    createPlanForCodebase(ctx, planCreationResponseMap, metadataMap, stepsField.getUuid(), stackId);
+    createPlanForCodebase(ctx, planCreationResponseMap, metadataMap, stepsField.getUuid(), workspaceId);
     dependenciesNodeMap.put(stepsField.getUuid(), stepsField);
     StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
         strategyMetadataMap, getAdvisorObtainments(ctx.getDependency()));
 
     metadataMap.put("stageNode", ByteString.copyFrom(kryoSerializer.asBytes(stageNode)));
     metadataMap.put("infrastructure", ByteString.copyFrom(kryoSerializer.asBytes(infrastructure)));
-    metadataMap.put("stackId", ByteString.copyFrom(kryoSerializer.asBytes(stackId)));
-    metadataMap.put("workflow", ByteString.copyFrom(kryoSerializer.asBytes(workflow)));
+    metadataMap.put("workspaceId", ByteString.copyFrom(kryoSerializer.asBytes(workspaceId)));
 
     planCreationResponseMap.put(stepsField.getUuid(),
         PlanCreationResponse.builder()
@@ -334,8 +335,8 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
 
   private void createPlanForCodebase(PlanCreationContext ctx,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap,
-      String childNodeID, String stackId) {
-    CodeBase codeBase = getIACMCodebase(ctx, stackId);
+      String childNodeID, String workspaceId) {
+    CodeBase codeBase = getIACMCodebase(ctx, workspaceId);
     List<PlanNode> codebasePlanNodes =
         CodebasePlanCreator.buildCodebasePlanNodes(generateUuid(), childNodeID, kryoSerializer, codeBase, null);
     if (isNotEmpty(codebasePlanNodes)) {

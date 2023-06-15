@@ -452,8 +452,8 @@ public enum EntityType {
   CONTAINER_STEP(
       ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),
   @JsonProperty(EntityTypeConstants.IACM)
-  IACM_TERRAFORM_PLAN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLAN, IdentifierRef.class,
-      EntityYamlRootNames.IACM_TERRAFORM_PLAN),
+  IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
+      EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TEMPLATE(
       ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),
@@ -582,7 +582,33 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
-      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
+  K8S_BLUE_GREEN_STAGE_SCALE_DOWN(ModuleType.CD, EntityTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN,
+      IdentifierRef.class, EntityYamlRootNames.K8S_BLUE_GREEN_STAGE_SCALE_DOWN),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_BUILD)
+  AWS_SAM_BUILD(
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_BUILD, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_BUILD),
+  @JsonProperty(EntityTypeConstants.SEMGREP)
+  SEMGREP(ModuleType.STO, EntityTypeConstants.SEMGREP, IdentifierRef.class, EntityYamlRootNames.SEMGREP),
+  @JsonProperty(EntityTypeConstants.SSCA_ENFORCEMENT)
+  SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.IDP_CONNECTOR)
+  IDP_CONNECTOR(ModuleType.IDP, EntityTypeConstants.IDP_CONNECTOR, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.CD_SSCA_ENFORCEMENT)
+  CD_SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.CD_SSCA_ENFORCEMENT, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.DOWNLOAD_MANIFESTS)
+  DOWNLOAD_MANIFESTS(ModuleType.CD, EntityTypeConstants.DOWNLOAD_MANIFESTS, IdentifierRef.class,
+      EntityYamlRootNames.DOWNLOAD_MANIFESTS),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2(ModuleType.CD,
+      EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2, IdentifierRef.class,
+      EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+  SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.COVERITY)
+  COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY);
 
   private final ModuleType moduleType;
   String yamlName;

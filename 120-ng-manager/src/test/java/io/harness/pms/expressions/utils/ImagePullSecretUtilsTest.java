@@ -363,7 +363,8 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
     AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
         AzureAcrTokenTaskResponse.builder().token(jwtAcrToken).build();
 
-    when(azureHelperService.executeSyncTask(any(), any(), any(), anyString())).thenReturn(azureAcrTokenTaskResponse);
+    when(azureHelperService.executeSyncTask(any(), any(), any(BaseNGAccess.class), anyString()))
+        .thenReturn(azureAcrTokenTaskResponse);
     assertEquals(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance),
         format("${imageSecret.create(\"%s\", \"%s\", \"%s\")}", ACR_REGISTRY, ACR_DUMMY_USERNAME, jwtAcrToken));
     assertEquals(imagePullSecretUtils.getDockerConfigJson(artifactOutcome, ambiance),
@@ -384,7 +385,7 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(connectorResponseDTO);
     when(azureHelperService.getBaseNGAccess(ACCOUNT_ID_VALUE, ORG_ID_VALUE, PROJECT_ID_VALUE)).thenReturn(baseNGAccess);
     when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(azureHelperService.executeSyncTask(any(), any(), any(), anyString()))
+    when(azureHelperService.executeSyncTask(any(), any(), any(BaseNGAccess.class), anyString()))
         .thenThrow(new RuntimeException("some unexpected exception"));
 
     assertThatThrownBy(() -> imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance))
@@ -411,7 +412,8 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
     AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
         AzureAcrTokenTaskResponse.builder().token(jwtAcrToken).build();
 
-    when(azureHelperService.executeSyncTask(any(), any(), any(), anyString())).thenReturn(azureAcrTokenTaskResponse);
+    when(azureHelperService.executeSyncTask(any(), any(), any(BaseNGAccess.class), anyString()))
+        .thenReturn(azureAcrTokenTaskResponse);
     assertEquals(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance),
         format("${imageSecret.create(\"%s\", \"%s\", \"%s\")}", ACR_REGISTRY, ACR_DUMMY_USERNAME, jwtAcrToken));
     assertEquals(imagePullSecretUtils.getDockerConfigJson(artifactOutcome, ambiance),
@@ -437,7 +439,8 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
     AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
         AzureAcrTokenTaskResponse.builder().token(jwtAcrToken).build();
 
-    when(azureHelperService.executeSyncTask(any(), any(), any(), anyString())).thenReturn(azureAcrTokenTaskResponse);
+    when(azureHelperService.executeSyncTask(any(), any(), any(BaseNGAccess.class), anyString()))
+        .thenReturn(azureAcrTokenTaskResponse);
     assertEquals(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance),
         format("${imageSecret.create(\"%s\", \"%s\", \"%s\")}", ACR_REGISTRY, ACR_DUMMY_USERNAME, jwtAcrToken));
     assertEquals(imagePullSecretUtils.getDockerConfigJson(artifactOutcome, ambiance),

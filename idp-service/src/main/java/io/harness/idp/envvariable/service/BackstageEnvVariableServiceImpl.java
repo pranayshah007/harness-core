@@ -7,6 +7,7 @@
 
 package io.harness.idp.envvariable.service;
 
+import static io.harness.idp.common.Constants.GITHUB_APP_PRIVATE_KEY_REF;
 import static io.harness.idp.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
 
 import static java.lang.String.format;
@@ -17,7 +18,6 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
@@ -34,11 +34,13 @@ import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +68,17 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
+  public Optional<BackstageEnvVariable> findByEnvNameAndAccountIdentifier(String envName, String accountIdentifier) {
+    Optional<BackstageEnvVariableEntity> envVariableEntityOpt =
+        backstageEnvVariableRepository.findByEnvNameAndAccountIdentifier(envName, accountIdentifier);
+    if (envVariableEntityOpt.isEmpty()) {
+      return Optional.empty();
+    }
+    BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((envVariableEntityOpt.get().getType()));
+    return Optional.of(envVariableMapper.toDto(envVariableEntityOpt.get()));
+  }
+
+  @Override
   public BackstageEnvVariable create(BackstageEnvVariable envVariable, String accountIdentifier) {
     envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
     sync(Collections.singletonList(envVariable), accountIdentifier);
@@ -80,9 +93,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return responseEnvVariable;
   }
 
-  @Override
-  public List<BackstageEnvVariable> createMulti(
-      List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
+  List<BackstageEnvVariable> createMulti(List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
     requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
     sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
@@ -115,9 +126,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return responseVariable;
   }
 
-  @Override
-  public List<BackstageEnvVariable> updateMulti(
-      List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
+  List<BackstageEnvVariable> updateMulti(List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
     requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
     sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
@@ -131,6 +140,30 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     setupUsageProducer.publishEnvVariableSetupUsage(responseVariables, accountIdentifier);
 
     return responseVariables;
+  }
+
+  @Override
+  public List<BackstageEnvVariable> createOrUpdate(List<BackstageEnvVariable> envVariables, String accountIdentifier) {
+    List<String> envNamesFromRequest =
+        envVariables.stream().map(BackstageEnvVariable::getEnvName).collect(Collectors.toList());
+    Set<String> envNamesFromDB =
+        backstageEnvVariableRepository
+            .findAllByAccountIdentifierAndMultipleEnvNames(accountIdentifier, envNamesFromRequest)
+            .stream()
+            .map(BackstageEnvVariableEntity::getEnvName)
+            .collect(Collectors.toSet());
+    List<BackstageEnvVariable> envVariablesToUpdate = new ArrayList<>();
+    List<BackstageEnvVariable> envVariablesToAdd = new ArrayList<>();
+    envVariables.forEach(envVariable -> {
+      if (envNamesFromDB.contains(envVariable.getEnvName())) {
+        envVariablesToUpdate.add(envVariable);
+      } else {
+        envVariablesToAdd.add(envVariable);
+      }
+    });
+    List<BackstageEnvVariable> response = createMulti(envVariablesToAdd, accountIdentifier);
+    response.addAll(updateMulti(envVariablesToUpdate, accountIdentifier));
+    return response;
   }
 
   @Override
@@ -164,6 +197,12 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   }
 
   @Override
+  public void findAndSync(String accountIdentifier) {
+    List<BackstageEnvVariable> variables = findByAccountIdentifier(accountIdentifier);
+    sync(variables, accountIdentifier);
+  }
+
+  @Override
   public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) {
     Iterable<BackstageEnvVariableEntity> envVariableEntities =
         backstageEnvVariableRepository.findAllById(secretIdentifiers);
@@ -183,7 +222,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier) {
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET, envNames);
-    backstageEnvVariableRepository.deleteAllByEnvName(envNames);
+    backstageEnvVariableRepository.deleteAllByAccountIdentifierAndEnvNames(accountIdentifier, envNames);
   }
 
   @Override
@@ -203,7 +242,6 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
   }
 
-  @Override
   public void sync(List<BackstageEnvVariable> envVariables, String accountIdentifier) {
     if (envVariables.isEmpty()) {
       return;
@@ -217,6 +255,11 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         String secretIdentifier = ((BackstageEnvSecretVariable) envVariable).getHarnessSecretIdentifier();
         DecryptedSecretValue decryptedValue =
             ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
+
+        if (envName.equals(GITHUB_APP_PRIVATE_KEY_REF)) {
+          decryptedValue.setDecryptedValue(new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue())));
+        }
+
         secretData.put(envName, decryptedValue.getDecryptedValue().getBytes());
       } else {
         secretData.put(envName, ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());
@@ -241,6 +284,19 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       resultList.add((BackstageEnvSecretVariable) envVariableMapper.toDto(backstageEnvVariableEntity));
     }
     return resultList;
+  }
+
+  @Override
+  public List<BackstageEnvVariable> findByEnvNamesAndAccountIdentifier(
+      List<String> envNames, String accountIdentifier) {
+    List<BackstageEnvVariableEntity> entities =
+        backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(accountIdentifier, envNames);
+    List<BackstageEnvVariable> backstageEnvVariables = new ArrayList<>();
+    entities.forEach(entity -> {
+      BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((entity.getType()));
+      backstageEnvVariables.add(envVariableMapper.toDto(entity));
+    });
+    return backstageEnvVariables;
   }
 
   private String getNamespaceForAccount(String accountIdentifier) {

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +29,7 @@ import io.harness.beans.RepresentationStrategy;
 import io.harness.category.element.UnitTests;
 import io.harness.dto.OrchestrationAdjacencyListDTO;
 import io.harness.dto.OrchestrationGraphDTO;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -36,6 +38,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.PipelineExecutionNotesDTO;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -71,6 +74,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock AccessControlClient accessControlClient;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -312,5 +316,27 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
             .getListOfBranches(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "testRepo")
             .getData();
     assertEquals(uniqueBranches.getBranches(), branchList);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetNotesForPlanExecution() {
+    doReturn("Notes").when(planExecutionMetadataService).getNotesForExecution("executionId");
+    PipelineExecutionNotesDTO pipelineExecutionNotesResponse =
+        executionDetailsResource.getNotesForPlanExecution(ACCOUNT_ID, "executionId").getData();
+    assertEquals(pipelineExecutionNotesResponse.getNotes(), "Notes");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testUpdateNotesForPlanExecution() {
+    doReturn("newNotes").when(planExecutionMetadataService).updateNotesForExecution("executionId", "newNotes");
+    PipelineExecutionNotesDTO pipelineExecutionNotesResponse =
+        executionDetailsResource
+            .updateNotesForPlanExecution(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "newNotes", "executionId")
+            .getData();
+    assertEquals(pipelineExecutionNotesResponse.getNotes(), "newNotes");
   }
 }

@@ -91,6 +91,7 @@ public interface EntityTypeConstants {
   String CHECKMARX = "Checkmarx";
   String CLAIR = "Clair";
   String CODEQL = "CodeQL";
+  String COVERITY = "Coverity";
   String DATA_THEOREM = "DataTheorem";
   String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   String CUSTOM_INGEST = "CustomIngest";
@@ -112,6 +113,7 @@ public interface EntityTypeConstants {
   String PROWLER = "Prowler";
   String QUALYS = "Qualys";
   String REAPSAW = "Reapsaw";
+  String SEMGREP = "Semgrep";
   String SHIFT_LEFT = "ShiftLeft";
   String SNIPER = "Sniper";
   String SNYK = "Snyk";
@@ -196,7 +198,7 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String CONTAINER_STEP = "Container";
-  String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+  String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   String IACM_TEMPLATE = "IACMTemplate";
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
@@ -218,6 +220,7 @@ public interface EntityTypeConstants {
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
+  String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
@@ -227,11 +230,19 @@ public interface EntityTypeConstants {
 
   // AWS SAM
   String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String DOWNLOAD_MANIFESTS = "DownloadManifests";
+  String AWS_SAM_BUILD = "AwsSamBuild";
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
   String SSCA_ORCHESTRATION = "SscaOrchestration";
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
-  String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
+  String SSCA_ENFORCEMENT = "SscaEnforcement";
+  String IDP_CONNECTOR = "IdpConnector";
+  String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
+
+  String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
+  String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
 }

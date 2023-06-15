@@ -29,6 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
+import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionMode;
@@ -45,6 +46,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.ImmutableList;
@@ -52,6 +54,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -78,6 +81,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   @Mock private PlanExecutionService planExecutionService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock NodeExecutionsCache nodeExecutionsCache;
 
   @Before
   public void setup() {
@@ -249,8 +253,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
             .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).putMatrixValues("a", "1").build())
             .build());
 
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache))
+                                             .build());
 
     validateSingleExpression(evaluator, "strategy.matrix.a", "1", false);
     validateSingleExpression(evaluator, "strategy.iteration", 0, false);
@@ -268,8 +274,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
                                                               .build())
                                           .build());
 
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache))
+                                             .build());
 
     validateSingleExpression(evaluator, "strategy.repeat.partition", Arrays.asList("host1", "host2", "host3"), false);
     validateSingleExpression(evaluator, "strategy.repeat.item", "value", false);
@@ -292,10 +300,19 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     validateSingleExpression(evaluator, "obj." + expression, expected, skipEvaluate);
   }
 
+  public boolean isAnyCollection(Object value) {
+    return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
+        || value instanceof Iterable;
+  }
+
   private void validateSingleExpression(
       EngineExpressionEvaluator evaluator, String expression, Object expected, boolean skipEvaluate) {
     expression = "<+" + expression + ">";
-    assertThat(evaluator.renderExpression(expression)).isEqualTo(String.valueOf(expected));
+    if (isAnyCollection(expected)) {
+      assertThat(evaluator.renderExpression(expression)).isEqualTo(JsonUtils.asJson(expected));
+    } else {
+      assertThat(evaluator.renderExpression(expression)).isEqualTo(String.valueOf(expected));
+    }
     if (skipEvaluate) {
       return;
     }

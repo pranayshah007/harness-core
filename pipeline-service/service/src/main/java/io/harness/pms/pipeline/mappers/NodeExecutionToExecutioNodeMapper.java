@@ -65,7 +65,6 @@ public class NodeExecutionToExecutioNodeMapper {
         .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
         .failureInfo(FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()))
         .interruptHistories(InterruptConfigDTOMapper.toInterruptEffectDTOList(nodeExecution.getInterruptHistories()))
-        .skipInfo(nodeExecution.getSkipInfo())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
         .executableResponses(nodeExecution.getExecutableResponses())
         .unitProgresses(nodeExecution.getUnitProgresses())

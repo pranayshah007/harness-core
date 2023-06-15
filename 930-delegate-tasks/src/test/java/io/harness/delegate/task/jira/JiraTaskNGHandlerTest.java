@@ -94,10 +94,6 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   private static String url;
   public static JiraClient jiraClient;
   private final JiraTaskNGHandler jiraTaskNGHandler = new JiraTaskNGHandler();
-  private static final String MULTI = "multi";
-  private static final String ISSUE_TYPE = "Issue Type";
-  private static final String ISSUE_ID = "IssueId";
-  private static final String CUSTOMFIELD_OPTION = "customfield_option";
   String JSON_RESOURCE = "testJson.json";
   ObjectNode jsonNode;
   ObjectNode jsonstatusNode;
@@ -941,7 +937,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testcreateIssue() throws Exception {
+  public void testcreateIssue() {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
@@ -1006,9 +1002,12 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testcreateIssue2() throws Exception {
+  public void testcreateIssue2() {
     Map<String, String> fields = new HashMap<>();
-    fields.put("QE Assignee", "your-jira-account-id");
+    String assignee1Email = "assignee1@harness.io";
+    String assignee2Email = "some-assignee1@harness.io";
+
+    fields.put("QE Assignee", assignee1Email);
     fields.put("Test Summary", "No test added");
 
     JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
@@ -1046,18 +1045,20 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     fieldsMap.put("Test Summary", jiraFieldNG2);
     when(jiraIssueTypeNG.getFields()).thenReturn(fieldsMap);
 
-    JiraUserData jiraUserData = new JiraUserData("JIRAUSERaccountId", "assignee", true, "your-jira-account-id");
-    jiraUserData.setName("Assignee");
+    JiraUserData jiraUserData1 = new JiraUserData("JIRAUSER1234", "assignee", true, assignee1Email);
+    jiraUserData1.setName(assignee1Email);
+    JiraUserData jiraUserData2 = new JiraUserData("JIRAUSER1235", "assignee", true, assignee2Email);
+    jiraUserData2.setName(assignee2Email);
 
     JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
     Map<String, String> fields1 = new HashMap<>();
-    fields1.put("QE Assignee", "Assignee");
+    fields1.put("QE Assignee", assignee1Email);
     fields1.put("Test Summary", "No test added");
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
     try (MockedConstruction<JiraClient> ignored = mockConstruction(JiraClient.class, (mock, context) -> {
       when(mock.getIssueCreateMetadata("TJI", "Bug", null, false, false, false, false))
           .thenReturn(jiraIssueCreateMetadataNG);
-      when(mock.getUsers("your-jira-account-id", null, null)).thenReturn(Arrays.asList(jiraUserData));
+      when(mock.getUsers(assignee1Email, null, null)).thenReturn(List.of(jiraUserData1, jiraUserData2));
       when(mock.createIssue("TJI", "Bug", fields1, true, false, false)).thenReturn(jiraIssueNG);
       when(mock.getInstanceData()).thenReturn(jiraInstanceData);
     })) {
@@ -1073,7 +1074,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
-  public void testCreateIssueWhenCreateMetadataThrowsException() throws Exception {
+  public void testCreateIssueWhenCreateMetadataThrowsException() {
     Map<String, String> fields = new HashMap<>();
     fields.put("Test Summary", "No test added");
     JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
@@ -1099,7 +1100,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testupdateIssue() throws Exception {
+  public void testupdateIssue() {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
@@ -1138,7 +1139,6 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     fieldsMap.put("Issue Type", jiraFieldNG3);
     when(jiraIssueUpdateMetadataNG.getFields()).thenReturn(fieldsMap);
 
-    JiraClient jiraClient = Mockito.mock(JiraClient.class);
     JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraDeploymentType.CLOUD);
     JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
     JiraIssueNG jiraIssueNG = Mockito.mock(JiraIssueNG.class);
@@ -1166,7 +1166,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
-  public void testUpdateIssueWhenUpdateMetadataThrowsException() throws Exception {
+  public void testUpdateIssueWhenUpdateMetadataThrowsException() {
     Map<String, String> fields = new HashMap<>();
     fields.put("Test Summary", "No test added");
 
@@ -1197,7 +1197,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testIssueForException() throws Exception {
+  public void testIssueForException() {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");

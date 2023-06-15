@@ -7,6 +7,7 @@
 
 package io.harness.core.ci.services;
 
+import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
 import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -70,6 +71,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   @Inject private ProjectClient projectClient;
   private static final String tableNameServiceAndInfra = "service_infra_info";
   private static final String tableName = "pipeline_execution_summary_ci";
+  private static final String tableNameStageSummary = "stage_execution_summary_ci";
+
   private static final long HR_IN_MS = 60 * 60 * 1000;
   private static final long DAY_IN_MS = 24 * HR_IN_MS;
 
@@ -94,8 +97,34 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     long timestamp = System.currentTimeMillis();
     long totalTries = 0;
     String query = "select count(distinct moduleinfo_author_id) from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
-        + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
+        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
+
+    while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, accountId);
+        statement.setLong(2, timestamp);
+        statement.setLong(3, timestamp - 30 * DAY_IN_MS);
+        resultSet = statement.executeQuery();
+        return resultSet.next() ? resultSet.getLong(1) : 0L;
+      } catch (SQLException ex) {
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return -1L;
+  }
+
+  public long getHostedCreditUsage(String accountId) {
+    long timestamp = System.currentTimeMillis();
+    long totalTries = 0;
+    String query = "select sum(stagebuildtime*buildmultiplier/60000) from " + tableNameStageSummary
+        + " where accountidentifier=? and infratype ='HostedVm' "
+        + " and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -120,8 +149,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   public UsageDataDTO getActiveCommitter(String accountId, long timestamp) {
     long totalTries = 0;
     String query = "select distinct moduleinfo_author_id, projectidentifier , orgidentifier from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
-        + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
+        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -298,7 +327,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       long currentEpochValue = time.get(i);
       if (currentEpochValue >= startInterval && currentEpochValue < endInterval) {
         currentTotal++;
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+            || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
           currentSuccess++;
         } else if (failedList.contains(status.get(i))) {
           currentFailed++;
@@ -308,7 +338,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       // previous interval record
       if (currentEpochValue >= previousStartInterval && currentEpochValue < startInterval) {
         previousTotal++;
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+            || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
           previousSuccess++;
         } else if (failedList.contains(status.get(i))) {
           previousFailed++;
@@ -361,7 +392,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       for (int i = 0; i < time.size(); i++) {
         if (startDateCopy == getStartingDateEpochValue(time.get(i), intervalInMs)) {
           total++;
-          if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+          if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+              || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
             success++;
           } else if (status.get(i).contentEquals(ExecutionStatus.EXPIRED.name())) {
             expired++;
@@ -765,7 +797,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
             buildCountMap.put(variableEpochValue, buildCountMap.get(variableEpochValue) + 1);
 
-            if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+            if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+                || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
               success++;
             }
 
@@ -785,7 +818,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
                 author = authorInfo.get(i);
               }
             }
-          } else if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+          } else if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+              || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
             previousSuccess++;
           }
         }

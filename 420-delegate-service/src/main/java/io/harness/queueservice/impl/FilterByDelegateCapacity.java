@@ -30,6 +30,8 @@ public class FilterByDelegateCapacity implements DelegateResourceCriteria {
 
   private boolean delegateHasCapacityToAssignTask(Delegate delegate, TaskType taskType) {
     if (delegate.hasCapacityRegistered()) {
+      log.info("Delegate {} with capacity registered {} has current number of task assigned {}", delegate.getUuid(),
+          delegate.getDelegateCapacity().getMaximumNumberOfBuilds(), delegate.getNumberOfTaskAssigned());
       return delegate.getDelegateCapacity().getMaximumNumberOfBuilds() >= delegate.getNumberOfTaskAssigned();
     }
     return true;

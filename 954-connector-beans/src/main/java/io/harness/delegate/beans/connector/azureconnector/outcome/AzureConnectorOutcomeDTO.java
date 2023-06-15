@@ -10,15 +10,11 @@ package io.harness.delegate.beans.connector.azureconnector.outcome;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -37,20 +33,4 @@ public class AzureConnectorOutcomeDTO
   Set<String> delegateSelectors;
   @NotNull private AzureEnvironmentType azureEnvironmentType;
   @Builder.Default Boolean executeOnDelegate = true;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (credential.getType() == AzureCredentialType.MANUAL_CREDENTIALS) {
-      return Collections.singletonList(((AzureManualDetailsOutcomeDTO) credential.getSpec()).getAuth().getSpec());
-    }
-    if (credential.getType() == AzureCredentialType.INHERIT_FROM_DELEGATE) {
-      AzureMSIAuthOutcomeDTO azureMSIAuthOutcomeDTO =
-          ((AzureInheritFromDelegateDetailsOutcomeDTO) credential.getSpec()).getAuth();
-
-      if (azureMSIAuthOutcomeDTO instanceof AzureMSIAuthUAOutcomeDTO) {
-        return Collections.singletonList(((AzureMSIAuthUAOutcomeDTO) azureMSIAuthOutcomeDTO).getSpec());
-      }
-    }
-    return null;
-  }
 }

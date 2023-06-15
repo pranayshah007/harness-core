@@ -18,7 +18,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
@@ -44,7 +43,6 @@ public class RefreshInputsHelper {
   @Inject ServiceEntityService serviceEntityService;
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
-  @Inject private CDYamlFacade cdYamlFacade;
 
   public String refreshInputs(
       String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
@@ -68,7 +66,7 @@ public class RefreshInputsHelper {
             .cacheMap(cacheMap)
             .resolvedTemplatesYamlNode(resolvedTemplatesYamlNode)
             .build());
-    return cdYamlFacade.writeYamlString(refreshInputsMap);
+    return YamlUtils.writeYamlString(refreshInputsMap);
   }
 
   private YamlNode getYamlNode(String yaml) {
@@ -164,7 +162,7 @@ public class RefreshInputsHelper {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
-    String linkedServiceInputsYaml = cdYamlFacade.writeYamlString(serviceInputsNode);
+    String linkedServiceInputsYaml = YamlUtils.writeYamlString(serviceInputsNode);
     JsonNode refreshedJsonNode =
         YamlRefreshHelper.refreshYamlFromSourceYaml(linkedServiceInputsYaml, serviceRuntimeInputYaml);
     serviceNodeValue.set(YamlTypes.SERVICE_INPUTS, refreshedJsonNode.get(YamlTypes.SERVICE_INPUTS));

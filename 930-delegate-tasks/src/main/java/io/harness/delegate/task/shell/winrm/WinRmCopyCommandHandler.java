@@ -11,6 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_WINRM_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_CONFIG_FILE;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_CONFIG_FILE_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT;
@@ -138,7 +141,10 @@ public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler
       result = executor.copyConfigFiles(configFile);
       if (CommandExecutionStatus.FAILURE.equals(result)) {
         log.info("Failed to copy config file: " + configFile.getFileName());
-        break;
+        executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);
+        throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT,
+            format(FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
+            new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
       }
     }
     executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);

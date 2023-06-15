@@ -29,6 +29,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.PIPELINE
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PIPELINE_ID_ATTR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PROJECT_ID_ATTR;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.SHARED_VOLUME_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_VOLUME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_WORK_DIR;
@@ -56,6 +57,11 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
+import io.harness.beans.yaml.extended.volumes.CIVolume;
+import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
+import io.harness.beans.yaml.extended.volumes.HostPathYaml;
+import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
+import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.delegate.beans.ci.pod.ContainerCapabilities;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
@@ -67,7 +73,7 @@ import io.harness.delegate.beans.ci.pod.PodToleration;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.exception.GeneralException;
-import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -90,10 +96,6 @@ import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
-import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
-import io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml;
-import io.harness.steps.plugin.infrastructure.volumes.HostPathYaml;
-import io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -223,8 +225,24 @@ public class K8sPodInitUtils {
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 
-  public Map<String, String> getVolumeToMountPath(List<PodVolume> volumes) {
+  public Map<String, String> getVolumeToMountPath(List<String> sharedPaths, List<PodVolume> volumes) {
     Map<String, String> volumeToMountPath = new HashMap<>();
+    int index = 0;
+    if (sharedPaths != null) {
+      for (String path : sharedPaths) {
+        if (isEmpty(path)) {
+          continue;
+        }
+
+        String volumeName = format("%s%d", SHARED_VOLUME_PREFIX, index);
+        if (path.equals(STEP_MOUNT_PATH) || path.equals(ADDON_VOL_MOUNT_PATH)) {
+          throw new InvalidRequestException(format("Shared path: %s is a reserved keyword ", path));
+        }
+        volumeToMountPath.put(volumeName, path);
+        index++;
+      }
+    }
+
     volumeToMountPath.put(STEP_VOLUME, STEP_MOUNT_PATH);
     volumeToMountPath.put(ADDON_VOLUME, ADDON_VOL_MOUNT_PATH);
 
@@ -248,19 +266,19 @@ public class K8sPodInitUtils {
   public List<PodVolume> convertDirectK8Volumes(ContainerK8sInfra k8sDirectInfraYaml) {
     List<PodVolume> podVolumes = new ArrayList<>();
 
-    List<ContainerVolume> volumes = k8sDirectInfraYaml.getSpec().getVolumes().getValue();
+    List<CIVolume> volumes = k8sDirectInfraYaml.getSpec().getVolumes().getValue();
     if (isEmpty(volumes)) {
       return podVolumes;
     }
 
     int index = 0;
-    for (ContainerVolume volume : volumes) {
+    for (CIVolume volume : volumes) {
       String volumeName = format("%s%d", VOLUME_PREFIX, index);
-      if (volume.getType() == ContainerVolume.Type.EMPTY_DIR) {
+      if (volume.getType() == CIVolume.Type.EMPTY_DIR) {
         podVolumes.add(convertEmptyDir(volumeName, (EmptyDirYaml) volume));
-      } else if (volume.getType() == ContainerVolume.Type.HOST_PATH) {
+      } else if (volume.getType() == CIVolume.Type.HOST_PATH) {
         podVolumes.add(convertHostPath(volumeName, (HostPathYaml) volume));
-      } else if (volume.getType() == ContainerVolume.Type.PERSISTENT_VOLUME_CLAIM) {
+      } else if (volume.getType() == CIVolume.Type.PERSISTENT_VOLUME_CLAIM) {
         podVolumes.add(convertPVCVolume(volumeName, (PersistentVolumeClaimYaml) volume));
       }
 
@@ -342,7 +360,7 @@ public class K8sPodInitUtils {
   private void validateTolerationEffect(String effect) {
     if (isNotEmpty(effect)) {
       if (!effect.equals("NoSchedule") && !effect.equals("PreferNoSchedule") && !effect.equals("NoExecute")) {
-        throw new CIStageExecutionException(format("Invalid value %s for effect in toleration", effect));
+        throw new ContainerStepExecutionException(format("Invalid value %s for effect in toleration", effect));
       }
     }
   }
@@ -350,7 +368,7 @@ public class K8sPodInitUtils {
   private void validateTolerationOperator(String operator) {
     if (isNotEmpty(operator)) {
       if (!operator.equals("Equal") && !operator.equals("Exists")) {
-        throw new CIStageExecutionException(format("Invalid value %s for operator in toleration", operator));
+        throw new ContainerStepExecutionException(format("Invalid value %s for operator in toleration", operator));
       }
     }
   }

@@ -17,6 +17,7 @@ import io.harness.pms.yaml.ParameterField;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,15 +34,18 @@ public class CommandStepParameters extends CommandBaseStepInfo implements SshSpe
   Map<String, Object> environmentVariables;
   Map<String, Object> outputVariables;
   @JsonIgnore boolean isRollback;
+  @JsonIgnore String commandDeployFqn;
+  @JsonIgnore Set<String> secretOutputVariablesNames;
 
   @Builder(builderMethodName = "infoBuilder")
   public CommandStepParameters(String uuid, ParameterField<Boolean> onDelegate,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
       List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables, ParameterField<String> host,
-      boolean isRollback) {
+      boolean isRollback, Set<String> secretOutputVariablesNames) {
     super(uuid, onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
     this.isRollback = isRollback;
+    this.secretOutputVariablesNames = secretOutputVariablesNames;
   }
 }

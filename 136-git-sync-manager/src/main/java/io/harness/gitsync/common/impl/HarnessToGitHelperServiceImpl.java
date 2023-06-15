@@ -289,8 +289,12 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     String orgIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getOrgId().getValue();
     String projectIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getProjectId().getValue();
     try {
-      return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
-          isGitSimplificationEnabledRequest.getIsNotForFFModule());
+      if (isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)) {
+        return gitSyncSettingsService.getGitSimplificationStatus(accountIdentifier, orgIdentifier, projectIdentifier);
+      } else {
+        return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
+            isGitSimplificationEnabledRequest.getIsNotForFFModule());
+      }
     } catch (Exception ex) {
       log.error(
           String.format(
@@ -704,7 +708,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private String getFileUrl(ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope, GitRepositoryDTO gitRepositoryDTO,
       String filepath, String connectorRef) {
-    if (isEmpty(scmGetFileResponseDTO.getBranchName())) {
+    if (isEmpty(scmGetFileResponseDTO.getBranchName()) && isEmpty(scmGetFileResponseDTO.getCommitId())) {
       return filepath;
     }
     return gitFilePathHelper.getFileUrl(scope, connectorRef, scmGetFileResponseDTO.getBranchName(), filepath,
@@ -816,6 +820,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
     return ScmGetFileByBranchRequestDTO.builder()
         .branchName(getFileRequest.getBranchName())
+        .commitId(getFileRequest.getCommitId())
         .connectorRef(getFileRequest.getConnectorRef())
         .filePath(getFileRequest.getFilePath())
         .repoName(getFileRequest.getRepoName())

@@ -34,11 +34,13 @@ public class HelmRollbackCommandRequestNG extends HelmCommandRequestNG {
       CommandUnitsProgress commandUnitsProgress, LogCallback logCallback, String namespace, HelmVersion helmVersion,
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
-      String gcpKeyPath, String releaseHistoryPrefix, List<ServiceHookDelegateConfig> serviceHooks) {
+      String gcpKeyPath, String releaseHistoryPrefix, List<ServiceHookDelegateConfig> serviceHooks,
+      boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck) {
     super(releaseName, HelmCommandType.ROLLBACK, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, useRefactorSteadyStateCheck,
+        skipSteadyStateCheck);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
   }

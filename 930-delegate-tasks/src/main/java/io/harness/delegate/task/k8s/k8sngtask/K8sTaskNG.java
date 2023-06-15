@@ -87,7 +87,7 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             .executeTask(k8sDeployRequest, null, getLogStreamingTaskClient(), commandUnitsProgress);
       } catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-        log.error("Exception in processing k8s task [{}]",
+        log.warn("Exception in processing k8s instance sync task [{}]",
             k8sDeployRequest.getCommandName() + ":" + k8sDeployRequest.getTaskType(), sanitizedException);
         return K8sDeployResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.FAILURE)

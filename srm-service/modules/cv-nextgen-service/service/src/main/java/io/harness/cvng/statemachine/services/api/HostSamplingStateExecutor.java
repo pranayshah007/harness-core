@@ -173,10 +173,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
 
   @Override
   public AnalysisStatus getExecutionStatus(HostSamplingState analysisState) {
-    if (analysisState.getStatus() == AnalysisStatus.SUCCESS) {
-      return AnalysisStatus.SUCCESS;
-    }
-    return AnalysisStatus.TRANSITION;
+    return analysisState.getStatus();
   }
 
   @Override
@@ -190,6 +187,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
 
   @Override
   public AnalysisState handleRunning(HostSamplingState analysisState) {
+    analysisState.setStatus(AnalysisStatus.TRANSITION);
     return analysisState;
   }
 
