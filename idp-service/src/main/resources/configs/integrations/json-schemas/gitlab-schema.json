@@ -40,7 +40,7 @@
                 "pattern": "^.*$"
               },
               "apiBaseUrl": {
-                "$id": "#root/integrations/github/items/apiBaseUrl",
+                "$id": "#root/integrations/gitlab/items/apiBaseUrl",
                 "title": "ApiBaseUrl",
                 "type": "string",
                 "default": "",
