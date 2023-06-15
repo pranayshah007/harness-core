@@ -48,9 +48,12 @@ public class UserGroupEventHandler implements EventHandler {
     } catch (InvalidProtocolBufferException e) {
       log.error("Exception in unpacking EntityChangeDTO for user group event with key {}", message.getId(), e);
     }
+
     if (Objects.isNull(entityChangeDTO)) {
       return true;
     }
+    log.info(String.format( "Processing event id: %s User Group %s %s", message.getId(),
+            stripToNull(entityChangeDTO.getIdentifier().getValue()), getEventType(message)));
     try {
       HarnessScopeParams params = HarnessScopeParams.builder()
                                       .accountIdentifier(stripToNull(entityChangeDTO.getAccountIdentifier().getValue()))
