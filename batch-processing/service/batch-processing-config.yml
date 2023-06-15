@@ -30,7 +30,8 @@ timescaledb:
   sslRootCert: ""
 
 batchQueryConfig:
-  queryBatchSize: 4000
+  queryBatchSize: 1000
+  billingDataQueryBatchSize: 4000
   instanceDataBatchSize: 5000
   syncJobDisabled: false
 
