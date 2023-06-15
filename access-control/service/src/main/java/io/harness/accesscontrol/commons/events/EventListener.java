@@ -119,7 +119,6 @@ public abstract class EventListener extends RedisTraceConsumer {
     }
     String entityType = metadataMap.get(ENTITY_TYPE);
     String action = metadataMap.get(ACTION);
-    log.info(String.format( "Processing event id: %s entity %s %s", message.getId(),
-            entityType, action));
+    log.info(String.format("Processing event id: %s entity %s %s", message.getId(), entityType, action));
   }
 }

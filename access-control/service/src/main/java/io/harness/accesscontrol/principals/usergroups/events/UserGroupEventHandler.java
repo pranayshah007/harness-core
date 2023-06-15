@@ -52,8 +52,8 @@ public class UserGroupEventHandler implements EventHandler {
     if (Objects.isNull(entityChangeDTO)) {
       return true;
     }
-    log.info(String.format( "Processing event id: %s User Group %s %s", message.getId(),
-            stripToNull(entityChangeDTO.getIdentifier().getValue()), getEventType(message)));
+    log.info(String.format("Processing event id: %s User Group %s %s", message.getId(),
+        stripToNull(entityChangeDTO.getIdentifier().getValue()), getEventType(message)));
     try {
       HarnessScopeParams params = HarnessScopeParams.builder()
                                       .accountIdentifier(stripToNull(entityChangeDTO.getAccountIdentifier().getValue()))
