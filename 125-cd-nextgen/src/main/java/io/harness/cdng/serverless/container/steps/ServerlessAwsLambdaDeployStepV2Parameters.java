@@ -7,7 +7,6 @@
 
 package io.harness.cdng.serverless.container.steps;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,15 +16,16 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
-import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -34,17 +34,17 @@ import java.util.Map;
 @TypeAlias("serverlessAwsLambdaDeployStepV2Parameters")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Parameters")
 public class ServerlessAwsLambdaDeployStepV2Parameters
-    extends ServerlessAwsLambdaContainerBaseStepInfo implements ServerlessSpecParameters, StepParameters {
+    extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
   @JsonIgnore String packageStepFqn;
   ParameterField<List<String>> deployCommandOptions;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaDeployStepV2Parameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Map<String, JsonNode>> settings,
-      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
-      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+  public ServerlessAwsLambdaDeployStepV2Parameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions, String packageStepFqn) {
+      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions,
+      String packageStepFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, serverlessVersion);
     this.deployCommandOptions = deployCommandOptions;

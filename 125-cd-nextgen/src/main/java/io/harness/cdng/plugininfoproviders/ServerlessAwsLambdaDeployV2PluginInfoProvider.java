@@ -7,8 +7,15 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.k8s.manifest.ManifestHelper.normalizeFolderPath;
+
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -25,9 +32,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaContainerBaseStepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -47,9 +53,11 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.ImageDetails;
+import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
+import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PluginDetails.Builder;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.contracts.steps.StepType;
@@ -64,9 +72,9 @@ import io.harness.steps.container.execution.plugin.StepImageConfig;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 import io.harness.yaml.utils.NGVariablesUtils;
-import org.hibernate.validator.constraints.NotEmpty;
-import org.jooq.tools.StringUtils;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -76,14 +84,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.k8s.manifest.ManifestHelper.normalizeFolderPath;
-import static java.lang.String.format;
+import org.hibernate.validator.constraints.NotEmpty;
+import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginInfoProvider {
@@ -111,9 +113,8 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
     ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info =
         (ServerlessAwsLambdaDeployStepV2Info) cdAbstractStepNode.getStepSpecType();
 
-    Builder pluginDetailsBuilder =
-        getPluginDetailsBuilder(request, serverlessAwsLambdaDeployStepV2Info.getResources(),
-                serverlessAwsLambdaDeployStepV2Info.getRunAsUser());
+    Builder pluginDetailsBuilder = getPluginDetailsBuilder(serverlessAwsLambdaDeployStepV2Info.getResources(),
+        serverlessAwsLambdaDeployStepV2Info.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
@@ -128,8 +129,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(
-        getEnvironmentVariables(ambiance, serverlessAwsLambdaDeployStepV2Info));
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(ambiance, serverlessAwsLambdaDeployStepV2Info));
     PluginCreationResponse response = getPluginCreationResponse(pluginDetailsBuilder);
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
                                       .setIdentifier(cdAbstractStepNode.getIdentifier())
@@ -148,17 +148,30 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
     return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
-  public ImageDetails getImageDetails(
-          ServerlessAwsLambdaContainerBaseStepInfo serverlessAwsLambdaContainerBaseStepInfo) {
-    return PluginInfoProviderHelper.getImageDetails(
-            serverlessAwsLambdaContainerBaseStepInfo.getConnectorRef(),
-            serverlessAwsLambdaContainerBaseStepInfo.getImage(),
-            serverlessAwsLambdaContainerBaseStepInfo.getImagePullPolicy());
+  public ImageDetails getImageDetails(ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo) {
+    return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaV2BaseStepInfo.getConnectorRef(),
+        serverlessAwsLambdaV2BaseStepInfo.getImage(), serverlessAwsLambdaV2BaseStepInfo.getImagePullPolicy());
   }
 
   public Builder getPluginDetailsBuilder(
-      PluginCreationRequest request, ContainerResource resources, ParameterField<Integer> runAsUser) {
-    return PluginInfoProviderHelper.buildPluginDetails(request, resources, runAsUser);
+      ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
+    PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
+
+    PluginContainerResources pluginContainerResources = PluginContainerResources.newBuilder()
+                                                            .setCpu(PluginInfoProviderHelper.getCPU(resources))
+                                                            .setMemory(PluginInfoProviderHelper.getMemory(resources))
+                                                            .build();
+
+    pluginDetailsBuilder.setResource(pluginContainerResources);
+
+    if (runAsUser != null && runAsUser.getValue() != null) {
+      pluginDetailsBuilder.setRunAsUser(runAsUser.getValue());
+    }
+
+    // Set used port and available port information
+    PluginInfoProviderHelper.setPortDetails(usedPorts, pluginDetailsBuilder);
+
+    return pluginDetailsBuilder;
   }
 
   public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {
@@ -173,10 +186,9 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
     return false;
   }
 
-  public Map<String, String> getEnvironmentVariables(Ambiance ambiance,
-                                                     ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info) {
-    ParameterField<Map<String, String>> envVariables =
-            serverlessAwsLambdaDeployStepV2Info.getEnvVariables();
+  public Map<String, String> getEnvironmentVariables(
+      Ambiance ambiance, ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info) {
+    ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaDeployStepV2Info.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());
@@ -241,7 +253,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
     serverlessPrepareRollbackEnvironmentVariablesMap.put(
-            "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
 
     if (awsAccessKey != null) {
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_AWS_ACCESS_KEY", awsAccessKey);

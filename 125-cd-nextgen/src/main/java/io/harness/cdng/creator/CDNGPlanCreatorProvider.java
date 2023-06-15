@@ -165,7 +165,6 @@ import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbac
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployV2StepPlanCreator;
-import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackContainerStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackV2StepPlanCreator;

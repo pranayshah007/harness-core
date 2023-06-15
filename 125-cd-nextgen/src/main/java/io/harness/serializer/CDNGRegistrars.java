@@ -91,6 +91,8 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Node;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2Step;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode;
 import io.harness.cdng.ssh.CommandStepNode;
@@ -1287,11 +1289,11 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
-                   .entityType(EntityType.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+                   .entityType(EntityType.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(ServerlessAwsLambdaCloudFormationRollbackStepNode.class)
+                   .clazz(ServerlessAwsLambdaDeployStepV2Node.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

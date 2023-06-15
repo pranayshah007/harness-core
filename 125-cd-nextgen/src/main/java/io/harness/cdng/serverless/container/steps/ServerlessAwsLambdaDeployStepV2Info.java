@@ -7,9 +7,8 @@
 
 package io.harness.cdng.serverless.container.steps;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.JsonNode;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,7 +27,13 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.extended.ci.container.ContainerResource;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,11 +41,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
-import java.util.Map;
-
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -51,7 +51,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 @TypeAlias("serverlessAwsLambdaDeployStepV2Info")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info")
 public class ServerlessAwsLambdaDeployStepV2Info
-    extends ServerlessAwsLambdaContainerBaseStepInfo implements CDAbstractStepInfo, Visitable {
+    extends ServerlessAwsLambdaV2BaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -67,10 +67,11 @@ public class ServerlessAwsLambdaDeployStepV2Info
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaDeployStepV2Info(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                             ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-                                             ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-                                             ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-                                             ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions, String downloadManifestsFqn) {
+      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions,
+      String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, serverlessVersion);
     this.deployCommandOptions = deployCommandOptions;

@@ -8,7 +8,6 @@
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
