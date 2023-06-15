@@ -34,6 +34,8 @@ public class Constants {
   public static final String BACKEND_SECRET = "BACKEND_SECRET";
   public static final String IDP_BACKEND_SECRET = "IDP_BACKEND_SECRET";
   public static final String PROXY_ENV_NAME = "HOST_PROXY_MAP";
+  public static final String GITHUB_AUTH = "github-auth";
+  public static final String GOOGLE_AUTH = "google-auth";
   public static final String AUTH_GITHUB_CLIENT_ID = "AUTH_GITHUB_CLIENT_ID";
   public static final String AUTH_GITHUB_CLIENT_SECRET = "AUTH_GITHUB_CLIENT_SECRET";
   public static final String AUTH_GITHUB_ENTERPRISE_INSTANCE_URL = "AUTH_GITHUB_ENTERPRISE_INSTANCE_URL";

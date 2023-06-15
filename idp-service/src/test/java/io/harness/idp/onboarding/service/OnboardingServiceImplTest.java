@@ -55,8 +55,11 @@ import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -78,6 +81,8 @@ public class OnboardingServiceImplTest extends CategoryTest {
       "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
   private static final String URL = "https://www.github.com";
   private static final String CONNECTOR_NAME = "test-connector-name";
+  private static final String DELEGATE_SELECTOR1 = "ds1";
+  private static final String DELEGATE_SELECTOR2 = "ds2";
   AutoCloseable openMocks;
   @InjectMocks private OnboardingServiceImpl onboardingServiceImpl;
   @InjectMocks HarnessOrgToBackstageDomain harnessOrgToBackstageDomain;
@@ -184,10 +189,11 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
   public void testImportHarnessEntities() throws Exception {
+    Set<String> delegateSelectors = new HashSet<>(Arrays.asList(DELEGATE_SELECTOR1, DELEGATE_SELECTOR2));
     GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
                                                 .url(URL)
                                                 .connectionType(GitConnectionType.ACCOUNT)
-                                                .delegateSelectors(null)
+                                                .delegateSelectors(delegateSelectors)
                                                 .executeOnDelegate(false)
                                                 .build();
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()

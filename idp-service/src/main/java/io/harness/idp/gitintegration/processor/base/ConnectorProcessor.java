@@ -59,6 +59,8 @@ import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.gitsync.CreateFileRequest;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.common.beans.GitOperation;
@@ -95,7 +97,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jgit.lib.Ref;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
@@ -151,15 +152,24 @@ public abstract class ConnectorProcessor {
   private void performPushGitServiceGrpc(GitConfigDTO gitConfigDTO, ConnectorConfigDTO connectorConfigDTO,
       String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, String locationParentPath,
       List<String> filesToPush, String username, String password, UserPrincipal userPrincipalFromContext) {
-    GitBaseRequest gitBaseRequest =
-        GitBaseRequest.builder()
+    ListRemoteRequest listRemoteRequest =
+        ListRemoteRequest.builder()
             .repoUrl(catalogConnectorInfo.getRepo())
             .authRequest(
                 UsernamePasswordAuthRequest.builder().username(username).password(password.toCharArray()).build())
             .connectorId(catalogConnectorInfo.getConnector().getIdentifier())
             .accountId(accountIdentifier)
             .build();
-    Map<String, Ref> remoteList = gitClientV2.listRemote(gitBaseRequest);
+    Map<String, String> remoteList;
+    if (gitConfigDTO.getExecuteOnDelegate()) {
+      GitCommandExecutionResponse delegateResponse =
+          listRemote(gitConfigDTO, connectorConfigDTO, accountIdentifier, listRemoteRequest);
+      ListRemoteResult listRemoteResult = (ListRemoteResult) delegateResponse.getGitCommandResult();
+      remoteList = listRemoteResult.getRemoteList();
+    } else {
+      ListRemoteResult listRemoteResult = gitClientV2.listRemote(listRemoteRequest);
+      remoteList = listRemoteResult.getRemoteList();
+    }
     boolean commitToNewBranch;
     String baseBranchName;
     if (remoteList.containsKey("refs/heads/" + catalogConnectorInfo.getBranch())) {
@@ -167,7 +177,7 @@ public abstract class ConnectorProcessor {
       baseBranchName = catalogConnectorInfo.getBranch();
     } else {
       commitToNewBranch = true;
-      baseBranchName = remoteList.get("HEAD").getTarget().getName();
+      baseBranchName = remoteList.get("HEAD");
     }
 
     Scope scope = Scope.of(accountIdentifier, null, null);
@@ -342,6 +352,13 @@ public abstract class ConnectorProcessor {
     log.info("Git commit and push done");
   }
 
+  public GitCommandExecutionResponse listRemote(GitConfigDTO gitConfigDTO, ConnectorConfigDTO connectorConfigDTO,
+      String accountIdentifier, ListRemoteRequest listRemoteRequest) {
+    validateFieldsPresent(gitConfigDTO);
+    return (GitCommandExecutionResponse) listRemoteConnector(
+        gitConfigDTO, connectorConfigDTO, accountIdentifier, listRemoteRequest);
+  }
+
   public GitCommandExecutionResponse commitAndPush(GitConfigDTO gitConfigDTO, ConnectorConfigDTO connectorConfigDTO,
       String accountIdentifier, CommitAndPushRequest commitAndPushRequest) {
     validateFieldsPresent(gitConfigDTO);
@@ -367,6 +384,17 @@ public abstract class ConnectorProcessor {
 
   private void validateRequiredFieldsPresent(Object... fields) {
     Lists.newArrayList(fields).forEach(field -> Objects.requireNonNull(field, "One of the required field is empty."));
+  }
+
+  public DelegateResponseData listRemoteConnector(GitConfigDTO gitConfigDTO, ConnectorConfigDTO connectorConfigDto,
+      String accountIdentifier, ListRemoteRequest listRemoteRequest) {
+    TaskParameters taskParameters = getTaskParameters(
+        gitConfigDTO, connectorConfigDto, accountIdentifier, GitCommandType.LIST_REMOTE, listRemoteRequest);
+
+    DelegateTaskRequest delegateTaskRequest =
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier);
+
+    return executeDelegateSyncTask(delegateTaskRequest);
   }
 
   public DelegateResponseData commitAndPushConnector(GitConfigDTO gitConfigDTO, ConnectorConfigDTO connectorConfigDto,

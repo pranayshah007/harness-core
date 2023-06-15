@@ -7,6 +7,8 @@
 
 package io.harness.idp.common.delegateselectors.utils;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -16,6 +18,7 @@ import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
+@OwnedBy(HarnessTeam.IDP)
 public class DelegateSelectorsUtils {
   public static Set<String> extractDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
     Set<String> delegateSelectors = new HashSet<>();

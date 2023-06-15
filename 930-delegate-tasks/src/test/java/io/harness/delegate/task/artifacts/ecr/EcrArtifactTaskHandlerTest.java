@@ -293,7 +293,7 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(Collections.singletonList(buildDetailsInternal))
         .when(ecrService)
-        .getBuilds(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", 10000);
+        .getBuilds(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", 1000);
     //
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getBuilds(ecrArtifactDelegateRequest);
@@ -359,7 +359,7 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
     doReturn(Arrays.asList(buildDetailsTagStablePerl, buildDetailsTagV1, buildDetailsTagV2, buildDetailsTagV3,
                  buildDetailsTagLatest, buildDetailsTagStable))
         .when(ecrService)
-        .getBuilds(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", 10000);
+        .getBuilds(awsInternalConfig, null, "EcrImageUrl", region, "imagePath", 1000);
 
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.getBuilds(ecrArtifactDelegateRequest);
     assertEquals(response.getArtifactDelegateResponses().size(), 6);

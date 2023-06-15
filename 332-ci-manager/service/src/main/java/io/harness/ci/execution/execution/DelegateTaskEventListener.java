@@ -44,6 +44,7 @@ public class DelegateTaskEventListener implements MessageListener {
       if (metadata.containsKey(OBSERVER_CLASS_NAME_KEY)
           && metadata.get(OBSERVER_CLASS_NAME_KEY).equals(OBSERVER_CLASS_NAME_VALUE)) {
         try {
+          log.info("Received dlite initialization task message");
           Informant informant = Informant.parseFrom(message.getMessage().getData());
           Informant5 informant5 = informant.getInformant5();
           ByteString accountIdEncrypted = informant5.getParam1();
@@ -58,6 +59,10 @@ public class DelegateTaskEventListener implements MessageListener {
           String stageId = (String) kryoSerializer.asObject(stageIdEncrypted.toByteArray());
           String taskType = (String) kryoSerializer.asObject(taskTypeEncrypted.toByteArray());
 
+          log.info(String.format(
+              "Parsed dlite initialization task message, accountId %s, taskId %s, delegateId %s, stageId %s, taskType %s",
+              accountId, taskId, delegateId, stageId, taskType));
+
           if (Strings.isNotBlank(stageId) && DLITE_CI_VM_INITIALIZE_TASK.toString().equals(taskType)) {
             CITaskDetails ciTaskDetails = CITaskDetails.builder()
                                               .stageExecutionId(stageId)
@@ -67,6 +72,7 @@ public class DelegateTaskEventListener implements MessageListener {
                                               .accountId(accountId)
                                               .build();
             ciTaskDetailsRepository.save(ciTaskDetails);
+            log.info(String.format("Successfully saved dlite initialization task data with taskId %s", taskId));
           }
         } catch (Exception e) {
           log.error("Error while handling the message: " + e);

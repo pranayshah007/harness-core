@@ -51,8 +51,7 @@
                   "additionalProperties": false,
                   "required": [
                     "clientId",
-                    "clientSecret",
-                    "enterpriseInstanceUrl"
+                    "clientSecret"
                   ],
                   "properties": {
                     "clientId": {

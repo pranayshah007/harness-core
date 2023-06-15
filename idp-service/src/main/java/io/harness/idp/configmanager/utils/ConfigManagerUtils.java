@@ -11,6 +11,7 @@ import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,8 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -205,9 +208,9 @@ public class ConfigManagerUtils {
 
   public String getAuthConfig(String authId) {
     switch (authId) {
-      case "github-auth":
+      case Constants.GITHUB_AUTH:
         return readFileFromClassPath(GITHUB_AUTH_CONFIG_FILE);
-      case "google-auth":
+      case Constants.GOOGLE_AUTH:
         return readFileFromClassPath(GOOGLE_AUTH_CONFIG_FILE);
       default:
         return null;
@@ -216,9 +219,9 @@ public class ConfigManagerUtils {
 
   public String getAuthConfigSchema(String authId) {
     switch (authId) {
-      case "github-auth":
+      case Constants.GITHUB_AUTH:
         return readFileFromClassPath(GITHUB_AUTH_JSON_SCHEMA_FILE);
-      case "google-auth":
+      case Constants.GOOGLE_AUTH:
         return readFileFromClassPath(GOOGLE_AUTH_JSON_SCHEMA_FILE);
       default:
         return null;
@@ -236,5 +239,30 @@ public class ConfigManagerUtils {
       default:
         return readFileFromClassPath(HARNESS_CI_CD_CONFIG_PATH);
     }
+  }
+
+  public JsonNode getNodeByName(JsonNode node, String name) {
+    if (node.isObject()) {
+      Iterator<Map.Entry<String, JsonNode>> fieldsIterator = node.fields();
+      while (fieldsIterator.hasNext()) {
+        Map.Entry<String, JsonNode> entry = fieldsIterator.next();
+        if (entry.getKey().equals(name)) {
+          return entry.getValue();
+        } else {
+          JsonNode result = getNodeByName(entry.getValue(), name);
+          if (result != null) {
+            return result;
+          }
+        }
+      }
+    } else if (node.isArray()) {
+      for (JsonNode childNode : node) {
+        JsonNode result = getNodeByName(childNode, name);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    return null;
   }
 }

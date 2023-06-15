@@ -1208,54 +1208,54 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Canary App Setup")
             .setType(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
     StepInfo tasBGAppSetup =
         StepInfo.newBuilder()
             .setName("BG App Setup")
             .setType(StepSpecTypeConstants.TAS_BG_APP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
     StepInfo tasBasicAppSetup =
         StepInfo.newBuilder()
             .setName("Basic App Setup")
             .setType(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
     StepInfo tasAppResize = StepInfo.newBuilder()
                                 .setName("App Resize")
                                 .setType(StepSpecTypeConstants.TAS_APP_RESIZE)
                                 .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
-                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                                .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
                                 .build();
     StepInfo tasSwapRoutes =
         StepInfo.newBuilder()
             .setName("Swap Routes")
             .setType(StepSpecTypeConstants.TAS_SWAP_ROUTES)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
     StepInfo tasRollback = StepInfo.newBuilder()
                                .setName("App Rollback")
                                .setType(StepSpecTypeConstants.TAS_ROLLBACK)
                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
-                               .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                               .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
                                .build();
     StepInfo tasSwapRollback =
         StepInfo.newBuilder()
             .setName("Swap Rollback")
             .setType(StepSpecTypeConstants.SWAP_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo tanzuCommand = StepInfo.newBuilder()
                                 .setName("Tanzu Command")
                                 .setType(StepSpecTypeConstants.TANZU_COMMAND)
                                 .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
-                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                                .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
                                 .build();
 
     StepInfo asgRollingDeploy =
@@ -1291,7 +1291,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Rolling Deploy")
             .setType(StepSpecTypeConstants.TAS_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo tasRollingRollback =
@@ -1299,7 +1299,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Rolling Rollback")
             .setType(StepSpecTypeConstants.TAS_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo k8sDryRunManifest = StepInfo.newBuilder()
@@ -1325,7 +1325,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Route Mapping")
             .setType(StepSpecTypeConstants.TAS_ROUTE_MAPPING)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
     StepInfo terraformCloudRun = StepInfo.newBuilder()

@@ -67,7 +67,7 @@ import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -89,7 +89,6 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       StepType.newBuilder().setType("CI_CODEBASE_TASK").setStepCategory(StepCategory.STEP).build();
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
@@ -126,7 +125,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build();
 
     log.info("Created delegate task to fetch codebase info");
-    return StepUtils.prepareTaskRequest(
+    return TaskRequestsUtils.prepareTaskRequest(
         ambiance, taskData, referenceFalseKryoSerializer, false, Collections.emptyList(), false, null);
   }
 

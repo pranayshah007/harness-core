@@ -137,7 +137,7 @@ def main(event, context):
         ingest_into_preaggregated(jsonData)
         ingest_into_unified(jsonData)
         update_connector_data_sync_status(jsonData, PROJECTID, client)
-        ingest_data_to_costagg(jsonData)
+        # ingest_data_to_costagg(jsonData)
         send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
             "eventType": "COST_CATEGORY_UPDATE",
             "message": {
@@ -941,7 +941,7 @@ def syncDataset(jsonData):
     ingest_into_preaggregated(jsonData)
     ingest_into_unified(jsonData)
     update_connector_data_sync_status(jsonData, PROJECTID, client)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
 
 
 def doBQTransfer(jsonData):
@@ -1143,8 +1143,8 @@ def ingest_into_unified(jsonData):
     )
     try:
         run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
-        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
-                                    "labels", fetch_ingestion_filters(jsonData))
+        # flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+        #                             "labels", fetch_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e

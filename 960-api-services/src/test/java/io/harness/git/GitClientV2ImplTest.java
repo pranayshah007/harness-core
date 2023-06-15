@@ -53,6 +53,8 @@ import io.harness.git.model.FetchFilesByPathRequest;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitFileChange;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.git.model.PushResultGit;
 import io.harness.rule.Owner;
 
@@ -88,7 +90,6 @@ import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.util.SystemReader;
 import org.junit.AfterClass;
@@ -903,15 +904,16 @@ public class GitClientV2ImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListRemote() {
     addRemote(repoPath);
-    GitBaseRequest request = GitBaseRequest.builder()
-                                 .repoUrl(repoPath)
-                                 .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
-                                 .build();
-    Map<String, Ref> remoteListing = gitClient.listRemote(request);
-    assertThat(remoteListing.get("HEAD").getTarget().getName()).isEqualTo("refs/heads/master");
-    assertThat(remoteListing.get("refs/tags/base").getTarget().getName()).isEqualTo("refs/tags/base");
-    assertThat(remoteListing.get("refs/heads/master").getTarget().getName()).isEqualTo("refs/heads/master");
-    assertThat(remoteListing.get("refs/remotes/origin/master").getTarget().getName())
-        .isEqualTo("refs/remotes/origin/master");
+    ListRemoteRequest request = ListRemoteRequest.builder()
+                                    .repoUrl(repoPath)
+                                    .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+                                    .build();
+    ListRemoteResult listRemoteResult = gitClient.listRemote(request);
+    Map<String, String> remoteListing = listRemoteResult.getRemoteList();
+    assertThat(remoteListing)
+        .containsEntry("HEAD", "refs/heads/master")
+        .containsEntry("refs/tags/base", "refs/tags/base")
+        .containsEntry("refs/heads/master", "refs/heads/master")
+        .containsEntry("refs/remotes/origin/master", "refs/remotes/origin/master");
   }
 }

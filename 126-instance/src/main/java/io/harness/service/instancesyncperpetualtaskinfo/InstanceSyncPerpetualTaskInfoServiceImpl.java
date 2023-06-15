@@ -108,6 +108,20 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   }
 
   @Override
+  public InstanceSyncPerpetualTaskInfoDTO updateLastSuccessfulRun(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
+                            .and(InstanceSyncPerpetualTaskInfoKeys.id)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getId());
+    Update update = new Update();
+
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.lastSuccessfulRun, instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun());
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
   public List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(accountId)

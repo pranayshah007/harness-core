@@ -91,6 +91,7 @@ public interface EntityTypeConstants {
   String CHECKMARX = "Checkmarx";
   String CLAIR = "Clair";
   String CODEQL = "CodeQL";
+  String COVERITY = "Coverity";
   String DATA_THEOREM = "DataTheorem";
   String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   String CUSTOM_INGEST = "CustomIngest";

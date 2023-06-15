@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -47,14 +48,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private K8sClient k8sClient;
   private NamespaceService namespaceService;
   private ConfigEnvVariablesService configEnvVariablesService;
-
   private BackstageEnvVariableService backstageEnvVariableService;
   private PluginsProxyInfoService pluginsProxyInfoService;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
-  private static final String PLUGIN_SAVE_UNSUCCESSFUL =
-      "Plugin config saving is unsuccessful for plugin - % in account - %s";
   private static final String NO_PLUGIN_ENABLED_FOR_ACCOUNT = "No plugin is enabled for account - %s";
   private static final String BASE_APP_CONFIG_PATH = "baseappconfig.yaml";
   private static final String BASE_APP_CONFIG_PATH_QA = "baseappconfig-qa.yaml";
@@ -149,7 +147,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   @Override
   public AppConfig toggleConfigForAccount(
-      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) {
+      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) throws ExecutionException {
     AppConfigEntity updatedData = null;
     Boolean createdNewConfig = false;
 

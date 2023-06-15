@@ -84,7 +84,7 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void runOnceTest() {
+  public void runOnceTest() throws Exception {
     MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK).build();
     ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
@@ -138,7 +138,7 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void runOnceFailureTest() {
+  public void runOnceFailureTest() throws Exception {
     MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
     ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
     PerpetualTaskExecutionParams params =

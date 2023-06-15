@@ -606,7 +606,9 @@ public enum EntityType {
       EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2),
   @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
   SERVERLESS_AWS_LAMBDA_ROLLBACK_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2,
-      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2);
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2),
+  @JsonProperty(EntityTypeConstants.COVERITY)
+  COVERITY(ModuleType.STO, EntityTypeConstants.COVERITY, IdentifierRef.class, EntityYamlRootNames.COVERITY);
 
   private final ModuleType moduleType;
   String yamlName;

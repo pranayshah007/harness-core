@@ -106,6 +106,7 @@ public class EntityYamlRootNames {
   public static final String CHECKMARX = "Checkmarx";
   public static final String CLAIR = "Clair";
   public static final String CODEQL = "CodeQL";
+  public static final String COVERITY = "Coverity";
   public static final String CUSTOM_INGEST = "CustomIngest";
   public static final String DATA_THEOREM = "DataTheorem";
   public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";

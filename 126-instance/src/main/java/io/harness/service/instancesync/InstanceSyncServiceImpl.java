@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -114,6 +115,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
   private static final int RELEASE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_RELEASE_COUNT", "5"));
+
+  static final long RELEASE_PRESERVE_TIME = TimeUnit.DAYS.toMillis(7);
 
   @Inject
   public InstanceSyncServiceImpl(PersistentLocker persistentLocker,
@@ -409,6 +412,9 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       if (!result.getStatus().getExecutionStatus().isEmpty() && !result.getStatus().getIsSuccessful()) {
         log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
             result, result.getStatus().getErrorMessage());
+        for (InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO : instanceSyncPerpetualTaskInfoDTOList) {
+          cleanPerpetualTaskIfFailingForSevenDays(instanceSyncPerpetualTaskInfoDTO);
+        }
         return;
       }
 
@@ -422,6 +428,9 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         if (instanceSyncData.getStatus().getIsSuccessful()
             && !instancesPerTask.containsKey(instanceSyncData.getTaskInfoId())) {
           instancesPerTask.put(instanceSyncData.getTaskInfoId(), instanceSyncData);
+        } else {
+          cleanPerpetualTaskIfFailingForSevenDays(
+              instanceSyncPerpetualTaskInfoMap.get(instanceSyncData.getTaskInfoId()));
         }
       }
 
@@ -504,6 +513,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             log.info("Instance Sync completed");
             // cleaning up V1 perpetual task
             cleanupPerpetualTaskV1(instanceSyncPerpetualTaskInfoDTO);
+            instanceSyncPerpetualTaskInfoDTO.setLastSuccessfulRun(System.currentTimeMillis());
+            instanceSyncPerpetualTaskInfoService.updateLastSuccessfulRun(instanceSyncPerpetualTaskInfoDTO);
           } catch (Exception exception) {
             log.error("Exception occurred during instance sync", exception);
           } finally {
@@ -530,6 +541,17 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskIdV2(null);
       instanceSyncPerpetualTaskInfoDTO.setPerpetualTaskId(perpetualTaskIdV1);
       instanceSyncPerpetualTaskInfoService.updatePerpetualTaskIdV1OrV2(instanceSyncPerpetualTaskInfoDTO);
+    }
+  }
+
+  private void cleanPerpetualTaskIfFailingForSevenDays(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    if (instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun() != null
+        && instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun() != 0
+        && instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun() + RELEASE_PRESERVE_TIME
+            < System.currentTimeMillis()) {
+      instanceSyncPerpetualTaskInfoService.deleteById(
+          instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), instanceSyncPerpetualTaskInfoDTO.getId());
     }
   }
 
@@ -855,6 +877,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                                           .build()))
         .perpetualTaskIdV2(perpetualTaskId)
         .connectorIdentifier(connectorIdentifier)
+        .lastSuccessfulRun(System.currentTimeMillis())
         .build();
   }
 

@@ -136,6 +136,8 @@ io.harness.beans.yaml.extended.platform.ArchType
 io.harness.ci.pipeline.executions.beans.CIBuildAuthor
 io.harness.beans.steps.stepinfo.security.BrakemanStepInfo
 io.harness.beans.steps.nodes.security.CodeqlScanNode
+io.harness.beans.steps.nodes.security.CoverityScanNode
+io.harness.beans.steps.stepinfo.security.CoverityStepInfo
 io.harness.sto.config.STOImageConfig
 io.harness.beans.steps.stepinfo.security.NessusStepInfo
 io.harness.beans.steps.nodes.security.CheckmarxScanNode

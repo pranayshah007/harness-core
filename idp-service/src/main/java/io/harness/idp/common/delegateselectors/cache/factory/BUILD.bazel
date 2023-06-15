@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/connector:module",
+        "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/plugins:module",
         "@maven//:com_google_inject_guice",
     ],
 )
