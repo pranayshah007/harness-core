@@ -252,6 +252,13 @@ public class OnboardingServiceImpl implements OnboardingService {
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore,
         initialFileToPush, onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
+    registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE,
+        Collections.singletonList(backstageCatalogEntityInitial.getSecond().getSecond()
+            + backstageCatalogEntityInitial.getFirst().getMetadata().getName() + YAML_FILE_EXTENSION));
+
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType,
+        connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
+
     saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
@@ -374,10 +381,6 @@ public class OnboardingServiceImpl implements OnboardingService {
           false);
 
       registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
-
-      createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo,
-          asyncCatalogImportEntity.getCatalogInfraConnectorType(),
-          connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
 
       log.info("Cleaning up directories created during IDP async onboarding");
       cleanUpDirectories(orgYamlPath, serviceYamlPath, serviceYamlPath);
