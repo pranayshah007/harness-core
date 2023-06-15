@@ -274,8 +274,15 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public Map<String, String> evaluateOutputVariables(
       Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
+    boolean resolveObjectsViaJSONSelect;
+    if (pmsFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT)) {
+      resolveObjectsViaJSONSelect = true;
+    } else {
+      resolveObjectsViaJSONSelect = false;
+    }
     if (outputVariables != null) {
-      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse);
+      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse, resolveObjectsViaJSONSelect);
       outputVariables.keySet().forEach(name -> {
         Object expression = outputVariables.get(name);
         if (expression instanceof ParameterField) {
@@ -316,10 +323,14 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     return url.matches(URL_ENCODED_CHAR_REGEX);
   }
 
-  private Map<String, String> buildContextMapFromResponse(HttpStepResponse httpStepResponse) {
+  private Map<String, String> buildContextMapFromResponse(
+      HttpStepResponse httpStepResponse, boolean resolveObjectsViaJSONSelect) {
     Map<String, String> contextMap = new HashMap<>();
     contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
     contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
+    if (resolveObjectsViaJSONSelect) {
+      contextMap.put("resolveObjectsViaJSONSelect", "true");
+    }
     return contextMap;
   }
 
