@@ -99,16 +99,22 @@ public class EcrServiceImpl implements EcrService {
 
   @Override
   public List<BuildDetailsInternal> getBuilds(AwsInternalConfig awsConfig, String registryId, String imageUrl,
-      String region, String imageName, int maxNumberOfBuilds) {
+      String region, String imageName, int maxNumberOfImagesPerPage) {
     List<BuildDetailsInternal> buildDetailsInternals = new ArrayList<>();
     try {
+      log.debug("GetBuilds for {} in region {} with maxPageSize {}", imageName, region, maxNumberOfImagesPerPage);
       DescribeImagesResult describeImagesResult;
-      DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest().withRepositoryName(imageName);
+      DescribeImagesRequest describeImagesRequest =
+          new DescribeImagesRequest().withRepositoryName(imageName).withMaxResults(maxNumberOfImagesPerPage);
       if (StringUtils.isNotBlank(registryId)) {
         describeImagesRequest.setRegistryId(registryId);
       }
+      int pageCounter = 0;
       do {
+        log.debug("Making a describeImages API call page request no. {}", ++pageCounter);
         describeImagesResult = awsApiHelperService.describeEcrImages(awsConfig, region, describeImagesRequest);
+        log.debug(
+            "DescribeImages API page result got back with {} images", describeImagesResult.getImageDetails().size());
 
         describeImagesResult.getImageDetails()
             .stream()
@@ -127,11 +133,12 @@ public class EcrServiceImpl implements EcrService {
               });
             });
         describeImagesRequest.setNextToken(describeImagesResult.getNextToken());
+        log.debug("Finished processing page no. {} for describeImages API call", pageCounter);
       } while (describeImagesRequest.getNextToken() != null);
     } catch (Exception e) {
       return getBuildsFallback(awsConfig, registryId, imageUrl, region, imageName);
     }
-    // Sorting at build tag for docker artifacts.
+    log.debug("GetBuilds describeImages API has done with the fetch of {} tags", buildDetailsInternals.size());
     return buildDetailsInternals;
   }
 
@@ -188,7 +195,7 @@ public class EcrServiceImpl implements EcrService {
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(AwsInternalConfig awsInternalConfig, String registryId,
       String imageUrl, String region, String imageName, String tagRegex) {
     List<BuildDetailsInternal> builds =
-        getBuilds(awsInternalConfig, registryId, imageUrl, region, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
+        getBuilds(awsInternalConfig, registryId, imageUrl, region, imageName, MAX_NO_OF_IMAGES);
 
     Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
 

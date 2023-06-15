@@ -87,6 +87,7 @@ import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
+import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgBasicInfo;
@@ -529,6 +530,17 @@ public class PipelineMigrationService extends NgMigrationService {
         if (EmptyPredicate.isNotEmpty(orchestrationWorkflow.getUserVariables())) {
           workflowVariables.putAll(orchestrationWorkflow.getUserVariables().stream().collect(
               Collectors.toMap(Variable::getName, Function.identity())));
+          orchestrationWorkflow.getUserVariables()
+              .stream()
+              .filter(variable -> VariableType.ENTITY.equals(variable.getType()))
+              .filter(variable -> EmptyPredicate.isNotEmpty(variable.getMetadata()))
+              .filter(variable -> variable.getMetadata().get("entityType") != null)
+              .filter(variable
+                  -> Lists
+                         .newArrayList(EntityType.SERVICE.name(), EntityType.INFRASTRUCTURE_DEFINITION.name(),
+                             EntityType.ENVIRONMENT.name())
+                         .contains((String) variable.getMetadata().get("entityType")))
+              .forEach(variable -> toSkip.add(variable.getName()));
         }
       }
     }

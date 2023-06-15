@@ -50,6 +50,8 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.git.model.PushResultGit;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.globalcontex.AuditGlobalContextData;
@@ -334,6 +336,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(IstioDestinationWeight.class, 7183);
 
     kryo.register(ChangeType.class, 5212);
+    kryo.register(ListRemoteRequest.class, 1400);
+    kryo.register(ListRemoteResult.class, 1410);
     kryo.register(GitFileChange.class, 1418);
     kryo.register(CommitAndPushRequest.class, 1419);
     kryo.register(UsernamePasswordAuthRequest.class, 1420);

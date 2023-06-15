@@ -142,6 +142,7 @@
 1205:io.harness.exception.FailureType
 1206:io.harness.context.MdcGlobalContextData
 1207:java.util.HashMap.KeySet
+1400:io.harness.git.model.ListRemoteRequest
 1401:io.harness.security.encryption.EncryptedRecordData
 1402:io.harness.pcf.model.ManifestType
 1403:com.amazonaws.services.ec2.model.HibernationOptions
@@ -151,6 +152,7 @@
 1407:io.harness.deployment.InstanceDetails.PCF
 1408:io.harness.deployment.InstanceDetails.AWS
 1409:io.harness.deployment.InstanceDetails.InstanceType
+1410:io.harness.git.model.ListRemoteResult
 1411:io.harness.deployment.InstanceDetails.PHYSICAL_HOST
 1412:io.harness.deployment.InstanceDetails.K8s
 1413:io.harness.security.encryption.EncryptedDataParams
@@ -2346,6 +2348,7 @@
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
 563536:io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig
 563537:io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
+563538:io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig
 573401:io.harness.delegate.task.gitcommon.GitTaskNGRequest
 573402:io.harness.delegate.task.gitcommon.GitTaskNGResponse
 573403:io.harness.delegate.task.gitcommon.GitFetchFilesResult

@@ -14,14 +14,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.msp.dao.ManagedAccountDao;
 import io.harness.ccm.msp.dto.ManagedAccount;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import okhttp3.Request;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,10 +34,14 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ManagedAccountServiceImplTest extends CategoryTest {
   @Mock private ManagedAccountDao managedAccountDao;
+  @Mock private AccountClient accountClient;
   @InjectMocks @Inject private ManagedAccountServiceImpl managedAccountService;
 
   private static final String MANAGED_ACCOUNT_ID = "account_id";
@@ -43,6 +52,9 @@ public class ManagedAccountServiceImplTest extends CategoryTest {
 
   @Before
   public void setUp() throws Exception {
+    when(accountClient.getAccountDTO(MSP_ACCOUNT_ID)).thenReturn(getAccountDTO(MSP_ACCOUNT_ID, MSP_ACCOUNT_ID));
+    when(accountClient.getAccountDTO(MANAGED_ACCOUNT_ID))
+        .thenReturn(getAccountDTO(MANAGED_ACCOUNT_ID, MANAGED_ACCOUNT_NAME));
     when(managedAccountDao.save(any())).thenReturn(UUID);
     when(managedAccountDao.getDetailsForAccount(MSP_ACCOUNT_ID, MANAGED_ACCOUNT_ID))
         .thenReturn(getDummyManagedAccount());
@@ -55,7 +67,7 @@ public class ManagedAccountServiceImplTest extends CategoryTest {
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void testSave() {
-    String uuid = managedAccountService.save(getDummyManagedAccount());
+    String uuid = managedAccountService.save(MSP_ACCOUNT_ID, MANAGED_ACCOUNT_ID);
     assertThat(uuid).isEqualTo(UUID);
   }
 
@@ -118,5 +130,40 @@ public class ManagedAccountServiceImplTest extends CategoryTest {
         .accountName(UPDATED_MANAGED_ACCOUNT_NAME)
         .mspAccountId(MSP_ACCOUNT_ID)
         .build();
+  }
+
+  private Call<RestResponse<AccountDTO>> getAccountDTO(String accountId, String accountName) {
+    return new Call<RestResponse<AccountDTO>>() {
+      @Override
+      public Response<RestResponse<AccountDTO>> execute() throws IOException {
+        return Response.success(new RestResponse(AccountDTO.builder().identifier(accountId).name(accountName).build()));
+      }
+
+      @Override
+      public void enqueue(Callback<RestResponse<AccountDTO>> callback) {}
+
+      @Override
+      public boolean isExecuted() {
+        return false;
+      }
+
+      @Override
+      public void cancel() {}
+
+      @Override
+      public boolean isCanceled() {
+        return false;
+      }
+
+      @Override
+      public Call<RestResponse<AccountDTO>> clone() {
+        return null;
+      }
+
+      @Override
+      public Request request() {
+        return null;
+      }
+    };
   }
 }

@@ -24,6 +24,7 @@ java_library(
         "//idp-service/src/main/java/io/harness/idp/gitintegration/processor:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/repositories:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/utils:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy:module",
         "@maven//:com_google_inject_guice",
     ],
 )

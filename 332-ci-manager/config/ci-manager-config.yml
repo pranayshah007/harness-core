@@ -243,6 +243,12 @@ ciExecutionServiceConfig:
           - /bin/sto_plugin
           - "--run-strategy"
           - single-container
+      - product: coverity_.*
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
       - product: gitleaks_.*
         image: harness/gitleaks-job-runner
       - product: fossa_.*
