@@ -493,16 +493,21 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
   @Override
   public boolean forceDelete(ProjectParams projectParams, String identifier) {
-    AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
-    if (serviceLevelObjective != null) {
+    return forceDelete(projectParams, Collections.singletonList(identifier));
+  }
+
+  @Override
+  public boolean forceDelete(ProjectParams projectParams, List<String> identifiers) {
+    List<AbstractServiceLevelObjective> serviceLevelObjectives = get(projectParams, identifiers);
+    List<String> sliIdentifiers = new ArrayList<>();
+    List<String> notiRuleRefs = new ArrayList<>();
+    for (AbstractServiceLevelObjective serviceLevelObjective : serviceLevelObjectives) {
       if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-        serviceLevelIndicatorService.deleteByIdentifier(
-            projectParams, ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators());
-        notificationRuleService.delete(projectParams,
-            serviceLevelObjective.getNotificationRuleRefs()
-                .stream()
-                .map(NotificationRuleRef::getNotificationRuleRef)
-                .collect(Collectors.toList()));
+        sliIdentifiers.addAll(((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators());
+        notiRuleRefs.addAll(serviceLevelObjective.getNotificationRuleRefs()
+                                .stream()
+                                .map(NotificationRuleRef::getNotificationRuleRef)
+                                .collect(Collectors.toList()));
       } else {
         String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
             serviceLevelObjective.getAccountId(), serviceLevelObjective.getUuid());
@@ -513,12 +518,22 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         }
       }
     }
-    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
-    sloHealthIndicatorService.delete(projectParams, identifier);
-    annotationService.delete(projectParams, identifier);
-    sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
+    serviceLevelIndicatorService.deleteByIdentifier(projectParams, sliIdentifiers);
+    notificationRuleService.delete(projectParams, notiRuleRefs);
+    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifiers);
+    sloHealthIndicatorService.delete(projectParams, identifiers);
+    annotationService.delete(projectParams, identifiers);
+    for (String identifier : identifiers) {
+      sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
+    }
 
-    return hPersistence.delete(serviceLevelObjective);
+    return hPersistence.delete(
+        hPersistence.createQuery(AbstractServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveV2Keys.accountId, projectParams.getAccountIdentifier())
+            .filter(ServiceLevelObjectiveV2Keys.orgIdentifier, projectParams.getOrgIdentifier())
+            .filter(ServiceLevelObjectiveV2Keys.projectIdentifier, projectParams.getProjectIdentifier())
+            .field(ServiceLevelObjectiveV2Keys.identifier)
+            .in(identifiers));
   }
 
   @Override

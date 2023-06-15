@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.InputSetValidatorType.REGEX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -30,12 +31,10 @@ import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,6 +66,18 @@ public class MergeHelper {
         originalYaml, inputSetPipelineCompYaml, appendInputSetValidator, false);
 
     return mergedYamlConfig.getYaml();
+  }
+
+  public JsonNode mergeRuntimeInputValuesIntoOriginalJsonNode(
+      JsonNode originalJsonNode, JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalJsonNode, inputSetPipelineCompJsonNode, appendInputSetValidator, false, false);
+  }
+
+  public JsonNode mergeRuntimeInputValuesIntoOriginalJsonNode(JsonNode originalJsonNode,
+      JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalJsonNode, inputSetPipelineCompJsonNode, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
   }
 
   public YamlConfig mergeRuntimeInputValuesIntoOriginalYaml(
@@ -370,24 +381,17 @@ public class MergeHelper {
     return JsonUtils.asJson(pipelineNode.getCurrJsonNode());
   }
 
-  public String mergeOptionsRuntimeInput(String pipelineYaml, String runtimeInputYaml) {
-    if (EmptyPredicate.isEmpty(runtimeInputYaml)) {
-      return pipelineYaml;
+  public JsonNode mergeOptionsRuntimeInput(JsonNode pipelineJsonNode, JsonNode runtimeInputJsonNode) {
+    if (isEmpty(runtimeInputJsonNode)) {
+      return pipelineJsonNode;
     }
-    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-    JsonNode pipelineNode = YamlUtils.tryReadTree(pipelineYaml).getNode().getCurrJsonNode();
-    JsonNode runtimeInputNode = YamlUtils.tryReadTree(runtimeInputYaml).getNode().getCurrJsonNode();
-    Map<String, Object> runtimeInputMap = JsonPipelineUtils.jsonNodeToMap(runtimeInputNode);
+    Map<String, Object> runtimeInputMap = JsonPipelineUtils.jsonNodeToMap(runtimeInputJsonNode);
     if (EmptyPredicate.isNotEmpty(runtimeInputMap) && runtimeInputMap.containsKey(YAMLFieldNameConstants.OPTIONS)) {
       Map<String, Object> optionsMap = new HashMap<>();
       optionsMap.put(YAMLFieldNameConstants.OPTIONS, runtimeInputMap.get(YAMLFieldNameConstants.OPTIONS));
-      try {
-        pipelineNode = objectMapper.readerForUpdating(pipelineNode).readValue(YamlUtils.write(optionsMap));
-        return objectMapper.writeValueAsString(pipelineNode);
-      } catch (IOException ex) {
-        throw new InvalidRequestException("Invalid yaml", ex);
-      }
+      // TODO: improve this method by directly replacing options value in map of pipeline json.
+      pipelineJsonNode = YamlUtils.replaceYamlInJsonNode(pipelineJsonNode, YamlUtils.writeYamlString(optionsMap));
     }
-    return pipelineYaml;
+    return pipelineJsonNode;
   }
 }

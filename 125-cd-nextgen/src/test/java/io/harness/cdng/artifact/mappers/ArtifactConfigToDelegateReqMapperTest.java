@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.mappers;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
@@ -102,6 +103,7 @@ import org.mockito.Mock;
 public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   private final String ACCEPT_ALL_REGEX = "\\*";
   private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
+  private final String TAG = "tag";
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock DelegateMetricsService delegateMetricsService;
   @Mock SecretManagerClientService ngSecretService;
@@ -1155,6 +1157,61 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
     assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(".*?");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooDelegateRequestTagAsRegexWithSomeValue() {
+    BambooArtifactConfig bambooArtifactConfig =
+        BambooArtifactConfig.builder()
+            .artifactPaths(ParameterField.createValueField(Collections.singletonList("ARTIFACT")))
+            .planKey(ParameterField.createValueField("PLAN"))
+            .build(ParameterField.createValueFieldWithInputSetValidator(
+                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, TAG), true))
+            .build();
+    BambooConnectorDTO connectorDTO = BambooConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    BambooArtifactDelegateRequest bambooArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(
+            bambooArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(bambooArtifactDelegateRequest.getBambooConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(bambooArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(bambooArtifactDelegateRequest.getArtifactPaths())
+        .isEqualTo(bambooArtifactConfig.getArtifactPaths().fetchFinalValue());
+    assertThat(bambooArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.BAMBOO);
+    assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
+    assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBambooDelegateRequestTag() {
+    BambooArtifactConfig bambooArtifactConfig =
+        BambooArtifactConfig.builder()
+            .artifactPaths(ParameterField.createValueField(Collections.singletonList("ARTIFACT")))
+            .planKey(ParameterField.createValueField("PLAN"))
+            .build(ParameterField.createValueField(TAG))
+            .build();
+    BambooConnectorDTO connectorDTO = BambooConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    BambooArtifactDelegateRequest bambooArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(
+            bambooArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(bambooArtifactDelegateRequest.getBambooConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(bambooArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(bambooArtifactDelegateRequest.getArtifactPaths())
+        .isEqualTo(bambooArtifactConfig.getArtifactPaths().fetchFinalValue());
+    assertThat(bambooArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.BAMBOO);
+    assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
+    assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
   }
 
   @Test

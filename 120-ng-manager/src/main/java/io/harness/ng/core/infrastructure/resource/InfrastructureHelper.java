@@ -39,8 +39,8 @@ public class InfrastructureHelper {
     InfrastructureEntity infraEntity =
         infrastructureEntityService.get(accountId, orgId, projectId, environmentId, infrastructureDefinitionId)
             .orElse(null);
-    notNullCheck(format("No infrastructure definition [%s] exists in the environment [%s].", environmentId,
-                     infrastructureDefinitionId),
+    notNullCheck(format("No infrastructure definition [%s] exists in the environment [%s].", infrastructureDefinitionId,
+                     environmentId),
         infraEntity);
 
     InfrastructureDefinitionConfig infrastructureConfig =

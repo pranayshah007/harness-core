@@ -7,16 +7,24 @@
 
 package io.harness.dms.app;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.ng.DbAliases.DMS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.resources.DelegateServiceVersionInfoResource;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.dms.health.DelegateServiceHealthResource;
 import io.harness.dms.module.DelegateServiceModule;
+import io.harness.dms.resource.DelegateServiceVersionInfoResource;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.health.HealthService;
+import io.harness.mongo.MongoPersistence;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.store.Store;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
@@ -61,11 +69,36 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
 
     List<Module> modules = new ArrayList<>();
     modules.add(new DelegateServiceModule(delegateServiceConfig));
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return delegateServiceConfig.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return delegateServiceConfig.getFeatureFlagConfig();
+      }
+    });
     Injector injector = Guice.createInjector(modules);
 
+    registerStores(delegateServiceConfig, injector);
     registerHealthCheck(environment, injector);
     registerResources(environment, injector);
     registerAuthenticationFilter(environment, injector);
+  }
+
+  private void registerStores(DelegateServiceConfiguration configuration, Injector injector) {
+    final MongoPersistence mongoPersistence = injector.getInstance(MongoPersistence.class);
+    mongoPersistence.setOverrideDelegateMigration(true);
+    if (isNotEmpty(configuration.getMongoConfig().getUri())) {
+      mongoPersistence.register(Store.builder().name(DMS).build(), configuration.getMongoConfig().getUri());
+    }
   }
 
   private void registerAuthenticationFilter(Environment environment, Injector injector) {

@@ -24,8 +24,8 @@ import lombok.experimental.FieldDefaults;
 public class PluginExecutionConfig {
   StepImageConfig samBuildStepImageConfig;
   StepImageConfig samDeployStepImageConfig;
-  StepImageConfig serverlessPrepareRollbackContainerStepImageConfig;
-  StepImageConfig serverlessAwsLambdaDeployV2StepImageConfig;
   StepImageConfig gitCloneConfig;
+  StepImageConfig serverlessPrepareRollbackV2StepImageConfig;
+  StepImageConfig serverlessAwsLambdaDeployV2StepImageConfig;
   String apiUrl;
 }

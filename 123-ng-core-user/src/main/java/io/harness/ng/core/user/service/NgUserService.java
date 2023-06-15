@@ -42,7 +42,7 @@ public interface NgUserService {
   void addUserToCG(String userId, Scope scope);
   void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource);
 
-  Optional<UserInfo> getUserById(String userId);
+  Optional<UserInfo> getUserById(String userId, boolean includeSupportAccounts);
 
   Optional<UserMetadataDTO> getUserByEmail(String emailId, boolean fetchFromCurrentGen);
 

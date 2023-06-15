@@ -16,6 +16,7 @@ import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP_IDENTIFIERS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
 import static io.harness.ci.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
@@ -49,6 +50,7 @@ import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
+import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -264,6 +266,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
     log.info("start executeAsyncAfterRbac for initialize step async");
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
+
+    // save unique step identifiers from executionWrapperConfig, this will be used to fetch the correct artifact outcome
+    // this should happen after strategy population
+    consumeUniqueStepIdentifiers(initializeStepInfo, ambiance);
 
     String logPrefix = getLogPrefix(ambiance);
     ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
@@ -820,6 +826,25 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
               ambiance, TASK_SELECTORS, taskSelectorSweepingOutput, StepOutcomeGroup.STAGE.name());
         } catch (Exception e) {
           log.error("Error while consuming taskSelector sweeping output", e);
+        }
+      }
+    }
+  }
+
+  private void consumeUniqueStepIdentifiers(InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
+    List<String> uniqueStepIdentifiers =
+        IntegrationStageUtils.getStepIdentifiers(initializeStepInfo.getExecutionElementConfig().getSteps());
+    if (isNotEmpty(uniqueStepIdentifiers)) {
+      OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(UNIQUE_STEP_IDENTIFIERS));
+      if (!optionalSweepingOutput.isFound()) {
+        try {
+          UniqueStepIdentifiersSweepingOutput uniqueStepIdentifiersSweepingOutput =
+              UniqueStepIdentifiersSweepingOutput.builder().uniqueStepIdentifiers(uniqueStepIdentifiers).build();
+          executionSweepingOutputResolver.consume(
+              ambiance, UNIQUE_STEP_IDENTIFIERS, uniqueStepIdentifiersSweepingOutput, StepOutcomeGroup.STAGE.name());
+        } catch (Exception e) {
+          log.error("Error while consuming uniqueIdentifiers sweeping output", e);
         }
       }
     }

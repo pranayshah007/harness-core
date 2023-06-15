@@ -23,6 +23,7 @@ import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
 import io.harness.cdng.aws.sam.AwsSamBuildStepNode;
 import io.harness.cdng.aws.sam.AwsSamDeployStepNode;
 import io.harness.cdng.aws.sam.AwsSamRollbackStepNode;
+import io.harness.cdng.aws.sam.DownloadManifestsStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
@@ -90,8 +91,8 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepNode;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStepNode;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepNode;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.tas.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
@@ -1142,6 +1143,18 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.DOWNLOAD_MANIFESTS)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(DownloadManifestsStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.AWS_SAM_BUILD)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -1254,7 +1267,19 @@ public class CDNGRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(ServerlessAwsLambdaPrepareRollbackContainerStepNode.class)
+                   .clazz(ServerlessAwsLambdaPrepareRollbackV2StepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ServerlessAwsLambdaRollbackV2StepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
@@ -1273,17 +1298,5 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
-              .add(YamlSchemaRootClass.builder()
-                      .entityType(EntityType.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
-                      .availableAtProjectLevel(true)
-                      .availableAtOrgLevel(false)
-                      .availableAtAccountLevel(false)
-                      .clazz(ServerlessAwsLambdaCloudFormationRollbackStepNode.class)
-                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                              .namespace(SchemaNamespaceConstants.CD)
-                              .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
-                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                              .build())
-                      .build())
           .build();
 }

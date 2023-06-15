@@ -327,6 +327,10 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
   @Override
   public String getAccountIdFromApiKey(String apiKey) {
+    if (isEmpty(apiKey)) {
+      return null;
+    }
+
     if (apiKey.contains(DELIMITER)) {
       String decodedApiKey = new String(Base64.getDecoder().decode(apiKey), Charsets.UTF_8);
       String[] split = decodedApiKey.split(DELIMITER);

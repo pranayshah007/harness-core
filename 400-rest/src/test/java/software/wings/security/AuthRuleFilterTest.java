@@ -519,7 +519,7 @@ public class AuthRuleFilterTest extends WingsBaseTest {
   private Method getNgMockResourceMethod() {
     Class mockClass = UserResourceNG.class;
     try {
-      return mockClass.getMethod("getUser", String.class);
+      return mockClass.getMethod("getUser", String.class, boolean.class);
     } catch (NoSuchMethodException e) {
       return null;
     }

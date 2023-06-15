@@ -44,6 +44,7 @@ public interface SubscriptionService {
   CustomerDetailDTO getStripeCustomer(String accountIdentifier);
   CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
+  String createClientSecret(String accountIdentifier, String billingEmail);
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier);
 
   void syncStripeEvent(String event);

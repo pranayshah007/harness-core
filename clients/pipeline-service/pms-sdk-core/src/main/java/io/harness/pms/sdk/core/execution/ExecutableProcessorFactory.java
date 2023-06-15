@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.sdk.core.execution.invokers.AsyncChainStrategy;
 import io.harness.pms.sdk.core.execution.invokers.AsyncStrategy;
 import io.harness.pms.sdk.core.execution.invokers.ChildChainStrategy;
 import io.harness.pms.sdk.core.execution.invokers.ChildStrategy;
@@ -53,6 +54,9 @@ public class ExecutableProcessorFactory {
         break;
       case CHILD_CHAIN:
         executeStrategy = new ChildChainStrategy();
+        break;
+      case ASYNC_CHAIN:
+        executeStrategy = new AsyncChainStrategy();
         break;
       default:
         throw new InvalidRequestException("No Invoker present for execution mode :" + mode);

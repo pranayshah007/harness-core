@@ -35,7 +35,7 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -60,9 +60,9 @@ import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig;
-import io.harness.delegate.task.serverless.request.ServerlessCloudFormationRollbackRequest;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
+import io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request;
 import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
@@ -112,7 +112,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -163,18 +162,20 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     return taskChainResponse;
   }
 
-  public List<ServerlessAwsLambdaFunction> getServerlessAwsLambdaFunctions(String instancesList) throws JsonProcessingException {
+  public List<ServerlessAwsLambdaFunction> getServerlessAwsLambdaFunctions(String instancesList)
+      throws JsonProcessingException {
     ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     return Arrays.asList(objectMapper.readValue(instancesList, ServerlessAwsLambdaFunction[].class));
   }
 
   public List<ServerInstanceInfo> getServerlessDeployFunctionInstanceInfo(
-          List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions, String region, String stage, String service, String infraStructureKey) {
+      List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions, String region, String stage, String service,
+      String infraStructureKey) {
     if (EmptyPredicate.isEmpty(serverlessAwsLambdaFunctions)) {
       return Collections.emptyList();
     }
     return ServerlessAwsLambdaFunctionToServerInstanceInfoMapper.toServerInstanceInfoList(
-            serverlessAwsLambdaFunctions, region, stage, service, infraStructureKey);
+        serverlessAwsLambdaFunctions, region, stage, service, infraStructureKey);
   }
 
   @NotNull
@@ -308,8 +309,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public TaskChainResponse queueServerlessTaskWithTaskType(StepElementParameters stepElementParameters,
-      ServerlessCloudFormationRollbackRequest serverlessCommandRequest, Ambiance ambiance,
-      PassThroughData passThroughData, boolean isChainEnd, TaskType taskType) {
+      ServerlessRollbackV2Request serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
+      boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {serverlessCommandRequest})
                             .taskType(taskType.name())
@@ -708,13 +709,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public void putValuesYamlEnvVars(Ambiance ambiance,
-      ServerlessAwsLambdaPrepareRollbackContainerStepParameters
-          serverlessAwsLambdaPrepareRollbackContainerStepParameters,
+      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters,
       Map<String, String> envVarMap) {
     OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                serverlessAwsLambdaPrepareRollbackContainerStepParameters.getDownloadManifestsFqn() + "."
+                serverlessAwsLambdaPrepareRollbackV2StepParameters.getDownloadManifestsFqn() + "."
                 + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {

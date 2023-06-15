@@ -449,6 +449,7 @@ import io.harness.delegate.task.terragrunt.TerragruntDestroyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntPlanTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntRollbackTaskNG;
 import io.harness.delegate.task.trigger.TriggerAuthenticationTask;
+import io.harness.delegate.task.webhook.WebhookSenderDelegateTask;
 import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
@@ -2048,6 +2049,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.HTTP_TASK_NG).toInstance(HttpTaskNG.class);
     mapBinder.addBinding(TaskType.NOTIFY_MAIL).toInstance(MailSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_SLACK).toInstance(SlackSenderDelegateTask.class);
+    mapBinder.addBinding(TaskType.NOTIFY_WEBHOOK).toInstance(WebhookSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_PAGERDUTY).toInstance(PagerDutySenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_MICROSOFTTEAMS).toInstance(MicrosoftTeamsSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_TASK_NG).toInstance(ShellScriptTaskNG.class);

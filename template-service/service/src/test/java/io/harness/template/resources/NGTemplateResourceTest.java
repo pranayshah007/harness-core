@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static junit.framework.TestCase.assertEquals;
@@ -228,6 +229,25 @@ public class NGTemplateResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testCreateTemplateForPolicyDeny() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
+    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "", false);
+    ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
+        templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "", false);
+    assertThat(responseDTO.getData()).isNotNull();
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    assertThat(responseDTO.getData().isValid()).isTrue();
+    assertThat(responseDTO.getData().getTemplateResponseDTO()).isNull();
+    assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
+  }
+
+  @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testGetTemplate() {
@@ -276,6 +296,25 @@ public class NGTemplateResourceTest extends CategoryTest {
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     assertThat(responseDTO.getData().isValid()).isTrue();
     assertThat(responseDTO.getData().getTemplateResponseDTO().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateTemplateForPolicyDeny() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
+    doReturn(entityWithMongoVersion).when(templateService).updateTemplateEntity(entity, ChangeType.MODIFY, false, "");
+    ResponseDTO<TemplateWrapperResponseDTO> responseDTO = templateResource.updateExistingTemplateLabel("", ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, yaml, false, "");
+    assertThat(responseDTO.getData()).isNotNull();
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    assertThat(responseDTO.getData().isValid()).isTrue();
+    assertThat(responseDTO.getData().getTemplateResponseDTO()).isNull();
+    assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
   }
 
   @Test

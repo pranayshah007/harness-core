@@ -472,14 +472,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
-        try {
-          triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
-        } catch (Exception ex) {
-          log.error(
-              "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
-              foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
-              foundTriggerEntity.getOrgIdentifier(), ex);
-        }
+      }
+      try {
+        triggerSetupUsageHelper.deleteExistingSetupUsages(foundTriggerEntity);
+      } catch (Exception ex) {
+        log.error(
+            "Error while deleting the setup usages for the trigger with the identifier {} in project {} in org {}",
+            foundTriggerEntity.getIdentifier(), foundTriggerEntity.getProjectIdentifier(),
+            foundTriggerEntity.getOrgIdentifier(), ex);
       }
     }
     return true;
@@ -1155,7 +1155,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         break;
       }
     }
-    if (!hasApiKey && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (!hasApiKey) {
       String mandatoryAuth = NGRestUtils
                                  .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
                                      accountIdentifier, orgIdentifier, projectIdentifier))

@@ -21,7 +21,7 @@ java_library(
         "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
         "//idp-service/modules/clients:module",
         "//idp-service/src/main/java/io/harness/idp/common:module",
-        "//idp-service/src/main/java/io/harness/idp/gitintegration:module",
+        "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
         "@maven//:com_google_inject_guice",
         "@maven//:javax_javaee_api",
     ],

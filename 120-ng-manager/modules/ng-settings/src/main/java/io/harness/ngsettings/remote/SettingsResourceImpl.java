@@ -17,8 +17,6 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.dto.SettingRequestDTO;
@@ -60,14 +58,7 @@ public class SettingsResourceImpl implements SettingsResource {
   public ResponseDTO<List<SettingUpdateResponseDTO>> update(@AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
-    if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
-    }
     return ResponseDTO.newResponse(
         settingsService.update(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTOList));
-  }
-
-  private boolean isSettingsFeatureEnabled(String accountIdentifier) {
-    return featureFlagHelper.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
   }
 }

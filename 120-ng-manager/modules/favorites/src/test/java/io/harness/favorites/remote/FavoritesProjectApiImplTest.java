@@ -47,7 +47,6 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
   private FavoritesResourceUtils favoritesResourceUtils;
   @Mock private FavoritesService favoriteService;
   private final String userId = "userId";
-  private final String moduleType = "CD";
   private final String accountId = "accountId";
   private final String orgId = "org";
   private final String projectId = "project";
@@ -61,7 +60,7 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     favoritesResourceUtils = new FavoritesResourceUtils();
     projectFavoriteApi = new ProjectFavoritesApiImpl(favoriteService, favoritesResourceUtils);
-    favoriteDTO = favoriteDTO.module(io.harness.spec.server.ng.v1.model.ModuleType.fromValue(moduleType))
+    favoriteDTO = favoriteDTO.module(io.harness.spec.server.ng.v1.model.ModuleType.CD)
                       .userId(userId)
                       .resourceType(FavoritesResourceType.fromValue(resourceType_connector))
                       .resourceId(resourceId);
@@ -92,8 +91,8 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
     favoriteEntity.setProjectIdentifier(projectId);
     when(favoriteService.getFavorites(anyString(), anyString(), anyString(), anyString(), any()))
         .thenReturn(Collections.singletonList(favoriteEntity));
-    Response projectFavoriteResponse = projectFavoriteApi.getProjectFavorites(
-        orgId, projectId, userId, accountId, FavoritesResourceType.fromValue(resourceType_connector));
+    Response projectFavoriteResponse =
+        projectFavoriteApi.getProjectFavorites(orgId, projectId, userId, accountId, resourceType_connector);
     assertThat(projectFavoriteResponse).isNotNull();
     assertThat(projectFavoriteResponse.getStatus()).isEqualTo(200);
     assertThat(projectFavoriteResponse.getEntity())
@@ -120,7 +119,7 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteProjectScopedFavorite() {
     Response deleteAccountFavorite = projectFavoriteApi.deleteProjectFavorite(
-        orgId, projectId, userId, accountId, FavoritesResourceType.fromValue(resourceType_connector), resourceId);
+        orgId, projectId, userId, accountId, resourceType_connector, resourceId);
     assertThat(deleteAccountFavorite).isNotNull();
     assertThat(deleteAccountFavorite.getStatus()).isEqualTo(204);
     assertThat(deleteAccountFavorite.getEntity()).isNull();
@@ -130,12 +129,11 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteProjectScopedFavoriteInvalidResourceTypeThrowException() {
-    FavoritesResourceType favoritesResourceType = FavoritesResourceType.fromValue("Random");
     doThrow(new InvalidRequestException("Please provide a valid resource Type"))
         .when(favoriteService)
-        .deleteFavorite(accountId, orgId, projectId, userId, favoritesResourceType, resourceId);
-    Response response = projectFavoriteApi.deleteProjectFavorite(
-        orgId, projectId, userId, accountId, favoritesResourceType, resourceId);
+        .deleteFavorite(accountId, orgId, projectId, userId, "Random", resourceId);
+    Response response =
+        projectFavoriteApi.deleteProjectFavorite(orgId, projectId, userId, accountId, "Random", resourceId);
     ResponseMessage errorResponse = ResponseMessage.builder()
                                         .code(ErrorCode.INVALID_REQUEST)
                                         .level(Level.ERROR)
@@ -151,9 +149,9 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
   public void testDeleteProjectScopedFavoriteNullResourceTypeThrowException() {
     doThrow(new InvalidRequestException("Please provide a valid resource Type"))
         .when(favoriteService)
-        .deleteFavorite(accountId, orgId, projectId, userId, null, resourceId);
-    Response response = projectFavoriteApi.deleteProjectFavorite(
-        orgId, projectId, userId, accountId, FavoritesResourceType.fromValue("Random"), resourceId);
+        .deleteFavorite(accountId, orgId, projectId, userId, "Random", resourceId);
+    Response response =
+        projectFavoriteApi.deleteProjectFavorite(orgId, projectId, userId, accountId, "Random", resourceId);
     ResponseMessage errorResponse = ResponseMessage.builder()
                                         .code(ErrorCode.INVALID_REQUEST)
                                         .level(Level.ERROR)

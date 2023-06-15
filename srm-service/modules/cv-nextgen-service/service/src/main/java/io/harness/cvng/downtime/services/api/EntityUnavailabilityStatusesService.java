@@ -40,6 +40,8 @@ public interface EntityUnavailabilityStatusesService extends DeleteEntityByHandl
 
   List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams, long startTime, long endTime);
 
+  List<EntityUnavailabilityStatuses> getAllInstancesEntity(ProjectParams projectParams, long startTime, long endTime);
+
   List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
       ProjectParams projectParams, long startTime, long endTime);
 

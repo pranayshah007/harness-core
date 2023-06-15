@@ -93,6 +93,7 @@ import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
@@ -358,7 +359,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
     doThrow(new InvalidRequestException("Exception eval failure"))
         .when(pmsEngineExpressionService)
-        .resolve(ambiance, stepParameters, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+        .resolve(ambiance, stepParameters, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED, List.of());
 
     when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
@@ -821,7 +822,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         .thenReturn(new OrchestrationMap());
     executionStrategy.resolveParameters(ambiance, planNode);
     verify(pmsEngineExpressionService, times(1))
-        .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
+        .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode(), List.of());
     verify(nodeExecutionService, times(1)).updateV2(any(), any());
   }
 }

@@ -19,8 +19,6 @@ import org.apache.commons.math3.util.Pair;
 
 public interface SLIRecordService {
   void create(List<SLIRecordParam> sliRecordList, String sliId, String verificationTaskId, int sliVersion);
-  void delete(List<String> sliIds);
-
   Pair<Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>,
       Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>>
   getSLODetailsSLIRecordsAndSLIMissingDataType(

@@ -31,8 +31,10 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.jsonwebtoken.lang.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -324,17 +326,17 @@ public class NextGenServiceImpl implements NextGenService {
     List<ConnectorResponseDTO> connectorResponseDTOList =
         listConnector(accountId, orgIdentifier, projectIdentifier, connectorIdListWithScope);
     if (connectorResponseDTOList.size() < connectorIdListWithScope.size()) {
-      Set<String> connectorIdSetWithScope = connectorIdListWithScope.stream().collect(Collectors.toSet());
+      Set<String> connectorIdSetWithScope = new HashSet<>(connectorIdListWithScope);
       for (ConnectorResponseDTO connectorResponseDTO : connectorResponseDTOList) {
         ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.getConnector();
         String scopedConnectorId = ScopedInformation.getScopedIdentifier(accountId, connectorInfoDTO.getOrgIdentifier(),
             connectorInfoDTO.getProjectIdentifier(), connectorInfoDTO.getIdentifier());
-        if (connectorIdSetWithScope.contains(scopedConnectorId)) {
-          connectorIdSetWithScope.remove(scopedConnectorId);
-        }
+        connectorIdSetWithScope.remove(scopedConnectorId);
       }
-      throw new InvalidArgumentsException(
-          String.format("Invalid connector refs: %s", String.join(", ", connectorIdSetWithScope)));
+      if (!Collections.isEmpty(connectorIdSetWithScope)) {
+        throw new InvalidArgumentsException(
+            String.format("Invalid connector refs: %s", String.join(", ", connectorIdSetWithScope)));
+      }
     }
   }
 

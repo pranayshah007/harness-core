@@ -12,6 +12,8 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("stoYamlImageType")
@@ -34,7 +36,8 @@ public enum STOYamlImageType {
         return value;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + yamlName);
+    throw new IllegalArgumentException("Invalid value for image type: " + yamlName + ". Valid values are: "
+        + Arrays.stream(STOYamlImageType.values()).map(Enum::toString).collect(Collectors.joining(", ")));
   }
 
   @JsonValue

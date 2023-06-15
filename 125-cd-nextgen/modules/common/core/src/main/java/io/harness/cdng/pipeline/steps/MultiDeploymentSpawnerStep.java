@@ -18,7 +18,6 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -171,9 +170,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     String childNodeId = stepParameters.getChildNodeId();
 
     // Separate handling as parallelism works differently when filters are present with service.tags expression
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-        && (environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironments())
-            || environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironmentGroup()))) {
+    if (environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironments())
+        || environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironmentGroup())) {
       return getChildrenExecutableResponse(
           ambiance, stepParameters, children, accountIdentifier, orgIdentifier, projectIdentifier, childNodeId);
     }

@@ -46,4 +46,12 @@ public class ServerlessInstallationCapability implements ExecutionCapability {
     // todo: review value later
     return Duration.ofHours(4);
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    return "Make sure following delegate(s) have Serverless installed";
+  }
 }

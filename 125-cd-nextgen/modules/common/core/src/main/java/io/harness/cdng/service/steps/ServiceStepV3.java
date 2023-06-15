@@ -591,7 +591,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceStepOverrideHelper.saveFinalManifestsToSweepingOutputV2(ngServiceV2InfoConfig, ambiance,
             ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT, mergedOverrideV2Configs, scopedEnvironmentRef);
         serviceStepOverrideHelper.saveFinalConfigFilesToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
-            ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT, ambiance, scopedEnvironmentRef);
+            scopedEnvironmentRef, ambiance, ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
       } else {
         serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
             servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,

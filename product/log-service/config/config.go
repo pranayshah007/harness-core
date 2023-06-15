@@ -48,11 +48,14 @@ type Config struct {
 	}
 
 	Redis struct {
-		Endpoint             string `envconfig:"LOG_SERVICE_REDIS_ENDPOINT"`
-		Password             string `envconfig:"LOG_SERVICE_REDIS_PASSWORD" secret:"true"`
-		SSLEnabled           bool   `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
-		CertPath             string `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
-		DisableExpiryWatcher bool   `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
+		Endpoint             string   `envconfig:"LOG_SERVICE_REDIS_ENDPOINT"`
+		Password             string   `envconfig:"LOG_SERVICE_REDIS_PASSWORD" secret:"true"`
+		SSLEnabled           bool     `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
+		CertPath             string   `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
+		DisableExpiryWatcher bool     `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
+		UseSentinel          bool     `envconfig:"LOG_SERVICE_REDIS_USE_SENTINEL"`
+		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
+		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
 	}
 
 	// Whether to use secret env variables as they are, or talk to GCP secret

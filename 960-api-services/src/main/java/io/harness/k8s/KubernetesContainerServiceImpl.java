@@ -228,8 +228,6 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Inject private K8sResourceValidatorImpl k8sResourceValidator;
   @Inject private OidcTokenRetriever oidcTokenRetriever;
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
-  @Inject private K8sApiClientHelper k8sApiClientHelper;
-
   private final Retry retry = KubernetesApiRetryUtils.buildRetryAndRegisterListeners(this.getClass().getSimpleName());
 
   @Override
@@ -1199,7 +1197,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String name = definition.getMetadata().getName();
     log.info("Creating service [{}]", name);
     final Supplier<V1Service> v1ServiceMapSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).createNamespacedService(
             kubernetesConfig.getNamespace(), definition, null, null, null, null);
@@ -1221,7 +1219,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String name = definition.getMetadata().getName();
     log.info("Replacing service [{}]", name);
     final Supplier<V1Service> v1ServiceSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).replaceNamespacedService(
             name, kubernetesConfig.getNamespace(), definition, null, null, null, null);
@@ -1256,7 +1254,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
     final Supplier<V1Service> v1ServiceSupplier = Retry.decorateSupplier(retry, () -> {
       try {
-        ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
         return new CoreV1Api(apiClient).readNamespacedService(name, namespace, null);
       } catch (ApiException exception) {
         if (isResourceNotFoundException(exception.getCode())) {
@@ -1351,7 +1349,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String name = definition.getMetadata().getName();
     log.info("Replacing config map [{}]", name);
     final Supplier<V1ConfigMap> v1ConfigMapSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).replaceNamespacedConfigMap(
             name, kubernetesConfig.getNamespace(), definition, null, null, null, null);
@@ -1373,7 +1371,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String name = definition.getMetadata().getName();
     log.info("Creating config map [{}]", name);
     final Supplier<V1ConfigMap> v1ConfigMapSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).createNamespacedConfigMap(
             kubernetesConfig.getNamespace(), definition, null, null, null, null);
@@ -1405,7 +1403,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   public V1ConfigMap getConfigMap(KubernetesConfig kubernetesConfig, String name) {
     final Supplier<V1ConfigMap> v1ConfigMapSupplier = Retry.decorateSupplier(retry, () -> {
       try {
-        ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
         return new CoreV1Api(apiClient).readNamespacedConfigMap(name, kubernetesConfig.getNamespace(), null);
       } catch (ApiException exception) {
         if (isResourceNotFoundException(exception.getCode())) {
@@ -1447,7 +1445,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public void deleteConfigMap(KubernetesConfig kubernetesConfig, String name) {
-    ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+    ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
     retry.executeRunnable(() -> {
       try {
         new CoreV1Api(apiClient).deleteNamespacedConfigMap(
@@ -1601,7 +1599,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
 
     final Supplier<V1Secret> v1SecretSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).readNamespacedSecret(secretName, kubernetesConfig.getNamespace(), null);
       } catch (ApiException exception) {
@@ -1628,7 +1626,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   public void deleteSecret(KubernetesConfig kubernetesConfig, String secretName) {
     retry.executeRunnable(() -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         new CoreV1Api(apiClient).deleteNamespacedSecret(
             secretName, kubernetesConfig.getNamespace(), null, null, null, null, null, null);
@@ -1677,7 +1675,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   V1Secret createSecret(KubernetesConfig kubernetesConfig, V1Secret secret) {
     log.info("Creating secret [{}]", secret.getMetadata().getName());
     final Supplier<V1Secret> v1SecretSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).createNamespacedSecret(
             kubernetesConfig.getNamespace(), secret, null, null, null, null);
@@ -1698,7 +1696,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   V1Secret replaceSecret(KubernetesConfig kubernetesConfig, V1Secret secret) {
     String name = secret.getMetadata().getName();
     log.info("Replacing secret [{}]", name);
-    ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+    ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
     try {
       return new CoreV1Api(apiClient).replaceNamespacedSecret(
           name, kubernetesConfig.getNamespace(), secret, null, null, null, null);
@@ -2108,7 +2106,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       KubernetesConfig kubernetesConfig, String namespace, Map<String, String> labels) {
     final Supplier<List<V1Pod>> podSupplier = Retry.decorateSupplier(retry, () -> {
       try {
-        ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
         String labelSelector = labels.entrySet()
                                    .stream()
                                    .map(entry -> format(K8S_SELECTOR_FORMAT, entry.getKey(), entry.getValue()))
@@ -2137,7 +2135,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
     final Supplier<V1Deployment> decorateSupplier = Retry.decorateSupplier(retry, () -> {
       try {
-        ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
 
         return new AppsV1Api(apiClient).readNamespacedDeployment(name, namespace, null);
       } catch (ApiException exception) {
@@ -2156,7 +2154,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   public VersionInfo getVersion(KubernetesConfig kubernetesConfig) {
     final Supplier<VersionInfo> versionInfoSupplier = Retry.decorateSupplier(retry, () -> {
       try {
-        ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
         return new VersionApi(apiClient).getCode();
       } catch (ApiException exception) {
         String message = format(
@@ -2196,7 +2194,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
 
     if (KubernetesClusterAuthType.EXEC_OAUTH == config.getAuthType()) {
-      return k8sApiClientHelper.generateExecFormatKubeconfig(config);
+      return K8sApiClientHelper.generateExecFormatKubeconfig(config);
     }
 
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
@@ -2227,7 +2225,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   public List<V1Secret> getSecretsWithLabelsAndFields(KubernetesConfig kubernetesConfig, String labels, String fields) {
     final Supplier<List<V1Secret>> secretSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       String namespace = kubernetesConfig.getNamespace();
       try {
         V1SecretList secrets = new CoreV1Api(apiClient).listNamespacedSecret(
@@ -2245,7 +2243,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   public V1Status deleteSecrets(KubernetesConfig kubernetesConfig, String labels, String fields) {
     final Supplier<V1Status> secretSupplier = Retry.decorateSupplier(retry, () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       String namespace = kubernetesConfig.getNamespace();
       try {
         return new CoreV1Api(apiClient).deleteCollectionNamespacedSecret(

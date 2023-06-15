@@ -257,6 +257,12 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   @Override
+  public Optional<Organization> getConsideringCase(String accountIdentifier, String organizationIdentifier) {
+    return organizationRepository.findByAccountIdentifierAndIdentifierAndDeletedNot(
+        accountIdentifier, organizationIdentifier, true);
+  }
+
+  @Override
   public Organization update(String accountIdentifier, String identifier, OrganizationDTO organizationDTO) {
     validateUpdateOrganizationRequest(identifier, organizationDTO);
     Optional<Organization> optionalOrganization = get(accountIdentifier, identifier);

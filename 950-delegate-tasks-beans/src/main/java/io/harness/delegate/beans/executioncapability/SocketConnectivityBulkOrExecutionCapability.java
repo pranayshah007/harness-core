@@ -47,4 +47,15 @@ public class SocketConnectivityBulkOrExecutionCapability implements ExecutionCap
     return isNotEmpty(fetchCapabilityBasis()) ? String.format("Capability to reach, %s ", fetchCapabilityBasis())
                                               : null;
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Following delegate(s) unable to connect to any of the [hostname1, hostname2]:  [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format("Following delegate(s) unable to connect to any of the %s", fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }

@@ -70,6 +70,7 @@ import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.DownloadManifestsPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaDeployV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessPrepareRollbackPluginInfoProvider;
@@ -211,6 +212,7 @@ public class NGModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
     pluginInfoProviderMultibinder.addBinding().to(AwsSamDeployPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsSamBuildPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(DownloadManifestsPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessPrepareRollbackPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaDeployV2PluginInfoProvider.class);

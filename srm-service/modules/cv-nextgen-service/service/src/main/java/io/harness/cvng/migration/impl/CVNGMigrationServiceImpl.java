@@ -68,6 +68,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                 } catch (Exception ex) {
                   log.error("Error while running migration {}", migration.getSimpleName(), ex);
                   onFailure();
+                  break;
                 }
                 final UpdateOperations<CVNGSchema> updateOperations =
                     hPersistence.createUpdateOperations(CVNGSchema.class);

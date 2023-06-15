@@ -65,4 +65,31 @@ public class DelegateManagerEncryptionDecryptionHarnessSMResource {
       throw e;
     }
   }
+
+  @DelegateAuth
+  @POST
+  @Path("/encrypt-harness-sm-secret-ng")
+  public RestResponse<EncryptedRecordData> encryptHarnessSMSecretNG(
+      @NotNull @QueryParam("accountId") String accountId, @NotNull EncryptedRecord encryptedRecord) {
+    try {
+      return new RestResponse<>(encryptionDecryptionService.encryptDataNG(accountId, encryptedRecord.getContent()));
+    } catch (Exception e) {
+      log.error(format("Unable to encrypt the content for harness secret manager for account %s", accountId), e);
+      throw e;
+    }
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("/decrypt-harness-sm-secret-ng")
+  public RestResponse<DecryptedRecord> decryptHarnessSMSecretNG(
+      @NotNull @QueryParam("accountId") String accountId, @NotNull @Body EncryptedSMData encryptedSMData) {
+    try {
+      return new RestResponse<>(
+          encryptionDecryptionService.decryptDataNG(accountId, encryptedSMData.toEncryptedRecordData()));
+    } catch (Exception e) {
+      log.error(format("Unable to decrypt the content for harness secret manager for account %s", accountId), e);
+      throw e;
+    }
+  }
 }

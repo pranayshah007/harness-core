@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG;
 import static io.harness.beans.FeatureName.TG_USE_AUTO_APPROVE_FLAG;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.context.ContextElementType.TERRAGRUNT_INHERIT_PLAN;
@@ -409,6 +410,10 @@ public abstract class TerragruntProvisionState extends State {
             .planName(getPlanName(context))
             .pathToModule(pathToModule)
             .runAll(runAll)
+            .encryptDecryptPlanForHarnessSMOnManager(
+                featureFlagService.isEnabled(
+                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getApp().getAccountId())
+                && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();
 
@@ -538,6 +543,10 @@ public abstract class TerragruntProvisionState extends State {
             .planName(getPlanName(context))
             .pathToModule(pathToModule)
             .runAll(runAll)
+            .encryptDecryptPlanForHarnessSMOnManager(
+                featureFlagService.isEnabled(
+                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getAccountId())
+                && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();
     return createAndRunTask(activityId, executionContext, parameters, element.getDelegateTag());

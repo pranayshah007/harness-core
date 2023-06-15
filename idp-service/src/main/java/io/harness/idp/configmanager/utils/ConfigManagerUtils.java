@@ -70,6 +70,8 @@ public class ConfigManagerUtils {
   private static final String JIRA_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jira-schema.json";
   private static final String FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/firehydrant-schema.json";
   private static final String HARNESS_CI_CD_JSON_SCHEMA_PATH = "configs/json-schemas/harness-ci-cd-schema.json";
+
+  private static final String KUBERNETES_JSON_SCHEMA_PATH = "configs/json-schemas/kubernetes-schema.json";
   private static final String HARNESS_CI_CD_CONFIG_PATH = "configs/plugins/harness-ci-cd.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE = "configs/plugins/harness-ci-cd-compliance.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_PRE_QA = "configs/plugins/harness-ci-cd-preqa.yaml";
@@ -194,6 +196,8 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH);
       case "harness-ci-cd":
         return readFileFromClassPath(HARNESS_CI_CD_JSON_SCHEMA_PATH);
+      case "kubernetes":
+        return readFileFromClassPath(KUBERNETES_JSON_SCHEMA_PATH);
       default:
         return null;
     }

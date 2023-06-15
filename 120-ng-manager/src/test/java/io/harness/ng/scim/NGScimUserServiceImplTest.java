@@ -142,7 +142,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -189,7 +189,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
@@ -246,7 +246,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
@@ -297,7 +297,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.of(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
@@ -357,7 +357,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
@@ -412,7 +412,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
@@ -470,7 +470,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     when(userGroupService.getUserGroupsForUser(any(), any())).thenReturn(null);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
@@ -529,7 +529,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     when(userGroupService.getUserGroupsForUser(any(), any())).thenReturn(userGroups);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
@@ -568,7 +568,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(null));
-    when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(anyString(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -611,7 +611,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any(), anyBoolean())).thenReturn(Optional.ofNullable(userInfo));
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -699,7 +699,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   public void testGetUserInCGNotInNG() {
     UserInfo userInfo =
         UserInfo.builder().admin(true).email("username@harness.io").name("display_name").uuid("someRandom").build();
-    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(userInfo.getUuid(), false)).thenReturn(Optional.of(userInfo));
     when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
     scimUserService.getUser(userInfo.getUuid(), "someRandom");
   }
@@ -713,7 +713,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
     userMetadataDTO.setEmail("username@harness.io");
     userMetadataDTO.setUuid("someRandom");
-    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(userInfo.getUuid(), false)).thenReturn(Optional.of(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
     when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
     ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "someRandom");
@@ -731,7 +731,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
     userMetadataDTO.setEmail("username@harness.io");
     userMetadataDTO.setUuid("someRandom");
-    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(userInfo.getUuid(), false)).thenReturn(Optional.of(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
     when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(false);
     ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "someRandom");
@@ -746,7 +746,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
     userMetadataDTO.setEmail("username@harness.io");
     userMetadataDTO.setUuid("userId");
-    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(userInfo.getUuid(), false)).thenReturn(Optional.of(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
     when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
     ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "accountId");
@@ -786,7 +786,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     scimUser.setUserName(updatedName);
     scimUser.setEmails(JsonUtils.asTree(Collections.singletonList(emailMap)));
 
-    when(ngUserService.getUserById(userId)).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(userId, false)).thenReturn(Optional.of(userInfo));
     when(ngUserService.getUserMetadata(userId)).thenReturn(Optional.of(userMetadataDTO));
     when(ngUserService.updateScimUser(accountId, userId, scimUser)).thenReturn(true);
 
@@ -813,7 +813,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     ScimUser scimUser = new ScimUser();
     scimUser.setUserName(updatedEmail);
 
-    when(ngUserService.getUserById(userId)).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserById(userId, false)).thenReturn(Optional.of(userInfo));
     when(ngUserService.getUserMetadata(userId)).thenReturn(Optional.of(userMetadataDTO));
     when(ngUserService.updateScimUser(accountId, userId, scimUser)).thenReturn(true);
 

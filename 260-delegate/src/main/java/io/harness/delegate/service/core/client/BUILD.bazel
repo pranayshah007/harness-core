@@ -18,6 +18,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/network:module",
         "//980-commons/src/main/java/io/harness/security:module",
+        "//980-commons/src/main/java/io/harness/serializer/kryo:module",
         "//980-commons/src/main/java/io/harness/version:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",

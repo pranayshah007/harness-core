@@ -120,7 +120,8 @@ scheduler-jobs-config:
   budgetCostUpdateJobCron: "0 0 14 * * ?"
   connectorHealthUpdateJobCron: "0 0 14 * * ?"
   awsAccountTagsCollectionJobCron : "0 0 9 * * ?"
-  governanceRecommendationJobCron : "0 0 0 * * *"
+  governanceRecommendationJobCronAws : "0 0 0 * * *"
+  governanceRecommendationJobCronAzure : "0 0 8 * * *"
 
 cePythonService:
   pythonServiceUrl: "http://0.0.0.0:8081"
@@ -195,7 +196,8 @@ isClickHouseEnabled: false
 recommendationConfig:
   regionsLimit: 5
   accountLimit: 15
-  governanceRecommendationEnabled: false
+  governanceRecommendationEnabledAws: false
+  governanceRecommendationEnabledAzure: false
 
 governanceConfig:
   useDkron: true

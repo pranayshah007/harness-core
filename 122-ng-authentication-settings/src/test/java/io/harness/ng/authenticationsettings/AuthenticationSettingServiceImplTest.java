@@ -9,6 +9,7 @@ package io.harness.ng.authenticationsettings;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -59,6 +61,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import okhttp3.MultipartBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -346,8 +349,8 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     doReturn(Response.success(mockSSOConfigRes)).when(request).execute();
 
     SSOConfig responseSSOConfig = authenticationSettingsServiceImpl.updateSAMLMetadata(anyString(), anyString(), any(),
-        anyString(), anyString(), anyBoolean(), anyString(), anyString(), anyString(), anyString(), anyString(),
-        anyString(), anyBoolean(), anyString(), anyString());
+        eq("hi"), anyString(), anyBoolean(), eq("http://dummy.logout.url"), anyString(), anyString(), anyString(),
+        anyString(), eq("friendlyName"), anyBoolean(), anyString(), anyString());
 
     assertNotNull(responseSSOConfig);
     assertThat(responseSSOConfig.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
@@ -440,5 +443,201 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
                 + "and this is the only SAML setting with authentication setting enabled. Please enable authentication on other configured SAML"
                 + " setting(s) first or switch account authentication mechanism to other before disabling authentication for this SAML.",
             uuid, ACCOUNT_ID));
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUploadSamlMetaDataConfigWInvalidName() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT_ID, PL_ENABLE_MULTIPLE_IDP_SUPPORT);
+    doReturn(request).when(managerClient).getSAMLMetadata(ACCOUNT_ID);
+    // Mock the response
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    RestResponse<SamlSettings> mockResponse = new RestResponse<>(samlSettings);
+    Response<RestResponse<SamlSettings>> response = Response.success(mockResponse);
+    doReturn(response).when(request).execute();
+
+    // Create the test data
+    MultipartBody.Part inputStreamPart = mock(MultipartBody.Part.class);
+    String displayName = "js.alert()";
+    String groupMembershipAttr = "groupMembershipAttr";
+    boolean authorizationEnabled = true;
+    String logoutUrl = "http://dummy.logout.url";
+    String entityIdentifier = "entityIdentifier";
+    String samlProviderType = "samlProviderType";
+    String clientId = "clientId";
+    String clientSecret = "clientSecret";
+    String friendlySamlName = "friendlySamlName";
+    boolean jitEnabled = true;
+    String jitValidationKey = "jitValidationKey";
+    String jitValidationValue = "jitValidationValue";
+
+    assertThatThrownBy(
+        ()
+            -> authenticationSettingsServiceImpl.uploadSAMLMetadata(ACCOUNT_ID, inputStreamPart, displayName,
+                groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+                clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Name can be 128 characters long and can contain alphanumeric characters.,-_");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUploadSamlMetaDataConfigWInvalidFriendlyname() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT_ID, PL_ENABLE_MULTIPLE_IDP_SUPPORT);
+    doReturn(request).when(managerClient).getSAMLMetadata(ACCOUNT_ID);
+    // Mock the response
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    RestResponse<SamlSettings> mockResponse = new RestResponse<>(samlSettings);
+    Response<RestResponse<SamlSettings>> response = Response.success(mockResponse);
+    doReturn(response).when(request).execute();
+
+    // Create the test data
+    MultipartBody.Part inputStreamPart = mock(MultipartBody.Part.class);
+    String displayName = "Dummy";
+    String groupMembershipAttr = "groupMembershipAttr";
+    boolean authorizationEnabled = true;
+    String logoutUrl = "http://dummy.logout.url";
+    String entityIdentifier = "entityIdentifier";
+    String samlProviderType = "samlProviderType";
+    String clientId = "clientId";
+    String clientSecret = "clientSecret";
+    String friendlySamlName = "js.alert()";
+    boolean jitEnabled = true;
+    String jitValidationKey = "jitValidationKey";
+    String jitValidationValue = "jitValidationValue";
+
+    assertThatThrownBy(
+        ()
+            -> authenticationSettingsServiceImpl.uploadSAMLMetadata(ACCOUNT_ID, inputStreamPart, displayName,
+                groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+                clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Display Name can be 128 characters long and can contain alphanumeric characters.,-_");
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUploadSamlMetaDataConfigWInvalidlogoutUrl() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT_ID, PL_ENABLE_MULTIPLE_IDP_SUPPORT);
+    doReturn(request).when(managerClient).getSAMLMetadata(ACCOUNT_ID);
+    // Mock the response
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    RestResponse<SamlSettings> mockResponse = new RestResponse<>(samlSettings);
+    Response<RestResponse<SamlSettings>> response = Response.success(mockResponse);
+    doReturn(response).when(request).execute();
+
+    // Create the test data
+    MultipartBody.Part inputStreamPart = mock(MultipartBody.Part.class);
+    String displayName = "Dummy";
+    String groupMembershipAttr = "groupMembershipAttr";
+    boolean authorizationEnabled = true;
+    String logoutUrl = "<+script.js()>";
+    String entityIdentifier = "entityIdentifier";
+    String samlProviderType = "samlProviderType";
+    String clientId = "clientId";
+    String clientSecret = "clientSecret";
+    String friendlySamlName = "Friendly Name";
+    boolean jitEnabled = true;
+    String jitValidationKey = "jitValidationKey";
+    String jitValidationValue = "jitValidationValue";
+
+    assertThatThrownBy(
+        ()
+            -> authenticationSettingsServiceImpl.uploadSAMLMetadata(ACCOUNT_ID, inputStreamPart, displayName,
+                groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+                clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid logoutUrl " + logoutUrl);
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUpdateSAMLMetaDataWInvalidName() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(request)
+        .when(managerClient)
+        .updateSAMLMetadata(anyString(), anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+            any(), any(), any(), any());
+
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    List<SSOSettings> settings = new ArrayList<>();
+    settings.add(samlSettings);
+    SSOConfig config = SSOConfig.builder()
+                           .accountId(ACCOUNT_ID)
+                           .authenticationMechanism(AuthenticationMechanism.SAML)
+                           .ssoSettings(settings)
+                           .build();
+    RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
+    doReturn(Response.success(mockSSOConfigRes)).when(request).execute();
+
+    String displayName = "js.alert()";
+    String logoutUrl = "http://dummy.logout.url";
+    assertThatThrownBy(()
+                           -> authenticationSettingsServiceImpl.updateSAMLMetadata(anyString(), anyString(), any(),
+                               displayName, anyString(), anyBoolean(), logoutUrl, anyString(), anyString(), anyString(),
+                               anyString(), anyString(), anyBoolean(), anyString(), anyString()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Name can be 128 characters long and can contain alphanumeric characters.,-_");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUpdateSAMLMetaDataWInvalidLogoutUrl() throws IOException {
+    Call<RestResponse<SamlSettings>> request = mock(Call.class);
+    doReturn(request)
+        .when(managerClient)
+        .updateSAMLMetadata(anyString(), anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+            any(), any(), any(), any());
+
+    SamlSettings samlSettings = SamlSettings.builder()
+                                    .accountId(ACCOUNT_ID)
+                                    .friendlySamlName("testSAMLFriendlyName")
+                                    .ssoType(SSOType.SAML)
+                                    .logoutUrl("http://dummy.logout.url")
+                                    .build();
+    List<SSOSettings> settings = new ArrayList<>();
+    settings.add(samlSettings);
+    SSOConfig config = SSOConfig.builder()
+                           .accountId(ACCOUNT_ID)
+                           .authenticationMechanism(AuthenticationMechanism.SAML)
+                           .ssoSettings(settings)
+                           .build();
+    RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
+    doReturn(Response.success(mockSSOConfigRes)).when(request).execute();
+
+    String logoutUrl = "hello";
+    assertThatThrownBy(()
+                           -> authenticationSettingsServiceImpl.updateSAMLMetadata(anyString(), anyString(), any(),
+                               anyString(), anyString(), anyBoolean(), logoutUrl, anyString(), anyString(), anyString(),
+                               anyString(), anyString(), anyBoolean(), anyString(), anyString()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid logoutUrl " + logoutUrl);
   }
 }

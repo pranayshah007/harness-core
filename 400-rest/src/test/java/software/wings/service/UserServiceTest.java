@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -2000,6 +2001,23 @@ public class UserServiceTest extends WingsBaseTest {
 
     assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
     verify(signupService, times(1)).sendEmail(any(), anyString(), any());
+  }
+
+  /**
+   * Should fetch user.
+   */
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void userWithSupportAccounts() {
+    Account account = Account.Builder.anAccount().withUuid(generateUuid()).build();
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
+    List<Account> accountList = Arrays.asList(account);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
+    User user = userService.get(USER_ID, true);
+    assertThat(user.getSupportAccounts().size()).isEqualTo(1);
+    assertThat(user.getSupportAccounts().get(0).getUuid()).isEqualTo(account.getUuid());
   }
 
   private List<Account> getAccounts() {

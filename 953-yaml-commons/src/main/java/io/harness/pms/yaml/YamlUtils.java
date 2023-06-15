@@ -74,6 +74,7 @@ public class YamlUtils {
     mapper = new ObjectMapper(new YAMLFactory()
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                                   .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     mapper.registerModule(new EdgeCaseRegexModule());
     mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
@@ -112,10 +113,7 @@ public class YamlUtils {
     return mapper.readValue(yaml, valueTypeRef);
   }
 
-  @Deprecated
-  // Use writeYamlString method instead
-  // It will replace "---\n" with ""
-  public String write(Object object) {
+  public String writeYamlString(Object object) {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
@@ -123,24 +121,16 @@ public class YamlUtils {
     }
   }
 
-  public String writeYamlString(Object object) {
+  public JsonNode replaceYamlInJsonNode(JsonNode jsonNode, String yaml) {
     try {
-      return mapper.writeValueAsString(object).replace("---\n", "");
+      return mapper.readerForUpdating(jsonNode).readValue(yaml);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+      throw new InvalidRequestException("Couldn't replace yaml in jsonNode", e);
     }
   }
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
-  }
-
-  public YamlField tryReadTree(String content) {
-    try {
-      return readTreeInternal(content, mapper);
-    } catch (Exception ex) {
-      throw new InvalidRequestException("Invalid yaml", ex);
-    }
   }
 
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {

@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -63,9 +62,10 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     log.info("Running the K8s InstanceSync perpetual task executor for task id: {}", taskId);
-    String accountId = getAccountId(params);
     AtomicInteger batchInstanceCount = new AtomicInteger(0);
     AtomicInteger batchReleaseDetailsCount = new AtomicInteger(0);
+    InstanceSyncV2Request instanceSyncV2Request = createRequest(taskId.getId(), params);
+    String accountId = instanceSyncV2Request.getAccountId();
     InstanceSyncResponseV2.Builder responseBuilder =
         InstanceSyncResponseV2.newBuilder().setPerpetualTaskId(taskId.getId()).setAccountId(accountId);
     try {
@@ -84,8 +84,6 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                 .build());
         return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
       }
-
-      InstanceSyncV2Request instanceSyncV2Request = createRequest(taskId.getId(), params);
 
       long totalPages = instanceSyncTaskDetails.getDetails().getTotalPages();
 
@@ -197,8 +195,6 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return false;
   }
-
-  protected abstract String getAccountId(@NotNull PerpetualTaskExecutionParams params);
 
   protected abstract InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params);
 

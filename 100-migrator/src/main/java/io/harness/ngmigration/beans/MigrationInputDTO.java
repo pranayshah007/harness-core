@@ -29,6 +29,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MigrationInputDTO {
+  private String destinationGatewayUrl;
   private String destinationAuthToken;
   private String destinationAccountIdentifier;
   private String accountIdentifier;

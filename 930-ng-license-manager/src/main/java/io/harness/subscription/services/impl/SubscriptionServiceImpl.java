@@ -544,14 +544,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     return stripeHelper.updateBilling(params);
   }
 
-  //  @Override
-  //  public List<CustomerDetailDTO> listStripeCustomers(String accountIdentifier) {
-  //    isSelfServiceEnable(accountIdentifier);
-  //
-  //    // TODO: Might not needed any more due to one customer to one account
-  //    List<StripeCustomer> stripeCustomers = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
-  //    return stripeCustomers.stream().map(s -> toCustomerDetailDTO(s)).collect(Collectors.toList());
-  //  }
+  @Override
+  public String createClientSecret(String accountIdentifier, String billingEmail) {
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+
+    String customerId;
+
+    if (stripeCustomer == null) {
+      AccountDTO account = accountService.getAccount(accountIdentifier);
+      customerId = createStripeCustomer(accountIdentifier,
+          CustomerDTO.builder().companyName(account.getCompanyName()).billingEmail(billingEmail).build())
+                       .getCustomerId();
+    } else {
+      customerId = stripeCustomer.getCustomerId();
+    }
+
+    return stripeHelper.retrieveClientSecret(customerId);
+  }
 
   @Override
   public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier) {

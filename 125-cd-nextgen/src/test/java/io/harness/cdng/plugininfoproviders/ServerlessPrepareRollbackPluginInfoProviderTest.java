@@ -29,7 +29,7 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -99,8 +99,8 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-        ServerlessAwsLambdaPrepareRollbackContainerStepInfo.infoBuilder()
+    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
+        ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
@@ -139,8 +139,8 @@ public class ServerlessPrepareRollbackPluginInfoProviderTest extends CategoryTes
                                   .connectorRef(ParameterField.<String>builder().value("connector").build())
                                   .paths(ParameterField.<List<String>>builder().value(paths).build())
                                   .build();
-    ServerlessAwsLambdaPrepareRollbackContainerStepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
-        ServerlessAwsLambdaPrepareRollbackContainerStepInfo.infoBuilder().build();
+    ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackContainerStepInfo =
+        ServerlessAwsLambdaPrepareRollbackV2StepInfo.infoBuilder().build();
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
         ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();

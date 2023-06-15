@@ -20,23 +20,37 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helper.K8sAndHelmInfrastructureUtility;
+import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.helm.NativeHelmDeploymentReleaseDetails;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public String getPerpetualTaskType() {
     return PerpetualTaskType.NATIVE_HELM_INSTANCE_SYNC;
+  }
+
+  public String getPerpetualTaskV2Type() {
+    return PerpetualTaskType.NATIVE_HELM_INSTANCE_SYNC_V2;
   }
 
   @Override
@@ -51,6 +65,30 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   public boolean isInstanceSyncV2Enabled() {
     return false;
+  }
+
+  @Override
+  public DeploymentReleaseDetails getDeploymentReleaseDetails(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    List<NativeHelmDeploymentReleaseDetails> helmDeploymentReleaseDetailsList = new ArrayList<>();
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList =
+        instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList();
+    for (DeploymentInfoDetailsDTO deploymentInfoDetailsDTO : deploymentInfoDetailsDTOList) {
+      DeploymentInfoDTO deploymentInfoDTO = deploymentInfoDetailsDTO.getDeploymentInfoDTO();
+
+      if (!(deploymentInfoDTO instanceof NativeHelmDeploymentInfoDTO)) {
+        log.warn("Unexpected type of deploymentInfoDto, expected NativeHelmDeploymentInfoDTO found {}",
+            deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
+      } else {
+        helmDeploymentReleaseDetailsList.add(
+            K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO));
+      }
+    }
+    return DeploymentReleaseDetails.builder()
+        .taskInfoId(instanceSyncPerpetualTaskInfoDTO.getId())
+        .deploymentDetails(new ArrayList<>(helmDeploymentReleaseDetailsList))
+        .deploymentType(ServiceSpecType.NATIVE_HELM)
+        .build();
   }
 
   @Override
@@ -85,11 +123,15 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
           (NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0);
       LinkedHashSet<String> namespaces = getNamespaces(serverInstanceInfoList);
 
+      K8sCloudConfigMetadata cloudConfigMetadata =
+          K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+
       return NativeHelmDeploymentInfoDTO.builder()
           .namespaces(namespaces)
           .releaseName(nativeHelmServerInstanceInfo.getReleaseName())
           .helmChartInfo(nativeHelmServerInstanceInfo.getHelmChartInfo())
           .helmVersion(nativeHelmServerInstanceInfo.getHelmVersion())
+          .cloudConfigMetadata(cloudConfigMetadata)
           .build();
     }
 

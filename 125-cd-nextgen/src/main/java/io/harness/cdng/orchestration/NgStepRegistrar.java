@@ -32,6 +32,7 @@ import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamRollbackStep;
+import io.harness.cdng.aws.sam.DownloadManifestsStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -124,9 +125,9 @@ import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaCloudFormationRollbackStep;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2Step;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStep;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2Step;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2Step;
 import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
@@ -306,6 +307,7 @@ public class NgStepRegistrar {
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
     engineSteps.put(AwsSamBuildStep.STEP_TYPE, AwsSamBuildStep.class);
     engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
+    engineSteps.put(DownloadManifestsStep.STEP_TYPE, DownloadManifestsStep.class);
 
     // Service Hooks
     engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
@@ -313,12 +315,9 @@ public class NgStepRegistrar {
     // Blue Green Stage Scale Down
     engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
 
-    engineSteps.put(ServerlessAwsLambdaPrepareRollbackContainerStep.STEP_TYPE,
-        ServerlessAwsLambdaPrepareRollbackContainerStep.class);
-    engineSteps.put(
-        ServerlessAwsLambdaCloudFormationRollbackStep.STEP_TYPE, ServerlessAwsLambdaCloudFormationRollbackStep.class);
-    engineSteps.put(ServerlessAwsLambdaDeployV2Step.STEP_TYPE,
-            ServerlessAwsLambdaDeployV2Step.class);
+    engineSteps.put(ServerlessAwsLambdaPrepareRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaPrepareRollbackV2Step.class);
+    engineSteps.put(ServerlessAwsLambdaRollbackV2Step.STEP_TYPE, ServerlessAwsLambdaRollbackV2Step.class);
+    engineSteps.put(ServerlessAwsLambdaDeployV2Step.STEP_TYPE, ServerlessAwsLambdaDeployV2Step.class);
     return engineSteps;
   }
 }

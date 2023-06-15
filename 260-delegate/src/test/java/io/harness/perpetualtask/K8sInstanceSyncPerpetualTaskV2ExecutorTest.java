@@ -94,7 +94,8 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
                                                       .connector(ConnectorInfoDTO.builder().build())
                                                       .perpetualTaskId(PERPETUAL_TASK)
                                                       .build();
-    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
+    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(
+             any(K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest.class)))
         .thenReturn(List.of(K8sServerInstanceInfo.builder()
                                 .name("instance1")
                                 .namespace("namespace1")

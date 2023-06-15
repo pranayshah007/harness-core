@@ -2610,6 +2610,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -2734,6 +2760,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "outputFilePathsContent": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "projectName": {
               "type": "string"
@@ -4480,7 +4512,7 @@
         "type": {
           "type": "string",
           "enum": [
-            "harness"
+            "Harness"
           ]
         }
       },
@@ -4490,7 +4522,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "harness"
+                "const": "Harness"
               }
             }
           },
@@ -7420,7 +7452,19 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "sharedPaths": {
-          "$ref": "#/definitions/ParameterFieldListString"
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "stepGroupInfra": {
           "oneOf": [
