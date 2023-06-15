@@ -24,10 +24,12 @@ import io.harness.ccm.commons.dao.recommendation.RecommendationsIgnoreListDAO;
 import io.harness.ccm.commons.entities.recommendations.RecommendationAzureVmId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationEC2InstanceId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationECSServiceId;
+import io.harness.ccm.commons.entities.recommendations.RecommendationGovernanceRuleId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationNodepoolId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationWorkloadId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationsIgnoreList;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsIgnoreResourcesDTO;
+import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
@@ -51,6 +53,7 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
   @Mock private ECSRecommendationDAO mockEcsRecommendationDAO;
   @Mock private EC2RecommendationDAO mockEc2RecommendationDAO;
   @Mock private AzureRecommendationDAO mockAzureRecommendationDAO;
+  @Mock private RuleExecutionDAO mockGovernanceRecommendationDAO;
 
   private RecommendationsIgnoreList recommendationsExpectedIgnoreList;
   private RecommendationsIgnoreResourcesDTO ignoreResourcesDTO;
@@ -67,6 +70,7 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
   private final String SUBSCRIPTION_ID = "subscriptionId";
   private final String RESOURCE_GROUP_ID = "resourceGroupId";
   private final String VM_NAME = "vmName";
+  private final String RULE_ID = "ruleId";
 
   @InjectMocks private RecommendationsIgnoreListService recommendationsIgnoreListServiceUnderTest;
 
@@ -123,6 +127,8 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
     verify(mockEc2RecommendationDAO).ignoreEC2Recommendations(ACCOUNT_ID, List.of(getRecommendationEC2InstanceId("1")));
     verify(mockAzureRecommendationDAO)
         .ignoreAzureVmRecommendations(ACCOUNT_ID, List.of(getRecommendationAzureVmId("1")));
+    verify(mockGovernanceRecommendationDAO)
+        .ignoreGovernanceRecommendations(ACCOUNT_ID, List.of(getRecommendationGovernanceRuleId("1")));
     verify(mockIgnoreListDAO).save(recommendationsExpectedIgnoreList);
   }
 
@@ -145,6 +151,8 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
     verify(mockEc2RecommendationDAO).ignoreEC2Recommendations(ACCOUNT_ID, List.of(getRecommendationEC2InstanceId("1")));
     verify(mockAzureRecommendationDAO)
         .ignoreAzureVmRecommendations(ACCOUNT_ID, List.of(getRecommendationAzureVmId("1")));
+    verify(mockGovernanceRecommendationDAO)
+        .ignoreGovernanceRecommendations(ACCOUNT_ID, List.of(getRecommendationGovernanceRuleId("1")));
     verify(mockIgnoreListDAO).save(getRecommendationsIgnoreList(1, "1"));
   }
 
@@ -170,6 +178,8 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
         .unignoreEC2Recommendations(ACCOUNT_ID, List.of(getRecommendationEC2InstanceId("")));
     verify(mockAzureRecommendationDAO)
         .unIgnoreAzureVmRecommendations(ACCOUNT_ID, List.of(getRecommendationAzureVmId("")));
+    verify(mockGovernanceRecommendationDAO)
+        .unIgnoreGovernanceRecommendations(ACCOUNT_ID, List.of(getRecommendationGovernanceRuleId("")));
     verify(mockIgnoreListDAO).save(recommendationsExpectedIgnoreList);
   }
 
@@ -190,6 +200,7 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
     verify(mockEcsRecommendationDAO).unignoreECSRecommendations(ACCOUNT_ID, Collections.EMPTY_LIST);
     verify(mockEc2RecommendationDAO).unignoreEC2Recommendations(ACCOUNT_ID, Collections.EMPTY_LIST);
     verify(mockAzureRecommendationDAO).unIgnoreAzureVmRecommendations(ACCOUNT_ID, Collections.EMPTY_LIST);
+    verify(mockGovernanceRecommendationDAO).unIgnoreGovernanceRecommendations(ACCOUNT_ID, Collections.EMPTY_LIST);
     verify(mockIgnoreListDAO).save(expectedResult);
   }
 
@@ -277,6 +288,7 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
           .ecsServiceIgnoreList(Collections.emptySet())
           .ec2InstanceIgnoreList(Collections.emptySet())
           .azureVmIgnoreList(Collections.emptySet())
+          .governanceRuleIgnoreList(Collections.emptySet())
           .build();
     }
     return RecommendationsIgnoreList.builder()
@@ -296,6 +308,9 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
         .azureVmIgnoreList(new HashSet<>() {
           { add(getRecommendationAzureVmId(instance)); }
         })
+        .governanceRuleIgnoreList(new HashSet<>() {
+          { add(getRecommendationGovernanceRuleId(instance)); }
+        })
         .build();
   }
 
@@ -307,6 +322,7 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
           .ec2Instances(Collections.emptySet())
           .ecsServices(Collections.emptySet())
           .azureVmIds(Collections.emptySet())
+          .governanceRuleIds(Collections.emptySet())
           .build();
     }
     return RecommendationsIgnoreResourcesDTO.builder()
@@ -315,6 +331,7 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
         .ecsServices(Set.of(getRecommendationECSServiceId(instance)))
         .ec2Instances(Set.of(getRecommendationEC2InstanceId(instance)))
         .azureVmIds(Set.of(getRecommendationAzureVmId(instance)))
+        .governanceRuleIds(Set.of(getRecommendationGovernanceRuleId(instance)))
         .build();
   }
 
@@ -336,5 +353,9 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
 
   private RecommendationAzureVmId getRecommendationAzureVmId(String instance) {
     return new RecommendationAzureVmId(SUBSCRIPTION_ID + instance, RESOURCE_GROUP_ID + instance, VM_NAME + instance);
+  }
+
+  private RecommendationGovernanceRuleId getRecommendationGovernanceRuleId(String instance) {
+    return new RecommendationGovernanceRuleId(RULE_ID + instance);
   }
 }
