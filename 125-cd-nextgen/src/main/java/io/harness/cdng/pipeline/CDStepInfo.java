@@ -88,6 +88,7 @@ import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tas.TasAppResizeStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
@@ -140,7 +141,7 @@ import io.swagger.annotations.ApiModel;
         AwsSamBuildStepInfo.class, AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class,
         AwsLambdaRollbackStepInfo.class, BambooBuildStepInfo.class, TasRouteMappingStepInfo.class,
         GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class, K8sBGStageScaleDownStep.class,
-        ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaPrepareRollbackV2StepInfo.class,
+        ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class,
         ServerlessAwsLambdaDeployStepV2Info.class})
 
 @OwnedBy(HarnessTeam.CDC)

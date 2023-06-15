@@ -47,7 +47,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SimpleVisitorHelper(helperClass = ServerlessAwsLambdaDeployStepV2InfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
+@JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
 @TypeAlias("serverlessAwsLambdaDeployStepV2Info")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info")
 public class ServerlessAwsLambdaDeployStepV2Info
