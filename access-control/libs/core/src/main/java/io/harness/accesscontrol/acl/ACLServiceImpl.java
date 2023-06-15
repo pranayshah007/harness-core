@@ -206,7 +206,7 @@ public class ACLServiceImpl implements ACLService {
             -> !permissionCheck.getResourceType().equalsIgnoreCase(
                 inMemoryPermissionRepository.getResourceTypeBy(permissionCheck.getPermission())))
         .forEach(permissionCheck
-            -> log.warn("Access check requested for redundant combination of resource : {} with permission : {}",
+            -> log.debug("Access check requested for redundant combination of resource : {} with permission : {}",
                 permissionCheck.getResourceType(), permissionCheck.getPermission()));
 
     List<List<ACL>> matchingACLs = aclDAO.getMatchingACLs(principal, permissionChecks);
