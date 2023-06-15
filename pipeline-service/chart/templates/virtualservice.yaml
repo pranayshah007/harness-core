@@ -20,12 +20,12 @@ spec:
     - {{ . }}
     {{- end }}
   http:
-    - name: pipeline-service
     match:
     - uri:
         prefix: /pipeline/
     - uri:
         prefix: /pipeline
+    name: pipeline-service
     rewrite:
       uri: /
     route:
