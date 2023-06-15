@@ -31,15 +31,15 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("serverlessAwsLambdaDeployStepV2Parameters")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Parameters")
-public class ServerlessAwsLambdaDeployStepV2Parameters
+@TypeAlias("ServerlessAwsLambdaDeployV2StepParameters")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters")
+public class ServerlessAwsLambdaDeployV2StepParameters
     extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
   @JsonIgnore String packageStepFqn;
   ParameterField<List<String>> deployCommandOptions;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaDeployStepV2Parameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+  public ServerlessAwsLambdaDeployV2StepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,

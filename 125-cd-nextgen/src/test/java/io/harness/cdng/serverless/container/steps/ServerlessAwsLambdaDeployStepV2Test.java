@@ -13,11 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.inject.Inject;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,7 +25,6 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
-import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -60,113 +57,112 @@ import org.mockito.junit.MockitoRule;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
-    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
-    @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-    @Mock
-    private InstanceInfoService instanceInfoService;
+  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private InstanceInfoService instanceInfoService;
 
-    @InjectMocks
-    @Spy
-    private ServerlessAwsLambdaDeployV2Step serverlessAwsLambdaDeployV2Step;
+  @InjectMocks @Spy private ServerlessAwsLambdaDeployV2Step serverlessAwsLambdaDeployV2Step;
 
-    @Before
-    public void setup() {}
+  @Before
+  public void setup() {}
 
-    @SneakyThrows
-    @Test
-    @Owner(developers = PIYUSH_BHUWALKA)
-    @Category(UnitTests.class)
-    public void testGetAnyOutComeForStep() {
-        String accountId = "accountId";
-        Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-        ServerlessAwsLambdaDeployStepV2Parameters stepParameters =
-                ServerlessAwsLambdaDeployStepV2Parameters.infoBuilder()
-                        .image(ParameterField.<String>builder().value("sdaf").build())
-                        .build();
-        StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetAnyOutComeForStep() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaDeployV2StepParameters stepParameters =
+        ServerlessAwsLambdaDeployV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-        Map<String, ResponseData> responseDataMap = new HashMap<>();
-        Map<String, String> resultMap = new HashMap<>();
-        String instancesContentBase64 = "content64";
-        String instanceContent = "content";
-        String serviceNameBase64 = "content64";
-        String serviceNameContent = "content";
-        resultMap.put("serverlessInstances", instancesContentBase64);
-        resultMap.put("serverlessServiceName", serviceNameBase64);
-        StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
-        StepStatusTaskResponseData stepStatusTaskResponseData =
-                StepStatusTaskResponseData.builder()
-                        .stepStatus(
-                                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
-                        .build();
-        responseDataMap.put("key", stepStatusTaskResponseData);
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    Map<String, String> resultMap = new HashMap<>();
+    String instancesContentBase64 = "content64";
+    String instanceContent = "content";
+    String serviceNameBase64 = "content64";
+    String serviceNameContent = "content";
+    resultMap.put("serverlessInstances", instancesContentBase64);
+    resultMap.put("serverlessServiceName", serviceNameBase64);
+    StepMapOutput stepMapOutput = StepMapOutput.builder().map(resultMap).build();
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(
+                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
+            .build();
+    responseDataMap.put("key", stepStatusTaskResponseData);
 
-        List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions = Collections.emptyList();
-        when(serverlessStepCommonHelper.convertByte64ToString(instancesContentBase64)).thenReturn(instanceContent);
-        when(serverlessStepCommonHelper.getServerlessAwsLambdaFunctions(instanceContent)).thenReturn(serverlessAwsLambdaFunctions);
+    List<ServerlessAwsLambdaFunction> serverlessAwsLambdaFunctions = Collections.emptyList();
+    when(serverlessStepCommonHelper.convertByte64ToString(instancesContentBase64)).thenReturn(instanceContent);
+    when(serverlessStepCommonHelper.getServerlessAwsLambdaFunctions(instanceContent))
+        .thenReturn(serverlessAwsLambdaFunctions);
 
-        when(serverlessStepCommonHelper.convertByte64ToString(serviceNameBase64)).thenReturn(serviceNameContent);
+    when(serverlessStepCommonHelper.convertByte64ToString(serviceNameBase64)).thenReturn(serviceNameContent);
 
-        ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome = ServerlessAwsLambdaInfrastructureOutcome
-                .builder()
-                        .stage("stage")
-                                .region("regjion")
-                                        .infrastructureKey("infraKey")
-                                                .build();
-        when(serverlessStepCommonHelper.getInfrastructureOutcome(ambiance)).thenReturn(serverlessAwsLambdaInfrastructureOutcome);
+    ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome =
+        ServerlessAwsLambdaInfrastructureOutcome.builder()
+            .stage("stage")
+            .region("regjion")
+            .infrastructureKey("infraKey")
+            .build();
+    when(serverlessStepCommonHelper.getInfrastructureOutcome(ambiance))
+        .thenReturn(serverlessAwsLambdaInfrastructureOutcome);
 
-        List<ServerInstanceInfo> serverInstanceInfoList = Collections.emptyList();
-        when(serverlessStepCommonHelper.getServerlessDeployFunctionInstanceInfo(any(), any(), any(), any(), any())).thenReturn(serverInstanceInfoList);
-        serverlessAwsLambdaDeployV2Step.getAnyOutComeForStep(
-                ambiance, stepElementParameters, responseDataMap);
-        StepOutcome stepOutcome = mock(StepOutcome.class);
-        when(instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList)).thenReturn(stepOutcome);
-        assertThat(serverlessAwsLambdaDeployV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap)).isEqualTo(stepOutcome);
-    }
+    List<ServerInstanceInfo> serverInstanceInfoList = Collections.emptyList();
+    when(serverlessStepCommonHelper.getServerlessDeployFunctionInstanceInfo(any(), any(), any(), any(), any()))
+        .thenReturn(serverInstanceInfoList);
+    serverlessAwsLambdaDeployV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap);
+    StepOutcome stepOutcome = mock(StepOutcome.class);
+    when(instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList))
+        .thenReturn(stepOutcome);
+    assertThat(serverlessAwsLambdaDeployV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap))
+        .isEqualTo(stepOutcome);
+  }
 
-    @SneakyThrows
-    @Test
-    @Owner(developers = PIYUSH_BHUWALKA)
-    @Category(UnitTests.class)
-    public void testGetSerialisedStep() {
-        String accountId = "accountId";
-        int port = 1;
-        String callbackToken = "token";
-        String displayName = "name";
-        String id = "id";
-        String logKey = "logKey";
-        Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetSerialisedStep() {
+    String accountId = "accountId";
+    int port = 1;
+    String callbackToken = "token";
+    String displayName = "name";
+    String id = "id";
+    String logKey = "logKey";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
-        doReturn(1).when(serverlessAwsLambdaDeployV2Step).getPort(any(), any());
-        doReturn(122L).when(serverlessAwsLambdaDeployV2Step).getTimeout(any(), any());
-        UnitStep unitStep = mock(UnitStep.class);
-        doReturn(accountId).when(unitStep).getAccountId();
-        doReturn(port).when(unitStep).getContainerPort();
-        doReturn(callbackToken).when(unitStep).getCallbackToken();
-        doReturn(displayName).when(unitStep).getDisplayName();
-        doReturn(id).when(unitStep).getId();
-        doReturn(logKey).when(unitStep).getLogKey();
-        doReturn(unitStep)
-                .when(serverlessAwsLambdaDeployV2Step)
-                .getUnitStep(any(), any(), any(), any(), any(), any());
+    doReturn(1).when(serverlessAwsLambdaDeployV2Step).getPort(any(), any());
+    doReturn(122L).when(serverlessAwsLambdaDeployV2Step).getTimeout(any(), any());
+    UnitStep unitStep = mock(UnitStep.class);
+    doReturn(accountId).when(unitStep).getAccountId();
+    doReturn(port).when(unitStep).getContainerPort();
+    doReturn(callbackToken).when(unitStep).getCallbackToken();
+    doReturn(displayName).when(unitStep).getDisplayName();
+    doReturn(id).when(unitStep).getId();
+    doReturn(logKey).when(unitStep).getLogKey();
+    doReturn(unitStep).when(serverlessAwsLambdaDeployV2Step).getUnitStep(any(), any(), any(), any(), any(), any());
 
-        ServerlessAwsLambdaDeployStepV2Parameters stepParameters =
-                ServerlessAwsLambdaDeployStepV2Parameters.infoBuilder()
-                        .image(ParameterField.<String>builder().value("sdaf").build())
-                        .build();
-        StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    ServerlessAwsLambdaDeployV2StepParameters stepParameters =
+        ServerlessAwsLambdaDeployV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
 
-        long timeout = 1000;
-        String parkedTaskId = "parkedTaskId";
-        UnitStep unit = serverlessAwsLambdaDeployV2Step.getSerialisedStep(
-                ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId);
-        assertThat(unit.getContainerPort()).isEqualTo(port);
-        assertThat(unit.getAccountId()).isEqualTo(accountId);
-        assertThat(unit.getCallbackToken()).isEqualTo(callbackToken);
-        assertThat(unit.getDisplayName()).isEqualTo(displayName);
-        assertThat(unit.getId()).isEqualTo(id);
-        assertThat(unit.getLogKey()).isEqualTo(logKey);
-    }
+    long timeout = 1000;
+    String parkedTaskId = "parkedTaskId";
+    UnitStep unit = serverlessAwsLambdaDeployV2Step.getSerialisedStep(
+        ambiance, stepElementParameters, accountId, logKey, timeout, parkedTaskId);
+    assertThat(unit.getContainerPort()).isEqualTo(port);
+    assertThat(unit.getAccountId()).isEqualTo(accountId);
+    assertThat(unit.getCallbackToken()).isEqualTo(callbackToken);
+    assertThat(unit.getDisplayName()).isEqualTo(displayName);
+    assertThat(unit.getId()).isEqualTo(id);
+    assertThat(unit.getLogKey()).isEqualTo(logKey);
+  }
 }

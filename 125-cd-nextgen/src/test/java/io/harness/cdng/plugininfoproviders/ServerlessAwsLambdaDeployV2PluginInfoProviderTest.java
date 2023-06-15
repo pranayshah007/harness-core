@@ -7,7 +7,14 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import com.google.inject.name.Named;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,7 +29,7 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackContainerStepInfo;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -45,6 +52,14 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.extended.ci.container.ContainerResource;
+
+import com.google.inject.name.Named;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,20 +69,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -99,13 +100,13 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info =
-            ServerlessAwsLambdaDeployStepV2Info.infoBuilder()
+    ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
+        ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
-    doReturn(serverlessAwsLambdaDeployStepV2Info).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(serverlessAwsLambdaDeployV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
     doReturn(Collections.emptyMap())
         .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
         .getEnvironmentVariables(any(), any());
@@ -139,8 +140,10 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
                                   .connectorRef(ParameterField.<String>builder().value("connector").build())
                                   .paths(ParameterField.<List<String>>builder().value(paths).build())
                                   .build();
-    ServerlessAwsLambdaDeployStepV2Info serverlessAwsLambdaDeployStepV2Info =
-            ServerlessAwsLambdaDeployStepV2Info.infoBuilder().deployCommandOptions(ParameterField.createValueField(Collections.emptyList())).build();
+    ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
+        ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
+            .deployCommandOptions(ParameterField.createValueField(Collections.emptyList()))
+            .build();
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
         ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();
@@ -201,7 +204,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     doReturn(secret).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getKey(ambiance, awsSecret);
 
     Map<String, String> response = serverlessAwsLambdaDeployV2PluginInfoProvider.getEnvironmentVariables(
-        ambiance, serverlessAwsLambdaDeployStepV2Info);
+        ambiance, serverlessAwsLambdaDeployV2StepInfo);
     assertThat(response.containsKey("PLUGIN_SERVERLESS_DIR")).isTrue();
     assertThat(response.get("PLUGIN_SERVERLESS_DIR")).isEqualTo(paths.get(0));
 

@@ -7,14 +7,14 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class ServerlessAwsLambdaDeployStepV2InfoVisitorHelper implements ConfigValidator {
+public class ServerlessAwsLambdaDeployV2StepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return ServerlessAwsLambdaDeployStepV2Info.infoBuilder().build();
+    return ServerlessAwsLambdaDeployV2StepInfo.infoBuilder().build();
   }
 
   @Override

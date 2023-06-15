@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaDeployStepV2InfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaDeployV2StepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -46,11 +46,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = ServerlessAwsLambdaDeployStepV2InfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ServerlessAwsLambdaDeployV2StepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
-@TypeAlias("serverlessAwsLambdaDeployStepV2Info")
-@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Info")
-public class ServerlessAwsLambdaDeployStepV2Info
+@TypeAlias("ServerlessAwsLambdaDeployV2StepInfo")
+@RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo")
+public class ServerlessAwsLambdaDeployV2StepInfo
     extends ServerlessAwsLambdaV2BaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -66,7 +66,7 @@ public class ServerlessAwsLambdaDeployStepV2Info
   ParameterField<List<String>> deployCommandOptions;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaDeployStepV2Info(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+  public ServerlessAwsLambdaDeployV2StepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
@@ -89,7 +89,7 @@ public class ServerlessAwsLambdaDeployStepV2Info
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ServerlessAwsLambdaDeployStepV2Parameters.infoBuilder()
+    return ServerlessAwsLambdaDeployV2StepParameters.infoBuilder()
         .image(getImage())
         .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())

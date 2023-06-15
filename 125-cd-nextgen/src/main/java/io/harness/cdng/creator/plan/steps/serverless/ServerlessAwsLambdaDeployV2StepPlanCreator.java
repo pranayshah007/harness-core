@@ -7,14 +7,13 @@
 
 package io.harness.cdng.creator.plan.steps.serverless;
 
-import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_SERVERLESS_MANIFESTS;
 import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Node;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployStepV2Parameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepNode;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -26,32 +25,32 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaDeployV2StepPlanCreator
-    extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaDeployStepV2Node> {
+    extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaDeployV2StepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
   }
 
   @Override
-  public Class<ServerlessAwsLambdaDeployStepV2Node> getFieldClass() {
-    return ServerlessAwsLambdaDeployStepV2Node.class;
+  public Class<ServerlessAwsLambdaDeployV2StepNode> getFieldClass() {
+    return ServerlessAwsLambdaDeployV2StepNode.class;
   }
 
   @Override
   public PlanCreationResponse createPlanForField(
-      PlanCreationContext ctx, ServerlessAwsLambdaDeployStepV2Node stepNode) {
+      PlanCreationContext ctx, ServerlessAwsLambdaDeployV2StepNode stepNode) {
     return super.createPlanForField(ctx, stepNode);
   }
 
   @Override
-  protected StepParameters getStepParameters(PlanCreationContext ctx, ServerlessAwsLambdaDeployStepV2Node stepNode) {
+  protected StepParameters getStepParameters(PlanCreationContext ctx, ServerlessAwsLambdaDeployV2StepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
     String packageStepFqn = getExecutionStepFqn(ctx.getCurrentField(), SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
-    ServerlessAwsLambdaDeployStepV2Parameters serverlessAwsLambdaDeployStepV2Parameters =
-        (ServerlessAwsLambdaDeployStepV2Parameters) ((StepElementParameters) stepParameters).getSpec();
-    serverlessAwsLambdaDeployStepV2Parameters.setPackageStepFqn(packageStepFqn);
-    serverlessAwsLambdaDeployStepV2Parameters.setDelegateSelectors(
-        stepNode.getServerlessAwsLambdaDeployStepV2Info().getDelegateSelectors());
+    ServerlessAwsLambdaDeployV2StepParameters serverlessAwsLambdaDeployV2StepParameters =
+        (ServerlessAwsLambdaDeployV2StepParameters) ((StepElementParameters) stepParameters).getSpec();
+    serverlessAwsLambdaDeployV2StepParameters.setPackageStepFqn(packageStepFqn);
+    serverlessAwsLambdaDeployV2StepParameters.setDelegateSelectors(
+        stepNode.getServerlessAwsLambdaDeployV2StepInfo().getDelegateSelectors());
     return stepParameters;
   }
 }

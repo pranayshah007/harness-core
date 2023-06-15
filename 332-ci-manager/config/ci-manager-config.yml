@@ -103,7 +103,7 @@ scmConnectionConfig:
 
 logServiceConfig:
   internalUrl: ""
-  baseUrl: https://qa.harness.io/log-service/
+  baseUrl:  https://0832-34-93-204-95.ngrok-free.app
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -178,7 +178,7 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:11976"
+  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:12072"
   addonImage: harness/ci-addon:1.16.17
   liteEngineImage: harness/ci-lite-engine:1.16.17
   isLocal: false
