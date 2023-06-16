@@ -331,8 +331,15 @@ public class ApiKeyServiceImpl implements ApiKeyService {
       return null;
     }
 
-    if (apiKey.contains(DELIMITER)) {
-      String decodedApiKey = new String(Base64.getDecoder().decode(apiKey), Charsets.UTF_8);
+    // API key generated from Harness will be base64 encoded
+    String decodedApiKey = null;
+    try {
+      decodedApiKey = new String(Base64.getDecoder().decode(apiKey), Charsets.UTF_8);
+    } catch (RuntimeException ex) {
+      return null;
+    }
+
+    if (decodedApiKey.contains(DELIMITER)) {
       String[] split = decodedApiKey.split(DELIMITER);
       return split[0];
     } else {
