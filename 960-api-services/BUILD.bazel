@@ -104,6 +104,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/manifest:module",
         "//960-api-services/src/main/java/io/harness/manifest/handler:module",
         "//960-api-services/src/main/java/io/harness/manifest/request:module",
+        "//960-api-services/src/main/java/io/harness/metrics/impl:module",
         "//960-api-services/src/main/java/io/harness/nexus:module",
         "//960-api-services/src/main/java/io/harness/nexus/model:module",
         "//960-api-services/src/main/java/io/harness/nexus/service:module",
