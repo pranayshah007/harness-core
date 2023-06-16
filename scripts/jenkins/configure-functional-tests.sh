@@ -15,8 +15,6 @@ replace_text "disabledCaches: \[\]" "disabledCaches: \["userPermissionCache", "p
 replace_text "uri: http://localhost:9200" "uri: ${ELASTICSEARCH_URI}" 360-cg-manager/config.yml
 replace_text "indexSuffix: _default" "indexSuffix: ${ELASTICSEARCH_INDEX_SUFFIX}" 360-cg-manager/config.yml
 replace_text "searchEnabled: false" "searchEnabled: true" 360-cg-manager/config.yml
-replace_text "sentinel: false" "sentinel: true" 360-cg-manager/config.yml
-replace_text "sentinel: false" "sentinel: true" 332-ci-manager/config/ci-manager-config.yml
 replace_text "sentinel: false" "sentinel: ${REDIS_SENTINEL}" 360-cg-manager/config.yml
 replace_text "sentinel: false" "sentinel: ${REDIS_SENTINEL}" 332-ci-manager/config/ci-manager-config.yml
 replace_text "enterpriseCacheEnabled: true" "enterpriseCacheEnabled: false" 332-ci-manager/config/ci-manager-config.yml
