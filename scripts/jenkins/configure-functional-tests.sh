@@ -17,17 +17,15 @@ replace_text "indexSuffix: _default" "indexSuffix: ${ELASTICSEARCH_INDEX_SUFFIX}
 replace_text "searchEnabled: false" "searchEnabled: true" 360-cg-manager/config.yml
 replace_text "sentinel: false" "sentinel: true" 360-cg-manager/config.yml
 replace_text "sentinel: false" "sentinel: true" 332-ci-manager/config/ci-manager-config.yml
+replace_text "sentinel: false" "sentinel: ${REDIS_SENTINEL}" 360-cg-manager/config.yml
+replace_text "sentinel: false" "sentinel: ${REDIS_SENTINEL}" 332-ci-manager/config/ci-manager-config.yml
 replace_text "enterpriseCacheEnabled: true" "enterpriseCacheEnabled: false" 332-ci-manager/config/ci-manager-config.yml
 replace_text "cacheBackend: REDIS" "cacheBackend: HAZELCAST" 332-ci-manager/config/ci-manager-config.yml
 replace_text "masterName: \"test\"" "masterName: \"${REDIS_MASTER_NAME}\"" 360-cg-manager/config.yml
 replace_text "masterName: \"test\"" "masterName: \"${REDIS_MASTER_NAME}\"" 332-ci-manager/config/ci-manager-config.yml
 replace_text "envNamespace: \"\"" "envNamespace: ${TIMESTAMP}" 360-cg-manager/config.yml
-replace_text "\"redis://redis1:26379\"" "\"${REDIS_SENTINEL1}\"" 360-cg-manager/config.yml
-replace_text "\"redis://redis2:26379\"" "\"${REDIS_SENTINEL2}\"" 360-cg-manager/config.yml
-replace_text "\"redis://redis3:26379\"" "\"${REDIS_SENTINEL3}\"" 360-cg-manager/config.yml
-replace_text "\"redis://redis1:26379\"" "\"${REDIS_SENTINEL1}\"" 332-ci-manager/config/ci-manager-config.yml
-replace_text "\"redis://redis2:26379\"" "\"${REDIS_SENTINEL2}\"" 332-ci-manager/config/ci-manager-config.yml
-replace_text "\"redis://redis3:26379\"" "\"${REDIS_SENTINEL3}\"" 332-ci-manager/config/ci-manager-config.yml
+replace_text "redisUrl: \"redis://localhost:6379\"" "redisUrl: \"${REDIS_URL}\"" 360-cg-manager/config.yml
+replace_text "redisUrl: \"redis://localhost:6379\"" "redisUrl: \"${REDIS_URL}\"" 332-ci-manager/config/ci-manager-config.yml
 replace_text "distributedLockImplementation: MONGO" "distributedLockImplementation: REDIS" 360-cg-manager/config.yml
 
 replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 350-event-server/event-service-config.yml
