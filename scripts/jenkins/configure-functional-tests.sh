@@ -21,8 +21,6 @@ replace_text "sentinel: false" "sentinel: ${REDIS_SENTINEL}" 360-cg-manager/conf
 replace_text "sentinel: false" "sentinel: ${REDIS_SENTINEL}" 332-ci-manager/config/ci-manager-config.yml
 replace_text "enterpriseCacheEnabled: true" "enterpriseCacheEnabled: false" 332-ci-manager/config/ci-manager-config.yml
 replace_text "cacheBackend: REDIS" "cacheBackend: HAZELCAST" 332-ci-manager/config/ci-manager-config.yml
-replace_text "masterName: \"test\"" "masterName: \"${REDIS_MASTER_NAME}\"" 360-cg-manager/config.yml
-replace_text "masterName: \"test\"" "masterName: \"${REDIS_MASTER_NAME}\"" 332-ci-manager/config/ci-manager-config.yml
 replace_text "envNamespace: \"\"" "envNamespace: ${TIMESTAMP}" 360-cg-manager/config.yml
 replace_text "redisUrl: \"redis://localhost:6379\"" "redisUrl: \"${REDIS_URL}\"" 360-cg-manager/config.yml
 replace_text "redisUrl: \"redis://localhost:6379\"" "redisUrl: \"${REDIS_URL}\"" 332-ci-manager/config/ci-manager-config.yml
