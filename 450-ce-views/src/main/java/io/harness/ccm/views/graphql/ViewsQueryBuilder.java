@@ -164,7 +164,7 @@ public class ViewsQueryBuilder {
       List<BusinessMapping> sharedCostBusinessMappings) {
     return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, Collections.emptyList(),
         aggregations, sortCriteriaList, cloudProviderTableName, queryParams, null, sharedCostBusinessMappings,
-        Collections.emptyMap(), false);
+        Collections.emptyMap());
   }
 
   /**
@@ -182,7 +182,6 @@ public class ViewsQueryBuilder {
    * @param sharedCostBusinessMapping used to apply shared bucket rules in the union query
    * @param sharedCostBusinessMappings negating shared cost buckets for the base query to handle duplicate cost
    * @param labelsKeyAndColumnMapping label's key and column mapping - flattened labels
-   * @param shouldUseFlattenedLabels enable flattened labels
    * @return SelectQuery
    */
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
@@ -190,7 +189,7 @@ public class ViewsQueryBuilder {
       List<QLCEViewGroupBy> sharedCostGroupBy, List<QLCEViewAggregation> aggregations,
       List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
       BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings,
-      Map<String, String> labelsKeyAndColumnMapping, boolean shouldUseFlattenedLabels) {
+      Map<String, String> labelsKeyAndColumnMapping) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -199,8 +198,8 @@ public class ViewsQueryBuilder {
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);
 
-    boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabels
-        && featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
+    boolean shouldUseFlattenedLabelsColumn =
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
 
     List<ViewField> customFields =
         collectFieldListByIdentifier(rules, filters, groupByEntity, ViewFieldIdentifier.CUSTOM);
@@ -401,12 +400,12 @@ public class ViewsQueryBuilder {
 
   public SelectQuery getTotalCountSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy, final UnionQuery unionQuery,
       final String cloudProviderTableName, final ViewQueryParams queryParams,
-      final Map<String, String> labelsKeyAndColumnMapping, boolean shouldUseFlattenedLabels) {
+      final Map<String, String> labelsKeyAndColumnMapping) {
     final SelectQuery outerQuery = new SelectQuery();
     final SelectQuery query = new SelectQuery();
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabels
-        && featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
+    boolean shouldUseFlattenedLabelsColumn =
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
     if (!Lists.isNullOrEmpty(groupBy)) {
       decorateQueryWithGroupBy(
           query, getGroupByEntity(groupBy), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
@@ -445,12 +444,11 @@ public class ViewsQueryBuilder {
   public SelectQuery getSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy,
       final List<QLCEViewAggregation> aggregateFunction, final List<QLCEViewSortCriteria> sort,
       final UnionQuery unionQuery, final String cloudProviderTableName, final boolean isClusterPerspective,
-      final ViewQueryParams queryParams, final Map<String, String> labelsKeyAndColumnMapping,
-      final boolean shouldUseFlattenedLabels) {
+      final ViewQueryParams queryParams, final Map<String, String> labelsKeyAndColumnMapping) {
     final SelectQuery query = new SelectQuery();
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabels
-        && featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
+    boolean shouldUseFlattenedLabelsColumn =
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
     decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, query, tableIdentifier,
         shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
     if (!Lists.isNullOrEmpty(aggregateFunction)) {
@@ -467,11 +465,11 @@ public class ViewsQueryBuilder {
       final List<QLCEViewAggregation> aggregateFunction, final Map<String, Double> entityCosts, final double totalCost,
       final CostTarget costTarget, final SharedCost sharedCost, final BusinessMapping businessMapping,
       final String cloudProviderTableName, final boolean isClusterPerspective, final ViewQueryParams queryParams,
-      final Map<String, String> labelsKeyAndColumnMapping, final boolean shouldUseFlattenedLabels) {
+      final Map<String, String> labelsKeyAndColumnMapping) {
     SelectQuery selectQuery = null;
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabels
-        && featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
+    boolean shouldUseFlattenedLabelsColumn =
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
     switch (sharedCost.getStrategy()) {
       case PROPORTIONAL:
         if (Double.compare(totalCost, 0.0D) != 0) {
@@ -612,7 +610,7 @@ public class ViewsQueryBuilder {
 
   public SelectQuery getTotalCountQuery(List<ViewRule> rules, List<QLCEViewFilter> filters,
       List<QLCEViewTimeFilter> timeFilters, List<QLCEViewGroupBy> groupByList, String cloudProviderTableName,
-      ViewQueryParams queryParams, Map<String, String> labelsKeyAndColumnMapping, boolean shouldUseFlattenedLabels) {
+      ViewQueryParams queryParams, Map<String, String> labelsKeyAndColumnMapping) {
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);
     SelectQuery selectQueryInner = new SelectQuery();
     SelectQuery selectQueryOuter = new SelectQuery();
@@ -620,8 +618,8 @@ public class ViewsQueryBuilder {
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
     QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
-    boolean shouldUseFlattenedLabelsColumn = shouldUseFlattenedLabels
-        && featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
+    boolean shouldUseFlattenedLabelsColumn =
+        featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, queryParams.getAccountId());
 
     selectQueryInner.addCustomColumns(Converter.toCustomColumnSqlObject(COUNT, COUNT_INNER));
 

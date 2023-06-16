@@ -18,6 +18,10 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
+import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
+import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
+import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
+import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -163,8 +167,19 @@ public class IdentityNodeExecutionStrategy
       NodeExecution nodeExecution = nodeExecutionService.update(
           nodeExecutionId, ops -> ops.set(NodeExecutionKeys.adviserResponse, adviserResponse));
       AdviserResponseHandler adviserResponseHandler = adviseHandlerFactory.obtainHandler(adviserResponse.getType());
-      adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
+      if (!isFailureStrategyAdvisor(adviserResponseHandler)) {
+        adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
+      } else {
+        endNodeExecution(ambiance);
+      }
     }
+  }
+
+  private boolean isFailureStrategyAdvisor(AdviserResponseHandler adviserResponseHandler) {
+    return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
+        || adviserResponseHandler instanceof MarkSuccessAdviseHandler
+        || adviserResponseHandler instanceof RetryAdviserResponseHandler
+        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
   }
 
   @Override

@@ -7,6 +7,7 @@
 
 package io.harness.pms.pipeline.service;
 
+import static io.harness.beans.FeatureName.STATIC_YAML_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PARALLEL_STEP_ELEMENT_CONFIG;
@@ -45,6 +46,7 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
@@ -99,6 +101,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final PmsSdkInstanceService pmsSdkInstanceService;
   private final PmsYamlSchemaHelper pmsYamlSchemaHelper;
   private final SchemaFetcher schemaFetcher;
+  private final PmsFeatureFlagService pmsFeatureFlagService;
 
   private ExecutorService yamlSchemaExecutor;
 
@@ -112,7 +115,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
       PmsSdkInstanceService pmsSdkInstanceService, PmsYamlSchemaHelper pmsYamlSchemaHelper, SchemaFetcher schemaFetcher,
       @Named("allowedParallelStages") Integer allowedParallelStages,
-      @Named("YamlSchemaExecutorService") ExecutorService executor) {
+      @Named("YamlSchemaExecutorService") ExecutorService executor, PmsFeatureFlagService pmsFeatureFlagService) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaValidator = yamlSchemaValidator;
     this.pmsSdkInstanceService = pmsSdkInstanceService;
@@ -120,12 +123,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.schemaFetcher = schemaFetcher;
     this.allowedParallelStages = allowedParallelStages;
     this.yamlSchemaExecutor = executor;
+    this.pmsFeatureFlagService = pmsFeatureFlagService;
   }
 
   @Override
   public JsonNode getPipelineYamlSchema(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
+      if (pmsFeatureFlagService.isEnabled(accountIdentifier, STATIC_YAML_SCHEMA)) {
+        String staticYamlRepoUrl = calculateFileURL(EntityType.PIPELINES, "v0");
+        return schemaFetcher.fetchStaticYamlSchema(accountIdentifier, staticYamlRepoUrl);
+      }
       return getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
     } catch (Exception e) {
       log.error("[PMS] Failed to get pipeline yaml schema");

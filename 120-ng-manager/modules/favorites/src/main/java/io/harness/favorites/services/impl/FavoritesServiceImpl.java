@@ -65,6 +65,20 @@ public class FavoritesServiceImpl implements FavoritesService {
   }
 
   @Override
+  public boolean isFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
+      String resourceType, String resourceId) {
+    ResourceType resourceTypeResolved =
+        resourceType != null ? EnumUtils.getEnum(ResourceType.class, resourceType) : null;
+    if (resourceType == null) {
+      throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
+    }
+    return favoriteRepository
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceId(
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeResolved, resourceId)
+        .isPresent();
+  }
+
+  @Override
   public List<Favorite> getFavorites(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId) {
     return favoriteRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifier(

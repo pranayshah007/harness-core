@@ -2067,4 +2067,61 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(s3ArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.AMAZONS3);
     assertThat(s3ArtifactDelegateRequest.getFilePathRegex()).isEqualTo("*");
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetS3DelegateRequestWithTagAsRegexGeneric() {
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .artifactPath(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .artifactDirectory(ParameterField.createValueField("IMAGE"))
+            .build();
+    ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    ArtifactoryGenericArtifactDelegateRequest delegateRequest =
+        (ArtifactoryGenericArtifactDelegateRequest) ArtifactConfigToDelegateReqMapper
+            .getArtifactoryArtifactDelegateRequest(artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getArtifactoryConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.generic.name());
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo("*");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetS3DelegateRequestWithTagRegexGeneric() {
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
+            .artifactPath(ParameterField.createValueFieldWithInputSetValidator(
+                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .artifactDirectory(ParameterField.createValueField("IMAGE"))
+            .build();
+    ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    ArtifactoryGenericArtifactDelegateRequest delegateRequest =
+        (ArtifactoryGenericArtifactDelegateRequest) ArtifactConfigToDelegateReqMapper
+            .getArtifactoryArtifactDelegateRequest(artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getArtifactoryConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.generic.name());
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo("stable*");
+  }
 }

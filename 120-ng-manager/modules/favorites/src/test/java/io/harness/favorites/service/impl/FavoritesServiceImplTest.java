@@ -9,6 +9,7 @@ package io.harness.favorites.service.impl;
 
 import static io.harness.rule.OwnerRule.BOOPESH;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,7 @@ import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,8 +49,8 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Mock private FavoriteRepository favoriteRepository;
 
   private FavoritesServiceImpl favoriteService;
-  private static String userId = "userId";
-  private static String accountId = "accountId";
+  private static String userId = randomAlphabetic(10);
+  private static String accountId = randomAlphabetic(10);
   private static String resourceTypeDTO = "CONNECTOR";
 
   @Before
@@ -97,10 +99,10 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void getFavoritesWithResourceTypeFoundFavoritesReturnFavoritesList() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
     ResourceType resourceType = ResourceType.CONNECTOR;
     List<Favorite> expectedFavorites = new ArrayList<>();
     expectedFavorites.add(Favorite.builder().build());
@@ -117,10 +119,10 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void getFavoritesWithInvalidResourceTypeFoundFavoritesReturnFavoritesList() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
     favoriteService.getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId, null);
   }
 
@@ -128,10 +130,10 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void getFavoritesWithResourceTypeNoFavoritesReturnEmptyList() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
     ResourceType resourceType = ResourceType.CONNECTOR;
     when(favoriteRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceType(
              accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType))
@@ -145,10 +147,10 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void getUserFavoritesSuccess() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
     List<Favorite> expectedFavorites = new ArrayList<>();
     expectedFavorites.add(Favorite.builder().build());
     expectedFavorites.add(Favorite.builder().build());
@@ -163,11 +165,54 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
+  public void isFavoritesSuccess() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
+    ResourceType resourceType = ResourceType.CONNECTOR;
+    String favoriteConnectorId = randomAlphabetic(10);
+    Favorite favorite = Favorite.builder()
+                            .userIdentifier(userId)
+                            .resourceType(resourceType)
+                            .resourceIdentifier(favoriteConnectorId)
+                            .build();
+    when(favoriteRepository
+             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceId(
+                 accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType, favoriteConnectorId))
+        .thenReturn(Optional.of(favorite));
+    boolean isFavorite = favoriteService.isFavorite(
+        accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType.toString(), favoriteConnectorId);
+    assertThat(isFavorite).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void isFavoritesFailure() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
+    ResourceType resourceType = ResourceType.CONNECTOR;
+    String favoriteConnectorId = randomAlphabetic(10);
+    when(favoriteRepository
+             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceId(
+                 accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType, favoriteConnectorId))
+        .thenReturn(Optional.empty());
+    boolean isFavorite = favoriteService.isFavorite(
+        accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType.toString(), favoriteConnectorId);
+    assertThat(isFavorite).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
   public void getFavoritesNoFavoritesReturnEmptyList() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
     when(favoriteRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifier(
              accountIdentifier, orgIdentifier, projectIdentifier, userId))
         .thenReturn(new ArrayList<>());
@@ -180,11 +225,11 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void deleteFavoriteInvokeRepositoryDelete() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
-    String resourceId = "resource123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
+    String resourceId = randomAlphabetic(10);
     favoriteService.deleteFavorite(
         accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceTypeDTO, resourceId);
     verify(favoriteRepository)
@@ -196,11 +241,11 @@ public class FavoritesServiceImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void deleteFavoriteInvokeRepositoryDeleteInvalidRequest() {
-    String accountIdentifier = "account123";
-    String orgIdentifier = "org123";
-    String projectIdentifier = "project123";
-    String userId = "user123";
-    String resourceId = "resource123";
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String userId = randomAlphabetic(10);
+    String resourceId = randomAlphabetic(10);
     favoriteService.deleteFavorite(accountIdentifier, orgIdentifier, projectIdentifier, userId, null, resourceId);
   }
 }

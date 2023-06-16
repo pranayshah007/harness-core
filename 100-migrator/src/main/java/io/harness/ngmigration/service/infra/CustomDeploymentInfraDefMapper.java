@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
@@ -71,6 +72,7 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
       variablesFromInfra.forEach(vp -> {
         variables.add(CustomDeploymentStringNGVariable.builder()
                           .name(vp.getName())
+                          .type(CustomDeploymentNGVariableType.STRING)
                           .value(ParameterField.createValueField(vp.getValue()))
                           .build());
         keysAdded.add(vp.getName());
@@ -83,6 +85,7 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
           .forEach(vp
               -> variables.add(CustomDeploymentStringNGVariable.builder()
                                    .name(vp.getName())
+                                   .type(CustomDeploymentNGVariableType.STRING)
                                    .value(ParameterField.createValueField(vp.getValue()))
                                    .build()));
     }

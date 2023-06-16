@@ -306,6 +306,7 @@ import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -3605,21 +3606,21 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID) throws Exception {
+  public CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID) {
     User user = UserThreadLocal.get();
     String jwtToken = createCannyToken(user);
 
     String redirectUrl =
         String.format("%s?companyID=%s&ssoToken=%s", configuration.getPortal().getCannyBaseUrl(), companyID, jwtToken);
 
-    if (returnToUrl != null) {
+    if (StringUtils.isNotEmpty(returnToUrl)) {
       redirectUrl += "&redirect=" + returnToUrl;
     }
     log.info("Canny login: successfully created jwt token and redirect URL for user {}", user.getUuid());
     return CannySsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
   }
 
-  private String createCannyToken(User user) throws Exception {
+  private String createCannyToken(User user) {
     String jwtCannySecret = configuration.getPortal().getJwtCannySecret();
 
     HashMap<String, Object> userData = new HashMap<>();
@@ -3628,10 +3629,18 @@ public class UserServiceImpl implements UserService {
     userData.put(UserKeys.name, user.getName());
     userData.put(UserKeys.companyName, user.getCompanyName());
 
+    byte[] jwtCannySecretBytes;
+    try {
+      jwtCannySecretBytes = jwtCannySecret.getBytes("UTF-8");
+    } catch (UnsupportedEncodingException ex) {
+      log.error("Error while encoding the canny secret to bytes", ex);
+      throw new InvalidRequestException("Error while encoding the canny secret to bytes", ex);
+    }
+
     return Jwts.builder()
         .setIssuedAt(new Date())
         .setClaims(userData)
-        .signWith(SignatureAlgorithm.HS256, jwtCannySecret.getBytes("UTF-8"))
+        .signWith(SignatureAlgorithm.HS256, jwtCannySecretBytes)
         .compact();
   }
 

@@ -578,7 +578,7 @@ public interface UserService extends OwnedByAccount {
    */
   ZendeskSsoLoginResponse generateZendeskSsoJwt(String returnToUrl);
 
-  CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID) throws Exception;
+  CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID);
 
   /**
    *

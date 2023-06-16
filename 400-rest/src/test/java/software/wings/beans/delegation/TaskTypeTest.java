@@ -487,6 +487,8 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(447, "COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS");
     taskTypeOrdinalMapping.put(448, "NOTIFY_WEBHOOK");
     taskTypeOrdinalMapping.put(449, "SERVERLESS_ROLLBACK_V2_TASK");
+    taskTypeOrdinalMapping.put(450, "K8S_COMMAND_TASK_NG_RANCHER");
+    taskTypeOrdinalMapping.put(451, "HELM_COMMAND_TASK_NG_RANCHER");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

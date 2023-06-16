@@ -63,6 +63,8 @@ public class EngineExpressionEvaluator {
   public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
   public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
   public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
+  public static final String PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT =
+      "PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT";
 
   private static final int MAX_DEPTH = 15;
 
@@ -729,8 +731,11 @@ public class EngineExpressionEvaluator {
         if (value == null) {
           unresolvedExpressions.add(expression);
         }
-        if (isAnyCollection(value)) {
-          return JsonUtils.asJson(value);
+        // Use the asJson only when the FF is not disabled.
+        if (!ctx.isFeatureFlagEnabled(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT)) {
+          if (isAnyCollection(value)) {
+            return JsonUtils.asJson(value);
+          }
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {

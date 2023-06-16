@@ -47,6 +47,7 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.YamlGroup;
@@ -84,6 +85,8 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
+
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
 
@@ -97,7 +100,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void setUp() throws ExecutionException, InterruptedException, TimeoutException {
     MockitoAnnotations.initMocks(this);
     pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(yamlSchemaProvider, yamlSchemaValidator, pmsSdkInstanceService,
-        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor);
+        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService);
   }
 
   @Test
@@ -242,6 +245,8 @@ public class PMSYamlSchemaServiceImplTest {
         .thenReturn(false);
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, ACC_ID))
         .thenReturn(false);
+
+    when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.STATIC_YAML_SCHEMA, ACC_ID)).thenReturn(false);
 
     try (MockedStatic<JsonPipelineUtils> pipelineUtils = mockStatic(JsonPipelineUtils.class)) {
       pipelineUtils.when(() -> JsonPipelineUtils.writeJsonString(any())).thenReturn(schemaString);

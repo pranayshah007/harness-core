@@ -94,16 +94,11 @@ public class ServiceOverrideUtilityFacade {
         || ParameterField.isNull(parameters.getServiceRef()) || isEmpty(parameters.getServiceRef().getValue())) {
       throw new InvalidRequestException("Environment Ref or Service Ref given for overrides has not been resolved");
     }
+
+    // Todo : remove warning and add exception, warning was added for the case where user has inflight pipelines between
+    // two NG Manager deployments
     if (ParameterField.isNull(parameters.getInfraId()) || isEmpty(parameters.getInfraId().getValue())) {
       log.warn("Infra Identifier has not been resolved to get service overrides");
-    }
-
-    if ((!ParameterField.isNull(parameters.getServiceOverrideInputs())
-            && parameters.getServiceOverrideInputs().isExpression())
-        || (!ParameterField.isNull(parameters.getEnvInputs()) && parameters.getEnvInputs().isExpression())) {
-      throw new InvalidRequestException(String.format(
-          "Service Override inputs [%s] or Environment inputs [%s] are not resolved",
-          parameters.getServiceOverrideInputs().getExpressionValue(), parameters.getEnvInputs().getExpressionValue()));
     }
 
     EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesMap = new EnumMap<>(ServiceOverridesType.class);
@@ -119,7 +114,8 @@ public class ServiceOverrideUtilityFacade {
           getMergedOverridesAcrossScope(allTypesOverridesV2);
 
       if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
-          && !ParameterField.isNull(parameters.getServiceOverrideInputs())) {
+          && !ParameterField.isNull(parameters.getServiceOverrideInputs())
+          && isNotEmpty(parameters.getServiceOverrideInputs().getValue())) {
         NGServiceOverrideConfigV2 envServiceOverrideWithMergedInputs =
             mergeOverrideV2Inputs(acrossScopeMergedOverrides.get(ServiceOverridesType.ENV_SERVICE_OVERRIDE),
                 parameters.getServiceOverrideInputs().getValue());
@@ -127,7 +123,7 @@ public class ServiceOverrideUtilityFacade {
       }
 
       if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
-          && !ParameterField.isNull(parameters.getEnvInputs())) {
+          && !ParameterField.isNull(parameters.getEnvInputs()) && isNotEmpty(parameters.getEnvInputs().getValue())) {
         NGServiceOverrideConfigV2 envGlobalOverrideWithMergedInputs =
             getOverrideConfigMergingEnvInputs(acrossScopeMergedOverrides.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE),
                 parameters.getEnvInputs().getValue());
@@ -278,7 +274,7 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private NGServiceOverrideConfigV2 mergeOverrideV2Inputs(
-      NGServiceOverrideConfigV2 overrideConfig, Map<String, Object> serviceOverrideInputs) {
+      NGServiceOverrideConfigV2 overrideConfig, @NonNull Map<String, Object> serviceOverrideInputs) {
     try {
       String specYamlDummyNodeAdded = getSpecYamlForMerging(overrideConfig);
       Map<String, Object> inputsDummyNodeAdded = addDummyNodeToOverrideInputs(serviceOverrideInputs);
@@ -372,7 +368,7 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private NGServiceOverrideConfigV2 getOverrideConfigMergingEnvInputs(
-      NGServiceOverrideConfigV2 overrideConfig, Map<String, Object> envInputs) throws IOException {
+      NGServiceOverrideConfigV2 overrideConfig, @NonNull Map<String, Object> envInputs) throws IOException {
     NGServiceOverrideConfigV2 ngServiceOverrideConfigV2;
 
     String inputStringToMerge = updateInputsAndGetForMerging(envInputs);

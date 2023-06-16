@@ -18,6 +18,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.OCI_HELM_REPO;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -37,6 +38,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -93,6 +95,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
@@ -122,8 +125,10 @@ import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestType;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
@@ -175,6 +180,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
@@ -198,6 +204,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -2784,5 +2791,59 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     commandUnitProgressMap.put(K8sCommandUnitConstants.FetchFiles, commandUnitProgress);
     return UnitProgressDataMapper.toUnitProgressData(
         CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testTaskTypeRancher() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
+    TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_RANCHER;
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testTaskTypeHooks() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_V2;
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testTaskType() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG;
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType);
+  }
+
+  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
+    try (MockedStatic<K8sTaskCapabilityHelper> mock = mockStatic(K8sTaskCapabilityHelper.class)) {
+      mock.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
+          .thenReturn(emptyList());
+      doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
+      HelmSpecParameters stepParams = HelmDeployStepParams.infoBuilder().build();
+      ServiceHookDelegateConfig hook = mock(ServiceHookDelegateConfig.class);
+      TaskChainResponse taskChainResponse =
+          nativeHelmStepHelper.queueNativeHelmTask(StepElementParameters.builder().spec(stepParams).build(),
+              HelmInstallCommandRequestNG.builder()
+                  .commandName("Rolling Deploy")
+                  .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                  .serviceHooks(List.of(hook))
+                  .build(),
+              ambiance, NativeHelmExecutionPassThroughData.builder().build());
+      assertThat(taskChainResponse.getTaskRequest()
+                     .getDelegateTaskRequest()
+                     .getRequest()
+                     .getDetails()
+                     .getType()
+                     .getType()
+                     .trim())
+          .isEqualTo(expectedTaskType.name());
+    }
   }
 }

@@ -628,6 +628,8 @@ public enum FeatureName {
   PL_NEW_SCIM_STANDARDS("Changes required for being SCIM 2 compliant API calls", HarnessTeam.PL),
   PL_ENABLE_MULTIPLE_IDP_SUPPORT("Enable support for multiple SSO IDP in an account", HarnessTeam.PL),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
+  PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT(
+      "Support for disabling returning complex objects as json", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_CONCATENATION(
       "Support for new string concatenation support in expression engine", HarnessTeam.PIPELINE),
   GITOPS_SYNC_STEP("Enable sync step in GitOps", HarnessTeam.GITOPS),
