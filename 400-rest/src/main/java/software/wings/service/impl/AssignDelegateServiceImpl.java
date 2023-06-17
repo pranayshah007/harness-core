@@ -148,6 +148,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private FeatureFlagService featureFlagService;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
+  @Inject private DelegateDao delegateDao;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
@@ -191,7 +192,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssign(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -617,7 +618,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
           if (!result.isPresent() || result.get().getLastUpdatedAt() < currentTimeMillis() - WHITELIST_TTL
               || !result.get().isValidated()) {
             matching = false;
-            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
             if (delegate == null) {
               break;
             }
@@ -642,7 +643,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return false;
     }
 
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -838,7 +839,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       } else if (whitelistedDelegates.isEmpty()) {
         StringBuilder msg = new StringBuilder();
         for (String delegateId : activeDelegates) {
-          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId, false);
+          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
           if (delegate != null) {
             msg.append(" ===> ").append(delegate.getHostName()).append(": ");
             boolean canAssignScope = canAssignDelegateScopes(delegate, delegateTask);
@@ -873,7 +874,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         errorMessage =
             "None of the active delegates were eligible to complete the task." + taskTagsMsg + "\n\n" + msg.toString();
       } else if (delegateTask.getDelegateId() != null) {
-        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId(), false);
+        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId());
         errorMessage = "Delegate task timed out. Delegate: "
             + (delegate != null ? delegate.getHostName() : "not found: " + delegateTask.getDelegateId());
       } else {
@@ -1049,7 +1050,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean canAssignDelegateBySelectors(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1074,7 +1075,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTask(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1123,7 +1124,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTaskV2(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1182,11 +1183,11 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Override
   public List<Delegate> fetchActiveDelegates(DelegateTask delegateTask) {
     List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
-    long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LONG_LAST_HEARTBEAT;
-    List<Delegate> nonConnectedDelegates =
-        accountDelegates.stream()
-            .filter(delegate -> delegate.getLastHeartBeat() < oldestAcceptableHeartBeat)
-            .collect(Collectors.toList());
+    List<Delegate> nonConnectedDelegates = accountDelegates.stream()
+                                               .filter(delegate
+                                                   -> delegateDao.isDelegateHeartBeatExpired(delegate.getUuid(),
+                                                       delegate.getAccountId(), MAX_DELEGATE_LONG_LAST_HEARTBEAT))
+                                               .collect(Collectors.toList());
     List<String> nonConnectedDelegatesIds =
         nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());
     if (isNotEmpty(nonConnectedDelegatesIds)) {
@@ -1196,7 +1197,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
-                && delegate.getLastHeartBeat() > oldestAcceptableHeartBeat)
+                && delegateDao.isDelegateHeartBeatExpired(
+                    delegate.getUuid(), delegate.getAccountId(), MAX_DELEGATE_LONG_LAST_HEARTBEAT))
         .collect(toList());
   }
 
@@ -1313,12 +1315,11 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private List<String> identifyActiveDelegateIds(List<Delegate> accountDelegates, String accountId) {
-    long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LAST_HEARTBEAT;
-
     Map<DelegateActivity, List<Delegate>> delegatesMap =
         accountDelegates.stream().collect(Collectors.groupingBy(delegate -> {
           if (DelegateInstanceStatus.ENABLED == delegate.getStatus()) {
-            if (delegate.getLastHeartBeat() > oldestAcceptableHeartBeat) {
+            if (delegateDao.isDelegateHeartBeatExpired(
+                    delegate.getUuid(), delegate.getAccountId(), MAX_DELEGATE_LONG_LAST_HEARTBEAT)) {
               return DelegateActivity.ACTIVE;
             } else {
               return DelegateActivity.DISCONNECTED;

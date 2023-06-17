@@ -515,7 +515,7 @@ public class DelegateSetupResourceV3 {
       @Parameter(description = "Account UUID") @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateCache.get(accountId, delegateId, true));
+      return new RestResponse<>(delegateCache.get(accountId, delegateId));
     }
   }
 

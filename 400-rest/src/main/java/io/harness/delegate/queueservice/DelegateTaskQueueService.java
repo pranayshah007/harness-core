@@ -160,7 +160,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
 
   @VisibleForTesting
   List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
-    return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
+    return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id)).collect(Collectors.toList());
   }
 
   @VisibleForTesting

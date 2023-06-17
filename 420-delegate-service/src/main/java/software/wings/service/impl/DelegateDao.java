@@ -20,9 +20,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.persistence.HPersistence;
+import io.harness.service.intfc.DelegateCache;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
@@ -38,6 +40,8 @@ import org.jooq.tools.StringUtils;
 public class DelegateDao {
   @Inject private HPersistence persistence;
   public static final Duration EXPIRY_TIME = ofMinutes(1);
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
+  @Inject private DelegateCache delegateCache;
 
   public void delegateDisconnected(String accountId, String delegateId) {
     log.info("Mark delegate as disconnected: {}", delegateId);
@@ -47,6 +51,9 @@ public class DelegateDao {
     UpdateOperations<Delegate> updateOperations =
         persistence.createUpdateOperations(Delegate.class).set(DelegateKeys.disconnected, Boolean.TRUE);
     persistence.update(query, updateOperations);
+    if (enableRedisForDelegateService) {
+      // clear cache
+    }
   }
 
   public boolean checkDelegateConnected(String accountId, String delegateId, String version) {
@@ -56,6 +63,9 @@ public class DelegateDao {
                                 .filter(DelegateKeys.disconnected, Boolean.FALSE);
     if (isNotEmpty(version)) {
       query.filter(DelegateKeys.version, version);
+    }
+    if (enableRedisForDelegateService) {
+      return isDelegateHeartBeatExpired(delegateId, accountId, EXPIRY_TIME.toMillis());
     }
     return query.field(DelegateKeys.lastHeartBeat)
                .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
@@ -77,6 +87,10 @@ public class DelegateDao {
   }
 
   public boolean checkDelegateLiveness(String accountId, String delegateId) {
+    if (enableRedisForDelegateService){
+      return isDelegateHeartBeatExpired(delegateId, accountId,EXPIRY_TIME.toMillis());
+    }
+
     Query<Delegate> query = persistence.createQuery(Delegate.class)
                                 .filter(DelegateKeys.accountId, accountId)
                                 .filter(DelegateKeys.uuid, delegateId)
@@ -131,6 +145,23 @@ public class DelegateDao {
     }
     return query.filter(DelegateKeys.accountId, accountId).count();
   }
+
+  public long getDelegateLastHeartBeat(Delegate delegate) {
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    if (delegateFromCache != null) {
+      return delegateFromCache.getLastHeartBeat();
+    }
+    return delegate.getLastHeartBeat();
+  }
+
+  public boolean isDelegateHeartBeatExpired(String delegateId, String accountId, long maxExpiry) {
+    Delegate delegateFromCache = delegateCache.get(accountId, delegateId);
+    if (delegateFromCache == null) {
+      return true;
+    }
+    return delegateFromCache.getLastHeartBeat() >= (currentTimeMillis() - maxExpiry);
+  }
+
 
   private Query<Delegate> createQueryForAllActiveDelegates(String version) {
     return persistence.createQuery(Delegate.class, excludeAuthority)
