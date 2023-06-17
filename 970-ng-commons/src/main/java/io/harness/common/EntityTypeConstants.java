@@ -246,4 +246,6 @@ public interface EntityTypeConstants {
   String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
+
+  String DOWNLOAD_SERVERLESS_MANIFESTS = "DownloadServerlessManifests";
 }
