@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -93,7 +94,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(JUnitParamsRunner.class)
@@ -156,7 +160,8 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
-  public void testCreatePlanForChildrenNodes_0(DeploymentStageNode node) {
+  @PrepareForTest(YamlUtils.class)
+  public void testCreatePlanForChildrenNodes(DeploymentStageNode node) {
     node.setFailureStrategies(
         ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
                                                     .onFailure(OnFailureConfig.builder()
@@ -171,17 +176,21 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                       PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
                                   .currentField(new YamlField(new YamlNode("spec", jsonNode)))
                                   .build();
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
         deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
+    mockSettings.close();
 
-    assertThat(planCreationResponseMap).hasSize(10);
+    assertThat(planCreationResponseMap).hasSize(11);
     assertThat(planCreationResponseMap.values()
                    .stream()
                    .map(PlanCreationResponse::getPlanNode)
                    .filter(Objects::nonNull)
                    .map(PlanNode::getIdentifier)
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles");
+        .containsExactlyInAnyOrder(
+            "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
   }
 
   @Test
@@ -253,7 +262,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                     .build();
     String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
     FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", null, null, yaml, FreezeType.GLOBAL);
+        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", "orgId", "projId", yaml, FreezeType.GLOBAL);
     return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 
@@ -335,20 +344,20 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
             .environments(EnvironmentsYaml.builder()
                               .uuid("environments-uuid")
                               .values(ParameterField.createValueField(
-                                  asList(EnvironmentYamlV2.builder()
-                                             .uuid("envuuid")
-                                             .environmentRef(ParameterField.<String>builder().value(envId).build())
-                                             .deployToAll(ParameterField.createValueField(false))
-                                             .infrastructureDefinitions(ParameterField.createValueField(
-                                                 asList(InfraStructureDefinitionYaml.builder()
-                                                            .identifier(ParameterField.createValueField("infra"))
-                                                            .build())))
-                                             .build())))
+                                  List.of(EnvironmentYamlV2.builder()
+                                              .uuid("envuuid")
+                                              .environmentRef(ParameterField.<String>builder().value(envId).build())
+                                              .deployToAll(ParameterField.createValueField(false))
+                                              .infrastructureDefinitions(ParameterField.createValueField(
+                                                  asList(InfraStructureDefinitionYaml.builder()
+                                                             .identifier(ParameterField.createValueField("infra"))
+                                                             .build())))
+                                              .build())))
                               .filters(ParameterField.createValueField(
-                                  asList(FilterYaml.builder()
-                                             .type(FilterType.all)
-                                             .entities(Set.of(Entity.environments, Entity.infrastructures))
-                                             .build())))
+                                  List.of(FilterYaml.builder()
+                                              .type(FilterType.all)
+                                              .entities(Set.of(Entity.environments, Entity.infrastructures))
+                                              .build())))
                               .build())
             .deploymentType(KUBERNETES)
             .execution(ExecutionElementConfig.builder()
@@ -467,9 +476,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   //  @Parameters(method = "getDeploymentStageConfigForMultiSvcMultiEvs")
   //  public void testCreatePlanForChildrenNodesWithFilters_0(DeploymentStageNode node) {
   //    when(environmentInfraFilterHelper.areFiltersPresent(any())).thenReturn(true);
-  //
-  //    doReturn(true).when(featureFlagHelperService).isEnabled("accountId",
-  //    FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
   //
   //    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
   //                                          .onFailure(OnFailureConfig.builder()

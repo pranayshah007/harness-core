@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.AVMOHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ContainerStateWriterTest extends CategoryTest {
@@ -77,7 +77,7 @@ public class ContainerStateWriterTest extends CategoryTest {
                                       .accountId(ACCOUNT_ID)
                                       .message(ContainerStateProto.newBuilder().setVersion(0).build())
                                       .build()));
-    verifyZeroInteractions(instanceDataDao);
+    verifyNoInteractions(instanceDataDao);
   }
 
   @Test
@@ -94,7 +94,7 @@ public class ContainerStateWriterTest extends CategoryTest {
                                                                           .build())
                                                              .build()));
     verify(instanceDataDao).getK8sPodInstance(ACCOUNT_ID, CLUSTER_ID, NAMESPACE, POD_NAME);
-    verifyZeroInteractions(workloadRecommendationDao);
+    verifyNoInteractions(workloadRecommendationDao);
   }
 
   @Test

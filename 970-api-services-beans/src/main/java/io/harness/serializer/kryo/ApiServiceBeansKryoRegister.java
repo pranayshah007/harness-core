@@ -50,6 +50,8 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.git.model.PushResultGit;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.globalcontex.AuditGlobalContextData;
@@ -132,6 +134,7 @@ import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.auth.refreshtoken.AccessTokenResponse;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
 import io.harness.shell.CommandExecutionData;
@@ -171,14 +174,17 @@ import software.wings.helpers.ext.gcb.models.GcbArtifactObjects;
 import software.wings.helpers.ext.gcb.models.GcbArtifacts;
 import software.wings.helpers.ext.gcb.models.GcbBuildSource;
 import software.wings.helpers.ext.gcb.models.GcbResult;
+import software.wings.helpers.ext.gcb.models.HashType;
 import software.wings.helpers.ext.gcb.models.LogStreamingOption;
 import software.wings.helpers.ext.gcb.models.LoggingMode;
 import software.wings.helpers.ext.gcb.models.MachineType;
+import software.wings.helpers.ext.gcb.models.RepoSource;
 import software.wings.helpers.ext.gcb.models.SourceProvenance;
 import software.wings.helpers.ext.gcb.models.StorageSource;
 import software.wings.helpers.ext.gcb.models.SubstitutionOption;
 import software.wings.helpers.ext.gcb.models.TimeSpan;
 import software.wings.helpers.ext.gcb.models.VerifyOption;
+import software.wings.helpers.ext.gcb.models.Volume;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
@@ -331,6 +337,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(IstioDestinationWeight.class, 7183);
 
     kryo.register(ChangeType.class, 5212);
+    kryo.register(ListRemoteRequest.class, 1400);
+    kryo.register(ListRemoteResult.class, 1410);
     kryo.register(GitFileChange.class, 1418);
     kryo.register(CommitAndPushRequest.class, 1419);
     kryo.register(UsernamePasswordAuthRequest.class, 1420);
@@ -433,6 +441,9 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(StorageSource.class, 7421);
     kryo.register(SourceProvenance.class, 7422);
     kryo.register(TimeSpan.class, 7425);
+    kryo.register(RepoSource.class, 7438);
+    kryo.register(HashType.class, 7450);
+    kryo.register(Volume.class, 7451);
     kryo.register(AzureImageGallery.class, 40017);
     kryo.register(AzureImageDefinition.class, 40018);
     kryo.register(ExecutionCredential.ExecutionType.class, 5023);
@@ -484,5 +495,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITagsResponse.class, 81001);
     kryo.register(NexusRepositories.class, 9000312);
     kryo.register(TfConfigInspectVersion.class, 9000313);
+    kryo.register(AccessTokenResponse.class, 10000123);
   }
 }

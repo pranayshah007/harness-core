@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -42,10 +43,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
-import io.harness.template.beans.TemplateWrapperResponseDTO;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
 import software.wings.beans.template.Template;
 import software.wings.beans.template.TemplateType;
@@ -142,13 +143,14 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
         templateClient
-            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+            .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
+                StoreType.INLINE)
             .execute();
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);

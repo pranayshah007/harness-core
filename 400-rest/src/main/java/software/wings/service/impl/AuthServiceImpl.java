@@ -136,6 +136,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -162,6 +163,7 @@ public class AuthServiceImpl implements AuthService {
   private ConfigurationController configurationController;
   private static final String USER_PERMISSION_CACHE_NAME = "userPermissionCache".concat(":%s");
   private static final String USER_RESTRICTION_CACHE_NAME = "userRestrictionCache".concat(":%s");
+  private static final Duration TWO_HOURS = new Duration(TimeUnit.HOURS, 2);
   @Inject private ExecutorService executorService;
   @Inject private ApiKeyService apiKeyService;
   @Inject @Nullable private SegmentHandler segmentHandler;
@@ -221,7 +223,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     if (authToken == null) {
-      log.info("Token with prefix {} not found in cache hence fetching it from db", authTokenId.substring(0, 5));
+      String authTokenIdValue = authTokenId.length() >= 5 ? authTokenId.substring(0, 5) : authTokenId;
+      log.info("Token with prefix {} not found in cache hence fetching it from db", authTokenIdValue);
       authToken = getAuthTokenFromDB(authTokenId);
       addAuthTokenToCache(authToken);
     }
@@ -516,10 +519,10 @@ public class AuthServiceImpl implements AuthService {
   private Cache<String, UserPermissionInfo> getUserPermissionCache(String accountId) {
     if (configurationController.isPrimary()) {
       return harnessCacheManager.getCache(String.format(PRIMARY_CACHE_PREFIX + USER_PERMISSION_CACHE_NAME, accountId),
-          String.class, UserPermissionInfo.class, AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR));
+          String.class, UserPermissionInfo.class, CreatedExpiryPolicy.factoryOf(TWO_HOURS));
     }
     return harnessCacheManager.getCache(String.format(USER_PERMISSION_CACHE_NAME, accountId), String.class,
-        UserPermissionInfo.class, AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR),
+        UserPermissionInfo.class, CreatedExpiryPolicy.factoryOf(TWO_HOURS),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 
@@ -552,7 +555,12 @@ public class AuthServiceImpl implements AuthService {
           return null;
         }
 
+        // if value is empty, then we should have a fallback!
         value = getUserPermissionInfoFromDB(accountId, user);
+        // Add a log message when UserPermissionInfo is empty. Context: PL-32390
+        if (isUserPermissionInfoEmpty(value)) {
+          log.warn("Adding empty user permission for accountId: {} and user: {}", accountId, user.getEmail());
+        }
         userPermissionInfoCache.put(key, value);
       }
       return value;
@@ -610,6 +618,10 @@ public class AuthServiceImpl implements AuthService {
       }
 
       value = getUserPermissionInfoFromDB(accountId, user);
+      // Add a log message when UserPermissionInfo is empty. Context: PL-32390
+      if (isUserPermissionInfoEmpty(value)) {
+        log.warn("Updating empty user permission for accountId: {} and user: {}", accountId, user.getEmail());
+      }
       userPermissionInfoCache.put(key, value);
 
     } catch (Exception e) {
@@ -690,6 +702,10 @@ public class AuthServiceImpl implements AuthService {
 
   private UserPermissionInfo getUserPermissionInfoFromDB(String accountId, User user) {
     List<UserGroup> userGroups = getUserGroups(accountId, user);
+    if (userGroups.isEmpty()) {
+      log.info("Attempting to evaluate user permission info with empty user-groups list. AccountId: {} User: {}",
+          accountId, user.getEmail());
+    }
     return authHandler.evaluateUserPermissionInfo(accountId, userGroups, user);
   }
 
@@ -1357,5 +1373,13 @@ public class AuthServiceImpl implements AuthService {
             USER);
       }
     });
+  }
+
+  private boolean isUserPermissionInfoEmpty(UserPermissionInfo value) {
+    return (value.getAppPermissionMap() == null || value.getAppPermissionMap().isEmpty())
+        && (value.getAppPermissionMapInternal() == null || value.getAppPermissionMapInternal().isEmpty())
+        && (value.getDashboardPermissions() == null || value.getDashboardPermissions().isEmpty())
+        && (value.getAccountPermissionSummary() == null
+            || value.getAccountPermissionSummary().getPermissions().isEmpty());
   }
 }

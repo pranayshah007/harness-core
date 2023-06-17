@@ -36,7 +36,17 @@ public interface ExecutionCapability {
    */
   Duration getPeriodUntilNextValidation();
 
+  /**
+   * Define capability to string
+   */
   default String getCapabilityToString() {
     return null;
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  default String getCapabilityValidationError() {
+    return "Following delegate(s) failed to complete validation check";
   }
 }

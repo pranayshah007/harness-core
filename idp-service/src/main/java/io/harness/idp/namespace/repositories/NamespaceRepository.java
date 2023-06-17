@@ -28,4 +28,6 @@ public interface NamespaceRepository extends CrudRepository<NamespaceEntity, Str
   Optional<NamespaceEntity> findByAccountIdentifierAndIsDeleted(String accountIdentifier, boolean deleted);
 
   NamespaceEntity save(NamespaceEntity namespaceEntity);
+
+  NamespaceEntity findByAccountIdentifierAndId(String accountIdentifier, String id);
 }

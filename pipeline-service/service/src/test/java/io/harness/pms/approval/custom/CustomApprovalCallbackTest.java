@@ -18,12 +18,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -35,8 +36,10 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.HarnessCustomApprovalException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
@@ -63,6 +66,9 @@ import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -70,21 +76,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CustomApprovalCallback.class, ShellScriptHelperService.class})
 public class CustomApprovalCallbackTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -94,6 +99,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private NGErrorHelper ngErrorHelper;
+  private MockedStatic<ShellScriptHelperService> shellScriptHelperServiceMockedStatic;
   private CustomApprovalCallback customApprovalCallback;
 
   ILogStreamingStepClient logStreamingStepClient;
@@ -108,6 +114,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Before
   public void setup() {
     customApprovalCallback = spy(CustomApprovalCallback.builder().approvalInstanceId(APPROVAL_INSTANCE_ID).build());
+    shellScriptHelperServiceMockedStatic = Mockito.mockStatic(ShellScriptHelperService.class, CALLS_REAL_METHODS);
     on(customApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
     on(customApprovalCallback).set("kryoSerializer", kryoSerializer);
     on(customApprovalCallback).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
@@ -118,6 +125,11 @@ public class CustomApprovalCallbackTest extends CategoryTest {
 
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+  }
+
+  @After
+  public void cleanup() {
+    shellScriptHelperServiceMockedStatic.close();
   }
 
   @Test
@@ -134,7 +146,14 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     instance.setAmbiance(ambiance);
     instance.setDeadline(0);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
-    customApprovalCallback.push(null);
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      customApprovalCallback.push(null);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback)
+          .saveExecutionLog(LogHelper.color("Approval instance has expired", LogColor.Red), LogLevel.INFO,
+              CommandExecutionStatus.FAILURE);
+    }
+
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.EXPIRED), nullable(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
     verify(customApprovalInstanceHandler).wakeup();
@@ -387,7 +406,6 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackNonFatalException() {
-    mockStatic(ShellScriptHelperService.class);
     Map<String, Object> outputVars = ImmutableMap.of("Status", "status");
     CustomApprovalInstance instance =
         CustomApprovalInstance.builder()
@@ -418,7 +436,8 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             .build();
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
-    when(ShellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars), eq(null)))
+    shellScriptHelperServiceMockedStatic
+        .when(() -> ShellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars), eq(null)))
         .thenAnswer(
             (Answer<ShellScriptOutcome>) invocation -> ShellScriptOutcome.builder().outputVariables(null).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
@@ -434,7 +453,6 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testCallbackNonFatalExceptionUsingKryoWithoutReference() {
-    mockStatic(ShellScriptHelperService.class);
     Map<String, Object> outputVars = Map.of("Status", "status");
     CustomApprovalInstance instance =
         CustomApprovalInstance.builder()
@@ -465,7 +483,8 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             .build();
 
     when(referenceFalseKryoSerializer.asInflatedObject(any())).thenReturn(response);
-    when(ShellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars), eq(null)))
+    shellScriptHelperServiceMockedStatic
+        .when(() -> ShellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars), eq(null)))
         .thenAnswer(
             (Answer<ShellScriptOutcome>) invocation -> ShellScriptOutcome.builder().outputVariables(null).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);

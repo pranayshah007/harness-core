@@ -24,7 +24,7 @@ import lombok.NonNull;
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactoryResourceService {
   ArtifactoryRepoDetailsDTO getRepositories(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
-      @NonNull String orgIdentifier, @NonNull String projectIdentifier);
+      String orgIdentifier, String projectIdentifier);
 
   List<ArtifactoryArtifactBuildDetailsDTO> getBuildDetails(@NonNull String repositoryName, @NonNull String filePath,
       int maxVersions, @NonNull IdentifierRef connectorRef, @NonNull String orgIdentifier,
@@ -41,5 +41,5 @@ public interface ArtifactoryResourceService {
   boolean validateArtifactServer(IdentifierRef artifactoryConnectorRef, String orgIdentifier, String projectIdentifier);
 
   ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
-      @NonNull String orgIdentifier, @NonNull String projectIdentifier, @NotNull String repository);
+      String orgIdentifier, String projectIdentifier, @NotNull String repository);
 }

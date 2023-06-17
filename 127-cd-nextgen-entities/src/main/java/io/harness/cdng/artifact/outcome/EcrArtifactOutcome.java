@@ -34,6 +34,10 @@ public class EcrArtifactOutcome implements ArtifactOutcome {
    */
   String connectorRef;
   /**
+   * ECR Registry Id
+   */
+  String registryId;
+  /**
    * Images in repos need to be referenced via a path.
    */
   String imagePath;
@@ -69,6 +73,9 @@ public class EcrArtifactOutcome implements ArtifactOutcome {
    * imagePullSecret for Ecr credentials base encoded.
    */
   String imagePullSecret;
+
+  String digest;
+
   Map<String, String> metadata;
   /**
    * dockerConfigJson for docker credentials base encoded.

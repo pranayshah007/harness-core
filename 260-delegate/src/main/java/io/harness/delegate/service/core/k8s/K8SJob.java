@@ -7,7 +7,9 @@
 
 package io.harness.delegate.service.core.k8s;
 
-import static io.harness.delegate.service.core.k8s.K8SConstants.DELEGATE_FIELD_MANAGER;
+import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
+
+import io.harness.delegate.service.core.util.K8SVolumeUtils;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -39,7 +41,7 @@ public class K8SJob extends V1Job {
   }
 
   public K8SJob addVolume(final V1Volume volume, final String mountPath) {
-    final var volumeMount = K8SVolumeUtils.createVolumeMount(volume, mountPath);
+    final var volumeMount = K8SVolumeUtils.volumeMount(volume, mountPath);
     getSpec().getTemplate().getSpec().addVolumesItem(volume).getContainers().forEach(
         container -> container.addVolumeMountsItem(volumeMount));
 

@@ -43,16 +43,27 @@ public class PlanExecutionExpansionRepositoryCustomImpl implements PlanExecution
   }
 
   @Override
-  public void update(String planExecutionId, Update update) {
-    String lockName = String.format(PLAN_EXPANSION_LOCK_PREFIX, planExecutionId);
-    try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
-      if (lock == null) {
-        log.error("Unable to acquire lock while adding json");
+  public void update(String planExecutionId, Update update, long lockTimeoutInMinutes) {
+    try {
+      String lockName = String.format(PLAN_EXPANSION_LOCK_PREFIX, planExecutionId);
+      Duration lockTimeOut = Duration.ofMinutes(lockTimeoutInMinutes);
+      Duration releaseTimeOut = Duration.ofMinutes(lockTimeoutInMinutes + 1);
+
+      try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(lockName, lockTimeOut, releaseTimeOut)) {
+        if (lock == null) {
+          log.error("Unable to acquire lock while adding json");
+        }
+        long startTs = System.currentTimeMillis();
+        Criteria criteria = Criteria.where("planExecutionId").is(planExecutionId);
+        Query query = new Query(criteria);
+        mongoTemplate.findAndModify(query, update, PlanExecutionExpansion.class);
+        long timeForUpdate = System.currentTimeMillis() - startTs;
+        if (timeForUpdate > 500) {
+          log.warn("Time taken to update the json is greater than 500ms. Please investigate");
+        }
       }
-      Criteria criteria = Criteria.where("planExecutionId").is(planExecutionId);
-      Query query = new Query(criteria);
-      mongoTemplate.findAndModify(query, update, PlanExecutionExpansion.class);
+    } catch (Exception ex) {
+      log.error("Unable to update expanded json", ex);
     }
   }
 

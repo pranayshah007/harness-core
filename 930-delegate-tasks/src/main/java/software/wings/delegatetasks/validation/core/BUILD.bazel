@@ -14,12 +14,8 @@ java_library(
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/tasklogging:module",
         "//950-delegate-tasks-beans:module",
-        "//980-commons:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:javax_validation_validation_api",
-        "@maven//:org_hibernate_validator_hibernate_validator",
+        "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//980-commons/src/main/java/io/harness/network:module",
     ],
 )
 

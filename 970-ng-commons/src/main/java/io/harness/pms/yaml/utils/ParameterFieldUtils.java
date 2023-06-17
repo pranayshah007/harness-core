@@ -17,10 +17,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ParameterFieldUtils {
-  public static boolean containsInputSetValidator(String value, String fqnForNode) {
+  public static String getValueFromParameterFieldWithInputSetValidator(String value, String fqnForNode) {
+    if (EmptyPredicate.isEmpty(value)) {
+      return value;
+    }
     try {
       ParameterField<?> parameterField = YamlPipelineUtils.read(value, ParameterField.class);
-      return parameterField.getInputSetValidator() != null;
+      if (parameterField.getInputSetValidator() == null) {
+        return value;
+      }
+      return parameterField.getValue().toString();
     } catch (IOException e) {
       if (EmptyPredicate.isEmpty(value)) {
         throw new InvalidRequestException("Value for the field at path [" + fqnForNode + "] is not provided!");
@@ -30,21 +36,28 @@ public class ParameterFieldUtils {
     }
   }
 
-  public static String getValueFromParameterFieldWithInputSetValidator(String value, String fqnForNode) {
-    try {
-      ParameterField<?> parameterField = YamlPipelineUtils.read(value, ParameterField.class);
-      if (parameterField.getInputSetValidator() != null) {
-        return parameterField.getValue().toString();
-      }
-      log.error("getValueFromParameterFieldWithInputSetValidator was called for value [" + value
-          + "] that does not have an input set validator");
-      return null;
-    } catch (IOException e) {
-      if (EmptyPredicate.isEmpty(value)) {
-        throw new InvalidRequestException("Value for the field at path [" + fqnForNode + "] is not provided!");
-      } else {
-        throw new InvalidRequestException(value + " is not a valid value for runtime input");
-      }
+  /**
+   * @param p Parameter field whose value is either a boolean or a string
+   * @return return a boolean derived from the above value
+   * @throws InvalidRequestException if the parameter field value cannot be converted to a boolean value
+   */
+  public static boolean getBooleanValue(ParameterField<?> p) {
+    if (ParameterField.isNull(p)) {
+      throw new InvalidRequestException("Value for field is null");
+    }
+
+    if (p.isExpression()) {
+      throw new InvalidRequestException("Value for field is an expression");
+    }
+
+    final Object o = p.fetchFinalValue();
+
+    if (o instanceof Boolean) {
+      return (boolean) o;
+    } else if (o instanceof String) {
+      return Boolean.parseBoolean((String) o);
+    } else {
+      throw new InvalidRequestException(String.format("Value for field [%s] is not a boolean", o));
     }
   }
 }

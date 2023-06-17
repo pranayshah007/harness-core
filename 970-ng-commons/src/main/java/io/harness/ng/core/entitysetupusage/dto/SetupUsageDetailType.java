@@ -29,7 +29,8 @@ public enum SetupUsageDetailType {
   ENTITY_REFERRED_BY_INFRA,
 
   TEMPLATE_REFERRED_BY_CONNECTOR,
-  PIPELINE_REFERED_BY_PIPELINES;
+  PIPELINE_REFERED_BY_PIPELINES,
+  SECRET_REFERRED_BY_SECRET;
 
   public static boolean isReferredByPipeline(String setupUsageDetailType) {
     SetupUsageDetailType type = SetupUsageDetailType.valueOf(setupUsageDetailType);

@@ -39,9 +39,14 @@ public abstract class ManifestHandler<M, S> {
   }
 
   protected M parseContentToManifest(String manifestContent) {
-    return DefaultManifestContentParser.parseJson(manifestContent, getManifestContentUnmarshallClass());
+    M manifest = DefaultManifestContentParser.parseJson(manifestContent, getManifestContentUnmarshallClass());
+    validateManifest(manifest);
+    return manifest;
   }
+
   public S getManifestTypeContent(S chainState) {
     return this.getManifestTypeContent(chainState, manifestRequest);
   }
+
+  protected void validateManifest(M manifest) {}
 }

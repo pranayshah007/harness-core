@@ -10,6 +10,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 
@@ -27,14 +28,19 @@ public interface EntityUnavailabilityStatusesService extends DeleteEntityByHandl
       ProjectParams projectParams, DowntimeDTO downtimeDTO, List<Pair<Long, Long>> futureInstances);
   List<EntityUnavailabilityStatusesDTO> getPastInstances(ProjectParams projectParams);
 
-  EntityUnavailabilityStatuses getInstanceById(String uuid);
+  EntityUnavailabilityStatuses getInstanceByUuid(String uuid);
 
   List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams);
 
   List<EntityUnavailabilityStatusesDTO> getAllInstances(
       ProjectParams projectParams, EntityType entityType, String entityIdentifier);
 
+  EntityUnavailabilityStatuses getMinStartTimeInstanceWithStatus(
+      ProjectParams projectParams, EntityType entityType, String entityIdentifier, EntityUnavailabilityStatus status);
+
   List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams, long startTime, long endTime);
+
+  List<EntityUnavailabilityStatuses> getAllInstancesEntity(ProjectParams projectParams, long startTime, long endTime);
 
   List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
       ProjectParams projectParams, long startTime, long endTime);
@@ -44,6 +50,11 @@ public interface EntityUnavailabilityStatusesService extends DeleteEntityByHandl
 
   List<EntityUnavailabilityStatusesDTO> getPastAndActiveDowntimeInstances(
       ProjectParams projectParams, List<String> entityIds);
+
+  void updateStatusOfEntity(EntityType entityType, String entityId, long startTime, long endTime,
+      EntityUnavailabilityStatus prevStatus, EntityUnavailabilityStatus newStatus);
+
+  void updateDCPassedToDCRestoredForAllEntities(EntityType entityType, String entityId, long startTime, long endTime);
   boolean deleteFutureDowntimeInstances(ProjectParams projectParams, String entityId);
   boolean deleteAllInstances(ProjectParams projectParams, String entityId);
 }

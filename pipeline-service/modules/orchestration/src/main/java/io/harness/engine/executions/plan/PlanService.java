@@ -23,6 +23,8 @@ public interface PlanService {
 
   <T extends Node> T fetchNode(String planId, String nodeId);
 
+  List<Node> fetchNodes(String planId);
+
   Plan fetchPlan(String planId);
 
   Optional<Plan> fetchPlanOptional(String planId);

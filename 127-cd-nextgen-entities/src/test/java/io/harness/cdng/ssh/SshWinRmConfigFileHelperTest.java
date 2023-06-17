@@ -10,11 +10,13 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,8 +26,15 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.configfile.ConfigFileOutcome;
+import io.harness.cdng.configfile.ConfigGitFile;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.GitLabStore;
+import io.harness.cdng.manifest.yaml.GitStore;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
+import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -112,6 +121,71 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     assertThat(secretConfigFile.getEncryptionDataDetails().get(0).getFieldName()).isEqualTo(ENCRYPTED_FILE_NAME);
     assertThat(secretConfigFile.getSecretConfigFile().getEncryptedConfigFile().getIdentifier())
         .isEqualTo(CONFIG_FILE_VALID_SECRET_ID);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetFileDelegateConfigFromGithub() {
+    GithubStore githubStore = GithubStore.builder().build();
+    verifyGetFileDelegateConfig(githubStore);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetFileDelegateConfigFromGit() {
+    GitStore gitStore = GitStore.builder().build();
+    verifyGetFileDelegateConfig(gitStore);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetFileDelegateConfigFromBitBucket() {
+    BitbucketStore bitbucketStore = BitbucketStore.builder().build();
+    verifyGetFileDelegateConfig(bitbucketStore);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetFileDelegateConfigFromGitLab() {
+    GitLabStore gitLabStore = GitLabStore.builder().build();
+    verifyGetFileDelegateConfig(gitLabStore);
+  }
+
+  private void verifyGetFileDelegateConfig(GitStoreConfig githubStore) {
+    Ambiance ambiance = getAmbiance();
+    Map<String, ConfigFileOutcome> configFilesOutcome = new HashMap<>();
+
+    configFilesOutcome.put("validConfigFile",
+        ConfigFileOutcome.builder()
+            .identifier("validConfigFile")
+            .gitFiles(List.of(
+                ConfigGitFile.builder().filePath("/path/" + CONFIG_FILE_NAME).fileContent(CONFIG_FILE_CONTENT).build()))
+            .store(githubStore)
+            .build());
+    when(cdExpressionResolver.updateExpressions(ambiance, githubStore)).thenReturn(githubStore);
+    when(cdExpressionResolver.renderExpression(any(), anyString(), anyBoolean())).thenReturn(CONFIG_FILE_CONTENT);
+
+    when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
+        .thenReturn(Optional.of(getFileNodeDTO()));
+    when(ngEncryptedDataService.getEncryptionDetails(any(), any()))
+        .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
+
+    FileDelegateConfig fileDelegateConfig =
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false);
+
+    assertThat(fileDelegateConfig.getStores()).isNotEmpty();
+    List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
+    GitFetchedStoreDelegateConfig storeDelegateConfig = (GitFetchedStoreDelegateConfig) stores.get(0);
+    assertThat(storeDelegateConfig.getConfigFiles()).isNotEmpty();
+    assertThat(storeDelegateConfig.getConfigFiles().size()).isEqualTo(1);
+
+    ConfigFileParameters configFile = storeDelegateConfig.getConfigFiles().get(0);
+    assertThat(configFile.getFileName()).isEqualTo(CONFIG_FILE_NAME);
+    assertThat(configFile.getFileContent()).isEqualTo(CONFIG_FILE_CONTENT);
   }
 
   @Test

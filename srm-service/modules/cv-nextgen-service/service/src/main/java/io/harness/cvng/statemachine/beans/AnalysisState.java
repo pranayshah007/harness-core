@@ -22,6 +22,10 @@ public abstract class AnalysisState {
     return MAX_RETRIES;
   }
 
+  public boolean orchestrateViaEvent() {
+    return true;
+  }
+
   public enum StateType {
     HOST_SAMPLING_STATE,
     CANARY_TIME_SERIES,
@@ -38,6 +42,9 @@ public abstract class AnalysisState {
     COMPOSOITE_SLO_METRIC_ANALYSIS,
     DEPLOYMENT_LOG_HOST_SAMPLING_STATE,
     DEPLOYMENT_METRIC_HOST_SAMPLING_STATE,
-    DEPLOYMENT_LOG_FEEDBACK_STATE
+    DEPLOYMENT_LOG_FEEDBACK_STATE,
+
+    COMPOSOITE_SLO_RESTORE_METRIC_ANALYSIS
+
   }
 }

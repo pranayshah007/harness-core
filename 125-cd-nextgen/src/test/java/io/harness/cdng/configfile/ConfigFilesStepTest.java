@@ -12,15 +12,14 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILED_CHILDREN_OUTPUT;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;

@@ -1,0 +1,48 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  orgIdentifier: org
+  projectIdentifier: proj
+  targetIdentifier: pipeline1
+  enabled: true
+  source:
+    type: Webhook
+    pollInterval: 2m
+    webhookId: 123
+    spec:
+      type: Github
+      spec:
+        type: Push
+        spec:
+          connectorRef: conn
+          autoAbortPreviousExecutions: false
+          payloadConditions: []
+          headerConditions: []
+          actions: []
+  inputYaml: |
+    pipeline:
+      identifier: dockerPipeline
+      stages:
+        - stage:
+            identifier: stage1
+            type: Deployment
+            spec:
+              service:
+                serviceRef: MyService
+                serviceInputs:
+                  serviceDefinition:
+                    type: Kubernetes
+                    spec:
+                      artifacts:
+                        primary:
+                          primaryArtifactRef: hello-world
+                          sources:
+                            - identifier: hello-world
+                              type: Gcr
+                              spec:
+                                tag: ""
+              environment:
+                environmentRef: ""
+                environmentInputs: ""
+                serviceOverrideInputs: ""
+                infrastructureDefinitions: ""

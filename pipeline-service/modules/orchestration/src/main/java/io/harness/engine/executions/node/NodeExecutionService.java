@@ -39,6 +39,8 @@ public interface NodeExecutionService {
    */
   NodeExecution get(String nodeExecutionId);
 
+  CloseableIterator<NodeExecution> get(List<String> nodeExecutionIds);
+
   /**
    * Fetches nodeExecution and uses id Index
    * @param nodeExecutionId
@@ -73,6 +75,7 @@ public interface NodeExecutionService {
    * @return NodeExecutions with all properties
    */
   List<NodeExecution> getAll(Set<String> nodeExecutionIds);
+  List<NodeExecution> getAllWithFieldIncluded(Set<String> nodeExecutionIds, Set<String> fieldsToInclude);
 
   /**
    * Fetches all step nodeExecutions with given projected fields, checks stepCategory should be step
@@ -328,6 +331,8 @@ public interface NodeExecutionService {
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);
 
+  List<NodeExecution> fetchStageExecutions(String planExecutionId);
+
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);
 
@@ -342,4 +347,7 @@ public interface NodeExecutionService {
 
   CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
       String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields);
+
+  NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
+      String planExecutionId, String planNode, boolean oldRetry, List<String> retriedId);
 }

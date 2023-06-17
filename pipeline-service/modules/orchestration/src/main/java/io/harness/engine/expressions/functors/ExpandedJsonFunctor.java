@@ -39,10 +39,12 @@ public class ExpandedJsonFunctor {
     }
     List<Level> levelsWithStrategyMetadata =
         ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
+    boolean useMatrixFieldName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
     if (EmptyPredicate.isNotEmpty(levelsWithStrategyMetadata)) {
-      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata));
+      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata, useMatrixFieldName));
     } else {
-      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(AmbianceUtils.obtainCurrentLevel(ambiance)));
+      response.put("strategy",
+          StrategyUtils.fetchStrategyObjectMap(AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
     }
     return response;
   }

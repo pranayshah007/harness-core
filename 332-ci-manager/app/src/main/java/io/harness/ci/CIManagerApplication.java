@@ -79,7 +79,7 @@ import io.harness.plugin.PluginMetadataRecordsJob;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
-import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
+import io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -344,7 +344,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private void registerQueueListener(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
-    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListener.class), 1);
+    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
   }
 
   @Override

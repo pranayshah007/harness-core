@@ -9,7 +9,7 @@ package io.harness.connector.validator.scmValidators;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,11 +45,12 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -88,7 +89,8 @@ public class GitlabConnectorValidatorTest extends CategoryTest {
     on(gitValidationHandler).set("gitCommandTaskHandler", gitCommandTaskHandler);
     on(gitValidationHandler).set("gitDecryptionHelper", gitDecryptionHelper);
     when(gitValidationHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Gitlab"))).thenReturn(gitValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Gitlab")))
+        .thenReturn(gitValidationHandler);
 
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
@@ -100,7 +102,7 @@ public class GitlabConnectorValidatorTest extends CategoryTest {
 
     on(scmConnectorValidationParamsProvider)
         .set("gitConfigAuthenticationInfoHelper", gitConfigAuthenticationInfoHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Gitlab")))
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Gitlab")))
         .thenReturn(scmConnectorValidationParamsProvider);
 
     ConnectorValidationResult validationResult = gitlabConnectorValidator.validate(
@@ -113,15 +115,18 @@ public class GitlabConnectorValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void validateTestViaDelegate() {
     GitlabConnectorDTO gitlabConnectorDTO = getConnector(true);
+    final String taskId = "xxxxxx";
 
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(GitCommandExecutionResponse.builder()
-                        .connectorValidationResult(
-                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of(taskId,
+            GitCommandExecutionResponse.builder()
+                .connectorValidationResult(
+                    ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                .build()));
 
     ConnectorValidationResult validationResult = gitlabConnectorValidator.validate(
         gitlabConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
+    assertThat(validationResult.getTaskId()).isEqualTo(taskId);
     assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
   }
 

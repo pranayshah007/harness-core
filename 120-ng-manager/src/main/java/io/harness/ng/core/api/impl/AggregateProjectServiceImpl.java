@@ -22,6 +22,7 @@ import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.utils.UserHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -50,14 +51,17 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
   private final OrganizationService organizationService;
   private final NgUserService ngUserService;
   private final ExecutorService executorService;
+  private final UserHelperService userHelperService;
 
   @Inject
   public AggregateProjectServiceImpl(ProjectService projectService, OrganizationService organizationService,
-      NgUserService ngUserService, @Named("aggregate-projects") ExecutorService executorService) {
+      NgUserService ngUserService, @Named("aggregate-projects") ExecutorService executorService,
+      UserHelperService userHelperService) {
     this.projectService = projectService;
     this.organizationService = organizationService;
     this.ngUserService = ngUserService;
     this.executorService = executorService;
+    this.userHelperService = userHelperService;
   }
 
   @Override
@@ -72,9 +76,9 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
 
   @Override
   public Page<ProjectAggregateDTO> listProjectAggregateDTO(
-      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO) {
+      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO, Boolean onlyFavorites) {
     Page<Project> permittedProjects =
-        projectService.listPermittedProjects(accountIdentifier, pageable, projectFilterDTO);
+        projectService.listPermittedProjects(accountIdentifier, pageable, projectFilterDTO, onlyFavorites);
     List<Project> projectList = permittedProjects.getContent();
 
     List<Callable<ProjectAggregateDTO>> tasks = new ArrayList<>();
@@ -96,7 +100,12 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
         Project project = projectList.get(i);
         log.error("Project aggregate task cancelled for project [{}/{}/{}]", project.getAccountIdentifier(),
             project.getOrgIdentifier(), project.getIdentifier(), e);
-        aggregates.add(ProjectAggregateDTO.builder().projectResponse(ProjectMapper.toResponseWrapper(project)).build());
+        aggregates.add(
+            ProjectAggregateDTO.builder()
+                .projectResponse(ProjectMapper.toProjectResponseBuilder(project)
+                                     .isFavorite(projectService.isFavorite(project, userHelperService.getUserId()))
+                                     .build())
+                .build());
       } catch (InterruptedException interruptedException) {
         Thread.currentThread().interrupt();
         return Page.empty();
@@ -104,7 +113,12 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
         Project project = projectList.get(i);
         log.error("Error occurred while computing aggregate for project [{}/{}/{}]", project.getAccountIdentifier(),
             project.getOrgIdentifier(), project.getIdentifier(), e);
-        aggregates.add(ProjectAggregateDTO.builder().projectResponse(ProjectMapper.toResponseWrapper(project)).build());
+        aggregates.add(
+            ProjectAggregateDTO.builder()
+                .projectResponse(ProjectMapper.toProjectResponseBuilder(project)
+                                     .isFavorite(projectService.isFavorite(project, userHelperService.getUserId()))
+                                     .build())
+                .build());
       }
     }
 
@@ -125,7 +139,9 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
     collaborators.removeAll(projectAdmins);
 
     return ProjectAggregateDTO.builder()
-        .projectResponse(ProjectMapper.toResponseWrapper(project))
+        .projectResponse(ProjectMapper.toProjectResponseBuilder(project)
+                             .isFavorite(projectService.isFavorite(project, userHelperService.getUserId()))
+                             .build())
         .organization(organizationOptional.map(OrganizationMapper::writeDto).orElse(null))
         .harnessManagedOrg(organizationOptional.map(Organization::getHarnessManaged).orElse(Boolean.FALSE))
         .admins(projectAdmins)

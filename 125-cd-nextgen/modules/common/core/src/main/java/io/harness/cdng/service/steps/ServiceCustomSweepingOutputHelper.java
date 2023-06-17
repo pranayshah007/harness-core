@@ -10,9 +10,11 @@ package io.harness.cdng.service.steps;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.EcsServiceSpec;
+import io.harness.cdng.service.beans.GoogleCloudFunctionsServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput;
+import io.harness.cdng.service.steps.sweepingoutput.GoogleFunctionsServiceCustomSweepingOutput;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -41,6 +43,10 @@ public class ServiceCustomSweepingOutputHelper {
     if (serviceDefinition.getServiceSpec() instanceof EcsServiceSpec) {
       EcsServiceSpec ecsServiceSpec = (EcsServiceSpec) serviceDefinition.getServiceSpec();
       saveAdditionalEcsServiceFieldsToSweepingOutput(ecsServiceSpec, ambiance);
+    } else if (serviceDefinition.getServiceSpec() instanceof GoogleCloudFunctionsServiceSpec) {
+      GoogleCloudFunctionsServiceSpec googleCloudFunctionsServiceSpec =
+          (GoogleCloudFunctionsServiceSpec) serviceDefinition.getServiceSpec();
+      saveAdditionalGoogleFunctionServiceFieldsToSweepingOutput(googleCloudFunctionsServiceSpec, ambiance);
     }
   }
 
@@ -56,5 +62,20 @@ public class ServiceCustomSweepingOutputHelper {
             .build();
     sweepingOutputService.consume(ambiance, ServiceStepV3Constants.ECS_SERVICE_SWEEPING_OUTPUT,
         ecsServiceCustomSweepingOutput, StepCategory.STAGE.name());
+  }
+
+  private void saveAdditionalGoogleFunctionServiceFieldsToSweepingOutput(
+      GoogleCloudFunctionsServiceSpec googleCloudFunctionsServiceSpec, Ambiance ambiance) {
+    if (googleCloudFunctionsServiceSpec.getEnvironmentType() == null
+        || googleCloudFunctionsServiceSpec.getEnvironmentType().fetchFinalValue() == null) {
+      log.info("No env type found in google function service");
+      return;
+    }
+    GoogleFunctionsServiceCustomSweepingOutput googleFunctionsServiceCustomSweepingOutput =
+        GoogleFunctionsServiceCustomSweepingOutput.builder()
+            .environmentType(googleCloudFunctionsServiceSpec.getEnvironmentType().fetchFinalValue().toString())
+            .build();
+    sweepingOutputService.consume(ambiance, ServiceStepV3Constants.GOOGLE_FUNCTION_SERVICE_SWEEPING_OUTPUT,
+        googleFunctionsServiceCustomSweepingOutput, StepCategory.STAGE.name());
   }
 }

@@ -104,7 +104,7 @@ public class PmsSdkInstanceTest extends CategoryTest {
 
     // dummy lock
     AcquiredLock<?> acquiredLock = mock(AcquiredLock.class);
-    doReturn(acquiredLock).when(persistentLocker).waitToAcquireLock(any(), any(), any());
+    doReturn(acquiredLock).when(persistentLocker).waitToAcquireLockOptional(any(), any(), any());
     pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver);
     verify(schemaFetcher, times(1)).invalidateAllCache();
     verify(ephemeralCacheService, times(1)).getDistributedSet("sdkStepsVisibleInUI");
@@ -126,7 +126,7 @@ public class PmsSdkInstanceTest extends CategoryTest {
     assertThatThrownBy(() -> pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver))
         .isInstanceOf(InitializeSdkException.class);
 
-    doReturn(null).when(persistentLocker).waitToAcquireLock(any(), any(), any());
+    doReturn(null).when(persistentLocker).waitToAcquireLockOptional(any(), any(), any());
     assertThatThrownBy(() -> pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver))
         .isInstanceOf(InitializeSdkException.class);
   }

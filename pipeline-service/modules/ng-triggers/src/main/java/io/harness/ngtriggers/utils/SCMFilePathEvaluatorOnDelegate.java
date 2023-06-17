@@ -7,6 +7,10 @@
 
 package io.harness.ngtriggers.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.NgSetupFields.NG;
+import static io.harness.delegate.beans.NgSetupFields.OWNER;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,6 +21,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
+import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.TriggerException;
 import io.harness.exception.WingsException;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
@@ -41,6 +46,7 @@ public class SCMFilePathEvaluatorOnDelegate extends SCMFilePathEvaluator {
   private TaskExecutionUtils taskExecutionUtils;
   private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
 
   @Override
   public ScmPathFilterEvaluationTaskResponse execute(FilterRequestData filterRequestData,
@@ -54,17 +60,20 @@ public class SCMFilePathEvaluatorOnDelegate extends SCMFilePathEvaluator {
             .taskType(TaskType.SCM_PATH_FILTER_EVALUATION_TASK.toString())
             .taskParameters(params)
             .executionTimeout(Duration.ofMinutes(1l))
-            .taskSetupAbstraction("ng", "true");
+            .taskSetupAbstraction(NG, "true");
+
+    String owner = taskSetupAbstractionHelper.getOwner(
+        filterRequestData.getAccountId(), connectorDetails.getOrgIdentifier(), connectorDetails.getProjectIdentifier());
+    if (isNotEmpty(owner)) {
+      delegateTaskRequestBuilder.taskSetupAbstraction(OWNER, owner);
+    }
 
     if (connectorDetails.getOrgIdentifier() != null) {
       delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", connectorDetails.getOrgIdentifier());
     }
 
     if (connectorDetails.getProjectIdentifier() != null) {
-      delegateTaskRequestBuilder
-          .taskSetupAbstraction(
-              "owner", connectorDetails.getOrgIdentifier() + "/" + connectorDetails.getProjectIdentifier())
-          .taskSetupAbstraction("projectIdentifier", connectorDetails.getProjectIdentifier());
+      delegateTaskRequestBuilder.taskSetupAbstraction("projectIdentifier", connectorDetails.getProjectIdentifier());
     }
 
     if (connectorDetails.getDelegateSelectors() != null) {

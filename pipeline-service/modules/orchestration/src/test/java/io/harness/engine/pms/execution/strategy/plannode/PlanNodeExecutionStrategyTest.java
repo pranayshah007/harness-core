@@ -18,8 +18,8 @@ import static io.harness.rule.OwnerRule.SHALINI;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -93,6 +93,7 @@ import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
@@ -279,6 +280,94 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
 
     assertThat(ambianceCaptor.getValue().getPlanExecutionId()).isEqualTo(planExecutionId);
     assertThat(facilitatorResponseCaptor.getValue().getExecutionMode()).isEqualTo(ExecutionMode.SYNC);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldTestStartExecutionWithWrongExpressionStepParams() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    String planId = generateUuid();
+    String planNodeId = generateUuid();
+    PmsStepParameters stepParameters = PmsStepParameters.parse(Map.of("name", "<+abc>"));
+
+    PlanNode planNode =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid(planNodeId)
+            .identifier("test")
+            .stepType(TEST_STEP_TYPE)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .serviceName("CD")
+            .stepParameters(stepParameters)
+            .whenCondition("\"true\" == \"false\"")
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+
+    when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
+    when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
+    doNothing().when(executionStrategy).processFacilitationResponse(any(), any());
+
+    executionStrategy.startExecution(ambiance);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldTestStartExecutionWithWrongExpressionStepParamsAndNotSkip() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    String planId = generateUuid();
+    String planNodeId = generateUuid();
+    PmsStepParameters stepParameters = PmsStepParameters.parse(Map.of("name", "<+abc>"));
+
+    PlanNode planNode =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid(planNodeId)
+            .identifier("test")
+            .stepType(TEST_STEP_TYPE)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .serviceName("CD")
+            .stepParameters(stepParameters)
+            .expressionMode(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED)
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+    doThrow(new InvalidRequestException("Exception eval failure"))
+        .when(pmsEngineExpressionService)
+        .resolve(ambiance, stepParameters, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED, List.of());
+
+    when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
+    when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
+    doNothing().when(executionStrategy).processFacilitationResponse(any(), any());
+    executionStrategy.startExecution(ambiance);
+
+    verify(executionStrategy).handleError(any(), any());
   }
 
   @Test
@@ -733,7 +822,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         .thenReturn(new OrchestrationMap());
     executionStrategy.resolveParameters(ambiance, planNode);
     verify(pmsEngineExpressionService, times(1))
-        .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
+        .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode(), List.of());
     verify(nodeExecutionService, times(1)).updateV2(any(), any());
   }
 }

@@ -107,12 +107,14 @@ public class AuthRuleFilter implements ContainerRequestFilter {
       "users/user",
       "users/account",
       "users/sso/zendesk",
+      "users/sso/canny",
       "users/two-factor-auth",
       "users/disable-two-factor-auth",
       "users/enable-two-factor-auth",
       "users/refresh-token",
       "harness-api-keys",
       "users/set-default-account",
+      "users/update-externally-managed",
       "account/new",
   };
   private static final String[] NO_FILTERING_URIS_SUFFIXES = new String[] {"/logout"};

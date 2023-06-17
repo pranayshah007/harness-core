@@ -55,12 +55,12 @@ public class InputSetYamlHelperTest extends CategoryTest {
         + "  description: something here";
     String newYaml = InputSetYamlHelper.setPipelineComponent(yaml1, newPipelineComponent);
     String newExpectedYaml = "inputSet:\n"
-        + "  name: \"n1\"\n"
-        + "  identifier: \"n1\"\n"
+        + "  name: n1\n"
+        + "  identifier: n1\n"
         + "  pipeline:\n"
-        + "    name: \"n2\"\n"
-        + "    identifier: \"n2\"\n"
-        + "    description: \"something here\"\n";
+        + "    name: n2\n"
+        + "    identifier: n2\n"
+        + "    description: something here\n";
     assertThat(newYaml).isEqualTo(newExpectedYaml);
   }
 
@@ -160,12 +160,12 @@ public class InputSetYamlHelperTest extends CategoryTest {
     List<String> newReferences = Arrays.asList("ref1", "ref2", "ref1NotAgain");
     String newYaml = InputSetYamlHelper.setReferencesFromOverlayInputSetYaml(yaml, newReferences);
     assertThat(newYaml).isEqualTo("overlayInputSet:\n"
-        + "  name: \"n1\"\n"
-        + "  identifier: \"n1\"\n"
+        + "  name: n1\n"
+        + "  identifier: n1\n"
         + "  inputSetReferences:\n"
-        + "  - \"ref1\"\n"
-        + "  - \"ref2\"\n"
-        + "  - \"ref1NotAgain\"\n");
+        + "    - ref1\n"
+        + "    - ref2\n"
+        + "    - ref1NotAgain\n");
   }
 
   @Test
@@ -274,8 +274,8 @@ public class InputSetYamlHelperTest extends CategoryTest {
 
   private String getPipelineYaml() {
     return "pipeline:\n"
-        + "  name: \"n2\"\n"
-        + "  identifier: \"n2\"\n";
+        + "  name: n2\n"
+        + "  identifier: n2\n";
   }
 
   private String getOverlayInputSetYaml(boolean hasTags, boolean hasReferences) {

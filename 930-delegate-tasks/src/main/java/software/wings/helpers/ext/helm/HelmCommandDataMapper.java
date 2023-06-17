@@ -9,7 +9,7 @@ package software.wings.helpers.ext.helm;
 
 import io.harness.helm.HelmCommandData;
 
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 
@@ -61,6 +61,9 @@ public class HelmCommandDataMapper {
       helmCommandData.setNewReleaseVersion(helmRollbackCommandRequest.getNewReleaseVersion());
       helmCommandData.setRollBackVersion(helmRollbackCommandRequest.getRollbackVersion());
       helmCommandData.setTimeOutInMillis(helmRollbackCommandRequest.getTimeoutInMillis());
+      if (helmRollbackCommandRequest.getContainerServiceParams() != null) {
+        helmCommandData.setNamespace(helmRollbackCommandRequest.getContainerServiceParams().getNamespace());
+      }
     }
     return helmCommandData;
   }

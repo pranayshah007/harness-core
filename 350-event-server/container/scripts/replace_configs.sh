@@ -54,6 +54,10 @@ if [[ "" != "$ENABLE_BATCH_WRITE" ]]; then
   export ENABLE_BATCH_WRITE; yq -i '.eventDataBatchQueryConfig.enableBatchWrite=env(ENABLE_BATCH_WRITE)' $CONFIG_FILE
 fi
 
+if [[ "" != "QUERY_BATCH_SIZE" ]]; then
+  export QUERY_BATCH_SIZE; yq -i '.eventDataBatchQueryConfig.queryBatchSize=env(QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
   yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE

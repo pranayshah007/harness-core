@@ -20,6 +20,7 @@ import io.harness.beans.PageResponse;
 import io.harness.event.model.EventType;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.common.beans.Generation;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.switchaccount.RestrictedSwitchAccountInfo;
@@ -33,7 +34,9 @@ import software.wings.beans.Account;
 import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.ZendeskSsoLoginResponse;
@@ -48,6 +51,7 @@ import software.wings.security.authentication.TwoFactorAuthenticationSettings;
 import software.wings.security.authentication.oauth.OauthUserInfo;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
+import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -94,7 +98,7 @@ public interface UserService extends OwnedByAccount {
   /**
    * Used for NG signup to create a new user and login from an NG user object
    */
-  User createNewUserAndSignIn(User user, String accountId);
+  User createNewUserAndSignIn(User user, String accountId, Generation generation);
 
   /**
    * Used for NG signup to create a new oauth user and login from an NG user object
@@ -193,6 +197,14 @@ public interface UserService extends OwnedByAccount {
   void delete(@NotEmpty String accountId, @NotEmpty String userId);
 
   /**
+   *
+   * @param accountId
+   * @param userId
+   * @param generation
+   */
+  boolean delete(@NotEmpty String accountId, @NotEmpty String userId, @NotNull Generation generation);
+
+  /**
    * Deletes the user from both CG and NG.
    *
    * @param accountId the account id
@@ -212,6 +224,8 @@ public interface UserService extends OwnedByAccount {
 
   User updateUser(String userId, UpdateOperations<User> updateOperations);
 
+  void validateName(String name);
+
   /**
    * Gets the.
    *
@@ -219,8 +233,6 @@ public interface UserService extends OwnedByAccount {
    * @return the user
    */
   User get(@NotEmpty String userId);
-
-  User get(@NotEmpty String userId, boolean includeSupportAccounts);
 
   List<User> getUsers(Set<String> userIds);
 
@@ -232,6 +244,15 @@ public interface UserService extends OwnedByAccount {
    * @return the user
    */
   User get(@NotEmpty String accountId, @NotEmpty String userId);
+
+  /**
+   * Gets the user and loads the user groups for the given account.
+   *
+   * @param userId the user id
+   * @param includeSupportAccounts include supportAccounts
+   * @return the user
+   */
+  User get(@NotEmpty String userId, boolean includeSupportAccounts);
 
   void loadSupportAccounts(User user);
 
@@ -270,8 +291,6 @@ public interface UserService extends OwnedByAccount {
    * @return the account
    */
   Account addAccount(Account account, User user, boolean addUser);
-
-  User getUserByEmail(String email, boolean loadSupportAccounts);
 
   /**
    * Retrieve an user by its email.
@@ -381,7 +400,7 @@ public interface UserService extends OwnedByAccount {
    * @param accountId the account id
    * @return the invites
    */
-  List<UserInvite> getInvitesFromAccountId(String accountId);
+  Query<UserInvite> getInvitesQueryFromAccountId(String accountId);
 
   /**
    * Gets invite.
@@ -401,6 +420,8 @@ public interface UserService extends OwnedByAccount {
   InviteOperationResponse completeInvite(UserInvite userInvite);
 
   boolean checkIfUserLimitHasReached(String accountId, String email);
+
+  void completeNGInviteWithAccountLevelData(UserInviteDTO userInvite, boolean shouldSendTwoFactorAuthResetEmail);
 
   /**
    * Complete NG invite and create user
@@ -425,6 +446,8 @@ public interface UserService extends OwnedByAccount {
    * @return the logged-in user
    */
   User completeNGInviteAndSignIn(UserInviteDTO userInvite);
+
+  User completeUserCreationOrAdditionViaJitAndSignIn(String email, String accountId);
 
   /**
    * Complete the trial user signup. Both the trial account and the account admin user will be created
@@ -461,7 +484,7 @@ public interface UserService extends OwnedByAccount {
    */
   User completeTrialSignupAndSignIn(String userInviteId);
 
-  User completeTrialSignupAndSignIn(UserInvite userInvite);
+  User completeTrialSignupAndSignIn(UserInvite userInvite, boolean shouldCreateSampleApp);
 
   User completePaidSignupAndSignIn(UserInvite userInvite);
 
@@ -488,6 +511,16 @@ public interface UserService extends OwnedByAccount {
    * @return the String
    */
   String getInviteIdFromToken(String jwtToken);
+
+  /**
+   * Gets invites from accountId & userGroupId.
+   *
+   * @param accountId the account id
+   * @param userGroupId the userGroup id
+   * @return the invites list
+   */
+  List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId);
+
   /**
    * Gets user account role.
    *
@@ -545,6 +578,8 @@ public interface UserService extends OwnedByAccount {
    */
   ZendeskSsoLoginResponse generateZendeskSsoJwt(String returnToUrl);
 
+  CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID);
+
   /**
    *
    *
@@ -570,6 +605,8 @@ public interface UserService extends OwnedByAccount {
   boolean isAccountAdmin(User user, String accountId);
 
   boolean isUserAccountAdmin(@NotNull UserPermissionInfo userPermissionInfo, @NotNull String accountId);
+
+  boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation);
 
   boolean isUserAssignedToAccount(User user, String accountId);
 
@@ -635,14 +672,18 @@ public interface UserService extends OwnedByAccount {
 
   boolean canEnableOrDisable(User user);
 
+  User createUserWithAccountLevelData(User user, String accountId, UserSource userSource, Generation generation);
+
   User createUser(User user, String accountId);
 
   String saveUserInvite(UserInvite userInvite);
 
   List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset, Integer pageSize,
-      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled);
+      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled,
+      boolean filterForGeneration);
 
-  long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance);
+  long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
+      boolean filterForGeneration);
 
   InviteOperationResponse checkInviteStatus(UserInvite userInvite, Generation gen);
 
@@ -657,6 +698,8 @@ public interface UserService extends OwnedByAccount {
   List<UserGroup> getUserGroupsOfUserAudit(String accountId, String userId);
 
   void addUserToAccount(String userId, String accountId);
+
+  void addUserToAccount(String userId, String accountId, UserSource userSource);
 
   void setUserEmailVerified(String userId);
 
@@ -674,5 +717,11 @@ public interface UserService extends OwnedByAccount {
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 
+  String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace);
+
   void removeAllUserGroupsFromUser(User user, String accountId);
+
+  void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
+
+  boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged);
 }

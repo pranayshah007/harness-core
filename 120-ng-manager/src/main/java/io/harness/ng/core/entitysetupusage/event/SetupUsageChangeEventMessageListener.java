@@ -19,6 +19,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.PIPE
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TRIGGERS;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -59,8 +60,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SetupUsageChangeEventMessageListener implements MessageListener {
   EntitySetupUsageService entitySetupUsageService;
   EntitySetupUsageEventDTOMapper entitySetupUsageEventDTOToRestDTOMapper;
-  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore = Sets.newHashSet(
-      SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES, INFRASTRUCTURE);
+  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore = Sets.newHashSet(SECRETS, CONNECTORS, SERVICE,
+      ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES, INFRASTRUCTURE, TRIGGERS);
 
   @Inject
   public SetupUsageChangeEventMessageListener(EntitySetupUsageService entitySetupUsageService,

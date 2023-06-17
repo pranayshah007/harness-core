@@ -97,7 +97,7 @@ public class K8sYamlToDelegateDTOMapperTest extends CategoryTest {
   public void createKubernetesConfigFromClusterConfigWithNameSpaceForClientKeyCertTest() {
     String clientKey = "clientKey";
     String clientKeyIdentifier = "clientKeyRef";
-    String clientCert = "clientCert";
+    String clientCert = "cert";
     String clientCertIdentifier = "clientCertRef";
     String clientKeyPhrase = "clientKeyPhrase";
     String clientKeyPhraseIdentifier = "clientKeyPhraseIdentifier";

@@ -19,7 +19,6 @@ import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
-import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.persistence.PersistentEntity;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.YamlField;
@@ -48,8 +47,6 @@ public class InputsValidationHelper {
   @Inject ServiceEntityService serviceEntityService;
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
-  @Inject private CDYamlFacade cdYamlFacade;
-
   public InputsValidationResponse validateInputsForYaml(
       String accountId, String orgId, String projectId, String yaml, String resolvedTemplatesYaml) {
     return validateInputsForYaml(accountId, orgId, projectId, yaml, resolvedTemplatesYaml, new HashMap<>());
@@ -183,7 +180,7 @@ public class InputsValidationHelper {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
-    String linkedServiceInputsYaml = cdYamlFacade.writeYamlString(serviceInputsNode);
+    String linkedServiceInputsYaml = YamlUtils.writeYamlString(serviceInputsNode);
     if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml,
             new HashSet<>(), new HashSet<>(keysToIgnoreInNodeToValidate))) {
       errorNodeSummary.setValid(false);

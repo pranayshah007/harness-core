@@ -22,6 +22,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.steps.StepSpecTypeConstants;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
@@ -110,9 +111,7 @@ public class ExecutionSummaryUpdateUtils {
       update.set(String.format(LayoutNodeGraphConstants.FAILURE_INFO_DTO, stageUuid),
           FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
     }
-    if (nodeExecution.getSkipInfo() != null) {
-      update.set(String.format(LayoutNodeGraphConstants.SKIP_INFO, stageUuid), nodeExecution.getSkipInfo());
-    }
+
     update.set(String.format(LayoutNodeGraphConstants.EXECUTION_INPUT_CONFIGURED, stageUuid),
         nodeExecution.getExecutionInputConfigured());
     update.set(String.format(LayoutNodeGraphConstants.NODE_IDENTIFIER, stageUuid), nodeExecution.getIdentifier());
@@ -123,5 +122,11 @@ public class ExecutionSummaryUpdateUtils {
     update.set(
         String.format(LayoutNodeGraphConstants.BASE_KEY + "." + GraphLayoutNodeDTOKeys.isRollbackStageNode, stageUuid),
         isRollbackStageNode);
+  }
+
+  public void updateNextIdOfStageBeforePipelineRollback(
+      Update update, String pipelineRollbackStagePlanNodeId, String previousStagePlanNodeId) {
+    update.set(String.format(LayoutNodeGraphConstants.NEXT_IDS, previousStagePlanNodeId),
+        Collections.singletonList(pipelineRollbackStagePlanNodeId));
   }
 }

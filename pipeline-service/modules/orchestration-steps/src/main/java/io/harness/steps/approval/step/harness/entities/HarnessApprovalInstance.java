@@ -18,6 +18,8 @@ import io.harness.ng.DbAliases;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
@@ -65,6 +67,8 @@ public class HarnessApprovalInstance extends ApprovalInstance {
   List<ApproverInputInfoDTO> approverInputs;
   @Transient private transient List<UserGroupDTO> validatedUserGroups;
   List<ApprovalUserGroupDTO> validatedApprovalUserGroups;
+  String approvalKey;
+  @Builder.Default Boolean isAutoRejectEnabled = Boolean.FALSE;
 
   public Optional<HarnessApprovalActivity> fetchLastApprovalActivity() {
     if (EmptyPredicate.isEmpty(approvalActivities)) {
@@ -135,6 +139,11 @@ public class HarnessApprovalInstance extends ApprovalInstance {
       return null;
     }
 
+    String stageIdentifier = "";
+    Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
+    if (stageLevel.isPresent()) {
+      stageIdentifier = stageLevel.get().getIdentifier();
+    }
     HarnessApprovalSpecParameters specParameters = (HarnessApprovalSpecParameters) stepParameters.getSpec();
     HarnessApprovalInstance instance =
         HarnessApprovalInstance.builder()
@@ -149,6 +158,10 @@ public class HarnessApprovalInstance extends ApprovalInstance {
                           .stream()
                           .map(ApproverInputInfoDTO::fromApproverInputInfo)
                           .collect(Collectors.toList()))
+            .isAutoRejectEnabled(specParameters.getIsAutoRejectEnabled() != null
+                && specParameters.getIsAutoRejectEnabled().fetchFinalValue() != null
+                && (boolean) specParameters.getIsAutoRejectEnabled().fetchFinalValue())
+            .approvalKey(stageIdentifier + "#" + stepParameters.getIdentifier())
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     return instance;

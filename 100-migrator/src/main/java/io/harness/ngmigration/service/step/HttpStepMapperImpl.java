@@ -30,6 +30,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -54,7 +55,7 @@ public class HttpStepMapperImpl extends StepMapper {
 
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
       return Collections.singletonList(

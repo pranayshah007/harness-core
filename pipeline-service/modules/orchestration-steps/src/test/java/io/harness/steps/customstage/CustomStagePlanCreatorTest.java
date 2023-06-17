@@ -12,7 +12,9 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,6 +36,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
@@ -95,6 +99,10 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
     CustomStageNode customStageNode = new CustomStageNode();
     customStageNode.setUuid("tempid");
     doReturn("temp".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
+
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(fullYamlFieldWithUuiD.getNode());
     assertThat(customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode)).isNotNull();
+    mockSettings.close();
   }
 }

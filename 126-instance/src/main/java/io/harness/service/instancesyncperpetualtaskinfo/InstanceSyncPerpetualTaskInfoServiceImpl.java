@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -90,15 +92,57 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   }
 
   @Override
+  public InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1OrV2(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
+                            .and(InstanceSyncPerpetualTaskInfoKeys.id)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getId());
+    Update update = new Update();
+
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2());
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
+  public InstanceSyncPerpetualTaskInfoDTO updateLastSuccessfulRun(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
+                            .and(InstanceSyncPerpetualTaskInfoKeys.id)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getId());
+    Update update = new Update();
+
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.lastSuccessfulRun, instanceSyncPerpetualTaskInfoDTO.getLastSuccessfulRun());
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
   public List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(accountId)
-                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId)
+                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2)
                             .is(perpetualTaskId);
 
     return instanceSyncPerpetualTaskInfoRepository.findAll(criteria)
         .stream()
         .map(InstanceSyncPerpetualTaskInfoMapper::toDTO)
         .collect(Collectors.toCollection(ArrayList::new));
+  }
+
+  @Override
+  public Page<InstanceSyncPerpetualTaskInfoDTO> findAllInPages(
+      Pageable pageRequest, String accountId, String perpetualTaskId) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2)
+                            .is(perpetualTaskId);
+
+    return instanceSyncPerpetualTaskInfoRepository.findAllInPages(criteria, pageRequest)
+        .map(InstanceSyncPerpetualTaskInfoMapper::toDTO);
   }
 }

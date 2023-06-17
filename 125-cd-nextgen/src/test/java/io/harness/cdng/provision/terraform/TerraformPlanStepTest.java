@@ -14,7 +14,7 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,8 +58,11 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -104,6 +107,10 @@ public class TerraformPlanStepTest extends CategoryTest {
 
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
+        .addLevels(Level.newBuilder()
+                       .setIdentifier("step1")
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                       .build())
         .putSetupAbstractions("accountId", "test-account")
         .putSetupAbstractions("projectIdentifier", "test-project")
         .putSetupAbstractions("orgIdentifier", "test-org")
@@ -111,6 +118,7 @@ public class TerraformPlanStepTest extends CategoryTest {
   }
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
@@ -461,6 +469,8 @@ public class TerraformPlanStepTest extends CategoryTest {
 
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
   }
 
   @Test // Different Status
@@ -549,6 +559,8 @@ public class TerraformPlanStepTest extends CategoryTest {
         terraformPlanStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> ngResponse);
 
     verify(terraformStepHelper).saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
@@ -590,6 +602,8 @@ public class TerraformPlanStepTest extends CategoryTest {
         terraformPlanStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> ngResponse);
 
     verify(terraformStepHelper).saveTerraformPlanHumanReadableOutput(ambiance, ngResponse, "provisioner1");
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(ngResponse), eq("provisioner1"), any());
 
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();

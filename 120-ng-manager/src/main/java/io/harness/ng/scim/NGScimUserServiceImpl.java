@@ -21,6 +21,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import static java.util.Collections.emptyList;
 
@@ -33,6 +34,7 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.api.InviteService;
 import io.harness.ng.core.invites.entities.Invite;
+import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
@@ -110,6 +112,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
       ngUserService.addUserToScope(
           user.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
+      ngUserService.updateNGUserToCGWithSource(
+          user.getUuid(), Scope.builder().accountIdentifier(accountId).build(), SCIM);
       return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
     } else {
       String userName = getName(userQuery);
@@ -148,13 +152,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
   }
 
   private ScimUser getUserInternal(String userId, String accountId) {
-    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
     return userInfo.map(user -> buildUserResponse(user, accountId)).orElse(null);
   }
 
   @Override
   public ScimUser getUser(String userId, String accountId) {
-    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
     if (userInfo.isPresent()) {
       Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userInfo.get().getEmail(), false);
       if (userOptional.isPresent()
@@ -215,6 +219,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
   @Override
   public void deleteUser(String userId, String accountId) {
     log.info("NGSCIM: deleting for accountId {} the user {}", accountId, userId);
+    ngUserService.removeUserFromScope(userId, Scope.builder().accountIdentifier(accountId).build(),
+        UserMembershipUpdateSource.USER, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
     ngUserService.removeUser(userId, accountId);
     log.info("NGSCIM: deleting the user completed for accountId {} the user {}", accountId, userId);
   }
@@ -247,6 +253,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
         }
       });
     }
+
+    if (patchOperationIncludesUserDeletion(patchRequest)) {
+      return null;
+    }
     return getUserInternal(userId, accountId);
   }
 
@@ -258,7 +268,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   @Override
   public Response updateUser(String userId, String accountId, ScimUser scimUser) {
     log.info("NGSCIM: Updating user - userId: {}, accountId: {}", userId, accountId);
-    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId, false);
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);
     if (!userInfo.isPresent() || !userMetadataDTOOptional.isPresent()) {
       log.error("NGSCIM: User is not found. userId: {}, accountId: {}", userId, accountId);
@@ -290,8 +300,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
 
       String updatedEmail = getPrimaryEmail(scimUser);
-      if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-          && existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
+      if (existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
         userMetadata.setEmail(updatedEmail);
         userMetadata.setExternallyManaged(true);
         log.info("NGSCIM: Updating email for user {} ; Updated email: {}", userId, updatedEmail);
@@ -299,6 +308,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       ngUserService.updateUserMetadata(userMetadata);
       log.info("NGSCIM: Updated metadata for user: {}", userId);
+
+      ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
 
       if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
         if (scimUser.getActive() != null && !scimUser.getActive()) {
@@ -314,8 +325,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
+      ScimUser updatedUser = null;
+      if (!putOperationIncludesUserDeletion(scimUser)) {
+        updatedUser = getUserInternal(userId, accountId);
+      }
+
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them
-      return Response.status(Response.Status.OK).entity(getUserInternal(userId, accountId)).build();
+      return Response.status(Response.Status.OK).entity(updatedUser).build();
     }
   }
 
@@ -329,7 +345,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         // OKTA doesn't send an explicit delete user request but only makes active true/false.
         // We need to remove the user completely if active=false as we do not have any first
         // class support for a disabled user vs a deleted user
-        ngUserService.removeUser(userId, accountId);
+        deleteUser(userId, accountId);
       } else {
         // This is to keep CG implementation working as it is.
         ngUserService.updateUserDisabled(accountId, userId, disabled);
@@ -363,8 +379,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       String updatedEmail = patchOperation.getValue(String.class).toLowerCase();
       userMetadataDTO.setEmail(updatedEmail);
@@ -379,6 +394,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
+
+    ngUserService.updateNGUserToCGWithSource(userId, Scope.builder().accountIdentifier(accountId).build(), SCIM);
 
     if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)
         && patchOperation.getValue(ScimUserValuedObject.class) != null) {
@@ -523,5 +540,28 @@ public class NGScimUserServiceImpl implements ScimUserService {
       groupsNode.add(JsonUtils.asTree(userGroupMap));
     }
     return groupsNode;
+  }
+
+  private boolean patchOperationIncludesUserDeletion(PatchRequest patchRequest) {
+    for (PatchOperation patchOperation : patchRequest.getOperations()) {
+      try {
+        boolean isActiveFalse = (patchOperation.getValue(ScimUserValuedObject.class) != null
+                                    && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive())
+            || ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+                && !(patchOperation.getValue(Boolean.class)));
+
+        if (isActiveFalse) {
+          return true;
+        }
+      } catch (JsonProcessingException e) {
+        log.error("Failed to parse the SCIM request while checking for user deletion operation", e);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  private boolean putOperationIncludesUserDeletion(ScimUser userResource) {
+    return userResource.getActive() != null && !userResource.getActive();
   }
 }

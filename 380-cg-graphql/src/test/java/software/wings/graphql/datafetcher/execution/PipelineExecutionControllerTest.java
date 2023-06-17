@@ -35,8 +35,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -1148,7 +1148,7 @@ public class PipelineExecutionControllerTest extends WingsBaseTest {
                            -> pipelineExecutionController.startPipelineExecution(
                                qlStartExecutionInput, MutationContext.builder().build()))
         .isInstanceOf(GeneralException.class)
-        .hasMessage("Cannot find helm chart for specified version number: 1.0");
+        .hasMessage("Cannot find helm chart for specified version number: 1.0 and service: SERVICE_ID");
 
     when(helmChartService.getByChartVersion(APP_ID, SERVICE_ID, APP_MANIFEST_NAME, "1.0"))
         .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());

@@ -108,7 +108,7 @@ public class BuildTriggerHelper {
     TemplatesResolvedPipelineResponseDTO response =
         NGRestUtils.getResponse(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-            ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
+            ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false, "true"));
 
     return response != null ? Optional.of(response.getResolvedTemplatesPipelineYaml()) : Optional.empty();
   }

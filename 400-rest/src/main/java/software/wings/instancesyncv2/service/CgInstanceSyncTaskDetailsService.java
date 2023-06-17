@@ -36,7 +36,7 @@ public class CgInstanceSyncTaskDetailsService {
 
   public void save(InstanceSyncTaskDetails taskDetails) {
     if (Objects.isNull(taskDetails)) {
-      log.error("Cannot save null task details. Doing nothing");
+      log.warn("Cannot save null task details. Doing nothing");
       return;
     }
 
@@ -45,6 +45,12 @@ public class CgInstanceSyncTaskDetailsService {
 
   public boolean delete(String taskDetailsId) {
     return mongoPersistence.delete(InstanceSyncTaskDetails.class, taskDetailsId);
+  }
+  public boolean deleteByInfraMappingId(String accountId, String infraMappingId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.infraMappingId, infraMappingId);
+    return mongoPersistence.delete(query);
   }
 
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {

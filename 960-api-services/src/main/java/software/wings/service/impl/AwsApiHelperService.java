@@ -27,6 +27,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverride;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverrideType;
+import io.harness.aws.AwsSdkClientEqualJitterBackoffStrategy;
+import io.harness.aws.AwsSdkClientFullJitterBackoffStrategy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
@@ -87,6 +91,8 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -107,6 +113,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
@@ -271,15 +278,9 @@ public class AwsApiHelperService {
     return String.format("%s_%s_%s", startTime, endTime, Instant.now().toEpochMilli());
   }
 
-  public List<BuildDetails> listBuilds(
-      AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePathRegex) {
+  public List<BuildDetails> listBuilds(AwsInternalConfig awsInternalConfig, String region, String bucketName,
+      String filePathRegex, boolean fetchObjectMetadata) {
     List<BuildDetails> buildDetailsList = Lists.newArrayList();
-
-    boolean isExpression = filePathRegex.contains("*") || filePathRegex.endsWith("/");
-
-    if (isExpression == false) {
-      return null;
-    }
 
     try {
       boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);
@@ -306,13 +307,13 @@ public class AwsApiHelperService {
 
       sortDescending(objectSummaryListFinal);
 
-      List<BuildDetails> pageBuildDetails =
-          getObjectSummariesNG(pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region);
+      List<BuildDetails> pageBuildDetails = getObjectSummariesNG(
+          pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region, fetchObjectMetadata);
 
       int size = pageBuildDetails.size();
 
       if (size > FETCH_FILE_COUNT_IN_BUCKET) {
-        pageBuildDetails.subList(0, size - FETCH_FILE_COUNT_IN_BUCKET).clear();
+        pageBuildDetails = pageBuildDetails.subList(0, FETCH_FILE_COUNT_IN_BUCKET);
       }
 
       buildDetailsList.addAll(pageBuildDetails);
@@ -333,7 +334,7 @@ public class AwsApiHelperService {
       boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);
 
       buildDetails =
-          getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, versioningEnabledForBucket, 1, region);
+          getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, versioningEnabledForBucket, 1, region, true);
 
     } catch (WingsException e) {
       e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
@@ -345,7 +346,7 @@ public class AwsApiHelperService {
     return buildDetails;
   }
 
-  private boolean isVersioningEnabledForBucket(AwsInternalConfig awsInternalConfig, String bucketName, String region) {
+  public boolean isVersioningEnabledForBucket(AwsInternalConfig awsInternalConfig, String bucketName, String region) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
       tracker.trackS3Call("Get Bucket Versioning Configuration");
@@ -353,7 +354,7 @@ public class AwsApiHelperService {
       BucketVersioningConfiguration bucketVersioningConfiguration =
           closeableAmazonS3Client.getClient().getBucketVersioningConfiguration(bucketName);
 
-      return "ENABLED".equals(bucketVersioningConfiguration.getStatus());
+      return "ENABLED".equalsIgnoreCase(bucketVersioningConfiguration.getStatus());
 
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);
@@ -368,58 +369,75 @@ public class AwsApiHelperService {
   }
 
   private List<BuildDetails> getObjectSummariesNG(Pattern pattern, List<S3ObjectSummary> objectSummaryList,
-      AwsInternalConfig awsInternalConfig, boolean versioningEnabledForBucket, String region) {
+      AwsInternalConfig awsInternalConfig, boolean versioningEnabledForBucket, String region,
+      boolean fetchObjectMetadata) {
     return objectSummaryList.stream()
         .filter(
             objectSummary -> !objectSummary.getKey().endsWith("/") && pattern.matcher(objectSummary.getKey()).find())
         .map(objectSummary
             -> getArtifactBuildDetails(awsInternalConfig, objectSummary.getBucketName(), objectSummary.getKey(),
-                versioningEnabledForBucket, objectSummary.getSize(), region))
+                versioningEnabledForBucket, objectSummary.getSize(), region, fetchObjectMetadata))
         .collect(toList());
   }
 
-  private BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName, String key,
-      boolean versioningEnabledForBucket, long artifactFileSize, String region) {
+  public BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName,
+      String keyWithVersionId, boolean versioningEnabledForBucket, long artifactFileSize, String region,
+      boolean fetchObjectMetadata) {
+    String key = keyWithVersionId;
     String versionId = null;
-    ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, bucketName, key, region);
-    if (objectMetadata == null) {
-      throw new InvalidRequestException("The provided key does not exist");
+    if (versioningEnabledForBucket && key.contains(":")) {
+      int index = StringUtils.lastIndexOf(key, ":");
+      if (index > -1 && index < keyWithVersionId.length() - 1) {
+        key = StringUtils.substring(keyWithVersionId, 0, index);
+        versionId = StringUtils.substring(keyWithVersionId, index + 1);
+      }
     }
-    if (versioningEnabledForBucket) {
-      versionId = key + ":" + objectMetadata.getVersionId();
-    }
+    String outputVersionKey = null;
+    if (fetchObjectMetadata) {
+      ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, region, bucketName, key, versionId);
 
-    if (versionId == null) {
-      versionId = key;
+      if (objectMetadata == null) {
+        throw new InvalidRequestException("The provided key does not exist");
+      }
+      if (versioningEnabledForBucket) {
+        outputVersionKey = key + ":" + objectMetadata.getVersionId();
+      }
+    }
+    if (outputVersionKey == null) {
+      outputVersionKey = key;
     }
 
     Map<String, String> map = new HashMap<>();
 
     map.put(ArtifactMetadataKeys.url, "https://s3.amazonaws.com/" + bucketName + "/" + key);
-    map.put(ArtifactMetadataKeys.buildNo, versionId);
+    map.put(ArtifactMetadataKeys.buildNo, outputVersionKey);
     map.put(ArtifactMetadataKeys.bucketName, bucketName);
     map.put(ArtifactMetadataKeys.artifactPath, key);
     map.put(ArtifactMetadataKeys.key, key);
+    map.put(ArtifactMetadataKeys.versionId, versionId);
     map.put(ArtifactMetadataKeys.artifactFileSize, String.valueOf(artifactFileSize));
 
     return aBuildDetails()
-        .withNumber(versionId)
-        .withRevision(versionId)
+        .withNumber(outputVersionKey)
+        .withRevision(outputVersionKey)
         .withArtifactPath(key)
         .withArtifactFileSize(String.valueOf(artifactFileSize))
         .withBuildParameters(map)
-        .withUiDisplayName("Build# " + versionId)
+        .withUiDisplayName("Build# " + outputVersionKey)
         .build();
   }
 
   private ObjectMetadata getObjectMetadataFromS3(
-      AwsInternalConfig awsInternalConfig, String bucketName, String key, String region) {
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, String key, String versionId) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
       tracker.trackS3Call("Get Object Metadata");
-
-      return closeableAmazonS3Client.getClient().getObjectMetadata(bucketName, key);
-
+      if (StringUtils.isBlank(versionId)) {
+        return closeableAmazonS3Client.getClient().getObjectMetadata(bucketName, key);
+      } else {
+        return closeableAmazonS3Client.getClient().getObjectMetadata(
+            new GetObjectMetadataRequest(bucketName, key, versionId));
+      }
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);
     } catch (AmazonClientException amazonClientException) {
@@ -468,6 +486,23 @@ public class AwsApiHelperService {
     return null;
   }
 
+  public S3Object getVersionedObjectFromS3(
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, String key, String version) {
+    GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, key, version);
+    try {
+      tracker.trackS3Call("Get Object");
+
+      return getAmazonS3Client(awsInternalConfig, getBucketRegion(awsInternalConfig, bucketName, region))
+          .getObject(getObjectRequest);
+
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    }
+    return null;
+  }
+
   private String getBucketRegion(AwsInternalConfig awsConfig, String bucketName, String region) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig, region))) {
@@ -495,12 +530,13 @@ public class AwsApiHelperService {
   }
 
   public Map<String, String> fetchLabels(
-      AwsInternalConfig awsConfig, String imageName, String region, List<String> tags) {
+      AwsInternalConfig awsConfig, String registryId, String imageName, String region, List<String> tags) {
     AmazonECRClient ecrClient = getAmazonEcrClient(awsConfig, region);
     return tags.stream()
         .map(tag
             -> ecrClient.batchGetImage(
                 new BatchGetImageRequest()
+                    .withRegistryId(registryId)
                     .withRepositoryName(imageName)
                     .withImageIds(new ImageIdentifier().withImageTag(tag))
                     .withAcceptedMediaTypes("application/vnd.docker.distribution.manifest.v1+json")))
@@ -532,7 +568,14 @@ public class AwsApiHelperService {
   }
 
   @NotNull
-  private RetryPolicy getRetryPolicy(AwsInternalConfig awsConfig) {
+  public RetryPolicy getRetryPolicy(AwsInternalConfig awsConfig) {
+    AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride =
+        awsConfig.getAwsSdkClientBackoffStrategyOverride();
+    if (awsSdkClientBackoffStrategyOverride != null) {
+      // use backoff strategy provided by aws connector
+      return getRetryPolicy(awsSdkClientBackoffStrategyOverride);
+    }
+
     AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
     return defaultBackoffStrategy != null
         ? new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
@@ -541,6 +584,34 @@ public class AwsApiHelperService {
             defaultBackoffStrategy.getMaxErrorRetry(), false)
         : new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
             new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(), DEFAULT_BACKOFF_MAX_ERROR_RETRIES, false);
+  }
+
+  private RetryPolicy getRetryPolicy(AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride) {
+    AwsSdkClientBackoffStrategyOverrideType awsBackoffStrategyOverrideType =
+        awsSdkClientBackoffStrategyOverride.getAwsBackoffStrategyOverrideType();
+    if (awsBackoffStrategyOverrideType == AwsSdkClientBackoffStrategyOverrideType.EQUAL_JITTER_BACKOFF_STRATEGY) {
+      AwsSdkClientEqualJitterBackoffStrategy awsSdkClientEqualJitterBackoffStrategy =
+          (AwsSdkClientEqualJitterBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
+          new PredefinedBackoffStrategies.EqualJitterBackoffStrategy(
+              (int) awsSdkClientEqualJitterBackoffStrategy.getBaseDelay(),
+              (int) awsSdkClientEqualJitterBackoffStrategy.getMaxBackoffTime()),
+          awsSdkClientBackoffStrategyOverride.getRetryCount(), false);
+    }
+
+    if (awsBackoffStrategyOverrideType == AwsSdkClientBackoffStrategyOverrideType.FULL_JITTER_BACKOFF_STRATEGY) {
+      AwsSdkClientFullJitterBackoffStrategy awsSdkClientFullJitterBackoffStrategy =
+          (AwsSdkClientFullJitterBackoffStrategy) awsSdkClientBackoffStrategyOverride;
+      return new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
+          new PredefinedBackoffStrategies.FullJitterBackoffStrategy(
+              (int) awsSdkClientFullJitterBackoffStrategy.getBaseDelay(),
+              (int) awsSdkClientFullJitterBackoffStrategy.getMaxBackoffTime()),
+          awsSdkClientBackoffStrategyOverride.getRetryCount(), false);
+    }
+
+    // AWS SDK v1 does not contain a fixed delay backoff strategy compatible with v1 RetryPolicy
+    return new RetryPolicy(new PredefinedRetryPolicies.SDKDefaultRetryCondition(),
+        new PredefinedBackoffStrategies.SDKDefaultBackoffStrategy(), DEFAULT_BACKOFF_MAX_ERROR_RETRIES, false);
   }
 
   public AWSCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {

@@ -21,8 +21,9 @@ import lombok.Builder;
 
 public class HelmRollbackStepParams extends HelmRollbackBaseStepInfo implements HelmSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public HelmRollbackStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmRollbackFqn) {
-    super(delegateSelectors, helmRollbackFqn);
+  public HelmRollbackStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmRollbackFqn,
+      ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, helmRollbackFqn, skipSteadyStateCheck);
   }
 
   @Nonnull

@@ -15,7 +15,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
@@ -63,7 +63,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.CDP)
 @RunWith(MockitoJUnitRunner.class)
@@ -319,7 +319,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -528,7 +528,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -736,7 +736,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -944,7 +944,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1153,9 +1153,9 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
-    doThrow(PivotalClientApiException.class).when(cfDeploymentManager).resizeApplication(any());
+    doThrow(PivotalClientApiException.class).when(cfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1363,7 +1363,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1571,7 +1571,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);

@@ -106,9 +106,6 @@ public interface HelmClient {
   HelmCliResponse repoUpdate(HelmCommandData helmCommandData)
       throws InterruptedException, TimeoutException, IOException;
 
-  HelmCliResponse templateForK8sV2(String releaseName, String namespace, String chartLocation,
-      List<String> valuesOverrides) throws InterruptedException, TimeoutException, IOException, ExecutionException;
-
   HelmCliResponse searchChart(HelmCommandData helmCommandData, String chartInfo)
       throws InterruptedException, TimeoutException, IOException;
 
@@ -129,6 +126,8 @@ public interface HelmClient {
    */
   HelmCliResponse renderChart(HelmCommandData helmCommandData, String chartLocation, String namespace,
       List<String> valuesOverrides, boolean isErrorFrameworkEnabled) throws Exception;
+
+  HelmCliResponse getManifest(HelmCommandData helmCommandData, String namespace) throws Exception;
 
   String getHelmPath(HelmVersion helmVersion);
 }

@@ -10,8 +10,10 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -23,9 +25,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -63,7 +63,7 @@ import lombok.experimental.SuperBuilder;
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
 public abstract class AbstractServiceLevelObjective
-    implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
+    implements PersistentEntity, UuidAware, AccountAccess, PersistentRegularIterable {
   @NotNull String accountId;
   String orgIdentifier;
   String projectIdentifier;
@@ -87,6 +87,7 @@ public abstract class AbstractServiceLevelObjective
   @FdIndex private long recordMetricIteration;
   @FdIndex private long sloHistoryTimescaleIteration;
   @NotNull ServiceLevelObjectiveType type;
+  @NotNull SLIEvaluationType sliEvaluationType;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -193,7 +194,8 @@ public abstract class AbstractServiceLevelObjective
           .set(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers,
               abstractServiceLevelObjective.getUserJourneyIdentifiers())
           .set(ServiceLevelObjectiveV2Keys.type, abstractServiceLevelObjective.getType())
-          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage());
+          .set(ServiceLevelObjectiveV2Keys.sloTargetPercentage, abstractServiceLevelObjective.getSloTargetPercentage())
+          .set(ServiceLevelObjectiveV2Keys.sliEvaluationType, abstractServiceLevelObjective.getSliEvaluationType());
       if (abstractServiceLevelObjective.getDesc() != null) {
         updateOperations.set(ServiceLevelObjectiveV2Keys.desc, abstractServiceLevelObjective.getDesc());
       }
@@ -206,5 +208,18 @@ public abstract class AbstractServiceLevelObjective
             ServiceLevelObjectiveV2Keys.projectIdentifier, abstractServiceLevelObjective.getProjectIdentifier());
       }
     }
+  }
+
+  public static AbstractServiceLevelObjective getDeletedAbstractServiceLevelObjective(
+      ProjectParams projectParams, String sloIdentifier) {
+    return SimpleServiceLevelObjective.builder()
+        .accountId(projectParams.getAccountIdentifier())
+        .projectIdentifier(projectParams.getProjectIdentifier())
+        .orgIdentifier(projectParams.getOrgIdentifier())
+        .identifier(sloIdentifier)
+        .name(sloIdentifier)
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .monitoredServiceIdentifier("")
+        .build();
   }
 }

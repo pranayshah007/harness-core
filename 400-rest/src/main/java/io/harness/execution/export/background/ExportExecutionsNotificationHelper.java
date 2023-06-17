@@ -23,6 +23,7 @@ import io.harness.execution.export.request.ExportExecutionsRequest;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
 import io.harness.execution.export.request.ExportExecutionsRequestHelper;
 import io.harness.execution.export.request.ExportExecutionsRequestSummary;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.ExportExecutionsNotification;
@@ -48,6 +49,7 @@ public class ExportExecutionsNotificationHelper {
 
   @Inject private ExportExecutionsRequestHelper exportExecutionsRequestHelper;
   @Inject private NotificationService notificationService;
+  @Inject private HtmlInputSanitizer userNameSanitizer;
 
   void dispatch(@NotNull ExportExecutionsRequest request) {
     if (request.isNotifyOnlyTriggeringUser()) {
@@ -100,8 +102,9 @@ public class ExportExecutionsNotificationHelper {
     Map<String, String> placeholderValues = new HashMap<>();
     placeholderValues.put("REQUEST_ID", request.getUuid());
     placeholderValues.put("USER_NAME",
-        request.getCreatedBy() == null || request.getCreatedBy().getName() == null ? "unknown"
-                                                                                   : request.getCreatedBy().getName());
+        request.getCreatedBy() == null || request.getCreatedBy().getName() == null
+            ? "unknown"
+            : userNameSanitizer.sanitizeInput(request.getCreatedBy().getName()));
     placeholderValues.put("TRIGGERED_AT", formatTimestamp(request.getCreatedAt()));
     placeholderValues.put("TRIGGERED_AT_SECS", formatTimestampAsSecs(request.getCreatedAt()));
 

@@ -40,11 +40,10 @@ import static java.time.Duration.ofMillis;
 import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -302,11 +301,11 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     writeField(timeSeriesAnalysisService, "managerClient", verificationManagerClient, true);
     writeField(continuousVerificationService, "timeSeriesAnalysisService", timeSeriesAnalysisService, true);
     writeField(continuousVerificationService, "executorService", executorService, true);
-    when(delegateService.queueTaskV2(anyObject()))
+    when(delegateService.queueTaskV2(any()))
         .then(invocation -> wingsPersistence.save((DelegateTask) invocation.getArguments()[0]));
     when(settingsService.get(connectorId)).thenReturn(aSettingAttribute().withValue(sumoConfig).build());
     when(settingsService.get(datadogConnectorId)).thenReturn(aSettingAttribute().withValue(datadogConfig).build());
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(Collections.emptyList());
     MainConfiguration mainConfiguration = new MainConfiguration();
     mainConfiguration.setPortal(new PortalConfig());
     software.wings.service.impl.analysis.ContinuousVerificationService managerVerificationService =
@@ -340,7 +339,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
         .thenReturn(mock(CVActivityLogger.class));
     when(featureFlagService.isEnabled(FeatureName.INSTANT_DELEGATE_DOWN_ALERT, accountId)).thenReturn(false);
     when(cvActivityLogService.getLoggerByCVConfigId(anyString(), anyString(), anyLong())).thenReturn(activityLogger);
-    when(verificationManagerClient.triggerCVDataCollection(anyString(), anyObject(), anyLong(), anyLong()))
+    when(verificationManagerClient.triggerCVDataCollection(anyString(), any(), anyLong(), anyLong()))
         .then(invocation -> {
           Object[] args = invocation.getArguments();
           managerVerificationService.collect247Data(
@@ -3190,7 +3189,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
                         .dataCollectionInfo(mock(DataCollectionInfoV2.class))
                         .status(ExecutionStatus.QUEUED)
                         .build();
-    when(verificationManagerClient.collectCVData(any(), anyObject())).then(invocation -> {
+    when(verificationManagerClient.collectCVData(any(), any())).then(invocation -> {
       Object[] args = invocation.getArguments();
       Call<Boolean> restCall = mock(Call.class);
       when(restCall.clone()).thenReturn(restCall);

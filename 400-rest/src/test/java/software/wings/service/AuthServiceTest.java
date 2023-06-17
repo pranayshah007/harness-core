@@ -9,6 +9,7 @@ package software.wings.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -40,10 +41,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -103,7 +104,9 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
 import dev.morphia.AdvancedDatastore;
 import io.serializer.HObjectMapper;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -118,8 +121,8 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import retrofit2.Call;
@@ -135,6 +138,7 @@ public class AuthServiceTest extends WingsBaseTest {
   private final String INVALID_TOKEN = "INVALID_TOKEN";
   private final String EXPIRED_TOKEN = "EXPIRED_TOKEN";
   private final String NOT_AVAILABLE_TOKEN = "NOT_AVAILABLE_TOKEN";
+  private final String SMALL_TOKEN = "FOUR";
   private final String AUTH_SECRET = "AUTH_SECRET";
 
   @Mock private GenericDbCache cache;
@@ -482,6 +486,26 @@ public class AuthServiceTest extends WingsBaseTest {
     assertThat(authToken).isNotNull().isInstanceOf(AuthToken.class);
   }
 
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void shouldValidateSmallLengthToken() {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    PrintStream printStream = new PrintStream(outputStream);
+    System.setOut(printStream);
+    AuthToken authTokenInDB = new AuthToken(ACCOUNT_ID, USER_ID, 86400000L);
+    when(advancedDatastore.get(AuthToken.class, SMALL_TOKEN)).thenReturn(authTokenInDB);
+    AuthToken authToken = authService.validateToken(SMALL_TOKEN);
+    assertThat(authToken).isNotNull().isInstanceOf(AuthToken.class);
+    assertThat(authToken).isEqualTo(authTokenInDB);
+    String logMessage = outputStream.toString();
+    String expectedMessage =
+        String.format("Token with prefix %s not found in cache hence fetching it from db", SMALL_TOKEN);
+    assertThat(logMessage).contains(expectedMessage);
+    System.setOut(System.out);
+    verify(advancedDatastore, times(1)).get(AuthToken.class, SMALL_TOKEN);
+  }
+
   /**
    * Should throw invalid token exception for invalid token.
    */
@@ -590,7 +614,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testGenerateBearerTokenWithJWTToken() throws UnsupportedEncodingException {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(true);
     Account mockAccount =
         Account.Builder.anAccount().withUuid("kmpySmUISimoRrJL6NL73w").withAccountKey("TestAccount").build();
     User mockUser = getMockUser(mockAccount);
@@ -622,7 +646,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testGenerateBearerTokenWithoutJWTToken() {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(false);
     Account mockAccount =
         Account.Builder.anAccount().withUuid("kmpySmUISimoRrJL6NL73w").withAccountKey("TestAccount").build();
     User mockUser = getMockUser(mockAccount);
@@ -633,7 +657,7 @@ public class AuthServiceTest extends WingsBaseTest {
     AuthToken authToken = new AuthToken(ACCOUNT_ID, USER_ID, 8640000L);
     JWT jwt = JWT.decode(user.getToken());
     String authTokenUuid = jwt.getClaim("authToken").asString();
-    when(cache.get(Matchers.any(), Matchers.matches(authTokenUuid))).thenReturn(authToken);
+    when(cache.get(any(), ArgumentMatchers.matches(authTokenUuid))).thenReturn(authToken);
     when(authTokenCache.get(authTokenUuid)).thenReturn(authToken);
     assertThat(user.getToken().length()).isGreaterThan(32);
     authService.validateToken(user.getToken());
@@ -643,7 +667,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
   public void shouldSendSegmentTrackEvent() throws IllegalAccessException {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(false);
     Account mockAccount = Account.Builder.anAccount().withAccountKey("TestAccount").withUuid(ACCOUNT_ID).build();
     User mockUser = getMockUser(mockAccount);
     mockUser.setLastAccountId(ACCOUNT_ID);

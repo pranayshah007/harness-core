@@ -3,7 +3,7 @@ x-stoplight:
   id: q0pbqzd9uictu
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1'
+  version: '1.0'
   description: This is the Open Api Spec 3 for the IDP Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     name: API Support
@@ -118,7 +118,7 @@ paths:
       description: Creates multiple backstage env variables
       x-internal: true
       requestBody:
-        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableBatchRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -136,7 +136,7 @@ paths:
       security:
         - x-api-key: []
       requestBody:
-        $ref: '#/components/requestBodies/BackstageEnvVariableRequestList'
+        $ref: '#/components/requestBodies/BackstageEnvVariableBatchRequest'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
@@ -327,9 +327,9 @@ paths:
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/SearchTerm'
         - schema:
-            type: array
+            type: string
           in: query
-          name: projects_to_filter
+          name: project_to_filter
           description: This would be used to filter resources having attributes matching the project filter.
   /v1/onboarding/harness-entities-count:
     get:
@@ -522,9 +522,9 @@ paths:
       x-internal: true
   /v1/app-config:
     post:
-      summary: Insert Plugin Config
-      operationId: insert-plugin-app-config
-      description: Insert Plugin Config
+      summary: Save Or Update Plugin Config
+      operationId: save-or-update-plugin-app-config
+      description: Save or Update Plugin Config
       responses:
         '200':
           $ref: '#/components/responses/AppConfigResponse'
@@ -532,22 +532,6 @@ paths:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/AppConfigRequest'
-      x-internal: true
-      tags:
-        - AppConfig
-    put:
-      summary: Update Plugin Config
-      operationId: update-plugin-configs
-      description: Update plugin configs
-      responses:
-        '200':
-          $ref: '#/components/responses/AppConfigResponse'
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      security:
-        - x-api-key: []
       requestBody:
         $ref: '#/components/requestBodies/AppConfigRequest'
       x-internal: true
@@ -569,6 +553,20 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
   /v1/connector-info:
+    get:
+      summary: Get Connector Info
+      tags:
+        - ConnectorInfo
+      operationId: get-connector-info
+      responses:
+        '200':
+          $ref: '#/components/responses/ConnectorInfoResponse'
+      description: Get Connector Info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
     post:
       summary: Create or Update Connector Info
       tags:
@@ -614,6 +612,195 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
       description: API for retriving merged configs for enabled plugin of account.
+      tags:
+        - MergedPluginsConfig
+  /v1/backstage-plugins-info:
+    get:
+      summary: List Available Backstage Plugins
+      tags:
+        - PluginInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginInfoResponseList'
+      operationId: get-backstage-plugins
+      description: Get all backstage plugins available
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+  /v1/plugin/request:
+    post:
+      summary: Request for a Plugin
+      operationId: post-plugin-request
+      responses:
+        '201':
+          description: Created
+      tags:
+        - PluginInfo
+      description: Request for a Plugin
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/RequestPluginRequest'
+    get:
+      summary: Get all plugin requests for an account
+      operationId: get-plugin-request
+      responses:
+        '200':
+          $ref: '#/components/responses/PluginRequestResponseList'
+      tags:
+        - PluginInfo
+      x-internal: true
+      description: Get all plugin requests for an account
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+  /v1/layout/ingest:
+    post:
+      summary: Ingest plugin layout
+      operationId: layout-ingest
+      responses:
+        '200':
+          $ref: '#/components/responses/LayoutResponse'
+      tags:
+        - LayoutProxy
+      description: Ingest plugin layout
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutIngestRequest'
+  /v1/sync-app-config:
+    put:
+      summary: Sync merged app-config for a given account
+      operationId: sync-app-config
+      responses:
+        '204':
+          description: No Content
+      description: API to sync app-config for a given account. This API can be accessed by Support User only.
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+          in: query
+          name: base_config
+          description: Set true to sync base app-config too
+      tags:
+        - MergedPluginsConfig
+  /v1/onboarding/generate-yaml:
+    post:
+      summary: Generate YAML Definition for entity
+      operationId: onboarding-generate-yaml
+      responses:
+        '200':
+          $ref: '#/components/responses/GenerateYamlResponse'
+      tags:
+        - OnboardingResource
+      x-internal: true
+      description: Generate YAML Definition for entity
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/GenerateYamlRequest'
+  '/v1/auth-info/{auth-id}':
+    get:
+      summary: Get Auth Info
+      tags:
+        - AuthInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthInfoResponse'
+      operationId: get-auth-info-auth-id
+      description: Get auth details for given authId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/AuthId'
+      x-internal: true
+    post:
+      summary: Save Auth Info
+      tags:
+        - AuthInfo
+      operationId: save-auth-info-auth-id
+      responses:
+        '201':
+          $ref: '#/components/responses/BackstageEnvVariableResponseList'
+      description: Save auth details for given authId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/AuthId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
+  /v1/allow-list:
+    get:
+      summary: Get backend url allow list
+      tags:
+        - AllowList
+      responses:
+        '200':
+          $ref: '#/components/responses/AllowListResponse'
+      operationId: get-allow-list
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      description: Get backend url allow list
+    post:
+      summary: Save backend url allow list
+      tags:
+        - AllowList
+      operationId: save-allow-list
+      responses:
+        '201':
+          $ref: '#/components/responses/AllowListResponse'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllowListRequest'
+        description: Save backend url allow list
+  /v1/configuration-entities:
+    put:
+      summary: Updates entities present in the configuration screen
+      operationId: update-configuration-entities
+      responses:
+        '200':
+          $ref: '#/components/responses/ConfigurationEntitiesResponse'
+      description: Updates entities present in the configuration screen
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ConfigurationEntitiesRequest'
+      x-internal: true
       tags:
         - MergedPluginsConfig
 components:
@@ -716,6 +903,21 @@ components:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
             id: r2xgjoclqancb
+    BackstageEnvVariableBatchRequest:
+      type: object
+      x-stoplight:
+        id: m9tpxiklbpfzk
+      properties:
+        env_variables:
+          x-stoplight:
+            id: r2xgjoclqancb
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+            x-stoplight:
+              id: i9tsq5o4dan8z
+      required:
+        - env_variables
     BackstageEnvVariableResponse:
       x-stoplight:
         id: e8875709fc5b1
@@ -725,6 +927,8 @@ components:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
             id: h1ub7r23fswfs
+      required:
+        - env_variable
     BackstagePermissions:
       title: BackstagePermissions
       x-stoplight:
@@ -818,30 +1022,6 @@ components:
       x-stoplight:
         id: 06dd99ce217ed
       description: Namespace response body
-    ImportHarnessEntitiesRequest:
-      title: ImportHarnessEntitiesRequest
-      x-stoplight:
-        id: amr368rxqugif
-      type: object
-      x-examples: {}
-      description: Details of Harness Entities and Catalog Location info
-      properties:
-        catalog_connector_info:
-          $ref: '#/components/schemas/CatalogConnectorInfo'
-          x-stoplight:
-            id: 2dpge46q45sn2
-        entities:
-          type: array
-          minItems: 0
-          items:
-            $ref: '#/components/schemas/EntitiesForImport'
-        all_import:
-          type: boolean
-          x-stoplight:
-            id: dsm3fnlholwsp
-      required:
-        - catalog_connector_info
-        - entities
     CatalogConnectorInfo:
       title: CatalogConnectorInfo
       x-stoplight:
@@ -849,7 +1029,7 @@ components:
       type: object
       description: Details of IDP catalog connector
       properties:
-        source_connector:
+        connector:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: 218l3eejs3pvn
@@ -859,16 +1039,11 @@ components:
           type: string
         path:
           type: string
-        infra_connector:
-          $ref: '#/components/schemas/ConnectorDetails'
-          x-stoplight:
-            id: y4jr5csvofm3c
       required:
-        - source_connector
+        - connector
         - repo
         - branch
         - path
-        - infra_connector
     HarnessEntitiesCountResponse:
       title: HarnessEntitiesCountResponse
       x-stoplight:
@@ -895,13 +1070,20 @@ components:
       title: HarnessEntitiesResponse
       x-stoplight:
         id: 06ugy0j5318dr
-      type: array
+      type: object
       x-examples: {}
       description: Response for harness entities mapping with backstage entities
-      items:
-        $ref: '#/components/schemas/HarnessBackstageEntities'
-        x-stoplight:
-          id: xrciue3ek36e6
+      properties:
+        harness_backstage_entities:
+          x-stoplight:
+            id: xrciue3ek36e6
+          type: array
+          items:
+            $ref: '#/components/schemas/HarnessBackstageEntities'
+            x-stoplight:
+              id: o4ipievo4uguh
+      required:
+        - harness_backstage_entities
     ImportEntitiesResponse:
       title: ImportEntitiesResponse
       x-stoplight:
@@ -965,6 +1147,11 @@ components:
           type: string
         type:
           type: string
+          enum:
+            - Github
+            - Gitlab
+            - Bitbucket
+            - AzureRepo
       required:
         - identifier
         - type
@@ -1003,12 +1190,7 @@ components:
         category:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
-          enum:
-            - Monitoring
-            - CI/CD
-            - Security
-            - Source Control Mgmt
+            id: 8rqc7h1vyq7sh
         source:
           type: string
           x-stoplight:
@@ -1064,24 +1246,29 @@ components:
       title: PluginDetailedInfo
       x-stoplight:
         id: ggn3lgk0pl7jx
-      type: object
-      properties:
-        plugin_details:
-          $ref: '#/components/schemas/PluginInfo'
-          x-stoplight:
-            id: zfeuzsbo3e90v
-        config:
-          type: string
-          x-stoplight:
-            id: 4arnqctb1wfyl
-        exports:
-          $ref: '#/components/schemas/Exports'
-          x-stoplight:
-            id: ns1ky9089aalt
-      required:
-        - plugin_details
-        - config
-        - exports
+      allOf:
+        - $ref: '#/components/schemas/PluginDetails'
+        - type: object
+          properties:
+            env_variables:
+              x-stoplight:
+                id: 4tj9fofa4b3hn
+              type: array
+              items:
+                $ref: '#/components/schemas/BackstageEnvSecretVariable'
+            saved:
+              type: boolean
+              x-stoplight:
+                id: b06clr6ww9ku0
+            proxy:
+              x-stoplight:
+                id: cxtlzxhi15ly8
+              type: array
+              items:
+                $ref: '#/components/schemas/ProxyHostDetail'
+          required:
+            - env_variables
+            - saved
     ManualImportEntityRequest:
       title: ManualImportEntityRequest
       x-stoplight:
@@ -1166,10 +1353,27 @@ components:
           x-stoplight:
             id: gjoqaxs5xj4g5
           format: int64
+        env_variables:
+          type: array
+          x-stoplight:
+            id: rbsynehqc2icl
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+        config_name:
+          type: string
+          x-stoplight:
+            id: jqz82xb7khx5d
+        proxy:
+          type: array
+          x-stoplight:
+            id: vvman59mk8g63
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config_id
         - configs
-        - enabled
+        - env_variables
+        - config_name
     AppConfigRequest:
       title: AppConfigRequest
       x-stoplight:
@@ -1214,6 +1418,8 @@ components:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
             id: ictqwjgoxe2bc
+      required:
+        - connector_details
     Exports:
       title: Exports
       x-stoplight:
@@ -1232,10 +1438,28 @@ components:
           type: integer
           x-stoplight:
             id: ksifiqe7f9p5w
+        default_entity_types:
+          type: array
+          x-stoplight:
+            id: rubpg21bu2st4
+          items:
+            x-stoplight:
+              id: kth23yj667xa3
+            type: string
+        export_details:
+          x-stoplight:
+            id: xszvlkfetqvdo
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportDetails'
+            x-stoplight:
+              id: ypu1bnoyc701c
       required:
         - pages
         - tab_contents
         - cards
+        - default_entity_types
+        - export_details
     MergedPluginConfigs:
       title: MergedPluginConfigs
       x-stoplight:
@@ -1247,8 +1471,22 @@ components:
           type: string
           x-stoplight:
             id: 9tuk5lnb9qem9
+        env_variables:
+          type: array
+          x-stoplight:
+            id: rvzbk4sw9nxvp
+          items:
+            $ref: '#/components/schemas/BackstageEnvSecretVariable'
+        proxy:
+          type: array
+          x-stoplight:
+            id: mwvxo7zsdc5zo
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - config
+        - env_variables
+        - proxy
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
@@ -1262,6 +1500,358 @@ components:
             id: 4cbw2qu8gjz0n
       required:
         - merged_config
+    RequestPlugin:
+      x-stoplight:
+        id: 9hysqi3bqen2g
+      type: object
+      title: RequestPluginRequest
+      description: Details of the plugin being requested
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 36cfc6be33iuq
+        creator:
+          type: string
+          x-stoplight:
+            id: 1rpevk6nasps4
+        package_link:
+          type: string
+          x-stoplight:
+            id: 06dejnewki48v
+        doc_link:
+          type: string
+          x-stoplight:
+            id: kjp2dblyv5l0j
+      required:
+        - name
+        - creator
+        - package_link
+        - doc_link
+    PluginRequestResponseList:
+      title: PluginRequestResponseList
+      x-stoplight:
+        id: l8pxjbva9kd77
+      type: object
+      properties:
+        plugin_requests:
+          type: array
+          x-stoplight:
+            id: 7p55aiahqzgfc
+          items:
+            $ref: '#/components/schemas/RequestPlugin'
+            x-stoplight:
+              id: djchso9u50p2u
+      required:
+        - plugin_requests
+      description: Returns all plugin requests for an account
+    ExportDetails:
+      title: ExportDetails
+      x-stoplight:
+        id: dg5ogyutt74c2
+      type: object
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: aurd52xhuftpn
+        name:
+          type: string
+          x-stoplight:
+            id: sq45ohcxqr9do
+        add_by_default:
+          type: boolean
+          x-stoplight:
+            id: 6tc18j0qbdoes
+        default_route:
+          type: string
+          x-stoplight:
+            id: oyrgvybpm6nik
+        layout_schema_specs:
+          type: object
+          x-stoplight:
+            id: aqq2o3sg33kiz
+      required:
+        - type
+        - name
+    PluginDetails:
+      title: PluginDetails
+      x-stoplight:
+        id: 4rsv9twy48kan
+      type: object
+      properties:
+        plugin_details:
+          $ref: '#/components/schemas/PluginInfo'
+          x-stoplight:
+            id: 78o6cgyocvp5q
+        config:
+          type: string
+          x-stoplight:
+            id: knh0tubwda57c
+        exports:
+          $ref: '#/components/schemas/Exports'
+          x-stoplight:
+            id: d75z7rk3lvcbb
+      required:
+        - plugin_details
+        - config
+        - exports
+    LayoutIngestRequest:
+      title: LayoutIngestRequest
+      x-stoplight:
+        id: e8du2q55p26u5
+      type: object
+      properties:
+        operation_type:
+          type: string
+          x-stoplight:
+            id: nv99llfqqfl3n
+        exports:
+          $ref: '#/components/schemas/Exports'
+      required:
+        - operation_type
+        - exports
+    GenerateYamlRequest:
+      title: GenerateYamlRequest
+      x-stoplight:
+        id: 6afrksdt6yzf8
+      type: object
+      properties:
+        entities:
+          type: array
+          x-stoplight:
+            id: x1bjzeq0xhqe9
+          items:
+            $ref: '#/components/schemas/EntitiesForImport'
+            x-stoplight:
+              id: mn1sipjammn91
+      required:
+        - entities
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    GenerateYamlResponse:
+      title: GenerateYamlResponse
+      x-stoplight:
+        id: lu8lnvc5d1ycn
+      type: object
+      description: Response contianing entity yaml definition and description about the entity
+      properties:
+        generated_yaml:
+          type: object
+          x-stoplight:
+            id: qlgqwff9xljw9
+          required:
+            - yaml_def
+            - description
+          properties:
+            yaml_def:
+              type: string
+              x-stoplight:
+                id: 06z2bq0czhdmr
+            description:
+              type: string
+              x-stoplight:
+                id: ywrkefgdppyrp
+      required:
+        - generated_yaml
+      x-examples: {}
+    AllEntitiesImport:
+      title: AllEntitiesImport
+      x-stoplight:
+        id: icn79gqklynqb
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: befy5yjyk1mho
+      x-discriminator-value: All
+      description: Import all harness entities
+    SampleEntitiesImport:
+      title: SampleEntitiesImport
+      x-stoplight:
+        id: 0n4jic9y62wnk
+      description: Import sample entities
+      x-discriminator-value: Sample
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+          x-stoplight:
+            id: ow59y8dd42ark
+        - type: object
+          x-stoplight:
+            id: a3pg2s49ri981
+    IndividualEntitiesImport:
+      title: IndividualEntitiesImport
+      x-stoplight:
+        id: sef7xljum4s1e
+      x-discriminator-value: Individual
+      description: Import selected harness entities
+      allOf:
+        - $ref: '#/components/schemas/ImportEntitiesBase'
+        - type: object
+          x-stoplight:
+            id: r3bpmjiqu80hs
+          properties:
+            entities:
+              x-stoplight:
+                id: wpilxcdq1y8fu
+              type: array
+              items:
+                $ref: '#/components/schemas/EntitiesForImport'
+                x-stoplight:
+                  id: ig9bbn1ayo7ou
+          required:
+            - entities
+    ImportEntitiesBase:
+      title: ImportEntitiesBase
+      x-stoplight:
+        id: 8yii7dwgw6iq4
+      type: object
+      description: Abstract base for import entities
+      discriminator:
+        propertyName: type
+        mapping:
+          All: '#/components/schemas/AllEntitiesImport'
+          Individual: '#/components/schemas/IndividualEntitiesImport'
+          Sample: '#/components/schemas/SampleEntitiesImport'
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: ivlkqhisxcx6w
+          enum:
+            - All
+            - Individual
+            - Sample
+        catalog_connector_info:
+          $ref: '#/components/schemas/CatalogConnectorInfo'
+          x-stoplight:
+            id: 2g3sd1omi2h4x
+      required:
+        - type
+        - catalog_connector_info
+    AuthInfoResponse:
+      title: AuthInfoResponse
+      x-stoplight:
+        id: zl71x322v2f97
+      type: object
+      properties:
+        authInfo:
+          $ref: '#/components/schemas/AuthInfo'
+      required:
+        - authInfo
+    AuthInfo:
+      title: AuthInfo
+      x-stoplight:
+        id: v6t3w7hydbjp3
+      type: object
+      properties:
+        namespace:
+          x-stoplight:
+            id: fp9ttpkqvfppc
+          type: string
+        env_variables:
+          x-stoplight:
+            id: srzbmdfx793md
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+      required:
+        - namespace
+        - env_variables
+    HostInfo:
+      title: HostInfo
+      x-stoplight:
+        id: ep3jvjucdina8
+      type: object
+      properties:
+        host:
+          type: string
+          x-stoplight:
+            id: ztb1a9uvhi3la
+        paths:
+          type: array
+          x-stoplight:
+            id: e9ukqgpupvls0
+          items:
+            x-stoplight:
+              id: x7pr16tq4n7ck
+            type: string
+      required:
+        - host
+    AllowListRequest:
+      title: AllowListRequest
+      x-stoplight:
+        id: xfurar7bwajs8
+      type: object
+      properties:
+        allow:
+          type: array
+          x-stoplight:
+            id: sxxcmr0vzwe89
+          items:
+            $ref: '#/components/schemas/HostInfo'
+      required:
+        - allow
+    AllowListResponse:
+      title: AllowListResponse
+      x-stoplight:
+        id: ijattu5dxrl7a
+      type: object
+      properties:
+        allow:
+          x-stoplight:
+            id: 5wy6szxaizdr9
+          type: array
+          items:
+            $ref: '#/components/schemas/HostInfo'
+      required:
+        - allow
+    ProxyHostDetail:
+      title: ProxyHostDetail
+      x-stoplight:
+        id: qzvmc7ygi53g8
+      type: object
+      properties:
+        host:
+          type: string
+          x-stoplight:
+            id: cd7j4zdyj0wqa
+        proxy:
+          type: boolean
+          x-stoplight:
+            id: hida2jcczo9jn
+        selectors:
+          type: array
+          x-stoplight:
+            id: 6t6308uuj8wrp
+          items:
+            x-stoplight:
+              id: 0sgdczdy6graq
+            type: string
+      required:
+        - host
+        - proxy
+      description: Proxy Host Detail
+    ConfigurationEntities:
+      title: ConfigurationEntities
+      x-stoplight:
+        id: f0upqtv6bktce
+      type: object
+      properties:
+        env_variables:
+          type: array
+          x-stoplight:
+            id: evwoa6kfuf4zg
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
+        proxy:
+          type: array
+          x-stoplight:
+            id: fin6y5q4eggxu
+          items:
+            $ref: '#/components/schemas/ProxyHostDetail'
+      required:
+        - env_variables
+        - proxy
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1343,11 +1933,6 @@ components:
       required: true
       schema:
         type: string
-        enum:
-          - pager-duty
-          - snyk-security
-          - harness-ci-cd
-          - github-pull-requests-board
     PluginName:
       name: PluginId
       in: query
@@ -1369,6 +1954,16 @@ components:
       required: true
       schema:
         type: string
+    AuthId:
+      name: auth-id
+      in: path
+      description: Auth Identifier
+      required: true
+      schema:
+        type: string
+        enum:
+          - github-auth
+          - google-auth
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -1397,35 +1992,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/BackstageEnvVariableRequest'
-    BackstageEnvVariableRequestList:
+    BackstageEnvVariableBatchRequest:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/BackstageEnvVariableRequest'
-          examples:
-            Example 1:
-              value:
-                - env_variable:
-                    identifier: 641c7f1aa18dbf72522d78f0
-                    env_name: PAGERDUTY_TOKEN
-                    created: 1679589047352
-                    updated: 1679589047352
-                    type: Secret
-                    harness_secret_identifier: pdtoken
-                - env_variable:
-                    identifier: 641c7f1aa18dbf72522d78f1
-                    env_name: GITHUB_APP_APPLICATION_ID
-                    created: 1679589047352
-                    updated: 1679589047352
-                    type: Config
-                    value: '1234'
+            $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
+          examples: {}
         application/yaml:
           schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/BackstageEnvVariableRequest'
+            $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
     BackstagePermissionsRequest:
       content:
         application/json:
@@ -1445,7 +2020,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
+            $ref: '#/components/schemas/ImportEntitiesBase'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
     ManualImportEntityRequest:
@@ -1481,11 +2056,46 @@ components:
                   enabled_disabled_at: 0
                   created: 1679589146025
                   updated: 1679589146025
+                  env_variables:
+                    - env_name: SNYK_TOKEN
+                      type: Secret
+                      harness_secret_identifier: snyktoken
+                  config_name: Snyk Security
     ConnectorInfoRequest:
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ConnectorInfoRequest'
+    RequestPluginRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RequestPlugin'
+      description: Details of the plugin being requested
+    LayoutIngestRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutIngestRequest'
+    GenerateYamlRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateYamlRequest'
+      description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
+    AllowListRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AllowListRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AllowListRequest'
+    ConfigurationEntitiesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -1659,9 +2269,56 @@ components:
       content:
         application/json:
           schema:
-            properties:
-              id:
-                type: string
+            $ref: '#/components/schemas/HarnessEntitiesCountResponse'
+    PluginRequestResponseList:
+      description: Returns all plugin requests for an account
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PluginRequestResponseList'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    GenerateYamlResponse:
+      description: Response contianing entity yaml definition and description about the entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateYamlResponse'
+    AuthInfoResponse:
+      description: Response containing auth environment variables and namespace
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AuthInfoResponse'
+    AllowListResponse:
+      description: Response containing backend url allow list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AllowListResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AllowListResponse'
+    ConfigurationEntitiesResponse:
+      description: Response for configuration screen resources
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConfigurationEntities'
   securitySchemes:
     x-api-key:
       name: x-api-key

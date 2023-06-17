@@ -13,8 +13,10 @@ import io.harness.cvng.analysis.beans.TransactionMetricInfo;
 import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
+import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
@@ -56,4 +58,11 @@ public interface DeploymentTimeSeriesAnalysisService {
 
   void addDemoMetricsAnalysisData(String verificationTaskId, CVConfig cvConfig,
       VerificationJobInstance verificationJobInstance, ActivityVerificationStatus activityVerificationStatus);
+
+  // TODO: Add UTs for getControlDataTimeRange getTestDataTimeRange
+  Optional<TimeRange> getControlDataTimeRange(AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
+      VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis);
+
+  TimeRange getTestDataTimeRange(
+      VerificationJobInstance verificationJobInstance, DeploymentTimeSeriesAnalysis timeSeriesAnalysis);
 }

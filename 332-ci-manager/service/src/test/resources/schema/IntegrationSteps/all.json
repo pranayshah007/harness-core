@@ -468,6 +468,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -585,6 +611,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -686,6 +738,32 @@
                   "additionalProperties": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -816,6 +894,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "outputFilePathsContent": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "projectName": {
               "type": "string"
@@ -1526,7 +1610,9 @@
                     "Gradle",
                     "Dotnet",
                     "Nunitconsole",
-                    "SBT"
+                    "SBT",
+                    "Pytest",
+                    "Unittest"
                   ]
                 },
                 {
@@ -1599,7 +1685,8 @@
                     "Java",
                     "Kotlin",
                     "Scala",
-                    "Csharp"
+                    "Csharp",
+                    "Python"
                   ]
                 },
                 {
@@ -1640,6 +1727,22 @@
               "oneOf": [
                 {
                   "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pythonVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "3",
+                    "2"
+                  ]
                 },
                 {
                   "type": "string",
@@ -1707,6 +1810,9 @@
               "type": "string"
             },
             "testGlobs": {
+              "type": "string"
+            },
+            "testRoot": {
               "type": "string"
             },
             "testSplitStrategy": {

@@ -12,6 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//940-feature-flag:module",
+        "//960-continuous-features:module",
         "//960-persistence:module",
         "//980-commons/src/main/java/io/harness/secret:module",
         "//980-commons/src/main/java/io/harness/threading:module",

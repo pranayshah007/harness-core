@@ -79,8 +79,11 @@ iacmServiceConfig:
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
 sscaServiceConfig:
-  baseUrl: http://localhost:8186
-  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
 
 managerTarget: localhost:9880
 managerAuthority: localhost
@@ -211,7 +214,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.6
       cacheS3: plugins/cache:1.4.6
-      iacmTerraform: plugins/harness_terraform:linux-amd64
+      iacmTerraform: plugins/harness_terraform
 
 scmConnectionConfig:
   url: localhost:8091
@@ -244,6 +247,7 @@ pmsGrpcClientConfig:
   authority: localhost
 
 apiUrl: https://localhost:8181/#/
+isLocal: true
 
 shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 

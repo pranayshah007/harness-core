@@ -10,7 +10,7 @@ package io.harness.idp.status.service;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;

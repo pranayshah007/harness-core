@@ -126,10 +126,11 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     // Secret Manager Connector
     if (!stepParametersSpec.getConfiguration().getIsTerraformCloudCli().getValue()) {
       String secretManagerRef = stepParametersSpec.getConfiguration().getSecretManagerRef().getValue();
-      identifierRef =
+      IdentifierRef secretManagerIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
-      entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
+      entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(secretManagerIdentifierRef).build();
       entityDetailList.add(entityDetail);
+      helper.validateSecretManager(ambiance, secretManagerIdentifierRef);
     }
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);
@@ -269,19 +270,20 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         boolean exportHumanReadablePlan = !ParameterField.isNull(exportTfHumanReadablePlanField)
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfHumanReadablePlanField);
 
+        helper.saveTerraformPlanExecutionDetails(
+            ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
+
         if (exportHumanReadablePlan || exportTfPlanJson) {
           // First we save the terraform plan execution detail
 
-          helper.saveTerraformPlanExecutionDetails(
-              ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
-
+          String stepFqn = AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList());
           if (exportHumanReadablePlan) {
             String humanReadableOutputName =
                 helper.saveTerraformPlanHumanReadableOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
             if (humanReadableOutputName != null) {
-              tfPlanOutcomeBuilder.humanReadableFilePath(TerraformHumanReadablePlanFunctor.getExpression(
-                  planStepParameters.getStepFqn(), humanReadableOutputName));
+              tfPlanOutcomeBuilder.humanReadableFilePath(
+                  TerraformHumanReadablePlanFunctor.getExpression(stepFqn, humanReadableOutputName));
             }
           }
 
@@ -290,8 +292,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
                 helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
             if (planJsonOutputName != null) {
-              tfPlanOutcomeBuilder.jsonFilePath(
-                  TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+              tfPlanOutcomeBuilder.jsonFilePath(TerraformPlanJsonFunctor.getExpression(stepFqn, planJsonOutputName));
             }
           }
         }

@@ -363,8 +363,7 @@ public class EnvironmentGroupResource {
     // fetching Environments from list of identifiers
     List<EnvironmentResponse> envResponseList = getEnvironmentResponses(updatedEntity);
 
-    return ResponseDTO.newResponse(updatedEntity.getVersion().toString(),
-        EnvironmentGroupMapper.toResponseWrapper(updatedEntity, envResponseList));
+    return ResponseDTO.newResponse(EnvironmentGroupMapper.toResponseWrapper(updatedEntity, envResponseList));
   }
 
   @VisibleForTesting

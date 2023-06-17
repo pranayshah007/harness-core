@@ -10,6 +10,7 @@ package io.harness.cvng.resources;
 import static io.harness.cvng.core.services.CVNextGenConstants.VERIFICATIONS_RESOURCE_PATH;
 
 import io.harness.annotations.ExposeInternalException;
+import io.harness.cvng.cdng.beans.v2.Baseline;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.VerificationOverview;
@@ -27,6 +28,7 @@ import javax.validation.Valid;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -61,6 +63,13 @@ public interface VerifyStepResource {
       nickname = "getVerificationOverviewForVerifyStepExecutionId")
   VerificationOverview
   getVerificationOverviewForVerifyStepExecutionId(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
+
+  @POST
+  @Path("/baseline")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "use the verification as a baseline", nickname = "updateBaseline")
+  Baseline updateBaseline(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams, Baseline baseline);
 
   @GET
   @Path("/analysis/metrics")

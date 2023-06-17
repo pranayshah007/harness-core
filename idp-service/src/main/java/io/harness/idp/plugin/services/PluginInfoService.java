@@ -7,14 +7,19 @@
 
 package io.harness.idp.plugin.services;
 
+import io.harness.idp.plugin.beans.PluginRequestEntity;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
+import io.harness.spec.server.idp.v1.model.RequestPlugin;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface PluginInfoService {
   List<PluginInfo> getAllPluginsInfo(String harnessAccount);
   PluginDetailedInfo getPluginDetailedInfo(String identifier, String harnessAccount);
   void saveAllPluginInfo();
   void deleteAllPluginInfo();
+  RequestPlugin savePluginRequest(String harnessAccount, RequestPlugin pluginRequest);
+  Page<PluginRequestEntity> getPluginRequests(String harnessAccount, int page, int limit);
 }

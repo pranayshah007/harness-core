@@ -9,7 +9,7 @@ package io.harness.engine.facilitation;
 
 import static io.harness.rule.OwnerRule.PRASHANT;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -34,19 +34,13 @@ public class AbstractPreFacilitationCheckerTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestCheck() {
     RunPreFacilitationChecker rChecker = spy(RunPreFacilitationChecker.class);
-    SkipPreFacilitationChecker sChecker = spy(SkipPreFacilitationChecker.class);
-    rChecker.setNextChecker(sChecker);
 
     doReturn(ExecutionCheck.builder().proceed(true).build())
         .when(rChecker)
-        .performCheck(any(Ambiance.class), any(Node.class));
-    doReturn(ExecutionCheck.builder().proceed(true).build())
-        .when(sChecker)
         .performCheck(any(Ambiance.class), any(Node.class));
 
     rChecker.check(Ambiance.newBuilder().getDefaultInstanceForType(), PlanNode.builder().build());
 
     verify(rChecker).performCheck(any(Ambiance.class), any(Node.class));
-    verify(sChecker).performCheck(any(Ambiance.class), any(Node.class));
   }
 }

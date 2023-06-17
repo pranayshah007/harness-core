@@ -70,6 +70,8 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -199,7 +201,7 @@ public class TrendAnalysisServiceImpl implements TrendAnalysisService {
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority)
             .filter(LogAnalysisClusterKeys.verificationTaskId, verificationTaskId)
             .filter(LogAnalysisClusterKeys.isEvicted, Boolean.FALSE)
-            .asList();
+            .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
     List<TimeSeriesRecordDTO> testData = new ArrayList<>();
     logAnalysisClusters.forEach(logAnalysisCluster -> {
       if (Instant.ofEpochMilli(logAnalysisCluster.getFirstSeenTime())

@@ -37,6 +37,10 @@ import io.harness.artifacts.ami.service.AMIRegistryService;
 import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
+import io.harness.artifacts.docker.client.DockerRestClientFactory;
+import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
+import io.harness.artifacts.docker.service.DockerRegistryService;
+import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
@@ -74,15 +78,18 @@ import io.harness.ccm.health.HealthStatusServiceImpl;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskService;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskServiceImpl;
 import io.harness.ccm.setup.CESetupServiceModule;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
-import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingValidationServiceImpl;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidationService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
+import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
@@ -90,6 +97,7 @@ import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
@@ -99,6 +107,7 @@ import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
+import io.harness.credit.remote.admin.AdminCreditHttpClientModule;
 import io.harness.cv.CVCommonsServiceModule;
 import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.perpetualtask.CVDataCollectionTaskService;
@@ -154,6 +163,8 @@ import io.harness.event.timeseries.processor.instanceeventprocessor.instancereco
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconServiceImpl;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.executionInfra.ExecutionInfrastructureService;
+import io.harness.executionInfra.ExecutionInfrastructureServiceImpl;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.file.FileServiceModule;
 import io.harness.git.GitClientV2;
@@ -263,6 +274,8 @@ import io.harness.service.intfc.AccountDataProvider;
 import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateStackdriverLogService;
 import io.harness.service.intfc.DelegateTokenService;
+import io.harness.taskclient.TaskClient;
+import io.harness.taskclient.TaskClientImpl;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.templatizedsm.RuntimeCredentialsInjector;
@@ -388,7 +401,6 @@ import software.wings.licensing.LicenseService;
 import software.wings.licensing.LicenseServiceImpl;
 import software.wings.provider.NoopDelegateConfigurationServiceProviderImpl;
 import software.wings.provider.NoopDelegatePropertiesServiceProviderImpl;
-import software.wings.ratelimit.DelegateRequestRateLimiter;
 import software.wings.resources.graphql.GraphQLRateLimiter;
 import software.wings.resources.graphql.GraphQLUtils;
 import software.wings.scheduler.BackgroundJobScheduler;
@@ -945,6 +957,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  public int maxDocumentsToBeFetchedByMongoQueries() {
+    return configuration.getMongoConnectionFactory().getMaxDocumentsToBeFetched();
+  }
+
+  @Provides
+  @Singleton
   @Named("gcpConfig")
   public io.harness.ccm.commons.beans.config.GcpConfig noOpDummyConfig() {
     return io.harness.ccm.commons.beans.config.GcpConfig.builder().build();
@@ -1089,6 +1107,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateStackdriverLogService.class).to(DelegateStackdriverLogServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
+    bind(TaskClient.class).to(TaskClientImpl.class);
+    bind(ExecutionInfrastructureService.class).to(ExecutionInfrastructureServiceImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);
     bind(CloudWatchService.class).to(CloudWatchServiceImpl.class);
@@ -1142,6 +1162,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(GcrBuildService.class).to(GcrBuildServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
+    bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
     bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
     bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
@@ -1219,7 +1241,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     bind(GraphQLRateLimiter.class);
     bind(GraphQLUtils.class);
-    bind(DelegateRequestRateLimiter.class);
     bind(SamlUserGroupSync.class);
     bind(ScimUserService.class).to(ScimUserServiceImpl.class);
     bind(ScimGroupService.class).to(ScimGroupServiceImpl.class);
@@ -1236,10 +1257,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
+    bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
+    bind(BusinessMappingValidationService.class).to(BusinessMappingValidationServiceImpl.class);
     bind(CECommunicationsService.class).to(CECommunicationsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);
@@ -1537,6 +1560,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     // admin ng-license dependencies
     install(new AdminLicenseHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    install(new AdminCreditHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
     install(CgOrchestrationModule.getInstance());

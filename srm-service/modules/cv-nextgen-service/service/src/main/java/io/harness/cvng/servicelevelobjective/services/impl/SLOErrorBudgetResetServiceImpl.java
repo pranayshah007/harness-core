@@ -11,29 +11,36 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBudgetResetEvent;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetInstanceDetails;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset.SLOErrorBudgetResetKeys;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetService {
+public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetService, SecondaryEventDetailsService {
   @Inject private HPersistence hPersistence;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
@@ -47,11 +54,10 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
         projectParams, sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
     Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
         sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
-    Preconditions.checkArgument(serviceLevelObjectiveV2Service
-                                    .getEvaluationType(projectParams, Collections.singletonList(serviceLevelObjective))
-                                    .get(serviceLevelObjective)
-            == SLIEvaluationType.WINDOW,
-        "ServiceLevelObjective Should be of type Window.");
+    Preconditions.checkArgument(serviceLevelObjective.getSliEvaluationType() == SLIEvaluationType.WINDOW,
+        "ServiceLevelObjective Should be of type Window");
+    Preconditions.checkArgument(
+        serviceLevelObjective.getTarget().getType() == SLOTargetType.CALENDER, "SLO Target should be of type Calender");
     SLOErrorBudgetReset sloErrorBudgetReset = entityFromDTO(projectParams, sloErrorBudgetResetDTO,
         serviceLevelObjective
             .getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset()))
@@ -70,12 +76,24 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   }
 
   @Override
+  public SLOErrorBudgetReset getErrorBudgetResetByUuid(String uuid) {
+    return hPersistence.get(SLOErrorBudgetReset.class, uuid);
+  }
+
+  @Override
+  public List<SLOErrorBudgetReset> getErrorBudgetResetEntities(
+      ProjectParams projectParams, String sloIdentifier, long startTime, long endTime) {
+    return getErrorBudgetResetQuery(projectParams, sloIdentifier)
+        .field(SLOErrorBudgetResetKeys.createdAt)
+        .greaterThanOrEq(startTime)
+        .field(SLOErrorBudgetResetKeys.createdAt)
+        .lessThanOrEq(endTime)
+        .asList();
+  }
+
+  @Override
   public List<SLOErrorBudgetResetDTO> getErrorBudgetResets(ProjectParams projectParams, String sloIdentifier) {
-    return hPersistence.createQuery(SLOErrorBudgetReset.class)
-        .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
-        .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
-        .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
-        .filter(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier, sloIdentifier)
+    return getErrorBudgetResetQuery(projectParams, sloIdentifier)
         .asList()
         .stream()
         .map(this::dtoFromEntity)
@@ -98,12 +116,25 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   }
 
   @Override
+  public SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType) {
+    SLOErrorBudgetReset sloErrorBudgetReset = getErrorBudgetResetByUuid(uuids.get(0));
+    return SecondaryEventDetailsResponse.builder()
+        .type(SecondaryEventsType.ERROR_BUDGET_RESET)
+        .startTime(TimeUnit.MILLISECONDS.toSeconds(sloErrorBudgetReset.getCreatedAt()))
+        .details(SLOErrorBudgetResetInstanceDetails.builder()
+                     .errorBudgetIncrementMinutes(sloErrorBudgetReset.getErrorBudgetIncrementMinutes())
+                     .build())
+        .build();
+  }
+
+  @Override
   public void clearErrorBudgetResets(ProjectParams projectParams, String sloIdentifier) {
-    hPersistence.delete(hPersistence.createQuery(SLOErrorBudgetReset.class)
-                            .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
-                            .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
-                            .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
-                            .filter(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier, sloIdentifier));
+    hPersistence.delete(getErrorBudgetResetQuery(projectParams, sloIdentifier));
+  }
+
+  @Override
+  public void clearErrorBudgetResets(ProjectParams projectParams, List<String> sloIdentifiers) {
+    hPersistence.delete(getErrorBudgetResetQuery(projectParams, sloIdentifiers));
   }
 
   private SLOErrorBudgetResetDTO dtoFromEntity(SLOErrorBudgetReset sloErrorBudgetReset) {
@@ -133,5 +164,28 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
         .reason(sloErrorBudgetResetDTO.getReason())
         .validUntil(Date.from(validTill))
         .build();
+  }
+
+  private Query<SLOErrorBudgetReset> getErrorBudgetResetQuery(ProjectParams projectParams, String sloIdentifier) {
+    return hPersistence.createQuery(SLOErrorBudgetReset.class)
+        .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .filter(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier, sloIdentifier);
+  }
+
+  private Query<SLOErrorBudgetReset> getErrorBudgetResetQuery(
+      ProjectParams projectParams, List<String> sloIdentifiers) {
+    return hPersistence.createQuery(SLOErrorBudgetReset.class)
+        .filter(SLOErrorBudgetResetKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(SLOErrorBudgetResetKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(SLOErrorBudgetResetKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(SLOErrorBudgetResetKeys.serviceLevelObjectiveIdentifier)
+        .in(sloIdentifiers);
+  }
+
+  @VisibleForTesting
+  List<SLOErrorBudgetReset> getSLOErrorBudgetResetEntities(ProjectParams projectParams, String sloIdentifier) {
+    return getErrorBudgetResetQuery(projectParams, sloIdentifier).asList();
   }
 }

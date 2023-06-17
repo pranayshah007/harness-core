@@ -18,13 +18,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.BuilderFactory.Context;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.eventsframework.api.AbstractProducer;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -54,7 +58,7 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
-  public void testSendCreateEventsForMonitoredService() {
+  public void testSendCreateEventsForMonitoredService() throws InvalidProtocolBufferException {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
 
     ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
@@ -65,6 +69,11 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
     List<Message> messages = messageArgumentCaptor.getAllValues();
     assertThat(messages.size()).isEqualTo(3);
     assertThat(messages.get(0).getMetadataMap().get("referredEntityType")).isEqualTo("CONNECTORS");
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData()).getReferredByEntity();
+    assertThat(entityDetailProtoDTO.getName()).isEqualTo(monitoredServiceDTO.getName());
+    assertThat(entityDetailProtoDTO.getIdentifierRef().getIdentifier().getValue())
+        .isEqualTo(monitoredServiceDTO.getIdentifier());
     assertThat(messages.get(0).getMetadataMap().get("action")).isEqualTo("flushCreate");
     assertThat(messages.get(1).getMetadataMap().get("referredEntityType")).isEqualTo("SERVICE");
     assertThat(messages.get(1).getMetadataMap().get("action")).isEqualTo("flushCreate");
@@ -75,18 +84,25 @@ public class SetupUsageEventsServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
-  public void testSendDeleteEventsForMonitoredService() {
+  public void testSendDeleteEventsForMonitoredService() throws InvalidProtocolBufferException {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
 
     ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
-    setupUsageEventService.sendDeleteEventsForMonitoredService(
-        context.getProjectParams(), monitoredServiceDTO.getIdentifier());
+    setupUsageEventService.sendDeleteEventsForMonitoredService(context.getProjectParams(),
+        MonitoredService.builder()
+            .identifier(monitoredServiceDTO.getIdentifier())
+            .name(monitoredServiceDTO.getName())
+            .build());
 
     verify(producer, times(3)).send(messageArgumentCaptor.capture());
 
     List<Message> messages = messageArgumentCaptor.getAllValues();
     assertThat(messages.size()).isEqualTo(3);
     assertThat(messages.get(0).getMetadataMap().get("referredEntityType")).isEqualTo("CONNECTORS");
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntitySetupUsageCreateV2DTO.parseFrom(messages.get(0).getData()).getReferredByEntity();
+    assertThat(entityDetailProtoDTO.getIdentifierRef().getIdentifier().getValue())
+        .isEqualTo(monitoredServiceDTO.getIdentifier());
     assertThat(messages.get(0).getMetadataMap().get("action")).isEqualTo("flushCreate");
     assertThat(messages.get(1).getMetadataMap().get("referredEntityType")).isEqualTo("SERVICE");
     assertThat(messages.get(1).getMetadataMap().get("action")).isEqualTo("flushCreate");

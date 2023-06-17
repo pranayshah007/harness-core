@@ -38,6 +38,8 @@ import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskFailureRequest;
 import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
@@ -147,6 +149,22 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body InstanceSyncPerpetualTaskResponse responseData);
 
+  ///##############INSTANCE SYNC V2 ###################
+  @POST("instancesync/instance-sync/v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> publishInstanceSyncResultV2(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body DelegateResponseData responseData);
+
+  @POST("instancesync/instance-sync-v2/v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> publishInstanceSyncV2ResultV2(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
+
+  @POST("instancesync/instance-sync-ng-v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> processInstanceSyncNGResultV2(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body InstanceSyncResponseV2 instanceSyncResponseV2);
+
+  @GET("instancesync/instance-sync-ng-v2/task/{perpetualTaskId}/details")
+  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("page") int page, @Query("page_size") int pageSize, @Query("accountId") String accountId);
   // Query for a specific set of delegate properties for a given account.
   // Request: GetDelegatePropertiesRequest
   // Response: GetDelegatePropertiesResponse
@@ -207,6 +225,11 @@ public interface DelegateAgentManagerClient {
   @Consumes({"application/x-protobuf"})
   @GET("agent/delegates/perpetual-task/context")
   Call<PerpetualTaskContextResponse> perpetualTaskContext(
+      @Query("taskId") String taskId, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @GET("agent/delegates/perpetual-task/context/v2")
+  Call<PerpetualTaskContextResponse> perpetualTaskContextV2(
       @Query("taskId") String taskId, @Query("accountId") String accountId);
 
   @Consumes({"application/x-protobuf"})

@@ -12,9 +12,11 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -38,10 +40,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
-import io.harness.template.beans.TemplateWrapperResponseDTO;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
@@ -121,6 +123,9 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
             .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
             .id(template.getServiceId() + SERVICE_COMMAND_TEMPLATE_SEPARATOR + template.getName())
             .build();
+    if (StringUtils.isNotBlank(template.getTemplateUuid())) {
+      children.add(CgEntityId.builder().id(template.getTemplateUuid()).type(NGMigrationEntityType.TEMPLATE).build());
+    }
     return DiscoveryNode.builder().children(children).entityNode(templateNode).build();
   }
 
@@ -192,13 +197,14 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
         templateClient
-            .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+            .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
+                StoreType.INLINE)
             .execute();
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
@@ -211,6 +217,11 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     ServiceCommand template = (ServiceCommand) entities.get(entityId).getEntity();
 
+    // Check if service command is referencing an existing template, skip creation
+    if (StringUtils.isNotBlank(template.getTemplateUuid())) {
+      return null;
+    }
+
     String identifierSource = template.getName();
     String serviceId = entityId.getId().split(SERVICE_COMMAND_TEMPLATE_SEPARATOR)[0];
     if (!UNKNOWN_SERVICE.equals(serviceId)) {
@@ -219,8 +230,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
 
     // Check if name has to cleaned up
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(
-        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
+    String identifier = MigratorUtility.generateIdentifier(identifierSource, inputDTO.getIdentifierCaseFormat());
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
@@ -241,15 +251,15 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
 
     SshCommandTemplate sshCommandTemplate = SshCommandTemplate.builder().commandUnits(commandUnits).build();
 
-    Template CGTemplate = Template.builder()
+    Template cgtemplate = Template.builder()
                               .type(TemplateType.SSH.name())
                               .templateObject(sshCommandTemplate)
                               .variables(template.getCommand().getTemplateVariables())
                               .build();
 
-    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(CGTemplate);
+    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(cgtemplate);
     JsonNode spec =
-        ngTemplateService.getNgTemplateConfigSpec(migrationContext, CGTemplate, orgIdentifier, projectIdentifier);
+        ngTemplateService.getNgTemplateConfigSpec(migrationContext, cgtemplate, orgIdentifier, projectIdentifier);
 
     if (ngTemplateService.isMigrationSupported() && spec != null) {
       List<NGYamlFile> files = new ArrayList<>();
@@ -260,17 +270,17 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
               .yaml(NGTemplateConfig.builder()
                         .templateInfoConfig(NGTemplateInfoConfig.builder()
                                                 .type(ngTemplateService.getTemplateEntityType())
-                                                .identifier(MigratorUtility.generateIdentifier(
-                                                    identifierSource, inputDTO.getIdentifierCaseFormat()))
+                                                .identifier(identifier)
                                                 .name(name)
                                                 .description(ParameterField.createValueField(description))
                                                 .projectIdentifier(projectIdentifier)
                                                 .orgIdentifier(orgIdentifier)
                                                 .versionLabel("v" + template.getDefaultVersion())
-                                                .spec(getSpec(spec, CGTemplate))
+                                                .spec(getSpec(spec, cgtemplate))
                                                 .build())
                         .build())
               .ngEntityDetail(NgEntityDetail.builder()
+                                  .entityType(TEMPLATE)
                                   .identifier(MigratorUtility.generateIdentifier(
                                       identifierSource, inputDTO.getIdentifierCaseFormat()))
                                   .orgIdentifier(orgIdentifier)
@@ -308,8 +318,11 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
       return configSpec;
     } else {
-      return JsonUtils.asTree(ImmutableMap.of("spec", configSpec, "type",
-          ngTemplateService.getNgTemplateStepName(template), "timeout", ngTemplateService.getTimeoutString(template)));
+      return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
+                                  .put("spec", configSpec)
+                                  .put("type", ngTemplateService.getNgTemplateStepName(template))
+                                  .put("timeout", ngTemplateService.getTimeoutString(template))
+                                  .build());
     }
   }
 

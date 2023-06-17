@@ -139,6 +139,66 @@ if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
   export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CACHE_S3_BUCKET" ]]; then
+  export CACHE_S3_BUCKET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.bucket=env(CACHE_S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_ACCESS_KEY" ]]; then
+  export CACHE_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.accessKey=env(CACHE_S3_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_ACCESS_SECRET" ]]; then
+  export CACHE_S3_ACCESS_SECRET; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.accessSecret=env(CACHE_S3_ACCESS_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_REGION" ]]; then
+  export CACHE_S3_REGION; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.region=env(CACHE_S3_REGION)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CACHE_S3_ENDPOINT" ]]; then
+  export CACHE_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.cacheIntelligenceS3Config.endpoint=env(CACHE_S3_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_ENDPOINT" ]]; then
+  export DLC_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.endpoint=env(DLC_S3_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_BUCKET" ]]; then
+  export DLC_S3_BUCKET; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.bucket=env(DLC_S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_ACCESS_KEY" ]]; then
+  export DLC_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.accessKey=env(DLC_S3_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_SECRET_KEY" ]]; then
+  export DLC_S3_SECRET_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.secretKey=env(DLC_S3_SECRET_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_REGION" ]]; then
+  export DLC_S3_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.region=env(DLC_S3_REGION)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_ENDPOINT" ]]; then
+  export DLC_GCS_ENDPOINT; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.endpoint=env(DLC_GCS_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_BUCKET" ]]; then
+  export DLC_GCS_BUCKET; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.bucket=env(DLC_GCS_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_ACCESS_KEY" ]]; then
+  export DLC_GCS_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.accessKey=env(DLC_GCS_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_SECRET_KEY" ]]; then
+  export DLC_GCS_SECRET_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.secretKey=env(DLC_GCS_SECRET_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_REGION" ]]; then
+  export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi
@@ -249,8 +309,12 @@ if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
   export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$STO_SERVICE_INTERNAL_ENDPOINT" ]]; then
+  export STO_SERVICE_INTERNAL_ENDPOINT; yq -i '.stoServiceConfig.internalUrl=env(STO_SERVICE_INTERNAL_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
-  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$IACM_SERVICE_ENDPOINT" ]]; then
@@ -289,8 +353,8 @@ if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
-if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
-  export SSCA_SERVICE_GLOBAL_TOKEN; yq -i '.sscaServiceConfig.globalToken=env(SSCA_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$IACM_SERVICE_GLOBAL_TOKEN" ]]; then

@@ -7,8 +7,11 @@
 
 package io.harness.accesscontrol.principals.users.persistence;
 
+import static io.harness.accesscontrol.scopes.core.ScopeHelper.getAccountFromScopeIdentifier;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
+
+import static java.util.Optional.ofNullable;
 
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.annotations.StoreIn;
@@ -22,6 +25,7 @@ import io.harness.mongo.index.MongoIndex;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -94,5 +98,10 @@ public class UserDBO implements PersistentRegularIterable, AccessControlEntity {
   @Override
   public String getUuid() {
     return id;
+  }
+
+  @Override
+  public Optional<String> getAccountId() {
+    return ofNullable(getAccountFromScopeIdentifier(scopeIdentifier));
   }
 }

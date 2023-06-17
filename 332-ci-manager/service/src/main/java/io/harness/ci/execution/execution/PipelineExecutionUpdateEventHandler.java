@@ -29,6 +29,7 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
@@ -45,6 +46,7 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -89,6 +91,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject @Named("ciEventHandlerExecutor") private ExecutorService executorService;
   @Inject @Named("ciRatelimitHandlerExecutor") private ExecutorService ciRatelimitHandlerExecutor;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject CIStageOutputRepository ciStageOutputRepository;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -102,6 +105,15 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       sendGitStatus(level, ambiance, status, event, accountId);
       sendCleanupRequest(level, ambiance, status, accountId);
     });
+  }
+
+  private void deleteCIStageOutputs(Ambiance ambiance) {
+    String stageExecutionId = ambiance.getStageExecutionId();
+    try {
+      ciStageOutputRepository.deleteFirstByStageExecutionId(stageExecutionId);
+    } catch (Exception e) {
+      log.error("Error while deleting CI outputs for stageExecutionId " + stageExecutionId, e);
+    }
   }
 
   private void sendCleanupRequest(Level level, Ambiance ambiance, Status status, String accountId) {
@@ -130,6 +142,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
             log.info("failed to remove execution record from db", ex);
           }
 
+          deleteCIStageOutputs(ambiance);
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
@@ -241,6 +254,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         .stageId(stageId)
         .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
+        .selectors(taskSelectors)
         .taskSetupAbstractions(abstractions)
         .executionTimeout(java.time.Duration.ofSeconds(900))
         .taskType(taskType)
@@ -301,6 +315,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
   private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
           && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == RUNNING)) {

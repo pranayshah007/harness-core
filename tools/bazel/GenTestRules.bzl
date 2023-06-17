@@ -48,13 +48,14 @@ def run_tests(srcs = "src/test/**/*Test.java", **kwargs):
                 "$(HARNESS_ARGS)",
                 "-Xmx4G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
-                "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
+                "-XX:HeapDumpPath=heap.hprof",
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
             test_class = test,
             testonly = True,
             visibility = ["//visibility:private"],
+            tags = ["java_test"],
             **kwargs
         )
     return targets
@@ -166,10 +167,11 @@ EOF""" % code,
                 "$(HARNESS_ARGS)",
                 "-Xmx16G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
-                "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
+                "-XX:HeapDumpPath=heap.hprof",
             ],
             env = {"JAVA_HOME": "$(JAVABASE)"},
             toolchains = ["@bazel_tools//tools/jdk:current_host_java_runtime"],
+            tags = ["java_test"],
         )
 
         targets += [target_name]
@@ -232,14 +234,14 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         test_class = package + "." + test_class,
         runtime_deps = [COMBINED_TESTS_TARGET + str(combined_tests_target_index)],
         size = "enormous",
-
+        tags = ["java_test"],
         #Additional
         visibility = ["//visibility:public"],
         jvm_flags = [
             "$(HARNESS_ARGS)",
             "-Xmx4G",
             "-XX:+HeapDumpOnOutOfMemoryError",
-            "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
+            "-XX:HeapDumpPath=heap.hprof",
         ],
     )
     return [target_name]

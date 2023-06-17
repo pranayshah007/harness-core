@@ -28,7 +28,7 @@ public class JavaxValidatorTest extends CategoryTest {
     MyObject obj = new MyObject();
     obj.setName("John");
     obj.setEmail("john@example.com");
-    JavaxValidator.validateOrThrow(obj);
+    JavaxValidator.validateBeanOrThrow(obj);
     assert true;
   }
 
@@ -40,7 +40,7 @@ public class JavaxValidatorTest extends CategoryTest {
     obj.setEmail("a_b");
 
     Assertions.assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> JavaxValidator.validateOrThrow(obj))
+        .isThrownBy(() -> JavaxValidator.validateBeanOrThrow(obj))
         .withMessageContaining("name: must not be null")
         .withMessageContaining("email: must be a well-formed email address");
   }

@@ -44,6 +44,7 @@ import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
@@ -105,6 +106,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
+  @Inject private MongoTemplate secondaryMongoTemplate;
 
   @Inject private PlanExpansionService planExpansionService;
 
@@ -120,6 +122,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
     }
     return nodeExecutionOptional.get();
+  }
+
+  @Override
+  public CloseableIterator<NodeExecution> get(List<String> nodeExecutionIds) {
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
+    return nodeExecutionReadHelper.fetchNodeExecutionsWithAllFields(query);
   }
 
   @Override
@@ -179,6 +187,24 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
   }
 
+  @Override
+  public List<NodeExecution> getAllWithFieldIncluded(Set<String> nodeExecutionIds, Set<String> fieldsToInclude) {
+    if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
+      return new ArrayList<>();
+    }
+
+    if (nodeExecutionIds.size() > MAX_BATCH_SIZE) {
+      throw new InvalidRequestException(
+          String.format("requested %d records more than threshold of %d. consider pagination", nodeExecutionIds.size(),
+              MAX_BATCH_SIZE));
+    }
+    // Uses - id index
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    return mongoTemplate.find(query, NodeExecution.class);
+  }
   @Override
   public CloseableIterator<NodeExecution> fetchAllStepNodeExecutions(
       String planExecutionId, Set<String> fieldsToInclude) {
@@ -318,7 +344,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       finalList.add(allExecutions.stream()
                         .filter(ne -> ne.getUuid().equals(parentId))
                         .findFirst()
-                        .orElseThrow(() -> new UnexpectedException("Expected parent to be in list")));
+                        .orElseThrow(() -> new UnexpectedException("Pipeline has already completed execution")));
     }
     return finalList;
   }
@@ -376,7 +402,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                               .setEventType(OrchestrationEventType.NODE_EXECUTION_START)
                               .setServiceName(nodeExecution.getModule());
 
-        if (nodeExecution.getResolvedStepParameters() != null) {
+        // @Todo(Archit): Send Original StepParameters incase of PipelineRollback
+        if (checkPresenceOfResolvedParametersForNonIdentityNodes(nodeExecution)) {
           builder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
         }
         eventEmitter.emitEvent(builder.build());
@@ -394,6 +421,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       }
       return savedNodeExecution;
     }
+  }
+
+  @VisibleForTesting
+  boolean checkPresenceOfResolvedParametersForNonIdentityNodes(NodeExecution nodeExecution) {
+    return nodeExecution.getNodeType() != null && NodeType.IDENTITY_PLAN_NODE != nodeExecution.getNodeType()
+        && nodeExecution.getResolvedStepParameters() != null;
   }
 
   // Save a collection nodeExecutions.
@@ -684,10 +717,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Builder eventBuilder = OrchestrationEvent.newBuilder()
                                .setAmbiance(nodeExecution.getAmbiance())
                                .setStatus(nodeExecution.getStatus())
-                               .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
                                .setEventType(orchestrationEventType)
                                .setServiceName(nodeExecution.getModule())
-                               .setTriggerPayload(triggerPayload);
+                               .setTriggerPayload(triggerPayload)
+                               .setEndTs(nodeExecution.getEndTs() == null ? 0 : nodeExecution.getEndTs());
+
+    if (checkPresenceOfResolvedParametersForNonIdentityNodes(nodeExecution)) {
+      eventBuilder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
+    }
 
     updateEventIfCausedByAutoAbortThroughTrigger(nodeExecution, orchestrationEventType, eventBuilder);
     eventEmitter.emitEvent(eventBuilder.build());
@@ -739,7 +776,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
   }
 
-  private List<NodeExecution> fetchStageExecutions(String planExecutionId) {
+  @Override
+  public List<NodeExecution> fetchStageExecutions(String planExecutionId) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
@@ -918,5 +956,22 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
 
     return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
+
+  @Override
+  public NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
+      String planExecutionId, String planNodeId, boolean oldRetry, List<String> retriedId) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.nodeId)
+                            .is(planNodeId)
+                            .and(NodeExecutionKeys.oldRetry)
+                            .is(oldRetry)
+                            .and(NodeExecutionKeys.retryIds)
+                            .in(retriedId);
+
+    Query query = query(criteria);
+    query.fields().include(NodeExecutionKeys.id);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(query);
   }
 }

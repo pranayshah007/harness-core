@@ -9,7 +9,7 @@ package software.wings.scheduler.audit;
 
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

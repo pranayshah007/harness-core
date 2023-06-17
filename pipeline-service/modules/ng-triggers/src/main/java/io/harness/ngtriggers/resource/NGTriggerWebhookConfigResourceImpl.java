@@ -141,7 +141,7 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
                 triggerIdentifier, eventPayload, headerConfigs)
             .build();
     if (eventEntity != null) {
-      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity);
+      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity, null);
       TriggerWebhookEvent newEvent = ngTriggerService.addEventToQueue(eventEntity);
       return ResponseDTO.newResponse(newEvent.getUuid());
     } else {
@@ -163,7 +163,39 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
                 triggerIdentifier, eventPayload, headerConfigs)
             .build();
     if (eventEntity != null) {
-      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity);
+      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity, null);
+      TriggerWebhookEvent newEvent = ngTriggerService.addEventToQueue(eventEntity);
+      String uuid = newEvent.getUuid();
+      return ResponseDTO.newResponse(
+          NGProcessWebhookResponseDTO.builder()
+              .eventCorrelationId(uuid)
+              .apiUrl(urlHelper.buildApiExecutionUrl(uuid, accountIdentifier))
+              .uiUrl(urlHelper.buildUiUrl(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier))
+              .uiSetupUrl(
+                  urlHelper.buildUiSetupUrl(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier))
+              .build());
+    } else {
+      return ResponseDTO.newResponse(
+          NGProcessWebhookResponseDTO.builder().eventCorrelationId(UNRECOGNIZED_WEBHOOK).build());
+    }
+  }
+
+  @PipelineServiceAuthIfHasApiKey
+  public ResponseDTO<NGProcessWebhookResponseDTO> processWebhookEventV3(@NotNull String webhookToken,
+      @NotNull String accountIdentifier, @NotNull String orgIdentifier, @NotNull String projectIdentifier,
+      String pipelineIdentifier, String triggerIdentifier, @NotNull String eventPayload, HttpHeaders httpHeaders) {
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    httpHeaders.getRequestHeaders().forEach(
+        (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
+    ngTriggerService.checkAuthorization(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, headerConfigs);
+    TriggerWebhookEvent eventEntity =
+        ngTriggerElementMapper
+            .toNGTriggerWebhookEventForCustom(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
+                triggerIdentifier, eventPayload, headerConfigs)
+            .build();
+    if (eventEntity != null) {
+      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity, webhookToken);
       TriggerWebhookEvent newEvent = ngTriggerService.addEventToQueue(eventEntity);
       String uuid = newEvent.getUuid();
       return ResponseDTO.newResponse(

@@ -125,12 +125,12 @@ import software.wings.beans.dto.Log;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
 import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
 import software.wings.common.TemplateExpressionProcessor;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.helm.HelmCommandExecutionResponse;
 import software.wings.helpers.ext.helm.HelmHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest.HelmInstallCommandRequestBuilder;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
@@ -247,6 +247,7 @@ public class HelmDeployState extends State {
   @Getter @Setter private GitFileConfig gitFileConfig;
   @Getter @Setter private String commandFlags;
   @Getter @Setter @Attributes(title = "Ignore release hist failure") private boolean ignoreReleaseHistFailure;
+  @Getter @Setter @Attributes(title = "Skip steady state check") private boolean skipSteadyStateCheck;
 
   public static final String HELM_COMMAND_NAME = "Helm Deploy";
   private static final String DOCKER_IMAGE_TAG_PLACEHOLDER_REGEX = "\\$\\{DOCKER_IMAGE_TAG}";
@@ -497,7 +498,8 @@ public class HelmDeployState extends State {
                 featureFlagService.isEnabled(FeatureName.GIT_HOST_CONNECTIVITY, context.getAccountId()))
             .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()))
             .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
-            .ignoreReleaseHistFailStatus(this.ignoreReleaseHistFailure);
+            .ignoreReleaseHistFailStatus(this.ignoreReleaseHistFailure)
+            .skipSteadyStateCheck(this.skipSteadyStateCheck);
 
     if (gitFileConfig != null) {
       helmInstallCommandRequestBuilder.gitFileConfig(gitFileConfig);
@@ -1064,7 +1066,7 @@ public class HelmDeployState extends State {
             }
 
             helmChartConfigTaskParams.setUseCache(helmVersion != HelmVersion.V2
-                && featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
+                && !featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
 
             helmChartConfigTaskParams.setCheckIncorrectChartVersion(true);
 
@@ -1168,6 +1170,8 @@ public class HelmDeployState extends State {
 
     commandRequest.setK8SteadyStateCheckEnabled(
         featureFlagService.isEnabled(FeatureName.HELM_STEADY_STATE_CHECK_1_16, context.getAccountId()));
+    commandRequest.setUseRefactorSteadyStateCheck(
+        featureFlagService.isEnabled(FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_CG, context.getAccountId()));
 
     StateExecutionContext stateExecutionContext =
         buildStateExecutionContext(stateExecutionDataBuilder, expressionFunctorToken);

@@ -7,7 +7,6 @@
 
 package io.harness.pms.pipeline.service;
 
-import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 
 import java.util.List;
@@ -17,7 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 public interface PipelineMetadataService {
-  int incrementRunSequence(PipelineEntity entity);
+  int incrementRunSequence(String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   int incrementExecutionCounter(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);

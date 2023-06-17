@@ -473,6 +473,23 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(433, "TAS_ROUTE_MAPPING");
     taskTypeOrdinalMapping.put(434, "AWS_EKS_LIST_CLUSTERS_TASK");
     taskTypeOrdinalMapping.put(435, "TERRAFORM_TASK_NG_V5");
+    taskTypeOrdinalMapping.put(436, "GOOGLE_FUNCTION_GEN_ONE_DEPLOY_TASK");
+    taskTypeOrdinalMapping.put(437, "GOOGLE_FUNCTION_GEN_ONE_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(438, "GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(439, "TERRAFORM_TASK_NG_V6");
+    taskTypeOrdinalMapping.put(440, "K8S_COMMAND_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(441, "HELM_COMMAND_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(442, "INSTANCE_SYNC_V2_CG_SUPPORT");
+    taskTypeOrdinalMapping.put(443, "COMMAND_TASK_NG_WITH_GIT_CONFIGS");
+    taskTypeOrdinalMapping.put(444, "K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK");
+    taskTypeOrdinalMapping.put(445, "RANCHER_TEST_CONNECTION_TASK_NG");
+    taskTypeOrdinalMapping.put(446, "RANCHER_LIST_CLUSTERS_TASK_NG");
+    taskTypeOrdinalMapping.put(447, "COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS");
+    taskTypeOrdinalMapping.put(448, "NOTIFY_WEBHOOK");
+    taskTypeOrdinalMapping.put(449, "SERVERLESS_ROLLBACK_V2_TASK");
+    taskTypeOrdinalMapping.put(450, "K8S_COMMAND_TASK_NG_RANCHER");
+    taskTypeOrdinalMapping.put(451, "HELM_COMMAND_TASK_NG_RANCHER");
+
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

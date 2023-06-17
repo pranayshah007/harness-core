@@ -9,6 +9,7 @@ package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.cvng.ticket.entities.Ticket;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -41,4 +42,5 @@ public class LogFeedbackEntity implements PersistentEntity {
   private String updatedByUser;
   private long createdAt;
   private long lastUpdatedAt;
+  private Ticket ticket;
 }

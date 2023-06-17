@@ -160,6 +160,10 @@ if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
   export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ANALYTIC_MONGO_TAG_VALUE" ]]; then
  export ANALYTIC_MONGO_TAG_VALUE; yq -i '.mongo.analyticNodeConfig.mongoTagValue=env(ANALYTIC_MONGO_TAG_VALUE)' $CONFIG_FILE
 fi
@@ -361,6 +365,10 @@ if [[ "" != "$jwtZendeskSecret" ]]; then
   export jwtZendeskSecret; yq -i '.portal.jwtZendeskSecret=env(jwtZendeskSecret)' $CONFIG_FILE
 fi
 
+if [[ "" != "$jwtCannySecret" ]]; then
+  export jwtCannySecret; yq -i '.portal.jwtCannySecret=env(jwtCannySecret)' $CONFIG_FILE
+fi
+
 if [[ "" != "$jwtMultiAuthSecret" ]]; then
   export jwtMultiAuthSecret; yq -i '.portal.jwtMultiAuthSecret=env(jwtMultiAuthSecret)' $CONFIG_FILE
 fi
@@ -410,6 +418,10 @@ if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_PORT" ]]; then
+  export SMTP_PORT; yq -i '.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SMTP_USERNAME" ]]; then
   export SMTP_USERNAME; yq -i '.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
 fi
@@ -420,6 +432,10 @@ fi
 
 if [[ "" != "$SMTP_USE_SSL" ]]; then
   export SMTP_USE_SSL; yq -i '.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_START_TLS" ]]; then
+  export SMTP_USE_TLS; yq -i '.smtp.startTLS=env(SMTP_START_TLS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MARKETO_ENABLED" ]]; then
@@ -669,12 +685,32 @@ if [[ "" != "$AWS_MARKETPLACE_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceProductCode=env(AWS_MARKETPLACE_PRODUCTCODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$AWS_MARKETPLACE_FF_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_FF_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceFfProductCode=env(AWS_MARKETPLACE_FF_PRODUCTCODE)' $CONFIG_FILE
 fi
 
-if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
-  export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
+if [[ "" != "$AWS_MARKETPLACE_CI_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CI_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCiProductCode=env(AWS_MARKETPLACE_CI_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_SRM_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_SRM_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceSrmProductCode=env(AWS_MARKETPLACE_SRM_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_STO_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_STO_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceStoProductCode=env(AWS_MARKETPLACE_STO_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_CD_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CD_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCdProductCode=env(AWS_MARKETPLACE_CD_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_CCM_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CCM_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCcmProductCode=env(AWS_MARKETPLACE_CCM_PRODUCTCODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOW_BLACKLISTED_EMAIL_DOMAINS" ]]; then
@@ -746,13 +782,14 @@ if [[ "" != "$AZURE_MARKETPLACE_SECRETKEY" ]]; then
   export AZURE_MARKETPLACE_SECRETKEY; yq -i '.mktPlaceConfig.azureMarketplaceSecretKey=env(AZURE_MARKETPLACE_SECRETKEY)' $CONFIG_FILE
 fi
 if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
-  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceClientConfig.httpClientConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
+fi
+if [[ "" != "$QUEUE_SERVICE_AUTH_TOKEN" ]]; then
+  export QUEUE_SERVICE_AUTH_TOKEN; yq -i '.delegateQueueServiceConfig.queueServiceClientConfig.queueServiceSecret=env(QUEUE_SERVICE_AUTH_TOKEN)' $CONFIG_FILE
 fi
 if [[ "" != "$ENABLE_TASK_QUEUE_DEQUEUE" ]]; then
   export ENABLE_TASK_QUEUE_DEQUEUE; yq -i '.delegateQueueServiceConfig.enableQueueAndDequeue=env(ENABLE_TASK_QUEUE_DEQUEUE)' $CONFIG_FILE
 fi
-
-
 
 if [[ "" != "$WORKERS" ]]; then
   IFS=',' read -ra WORKER_ITEMS <<< "$WORKERS"
@@ -1111,6 +1148,7 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value ngAuthUIEnabled "$HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER"
 replace_key_value portal.zendeskBaseUrl "$ZENDESK_BASE_URL"
+replace_key_value portal.cannyBaseUrl "$CANNY_BASE_URL"
 replace_key_value deployVariant "$DEPLOY_VERSION"
 
 if [[ "" != ${GATEWAY_PATH_PREFIX+x} ]]; then

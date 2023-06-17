@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 
 import java.time.Instant;
 import java.util.List;

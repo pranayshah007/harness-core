@@ -52,7 +52,9 @@ public interface LicenseService {
 
   Long getNumberOfClientMAUs(Edition plan);
 
-  LicenseType getModuleLicenseType(String dimension, Edition plan);
+  LicenseType getModuleLicenseType(Edition plan);
+
+  boolean hasPremierSupport(String dimension);
 
   boolean updateLicenseForProduct(
       String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension);

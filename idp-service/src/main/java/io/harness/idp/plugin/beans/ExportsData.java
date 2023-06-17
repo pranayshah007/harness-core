@@ -37,5 +37,6 @@ public class ExportsData {
     private String name;
     @JsonIgnore private String defaultRoute;
     @JsonIgnore private String addByDefault;
+    @JsonIgnore private Object layoutSchemaSpecs;
   }
 }

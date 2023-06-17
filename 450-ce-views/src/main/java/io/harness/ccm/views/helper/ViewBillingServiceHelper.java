@@ -13,7 +13,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.LAUNCH_TYPE_FI
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
-import static io.harness.ccm.views.businessMapping.entities.SharingStrategy.PROPORTIONAL;
+import static io.harness.ccm.views.businessmapping.entities.SharingStrategy.PROPORTIONAL;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_AGGREGRATED;
@@ -25,10 +25,10 @@ import static java.lang.String.format;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.currency.Currency;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
 import io.harness.ccm.views.entities.ViewField;
@@ -172,7 +172,8 @@ public class ViewBillingServiceHelper {
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final String cloudProviderTableName, final ViewQueryParams queryParams,
       final BusinessMapping sharedCostBusinessMapping, final Map<String, Double> entityCosts, final double totalCost,
-      final Set<String> selectedCostTargets, final boolean isClusterPerspective) {
+      final Set<String> selectedCostTargets, final boolean isClusterPerspective,
+      final Map<String, String> labelsKeyAndColumnMapping) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
     List<QLCEViewAggregation> modifiedAggregateFunction = aggregateFunction;
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
@@ -190,13 +191,16 @@ public class ViewBillingServiceHelper {
           if (shouldAddSharedCostQuery(entityCosts, totalCost, costTarget, sharedCost)) {
             final BusinessMapping businessMapping = sharedCostBusinessMapping.toDTO();
             businessMapping.setSharedCosts(List.of(sharedCost));
-            final SelectQuery selectQuery =
-                viewsQueryBuilder.getSharedCostQuery(modifiedGroupBy, modifiedAggregateFunction, entityCosts, totalCost,
-                    costTarget, sharedCost, businessMapping, cloudProviderTableName, isClusterPerspective);
-            final SelectQuery subQuery = getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction,
-                Collections.emptyList(), cloudProviderTableName, queryParams, businessMapping, Collections.emptyList());
-            selectQuery.addCustomFromTable(String.format("(%s)", subQuery.toString()));
-            unionQuery.addQueries(String.format("(%s)", selectQuery));
+            final SelectQuery selectQuery = viewsQueryBuilder.getSharedCostQuery(modifiedGroupBy,
+                modifiedAggregateFunction, entityCosts, totalCost, costTarget, sharedCost, businessMapping,
+                cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping);
+            if (Objects.nonNull(selectQuery)) {
+              final SelectQuery subQuery = getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction,
+                  Collections.emptyList(), cloudProviderTableName, queryParams, businessMapping,
+                  Collections.emptyList(), labelsKeyAndColumnMapping);
+              selectQuery.addCustomFromTable(String.format("(%s)", subQuery.toString()));
+              unionQuery.addQueries(String.format("(%s)", selectQuery));
+            }
           }
         }
       }
@@ -220,7 +224,8 @@ public class ViewBillingServiceHelper {
 
   public SelectQuery getSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy,
       final List<QLCEViewAggregation> aggregateFunction, final List<QLCEViewSortCriteria> sort,
-      final boolean isClusterPerspective, final UnionQuery unionQuery, final String cloudProviderTableName) {
+      final boolean isClusterPerspective, final UnionQuery unionQuery, final String cloudProviderTableName,
+      final ViewQueryParams queryParams, final Map<String, String> labelsKeyAndColumnMapping) {
     List<QLCEViewAggregation> modifiedAggregateFunction = aggregateFunction;
     List<QLCEViewSortCriteria> modifiedSort = sort;
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
@@ -234,11 +239,12 @@ public class ViewBillingServiceHelper {
       modifiedSort = viewParametersHelper.getModifiedSort(sort);
     }
     return viewsQueryBuilder.getSharedCostOuterQuery(modifiedGroupBy, modifiedAggregateFunction, modifiedSort,
-        unionQuery, cloudProviderTableName, isClusterPerspective);
+        unionQuery, cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping);
   }
 
   public SelectQuery getTotalCountSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy, final UnionQuery unionQuery,
-      final String cloudProviderTableName, final boolean isClusterPerspective) {
+      final String cloudProviderTableName, final boolean isClusterPerspective, final ViewQueryParams queryParams,
+      final Map<String, String> labelsKeyAndColumnMapping) {
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
     if (viewsQueryHelper.isGroupByNonePresent(modifiedGroupBy)) {
       modifiedGroupBy = viewsQueryHelper.removeGroupByNone(groupBy);
@@ -246,7 +252,8 @@ public class ViewBillingServiceHelper {
     if (isClusterPerspective) {
       modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
     }
-    return viewsQueryBuilder.getTotalCountSharedCostOuterQuery(modifiedGroupBy, unionQuery, cloudProviderTableName);
+    return viewsQueryBuilder.getTotalCountSharedCostOuterQuery(
+        modifiedGroupBy, unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -511,22 +518,24 @@ public class ViewBillingServiceHelper {
       boolean isTimeTruncGroupByRequired) {
     return getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName,
         viewsQueryHelper.buildQueryParams(null, isTimeTruncGroupByRequired, false, false, false),
-        Collections.emptyList());
+        Collections.emptyList(), Collections.emptyMap());
   }
 
   // Next-gen
   public SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
-      ViewQueryParams queryParams, List<BusinessMapping> sharedCostBusinessMappings) {
+      ViewQueryParams queryParams, List<BusinessMapping> sharedCostBusinessMappings,
+      Map<String, String> labelsKeyAndColumnMapping) {
     return getQuery(filters, groupBy, Collections.emptyList(), aggregateFunction, sort, cloudProviderTableName,
-        queryParams, null, sharedCostBusinessMappings);
+        queryParams, null, sharedCostBusinessMappings, labelsKeyAndColumnMapping);
   }
 
   // Next-gen
   public SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewGroupBy> sharedCostGroupBy, List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewSortCriteria> sort, String cloudProviderTableName, ViewQueryParams queryParams,
-      BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings) {
+      BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings,
+      Map<String, String> labelsKeyAndColumnMapping) {
     List<ViewRule> viewRuleList = new ArrayList<>();
 
     // Removing group by none if present
@@ -591,12 +600,13 @@ public class ViewBillingServiceHelper {
     }
 
     if (queryParams.isTotalCountQuery()) {
-      return viewsQueryBuilder.getTotalCountQuery(
-          viewRuleList, idFilters, timeFilters, modifiedGroupBy, cloudProviderTableName);
+      return viewsQueryBuilder.getTotalCountQuery(viewRuleList, idFilters, timeFilters, modifiedGroupBy,
+          cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, sharedCostGroupBy, aggregateFunction,
-        sort, cloudProviderTableName, queryParams, sharedCostBusinessMapping, sharedCostBusinessMappings);
+        sort, cloudProviderTableName, queryParams, sharedCostBusinessMapping, sharedCostBusinessMappings,
+        labelsKeyAndColumnMapping);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

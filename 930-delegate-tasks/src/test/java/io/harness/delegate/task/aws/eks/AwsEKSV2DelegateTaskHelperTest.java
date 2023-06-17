@@ -8,6 +8,7 @@
 package io.harness.delegate.task.aws.eks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_INSTALL_HINT;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_ACCESS_KEY_ID;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_SECRET_ACCESS_KEY;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
@@ -17,8 +18,8 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -107,9 +108,7 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
     assertEquals("aws-iam-authenticator", exec.getCommand());
     assertEquals(InteractiveMode.NEVER, exec.getInteractiveMode());
     assertTrue(exec.isProvideClusterInfo());
-    assertEquals(
-        "Please use the following AWS docs for installing the aws-iam-authenticator plugin https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html",
-        exec.getInstallHint());
+    assertEquals(EKS_AUTH_PLUGIN_INSTALL_HINT, exec.getInstallHint());
 
     List<String> args = exec.getArgs();
     assertNotNull(args);

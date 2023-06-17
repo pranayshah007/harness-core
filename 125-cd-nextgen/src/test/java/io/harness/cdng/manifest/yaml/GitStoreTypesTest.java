@@ -8,8 +8,10 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -22,6 +24,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -221,6 +224,19 @@ public class GitStoreTypesTest extends CategoryTest {
     testOverride(commitGitStore,
         BitbucketStore.builder().gitFetchType(FetchType.BRANCH).branch(BRANCH_OVERRIDE).build(),
         commitGitStore.withGitFetchType(FetchType.BRANCH).withBranch(BRANCH_OVERRIDE).withCommitId(null));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testValidateAtRuntime() {
+    BitbucketStore emptyGitStore = BitbucketStore.builder().gitFetchType(FetchType.BRANCH).build();
+
+    Set<String> invalidParameters = emptyGitStore.validateAtRuntime();
+
+    assertTrue(invalidParameters.contains("connectorRef"));
+    assertTrue(invalidParameters.contains("branch"));
+    assertTrue(invalidParameters.contains("folderPath"));
   }
 
   private void testOverride(GitStoreConfig origin, GitStoreConfig override, GitStoreConfig expected) {

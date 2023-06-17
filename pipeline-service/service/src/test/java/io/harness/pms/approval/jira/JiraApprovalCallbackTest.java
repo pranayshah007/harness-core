@@ -16,12 +16,13 @@ import static io.harness.rule.OwnerRule.RAFAEL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -36,8 +37,11 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.exception.HarnessJiraException;
 import io.harness.jira.JiraIssueNG;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -52,31 +56,36 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(PIPELINE)
-@PrepareForTest(CriteriaEvaluator.class)
 public class JiraApprovalCallbackTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   private static String approvalInstanceId = "approvalInstanceId";
+  private static String issueKey = "issueKey";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
   @InjectMocks private JiraApprovalCallback jiraApprovalCallback;
+  private MockedStatic<CriteriaEvaluator> aStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
@@ -84,6 +93,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
 
   @Before
   public void setUp() {
+    aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
     jiraApprovalCallback = spy(JiraApprovalCallback.builder().build());
     on(jiraApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(jiraApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
@@ -92,11 +102,15 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     on(jiraApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 
+  @After
+  public void cleanup() {
+    aStatic.close();
+  }
+
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testPush() {
-    MockedStatic<CriteriaEvaluator> aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
     aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
     on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
     Ambiance ambiance = Ambiance.newBuilder()
@@ -145,7 +159,6 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testPushUsingKryoWithoutReference() {
-    MockedStatic<CriteriaEvaluator> aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
     aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
     on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
     Ambiance ambiance = Ambiance.newBuilder()
@@ -182,12 +195,42 @@ public class JiraApprovalCallbackTest extends CategoryTest {
 
     doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
-    // To test case of error in kryo serialization
+
+    // To test case of error in kryo serialization; also validate that in such case log callback
+    // is called with a non-terminal command execution status
     doReturn(ErrorNotifyResponseData.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
-    jiraApprovalCallback.push(response);
+
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      jiraApprovalCallback.push(response);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback).saveExecutionLog(any(), eq(LogLevel.ERROR));
+    }
+
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(referenceFalseKryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
+
+    // Case when issue key is invalid
+    instance.setDeadline(Long.MAX_VALUE);
+    doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      jiraApprovalCallback.push(response);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback)
+          .saveExecutionLog(
+              LogHelper.color(String.format("Invalid issue key: %s", issueKey), LogColor.Red), LogLevel.ERROR);
+    }
+
+    // Case when expired, then should close log stream
+    instance.setDeadline(0);
+    doReturn(JiraTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    try (MockedConstruction<NGLogCallback> mocked = mockConstruction(NGLogCallback.class)) {
+      jiraApprovalCallback.push(response);
+      NGLogCallback logCallback = mocked.constructed().get(0);
+      verify(logCallback)
+          .saveExecutionLog(LogHelper.color("Approval instance has expired", LogColor.Red), LogLevel.INFO,
+              CommandExecutionStatus.FAILURE);
+    }
   }
 
   @Test
@@ -263,6 +306,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
             .build();
     instance.setAmbiance(ambiance);
     instance.setType(ApprovalType.JIRA_APPROVAL);
+    instance.setIssueKey(issueKey);
     return instance;
   }
 

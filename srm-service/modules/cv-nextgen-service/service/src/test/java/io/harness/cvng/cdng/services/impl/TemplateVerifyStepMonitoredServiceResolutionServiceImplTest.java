@@ -13,13 +13,14 @@ import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
@@ -33,6 +34,7 @@ import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask.MonitoringSou
 import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.models.VerificationType;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -128,6 +130,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
         templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
+    assertThat(actualCvConfigs.get(0).getDataSourceName()).isEqualTo(DataSourceType.APP_DYNAMICS);
+    assertThat(actualCvConfigs.get(0).getVerificationType()).isEqualTo(VerificationType.TIME_SERIES);
   }
 
   @Test
@@ -177,7 +181,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
             .filter(MonitoringSourcePerpetualTaskKeys.projectIdentifier, projectIdentifier)
             .filter(MonitoringSourcePerpetualTaskKeys.orgIdentifier, orgIdentifier);
     List<MonitoringSourcePerpetualTask> savedPerpetualTasks = query.asList();
-    assertThat(savedPerpetualTasks).hasSize(2);
+    assertThat(savedPerpetualTasks).hasSize(1);
   }
 
   @Test
@@ -232,24 +236,23 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
                                                                     .versionLabel("1")
                                                                     .templateInputs(templateInputsNode)
                                                                     .build();
-    String expectedResponse = "---\n"
-        + "monitoredService:\n"
+    String expectedResponse = "monitoredService:\n"
         + "  template:\n"
-        + "    templateRef: \"abc\"\n"
+        + "    templateRef: abc\n"
         + "    versionLabel: \"1\"\n"
         + "    templateInputs:\n"
         + "      sources:\n"
         + "        healthSources:\n"
-        + "        - identifier: \"datadog\"\n"
-        + "          type: \"DatadogLog\"\n"
-        + "          spec:\n"
-        + "            queries:\n"
-        + "            - identifier: \"Datadog_Logs_Query\"\n"
-        + "              indexes:\n"
-        + "              - \"abc\"\n"
-        + "              query: \"abc\"\n"
-        + "              serviceInstanceIdentifier: \"Instance\"\n"
-        + "      type: \"Application\"\n";
+        + "          - identifier: datadog\n"
+        + "            type: DatadogLog\n"
+        + "            spec:\n"
+        + "              queries:\n"
+        + "                - identifier: Datadog_Logs_Query\n"
+        + "                  indexes:\n"
+        + "                    - abc\n"
+        + "                  query: abc\n"
+        + "                  serviceInstanceIdentifier: Instance\n"
+        + "      type: Application\n";
     String response = templateVerifyStepMonitoredServiceResolutionService.getTemplateYaml(templateMonitoredServiceSpec);
     assertThat(expectedResponse).isEqualTo(response);
   }

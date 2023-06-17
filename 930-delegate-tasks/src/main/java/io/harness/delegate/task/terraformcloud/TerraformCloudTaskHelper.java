@@ -97,8 +97,11 @@ import io.harness.terraformcloud.model.WorkspaceData;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.serializer.HObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -133,6 +136,7 @@ public class TerraformCloudTaskHelper {
   private static final int CHUNK_SIZE = 100000;
   @Inject TerraformCloudClient terraformCloudClient;
   @Inject DelegateFileManagerBase delegateFileManager;
+  private final ObjectMapper objectMapper = HObjectMapper.get();
 
   public Map<String, String> getOrganizationsMap(TerraformCloudConfig terraformCloudConfig) {
     TerraformCloudApiTokenCredentials credentials =
@@ -483,31 +487,50 @@ public class TerraformCloudTaskHelper {
   }
 
   private void printPolicyChecksSummary(PolicyCheckData policyCheckData, LogCallback logCallback) {
-    PolicyCheckData.Attributes attributes = policyCheckData.getAttributes();
-    if (attributes != null) {
-      String status = attributes.getStatus();
-      if (status != null) {
-        LogColor logColor = (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED)) ? LogColor.Red : LogColor.Green;
-        logCallback.saveExecutionLog(
-            color(format("Policy check [%s]", status), logColor, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
-        PolicyCheckData.Attributes.Result result = attributes.getResult();
-        if (result != null) {
-          PolicyCheckData.Attributes.Result.Sentinel sentinel = result.getSentinel();
-          if (sentinel != null) {
-            Map<String, PolicyCheckData.Attributes.Result.Sentinel.PolicyData> data = sentinel.getData();
-            if (isNotEmpty(data) && isNotEmpty(data.values())) {
-              data.values().forEach(policyData
-                  -> policyData.getPolicies().forEach(policySummary
-                      -> logCallback.saveExecutionLog(
-                          format("%s : %s",
-                              policySummary.isResult() ? color("passed", LogColor.Green, LogWeight.Bold)
-                                                       : color("failed", LogColor.Red, LogWeight.Bold),
-                              policySummary.getPolicy() != null ? policySummary.getPolicy().getName() : "unknown name"),
-                          INFO, CommandExecutionStatus.RUNNING)));
+    try {
+      PolicyCheckData.Attributes attributes = policyCheckData.getAttributes();
+      if (attributes != null) {
+        String status = attributes.getStatus();
+        if (status != null) {
+          LogColor logColor =
+              (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED)) ? LogColor.Red : LogColor.Green;
+          logCallback.saveExecutionLog(color(format("Policy check [%s]", status), logColor, LogWeight.Bold), INFO,
+              CommandExecutionStatus.RUNNING);
+          PolicyCheckData.Attributes.Result result = attributes.getResult();
+          if (result != null) {
+            try {
+              PolicyCheckData.Attributes.Result.Sentinel sentinel =
+                  objectMapper.convertValue(result.getSentinel(), PolicyCheckData.Attributes.Result.Sentinel.class);
+
+              if (sentinel != null) {
+                Map<String, PolicyCheckData.Attributes.Result.Sentinel.PolicyData> data = sentinel.getData();
+                if (isNotEmpty(data) && isNotEmpty(data.values())) {
+                  data.values().forEach(policyData
+                      -> policyData.getPolicies().forEach(policySummary
+                          -> logCallback.saveExecutionLog(
+                              format("%s : %s",
+                                  policySummary.isResult() ? color("passed", LogColor.Green, LogWeight.Bold)
+                                                           : color("failed", LogColor.Red, LogWeight.Bold),
+                                  policySummary.getPolicy() != null ? policySummary.getPolicy().getName()
+                                                                    : "unknown name"),
+                              INFO, CommandExecutionStatus.RUNNING)));
+                }
+              }
+            } catch (IllegalArgumentException iax) {
+              try {
+                log.error("Failed to parse policy check sentinel response: "
+                        + objectMapper.writer().withDefaultPrettyPrinter().writeValueAsString(result.getSentinel()),
+                    iax);
+              } catch (JsonProcessingException jpex) {
+                // ignore this exception
+                log.error("failed to print TF cloud policy check sentinel: " + result.getSentinel(), jpex);
+              }
             }
           }
         }
       }
+    } catch (Exception ex) {
+      log.error("failed to print TF cloud policy check data: " + policyCheckData, ex);
     }
   }
 

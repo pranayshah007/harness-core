@@ -7,28 +7,40 @@
 
 package io.harness.idp.plugin.services;
 
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.FileUtils;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.service.PluginsProxyInfoService;
 import io.harness.idp.plugin.beans.ExportsData;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
+import io.harness.idp.plugin.beans.PluginRequestEntity;
 import io.harness.idp.plugin.enums.ExportType;
 import io.harness.idp.plugin.repositories.PluginInfoRepository;
+import io.harness.idp.plugin.repositories.PluginRequestRepository;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
+import io.harness.spec.server.idp.v1.model.RequestPlugin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -39,13 +51,19 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 @OwnedBy(HarnessTeam.IDP)
 public class PluginInfoServiceImplTest {
   @InjectMocks private PluginInfoServiceImpl pluginInfoServiceImpl;
   @Mock private PluginInfoRepository pluginInfoRepository;
+  @Mock private PluginRequestRepository pluginRequestRepository;
   @Mock private ConfigManagerService configManagerService;
+  @Mock private PluginsProxyInfoService pluginsProxyInfoService;
   private final ObjectMapper objectMapper = mock(ObjectMapper.class);
 
   private static final String ACCOUNT_ID = "123";
@@ -54,6 +72,11 @@ public class PluginInfoServiceImplTest {
   private static final String HARNESS_CI_CD_NAME = "Harnes CI/CD";
   private static final String HARNESS_CI_CD_ID = "harness-ci-cd";
   private static final String INVALID_PLUGIN_ID = "invalid-plugin";
+
+  private static final String PLUGIN_REQUEST_NAME = "pluginName";
+  private static final String PLUGIN_REQUEST_CREATOR = "foo";
+  private static final String PLUGIN_REQUEST_PACKAGE_LINK = "https://www.harness.io";
+  private static final String PLUGIN_REQUEST_DOC_LINK = "https://www.harness.io";
 
   @Before
   public void setUp() {
@@ -67,7 +90,7 @@ public class PluginInfoServiceImplTest {
     List<PluginInfoEntity> pluginInfoEntityList = new ArrayList<>();
     pluginInfoEntityList.add(getPagerDutyInfoEntity());
     pluginInfoEntityList.add(getHarnessCICDInfoEntity());
-    when(pluginInfoRepository.findAll()).thenReturn(pluginInfoEntityList);
+    when(pluginInfoRepository.findByIdentifierIn(any())).thenReturn(pluginInfoEntityList);
     Map<String, Boolean> map = new HashMap<>();
     map.put(PAGER_DUTY_ID, false);
     map.put(HARNESS_CI_CD_ID, true);
@@ -84,7 +107,9 @@ public class PluginInfoServiceImplTest {
   public void testGetPluginDetailedInfo() {
     when(pluginInfoRepository.findByIdentifier(PAGER_DUTY_ID))
         .thenReturn(Optional.ofNullable(getPagerDutyInfoEntity()));
-    when(configManagerService.getPluginConfig(ACCOUNT_ID, PAGER_DUTY_ID)).thenReturn(null);
+    when(configManagerService.getAppConfig(ACCOUNT_ID, PAGER_DUTY_ID, ConfigType.PLUGIN)).thenReturn(null);
+    when(pluginsProxyInfoService.getProxyHostDetailsForPluginId(ACCOUNT_ID, PAGER_DUTY_ID))
+        .thenReturn(new ArrayList<>());
     PluginDetailedInfo pluginDetailedInfo = pluginInfoServiceImpl.getPluginDetailedInfo(PAGER_DUTY_ID, ACCOUNT_ID);
     assertNotNull(pluginDetailedInfo);
     assertFalse(pluginDetailedInfo.getPluginDetails().isEnabled());
@@ -112,11 +137,11 @@ public class PluginInfoServiceImplTest {
         + "category: Source Control Mgmt\n"
         + "source: https://github.com/backstage/backstage/tree/master/plugins/github-pull-requests-board";
     PluginInfoEntity pluginInfoEntity = PluginInfoEntity.builder().build();
-    Mockito.mockStatic(FileUtils.class);
+    mockStatic(FileUtils.class);
     when(FileUtils.readFile(any(), any(), any())).thenReturn(schema);
     when(pluginInfoRepository.saveOrUpdate(any(PluginInfoEntity.class))).thenReturn(pluginInfoEntity);
     pluginInfoServiceImpl.saveAllPluginInfo();
-    verify(pluginInfoRepository, times(4)).saveOrUpdate(any(PluginInfoEntity.class));
+    verify(pluginInfoRepository, times(8)).saveOrUpdate(any(PluginInfoEntity.class));
   }
 
   @Test
@@ -126,6 +151,30 @@ public class PluginInfoServiceImplTest {
     doNothing().when(pluginInfoRepository).deleteAll();
     pluginInfoServiceImpl.deleteAllPluginInfo();
     verify(pluginInfoRepository).deleteAll();
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testSavePluginRequest() {
+    PluginRequestEntity pluginRequestEntity = PluginRequestEntity.builder().build();
+    when(pluginRequestRepository.save(any(PluginRequestEntity.class))).thenReturn(pluginRequestEntity);
+    pluginInfoServiceImpl.savePluginRequest(ACCOUNT_ID, getRequestPlugin());
+    verify(pluginRequestRepository, times(1)).save(any(PluginRequestEntity.class));
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGetPluginRequests() {
+    when(pluginRequestRepository.findAll(any(), any())).thenReturn(getPagePluginRequestEntity());
+    Page<PluginRequestEntity> pluginRequestEntityPage = pluginInfoServiceImpl.getPluginRequests(ACCOUNT_ID, 0, 10);
+    assertEquals(1, pluginRequestEntityPage.getTotalElements());
+    assertEquals(1, pluginRequestEntityPage.getContent().size());
+    assertThat(pluginRequestEntityPage.getContent().get(0).getName()).isEqualTo(PLUGIN_REQUEST_NAME);
+    assertThat(pluginRequestEntityPage.getContent().get(0).getCreator()).isEqualTo(PLUGIN_REQUEST_CREATOR);
+    assertThat(pluginRequestEntityPage.getContent().get(0).getPackageLink()).isEqualTo(PLUGIN_REQUEST_PACKAGE_LINK);
+    assertThat(pluginRequestEntityPage.getContent().get(0).getDocLink()).isEqualTo(PLUGIN_REQUEST_DOC_LINK);
   }
 
   private PluginInfoEntity getPagerDutyInfoEntity() {
@@ -151,5 +200,26 @@ public class PluginInfoServiceImplTest {
         .exports(new ExportsData())
         .core(true)
         .build();
+  }
+
+  private RequestPlugin getRequestPlugin() {
+    RequestPlugin requestPlugin = new RequestPlugin();
+    requestPlugin.setName(PLUGIN_REQUEST_NAME);
+    requestPlugin.setCreator(PLUGIN_REQUEST_CREATOR);
+    requestPlugin.setPackageLink(PLUGIN_REQUEST_PACKAGE_LINK);
+    requestPlugin.setDocLink(PLUGIN_REQUEST_DOC_LINK);
+    return requestPlugin;
+  }
+
+  private Page<PluginRequestEntity> getPagePluginRequestEntity() {
+    PluginRequestEntity pluginRequestEntity = PluginRequestEntity.builder()
+                                                  .name(PLUGIN_REQUEST_NAME)
+                                                  .creator(PLUGIN_REQUEST_CREATOR)
+                                                  .packageLink(PLUGIN_REQUEST_PACKAGE_LINK)
+                                                  .docLink(PLUGIN_REQUEST_DOC_LINK)
+                                                  .build();
+    List<PluginRequestEntity> pluginRequestEntityList = new ArrayList<>();
+    pluginRequestEntityList.add(pluginRequestEntity);
+    return new PageImpl<>(pluginRequestEntityList);
   }
 }

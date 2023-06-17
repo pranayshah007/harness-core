@@ -231,8 +231,8 @@ public class AppMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     MigrationContext migrationContext = MigrationContext.builder()
                                             .entities(Collections.emptyMap())
                                             .migratedEntities(Collections.emptyMap())
@@ -272,7 +272,7 @@ public class AppMigrationService extends NgMigrationService {
               .build();
       Response<ResponseDTO<ConnectorResponseDTO>> resp = null;
       resp = ngClient
-                 .createVariable(auth, inputDTO.getAccountIdentifier(),
+                 .createVariable(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                      JsonUtils.asTree(Collections.singletonMap("variable", variable)))
                  .execute();
       MigrationImportSummaryDTO variableMigrationSummaryDTO = handleResp(yamlFile, resp);

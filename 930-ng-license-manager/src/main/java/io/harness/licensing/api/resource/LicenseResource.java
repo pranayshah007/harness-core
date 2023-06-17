@@ -8,6 +8,7 @@
 package io.harness.licensing.api.resource;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.EDIT_LICENSE_PERMISSION;
 import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.VIEW_LICENSE_PERMISSION;
 
 import io.harness.ModuleType;
@@ -15,6 +16,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.exception.IllegalArgumentException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.NGLicensingEntityConstants;
@@ -198,7 +200,7 @@ public class LicenseResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Free License of the specified Module.")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   startFreeLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -231,7 +233,7 @@ public class LicenseResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Trial License of the specified Module.")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   startTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -240,6 +242,7 @@ public class LicenseResource {
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
       @Valid @Body StartTrialDTO startTrialRequestDTO,
       @Parameter(description = "Referrer URL") @QueryParam(NGCommonEntityConstants.REFERER) String referer) {
+    checkCITrialLicense(startTrialRequestDTO);
     return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO, referer));
   }
 
@@ -252,7 +255,7 @@ public class LicenseResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the Trial License of the specified Module.")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   @InternalApi
   public ResponseDTO<ModuleLicenseDTO>
   extendTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -260,7 +263,14 @@ public class LicenseResource {
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
           description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
       @Valid @Body StartTrialDTO startTrialRequestDTO) {
+    checkCITrialLicense(startTrialRequestDTO);
     return ResponseDTO.newResponse(licenseService.extendTrialLicense(accountIdentifier, startTrialRequestDTO));
+  }
+
+  private void checkCITrialLicense(StartTrialDTO startTrialRequestDTO) {
+    if (ModuleType.CI.equals(startTrialRequestDTO.getModuleType())) {
+      throw new InvalidRequestException("Trial license for CI module is not supported!");
+    }
   }
 
   @GET

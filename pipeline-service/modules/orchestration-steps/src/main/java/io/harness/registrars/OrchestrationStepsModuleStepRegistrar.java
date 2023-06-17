@@ -8,15 +8,18 @@
 package io.harness.registrars;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
+import io.harness.plancreator.steps.pluginstep.InitContainerV2Step;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.execution.CdSscaEnforcementStep;
 import io.harness.ssca.execution.CdSscaOrchestrationStep;
 import io.harness.steps.StagesStep;
 import io.harness.steps.approval.stage.ApprovalStageStep;
@@ -96,6 +99,8 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(InitContainerStep.STEP_TYPE, InitContainerStep.class);
     engineSteps.put(RunContainerStep.STEP_TYPE, RunContainerStep.class);
     engineSteps.put(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_TYPE, CdSscaOrchestrationStep.class);
+    engineSteps.put(INIT_CONTAINER_V2_STEP_TYPE, InitContainerV2Step.class);
+    engineSteps.put(CdSscaEnforcementStep.STEP_TYPE, CdSscaEnforcementStep.class);
 
     return engineSteps;
   }

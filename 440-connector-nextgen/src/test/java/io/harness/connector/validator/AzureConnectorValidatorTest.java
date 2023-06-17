@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -64,11 +64,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -116,14 +117,15 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(AzureValidateTaskResponse.builder()
-                        .connectorValidationResult(
-                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx",
+            AzureValidateTaskResponse.builder()
+                .connectorValidationResult(
+                    ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                .build()));
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test
@@ -149,14 +151,15 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(AzureValidateTaskResponse.builder()
-                        .connectorValidationResult(
-                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx",
+            AzureValidateTaskResponse.builder()
+                .connectorValidationResult(
+                    ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                .build()));
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test
@@ -180,14 +183,15 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(AzureValidateTaskResponse.builder()
-                        .connectorValidationResult(
-                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
-                        .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2ReturnTaskId(any()))
+        .thenReturn(Pair.of("xxxxxx",
+            AzureValidateTaskResponse.builder()
+                .connectorValidationResult(
+                    ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                .build()));
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2ReturnTaskId(any());
 
     azureConnectorDTO =
         AzureConnectorDTO.builder()
@@ -209,7 +213,7 @@ public class AzureConnectorValidatorTest extends CategoryTest {
 
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2(any());
+    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2ReturnTaskId(any());
   }
 
   @Test
@@ -246,11 +250,13 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     on(azureValidationHandler).set("azureNgConfigMapper", azureNgConfigMapper);
     on(azureValidationHandler).set("azureAuthorizationClient", azureAuthorizationClient);
     when(azureValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationHandler);
 
     AzureValidationParamsProvider azureValidationParamsProvider = new AzureValidationParamsProvider();
     on(azureValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()
@@ -290,11 +296,13 @@ public class AzureConnectorValidatorTest extends CategoryTest {
                     "Connector with credential type InheritFromDelegate does not support validation through harness")
                 .build());
     when(azureValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationHandler);
 
     AzureValidationParamsProvider azureValidationParamsProvider = new AzureValidationParamsProvider();
     on(azureValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Azure"))).thenReturn(azureValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Azure")))
+        .thenReturn(azureValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()

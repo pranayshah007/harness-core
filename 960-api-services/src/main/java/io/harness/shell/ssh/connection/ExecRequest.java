@@ -7,12 +7,14 @@
 
 package io.harness.shell.ssh.connection;
 
+import io.harness.shell.ssh.client.BaseSshRequest;
+
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class ExecRequest {
+public class ExecRequest extends BaseSshRequest {
   private String command;
   private boolean displayCommand;
 }

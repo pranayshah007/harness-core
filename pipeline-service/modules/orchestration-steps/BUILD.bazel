@@ -15,12 +15,14 @@ java_library(
     ],
     visibility = [
         "//100-migrator:__subpackages__",
+        "//125-cd-nextgen:__subpackages__",
         "//pipeline-service:__subpackages__",
     ],
     deps = [
         "//:lombok",
         "//332-ssca/cd:module",
         "//878-ng-common-utilities:module",
+        "//878-ng-common-utilities/src/main/java/io/harness/beans/common:module",
         "//880-pipeline-cd-commons:module",
         "//950-telemetry:module",
         "//953-yaml-commons:module",
@@ -28,6 +30,7 @@ java_library(
         "//960-continuous-features:module",
         "//960-yaml-sdk:module",
         "//999-annotations:module",
+        "//clients/ci:module",
         "//clients/notification:module",
         "//clients/pipeline-service/pms-sdk-core:module",
         "//pipeline-service/modules/orchestration:module",

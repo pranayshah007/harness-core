@@ -59,8 +59,7 @@ public class BackstageEnvVariablesSyncJob implements Managed {
     List<String> accountIds = namespaceService.getAccountIds();
     accountIds.forEach(account -> {
       try {
-        List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(account);
-        backstageEnvVariableService.sync(secrets, account);
+        backstageEnvVariableService.findAndSync(account);
       } catch (Exception e) {
         log.error("Could not sync backstage env variables for account {}", account, e);
       }

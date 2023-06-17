@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("googleFunctionStepOutcome")
 @JsonTypeName("googleFunctionStepOutcome")
-@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionStepOutcome")
+@RecasterAlias("io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome")
 public class GoogleFunctionStepOutcome implements Outcome, ExecutionSweepingOutput {
   String functionName;
   String runtime;

@@ -27,11 +27,11 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -80,8 +80,8 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -390,6 +390,6 @@ public class YamlGitServiceImplTest extends WingsBaseTest {
     yamlGitService.raiseAlertForGitFailure(ACCOUNT_ID, APP_ID, alertDetails);
     verify(alertService)
         .openAlert(eq(ACCOUNT_ID), eq(APP_ID), eq(AlertType.GitConnectionError),
-            Matchers.notNull(GitConnectionErrorAlert.class));
+            ArgumentMatchers.notNull(GitConnectionErrorAlert.class));
   }
 }

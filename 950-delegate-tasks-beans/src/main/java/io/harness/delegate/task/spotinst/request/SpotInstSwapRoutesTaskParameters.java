@@ -32,9 +32,10 @@ public class SpotInstSwapRoutesTaskParameters extends SpotInstTaskParameters {
   public SpotInstSwapRoutesTaskParameters(String appId, String accountId, String activityId, String commandName,
       String workflowExecutionId, Integer timeoutIntervalInMin, String awsRegion, ElastiGroup newElastiGroup,
       ElastiGroup oldElastiGroup, boolean downsizeOldElastiGroup, boolean rollback, String elastiGroupNamePrefix,
-      int steadyStateTimeOut, List<LoadBalancerDetailsForBGDeployment> lBdetailsForBGDeploymentList) {
+      int steadyStateTimeOut, List<LoadBalancerDetailsForBGDeployment> lBdetailsForBGDeploymentList,
+      boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin, SPOT_INST_SWAP_ROUTES,
-        awsRegion);
+        awsRegion, timeoutSupported);
     this.newElastiGroup = newElastiGroup;
     this.oldElastiGroup = oldElastiGroup;
     this.downsizeOldElastiGroup = downsizeOldElastiGroup;

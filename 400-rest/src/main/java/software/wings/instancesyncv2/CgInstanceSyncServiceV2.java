@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
@@ -32,11 +33,15 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.perpetualtask.instancesyncv2.ResponseBatchConfig;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
+import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.TaskType;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelper;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -48,7 +53,9 @@ import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.impl.instance.Status;
+import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
@@ -96,6 +103,9 @@ public class CgInstanceSyncServiceV2 {
   private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   private final InstanceService instanceService;
   private final PerpetualTaskService perpetualTaskService;
+  private final DelegateTaskService delegateTaskService;
+  private final EnvironmentService environmentService;
+  private final ServiceResourceService serviceResourceService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -104,19 +114,27 @@ public class CgInstanceSyncServiceV2 {
 
   public void handleInstanceSync(DeploymentEvent event) {
     if (isNull(event)) {
-      log.error("Null event sent for Instance Sync Processing. Doing nothing");
+      log.warn("Null event sent for Instance Sync Processing. Doing nothing");
       return;
     }
 
     if (CollectionUtils.isEmpty(event.getDeploymentSummaries())) {
-      log.error("No deployment summaries present in the deployment event. Doing nothing");
+      log.warn("No deployment summaries present in the deployment event. Doing nothing");
       return;
     }
 
     String infraMappingId = event.getDeploymentSummaries().iterator().next().getInfraMappingId();
     String appId = event.getDeploymentSummaries().iterator().next().getAppId();
+    String accountId = event.getDeploymentSummaries().iterator().next().getAccountId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infraMappingId);
     isSupportedCloudProvider(infrastructureMapping.getComputeProviderType());
+
+    if (taskDetailsService.getForInfraMapping(accountId, infraMappingId) == null
+        && !(delegateTaskService.isTaskTypeSupportedByAllDelegates(
+            accountId, TaskType.INSTANCE_SYNC_V2_CG_SUPPORT.name()))) {
+      throw new UnsupportedOperationException(
+          format("INSTANCE_SYNC_V2_CG_SUPPORT task type is not supported for accountId: [%s]", accountId));
+    }
 
     int retryCount = 0;
     while (retryCount < HANDLE_NEW_DEPLOYMENT_MAX_RETRIES) {
@@ -132,7 +150,7 @@ public class CgInstanceSyncServiceV2 {
       } catch (NotSupportedException ex) {
         throw ex;
       } catch (Exception ex) {
-        log.error(
+        log.warn(
             format("Failed Attempt no. [%s] while handling deployment event for executionId [%s], infraMappingId [%s]",
                 retryCount + 1, event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(),
                 infrastructureMapping.getUuid()),
@@ -153,7 +171,7 @@ public class CgInstanceSyncServiceV2 {
     List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
 
     if (isEmpty(deploymentSummaries)) {
-      log.error("Deployment Summaries can not be empty or null");
+      log.warn("Deployment Summaries can not be empty or null");
       return;
     }
 
@@ -202,7 +220,7 @@ public class CgInstanceSyncServiceV2 {
 
     if (!result.getExecutionStatus().isEmpty()
         && !result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
-      log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
+      log.warn("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
           result, result.getErrorMessage());
 
       if (!featureFlagService.isEnabled(FeatureName.INSTANCE_SYNC_V2_CG, result.getAccountId())) {
@@ -243,6 +261,11 @@ public class CgInstanceSyncServiceV2 {
 
     List<InstanceSyncTaskDetails> instanceSyncTaskDetailsList =
         taskDetailsService.fetchAllForPerpetualTask(result.getAccountId(), perpetualTaskId);
+    if (isEmpty(instanceSyncTaskDetailsList)) {
+      perpetualTaskService.deleteTask(result.getAccountId(), perpetualTaskId);
+      log.info("Deleted Instance Sync V2 Perpetual task: [{}] .", perpetualTaskId);
+      return;
+    }
     Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap = new HashMap<>();
     for (InstanceSyncTaskDetails instanceSyncTaskDetails : instanceSyncTaskDetailsList) {
       instanceSyncTaskDetailsMap.put(instanceSyncTaskDetails.getUuid(), instanceSyncTaskDetails);
@@ -277,6 +300,14 @@ public class CgInstanceSyncServiceV2 {
       }
       InfrastructureMapping infraMapping =
           infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+      Environment environment = environmentService.get(infraMapping.getAppId(), infraMapping.getEnvId(), false);
+      Service service = serviceResourceService.getWithDetails(infraMapping.getAppId(), infraMapping.getServiceId());
+      if (environment == null || service == null) {
+        taskDetailsService.deleteByInfraMappingId(infraMapping.getAccountId(), infraMapping.getUuid());
+        continue;
+      }
+
       Optional<InstanceHandler> instanceHandler = Optional.of(instanceHandlerFactory.getInstanceHandler(infraMapping));
       InstanceSyncByPerpetualTaskHandler instanceSyncHandler =
           (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
@@ -317,7 +348,7 @@ public class CgInstanceSyncServiceV2 {
             // No Action Required
           } catch (Exception ex) {
             handleSyncFailure(infraMapping, ex);
-            log.error(ex.getMessage());
+            log.warn(ExceptionUtils.getMessage(ex));
           } finally {
             Status status = instanceSyncHandler.getStatus(infraMapping, delegateResponse);
             if (status.isSuccess()) {

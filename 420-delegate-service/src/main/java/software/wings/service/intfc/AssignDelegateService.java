@@ -47,11 +47,19 @@ public interface AssignDelegateService {
 
   List<String> getEligibleDelegatesToExecuteTaskV2(DelegateTask task);
 
+  /**
+   * Get eligible delegate ids for this task. This function is used for new set of delegate APIs including
+   * setupExecutionInfra, Execute, Cleanup
+   * @param task the incoming task
+   * @return List of delegate ids
+   */
+  List<String> getEligibleDelegatesToTask(DelegateTask task);
+
   List<String> getConnectedDelegateList(List<String> delegates, DelegateTask delegateTask);
 
   boolean canAssignTask(String delegateId, DelegateTask task);
 
   boolean canAssignTaskV2(String delegateId, DelegateTask task);
 
-  List<Delegate> fetchActiveDelegates(String accountId);
+  List<Delegate> fetchActiveDelegates(DelegateTask delegateTask);
 }

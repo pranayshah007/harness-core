@@ -21,11 +21,11 @@ import static io.harness.rule.OwnerRule.BOJANA;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -78,7 +78,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -210,7 +210,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandExecutionResponse cfCommandExecutionResponse =
         pcfRollbackCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
@@ -499,7 +499,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     doReturn(prevActiveDetailsAfterUpSize)
         .when(cfDeploymentManager)
         .upsizeApplicationWithSteadyStateCheck(any(), any());
-    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandExecutionResponse cfCommandExecutionResponse =
         pcfRollbackCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
@@ -512,7 +512,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -522,9 +522,9 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(routesCaptorValue.get(0)).isEqualTo(prodRoutes.get(0));
     assertThat(routesCaptorValue.get(1)).isEqualTo(prodRoutes.get(1));
 
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -601,7 +601,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(cfDeploymentManager)
         .upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any(), any());
     doReturn(getPreviousReleasesAfterNonVersioningRenaming(cfCommandRequest))
         .when(cfDeploymentManager)
         .getPreviousReleases(any(), eq(cfAppNamePrefix));
@@ -617,7 +617,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -627,9 +627,9 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(routesCaptorValue.get(0)).isEqualTo(prodRoutes.get(0));
     assertThat(routesCaptorValue.get(1)).isEqualTo(prodRoutes.get(1));
 
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -728,7 +728,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(cfDeploymentManager)
         .upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandExecutionResponse cfCommandExecutionResponse =
         pcfRollbackCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
@@ -741,7 +741,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -751,9 +751,9 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(routesCaptorValue.get(0)).isEqualTo(prodRoutes.get(0));
     assertThat(routesCaptorValue.get(1)).isEqualTo(prodRoutes.get(1));
 
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -845,7 +845,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(cfDeploymentManager)
         .upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any(), any());
     doReturn(getPreviousReleasesDuringNonVersionToVersionRollback(cfCommandRequest))
         .when(cfDeploymentManager)
         .getPreviousReleases(any(), eq(cfAppNamePrefix));
@@ -861,7 +861,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
 
-    ArgumentCaptor<ArrayList> routesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> routesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> cfRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
 
     verify(cfDeploymentManager, times(1))
@@ -871,9 +871,9 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(routesCaptorValue.get(0)).isEqualTo(prodRoutes.get(0));
     assertThat(routesCaptorValue.get(1)).isEqualTo(prodRoutes.get(1));
 
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
 
-    ArgumentCaptor<ArrayList> unMapRoutesCaptor = ArgumentCaptor.forClass(ArrayList.class);
+    ArgumentCaptor<List> unMapRoutesCaptor = ArgumentCaptor.forClass(List.class);
     ArgumentCaptor<CfRequestConfig> unMapRequestCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);
     verify(cfDeploymentManager, times(1))
         .unmapRouteMapForApplication(unMapRequestCaptor.capture(), unMapRoutesCaptor.capture(), any());
@@ -965,7 +965,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     doReturn(prevActiveDetailsAfterUpSize)
         .when(cfDeploymentManager)
         .upsizeApplicationWithSteadyStateCheck(any(), any());
-    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any());
+    doReturn(prevActiveDetailsAfterUpSize).when(cfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandExecutionResponse cfCommandExecutionResponse =
         pcfRollbackCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
@@ -988,7 +988,7 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
                                      .build()));
 
     verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
-    verify(cfDeploymentManager, times(1)).resizeApplication(any());
+    verify(cfDeploymentManager, times(1)).resizeApplication(any(), any());
     verify(cfDeploymentManager, times(0)).renameApplication(any(), any());
 
     ArgumentCaptor<CfRequestConfig> cfRequestConfigCaptor = ArgumentCaptor.forClass(CfRequestConfig.class);

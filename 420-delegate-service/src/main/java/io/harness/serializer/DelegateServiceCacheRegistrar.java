@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.utils.DelegateJWTCacheValue;
 import io.harness.redis.intfc.DelegateRedissonCacheManager;
 
 import com.google.inject.AbstractModule;
@@ -34,6 +35,7 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   public static final String DELEGATE_GROUP_CACHE = "delegate_group";
   public static final String DELEGATES_FROM_GROUP_CACHE = "delegates_from_group";
   public static final String ABORTED_TASK_LIST_CACHE = "aborted_task_list";
+  public static final String DELEGATE_TOKEN_JWT_CACHE = "delegate_token_jwt";
   private static final Integer CACHE_SIZE = 10000;
 
   @Provides
@@ -64,6 +66,15 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
     return cacheManager.getCache(ABORTED_TASK_LIST_CACHE, String.class, Set.class, getLocalCachedMapOptions(30));
   }
 
+  @Provides
+  @Named(DELEGATE_TOKEN_JWT_CACHE)
+  @Singleton
+  public RLocalCachedMap<String, DelegateJWTCacheValue> getDelegateTokenJWTCache(
+      DelegateRedissonCacheManager cacheManager) {
+    return cacheManager.getCache(
+        DELEGATE_TOKEN_JWT_CACHE, String.class, DelegateJWTCacheValue.class, getLocalCachedMapOptions(25));
+  }
+
   @Override
   protected void configure() {
     registerRequiredBindings();
@@ -81,6 +92,9 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
             new TypeLiteral<RLocalCachedMap<String, List<Delegate>>>() {}, Names.named(DELEGATES_FROM_GROUP_CACHE)));
     rmapBinder.addBinding(ABORTED_TASK_LIST_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, Set<String>>>() {
     }, Names.named(ABORTED_TASK_LIST_CACHE)));
+    rmapBinder.addBinding(DELEGATE_TOKEN_JWT_CACHE)
+        .to(Key.get(new TypeLiteral<RLocalCachedMap<String, DelegateJWTCacheValue>>() {},
+            Names.named(DELEGATE_TOKEN_JWT_CACHE)));
   }
 
   public LocalCachedMapOptions getLocalCachedMapOptions(int timeToLiveInMinutes) {

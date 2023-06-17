@@ -15,10 +15,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.exception.ConnectorNotFoundException;
+import io.harness.git.GitClientHelper;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
@@ -92,19 +94,32 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
         filePaths = findFilesResponse.getFilesList().stream().map(PRFile::getPath).collect(toSet());
       }
     } else {
-      CompareCommitsResponse compareCommitsResponse =
-          Failsafe.with(retryPolicy)
-              .get(()
-                       -> scmServiceClient.compareCommits(
-                           connector, params.getPreviousCommit(), params.getLatestCommit(), scmBlockingStub));
+      CompareCommitsResponse compareCommitsResponse;
+      if (isBitBucketOnPrem(connector)) {
+        compareCommitsResponse = Failsafe.with(retryPolicy)
+                                     .get(()
+                                              -> scmServiceClient.compareCommits(connector, params.getLatestCommit(),
+                                                  params.getPreviousCommit(), scmBlockingStub));
+      } else {
+        compareCommitsResponse = Failsafe.with(retryPolicy)
+                                     .get(()
+                                              -> scmServiceClient.compareCommits(connector, params.getPreviousCommit(),
+                                                  params.getLatestCommit(), scmBlockingStub));
+      }
       if (compareCommitsResponse != null && compareCommitsResponse.getFilesCount() > 0) {
         filePaths = compareCommitsResponse.getFilesList().stream().map(PRFile::getPath).collect(toSet());
       }
     }
+
+    if (filePaths.isEmpty()) {
+      log.warn(
+          "there were 0 changedFiles for previous commit hash {} latest commit hash {} and  repo {} connectorIdentifier {}",
+          params.getPreviousCommit(), params.getLatestCommit(), connector.getUrl(), connectorIdentifier);
+    }
     return filePaths;
   }
 
-  private void decrypt(ScmConnector connector, List<EncryptedDataDetail> encryptedDataDetails) {
+  public void decrypt(ScmConnector connector, List<EncryptedDataDetail> encryptedDataDetails) {
     final DecryptableEntity decryptableEntity = secretDecryptor.decrypt(
         GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(connector), encryptedDataDetails);
     GitApiAccessDecryptionHelper.setAPIAccessDecryptableEntity(connector, decryptableEntity);
@@ -118,5 +133,10 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
         .withMaxAttempts(MAX_ATTEMPTS)
         .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  public boolean isBitBucketOnPrem(ScmConnector connector) {
+    return ConnectorType.BITBUCKET.equals(connector.getConnectorType())
+        && !GitClientHelper.isBitBucketSAAS(connector.getUrl());
   }
 }

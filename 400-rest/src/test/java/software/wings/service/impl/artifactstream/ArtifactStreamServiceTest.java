@@ -61,9 +61,9 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -160,8 +160,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -3777,7 +3777,7 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void testListArtifactStreamSummaryWithFeatureFlagEnabled() {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(true);
     createNexusArtifactStreamAtConnectorLevel("nexus1");
     createNexusArtifactStreamAtConnectorLevel("nexus2");
     List<ArtifactStreamSummary> artifactStreamSummary = artifactStreamService.listArtifactStreamSummary(APP_ID);

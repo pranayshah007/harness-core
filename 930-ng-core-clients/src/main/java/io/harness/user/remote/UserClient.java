@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageResponse;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
@@ -26,6 +27,7 @@ import io.harness.rest.RestResponse;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 
 import java.util.List;
@@ -44,11 +46,13 @@ public interface UserClient {
   String SEARCH_TERM_KEY = "searchTerm";
   String USERS_SEARCH_API = "ng/user/search";
   String USERS_API = "ng/user";
+  String USERS_API_INCLUDE_SUPPORT_USER = "ng/user/support-users";
 
   String USERS_AGGREGATE_API = "user";
   String USERS_API_OAUTH = "ng/user/oauth";
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
   String USER_SIGNUP_COMMUNITY = "ng/user/signup-invite/community";
+  String USER_SIGNUP_MARKETPLACE = "ng/user/signup-invite/marketplace";
   String USER_BATCH_LIST_API = "ng/user/batch";
   String USER_EMAILS_BATCH_LIST_API = "ng/user/batch-emails";
   String SCIM_USER_SEARCH = "ng/user/scim/search";
@@ -57,9 +61,11 @@ public interface UserClient {
   String SCIM_USER_UPDATE = "ng/user/scim";
   String SCIM_USER_DISABLED_UPDATE = "ng/user/scim/disabled";
   String USER_IN_ACCOUNT_VERIFICATION = "ng/user/user-account";
+  String USER_UPDATE_WITH_SOURCE = "ng/user/user-account-with-source";
   String USER_SAFE_DELETE = "ng/user/safeDelete/{userId}";
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
+  String CREATE_USER_WITH_ACCOUNT_LEVEL_DATA_VIA_INVITE = "ng/user/invites/user";
   String CHECK_USER_LIMIT = "ng/user/limit-check";
   String USER_TWO_FACTOR_AUTH_SETTINGS = "ng/user/two-factor-auth/{auth-mechanism}";
   String USER_ENABLE_TWO_FACTOR_AUTH = "ng/user/enable-two-factor-auth";
@@ -101,6 +107,11 @@ public interface UserClient {
   Call<RestResponse<Boolean>> updateUserDisabled(@Query(value = "accountId") String accountId,
       @Query(value = "userId") String userId, @Query("disabled") boolean disabled);
 
+  @POST(USER_SIGNUP_MARKETPLACE)
+  Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(@Query("inviteId") String inviteId,
+      @Query("marketPlaceToken") String marketPlaceToken, @Query("email") String email,
+      @Query("password") String password, @Body SignupDTO dto);
+
   @POST(USER_SIGNUP_COMMUNITY)
   Call<RestResponse<UserInfo>> createCommunityUserAndCompleteSignup(@Body SignupInviteDTO userRequest);
 
@@ -109,7 +120,13 @@ public interface UserClient {
       @Query("offset") String offset, @Query("limit") String limit, @Query("searchTerm") String searchTerm,
       @Query("requireAdminStatus") boolean requireAdminStatus);
 
-  @GET(USERS_API + "/{userId}") Call<RestResponse<Optional<UserInfo>>> getUserById(@Path("userId") String userId);
+  @GET(USERS_API + "/{userId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserById(
+      @Path("userId") String userId, @Query("includeSupportAccounts") boolean includeSupportAccounts);
+
+  @GET(USERS_API + "/{userId}/{accountId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserByIdAndAccount(
+      @Path("userId") String userId, @Path(value = "accountId") String accountId);
 
   @GET(USERS_API + "/email/{emailId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByEmailId(@Path("emailId") String emailId);
@@ -130,7 +147,9 @@ public interface UserClient {
   Call<RestResponse<Boolean>> createUserAndCompleteNGInvite(@Body UserInviteDTO userInviteDTO,
       @Query("isScimInvite") boolean isScimInvite,
       @Query("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail);
-
+  @PUT(CREATE_USER_WITH_ACCOUNT_LEVEL_DATA_VIA_INVITE)
+  Call<RestResponse<Boolean>> createUserWithAccountLevelDataAndCompleteNGInvite(@Body UserInviteDTO userInviteDTO,
+      @Query("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail);
   @GET(USER_IN_ACCOUNT_VERIFICATION)
   Call<RestResponse<Boolean>> isUserInAccount(
       @Query(value = "accountId") String accountId, @Query(value = "userId") String userId);
@@ -138,6 +157,10 @@ public interface UserClient {
   @POST(USER_IN_ACCOUNT_VERIFICATION)
   Call<RestResponse<Boolean>> addUserToAccount(
       @Query(value = "userId") String userId, @Query(value = "accountId") String accountId);
+
+  @POST(USER_UPDATE_WITH_SOURCE)
+  Call<RestResponse<Boolean>> updateNGUserToCGWithSource(@Query(value = "userId") String userId,
+      @Query(value = "accountId") String accountId, @Body UserSource userSource);
 
   @GET(USER_TWO_FACTOR_AUTH_SETTINGS)
   Call<RestResponse<Optional<TwoFactorAuthSettingsInfo>>> getUserTwoFactorAuthSettings(

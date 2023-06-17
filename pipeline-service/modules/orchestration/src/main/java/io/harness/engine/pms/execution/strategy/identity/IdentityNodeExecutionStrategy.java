@@ -10,7 +10,6 @@ package io.harness.engine.pms.execution.strategy.identity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
-import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
@@ -21,7 +20,6 @@ import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
-import io.harness.engine.pms.advise.handlers.MarkAsFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
 import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
@@ -145,15 +143,12 @@ public class IdentityNodeExecutionStrategy
 
       // Pipeline Stage is a stage-leaf node. Need to set executable response which contains Child ExecutionId. This
       // will be required to show child graph in retried stage.
-      if (originalNodeExecution.getNode().getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_STAGE)) {
-        return nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), originalNodeExecution.getStatus(),
-            update
-            -> update.set(NodeExecutionKeys.executableResponses, originalNodeExecution.getExecutableResponses()),
-            EnumSet.noneOf(Status.class));
-      }
 
-      return nodeExecutionService.updateStatusWithOps(
-          nodeExecution.getUuid(), originalNodeExecution.getStatus(), null, EnumSet.noneOf(Status.class));
+      // Adding executable response as this will help in fetching logs for retried stages
+      return nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), originalNodeExecution.getStatus(),
+          update
+          -> update.set(NodeExecutionKeys.executableResponses, originalNodeExecution.getExecutableResponses()),
+          EnumSet.noneOf(Status.class));
     });
     processAdviserResponse(ambiance, nodeExecution.getAdviserResponse());
   }
@@ -184,8 +179,7 @@ public class IdentityNodeExecutionStrategy
     return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
         || adviserResponseHandler instanceof MarkSuccessAdviseHandler
         || adviserResponseHandler instanceof RetryAdviserResponseHandler
-        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler
-        || adviserResponseHandler instanceof MarkAsFailureAdviseHandler;
+        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
   }
 
   @Override

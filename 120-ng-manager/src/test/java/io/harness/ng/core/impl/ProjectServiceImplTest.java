@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEET;
@@ -30,8 +31,8 @@ import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -49,6 +50,9 @@ import io.harness.context.GlobalContext;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.favorites.ResourceType;
+import io.harness.favorites.entities.Favorite;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.manage.GlobalContextManager;
@@ -75,6 +79,7 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
+import io.harness.utils.UserHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
@@ -82,6 +87,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -126,6 +132,8 @@ public class ProjectServiceImplTest extends CategoryTest {
   private ProjectServiceImpl projectService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
+  @Mock private FavoritesService favoritesService;
+  @Mock private UserHelperService userHelperService;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -134,7 +142,7 @@ public class ProjectServiceImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
         outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, featureFlagService, defaultUserGroupService));
+        yamlGitConfigService, featureFlagService, defaultUserGroupService, favoritesService, userHelperService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -374,14 +382,15 @@ public class ProjectServiceImplTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String searchTerm = randomAlphabetic(5);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(projectRepository.findAllProjects(any(Criteria.class))).thenReturn(Collections.emptyList());
+    when(projectRepository.findAll(any(Criteria.class))).thenReturn(Collections.emptyList());
     when(projectRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
 
     Set<String> orgIdentifiers = Collections.singleton(orgIdentifier);
     Page<Project> projectPage = projectService.listPermittedProjects(accountIdentifier, unpaged(),
-        ProjectFilterDTO.builder().orgIdentifiers(orgIdentifiers).searchTerm(searchTerm).moduleType(CD).build());
+        ProjectFilterDTO.builder().orgIdentifiers(orgIdentifiers).searchTerm(searchTerm).moduleType(CD).build(),
+        Boolean.FALSE);
 
-    verify(projectRepository, times(1)).findAllProjects(criteriaArgumentCaptor.capture());
+    verify(projectRepository, times(1)).findAll(criteriaArgumentCaptor.capture());
 
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document criteriaObject = criteria.getCriteriaObject();
@@ -393,6 +402,97 @@ public class ProjectServiceImplTest extends CategoryTest {
     assertTrue(criteriaObject.containsKey(ProjectKeys.modules));
 
     assertEquals(0, projectPage.getTotalElements());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testlistPermittedProjects() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String searchTerm = randomAlphabetic(5);
+    Project project = Project.builder()
+                          .id(randomAlphabetic(10))
+                          .identifier(randomAlphabetic(10))
+                          .accountIdentifier(accountIdentifier)
+                          .orgIdentifier(orgIdentifier)
+                          .build();
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(project.getIdentifier())
+                      .build();
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(projectRepository.findAll(any(Criteria.class))).thenReturn(List.of(project));
+    when(projectRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(List.of(project), 1));
+    when(scopeAccessHelper.getPermittedScopes(any())).thenReturn(List.of(scope));
+
+    Set<String> orgIdentifiers = Collections.singleton(orgIdentifier);
+    Page<Project> projectPage = projectService.listPermittedProjects(accountIdentifier, unpaged(),
+        ProjectFilterDTO.builder().orgIdentifiers(orgIdentifiers).searchTerm(searchTerm).moduleType(CD).build(),
+        Boolean.FALSE);
+
+    verify(projectRepository, times(1)).findAll(any(Criteria.class));
+    verify(projectRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject).hasSize(1).containsKey("id");
+    Document query = (Document) criteriaObject.get("id");
+    assertThat(query).hasSize(1).containsExactly(Map.entry("$in", List.of(project.getId())));
+    System.out.println(criteriaObject);
+
+    assertEquals(1, projectPage.getTotalElements());
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testListFavoriteProjects() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String searchTerm = randomAlphabetic(5);
+    Project project = Project.builder()
+                          .id(randomAlphabetic(10))
+                          .identifier(randomAlphabetic(10))
+                          .accountIdentifier(accountIdentifier)
+                          .orgIdentifier(orgIdentifier)
+                          .build();
+    Project project2 = Project.builder()
+                           .id(randomAlphabetic(10))
+                           .identifier(randomAlphabetic(10))
+                           .accountIdentifier(accountIdentifier)
+                           .orgIdentifier(orgIdentifier)
+                           .build();
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(project.getIdentifier())
+                      .build();
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(projectRepository.findAll(any(Criteria.class))).thenReturn(List.of(project, project2));
+    when(projectRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(List.of(project2), 1));
+    when(scopeAccessHelper.getPermittedScopes(any())).thenReturn(List.of(scope));
+    when(favoritesService.getFavorites(accountIdentifier, null, null, null, ResourceType.PROJECT.toString()))
+        .thenReturn(List.of(Favorite.builder()
+                                .resourceType(ResourceType.PROJECT)
+                                .resourceIdentifier(project2.getIdentifier())
+                                .build()));
+    Set<String> orgIdentifiers = Collections.singleton(orgIdentifier);
+    Page<Project> projectPage = projectService.listPermittedProjects(accountIdentifier, unpaged(),
+        ProjectFilterDTO.builder().orgIdentifiers(orgIdentifiers).searchTerm(searchTerm).moduleType(CD).build(),
+        Boolean.TRUE);
+    verify(projectRepository, times(1)).findAll(any(Criteria.class));
+    verify(projectRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject).hasSize(1).containsKey("id");
+    Document query = (Document) criteriaObject.get("id");
+    assertThat(query).hasSize(1).containsExactly(Map.entry("$in", List.of(project.getId())));
+    System.out.println(criteriaObject);
+
+    assertEquals(1, projectPage.getTotalElements());
   }
 
   @Test

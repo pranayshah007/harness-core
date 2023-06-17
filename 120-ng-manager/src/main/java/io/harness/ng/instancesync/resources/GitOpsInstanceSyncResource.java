@@ -72,8 +72,8 @@ public class GitOpsInstanceSyncResource {
   @ApiOperation(value = "Process Gitops instances", nickname = "processGitOpsInstances")
   public ResponseDTO<Boolean> processGitOpsInstances(
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotEmpty @QueryParam(NGCommonEntityConstants.AGENT_KEY) String agentIdentifier,
       @NotNull @Valid List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     if (isEmpty(gitOpsInstanceRequestList)) {

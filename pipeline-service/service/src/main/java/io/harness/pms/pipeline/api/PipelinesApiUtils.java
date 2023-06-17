@@ -44,6 +44,7 @@ import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
@@ -379,6 +380,17 @@ public class PipelinesApiUtils {
         .repoName(gitDetails.getRepoName())
         .build();
   }
+  public static GitEntityInfo populateGitImportDetails(GitImportInfo gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .connectorRef(gitDetails.getConnectorRef())
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
 
   public static GitEntityInfo populateGitMoveDetails(GitMoveDetails gitDetails) {
     if (gitDetails == null) {
@@ -519,8 +531,6 @@ public class PipelinesApiUtils {
     switch (moveConfigOperationType) {
       case INLINE_TO_REMOTE:
         return io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
-      case REMOTE_TO_INLINE:
-        return io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
       default:
         throw new InvalidRequestException("Invalid move config type provided.");
     }

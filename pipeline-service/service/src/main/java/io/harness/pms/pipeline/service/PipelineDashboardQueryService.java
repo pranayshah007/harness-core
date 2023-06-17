@@ -184,6 +184,8 @@ public class PipelineDashboardQueryService {
         createConditions(CI_TableName, orgId, pipelineId, projectId, accountId, startInterval, endInterval);
     conditionsCD.add(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.isNotNull());
     conditionsCI.add(Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.isNotNull());
+    conditionsCD.add(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.gt(0L));
+    conditionsCI.add(Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.gt(0L));
 
     if (Objects.equals(tableName, CD_TableName)) {
       meanAndMedians =
@@ -246,6 +248,7 @@ public class PipelineDashboardQueryService {
     List<Condition> conditions =
         createConditions(table, orgId, pipelineId, projectId, accountId, startInterval, endInterval);
     conditions.add(Tables.PIPELINE_EXECUTION_SUMMARY.ENDTS.isNotNull());
+    conditions.add(Tables.PIPELINE_EXECUTION_SUMMARY.ENDTS.gt(0L));
     return this.dsl
         .select(new SelectField[] {
             DSL.avg(Tables.PIPELINE_EXECUTION_SUMMARY.ENDTS.sub(Tables.PIPELINE_EXECUTION_SUMMARY.STARTTS)).div(1000),

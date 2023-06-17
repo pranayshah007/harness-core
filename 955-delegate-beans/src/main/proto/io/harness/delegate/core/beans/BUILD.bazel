@@ -10,8 +10,11 @@ proto_library(
     name = "955_delegate_core_task_proto",
     srcs = [
         "acquire_task.proto",
+        "infra.proto",
         "plugin.proto",
         "plugin_execution_status.proto",
+        "resource.proto",
+        "secret.proto",
     ],
     visibility = ["//visibility:public"],
     deps = [

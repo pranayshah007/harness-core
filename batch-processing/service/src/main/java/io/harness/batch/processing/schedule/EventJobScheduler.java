@@ -26,6 +26,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.GcpScheduledQueryTriggerAction;
 import io.harness.batch.processing.connectors.ConnectorsHealthUpdateService;
 import io.harness.batch.processing.events.timeseries.service.intfc.CostEventService;
+import io.harness.batch.processing.governance.GovernanceRecommendationService;
 import io.harness.batch.processing.metrics.ProductMetricsService;
 import io.harness.batch.processing.reports.ScheduledReportServiceImpl;
 import io.harness.batch.processing.service.AccountExpiryCleanupService;
@@ -46,6 +47,7 @@ import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -53,6 +55,7 @@ import io.harness.logging.AutoLogContext;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -102,6 +105,7 @@ public class EventJobScheduler {
   @Autowired private CostEventService costEventService;
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private InstanceInfoTimescaleDAO instanceInfoTimescaleDAO;
+  @Autowired private GovernanceRecommendationService governanceRecommendationService;
 
   @PostConstruct
   public void orderJobs() {
@@ -326,7 +330,7 @@ public class EventJobScheduler {
   public void runBudgetAlertsJob() {
     try {
       budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
-      log.info("Budget alerts send");
+      log.info("Budget & Budget Groups alerts sent");
     } catch (Exception ex) {
       log.error("Exception while running budgetAlertsJob", ex);
     }
@@ -336,9 +340,34 @@ public class EventJobScheduler {
   public void runBudgetCostUpdateJob() {
     try {
       budgetCostUpdateService.updateCosts();
-      log.info("Costs updated for budgets");
+      log.info("Costs updated for budgets & budget groups");
     } catch (Exception ex) {
       log.error("Exception while running runBudgetCostUpdateJob", ex);
+    }
+  }
+
+  // Run once a day, midnight
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCronAws}")
+  public void runGovernanceRecommendationJob() {
+    try {
+      log.info("generateRecommendation Running for AWS");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabledAws()) {
+        governanceRecommendationService.generateRecommendation(Collections.singletonList(ConnectorType.CE_AWS));
+      }
+    } catch (Exception e) {
+      log.error("Exception while running runGovernanceRecommendationJob for AWS", e);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCronAzure}")
+  public void runGovernanceRecommendationJobForAzure() {
+    try {
+      log.info("generateRecommendation Running for Azure");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabledAzure()) {
+        governanceRecommendationService.generateRecommendation(Collections.singletonList(ConnectorType.CE_AZURE));
+      }
+    } catch (Exception e) {
+      log.error("Exception while running runGovernanceRecommendationJob for Azure", e);
     }
   }
 

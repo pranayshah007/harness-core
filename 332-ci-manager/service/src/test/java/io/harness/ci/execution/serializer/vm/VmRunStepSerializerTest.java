@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.vm.VmRunStepSerializer;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -36,6 +37,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CI)
 public class VmRunStepSerializerTest extends CategoryTest {
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private CIFeatureFlagService featureFlagService;
   @InjectMocks private VmRunStepSerializer vmRunStepSerializer;
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
@@ -63,7 +65,7 @@ public class VmRunStepSerializerTest extends CategoryTest {
             .envVariables(ParameterField.createValueField(Map.of(
                 "key1", ParameterField.createValueField("val1"), "key2", ParameterField.createValueField("val2"))))
             .build();
-    VmRunStep vmRunStep = vmRunStepSerializer.serialize(runStepInfo, ambiance, "id", null, null, null);
+    VmRunStep vmRunStep = vmRunStepSerializer.serialize(runStepInfo, ambiance, "id", null, null, null, null, null);
     assertThat(vmRunStep.isPrivileged()).isTrue();
     assertThat(vmRunStep.getImage()).isEqualTo("image");
     assertThat(vmRunStep.getCommand()).isEqualTo("set -xe; echo hello");

@@ -105,6 +105,12 @@ public class MongoPersistence implements HPersistence {
     return query(cls, req, allChecks);
   }
 
+  @Override
+  public void invalidateCacheAndPut(String cls) {
+    delegateMigrationFlagCache.invalidate(cls);
+    delegateMigrationFlagCache.put(cls, true);
+  }
+
   public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req) {
     return querySecondary(cls, req, allChecks);
   }
@@ -162,6 +168,13 @@ public class MongoPersistence implements HPersistence {
   private Map<String, AdvancedDatastore> datastoreMap;
   private Map<String, MongoClient> mongoClientMap;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
+
+  private boolean overrideDelegateMigration;
+
+  public void setOverrideDelegateMigration(boolean overrideDelegateMigration) {
+    this.overrideDelegateMigration = overrideDelegateMigration;
+  }
+
   @Inject UserProvider userProvider;
 
   @Inject
@@ -236,6 +249,10 @@ public class MongoPersistence implements HPersistence {
   @Override
   public boolean isMigrationEnabled(String className) {
     try {
+      // This will be set in case of DMS.
+      if (overrideDelegateMigration) {
+        return true;
+      }
       return delegateMigrationFlagCache.get(className);
     } catch (ExecutionException e) {
       log.error("Exception occurred while checking for delegate migration flag for class {}.", className, e);
@@ -363,7 +380,7 @@ public class MongoPersistence implements HPersistence {
     }
   }
 
-  private <T extends PersistentEntity> void onSave(T entity) {
+  protected <T extends PersistentEntity> void onSave(T entity) {
     if (entity instanceof UuidAware) {
       UuidAware uuidAware = (UuidAware) entity;
       if (uuidAware.getUuid() == null) {

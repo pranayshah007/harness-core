@@ -27,6 +27,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @OwnedBy(HarnessTeam.DEL)
@@ -48,8 +49,14 @@ public class WaiterModule extends AbstractModule {
       return QueueFactory.createQueuePublisher(
           injector, NotifyEvent.class, asList(versionInfoManager.getVersionInfo().getVersion()), config);
     } else {
-      return NgQueueFactory.createNgQueuePublisher(injector, NotifyEvent.class,
-          asList(versionInfoManager.getVersionInfo().getVersion()), config, injector.getInstance(MongoTemplate.class));
+      if (waiterConfiguration.isVersioningDisabled()) {
+        return NgQueueFactory.createNgQueuePublisher(
+            injector, NotifyEvent.class, Collections.emptyList(), config, injector.getInstance(MongoTemplate.class));
+      } else {
+        return NgQueueFactory.createNgQueuePublisher(injector, NotifyEvent.class,
+            asList(versionInfoManager.getVersionInfo().getVersion()), config,
+            injector.getInstance(MongoTemplate.class));
+      }
     }
   }
 

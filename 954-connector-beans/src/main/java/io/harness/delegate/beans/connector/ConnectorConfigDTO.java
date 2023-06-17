@@ -46,13 +46,16 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
@@ -94,6 +97,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = JiraConnectorDTO.class, name = "Jira"),
       @JsonSubTypes.Type(value = NexusConnectorDTO.class, name = "Nexus"),
       @JsonSubTypes.Type(value = GithubConnectorDTO.class, name = "Github"),
+      @JsonSubTypes.Type(value = HarnessConnectorDTO.class, name = "Harness"),
       @JsonSubTypes.Type(value = GitlabConnectorDTO.class, name = "Gitlab"),
       @JsonSubTypes.Type(value = BitbucketConnectorDTO.class, name = "Bitbucket"),
       @JsonSubTypes.Type(value = AwsCodeCommitConnectorDTO.class, name = "Codecommit"),
@@ -116,6 +120,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = TasConnectorDTO.class, name = "Tas"),
       @JsonSubTypes.Type(value = BambooConnectorDTO.class, name = "Bamboo"),
       @JsonSubTypes.Type(value = TerraformCloudConnectorDTO.class, name = "TerraformCloud"),
+      @JsonSubTypes.Type(value = SignalFXConnectorDTO.class, name = "SignalFX"),
+      @JsonSubTypes.Type(value = RancherConnectorDTO.class, name = "Rancher"),
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")

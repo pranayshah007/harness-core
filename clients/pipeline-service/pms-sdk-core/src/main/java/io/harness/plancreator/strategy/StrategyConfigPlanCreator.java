@@ -7,10 +7,15 @@
 
 package io.harness.plancreator.strategy;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -22,12 +27,15 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;
 import io.harness.steps.matrix.StrategyStepParameters;
 import io.harness.strategy.StrategyValidationUtils;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -83,6 +91,14 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
                                         .strategyType(strategyType)
                                         .shouldProceedIfFailed(metadata.getShouldProceedIfFailed())
                                         .build();
+    YamlNode currentNode = ctx.getCurrentField().getNode();
+    ExecutionMetadata executionMetadata = ctx.getGlobalContext().get("metadata").getMetadata();
+    SkipType skipType = YamlUtils.getGivenYamlNodeFromParentPath(currentNode, STEPS) != null
+            && YamlUtils.findParentNode(currentNode, ROLLBACK_STEPS) == null
+            && ExecutionModeUtils.isRollbackMode(executionMetadata.getExecutionMode())
+        ? SkipType.SKIP_TREE
+        : SkipType.NOOP;
+
     return PlanNode.builder()
         .uuid(strategyNodeId)
         .identifier(metadata.getStrategyNodeIdentifier())
@@ -95,6 +111,7 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
                 .build())
         .skipExpressionChain(true)
+        .skipGraphType(skipType)
         .adviserObtainments(metadata.getAdviserObtainments())
         .build();
   }

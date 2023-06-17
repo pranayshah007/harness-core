@@ -10,23 +10,27 @@ package io.harness.idp.onboarding.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageResponse;
+import io.harness.spec.server.idp.v1.model.GenerateYamlRequest;
+import io.harness.spec.server.idp.v1.model.GenerateYamlResponse;
 import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesCountResponse;
+import io.harness.spec.server.idp.v1.model.ImportEntitiesBase;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
-import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
 import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 
-import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface OnboardingService {
   HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier);
 
   PageResponse<HarnessBackstageEntities> getHarnessEntities(String accountIdentifier, int page, int limit, String sort,
-      String order, String searchTerm, List<String> projectsToFilter);
+      String order, String searchTerm, String projectToFilter);
+
+  GenerateYamlResponse generateYaml(String harnessAccount, GenerateYamlRequest generateYamlRequest);
 
   ImportEntitiesResponse importHarnessEntities(
-      String accountIdentifier, ImportHarnessEntitiesRequest importHarnessEntitiesRequest);
+      String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) throws ExecutionException;
 
   ImportEntitiesResponse manualImportEntity(String harnessAccount, ManualImportEntityRequest manualImportEntityRequest);
 }

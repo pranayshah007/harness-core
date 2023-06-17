@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.pubsub.consumer;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.BatchProcessingException;
@@ -14,9 +15,15 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.service.LabelFlattenedService;
+import io.harness.ff.FeatureFlagService;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 
 import software.wings.beans.Account;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
@@ -32,6 +39,9 @@ import com.google.inject.Singleton;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.Subscription;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +49,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.helpers.MessageFormatter;
+import retrofit2.Call;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -48,13 +59,16 @@ public class BigQueryUpdateTopicSubscriber {
   private static final String FULL_SUBSCRIPTION_FORMAT = "projects/{}/subscriptions/{}";
   private static final String FULL_TOPIC_NAME_FORMAT = "projects/{}/topics/{}";
   @Inject private BatchMainConfig config;
-  @Inject BigQueryService bigQueryService;
-  @Inject BigQueryHelper bigQueryHelper;
-  @Inject BigQueryHelperService bigQueryHelperService;
-  @Inject BusinessMappingService businessMappingService;
-  @Inject BusinessMappingHistoryService businessMappingHistoryService;
-  @Inject ViewsQueryBuilder viewsQueryBuilder;
-  @Inject CloudToHarnessMappingService cloudToHarnessMappingService;
+  @Inject private BigQueryService bigQueryService;
+  @Inject private BigQueryHelper bigQueryHelper;
+  @Inject private BigQueryHelperService bigQueryHelperService;
+  @Inject private BusinessMappingService businessMappingService;
+  @Inject private BusinessMappingHistoryService businessMappingHistoryService;
+  @Inject private ViewsQueryBuilder viewsQueryBuilder;
+  @Inject private CloudToHarnessMappingService cloudToHarnessMappingService;
+  @Inject private NgLicenseHttpClient ngLicenseHttpClient;
+  @Inject private FeatureFlagService featureFlagService;
+  @Inject private LabelFlattenedService labelFlattenedService;
   Subscriber subscriber;
 
   public void subscribeAsync() throws IOException {
@@ -90,16 +104,18 @@ public class BigQueryUpdateTopicSubscriber {
     }
 
     // Get list of accounts in the current cluster
-    List<Account> ceEnabledAccounts = cloudToHarnessMappingService.getCeEnabledAccounts();
-    Set<String> accountsInCluster = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toSet());
+    Set<String> accountsInCluster = getCgAccounts().stream().map(Account::getUuid).collect(Collectors.toSet());
+    accountsInCluster.addAll(
+        getNgAccounts().stream().map(ModuleLicenseDTO::getAccountIdentifier).collect(Collectors.toSet()));
 
     ProjectSubscriptionName projectSubscriptionName = ProjectSubscriptionName.of(gcpProjectId, gcpSubscriptionName);
-    subscriber = Subscriber
-                     .newBuilder(projectSubscriptionName,
-                         new BigQueryUpdateMessageReceiver(bigQueryHelper, bigQueryHelperService,
-                             businessMappingHistoryService, viewsQueryBuilder, accountsInCluster))
-                     .setCredentialsProvider(credentialsProvider)
-                     .build();
+    subscriber =
+        Subscriber
+            .newBuilder(projectSubscriptionName,
+                new BigQueryUpdateMessageReceiver(bigQueryHelper, bigQueryHelperService, businessMappingHistoryService,
+                    viewsQueryBuilder, accountsInCluster, featureFlagService, labelFlattenedService))
+            .setCredentialsProvider(credentialsProvider)
+            .build();
 
     log.info("Starting listening to pub/sub topic: {}; subscription: {}", fullTopicName, gcpSubscriptionName);
     try {
@@ -109,5 +125,21 @@ public class BigQueryUpdateTopicSubscriber {
       throw new BatchProcessingException(
           String.format("Failed to start listening to pub/sub topic: %s.", fullTopicName), e);
     }
+  }
+
+  private List<Account> getCgAccounts() {
+    return cloudToHarnessMappingService.getCeEnabledAccounts();
+  }
+
+  private List<ModuleLicenseDTO> getNgAccounts() {
+    long expiryTime = Instant.now().minus(15, ChronoUnit.DAYS).toEpochMilli();
+    try {
+      Call<ResponseDTO<List<ModuleLicenseDTO>>> moduleLicensesByModuleType =
+          ngLicenseHttpClient.getModuleLicensesByModuleType(ModuleType.CE, expiryTime);
+      return NGRestUtils.getResponse(moduleLicensesByModuleType);
+    } catch (Exception ex) {
+      log.error("Exception in getting ng accounts ", ex);
+    }
+    return Collections.emptyList();
   }
 }

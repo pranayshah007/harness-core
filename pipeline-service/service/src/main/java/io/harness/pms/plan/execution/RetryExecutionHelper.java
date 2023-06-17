@@ -13,6 +13,7 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.ExecutionInfo;
@@ -21,9 +22,11 @@ import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.engine.executions.retry.RetryStagesMetadataDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.RetryStagesMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.plan.IdentityPlanNode;
@@ -124,6 +127,13 @@ public class RetryExecutionHelper {
           .isResumable(false)
           .errorMessage(
               "This execution is not the latest of all retried execution. You can only retry the latest execution.")
+          .build();
+    }
+
+    if (EmptyPredicate.isNotEmpty(pipelineExecutionSummaryEntity.getRollbackModeExecutionId())) {
+      return RetryInfo.builder()
+          .isResumable(false)
+          .errorMessage("This execution has undergone Pipeline Rollback, and hence cannot be retried.")
           .build();
     }
 
@@ -428,7 +438,7 @@ public class RetryExecutionHelper {
         .build();
   }
 
-  public RetryHistoryResponseDto getRetryHistory(String rootParentId) {
+  public RetryHistoryResponseDto getRetryHistory(String rootParentId, String currentPlanExecutionId) {
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
              pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(
                  rootParentId)) {
@@ -440,11 +450,28 @@ public class RetryExecutionHelper {
         return RetryHistoryResponseDto.builder().errorMessage("Nothing to show in retry history").build();
       }
       String latestRetryExecutionId = executionInfos.get(0).getUuid();
-      return RetryHistoryResponseDto.builder()
-          .executionInfos(executionInfos)
-          .latestExecutionId(latestRetryExecutionId)
-          .build();
+      RetryStagesMetadata retryStagesMetadata =
+          planExecutionMetadataService.getRetryStagesMetadata(currentPlanExecutionId);
+      if (retryStagesMetadata != null) {
+        return RetryHistoryResponseDto.builder()
+            .executionInfos(executionInfos)
+            .latestExecutionId(latestRetryExecutionId)
+            .retryStagesMetadata(toRetryStagesMetadataDTO(retryStagesMetadata))
+            .build();
+      } else {
+        return RetryHistoryResponseDto.builder()
+            .executionInfos(executionInfos)
+            .latestExecutionId(latestRetryExecutionId)
+            .build();
+      }
     }
+  }
+
+  private RetryStagesMetadataDTO toRetryStagesMetadataDTO(RetryStagesMetadata retryStagesMetadata) {
+    return RetryStagesMetadataDTO.builder()
+        .retryStagesIdentifier(retryStagesMetadata.getRetryStagesIdentifier())
+        .skipStagesIdentifier(retryStagesMetadata.getSkipStagesIdentifier())
+        .build();
   }
 
   private List<Node> getIdentityNodeForStrategyNodes(List<Node> planNodes, List<NodeExecution> nodeExecutions) {
@@ -460,8 +487,12 @@ public class RetryExecutionHelper {
       if (strategyNodeExecution.isEmpty()) {
         processedNodes.add(node);
       } else {
-        processedNodes.add(IdentityPlanNode.mapPlanNodeToIdentityNode(
-            node, node.getStepType(), strategyNodeExecution.get(0).getUuid()));
+        // This strategyNodeExecution is at the stage level. And the execution is being retried from this strategy
+        // stage. And setting useAdviserObtainments true because we want that IdentityNodeExecutionStrategy to use the
+        // original advisorsObtainments from the node.
+        processedNodes.add(
+            IdentityPlanNode.mapPlanNodeToIdentityNode(node, node.getStepType(), strategyNodeExecution.get(0).getUuid())
+                .withUseAdviserObtainments(true));
       }
     }
     return processedNodes;

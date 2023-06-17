@@ -25,8 +25,8 @@ public class BuildFailureInfo {
   private String commitID;
   private AuthorInfo author;
   private GitInfo gitInfo;
-  private long startTs;
-  private long endTs;
+  private Long startTs;
+  private Long endTs;
   private String triggerType;
   private String planExecutionId;
   private List<ServiceDeploymentInfo> serviceInfoList;

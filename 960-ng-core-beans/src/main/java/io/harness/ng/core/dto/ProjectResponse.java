@@ -26,11 +26,13 @@ public class ProjectResponse {
   @NotNull private ProjectDTO project;
   @Schema(description = ProjectConstants.CREATED_AT) private Long createdAt;
   @Schema(description = ProjectConstants.LAST_MODIFIED_AT) private Long lastModifiedAt;
+  @NotNull Boolean isFavorite;
 
   @Builder
-  public ProjectResponse(ProjectDTO project, Long createdAt, Long lastModifiedAt) {
+  public ProjectResponse(ProjectDTO project, Long createdAt, Long lastModifiedAt, Boolean isFavorite) {
     this.project = project;
     this.createdAt = createdAt;
     this.lastModifiedAt = lastModifiedAt;
+    this.isFavorite = isFavorite;
   }
 }

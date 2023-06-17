@@ -11,8 +11,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -102,5 +102,6 @@ public class AddExecutableResponseRequestProcessorTest extends CategoryTest {
             .build());
     verify(nodeExecutionService)
         .updateStatusWithOps(eq(nodeExecutionId), eq(Status.QUEUED_LICENSE_LIMIT_REACHED), any(), any());
+    verify(nodeExecutionService).update(eq(nodeExecutionId), any());
   }
 }

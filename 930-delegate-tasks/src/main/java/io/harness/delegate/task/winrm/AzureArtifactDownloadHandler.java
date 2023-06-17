@@ -8,6 +8,10 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.OUT_FILE;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.URI;
 import static io.harness.delegate.utils.AzureArtifactsUtils.getAuthHeader;
 import static io.harness.delegate.utils.AzureArtifactsUtils.getAzureArtifactDelegateConfig;
 import static io.harness.delegate.utils.AzureArtifactsUtils.getDecryptedToken;
@@ -57,12 +61,9 @@ public class AzureArtifactDownloadHandler implements ArtifactDownloadHandler {
 
   private String getPowerShellCommand(String destinationPath, String artifactFileName,
       AzureArtifactDelegateConfig azureArtifactDelegateConfig, String downloadUrl) {
-    return "$Headers = @{\n"
-        + "    Authorization = \""
-        + getAuthHeader(getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService)) + "\"\n"
-        + "}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
-        + "\n $ProgressPreference = 'SilentlyContinue'"
-        + "\n Invoke-WebRequest -Uri \"" + downloadUrl + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\"
-        + artifactFileName + "\"";
+    return DOWNLOAD_ARTIFACT_USING_CREDENTIALS_BY_PROXY_PS
+        .replace(AUTHORIZATION, getAuthHeader(getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService)))
+        .replace(URI, downloadUrl)
+        .replace(OUT_FILE, destinationPath + "\\" + artifactFileName);
   }
 }

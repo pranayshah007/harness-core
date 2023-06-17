@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public enum PredefinedTemplate {
   EMAIL_TEST("templates/email_test.txt", "email_test"),
   SLACK_TEST("templates/slack_test.txt", "slack_test"),
+  WEBHOOK_TEST("templates/webhook_test.txt", "webhook_test"),
   SLACK_VANILLA("templates/slack_vanilla.txt", "slack_vanilla"),
   PD_TEST("templates/pd_test.txt", "pd_test"),
   PD_VANILLA("templates/pd_vanilla.txt", "pd_vanilla"),
@@ -28,14 +29,17 @@ public enum PredefinedTemplate {
   PD_TEST_WITH_USER("templates/pd_test2.txt", "pd_test2"),
   MSTEAMS_TEST_WITH_USER("templates/msteams_test2.txt", "msteams_test2"),
   PIPELINE_PLAIN_SLACK("notification_templates/pipeline/slack/plain_text.txt", "pms_pipeline_slack_plain"),
+  PIPELINE_PLAIN_WEBHOOK("notification_templates/pipeline/webhook/plain_text.txt", "pms_pipeline_webhook_plain"),
   PIPELINE_PLAIN_EMAIL("notification_templates/pipeline/email/plain_text.txt", "pms_pipeline_email_plain"),
   PIPELINE_PLAIN_PAGERDUTY("notification_templates/pipeline/pagerduty/plain_text.txt", "pms_pipeline_pagerduty_plain"),
   PIPELINE_PLAIN_MSTEAMS("notification_templates/pipeline/msteams/plain_text.txt", "pms_pipeline_msteams_plain"),
   STAGE_PLAIN_SLACK("notification_templates/stage/slack/plain_text.txt", "pms_stage_slack_plain"),
+  STAGE_PLAIN_WEBHOOK("notification_templates/stage/webhook/plain_text.txt", "pms_stage_webhook_plain"),
   STAGE_PLAIN_EMAIL("notification_templates/stage/email/plain_text.txt", "pms_stage_email_plain"),
   STAGE_PLAIN_PAGERDUTY("notification_templates/stage/pagerduty/plain_text.txt", "pms_stage_pagerduty_plain"),
   STAGE_PLAIN_MSTEAMS("notification_templates/stage/msteams/plain_text.txt", "pms_stage_msteams_plain"),
   STEP_PLAIN_SLACK("notification_templates/step/slack/plain_text.txt", "pms_step_slack_plain"),
+  STEP_PLAIN_WEBHOOK("notification_templates/step/webhook/plain_text.txt", "pms_step_webhook_plain"),
   STEP_PLAIN_EMAIL("notification_templates/step/email/plain_text.txt", "pms_step_email_plain"),
   STEP_PLAIN_PAGERDUTY("notification_templates/step/pagerduty/plain_text.txt", "pms_step_pagerduty_plain"),
   STEP_PLAIN_MSTEAMS("notification_templates/step/msteams/plain_text.txt", "pms_step_msteams_plain"),
@@ -45,17 +49,31 @@ public enum PredefinedTemplate {
       "notification_templates/approval/slack/plain_text_execution.txt", "harness_approval_execution_slack"),
   HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL(
       "notification_templates/approval/email/plain_text_execution.txt", "harness_approval_execution_email"),
-  CVNG_SLO_SIMPLE_SLACK("cvng_notification_templates/cvng_slo_simple_slack.txt", "cvng_slo_simple_slack"),
-  CVNG_SLO_SIMPLE_EMAIL("cvng_notification_templates/cvng_slo_simple_email.txt", "cvng_slo_simple_email"),
-  CVNG_SLO_SIMPLE_PAGERDUTY("cvng_notification_templates/cvng_slo_simple_pagerduty.txt", "cvng_slo_simple_pagerduty"),
-  CVNG_SLO_SIMPLE_MSTEAMS("cvng_notification_templates/cvng_slo_simple_msteams.txt", "cvng_slo_simple_msteams"),
+  CVNG_SLO_SIMPLE_PROJECT_SLACK(
+      "cvng_notification_templates/cvng_slo_simple_project_slack.txt", "cvng_slo_simple_project_slack"),
+  CVNG_SLO_SIMPLE_PROJECT_EMAIL(
+      "cvng_notification_templates/cvng_slo_simple_project_email.txt", "cvng_slo_simple_project_email"),
+  CVNG_SLO_SIMPLE_PROJECT_PAGERDUTY(
+      "cvng_notification_templates/cvng_slo_simple_project_pagerduty.txt", "cvng_slo_simple_project_pagerduty"),
+  CVNG_SLO_SIMPLE_PROJECT_MSTEAMS(
+      "cvng_notification_templates/cvng_slo_simple_project_msteams.txt", "cvng_slo_simple_project_msteams"),
 
-  CVNG_SLO_COMPOSITE_SLACK("cvng_notification_templates/cvng_slo_composite_slack.txt", "cvng_slo_composite_slack"),
-  CVNG_SLO_COMPOSITE_EMAIL("cvng_notification_templates/cvng_slo_composite_email.txt", "cvng_slo_composite_email"),
-  CVNG_SLO_COMPOSITE_PAGERDUTY(
-      "cvng_notification_templates/cvng_slo_composite_pagerduty.txt", "cvng_slo_composite_pagerduty"),
-  CVNG_SLO_COMPOSITE_MSTEAMS(
-      "cvng_notification_templates/cvng_slo_composite_msteams.txt", "cvng_slo_composite_msteams"),
+  CVNG_SLO_COMPOSITE_PROJECT_SLACK(
+      "cvng_notification_templates/cvng_slo_composite_project_slack.txt", "cvng_slo_composite_project_slack"),
+  CVNG_SLO_COMPOSITE_PROJECT_EMAIL(
+      "cvng_notification_templates/cvng_slo_composite_project_email.txt", "cvng_slo_composite_project_email"),
+  CVNG_SLO_COMPOSITE_PROJECT_PAGERDUTY(
+      "cvng_notification_templates/cvng_slo_composite_project_pagerduty.txt", "cvng_slo_composite_project_pagerduty"),
+  CVNG_SLO_COMPOSITE_PROJECT_MSTEAMS(
+      "cvng_notification_templates/cvng_slo_composite_project_msteams.txt", "cvng_slo_composite_project_msteams"),
+  CVNG_SLO_COMPOSITE_ACCOUNT_SLACK(
+      "cvng_notification_templates/cvng_slo_composite_account_slack.txt", "cvng_slo_composite_account_slack"),
+  CVNG_SLO_COMPOSITE_ACCOUNT_EMAIL(
+      "cvng_notification_templates/cvng_slo_composite_account_email.txt", "cvng_slo_composite_account_email"),
+  CVNG_SLO_COMPOSITE_ACCOUNT_PAGERDUTY(
+      "cvng_notification_templates/cvng_slo_composite_account_pagerduty.txt", "cvng_slo_composite_account_pagerduty"),
+  CVNG_SLO_COMPOSITE_ACCOUNT_MSTEAMS(
+      "cvng_notification_templates/cvng_slo_composite_account_msteams.txt", "cvng_slo_composite_account_msteams"),
   CVNG_MONITOREDSERVICE_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
   CVNG_MONITOREDSERVICE_ET_SLACK(
@@ -89,7 +107,24 @@ public enum PredefinedTemplate {
   HARNESS_APPROVAL_NOTIFICATION_MSTEAMS(
       "notification_templates/approval/msteams/plain_text.txt", "harness_approval_msteams"),
   HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS(
-      "notification_templates/approval/msteams/plain_text_execution.txt", "harness_approval_execution_msteams");
+      "notification_templates/approval/msteams/plain_text_execution.txt", "harness_approval_execution_msteams"),
+  HARNESS_APPROVAL_ACTION_NOTIFICATION_SLACK(
+      "notification_templates/approval/slack/plain_text_action.txt", "harness_approval_action_slack"),
+  HARNESS_APPROVAL_ACTION_NOTIFICATION_EMAIL(
+      "notification_templates/approval/email/plain_text_action.txt", "harness_approval_action_email"),
+  HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text_action.txt", "harness_approval_action_msteams"),
+  HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_SLACK(
+      "notification_templates/approval/slack/plain_text_action_execution.txt",
+      "harness_approval_action_execution_slack"),
+  HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_EMAIL(
+      "notification_templates/approval/email/plain_text_action_execution.txt",
+      "harness_approval_action_execution_email"),
+  HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text_action_execution.txt",
+      "harness_approval_action_execution_msteams"),
+  SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert");
+
   private String path;
   private String identifier;
 

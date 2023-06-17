@@ -12,8 +12,8 @@ import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -33,14 +33,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(PersistenceIteratorFactory.class)
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ResourceRestraintPersistenceMonitorTest extends OrchestrationStepsTestBase {
   @Mock private PersistenceIteratorFactory persistenceIteratorFactory;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;

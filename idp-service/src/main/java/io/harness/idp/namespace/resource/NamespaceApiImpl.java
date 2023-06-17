@@ -9,9 +9,11 @@ package io.harness.idp.namespace.resource;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
@@ -23,12 +25,15 @@ import org.springframework.dao.DuplicateKeyException;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @Slf4j
 public class NamespaceApiImpl implements NamespaceApi {
+  private IdpCommonService idpCommonService;
   private NamespaceService namespaceService;
 
   @Override
   public Response createNamespace(String accountIdentifier) {
+    idpCommonService.checkUserAuthorization();
     try {
       NamespaceEntity saveResponse = namespaceService.saveAccountIdNamespace(accountIdentifier);
       NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(saveResponse);
@@ -40,6 +45,7 @@ public class NamespaceApiImpl implements NamespaceApi {
           .entity(ResponseMessage.builder().message(logMessage).build())
           .build();
     } catch (Exception e) {
+      log.error("Error in creating namespace for account - {}", accountIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -48,10 +54,12 @@ public class NamespaceApiImpl implements NamespaceApi {
 
   @Override
   public Response getNamespaceInfo(String accountIdentifier) {
+    idpCommonService.checkUserAuthorization();
     try {
       NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
       return Response.status(Response.Status.OK).entity(namespaceInfo).build();
     } catch (Exception e) {
+      log.error("Error in fetching namespace for accountId - {}", accountIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

@@ -17,9 +17,9 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/core/executors/bash:module",
         "//950-delegate-tasks-beans:module",
         "//960-api-services/src/main/java/io/harness/shell:module",
-        "//970-api-services-beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/io/harness/shell:module",
         "@maven//:com_google_inject_guice",
-        "@maven//:org_apache_commons_commons_lang3",
     ],
 )
 

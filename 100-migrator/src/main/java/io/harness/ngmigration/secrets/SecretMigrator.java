@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
@@ -24,6 +25,7 @@ import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.settings.SettingVariableTypes;
 
 import java.util.Map;
 
@@ -34,6 +36,22 @@ public interface SecretMigrator {
 
   default String getSecretFile(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
     return null;
+  }
+
+  default String getEncryptionKey(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
+      return null;
+    }
+    return encryptedData.getEncryptionKey();
+  }
+
+  default String getEncryptionValue(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    if (!SettingVariableTypes.CONFIG_FILE.equals(encryptedData.getType())) {
+      return null;
+    }
+    return EmptyPredicate.isEmpty(encryptedData.getEncryptedValue())
+        ? null
+        : String.valueOf(encryptedData.getEncryptedValue());
   }
 
   SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,

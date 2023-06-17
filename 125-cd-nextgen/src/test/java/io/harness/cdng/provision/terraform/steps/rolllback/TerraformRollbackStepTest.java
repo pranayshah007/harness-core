@@ -14,7 +14,7 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -304,9 +304,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn(null).when(executionSweepingOutputService).consume(any(), any(), any(), any());
     doReturn("fileId").when(terraformStepHelper).getLatestFileId("fullId");
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig = ArtifactoryStoreDelegateConfig.builder().build();
-    doReturn(artifactoryStoreDelegateConfig)
-        .when(terraformStepHelper)
-        .getFileStoreFetchFilesConfig(any(), any(), any());
+    doReturn(artifactoryStoreDelegateConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
     doReturn(null).when(terraformStepHelper).prepareTerraformVarFileInfo(any(), any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))

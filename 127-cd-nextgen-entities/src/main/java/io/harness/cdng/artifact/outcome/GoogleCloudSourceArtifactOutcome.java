@@ -46,11 +46,28 @@ public class GoogleCloudSourceArtifactOutcome implements ArtifactOutcome {
   /** Artifact type. */
   String type;
 
+  /** Branch */
+  String branch;
+
+  /** CommitId */
+  String commitId;
+
+  /** Tag */
+  String gitTag;
+
+  String fetchType;
+
   /** Whether this config corresponds to primary artifact.*/
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return GoogleCloudSourceArtifactSummary.builder().repository(repository).sourceDirectory(sourceDirectory).build();
+    return GoogleCloudSourceArtifactSummary.builder()
+        .repository(repository)
+        .sourceDirectory(sourceDirectory)
+        .tag(gitTag)
+        .branch(branch)
+        .commitId(commitId)
+        .build();
   }
 
   @Override

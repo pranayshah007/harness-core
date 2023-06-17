@@ -42,10 +42,13 @@ public enum AuthorizationServiceHeader {
   DEBEZIUM_SERVICE("DebeziumService"),
   SUBSCRIPTION_SERVICE("SubscriptionService"),
   CHAOS_SERVICE("ChaosService"),
+  SERVICE_DISCOVERY_SERVICE("ServiceDiscoveryService"),
   CODE("Code"),
   IACM_MANAGER("IACMManager"),
   MIGRATOR("MigratorService"),
-  IDP_SERVICE("IDPService");
+  IDP_SERVICE("IDPService"),
+  SSCA_SERVICE("SSCAService"),
+  IDP_UI("IDPUi");
 
   private final String serviceId;
 

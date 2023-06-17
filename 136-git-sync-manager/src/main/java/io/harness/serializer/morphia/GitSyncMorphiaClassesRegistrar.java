@@ -10,8 +10,10 @@ package io.harness.serializer.morphia;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.caching.entity.GitDefaultBranchCache;
 import io.harness.gitsync.caching.entity.GitFileCache;
 import io.harness.gitsync.common.beans.AzureRepoSCM;
+import io.harness.gitsync.common.beans.BitbucketSCM;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitFileLocation;
 import io.harness.gitsync.common.beans.GitSyncSettings;
@@ -51,10 +53,12 @@ public class GitSyncMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(GitFullSyncConfig.class);
     set.add(GitFullSyncJob.class);
     set.add(GitFileCache.class);
+    set.add(GitDefaultBranchCache.class);
     set.add(UserSourceCodeManager.class);
     set.add(AzureRepoSCM.class);
     set.add(GithubSCM.class);
     set.add(GitlabSCM.class);
+    set.add(BitbucketSCM.class);
   }
 
   @Override

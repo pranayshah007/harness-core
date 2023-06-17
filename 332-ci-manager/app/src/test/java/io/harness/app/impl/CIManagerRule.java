@@ -54,7 +54,6 @@ import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
-import io.harness.ssca.client.SSCAServiceClientModule;
 import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -198,12 +197,17 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
                 LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())
             .tiServiceConfig(
                 TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
-            .stoServiceConfig(
-                STOServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
+            .stoServiceConfig(STOServiceConfig.builder()
+                                  .baseUrl("http://localhost-inc:4000")
+                                  .internalUrl("http://localhost-inc:4000")
+                                  .globalToken("global-token")
+                                  .build())
             .iacmServiceConfig(
                 IACMServiceConfig.builder().baseUrl("http://localhost-inc:5000").globalToken("global-token").build())
             .sscaServiceConfig(
-                SSCAServiceConfig.builder().baseUrl("http://localhost:8186").globalToken("global-token").build())
+                SSCAServiceConfig.builder()
+                    .httpClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:8186").build())
+                    .build())
             .scmConnectionConfig(ScmConnectionConfig.builder().url("localhost:8181").build())
             .managerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .ngManagerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
@@ -213,8 +217,6 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .build();
 
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
-    modules.add(new SSCAServiceClientModule(configuration.getSscaServiceConfig()));
-
     modules.add(new ClosingFactoryModule(closingFactory));
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());

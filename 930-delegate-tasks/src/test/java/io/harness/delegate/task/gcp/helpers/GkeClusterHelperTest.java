@@ -11,6 +11,7 @@ import static io.harness.delegate.task.gcp.helpers.GcpHelperService.LOCATION_DEL
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.K8sConstants.GOOGLE_APPLICATION_CREDENTIALS_FLAG;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.BOGDAN;
@@ -22,10 +23,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -74,6 +75,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,11 +85,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GoogleCredential.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDP)
 public class GkeClusterHelperTest extends CategoryTest {
   @Mock private DataStore<StoredCredential> dataStore;
@@ -300,6 +300,7 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(gcpHelperService.getGoogleCredential(eq(DUMMY_GCP_KEY_CHARS), eq(false))).thenReturn(creds);
     MockedStatic mockedStaticAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(false);
+    when(KubeConfigAuthPluginHelper.runCommand(any(), any(), any())).thenReturn(true);
 
     // when
     KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
@@ -478,6 +479,7 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(gcpHelperService.getGoogleCredential(eq(DUMMY_GCP_KEY_CHARS), eq(false))).thenReturn(creds);
     MockedStatic mockedStaticAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    when(KubeConfigAuthPluginHelper.runCommand(any(), any(), any())).thenReturn(true);
 
     // when
     KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
@@ -490,6 +492,7 @@ public class GkeClusterHelperTest extends CategoryTest {
         .isEqualTo(Exec.builder()
                        .command(GCP_AUTH_PLUGIN_BINARY)
                        .apiVersion(API_VERSION)
+                       .args(Collections.singletonList(GOOGLE_APPLICATION_CREDENTIALS_FLAG))
                        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
                        .provideClusterInfo(true)
                        .interactiveMode(InteractiveMode.NEVER)
@@ -518,6 +521,7 @@ public class GkeClusterHelperTest extends CategoryTest {
     when(gcpHelperService.getGoogleCredential(eq(DUMMY_GCP_KEY_CHARS), eq(false))).thenReturn(creds);
     MockedStatic mockedStaticAuthPlugin = mockStatic(KubeConfigAuthPluginHelper.class);
     when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    when(KubeConfigAuthPluginHelper.runCommand(any(), any(), any())).thenReturn(true);
 
     // when
     KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), false, ZONE_CLUSTER, "default");
@@ -531,6 +535,7 @@ public class GkeClusterHelperTest extends CategoryTest {
         .isEqualTo(Exec.builder()
                        .command(GCP_AUTH_PLUGIN_BINARY)
                        .apiVersion(API_VERSION)
+                       .args(Collections.singletonList(GOOGLE_APPLICATION_CREDENTIALS_FLAG))
                        .installHint(GCP_AUTH_PLUGIN_INSTALL_HINT)
                        .provideClusterInfo(true)
                        .interactiveMode(InteractiveMode.NEVER)

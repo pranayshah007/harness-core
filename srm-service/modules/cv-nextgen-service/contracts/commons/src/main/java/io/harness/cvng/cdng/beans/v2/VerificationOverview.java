@@ -31,4 +31,7 @@ public class VerificationOverview {
   MetricsAnalysisOverview metricsAnalysis;
   ClusterAnalysisOverview logClusters;
   ClusterAnalysisOverview errorClusters;
+  BaselineOverview baselineOverview;
+  Long controlDataStartTimestamp;
+  Long testDataStartTimestamp;
 }

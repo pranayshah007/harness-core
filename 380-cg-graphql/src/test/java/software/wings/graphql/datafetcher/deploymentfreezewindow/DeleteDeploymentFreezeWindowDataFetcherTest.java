@@ -9,8 +9,8 @@ package software.wings.graphql.datafetcher.deploymentfreezewindow;
 
 import static io.harness.rule.OwnerRule.VED;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

@@ -7,6 +7,8 @@
 
 package io.harness.ccm.graphql.core.budget;
 
+import static io.harness.ccm.budget.BudgetBreakdown.MONTHLY;
+
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.BudgetBreakdown;
@@ -98,9 +100,9 @@ public class BudgetServiceImpl implements BudgetService {
 
   @Override
   public void update(String budgetId, Budget budget) {
+    Budget oldBudget = budgetDao.get(budgetId);
     if (budget.getAccountId() == null) {
-      Budget existingBudget = budgetDao.get(budgetId);
-      budget.setAccountId(existingBudget.getAccountId());
+      budget.setAccountId(oldBudget.getAccountId());
     }
     if (budget.getUuid() == null) {
       budget.setUuid(budgetId);
@@ -108,10 +110,14 @@ public class BudgetServiceImpl implements BudgetService {
     BudgetUtils.validateBudget(budget, budgetDao.list(budget.getAccountId(), budget.getName()));
     removeEmailDuplicates(budget);
     validatePerspective(budget);
-    updateBudgetParent(budget);
+    updateBudgetParent(budget, oldBudget);
+    updateBudgetDetails(budget, oldBudget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
     budgetDao.update(budgetId, budget);
+    if (budget.getParentBudgetGroupId() != null && budget.getBudgetAmount() != oldBudget.getBudgetAmount()) {
+      upwardCascadeBudgetAmount(budget, oldBudget);
+    }
   }
 
   @Override
@@ -196,12 +202,26 @@ public class BudgetServiceImpl implements BudgetService {
     }
   }
 
-  private void updateBudgetParent(Budget budget) {
+  private void updateBudgetParent(Budget budget, Budget oldBudget) {
+    budget.setParentBudgetGroupId(oldBudget.getParentBudgetGroupId());
     if (budget.getParentBudgetGroupId() != null) {
       BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
       if (parentBudgetGroup == null) {
         budget.setParentBudgetGroupId(null);
       }
+    }
+  }
+
+  private void updateBudgetDetails(Budget budget, Budget oldBudget) {
+    // We do not allow updates to period or startTime of a budget
+    budget.setPeriod(oldBudget.getPeriod());
+    budget.setStartTime(oldBudget.getStartTime());
+    budget.setEndTime(oldBudget.getEndTime());
+
+    // In case this budget is part of budget group
+    // We do not allow updates to breakdown as well
+    if (budget.getParentBudgetGroupId() != null) {
+      budget.getBudgetMonthlyBreakdown().setBudgetBreakdown(oldBudget.getBudgetMonthlyBreakdown().getBudgetBreakdown());
     }
   }
 
@@ -234,18 +254,20 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   private void updateBudgetEndTime(Budget budget) {
-    boolean isStartTimeValid = true;
     try {
       budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
       if (budget.getEndTime() < BudgetUtils.getStartOfCurrentDay()) {
-        isStartTimeValid = false;
+        long timeDiff = BudgetUtils.getStartOfCurrentDay() - budget.getEndTime() + BudgetUtils.ONE_DAY_MILLIS;
+        long periodInMilliSeconds = BudgetUtils.getEndTimeForBudget(0l, budget.getPeriod());
+        // Calculate the number of periods needed to cover the time difference
+        long periods_needed = Math.round(Math.ceil((double) timeDiff / (double) periodInMilliSeconds));
+        // Calculate the total time to shift the start time
+        long shift_time = periods_needed * periodInMilliSeconds;
+        budget.setStartTime(budget.getStartTime() + shift_time);
+        budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
       }
     } catch (Exception e) {
       log.error("Error occurred while updating end time of budget: {}, Exception : {}", budget.getUuid(), e);
-    }
-
-    if (!isStartTimeValid) {
-      throw new InvalidRequestException(BudgetUtils.INVALID_START_TIME_EXCEPTION);
     }
   }
 
@@ -292,7 +314,7 @@ public class BudgetServiceImpl implements BudgetService {
   private boolean updateNgBudgetCosts(Budget budget) {
     try {
       if (budget.getPeriod() == BudgetPeriod.YEARLY && budget.getBudgetMonthlyBreakdown() != null
-          && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+          && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == MONTHLY) {
         Double[] lastPeriodCost = budgetCostService.getLastYearMonthlyCost(budget);
         budget.getBudgetMonthlyBreakdown().setYearlyLastPeriodCost(lastPeriodCost);
         budget.setLastMonthCost(sumOfMonthlyCost(lastPeriodCost));
@@ -333,5 +355,22 @@ public class BudgetServiceImpl implements BudgetService {
       rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
     }
     return rootBudgetGroup;
+  }
+
+  private void upwardCascadeBudgetAmount(Budget budget, Budget oldBudget) {
+    BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
+    Double amountDiff = budget.getBudgetAmount() - oldBudget.getBudgetAmount();
+    Double[] amountMonthlyDiff = null;
+    Boolean isMonthlyBreadownBudget = false;
+    if (budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == MONTHLY) {
+      isMonthlyBreadownBudget = true;
+    }
+    if (isMonthlyBreadownBudget) {
+      amountMonthlyDiff =
+          BudgetUtils.getBudgetAmountMonthlyDifference(budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount(),
+              oldBudget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
+    }
+    budgetGroupService.upwardCascadeBudgetGroupAmount(
+        parentBudgetGroup, isMonthlyBreadownBudget, amountDiff, amountMonthlyDiff);
   }
 }

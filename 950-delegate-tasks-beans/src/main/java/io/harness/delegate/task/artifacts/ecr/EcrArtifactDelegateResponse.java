@@ -21,7 +21,10 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
-  /** Images in repos need to be referenced via a path */
+  String registryId;
+  /**
+   * Images in repos need to be referenced via a path
+   */
   String imagePath;
   /** Tag refers to exact tag number */
   String tag;
@@ -33,8 +36,9 @@ public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
 
   @Builder
   public EcrArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String imagePath, String tag, String imageUrl, String authToken, Map<String, String> label) {
+      String registryId, String imagePath, String tag, String imageUrl, String authToken, Map<String, String> label) {
     super(buildDetails, sourceType);
+    this.registryId = registryId;
     this.imagePath = imagePath;
     this.tag = tag;
     this.imageUrl = imageUrl;
@@ -45,7 +49,7 @@ public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
   @Override
   public String describe() {
     String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
-        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        ? "\nTo pull image use: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
 
     String metadataKeys = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)

@@ -52,6 +52,7 @@ import software.wings.service.impl.instance.FlatEntitySummaryStats;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.aggregation.Group;
 import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
@@ -155,6 +156,7 @@ public class InstanceStatsDataFetcher
       query.filter("isDeleted", false);
 
       instanceMongoHelper.setQuery(accountId, filters, query);
+      int limit = wingsPersistence.getMaxDocumentLimit(Instance.class);
 
       if (isNotEmpty(groupByList)) {
         if (groupByList.size() == 1) {
@@ -163,13 +165,18 @@ public class InstanceStatsDataFetcher
           String entityNameColumn = getNameField(firstLevelAggregation);
           List<QLDataPoint> dataPoints = new ArrayList<>();
 
-          wingsPersistence.getDefaultAnalyticsDatastore(Instance.class)
-              .createAggregation(Instance.class)
-              .match(query)
-              .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
-                  grouping(entityNameColumn, grouping("$first", entityNameColumn)))
-              .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
-                  projection("entityName", entityNameColumn), projection("count"))
+          AggregationPipeline aggregationPipeline =
+              wingsPersistence.getDefaultAnalyticsDatastore(Instance.class)
+                  .createAggregation(Instance.class)
+                  .match(query)
+                  .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
+                      grouping(entityNameColumn, grouping("$first", entityNameColumn)))
+                  .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
+                      projection("entityName", entityNameColumn), projection("count"));
+          if (limit > 0) {
+            aggregationPipeline.limit(limit);
+          }
+          aggregationPipeline
               .aggregate(FlatEntitySummaryStats.class,
                   AggregationOptions.builder()
                       .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -188,18 +195,23 @@ public class InstanceStatsDataFetcher
           String secondLevelEntityNameColumn = getNameField(secondLevelAggregation);
 
           List<TwoLevelAggregatedData> aggregatedDataList = new ArrayList<>();
-          wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-              .createAggregation(Instance.class)
-              .match(query)
-              .group(Group.id(grouping(entityIdColumn), grouping(secondLevelEntityIdColumn)),
-                  grouping("count", accumulator("$sum", 1)),
-                  grouping("firstLevelInfo",
-                      grouping("$first", projection("id", entityIdColumn), projection("name", entityNameColumn))),
-                  grouping("secondLevelInfo",
-                      grouping("$first", projection("id", secondLevelEntityIdColumn),
-                          projection("name", secondLevelEntityNameColumn))))
-              .sort(ascending("_id." + entityIdColumn), ascending("_id." + secondLevelEntityIdColumn),
-                  descending("count"))
+          AggregationPipeline aggregationPipeline =
+              wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+                  .createAggregation(Instance.class)
+                  .match(query)
+                  .group(Group.id(grouping(entityIdColumn), grouping(secondLevelEntityIdColumn)),
+                      grouping("count", accumulator("$sum", 1)),
+                      grouping("firstLevelInfo",
+                          grouping("$first", projection("id", entityIdColumn), projection("name", entityNameColumn))),
+                      grouping("secondLevelInfo",
+                          grouping("$first", projection("id", secondLevelEntityIdColumn),
+                              projection("name", secondLevelEntityNameColumn))))
+                  .sort(ascending("_id." + entityIdColumn), ascending("_id." + secondLevelEntityIdColumn),
+                      descending("count"));
+          if (limit > 0) {
+            aggregationPipeline.limit(limit);
+          }
+          aggregationPipeline
               .aggregate(TwoLevelAggregatedData.class,
                   AggregationOptions.builder()
                       .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)

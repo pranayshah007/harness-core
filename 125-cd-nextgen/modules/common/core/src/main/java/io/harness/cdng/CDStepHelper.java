@@ -25,6 +25,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AW
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static software.wings.beans.LogHelper.color;
@@ -40,14 +41,16 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -71,7 +74,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
-import io.harness.data.encoding.EncodingUtils;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -149,6 +152,7 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -563,6 +567,10 @@ public class CDStepHelper {
         K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome = (K8sAwsInfrastructureOutcome) infrastructure;
         releaseName = k8sAwsInfrastructureOutcome.getReleaseName();
         break;
+      case KUBERNETES_RANCHER:
+        K8sRancherInfrastructureOutcome rancherInfraOutcome = (K8sRancherInfrastructureOutcome) infrastructure;
+        releaseName = rancherInfraOutcome.getReleaseName();
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));
     }
@@ -575,7 +583,8 @@ public class CDStepHelper {
   }
 
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
-    return EncodingUtils.encodeBase64(getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize));
+    String content = getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize);
+    return "${ngBase64Manager.encode(\"" + content + "\")}";
   }
 
   public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
@@ -726,6 +735,14 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
 
+  public boolean isEnabledSupportHPAAndPDB(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_HPA_AND_PDB_NG);
+  }
+
+  public boolean isSkipUnchangedManifest(String accountId, boolean value) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG) && value;
+  }
+
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }
@@ -819,6 +836,17 @@ public class CDStepHelper {
     }
 
     return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
+  }
+
+  public Optional<ServiceHooksOutcome> getServiceHooksOutcome(Ambiance ambiance) {
+    OptionalOutcome serviceHooksOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
+
+    if (!serviceHooksOutcome.isFound()) {
+      return Optional.empty();
+    }
+
+    return Optional.of((ServiceHooksOutcome) serviceHooksOutcome.getOutcome());
   }
 
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
@@ -1018,5 +1046,30 @@ public class CDStepHelper {
         .baseLogKey(baseLogKey)
         .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
+  }
+
+  public List<TaskSelector> getDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
+    Set<String> delegateSelectors;
+    switch (connectorInfoDTO.getConnectorType()) {
+      case GITHUB:
+        delegateSelectors = ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case GIT:
+        delegateSelectors = ((GitConfigDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case BITBUCKET:
+        delegateSelectors = ((BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      case GITLAB:
+        delegateSelectors = ((GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig()).getDelegateSelectors();
+        break;
+      default:
+        throw new UnsupportedOperationException("Unknown Connector Config for delegate selectors");
+    }
+
+    return TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)
+                                               .stream()
+                                               .map(TaskSelectorYaml::new)
+                                               .collect(Collectors.toList()));
   }
 }

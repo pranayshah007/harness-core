@@ -18,7 +18,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -228,11 +228,14 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldRetryFetchToken() {
     final GcrRestClient restClient = Mockito.spy(gcrRestClient);
-    doThrow(RuntimeException.class).when(restClient).getImageManifest("authHeader", "realm-value", "tag");
+    when(gcrService.getGcrRestClient(gcpInternalConfig.getRegistryHostname())).thenReturn(restClient);
+    doThrow(RuntimeException.class)
+        .when(restClient)
+        .getImageManifest(gcpInternalConfig.getBasicAuthHeader(), "realm-value", "tag");
     try {
-      gcrService.fetchImage(restClient, "authHeader", "realm-value", "tag");
+      gcrService.fetchImage(gcpInternalConfig, "realm-value", "tag");
     } catch (Exception e) {
-      verify(restClient, times(10)).getImageManifest("authHeader", "realm-value", "tag");
+      verify(restClient, times(10)).getImageManifest(gcpInternalConfig.getBasicAuthHeader(), "realm-value", "tag");
     }
   }
 
@@ -241,11 +244,14 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldRetryListTag() {
     final GcrRestClient restClient = Mockito.spy(gcrRestClient);
-    doThrow(RuntimeException.class).when(restClient).listImageTags("authHeader", "realm-value");
+    when(gcrService.getGcrRestClient(gcpInternalConfig.getRegistryHostname())).thenReturn(restClient);
+    doThrow(RuntimeException.class)
+        .when(restClient)
+        .listImageTags(gcpInternalConfig.getBasicAuthHeader(), "realm-value");
     try {
-      gcrService.listImageTag(restClient, "authHeader", "realm-value");
+      gcrService.listImageTag(gcpInternalConfig, "realm-value");
     } catch (Exception e) {
-      verify(restClient, times(10)).listImageTags("authHeader", "realm-value");
+      verify(restClient, times(10)).listImageTags(gcpInternalConfig.getBasicAuthHeader(), "realm-value");
     }
   }
 

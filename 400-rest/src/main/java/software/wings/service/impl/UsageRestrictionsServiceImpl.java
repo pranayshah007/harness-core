@@ -692,7 +692,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
                                                                  .addFilter("accountId", EQ, accountId)
                                                                  .addFieldsIncluded("_id", "name")
                                                                  .build(),
-        false, false, null);
+        false, false, null, false);
 
     Map<String, String> appMap =
         pageResponse.getResponse().stream().collect(Collectors.toMap(Base::getUuid, Application::getName));

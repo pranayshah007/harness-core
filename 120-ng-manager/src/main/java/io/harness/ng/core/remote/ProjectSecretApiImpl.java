@@ -31,7 +31,6 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.ProjectSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
-import io.harness.spec.server.ng.v1.model.SecretValidationMetadata;
 import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 import io.harness.utils.ApiUtils;
 
@@ -107,8 +106,8 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
 
   @Override
   public Response getProjectScopedSecrets(String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit, String account) {
-    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit);
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
+    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit, sort, order);
   }
 
   @Override
@@ -138,14 +137,14 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
 
   @Override
   public Response validateProjectSecretRef(
-      String org, String project, @Valid SecretValidationMetadata body, String account) {
+      String org, String project, @Valid SecretRequest body, String harnessAccount) {
     boolean isValid;
+    SecretDTOV2 secretDto = secretApiUtils.toSecretDto(body.getSecret());
     try {
-      isValid = ngEncryptedDataService.validateSecretRef(
-          account, null, null, body.getSecretManagerIdentifier(), body.getSecretRefPath());
+      isValid = ngEncryptedDataService.validateSecretRef(harnessAccount, org, project, secretDto);
     } catch (Exception e) {
-      log.error("Secret path reference failed for secret on secretManager: {}, project:{}, org: {}, account: {}",
-          body.getSecretManagerIdentifier(), project, org, account);
+      log.error("Secret path reference failed for secret: {}, account: {}, org:{}, project:{}", secretDto.getName(),
+          harnessAccount, secretDto.getOrgIdentifier(), secretDto.getProjectIdentifier());
       throw e;
     }
     if (isValid) {
@@ -203,10 +202,10 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
   }
 
   private Response getSecrets(String account, String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit) {
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String sort, String order) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-    Page<SecretResponseWrapper> secretPage = ngSecretService.list(
-        account, org, project, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(account, org, project, secret, secretTypes, recursive,
+        searchTerm, null, false, ApiUtils.getPageRequest(page, limit, sort, order));
     List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =

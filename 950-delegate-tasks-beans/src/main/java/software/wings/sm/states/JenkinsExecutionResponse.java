@@ -45,4 +45,5 @@ public final class JenkinsExecutionResponse implements DelegateTaskNotifyRespons
   private JenkinsSubTaskType subTaskType;
   private String activityId;
   private Long timeElapsed; // time taken for task completion
+  private boolean isTimeoutError;
 }

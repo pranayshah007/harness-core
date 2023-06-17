@@ -9,6 +9,7 @@ package software.wings.service.impl.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.ARTIFACT_STREAM_METADATA_ONLY;
+import static io.harness.beans.FeatureName.SPG_ALLOW_FILTER_BY_PATHS_GCS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -18,6 +19,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.FileBucket.ARTIFACTS;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -83,6 +85,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
+import software.wings.service.intfc.BuildSourceService;
 import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.utils.ArtifactType;
@@ -150,6 +153,7 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
   @Inject private SettingsService settingsService;
+  @Inject private BuildSourceService buildSourceService;
   @Inject private FeatureFlagService featureFlagService;
 
   @Override
@@ -164,7 +168,13 @@ public class ArtifactServiceImpl implements ArtifactService {
             Preconditions.checkNotNull(wingsPersistence.get(ArtifactStream.class, artifactStreamEntry.getKey()),
                 "Artifact stream has been deleted");
         artifactStreamEntry.getValue().forEach(artifact -> artifact.setArtifactStreamName(artifactStream.getName()));
-        artifacts.addAll(artifactStreamEntry.getValue().stream().collect(toList()));
+        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
+            && ArtifactStreamType.GCS.name().equals(artifactStream.getArtifactStreamType())) {
+          artifacts.addAll(buildSourceService.listArtifactByArtifactStreamAndFilterPath(
+              artifactStreamEntry.getValue().stream().collect(toList()), artifactStream));
+        } else {
+          artifacts.addAll(artifactStreamEntry.getValue().stream().collect(toList()));
+        }
       }
     }
     pageResponse.setResponse(artifacts);
@@ -617,7 +627,7 @@ public class ArtifactServiceImpl implements ArtifactService {
     List<String> artifactFileIds = new ArrayList<>();
     List<String> allArtifactIds = new ArrayList<>();
 
-    try (HIterator<Artifact> iterator = new HIterator<>(artifactQuery.fetch())) {
+    try (HIterator<Artifact> iterator = new HIterator<>(artifactQuery.limit(NO_LIMIT).fetch())) {
       for (Artifact artifact : iterator) {
         if (isNotEmpty(artifact.getArtifactFiles())) {
           artifactIdsWithFiles.add(artifact.getUuid());
@@ -821,6 +831,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                                               .field(ArtifactKeys.contentStatus)
                                               .hasAnyOf(singletonList(DOWNLOADED))
                                               .order(Sort.descending(CREATED_AT_KEY))
+                                              .limit(NO_LIMIT)
                                               .asList(new FindOptions().skip(retentionSize));
     if (isEmpty(toBeDeletedArtifacts)) {
       return;
@@ -947,8 +958,7 @@ public class ArtifactServiceImpl implements ArtifactService {
       return artifactQuery;
     }
     artifactQuery.filter(ArtifactKeys.artifactSourceName, artifactStream.getSourceName());
-    if (artifactStream.getAccountId() != null && hitSecondary
-        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, artifactStream.getAccountId())) {
+    if (hitSecondary) {
       artifactQuery.useReadPreference(ReadPreference.secondaryPreferred());
     }
     return artifactQuery;
@@ -1000,12 +1010,16 @@ public class ArtifactServiceImpl implements ArtifactService {
         .filter(ArtifactKeys.accountId, accountId)
         .field(ArtifactKeys.uuid)
         .in(artifactIds)
+        .limit(NO_LIMIT)
         .asList();
   }
 
   @Override
   public List<Artifact> listByAccountId(String accountId) {
-    return wingsPersistence.createQuery(Artifact.class).filter(ArtifactKeys.accountId, accountId).asList();
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.accountId, accountId)
+        .limit(NO_LIMIT)
+        .asList();
   }
 
   @Override
@@ -1033,6 +1047,18 @@ public class ArtifactServiceImpl implements ArtifactService {
         .filter(ArtifactKeys.accountId, accountId)
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
         .order(Sort.descending(CREATED_AT_KEY))
+        .limit(NO_LIMIT)
+        .asList();
+  }
+
+  @Override
+  public List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId, String buildNo) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.accountId, accountId)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(ArtifactKeys.metadata_buildNo, buildNo)
+        .order(Sort.descending(CREATED_AT_KEY))
+        .limit(NO_LIMIT)
         .asList();
   }
 

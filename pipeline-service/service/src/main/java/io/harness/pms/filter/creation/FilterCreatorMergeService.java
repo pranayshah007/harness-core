@@ -26,6 +26,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.ErrorResponse;
@@ -41,6 +42,7 @@ import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
@@ -96,43 +98,47 @@ public class FilterCreatorMergeService {
     this.triggeredByHelper = triggeredByHelper;
   }
 
-  public FilterCreatorMergeServiceResponse getPipelineInfo(PipelineEntity pipelineEntity) throws IOException {
-    Map<String, PlanCreatorServiceInfo> services = getServices();
-    Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
-    Map<String, String> filters = new HashMap<>();
-    SetupMetadata.Builder setupMetadataBuilder = getSetupMetadataBuilder(
-        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-    if (gitSyncBranchContext != null) {
-      setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+  public FilterCreatorMergeServiceResponse getPipelineInfo(FilterCreationParams filterCreationParams)
+      throws IOException {
+    try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_FilterCreatorMergeService]")) {
+      PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
+      Map<String, PlanCreatorServiceInfo> services = getServices();
+      Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
+      Map<String, String> filters = new HashMap<>();
+      SetupMetadata.Builder setupMetadataBuilder = getSetupMetadataBuilder(
+          pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+      if (gitSyncBranchContext != null) {
+        setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+      }
+      setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
+      if (!gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+              pipelineEntity.getProjectIdentifier())) {
+        setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
+      }
+      FilterCreationBlobResponse response =
+          obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
+      validateFilterCreationBlobResponse(response);
+      if (GitContextHelper.isFullSyncFlow()) {
+        deleteExistingSetupUsages(pipelineEntity);
+      }
+      if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+        List<EntityDetailProtoDTO> templateReferences =
+            pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
+                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
+        response = response.toBuilder().addAllReferredEntities(templateReferences).build();
+      }
+      Optional<EntityDetailProtoDTO> gitConnectorReference = getGitConnectorReference(pipelineEntity);
+      if (gitConnectorReference.isPresent()) {
+        response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
+      }
+      pipelineSetupUsageHelper.publishSetupUsageEvent(filterCreationParams, response.getReferredEntitiesList());
+      return FilterCreatorMergeServiceResponse.builder()
+          .filters(filters)
+          .stageCount(response.getStageCount())
+          .stageNames(new ArrayList<>(response.getStageNamesList()))
+          .build();
     }
-    setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
-    if (!gitSyncSdkService.isGitSyncEnabled(
-            pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())) {
-      setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
-    }
-    FilterCreationBlobResponse response =
-        obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
-    validateFilterCreationBlobResponse(response);
-    if (GitContextHelper.isFullSyncFlow()) {
-      deleteExistingSetupUsages(pipelineEntity);
-    }
-    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      List<EntityDetailProtoDTO> templateReferences =
-          pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
-              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
-      response = response.toBuilder().addAllReferredEntities(templateReferences).build();
-    }
-    Optional<EntityDetailProtoDTO> gitConnectorReference = getGitConnectorReference(pipelineEntity);
-    if (gitConnectorReference.isPresent()) {
-      response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
-    }
-    pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
-    return FilterCreatorMergeServiceResponse.builder()
-        .filters(filters)
-        .stageCount(response.getStageCount())
-        .stageNames(new ArrayList<>(response.getStageNamesList()))
-        .build();
   }
 
   private void deleteExistingSetupUsages(PipelineEntity pipelineEntity) {

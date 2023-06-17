@@ -98,6 +98,21 @@ public class FakeNextGenService implements NextGenService {
   }
 
   @Override
+  public List<ConnectorResponseDTO> listConnector(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope) {
+    return connectorIdListWithScope.stream()
+        .map(connectorRef
+            -> ConnectorResponseDTO.builder()
+                   .connector(ConnectorInfoDTO.builder()
+                                  .orgIdentifier(orgIdentifier)
+                                  .projectIdentifier(projectIdentifier)
+                                  .identifier(connectorRef)
+                                  .build())
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public ProjectDTO getProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return ProjectDTO.builder()
         .orgIdentifier(orgIdentifier)
@@ -109,6 +124,11 @@ public class FakeNextGenService implements NextGenService {
   @Override
   public ProjectDTO getCachedProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return getProject(accountIdentifier, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public boolean isProjectDeleted(String accountId, String orgIdentifier, String projectIdentifier) {
+    return true;
   }
 
   @Override
@@ -139,11 +159,20 @@ public class FakeNextGenService implements NextGenService {
   }
 
   @Override
+  public void validateConnectorIdList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope) {
+    return;
+  }
+
+  @Override
   public List<ProjectDTO> listAccessibleProjects(String accountIdentifier) {
     List<ProjectDTO> projectDTOS = new ArrayList<>();
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project1").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project3").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project1").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project3").build());
     return projectDTOS;
   }
 }

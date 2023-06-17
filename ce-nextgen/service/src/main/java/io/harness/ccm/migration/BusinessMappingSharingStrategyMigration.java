@@ -7,15 +7,15 @@
 
 package io.harness.ccm.migration;
 
-import static io.harness.ccm.views.businessMapping.entities.SharingStrategy.EQUAL;
-import static io.harness.ccm.views.businessMapping.entities.SharingStrategy.FIXED;
+import static io.harness.ccm.views.businessmapping.entities.SharingStrategy.EQUAL;
+import static io.harness.ccm.views.businessmapping.entities.SharingStrategy.FIXED;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.businessMapping.dao.BusinessMappingDao;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.dao.BusinessMappingDao;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 

@@ -4,15 +4,32 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -xe
+set -e
 
-export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
+export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(.*\/\).*/\1/'`
 echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
 
 service_folders=("pipeline-service" "access-control" "platform-service" "batch-processing" "ce-nextgen" "audit-event-streaming")
 
 #Need confirmation for below services reference path of build.properties
 #"260-delegate" "315-sto-manager" "debezium-service"
+
+# exit if the target branch is pre_qa and build.propeties file is updated
+if [ "${BRANCH_PREFIX}" = "pre_qa/" ]; then
+  BASE_SHA="$(git merge-base $COMMIT_SHA $BASE_COMMIT_SHA)"
+  merge_summary=( $(git diff --name-only $COMMIT_SHA..$BASE_SHA) )
+
+  for file_name in "${merge_summary[@]}"
+  do
+    if [[ "${file_name}" = "build.properties" ]]; then
+      echo -e "\033[0;31mFOR PRE_QA BRANCH, build.properties FILE SHOULD NOT BE UPDATED";
+      exit 1
+    fi
+  done
+else
+  echo "BRANCH IS NOT EQUAL TO PRE_QA/*"
+  echo "SKIPPING THE CHECK FOR PRE_QA HOTFIX"
+fi
 
 #Get path of build.properties file for dedicated services
 if [[ "${BRANCH_PREFIX}" != "release/" ]]; then

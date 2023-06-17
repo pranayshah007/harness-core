@@ -107,9 +107,12 @@ import io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswo
 import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
+import io.harness.connector.entities.embedded.rancherconnector.RancherConfig;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
+import io.harness.connector.entities.embedded.signalfxconnector.SignalFXConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
@@ -173,6 +176,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureArtifactsConnector.class);
     set.add(BambooConnector.class);
     set.add(TerraformCloudConfig.class);
+    set.add(SignalFXConnector.class);
+    set.add(RancherConfig.class);
   }
 
   @Override
@@ -245,6 +250,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
         ServiceNowUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.servicenow.ServiceNowADFSAuthentication", ServiceNowADFSAuthentication.class);
+    h.put("connector.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication",
+        ServiceNowRefreshTokenAuthentication.class);
     h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
         JiraUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);

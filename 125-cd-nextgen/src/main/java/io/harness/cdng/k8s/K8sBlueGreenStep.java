@@ -109,6 +109,9 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
         k8sBlueGreenStepParameters.getSkipDryRun(), K8sBlueGreenBaseStepInfoKeys.skipDryRun, stepElementParameters);
     boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(k8sBlueGreenStepParameters.getPruningEnabled(),
         K8sBlueGreenBaseStepInfoKeys.pruningEnabled, stepElementParameters);
+    boolean skipUnchangedManifest =
+        CDStepHelper.getParameterFieldBooleanValue(k8sBlueGreenStepParameters.getSkipUnchangedManifest(),
+            K8sBlueGreenBaseStepInfoKeys.skipUnchangedManifest, stepElementParameters);
     List<String> manifestFilesContents =
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
@@ -137,13 +140,16 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .pruningEnabled(pruningEnabled)
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
+            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(accountId))
+            .skipUnchangedManifest(cdStepHelper.isSkipUnchangedManifest(accountId, skipUnchangedManifest));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
-      Map<String, String> k8sCommandFlag =
-          k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags());
-      bgRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
+      bgRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
+    Map<String, String> k8sCommandFlag =
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags());
+    bgRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sBGDeployRequest k8sBGDeployRequest = bgRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
 

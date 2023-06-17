@@ -7,12 +7,17 @@
 
 package io.harness.aggregator.consumers;
 
+import static io.harness.aggregator.OpType.DELETE;
+import static io.harness.aggregator.OpType.UPDATE;
+
 import io.harness.accesscontrol.AccessControlEntity;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.OpType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.DuplicateFieldException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
@@ -20,9 +25,11 @@ import io.debezium.engine.DebeziumEngine;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -38,15 +45,17 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
   private final Map<String, ChangeConsumer<? extends AccessControlEntity>> collectionToConsumerMap;
   private final Retry retry;
   private final ChangeEventFailureHandler changeEventFailureHandler;
+  private final AccessControlAdminService accessControlAdminService;
 
   public AccessControlDebeziumChangeConsumer(Deserializer<String> idDeserializer,
       Map<String, Deserializer<? extends AccessControlEntity>> collectionToDeserializerMap,
       Map<String, ChangeConsumer<? extends AccessControlEntity>> collectionToConsumerMap,
-      ChangeEventFailureHandler changeEventFailureHandler) {
+      ChangeEventFailureHandler changeEventFailureHandler, AccessControlAdminService accessControlAdminService) {
     this.idDeserializer = idDeserializer;
     this.collectionToDeserializerMap = collectionToDeserializerMap;
     this.collectionToConsumerMap = collectionToConsumerMap;
     this.changeEventFailureHandler = changeEventFailureHandler;
+    this.accessControlAdminService = accessControlAdminService;
 
     IntervalFunction intervalFunction = IntervalFunction.ofExponentialBackoff(1000, 2);
     RetryConfig retryConfig = RetryConfig.custom()
@@ -57,26 +66,59 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
     retry = Retry.of("debeziumEngineRetry", retryConfig);
   }
 
-  private boolean handleEvent(ChangeEvent<String, String> changeEvent) {
+  @VisibleForTesting
+  protected boolean handleEvent(ChangeEvent<String, String> changeEvent, Set<String> updateEventsSeen) {
     String id = idDeserializer.deserialize(null, changeEvent.key().getBytes());
     Optional<String> collectionName = getCollectionName(changeEvent.destination());
+
     Optional<OpType> opType =
         getOperationType(((EmbeddedEngineChangeEvent<String, String>) changeEvent).sourceRecord());
     if (opType.isPresent() && collectionName.isPresent()) {
+      if (opType.get() == UPDATE) {
+        if (updateEventsSeen.contains(id)) {
+          log.info("Skipping UPDATE event for entity: {}.{}", collectionName.get(), id);
+          return true;
+        }
+      }
       log.info("Handling {} event for entity: {}.{}", opType.get(), collectionName.get(), id);
 
       ChangeConsumer<? extends AccessControlEntity> changeConsumer = collectionToConsumerMap.get(collectionName.get());
-      changeConsumer.consumeEvent(opType.get(), id, deserialize(collectionName.get(), changeEvent));
+
+      AccessControlEntity accessControlEntity = deserialize(collectionName.get(), changeEvent);
+
+      // For DELETE change event we will skip block/unblock check because
+      // * We do not have deleted entity in change event
+      // * We do not have account information in change event to decide if we should block it
+      // * We can not get entity from db because it was already deleted
+      // * It is ok to process delete change event irrespective of block/unblock now because after unblock it would be
+      // difficult to reconcile these deleted entities
+      if (!DELETE.equals(opType.get()) && isBlocked(accessControlEntity)) {
+        return true;
+      }
+      boolean eventHandled =
+          changeConsumer.consumeEvent(opType.get(), id, deserialize(collectionName.get(), changeEvent));
+      // Skipping duplicate update events of same entity only when valid events get processed. Since there seems issue
+      // with Debezium where it passes UserGroup/Resource Group with null properties except for Id. We can't consider
+      // those events as processed as it will lead to skipping valid events.
+      if (opType.get() == UPDATE && eventHandled && !updateEventsSeen.contains(id)) {
+        updateEventsSeen.add(id);
+      }
     }
     return true;
+  }
+
+  private boolean isBlocked(AccessControlEntity accessControlEntity) {
+    Optional<String> accountId = accessControlEntity.getAccountId();
+    return accountId.filter(accessControlAdminService::isBlocked).isPresent();
   }
 
   @Override
   public void handleBatch(List<ChangeEvent<String, String>> changeEvents,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
+    Set<String> updateEventsSeen = new HashSet<>();
     for (ChangeEvent<String, String> changeEvent : changeEvents) {
       try {
-        retry.executeSupplier(() -> handleEvent(changeEvent));
+        retry.executeSupplier(() -> handleEvent(changeEvent, updateEventsSeen));
       } catch (Exception exception) {
         log.error(
             String.format(

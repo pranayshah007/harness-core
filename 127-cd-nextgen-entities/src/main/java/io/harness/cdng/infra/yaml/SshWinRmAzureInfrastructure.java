@@ -16,7 +16,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping.SshWinRmAzureInfraMappingBuilder;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.filters.GenericEntityRefExtractorHelper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -28,6 +28,7 @@ import io.harness.yaml.infra.HostConnectionTypeKind;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -46,7 +47,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AZURE)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = GenericEntityRefExtractorHelper.class)
 @TypeAlias("SshWinRmAzureInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure")
 public class SshWinRmAzureInfrastructure
@@ -161,5 +162,10 @@ public class SshWinRmAzureInfrastructure
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractSecretRefs() {
+    return Collections.singletonMap(YAMLFieldNameConstants.CREDENTIALS_REF, credentialsRef);
   }
 }

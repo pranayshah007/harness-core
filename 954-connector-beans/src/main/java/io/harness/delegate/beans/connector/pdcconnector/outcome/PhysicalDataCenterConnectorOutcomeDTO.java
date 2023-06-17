@@ -10,12 +10,10 @@ package io.harness.delegate.beans.connector.pdcconnector.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
@@ -31,9 +29,4 @@ import lombok.EqualsAndHashCode;
 public class PhysicalDataCenterConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Valid List<HostOutcomeDTO> hosts;
   Set<String> delegateSelectors;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    return Collections.singletonList(this);
-  }
 }

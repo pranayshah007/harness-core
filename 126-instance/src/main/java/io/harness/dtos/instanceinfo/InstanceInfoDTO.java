@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = SpotInstanceInfoDTO.class, name = "Elastigroup"),
       @JsonSubTypes.Type(value = AsgInstanceInfoDTO.class, name = "Asg"),
       @JsonSubTypes.Type(value = GoogleFunctionInstanceInfoDTO.class, name = "GoogleCloudFunction"),
+      @JsonSubTypes.Type(value = AwsSamInstanceInfoDTO.class, name = "AWS_SAM"),
       @JsonSubTypes.Type(value = AwsLambdaInstanceInfoDTO.class, name = "AwsLambda")
 })
 public abstract class InstanceInfoDTO {

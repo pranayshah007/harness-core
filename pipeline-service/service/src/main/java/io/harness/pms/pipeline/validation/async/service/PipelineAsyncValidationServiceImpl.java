@@ -9,9 +9,12 @@ package io.harness.pms.pipeline.validation.async.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.NGDateUtils;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.TemplateValidationResponseDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
@@ -21,6 +24,7 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.handler.PipelineAsyncValidationHandler;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
+import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.repositories.pipeline.validation.async.PipelineValidationEventRepository;
 
 import com.google.inject.Inject;
@@ -36,19 +40,23 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidationService {
+  public static final int MAX_TIME_FOR_PIPELINE_VALIDATION = 15;
   private final PipelineValidationEventRepository pipelineValidationEventRepository;
   private final Executor executor;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineGovernanceService pipelineGovernanceService;
+  private final PipelineRefreshService pipelineRefreshService;
 
   @Inject
   public PipelineAsyncValidationServiceImpl(PipelineValidationEventRepository pipelineValidationEventRepository,
       @Named("PipelineAsyncValidationExecutorService") Executor executor,
-      PMSPipelineTemplateHelper pipelineTemplateHelper, PipelineGovernanceService pipelineGovernanceService) {
+      PMSPipelineTemplateHelper pipelineTemplateHelper, PipelineGovernanceService pipelineGovernanceService,
+      PipelineRefreshService pipelineRefreshService) {
     this.pipelineValidationEventRepository = pipelineValidationEventRepository;
     this.executor = executor;
     this.pipelineTemplateHelper = pipelineTemplateHelper;
     this.pipelineGovernanceService = pipelineGovernanceService;
+    this.pipelineRefreshService = pipelineRefreshService;
   }
 
   @Override
@@ -67,8 +75,8 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
     PipelineValidationEvent savedPipelineValidationEvent =
         pipelineValidationEventRepository.save(pipelineValidationEvent);
 
-    executor.execute(new PipelineAsyncValidationHandler(
-        savedPipelineValidationEvent, loadFromCache, this, pipelineTemplateHelper, pipelineGovernanceService));
+    executor.execute(new PipelineAsyncValidationHandler(savedPipelineValidationEvent, loadFromCache, this,
+        pipelineTemplateHelper, pipelineGovernanceService, pipelineRefreshService));
     return savedPipelineValidationEvent;
   }
 
@@ -82,7 +90,10 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
             .fqn(fqn)
             .action(action)
             .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
-            .result(ValidationResult.builder().governanceMetadata(governanceMetadata).build())
+            .result(ValidationResult.builder()
+                        .templateValidationResponse(TemplateValidationResponseDTO.builder().validYaml(true).build())
+                        .governanceMetadata(governanceMetadata)
+                        .build())
             .startTs(System.currentTimeMillis())
             .endTs(System.currentTimeMillis())
             .build();
@@ -103,6 +114,25 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
 
   @Override
   public Optional<PipelineValidationEvent> getEventByUuid(String uuid) {
-    return pipelineValidationEventRepository.findById(uuid);
+    Optional<PipelineValidationEvent> eventByUuid = pipelineValidationEventRepository.findById(uuid);
+    if (eventByUuid.isEmpty()) {
+      throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
+    }
+    PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
+
+    Long currentTs = System.currentTimeMillis();
+    if (!ValidationStatus.isFinalStatus(pipelineValidationEvent.getStatus())
+        && NGDateUtils.getDiffOfTimeStampsInMinutes(currentTs, pipelineValidationEvent.getStartTs())
+            > MAX_TIME_FOR_PIPELINE_VALIDATION) {
+      try {
+        return Optional.of(updateEvent(
+            pipelineValidationEvent.getUuid(), ValidationStatus.TERMINATED, pipelineValidationEvent.getResult()));
+      } catch (Exception ex) {
+        log.error(
+            String.format("Could terminate the PipelineValidationEvent with id: %s", pipelineValidationEvent.getUuid()),
+            ex);
+      }
+    }
+    return eventByUuid;
   }
 }

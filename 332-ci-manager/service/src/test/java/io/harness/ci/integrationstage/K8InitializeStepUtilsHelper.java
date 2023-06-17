@@ -140,6 +140,14 @@ public class K8InitializeStepUtilsHelper {
     return arrayNode;
   }
 
+  private static JsonNode getRunStepsInStepGroupAsJsonNode4() throws Exception {
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String step = k8InitializeStepUtilsHelper.readFile("steps/runStepsInStepGroup4.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arrayNode = mapper.readValue(step, JsonNode.class);
+    return arrayNode;
+  }
+
   public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithStepGroup() throws Exception {
     return newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
         ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build(),
@@ -551,6 +559,10 @@ public class K8InitializeStepUtilsHelper {
         ExecutionWrapperConfig.builder().stepGroup(getRunStepsInStepGroupAsJsonNode3()).build());
   }
 
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithNestedStepGroup() throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().stepGroup(getRunStepsInStepGroupAsJsonNode4()).build());
+  }
+
   public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithStrategy() throws Exception {
     K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
     String step1String = k8InitializeStepUtilsHelper.readFile("strategy/stepWithStrategy1.json");
@@ -575,7 +587,7 @@ public class K8InitializeStepUtilsHelper {
     return newArrayList(step1, step2, step3, stepGroup1, stepGroup2, stepGroup3);
   }
 
-  private String readFile(String filename) {
+  public String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {
       return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);

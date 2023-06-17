@@ -39,6 +39,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.ServiceHookDelegateConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +58,7 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
   String getReleaseName();
   boolean isUseLatestKustomizeVersion();
   boolean isUseNewKubectlVersion();
+  List<ServiceHookDelegateConfig> getServiceHooks();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -118,8 +121,9 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+            capabilities.add(
+                HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+                    httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator, true));
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

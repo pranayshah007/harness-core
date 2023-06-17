@@ -115,7 +115,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   private void addChildrenForServiceV1(
       Map<String, PlanCreationResponse> planCreationResponseMap, YamlNode serviceConfigNode) throws IOException {
     ServiceConfig serviceConfig = YamlUtils.read(serviceConfigNode.toString(), ServiceConfig.class);
-
     List<String> serviceSpecChildrenIds = new ArrayList<>();
     boolean createPlanForArtifacts =
         ServiceDefinitionPlanCreatorHelper.validateCreatePlanNodeForArtifacts(serviceConfig);

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.CaseFormat.CAMEL_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
+import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
@@ -74,6 +75,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -94,6 +96,8 @@ public class MigratorUtility {
       ParameterField.createValueField(NGMigrationConstants.RUNTIME_INPUT);
   public static final ParameterField<List<TaskSelectorYaml>> RUNTIME_DELEGATE_INPUT =
       ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
+  public static final ParameterField<Boolean> RUNTIME_BOOLEAN_INPUT =
+      ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
 
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
@@ -102,14 +106,41 @@ public class MigratorUtility {
 
   private MigratorUtility() {}
 
-  public static <T> T getRestClient(ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
-    OkHttpClient okHttpClient = Http.getOkHttpClient(ngClientConfig.getBaseUrl(), false);
+  public static <T> T getRestClient(
+      MigrationInputDTO inputDTO, ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
+    String baseUrl = StringUtils.defaultIfBlank(constructBaseUrl(inputDTO, clazz), ngClientConfig.getBaseUrl());
+    OkHttpClient okHttpClient = Http.getOkHttpClient(baseUrl, false);
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
-                            .baseUrl(ngClientConfig.getBaseUrl())
+                            .baseUrl(baseUrl)
                             .addConverterFactory(JacksonConverterFactory.create(HObjectMapper.NG_DEFAULT_OBJECT_MAPPER))
                             .build();
     return retrofit.create(clazz);
+  }
+
+  private static <T> String constructBaseUrl(MigrationInputDTO inputDTO, Class<T> clazz) {
+    if (inputDTO == null || StringUtils.isBlank(inputDTO.getDestinationGatewayUrl())) {
+      return null;
+    }
+    String baseUrl = inputDTO.getDestinationGatewayUrl();
+    if (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+    }
+    String basePath;
+    switch (clazz.getName()) {
+      case "io.harness.ngmigration.client.NGClient":
+        basePath = "/ng/api/";
+        break;
+      case "io.harness.ngmigration.client.PmsClient":
+        basePath = "/pipeline/api/";
+        break;
+      case "io.harness.ngmigration.client.TemplateClient":
+        basePath = "/template/api/";
+        break;
+      default:
+        throw new InvalidRequestException("Invalid client class");
+    }
+    return baseUrl + basePath;
   }
 
   public static String generateManifestIdentifier(String name, CaseFormat caseFormat) {
@@ -121,6 +152,9 @@ public class MigratorUtility {
     if (LOWER_CASE == caseFormat) {
       return identifier.toLowerCase();
     }
+    if (SNAKE_CASE == caseFormat) {
+      return generateSnakeCaseIdentifier(name);
+    }
     return identifier;
   }
 
@@ -130,6 +164,24 @@ public class MigratorUtility {
     }
     name = StringUtils.stripAccents(name);
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
+  }
+
+  private static String generateSnakeCaseIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
+    name = StringUtils.stripAccents(name).toLowerCase();
+    StringBuilder snakeCase = new StringBuilder();
+
+    for (char c : name.toCharArray()) {
+      if (Character.isLetterOrDigit(c)) {
+        snakeCase.append(c);
+      } else {
+        snakeCase.append('_');
+      }
+    }
+    String generated = snakeCase.toString();
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 
@@ -241,13 +293,20 @@ public class MigratorUtility {
 
   public static String getIdentifierWithScope(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
-    NgEntityDetail detail =
-        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    NGYamlFile yamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (yamlFile == null) {
+      return NGMigrationConstants.RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = yamlFile.getNgEntityDetail();
     return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
     String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    return getScopedIdentifier(scope, identifier);
+  }
+
+  public static String getScopedIdentifier(Scope scope, String identifier) {
     switch (scope) {
       case ACCOUNT:
         return "account." + identifier;
@@ -295,6 +354,7 @@ public class MigratorUtility {
     }
     String name = variable.getName();
     name = name.replace('-', '_');
+    name = name.replaceAll("\\W", "");
     return StringNGVariable.builder()
         .type(NGVariableType.STRING)
         .name(name)
@@ -407,6 +467,9 @@ public class MigratorUtility {
 
   public static ParameterField<String> getIdentifierWithScopeDefaultsRuntime(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    if (StringUtils.isBlank(entityId) || entityType == null) {
+      return RUNTIME_INPUT;
+    }
     NGYamlFile ngYamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (ngYamlFile == null) {
       return RUNTIME_INPUT;
@@ -503,9 +566,13 @@ public class MigratorUtility {
   }
 
   public static List<GraphNode> getSteps(Workflow workflow) {
+    List<GraphNode> stepYamls = new ArrayList<>();
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null
+        || !(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
+      return stepYamls;
+    }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    List<GraphNode> stepYamls = new ArrayList<>();
     PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
     if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(postDeploymentPhaseStep.getSteps());
@@ -585,7 +652,7 @@ public class MigratorUtility {
         .build();
   }
 
-  public static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
+  public static MigrationInputDTO getMigrationInput(String requestAuthToken, ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
@@ -608,6 +675,11 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationGatewayUrl(StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getGatewayUrl(), null))
+        .destinationAccountIdentifier(StringUtils.defaultIfBlank(
+            importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
+        .destinationAuthToken(
+            StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getAuthToken(), requestAuthToken))
         .accountIdentifier(importDTO.getAccountIdentifier())
         .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
         .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())
@@ -622,10 +694,15 @@ public class MigratorUtility {
 
   public static Map<String, Object> getExpressions(
       WorkflowPhase phase, List<StepExpressionFunctor> functors, CaseFormat caseFormat) {
+    String stageIdentifier = MigratorUtility.generateIdentifier(phase.getName(), caseFormat);
+    return getExpressions(stageIdentifier, functors);
+  }
+
+  public static Map<String, Object> getExpressions(String phaseIdentifier, List<StepExpressionFunctor> functors) {
     Map<String, Object> expressions = new HashMap<>();
 
     for (StepExpressionFunctor functor : functors) {
-      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName(), caseFormat));
+      functor.setCurrentStageIdentifier(phaseIdentifier);
       expressions.put(functor.getCgExpression(), functor);
     }
     return expressions;
@@ -673,5 +750,34 @@ public class MigratorUtility {
     } else {
       return val;
     }
+  }
+
+  public static String toTimeoutString(long timestamp) {
+    long tSec = timestamp / 1000;
+    String timeString = "10m";
+
+    long days = TimeUnit.SECONDS.toDays(tSec);
+    if (days > 0) {
+      timeString = days + "d";
+      tSec -= TimeUnit.DAYS.toSeconds(days);
+    }
+
+    long hours = TimeUnit.SECONDS.toHours(tSec);
+    if (hours > 0) {
+      timeString = hours + "h";
+      tSec -= TimeUnit.HOURS.toSeconds(hours);
+    }
+
+    long minutes = TimeUnit.SECONDS.toMinutes(tSec);
+    if (minutes > 0) {
+      timeString = minutes + "m";
+      tSec -= TimeUnit.MINUTES.toSeconds(minutes);
+    }
+
+    long seconds = tSec;
+    if (seconds > 0) {
+      timeString = seconds + "s";
+    }
+    return timeString;
   }
 }

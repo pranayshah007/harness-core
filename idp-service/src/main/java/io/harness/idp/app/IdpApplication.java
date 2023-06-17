@@ -17,13 +17,16 @@ import io.harness.Microservice;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
+import io.harness.idp.configmanager.jobs.ConfigPurgeJob;
 import io.harness.idp.envvariable.jobs.BackstageEnvVariablesSyncJob;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.migration.IdpMigrationProvider;
+import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
@@ -37,10 +40,14 @@ import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.persistence.HPersistence;
+import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.service.impl.DelegateAsyncServiceImpl;
+import io.harness.service.impl.DelegateProgressServiceImpl;
+import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -66,6 +73,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -73,6 +81,7 @@ import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.ServerProperties;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 /**
  * The main application - entry point for the entire Wings Application.
@@ -137,14 +146,26 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerManagedJobs(environment, injector);
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
+    registerHealthCheck(environment, injector);
+    environment.jersey().register(RequestLoggingFilter.class);
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
+
+    MaintenanceController.forceMaintenance(false);
   }
 
   private void registerManagedJobs(Environment environment, Injector injector) {
     environment.lifecycle().manage(injector.getInstance(BackstageEnvVariablesSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
+    environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
   private void registerQueueListeners(Injector injector) {
@@ -189,6 +210,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     serviceToSecretMapping.put(
         AuthorizationServiceHeader.IDENTITY_SERVICE.getServiceId(), config.getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(), config.getNgManagerServiceSecret());
+    serviceToSecretMapping.put(AuthorizationServiceHeader.IDP_UI.getServiceId(), config.getIdpServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     registerInternalApiAuthFilter(config, environment);
@@ -233,5 +255,11 @@ public class IdpApplication extends Application<IdpConfiguration> {
           { add(IdpMigrationProvider.class); }
         })
         .build();
+  }
+
+  private void registerHealthCheck(Environment environment, Injector injector) {
+    final HealthService healthService = injector.getInstance(HealthService.class);
+    environment.healthChecks().register("IDP", healthService);
+    healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
   }
 }

@@ -1,0 +1,6 @@
+integrations:
+  bitbucketServer:
+    - host: HOST_VALUE
+      apiBaseUrl: https://HOST_VALUE/rest/api/1.0
+      username: ${HARNESS_BITBUCKET_USERNAME}
+      password: ${HARNESS_BITBUCKET_TOKEN}

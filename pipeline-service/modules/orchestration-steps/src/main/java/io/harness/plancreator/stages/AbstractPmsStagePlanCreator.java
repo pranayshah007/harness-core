@@ -55,8 +55,7 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
-    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
-        yamlField.getNode().getParentNode().getCurrJsonNode());
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(yamlField);
   }
 
   @Override

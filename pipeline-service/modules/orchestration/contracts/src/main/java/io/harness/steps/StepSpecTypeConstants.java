@@ -38,10 +38,10 @@ public interface StepSpecTypeConstants {
   String POLICY_STEP = "Policy";
   String EMAIL = "Email";
   String WAIT_STEP = "Wait";
-  String CONTAINER_STEP = "Container";
   String INIT_CONTAINER_STEP = "InitContainer";
   String RUN_CONTAINER_STEP = "RunContainer";
   String INIT_CONTAINER_STEP_V2 = "InitializeContainer";
+  //  String INIT_CONTAINER_STEP_V2 = "InitContainer";
 
   String APPROVAL_FACILITATOR = "APPROVAL_FACILITATOR";
   String RESOURCE_RESTRAINT_FACILITATOR_TYPE = "RESOURCE_RESTRAINT";
@@ -90,8 +90,6 @@ public interface StepSpecTypeConstants {
                                                   .setType(StepSpecTypeConstants.SERVICENOW_IMPORT_SET)
                                                   .setStepCategory(StepCategory.STEP)
                                                   .build();
-  StepType CONTAINER_STEP_TYPE =
-      StepType.newBuilder().setType(StepSpecTypeConstants.CONTAINER_STEP).setStepCategory(StepCategory.STEP).build();
 
   StepType INIT_CONTAINER_STEP_TYPE = StepType.newBuilder()
                                           .setType(StepSpecTypeConstants.INIT_CONTAINER_STEP)

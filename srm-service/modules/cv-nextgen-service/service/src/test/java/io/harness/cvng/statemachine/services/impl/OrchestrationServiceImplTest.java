@@ -16,9 +16,14 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -36,11 +41,29 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
+import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.models.VerificationType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLIMetricAnalysisTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -52,10 +75,13 @@ import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateM
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.TimeSeriesAnalysisState;
+import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
+import io.harness.cvng.statemachine.services.api.SLIMetricAnalysisStateExecutor;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
@@ -71,34 +97,65 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
+
+  @Inject private MetricPackService metricPackService;
   @Inject AnalysisStateMachineService analysisStateMachineService;
-  @Inject private VerificationTaskService verificationTaskService;
   @Inject OrchestrationService orchestrationService;
-  @Inject private Clock clock;
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+
+  @Spy private StateMachineEventPublisherService stateMachineEventPublisherService;
   private BuilderFactory builderFactory;
   private String cvConfigId;
   private String verificationTaskId;
   private String accountId;
   private DataGenerator dataGenerator;
   private TimeSeriesAnalysisState timeSeriesAnalysisState;
+  @Spy @Inject private SLIDataUnavailabilityInstancesHandlerService sliDataUnavailabilityInstancesHandlerService;
+  @Spy @Inject private SLIDataProcessorService sliDataProcessorService;
+  @Spy @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Spy @Inject private VerificationTaskService verificationTaskService;
+  @Spy @Inject private SLIRecordService sliRecordService;
+  @Spy @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
+  @Spy @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Spy @Inject private SLIMetricAnalysisTransformer sliMetricAnalysisTransformer;
+  @Spy @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
+  @Spy @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+  @Spy @Inject private SLIConsecutiveMinutesProcessorService sliConsecutiveMinutesProcessorService;
+  @Spy @Inject private MetricService metricService;
+  @Spy @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
+  @Spy @Inject private CompositeSLOService compositeSLOService;
+
+  @Spy @Inject private Clock clock;
+
+  @Spy @InjectMocks private SLIMetricAnalysisStateExecutor analysisStateExecutorMock;
+
+  // Inject the mock object into the map
+  @InjectMocks
+  private Map<AnalysisState.StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap = new HashMap<>();
 
   @Before
   public void setup() throws Exception {
+    MockitoAnnotations.initMocks(this);
+
     builderFactory = BuilderFactory.getDefault();
     cvConfigId = generateUuid();
     accountId = generateUuid();
@@ -128,7 +185,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                                             .get();
 
     assertThat(orchestrator).isNull();
-    orchestrationService.queueAnalysis(cvConfigId, clock.instant(), clock.instant().minus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(cvConfigId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                        .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
@@ -146,9 +207,13 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     Instant startTime = clock.instant();
     AnalysisOrchestrator orchestrator = orchestrationService.getAnalysisOrchestrator(verificationTaskId);
     assertThat(orchestrator).isNull();
-    orchestrationService.queueAnalysis(verificationTaskId, startTime.minus(5, ChronoUnit.MINUTES), startTime);
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .endTime(startTime)
+                                           .startTime(startTime.minus(5, ChronoUnit.MINUTES))
+                                           .build());
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
       updateLearningEngineTask();
       orchestrator = orchestrationService.getAnalysisOrchestrator(verificationTaskId);
       orchestrationService.orchestrate(orchestrator);
@@ -156,7 +221,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     }
     assertThat(orchestrationService.getAnalysisOrchestrator(verificationTaskId).getStatus())
         .isEqualTo(AnalysisOrchestratorStatus.WAITING);
-    orchestrationService.queueAnalysis(verificationTaskId, startTime.minus(5, ChronoUnit.MINUTES), startTime);
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime)
+                                           .endTime(startTime.minus(5, ChronoUnit.MINUTES))
+                                           .build());
     assertThat(orchestrationService.getAnalysisOrchestrator(verificationTaskId).getStatus())
         .isEqualTo(AnalysisOrchestratorStatus.RUNNING);
   }
@@ -167,7 +236,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   public void testQueueAnalysis_multiple() {
     for (Instant startTime = clock.instant(); startTime.isBefore(clock.instant().plus(Duration.ofMinutes(30)));
          startTime = startTime.plus(Duration.ofMinutes(5))) {
-      orchestrationService.queueAnalysis(verificationTaskId, startTime, startTime.plus(5, ChronoUnit.MINUTES));
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(startTime)
+                                             .endTime(startTime.plus(5, ChronoUnit.MINUTES))
+                                             .build());
     }
     List<AnalysisOrchestrator> orchestrator =
         hPersistence.createQuery(AnalysisOrchestrator.class)
@@ -179,7 +252,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     orchestrationService.orchestrate(orchestrator.get(0));
     for (Instant startTime = clock.instant(); startTime.isBefore(clock.instant().plus(Duration.ofMinutes(15)));
          startTime = startTime.plus(Duration.ofMinutes(5))) {
-      orchestrationService.queueAnalysis(verificationTaskId, startTime, startTime.plus(5, ChronoUnit.MINUTES));
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(startTime)
+                                             .endTime(startTime.plus(5, ChronoUnit.MINUTES))
+                                             .build());
     }
     orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                        .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
@@ -194,8 +271,16 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testRetryLogic() {
     Instant startTime = clock.instant();
-    orchestrationService.queueAnalysis(verificationTaskId, startTime.minus(5, ChronoUnit.MINUTES), startTime);
-    orchestrationService.queueAnalysis(verificationTaskId, startTime, startTime.plus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime.minus(5, ChronoUnit.MINUTES))
+                                           .endTime(startTime)
+                                           .build());
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime)
+                                           .endTime(startTime.plus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     List<AnalysisOrchestrator> orchestrator =
         hPersistence.createQuery(AnalysisOrchestrator.class)
@@ -206,7 +291,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     assertThat(orchestrator.get(0).getAnalysisStateMachineQueue()).hasSize(2);
     orchestrationService.orchestrate(orchestrator.get(0));
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
       updateLearningEngineTask();
       orchestrationService.orchestrate(orchestrator.get(0));
       incrementAnalysisStateMachineClockBy5Hours();
@@ -220,8 +305,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                    .filter(analysisStateMachine -> analysisStateMachine.getStatus().equals(AnalysisStatus.IGNORED))
                    .filter(analysisStateMachine -> analysisStateMachine.getCurrentState().getRetryCount() == 2))
         .isNotEmpty();
-    orchestrationService.queueAnalysis(
-        verificationTaskId, startTime.plus(1, ChronoUnit.DAYS), startTime.plus(2, ChronoUnit.DAYS));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime.plus(1, ChronoUnit.DAYS))
+                                           .endTime(startTime.plus(2, ChronoUnit.DAYS))
+                                           .build());
     orchestrationService.orchestrate(orchestrationService.getAnalysisOrchestrator(verificationTaskId));
     analysisStateMachines = hPersistence.createQuery(AnalysisStateMachine.class)
                                 .filter(AnalysisStateMachineKeys.verificationTaskId, verificationTaskId)
@@ -249,7 +337,12 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     assertThat(orchestrator).isNull();
 
-    assertThatThrownBy(() -> orchestrationService.queueAnalysis(cvConfigId, clock.instant(), null))
+    assertThatThrownBy(()
+                           -> orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                                                     .verificationTaskId(verificationTaskId)
+                                                                     .startTime(clock.instant())
+                                                                     .endTime(null)
+                                                                     .build()))
         .isInstanceOf(NullPointerException.class);
   }
 
@@ -517,7 +610,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     assertThat(orchestrator).isNull();
 
-    orchestrationService.queueAnalysis(cvConfigId, clock.instant(), clock.instant().minus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
     AnalysisOrchestrator dbOrchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                                               .filter(AnalysisOrchestratorKeys.verificationTaskId, cvConfigId)
                                               .get();
@@ -544,7 +641,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
             Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
-            "monitoredServiceIdentifier", generateUuid());
+            builderFactory.getContext().getMonitoredServiceIdentifier(), generateUuid());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
     String sliId = serviceLevelIndicator.getUuid();
@@ -554,7 +651,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                                             .get();
 
     assertThat(orchestrator).isNull();
-    orchestrationService.queueAnalysis(sliId, clock.instant(), clock.instant().minus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(sliId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                        .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
@@ -568,11 +669,94 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testQueueAnalysisWithRestore_forSLIVerificationTask() throws IllegalAccessException {
+    createMonitoredService();
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    SimpleServiceLevelObjective serviceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), serviceLevelObjective.getServiceLevelIndicators().get(0));
+    String sliId = serviceLevelIndicator.getUuid();
+
+    AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                                            .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                                            .get();
+
+    assertThat(orchestrator).isNull();
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(sliId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .isSLORestoreTask(true)
+                                           .build());
+
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                       .get();
+
+    assertThat(orchestrator).isNotNull();
+    assertThat(orchestrator.getUuid()).isNotNull();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(orchestrator.getAnalysisStateMachineQueue().get(0).getCurrentState().getType())
+        .isEqualTo(AnalysisState.StateType.SLI_METRIC_ANALYSIS);
+    orchestrationService.orchestrate(orchestrator);
+    stateTypeAnalysisStateExecutorMap.put(AnalysisState.StateType.SLI_METRIC_ANALYSIS, analysisStateExecutorMock);
+    doCallRealMethod().when(analysisStateExecutorMock).getExecutionStatus(any());
+    doCallRealMethod().when(analysisStateExecutorMock).execute(any());
+    FieldUtils.writeField(
+        analysisStateMachineService, "stateTypeAnalysisStateExecutorMap", stateTypeAnalysisStateExecutorMap, true);
+    FieldUtils.writeField(orchestrationService, "stateMachineService", analysisStateMachineService, true);
+    orchestrationService.orchestrate(orchestrator);
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                       .get();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisOrchestratorStatus.WAITING.name());
+    AnalysisStateMachine stateMachine = hPersistence.createQuery(AnalysisStateMachine.class)
+                                            .filter(AnalysisStateMachineKeys.verificationTaskId, sliId)
+                                            .get();
+    assertThat(stateMachine.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    verify(analysisStateExecutorMock).handleFinalStatuses(any());
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testQueueAnalysis_forCompositeSLOVerificationTask() throws IllegalAccessException {
+    FieldUtils.writeField(
+        orchestrationService, "stateMachineEventPublisherService", stateMachineEventPublisherService, true);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), getCompositeSLODTO());
+    String sloId =
+        serviceLevelObjectiveV2Service.getEntity(builderFactory.getProjectParams(), "compositeSloIdentifier").getUuid();
+    AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                                            .filter(AnalysisOrchestratorKeys.verificationTaskId, sloId)
+                                            .get();
+
+    assertThat(orchestrator).isNotNull();
+    assertThat(orchestrator.getUuid()).isNotNull();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(orchestrator.getAnalysisStateMachineQueue().get(0).getCurrentState().getType())
+        .isEqualTo(AnalysisState.StateType.COMPOSOITE_SLO_METRIC_ANALYSIS);
+    orchestrationService.orchestrate(orchestrator);
+    orchestrationService.orchestrate(orchestrator);
+
+    verify(stateMachineEventPublisherService, times(0)).registerTaskComplete(any(), any());
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testQueueAnalysis_withFailFast() {
     createDeploymentTimeSeriesAnalysisRecords(verificationTaskId);
-    orchestrationService.queueAnalysis(verificationTaskId, Instant.now(), Instant.now().plus(2, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(Instant.now())
+                                           .endTime(Instant.now().plus(2, ChronoUnit.MINUTES))
+                                           .build());
 
     AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                                             .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
@@ -678,7 +862,9 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
   private void createMonitoredService() {
     MonitoredServiceDTO monitoredServiceDTO =
-        builderFactory.monitoredServiceDTOBuilder().identifier("monitoredServiceIdentifier").build();
+        builderFactory.monitoredServiceDTOBuilder()
+            .identifier(builderFactory.getContext().getMonitoredServiceIdentifier())
+            .build();
     monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
@@ -688,5 +874,55 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     Clock oldClock = (Clock) FieldUtils.readField(analysisStateMachineService, "clock", true);
     Clock newClock = Clock.fixed(oldClock.instant().plus(Duration.ofHours(5)), ZoneOffset.UTC);
     FieldUtils.writeField(analysisStateMachineService, "clock", newClock, true);
+  }
+
+  private ServiceLevelObjectiveV2DTO getCompositeSLODTO() {
+    metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
+    SimpleServiceLevelObjective simpleServiceLevelObjective1 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
+    SimpleServiceLevelObjective simpleServiceLevelObjective2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    return builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+        .spec(CompositeServiceLevelObjectiveSpec.builder()
+                  .serviceLevelObjectivesDetails(
+                      Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                        .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                        .weightagePercentage(75.0)
+                                        .accountId(simpleServiceLevelObjective1.getAccountId())
+                                        .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                        .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                        .build(),
+                          ServiceLevelObjectiveDetailsDTO.builder()
+                              .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                              .weightagePercentage(25.0)
+                              .accountId(simpleServiceLevelObjective2.getAccountId())
+                              .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                              .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                              .build()))
+                  .build())
+        .build();
   }
 }

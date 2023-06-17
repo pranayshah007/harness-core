@@ -7,13 +7,18 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.beans.DecryptableEntity;
+import io.harness.exception.UnknownEnumTypeException;
 import io.harness.ng.core.models.SSHExecutionCredentialSpec;
 import io.harness.ng.core.models.SecretSpec;
+import io.harness.secretmanagerclient.SSHAuthScheme;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -41,6 +46,32 @@ public class SSHKeySpecDTO extends SecretSpecDTO {
   @Override
   public SecretSpec toEntity() {
     return SSHExecutionCredentialSpec.builder().port(getPort()).auth(this.auth.toEntity()).build();
+  }
+
+  @Override
+  public Optional<List<DecryptableEntity>> getDecryptableEntities() {
+    if (auth.getAuthScheme() == SSHAuthScheme.SSH) {
+      List<DecryptableEntity> decryptableEntities = new ArrayList<>();
+      SSHConfigDTO spec = (SSHConfigDTO) auth.getSpec();
+      switch (spec.getCredentialType()) {
+        case KeyPath:
+          decryptableEntities.add((SSHKeyPathCredentialDTO) spec.getSpec());
+          break;
+        case KeyReference:
+          decryptableEntities.add((SSHKeyReferenceCredentialDTO) spec.getSpec());
+          break;
+        case Password:
+          decryptableEntities.add((SSHPasswordCredentialDTO) spec.getSpec());
+          break;
+        default:
+          throw new UnknownEnumTypeException("Credential Type", spec.credentialType.name());
+      }
+      return Optional.of(decryptableEntities);
+    } else if (auth.getAuthScheme() == SSHAuthScheme.Kerberos) {
+      KerberosConfigDTO spec = (KerberosConfigDTO) auth.getSpec();
+      return Optional.ofNullable(spec.getSpec().getDecryptableEntities());
+    }
+    return Optional.empty();
   }
 
   @Builder

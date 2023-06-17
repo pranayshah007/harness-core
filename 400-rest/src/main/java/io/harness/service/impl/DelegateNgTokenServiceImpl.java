@@ -14,7 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.authenticator.DelegateTokenEncryptDecrypt;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -27,7 +27,6 @@ import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.delegate.utils.DelegateJWTCache;
-import io.harness.delegate.utils.DelegateTokenCacheHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
@@ -60,18 +59,19 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, AccountCrudObserver {
   private static final String DEFAULT_TOKEN_NAME = "default_token";
+  private final String TOKEN_NAME_ILLEGAL_CHARACTERS = "[~!@#$%^&*'\"/?<>,;.]";
+
   private final HPersistence persistence;
   private final OutboxService outboxService;
-  private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
+  private final DelegateSecretManager delegateSecretManager;
   private final DelegateJWTCache delegateJWTCache;
 
   @Inject
   public DelegateNgTokenServiceImpl(HPersistence persistence, OutboxService outboxService,
-      DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt, DelegateTokenCacheHelper delegateTokenCacheHelper,
-      DelegateJWTCache delegateJWTCache) {
+      DelegateSecretManager delegateSecretManager, DelegateJWTCache delegateJWTCache) {
     this.persistence = persistence;
     this.outboxService = outboxService;
-    this.delegateTokenEncryptDecrypt = delegateTokenEncryptDecrypt;
+    this.delegateSecretManager = delegateSecretManager;
     this.delegateJWTCache = delegateJWTCache;
   }
 
@@ -93,7 +93,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .isNg(true)
             .status(DelegateTokenStatus.ACTIVE)
             .value(token)
-            .encryptedTokenId(delegateTokenEncryptDecrypt.encrypt(accountId, token, tokenIdentifier.trim()))
+            .encryptedTokenId(delegateSecretManager.encrypt(accountId, token, tokenIdentifier.trim()))
             .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
             .revokeAfter(revokeAfter)
             .build();
@@ -166,7 +166,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public String getDelegateTokenValue(String accountId, String name) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      return delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken);
+      return delegateSecretManager.getDelegateTokenValue(delegateToken);
     }
     log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
     return null;
@@ -189,7 +189,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
           accountId, extractOrganization(owner), extractProject(owner));
       return getDelegateTokenDetails(token.get(), true);
     }
-
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
             .setOnInsert(DelegateTokenKeys.uuid, UUIDGenerator.generateUuid())
@@ -198,10 +197,16 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
             .set(DelegateTokenKeys.isNg, true)
             .set(DelegateTokenKeys.value, encodeBase64(Misc.generateSecretKey()));
-
+    String tokenIdentifier = getDefaultTokenName(owner);
     if (owner != null) {
       updateOperations.set(DelegateTokenKeys.owner, owner);
+      String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(owner.getIdentifier());
+      String projectId = DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(owner.getIdentifier());
+      tokenIdentifier = String.format("%s_%s_%s", getDefaultTokenName(owner), orgId, projectId);
     }
+    String tokenNameSanitized = StringUtils.replaceAll(tokenIdentifier, TOKEN_NAME_ILLEGAL_CHARACTERS, "_");
+    updateOperations.set(DelegateTokenKeys.encryptedTokenId,
+        delegateSecretManager.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     log.info("Default Delegate NG Token inserted/updated for account {}, organization {} and project {}", accountId,
@@ -278,7 +283,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateTokenEncryptDecrypt.getBase64EncodedTokenValue(delegateToken));
+      delegateTokenDetailsBuilder.value(delegateSecretManager.getBase64EncodedTokenValue(delegateToken));
     }
 
     if (delegateToken.getOwner() != null) {

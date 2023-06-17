@@ -21,6 +21,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.dto.HelmChartSpecification;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.service.impl.ContainerServiceParams;
 
@@ -60,12 +61,13 @@ public class HelmInstallCommandRequest extends HelmCommandRequest {
       K8sDelegateManifestConfig sourceRepoConfig, HelmVersion helmVersion, String ocPath, String workingDir,
       boolean k8SteadyStateCheckEnabled, boolean mergeCapabilities, boolean isGitHostConnectivityCheck,
       boolean useLatestChartMuseumVersion, boolean optimizedFilesFetch, boolean useNewKubectlVersion, String gcpKeyPath,
-      boolean ignoreReleaseHistFailStatus) {
+      boolean ignoreReleaseHistFailStatus, boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck) {
     super(HelmCommandType.INSTALL, accountId, appId, kubeConfigLocation, commandName, activityId,
         containerServiceParams, releaseName, chartSpecification, repoName, gitConfig, encryptedDataDetails,
         executionLogCallback, commandFlags, helmCommandFlag, sourceRepoConfig, helmVersion, ocPath, workingDir,
         variableOverridesYamlFiles, gitFileConfig, k8SteadyStateCheckEnabled, mergeCapabilities,
-        isGitHostConnectivityCheck, useLatestChartMuseumVersion, useNewKubectlVersion, gcpKeyPath);
+        isGitHostConnectivityCheck, useLatestChartMuseumVersion, useNewKubectlVersion, gcpKeyPath,
+        useRefactorSteadyStateCheck, skipSteadyStateCheck);
     this.newReleaseVersion = newReleaseVersion;
     this.prevReleaseVersion = prevReleaseVersion;
     this.namespace = namespace;

@@ -35,7 +35,7 @@ public interface NGTriggerService {
   Optional<NGTriggerEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String targetIdentifier, String identifier, boolean deleted);
 
-  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity);
+  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity);
 
   boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
 
@@ -48,6 +48,9 @@ public interface NGTriggerService {
 
   List<NGTriggerEntity> findTriggersForCustomWehbook(
       TriggerWebhookEvent triggerWebhookEvent, boolean isDeleted, boolean enabled);
+
+  Optional<NGTriggerEntity> findTriggersForCustomWebhookViaCustomWebhookToken(String webhookToken);
+
   List<NGTriggerEntity> findTriggersForWehbookBySourceRepoType(
       TriggerWebhookEvent triggerWebhookEvent, boolean isDeleted, boolean enabled);
   List<NGTriggerEntity> findBuildTriggersByAccountIdAndSignature(String accountId, List<String> signatures);
@@ -64,7 +67,8 @@ public interface NGTriggerService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId);
-  NGTriggerEntity updateTriggerWithValidationStatus(NGTriggerEntity ngTriggerEntity, ValidationResult validationResult);
+  NGTriggerEntity updateTriggerWithValidationStatus(
+      NGTriggerEntity ngTriggerEntity, ValidationResult validationResult, boolean whileExecution);
   TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
       String triggerId, String newYaml, boolean withServiceV2);
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);

@@ -11,11 +11,23 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.artifacts.docker.DockerRegistryRestClient;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.artifacts.githubpackages.beans.GithubMavenMetaData;
+import io.harness.artifacts.githubpackages.beans.GithubPackageTypes;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
+import io.harness.artifacts.githubpackages.beans.SnapshotVersion;
+import io.harness.artifacts.githubpackages.client.GithubPackagesMavenRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
@@ -36,9 +48,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Headers;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
@@ -47,10 +61,16 @@ import retrofit2.Response;
 @Slf4j
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
+  @Inject private DockerRegistryUtils dockerRegistryUtils;
+  @Inject private DockerRegistryServiceImpl dockerRegistryService;
 
   private int DEFAULT_GITHUB_LIST_RESPONSE_SIZE = 100;
-
-  @Override
+  private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
+  private static final String ERROR_MESSAGE =
+      "Check if the package and the version exists and if the permissions are scoped for the authenticated user";
+  private static final String COULD_NOT_FETCH_VERSION = "Could not fetch the version for the package";
+  private static final String COULD_NOT_FETCH_DOWNLOAD_URL = "Could not fetch Download Url";
+  private static final String GITHUB_MAVEN_URL = "https://maven.pkg.github.com/";
   public List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
       String packageType, String org, String versionRegex) {
     List<BuildDetails> buildDetails;
@@ -92,9 +112,8 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     } catch (GithubPackagesServerRuntimeException ex) {
       throw ex;
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the version for the package",
-          "Check if the package and the version exists and if the permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+      throw NestedExceptionUtils.hintWithExplanationException(
+          COULD_NOT_FETCH_VERSION, ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
     buildDetails = regexFilteringForGetBuilds(versionRegex, buildDetails, packageName);
@@ -103,28 +122,35 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       throw new InvalidRequestException("No version with matching regex is present");
     }
 
-    return buildDetails.get(0);
+    return getBuild(githubPackagesInternalConfig, packageName, packageType, buildDetails.get(0).getNumber(), org);
   }
 
   @Override
   public BuildDetails getBuild(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
       String packageType, String version, String org) {
-    List<BuildDetails> builds = new ArrayList<>();
-
     if (!isPackageType(packageType)) {
       throw new InvalidRequestException("Incorrect Package Type");
     }
 
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+    if (packageType.equals(GithubPackageTypes.CONTAINER)) {
+      artifactMetaInfo = fetchShaDetails(githubPackagesInternalConfig, packageName, version, org, artifactMetaInfo);
+      if (EmptyPredicate.isNotEmpty(artifactMetaInfo.getShaV2())
+          || EmptyPredicate.isNotEmpty(artifactMetaInfo.getSha())) {
+        return constructBuildDetails(
+            version, packageName, artifactMetaInfo, org, githubPackagesInternalConfig.getUsername());
+      }
+    }
+
+    List<BuildDetails> builds = new ArrayList<>();
     try {
       builds = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
     } catch (GithubPackagesServerRuntimeException ex) {
       throw ex;
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the version for the package",
-          "Check if the package and the version exists and if the permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+      throw NestedExceptionUtils.hintWithExplanationException(
+          COULD_NOT_FETCH_VERSION, ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
-
     return versionFiltering(version, builds, packageName);
   }
 
@@ -150,6 +176,45 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return map;
   }
 
+  public String fetchDownloadUrl(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType,
+      String org, String artifactId, String user, String extension, String repository, String packageName,
+      String version, String groupId) {
+    String userOrOrg = StringUtils.isBlank(user) ? org : user;
+    GithubPackagesMavenRestClient githubPackagesRestClient =
+        githubPackagesRestClientFactory.getGithubPackagesMavenRestClient(githubPackagesInternalConfig);
+    String basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
+    try {
+      Response<GithubMavenMetaData> githubMavenMetaData =
+          githubPackagesRestClient
+              .getMavenMetaData(basicAuthHeader, userOrOrg, repository, groupId, artifactId, version)
+              .execute();
+
+      if (!isSuccessful(githubMavenMetaData)) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Unable to fetch the metadata for github package of maven type",
+            "Check if the package exists and if the permissions are scoped for the authenticated user",
+            new InvalidArtifactServerException(githubMavenMetaData.message(), USER));
+      }
+      GithubMavenMetaData response = githubMavenMetaData.body();
+
+      List<SnapshotVersion> SnapshotVersions = response.getVersioning().getSnapshotVersions().getSnapshotVersion();
+
+      extension = StringUtils.isBlank(extension) ? "jar" : extension; // default value for extension field.
+
+      for (SnapshotVersion snapshotVersion1 : SnapshotVersions) {
+        if (snapshotVersion1.getExtension().equals(extension)) {
+          return GITHUB_MAVEN_URL
+              + String.format("%s/%s/%s/%s/%s/%s-%s.%s", userOrOrg, repository, groupId, artifactId, version,
+                  artifactId, snapshotVersion1.getValue(), extension);
+        }
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_DOWNLOAD_URL, e);
+      return "";
+    }
+
+    return "";
+  }
   private List<Map<String, String>> getPackages(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org) throws IOException {
     GithubPackagesRestClient githubPackagesRestClient =
@@ -226,6 +291,23 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return builds;
   }
 
+  private BuildDetails constructBuildDetails(
+      String version, String packageName, ArtifactMetaInfo artifactMetaInfo, String org, String userName) {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.SHA, artifactMetaInfo.getSha());
+    metadata.put(ArtifactMetadataKeys.SHAV2, artifactMetaInfo.getShaV2());
+    return BuildDetails.Builder.aBuildDetails()
+        .withBuildDisplayName(packageName + ": " + version)
+        .withUiDisplayName("Tag# " + version)
+        .withNumber(version)
+        .withMetadata(metadata)
+        .withLabels(artifactMetaInfo.getLabels())
+        .withStatus(BuildDetails.BuildStatus.SUCCESS)
+        .withBuildFullDisplayName(artifactMetaInfo.getShaV2())
+        .withArtifactPath(getArtifactPath(org, packageName, version, userName.toLowerCase()))
+        .build();
+  }
+
   private BuildDetails versionFiltering(String version, List<BuildDetails> builds, String packageName) {
     for (BuildDetails build : builds) {
       Map<String, String> map = build.getMetadata();
@@ -240,6 +322,20 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     }
 
     throw new InvalidRequestException("Could not find version " + version + " in the package " + packageName);
+  }
+
+  private String getArtifactPath(String org, String packageName, String tag, String username) {
+    String artifactPath;
+    if (GARUtils.isSHA(tag)) {
+      artifactPath = "ghcr.io/%s/%s@%s";
+    } else {
+      artifactPath = "ghcr.io/%s/%s:%s";
+    }
+    if (EmptyPredicate.isEmpty(org)) {
+      return String.format(artifactPath, username, packageName, tag);
+    } else {
+      return String.format(artifactPath, org, packageName, tag);
+    }
   }
 
   private List<BuildDetails> getBuildDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
@@ -301,7 +397,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       }
     }
 
-    githubPackagesVersionsResponse = processResponse(response);
+    githubPackagesVersionsResponse = processResponse(response, packageType);
 
     return processBuildDetails(
         githubPackagesVersionsResponse, packageName, githubPackagesInternalConfig.getUsername(), org);
@@ -324,63 +420,86 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         metadata.put(t, packageName);
       }
 
-      String tag = tags.get(0);
+      String tag = null;
+      if (tags.size() > 0) {
+        tag = tags.get(0);
+      }
 
       String artifactPath = "ghcr.io";
 
-      if (EmptyPredicate.isEmpty(org)) {
-        artifactPath += "/" + username + "/" + packageName + ":" + tag;
-      } else {
-        artifactPath += "/" + org + "/" + packageName + ":" + tag;
+      if (tag != null) {
+        if (EmptyPredicate.isEmpty(org)) {
+          artifactPath += "/" + username + "/" + packageName + ":" + tag;
+        } else {
+          artifactPath += "/" + org + "/" + packageName + ":" + tag;
+        }
+
+        build.setBuildDisplayName(packageName + ": " + tag);
+        build.setUiDisplayName("Tag# " + tag);
+        build.setNumber(tag);
+        build.setBuildUrl(v.getVersionHtmlUrl());
+        build.setStatus(BuildDetails.BuildStatus.SUCCESS);
+        build.setBuildFullDisplayName(v.getVersionName());
+        build.setMetadata(metadata);
+        build.setArtifactPath(artifactPath);
+
+        buildDetails.add(build);
       }
-
-      build.setBuildDisplayName(packageName + ": " + tag);
-      build.setUiDisplayName("Tag# " + tag);
-      build.setNumber(tag);
-      build.setBuildUrl(v.getVersionHtmlUrl());
-      build.setStatus(BuildDetails.BuildStatus.SUCCESS);
-      build.setBuildFullDisplayName(v.getVersionName());
-      build.setMetadata(metadata);
-      build.setArtifactPath(artifactPath);
-
-      buildDetails.add(build);
     }
 
     return buildDetails;
   }
 
-  private GithubPackagesVersionsResponse processResponse(List<JsonNode> versionDetails) {
+  private GithubPackagesVersionsResponse processResponse(List<JsonNode> versionDetails, String packageType) {
     List<GithubPackagesVersion> versions = new ArrayList<>();
 
     if (versionDetails != null) {
-      for (JsonNode node : versionDetails) {
-        JsonNode metadata = node.get("metadata");
+      if (packageType.equals(GithubPackageTypes.CONTAINER)) {
+        for (JsonNode node : versionDetails) {
+          JsonNode metadata = node.get("metadata");
 
-        JsonNode container = metadata.get("container");
+          JsonNode container = metadata.get(GithubPackageTypes.CONTAINER);
 
-        ArrayNode tags = (ArrayNode) container.get("tags");
+          ArrayNode tags = (ArrayNode) container.get("tags");
 
-        List<String> tagList = new ArrayList<>();
+          List<String> tagList = new ArrayList<>();
 
-        for (JsonNode jsonNode : tags) {
-          String tag = jsonNode.asText();
+          for (JsonNode jsonNode : tags) {
+            String tag = jsonNode.asText();
 
-          tagList.add(tag);
+            tagList.add(tag);
+          }
+
+          GithubPackagesVersion version = GithubPackagesVersion.builder()
+                                              .versionId(node.get("id").asText())
+                                              .versionName(node.get("name").asText())
+                                              .versionUrl(node.get("url").asText())
+                                              .versionHtmlUrl(node.get("html_url").asText())
+                                              .packageUrl(node.get("package_html_url").asText())
+                                              .createdAt(node.get("created_at").asText())
+                                              .lastUpdatedAt(node.get("updated_at").asText())
+                                              .packageType(metadata.get("package_type").asText())
+                                              .tags(tagList)
+                                              .build();
+          versions.add(version);
         }
-
-        GithubPackagesVersion version = GithubPackagesVersion.builder()
-                                            .versionId(node.get("id").asText())
-                                            .versionName(node.get("name").asText())
-                                            .versionUrl(node.get("url").asText())
-                                            .versionHtmlUrl(node.get("html_url").asText())
-                                            .packageUrl(node.get("package_html_url").asText())
-                                            .createdAt(node.get("created_at").asText())
-                                            .lastUpdatedAt(node.get("updated_at").asText())
-                                            .packageType(metadata.get("package_type").asText())
-                                            .tags(tagList)
-                                            .build();
-
-        versions.add(version);
+      } else if (packageType.equals(GithubPackageTypes.MAVEN) || packageType.equals(GithubPackageTypes.NUGET)
+          || packageType.equals(GithubPackageTypes.NPM)) {
+        for (JsonNode node : versionDetails) {
+          List<String> tagList = new ArrayList<>();
+          tagList.add(node.get("name").asText());
+          GithubPackagesVersion version = GithubPackagesVersion.builder()
+                                              .versionId(node.get("id").asText())
+                                              .versionName(node.get("name").asText())
+                                              .versionUrl(node.get("url").asText())
+                                              .packageUrl(node.get("package_html_url").asText())
+                                              .createdAt(node.get("created_at").asText())
+                                              .lastUpdatedAt(node.get("updated_at").asText())
+                                              .packageType("maven")
+                                              .tags(tagList)
+                                              .build();
+          versions.add(version);
+        }
       }
     } else {
       if (versionDetails == null) {
@@ -429,12 +548,96 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   }
 
   private boolean isPackageType(String packageType) {
-    if (StringUtils.equals(packageType, "container") || StringUtils.equals(packageType, "nuget")
-        || StringUtils.equals(packageType, "maven") || StringUtils.equals(packageType, "npm")
-        || StringUtils.equals(packageType, "rubygems")) {
+    if (StringUtils.equals(packageType, GithubPackageTypes.CONTAINER)
+        || StringUtils.equals(packageType, GithubPackageTypes.NUGET)
+        || StringUtils.equals(packageType, GithubPackageTypes.MAVEN)
+        || StringUtils.equals(packageType, GithubPackageTypes.NPM) || StringUtils.equals(packageType, "rubygems")) {
       return true;
     } else {
       return false;
     }
+  }
+
+  public ArtifactMetaInfo getArtifactMetaInfo(GithubPackagesInternalConfig githubPackagesInternalConfig,
+      String packageName, String version, String org, boolean isV1) throws IOException {
+    DockerRegistryRestClient githubPackagesDockerRestClient =
+        githubPackagesRestClientFactory.getGithubPackagesDockerRestClient(githubPackagesInternalConfig);
+    DockerInternalConfig dockerInternalConfig = getDockerInternalConfig(githubPackagesInternalConfig);
+    Function<Headers, String> getToken =
+        headers -> dockerRegistryService.getToken(dockerInternalConfig, headers, githubPackagesDockerRestClient);
+    String token;
+    Response<DockerImageManifestResponse> response;
+    if (isV1) {
+      response = githubPackagesDockerRestClient
+                     .getImageManifest(getBearerAuth(githubPackagesInternalConfig.getToken()),
+                         getFullPackageName(githubPackagesInternalConfig.getUsername(), packageName, org), version)
+                     .execute();
+      token = getToken.apply(response.headers());
+      response = githubPackagesDockerRestClient
+                     .getImageManifest(getBearerAuth(token),
+                         getFullPackageName(githubPackagesInternalConfig.getUsername(), packageName, org), version)
+                     .execute();
+    } else {
+      response = githubPackagesDockerRestClient
+                     .getImageManifestV2(getBearerAuth(githubPackagesInternalConfig.getToken()),
+                         getFullPackageName(githubPackagesInternalConfig.getUsername(), packageName, org), version)
+                     .execute();
+      token = getToken.apply(response.headers());
+      response = githubPackagesDockerRestClient
+                     .getImageManifestV2(getBearerAuth(token),
+                         getFullPackageName(githubPackagesInternalConfig.getUsername(), packageName, org), version)
+                     .execute();
+    }
+    return getArtifactMetaInfoHelper(response, packageName);
+  }
+
+  private ArtifactMetaInfo getArtifactMetaInfoHelper(
+      Response<DockerImageManifestResponse> response, String packageName) {
+    if (isSuccessful(response)) {
+      return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, packageName);
+    }
+    throw NestedExceptionUtils.hintWithExplanationException(
+        COULD_NOT_FETCH_IMAGE_MANIFEST, ERROR_MESSAGE, new ArtifactServerException(ERROR_MESSAGE));
+  }
+
+  private DockerInternalConfig getDockerInternalConfig(GithubPackagesInternalConfig githubPackagesInternalConfig) {
+    return DockerInternalConfig.builder()
+        .dockerRegistryUrl("https://ghcr.io")
+        .username(githubPackagesInternalConfig.getUsername())
+        .password(githubPackagesInternalConfig.getToken())
+        .build();
+  }
+
+  private String getBearerAuth(String token) {
+    return "Bearer " + token;
+  }
+
+  private String getFullPackageName(String userName, String packageName, String org) {
+    return String.format("%s/%s", EmptyPredicate.isEmpty(org) ? userName : org, packageName);
+  }
+
+  private ArtifactMetaInfo fetchShaDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
+      String packageName, String version, String org, ArtifactMetaInfo artifactMetaInfo) {
+    try {
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion1 =
+          getArtifactMetaInfo(githubPackagesInternalConfig, packageName, version, org, true);
+      if (artifactMetaInfoSchemaVersion1 != null) {
+        artifactMetaInfo.setSha(artifactMetaInfoSchemaVersion1.getSha());
+        artifactMetaInfo.setLabels(artifactMetaInfoSchemaVersion1.getLabels());
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+    }
+
+    try {
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion2 =
+          getArtifactMetaInfo(githubPackagesInternalConfig, packageName, version, org, false);
+      if (artifactMetaInfoSchemaVersion2 != null) {
+        artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+      }
+    } catch (Exception e) {
+      log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
+    }
+    return artifactMetaInfo;
   }
 }

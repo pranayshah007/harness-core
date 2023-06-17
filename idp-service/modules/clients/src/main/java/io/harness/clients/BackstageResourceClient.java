@@ -10,6 +10,7 @@ package io.harness.clients;
 import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.idp.v1.model.LayoutIngestRequest;
 import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import javax.validation.constraints.NotEmpty;
@@ -17,7 +18,6 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.HTTP;
-import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 
@@ -29,28 +29,25 @@ public interface BackstageResourceClient {
 
   @POST(CATALOG_API + "/locations")
   Call<Object> createCatalogLocation(@Path("accountIdentifier") String accountIdentifier,
-      @Header("Authorization") String authorization,
+
       @Body io.harness.clients.BackstageCatalogLocationCreateRequest request);
 
-  @GET(LAYOUT_API)
-  Call<Object> getAllLayouts(
-      @Header("Authorization") String authorization, @Path("accountIdentifier") String accountIdentifier);
+  @GET(LAYOUT_API) Call<Object> getAllLayouts(@Path("accountIdentifier") String accountIdentifier);
 
   @GET(LAYOUT_API + "/{layoutId}")
-  Call<Object> getLayout(@Header("Authorization") String authorization,
+  Call<Object> getLayout(
       @Path("accountIdentifier") String accountIdentifier, @Path("layoutId") @NotEmpty String layoutId);
 
-  @GET(LAYOUT_API + "/health")
-  Call<Object> getHealth(
-      @Header("Authorization") String authorization, @Path("accountIdentifier") String accountIdentifier);
+  @GET(LAYOUT_API + "/health") Call<Object> getHealth(@Path("accountIdentifier") String accountIdentifier);
 
   @POST(LAYOUT_API)
-  Call<Object> createLayout(@Body LayoutRequest body, @Header("Authorization") String authorization,
-      @Path("accountIdentifier") String accountIdentifier);
+  Call<Object> createLayout(@Body LayoutRequest body, @Path("accountIdentifier") String accountIdentifier);
 
   @HTTP(method = "DELETE", path = LAYOUT_API, hasBody = true)
-  Call<Object> deleteLayout(@Body LayoutRequest body, @Header("Authorization") String authorization,
-      @Path("accountIdentifier") String accountIdentifier);
+  Call<Object> deleteLayout(@Body LayoutRequest body, @Path("accountIdentifier") String accountIdentifier);
+
+  @POST(LAYOUT_API + "/ingest")
+  Call<Object> ingestLayout(@Body LayoutIngestRequest body, @Path("accountIdentifier") String accountIdentifier);
 
   @GET(HARNESS_REFRESH_API + "/refresh")
   Call<Object> providerRefresh(@Path("accountIdentifier") String accountIdentifier);

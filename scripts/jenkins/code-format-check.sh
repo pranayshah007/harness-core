@@ -106,6 +106,10 @@ bazel run //:buildifier
 
 git diff --exit-code
 
+echo "-------------------------"
+echo "$(git status --porcelain --untracked-files=no)"
+echo "-------------------------"
+
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "There are changes identified due to code format issue"
   echo "Please rerun code-formatter and update the PR to fix it"

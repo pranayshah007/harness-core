@@ -16,8 +16,8 @@ import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_NAME;
 import static software.wings.utils.WingsTestConstants.BUILD_JOB_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;

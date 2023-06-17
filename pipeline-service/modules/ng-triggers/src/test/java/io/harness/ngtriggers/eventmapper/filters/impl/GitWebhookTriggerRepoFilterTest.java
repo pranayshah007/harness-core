@@ -6,30 +6,35 @@
  */
 
 package io.harness.ngtriggers.eventmapper.filters.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RAJENDRA_BAVISKAR;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PRWebhookEvent;
+import io.harness.beans.PushWebhookEvent;
 import io.harness.beans.Repository;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.ngtriggers.NgTriggersTestHelper;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -50,31 +55,40 @@ import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.utils.GitProviderDataObtainmentManager;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.reflect.FieldUtils;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @OwnedBy(PIPELINE)
 public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Mock private NGTriggerService ngTriggerService;
   @Mock private GitProviderDataObtainmentManager dataObtainmentManager;
+  @Mock PmsFeatureFlagService featureFlagService;
   @Inject @InjectMocks private GitWebhookTriggerRepoFilter filter;
-  @Mock private Logger logger;
+  private Logger logger;
+  private ListAppender<ILoggingEvent> listAppender;
   private static List<TriggerDetails> triggerDetailsList;
   private static List<TriggerDetails> triggerDetailsList1;
+  private static List<TriggerDetails> triggerDetailsList2;
   private static List<ConnectorResponseDTO> connectors;
   private static List<ConnectorResponseDTO> connectors1;
+  private static List<ConnectorResponseDTO> connectors2;
   private static Repository repository1 = Repository.builder()
                                               .httpURL("https://github.com/owner1/repo1.git")
                                               .sshURL("git@github.com:owner1/repo1.git")
@@ -117,6 +131,27 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                               .link("http://gitlab.gitlab/venkat/sample.git")
                                               .build();
 
+  private static Repository repository8 =
+      Repository.builder()
+          .httpURL("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .sshURL("ssh://git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest.git")
+          .link("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .build();
+
+  private static Repository repository9 =
+      Repository.builder()
+          .httpURL("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest1.git")
+          .sshURL("ssh://git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest1.git")
+          .link("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest1.git")
+          .build();
+
+  private static Repository repository10 =
+      Repository.builder()
+          .httpURL("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .sshURL("git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest.git")
+          .link("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .build();
+
   static {
     TriggerDetails details1 =
         TriggerDetails.builder()
@@ -146,6 +181,41 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                            .connectorConfig(GithubConnectorDTO.builder()
                                                 .connectionType(GitConnectionType.REPO)
                                                 .url("https://github.com/owner1/repo1")
+                                                .build())
+                           .identifier("con1")
+                           .build())
+            .build();
+
+    TriggerDetails detailsGitlab =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder()
+                                 .accountId("acc")
+                                 .orgIdentifier("org")
+                                 .projectIdentifier("proj")
+                                 .metadata(NGTriggerMetadata.builder()
+                                               .webhook(WebhookMetadata.builder()
+                                                            .type("GITLAB")
+                                                            .git(GitMetadata.builder()
+                                                                     .connectorIdentifier("account.con1")
+                                                                     .repoName("sample.git")
+                                                                     .build())
+                                                            .build())
+                                               .build())
+                                 .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITLAB).build())
+                                .build())
+                    .build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTOLab =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(GithubConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .url("http://gitlab.gitlab/venkat/")
                                                 .build())
                            .identifier("con1")
                            .build())
@@ -248,20 +318,99 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                            .build())
             .build();
 
+    ConnectorResponseDTO connectorResponseDTO6 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(BitbucketConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .url("ssh://git@bitbucket.dev.harness.io:7999")
+                                                .build())
+                           .orgIdentifier("org")
+                           .projectIdentifier("proj")
+                           .identifier("con6")
+                           .build())
+            .build();
+
+    TriggerDetails details4 =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder()
+                                 .identifier("details4")
+                                 .accountId("acc")
+                                 .orgIdentifier("org")
+                                 .projectIdentifier("proj")
+                                 .metadata(NGTriggerMetadata.builder()
+                                               .webhook(WebhookMetadata.builder()
+                                                            .type("BITBUCKET")
+                                                            .git(GitMetadata.builder()
+                                                                     .repoName("har/deepakgitsynctest.git")
+                                                                     .connectorIdentifier("con6")
+                                                                     .build())
+                                                            .build())
+                                               .build())
+                                 .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.BITBUCKET).build())
+                                .build())
+                    .build())
+            .build();
+
+    ConnectorResponseDTO connectorResponseDTO7 =
+        ConnectorResponseDTO.builder()
+            .connector(
+                ConnectorInfoDTO.builder()
+                    .connectorConfig(BitbucketConnectorDTO.builder()
+                                         .connectionType(GitConnectionType.REPO)
+                                         .url("ssh://git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest.git")
+                                         .build())
+                    .orgIdentifier("org")
+                    .projectIdentifier("proj")
+                    .identifier("con7")
+                    .build())
+            .build();
+
+    TriggerDetails details5 =
+        TriggerDetails.builder()
+            .ngTriggerEntity(
+                NGTriggerEntity.builder()
+                    .identifier("details5")
+                    .accountId("acc")
+                    .orgIdentifier("org")
+                    .projectIdentifier("proj")
+                    .metadata(NGTriggerMetadata.builder()
+                                  .webhook(WebhookMetadata.builder()
+                                               .type("BITBUCKET")
+                                               .git(GitMetadata.builder().connectorIdentifier("con7").build())
+                                               .build())
+                                  .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.BITBUCKET).build())
+                                .build())
+                    .build())
+            .build();
+
     triggerDetailsList = asList(details1, details2, details3);
-    triggerDetailsList1 = asList(details2, details3);
+    triggerDetailsList1 = asList(details2, details3, details4, details5);
+    triggerDetailsList2 = asList(detailsGitlab);
     connectors = asList(connectorResponseDTO1, connectorResponseDTO2, connectorResponseDTO3);
-    connectors1 = asList(connectorResponseDTO4, connectorResponseDTO5);
+    connectors1 = asList(connectorResponseDTO4, connectorResponseDTO5, connectorResponseDTO6, connectorResponseDTO7);
+    connectors2 = asList(connectorResponseDTOLab);
   }
 
   @Before
   public void setUp() throws IOException, IllegalAccessException {
     initMocks(this);
-    final Field f = FieldUtils.getField(GitWebhookTriggerRepoFilter.class, "log", true);
-    FieldUtils.removeFinalModifier(f);
-    f.set(null, logger);
+    logger = (Logger) LoggerFactory.getLogger(GitWebhookTriggerRepoFilter.class);
+    listAppender = new ListAppender<>();
+    listAppender.start();
+    logger.addAppender(listAppender);
   }
-
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
@@ -320,6 +469,96 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
     assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList.get(2));
   }
 
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void applyRepoUrlFilterTest2() {
+    doReturn(connectors1).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("BITBUCKET").build())
+                    .webhookEvent(PushWebhookEvent.builder().repository(repository8).build())
+                    .repository(repository8)
+                    .build())
+            .details(triggerDetailsList1)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    List<TriggerDetails> triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(2);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList1.get(2));
+    assertThat(triggerDetails.get(1)).isEqualTo(triggerDetailsList1.get(3));
+
+    filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder()
+                                                       .accountId("acc")
+                                                       .createdAt(10L)
+                                                       .sourceRepoType("BITBUCKET")
+                                                       .build())
+                                    .webhookEvent(PushWebhookEvent.builder().repository(repository9).build())
+                                    .repository(repository9)
+                                    .build())
+            .details(triggerDetailsList1)
+            .build();
+
+    webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(0);
+
+    filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder()
+                                                       .accountId("acc")
+                                                       .createdAt(10L)
+                                                       .sourceRepoType("BITBUCKET")
+                                                       .build())
+                                    .webhookEvent(PushWebhookEvent.builder().repository(repository10).build())
+                                    .repository(repository10)
+                                    .build())
+            .details(triggerDetailsList1)
+            .build();
+
+    webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(2);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList1.get(2));
+    assertThat(triggerDetails.get(1)).isEqualTo(triggerDetailsList1.get(3));
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void applyRepoUrlFilterGitLabTest() {
+    doReturn(connectors2).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("acc")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITLAB").build())
+                    .webhookEvent(PushWebhookEvent.builder().repository(repository7).build())
+                    .repository(repository7)
+                    .build())
+            .details(triggerDetailsList2)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    List<TriggerDetails> triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(1);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList2.get(0));
+  }
   @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
@@ -570,8 +809,147 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                     .build())
             .build();
 
-    filter.generateConnectorFQNFromTriggerConfig(triggerDetails, triggerToConnectorMap);
-    verify(logger).error(eq(
-        "TRIGGER_ERROR_LOG: Exception while evaluating Trigger: acc:org:proj:null:null, Filter: GitWebhookTriggerRepoFilter, Skipping this one."));
+    filter.generateConnectorFQNFromTriggerConfig("accountId", triggerDetails, triggerToConnectorMap);
+    ILoggingEvent log = listAppender.list.get(0);
+    assertThat(log).isNotNull();
+    assertThat(log.getFormattedMessage())
+        .isEqualTo(
+            "TRIGGER_ERROR_LOG: Exception while evaluating Trigger: acc:org:proj:null:null, Filter: GitWebhookTriggerRepoFilter, Skipping this one.");
+    assertThat(log.getLevel()).isEqualTo(Level.ERROR);
+  }
+
+  @Test
+  @Owner(developers = RAJENDRA_BAVISKAR)
+  @Category(UnitTests.class)
+  public void testSanitizeUrl() {
+    // GitLab
+    String sanitizedUrlGitLab1 = filter.sanitizeUrl("ssh://gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab1).isEqualTo("git@gitlab.com:username/repo");
+
+    String sanitizedUrlGitLab2 = filter.sanitizeUrl("ssh://git@gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab2).isEqualTo("git@gitlab.com:username/repo");
+
+    String sanitizedUrlGitLab3 = filter.sanitizeUrl("git@gitlab.com:username");
+    assertThat(sanitizedUrlGitLab3).isEqualTo("git@gitlab.com:username");
+
+    String sanitizedUrlGitLab4 = filter.sanitizeUrl("http://gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab4).isEqualTo("https://gitlab.com/username/repo");
+
+    String sanitizedUrlGitLab5 = filter.sanitizeUrl("http://www.gitlab.com/username/repo");
+    assertThat(sanitizedUrlGitLab5).isEqualTo("https://gitlab.com/username/repo");
+
+    // Github
+    String sanitizedUrlGithub1 = filter.sanitizeUrl("ssh://github.com/username/repo");
+    assertThat(sanitizedUrlGithub1).isEqualTo("git@github.com:username/repo");
+
+    String sanitizedUrlGithub2 = filter.sanitizeUrl("ssh://git@github.com/username/repo");
+    assertThat(sanitizedUrlGithub2).isEqualTo("git@github.com:username/repo");
+
+    String sanitizedUrlGithub3 = filter.sanitizeUrl("git@github.com:username");
+    assertThat(sanitizedUrlGithub3).isEqualTo("git@github.com:username");
+
+    String sanitizedUrlGithub4 = filter.sanitizeUrl("http://github.com/username/repo");
+    assertThat(sanitizedUrlGithub4).isEqualTo("https://github.com/username/repo");
+
+    String sanitizedUrlGithub5 = filter.sanitizeUrl("http://www.github.com/username/repo");
+    assertThat(sanitizedUrlGithub5).isEqualTo("https://github.com/username/repo");
+
+    // Bitbucket
+    String sanitizedUrlBitbucket1 = filter.sanitizeUrl("ssh://bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket1).isEqualTo("git@bitbucket.org:username/repo");
+
+    String sanitizedUrlBitbucket2 = filter.sanitizeUrl("ssh://bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket2).isEqualTo("git@bitbucket.org:username/repo");
+
+    String sanitizedUrlBitbucket3 = filter.sanitizeUrl("git@bitbucket.org:username");
+    assertThat(sanitizedUrlBitbucket3).isEqualTo("git@bitbucket.org:username");
+
+    String sanitizedUrlBitbucket4 = filter.sanitizeUrl("http://bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket4).isEqualTo("https://bitbucket.org/username/repo");
+
+    String sanitizedUrlBitbucket6 = filter.sanitizeUrl("ssh://git@bitbucket.dev.harness.io:7999/username/");
+    assertThat(sanitizedUrlBitbucket6).isEqualTo("git@bitbucket.dev.harness.io:7999/username");
+
+    String sanitizedUrlBitbucket5 = filter.sanitizeUrl("http://www.bitbucket.org/username/repo");
+    assertThat(sanitizedUrlBitbucket5).isEqualTo("https://bitbucket.org/username/repo");
+
+    // Azure
+    String sanitizedUrlAzure1 = filter.sanitizeUrl("ssh://dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure1).isEqualTo("git@dev.azure.com:username/repo");
+
+    String sanitizedUrlAzure2 = filter.sanitizeUrl("ssh://dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure2).isEqualTo("git@dev.azure.com:username/repo");
+
+    String sanitizedUrlAzure3 = filter.sanitizeUrl("git@dev.azure.com:username");
+    assertThat(sanitizedUrlAzure3).isEqualTo("git@dev.azure.com:username");
+
+    String sanitizedUrlAzure4 = filter.sanitizeUrl("http://dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure4).isEqualTo("https://dev.azure.com/username/repo");
+
+    String sanitizedUrlAzure5 = filter.sanitizeUrl("http://www.dev.azure.com/username/repo");
+    assertThat(sanitizedUrlAzure5).isEqualTo("https://dev.azure.com/username/repo");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetCompleteHarnessRepoName() {
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/org/proj/repo")).isEqualTo("acc/org/proj/repo");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testEvaluateWrapperForSCMConnector() {
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
+    Set<String> urls = filter.getUrls(
+        Repository.builder()
+            .httpURL(
+                "https://git.app.harness.io/kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo.git")
+            .sshURL("")
+            .link("")
+            .build(),
+        "HARNESS");
+    List<TriggerDetails> eligibleTriggers = new ArrayList<>();
+    TriggerDetails harnessTrigger =
+        TriggerDetails.builder()
+            .ngTriggerEntity(
+                NGTriggerEntity.builder()
+                    .accountId("kmpySmUISimoRrJL6NL73w")
+                    .orgIdentifier("CITestDemoOrgnpAUTg9bai")
+                    .projectIdentifier("CITestDemoProsQQ6BmCDXS")
+                    .metadata(NGTriggerMetadata.builder()
+                                  .webhook(WebhookMetadata.builder()
+                                               .type("HARNESS")
+                                               .git(GitMetadata.builder().repoName("testprivaterepo").build())
+                                               .build())
+                                  .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.HARNESS).build())
+                                .build())
+                    .build())
+            .build();
+    FilterRequestData.builder().details(new ArrayList<>() {}).build();
+    filter.evaluateWrapperForSCMConnector(urls, eligibleTriggers,
+        FilterRequestData.builder()
+            .details(new ArrayList<TriggerDetails>() {
+              { add(harnessTrigger); }
+            })
+            .build());
+    assertThat(eligibleTriggers.size()).isEqualTo(1);
   }
 }

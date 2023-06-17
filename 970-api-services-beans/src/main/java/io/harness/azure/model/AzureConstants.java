@@ -322,6 +322,7 @@ public interface AzureConstants {
   // Azure REST client settings
   int REST_CLIENT_CONNECT_TIMEOUT_SECONDS = 15;
   int REST_CLIENT_READ_TIMEOUT_SECONDS = 30;
+  int REST_CLIENT_READ_TIMEOUT_EXTENDED_SECONDS = 150;
   int REST_CLIENT_WRITE_TIMEOUT_SECONDS = 30;
   int REST_CLIENT_IDLE_TIMEOUT_SECONDS = 60;
   int REST_CONNECTION_POOL_SIZE = 10;
@@ -411,17 +412,6 @@ public interface AzureConstants {
   String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
   String AUTHORIZATION_ERROR = "does not have authorization";
   String AZURE_AUTH_PLUGIN_INSTALL_HINT = "kubelogin is required to authenticate to the current cluster.\n"
-      + "It can be installed on the delegate by creating an immutable delegate and updating the following commands in INIT_SCRIPT\n"
-      + "https://github.com/Azure/kubelogin/releases\n"
-      + "\n"
-      + "// Download kubelogin\n"
-      + "curl https://github.com/Azure/kubelogin/releases/download/v0.0.27/kubelogin-linux-amd64.zip -L -o kubelogin.zip\n"
-      + "unzip kubelogin.zip\n"
-      + "chmod 755 /opt/harness-delegate/bin/linux_amd64/kubelogin\n"
-      + "\n"
-      + "// Add the binary to PATH\n"
-      + "mv ./bin/linux_amd64/kubelogin /usr/local/bin\n"
-      + "\n"
-      + "// Verify the binary\n"
-      + "kubelogin --version";
+      + "Please refer to Harness Docs to install it on the delegate using following: \n"
+      + "https://developer.harness.io/docs/platform/connectors/cloud-providers/add-a-microsoft-azure-connector/#install-the-kubelogin-client-go-credential-exec-plugin-on-the-delegate";
 }

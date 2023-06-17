@@ -14,6 +14,8 @@ import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskIn
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @OwnedBy(DX)
 public interface InstanceSyncPerpetualTaskInfoService {
@@ -30,5 +32,13 @@ public interface InstanceSyncPerpetualTaskInfoService {
 
   InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier);
+
+  InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1OrV2(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
+  InstanceSyncPerpetualTaskInfoDTO updateLastSuccessfulRun(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
+
   List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId);
+
+  Page<InstanceSyncPerpetualTaskInfoDTO> findAllInPages(Pageable pageRequest, String accountId, String perpetualTaskId);
 }

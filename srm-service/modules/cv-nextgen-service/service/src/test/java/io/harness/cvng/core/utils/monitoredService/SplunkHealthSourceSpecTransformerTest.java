@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class SplunkHealthSourceSpecTransformerTest extends CvNextGenTestBase {
-  List<SplunkHealthSourceSpec.QueryDTO> queryDTOS;
+  List<SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO> queryDTOS;
   String envIdentifier;
   String connectorIdentifier;
   String productName;
@@ -48,9 +48,14 @@ public class SplunkHealthSourceSpecTransformerTest extends CvNextGenTestBase {
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
-    queryDTOS = Lists.newArrayList(
-        SplunkHealthSourceSpec.QueryDTO.builder().name(randomAlphabetic(10)).query(randomAlphabetic(10)).build(),
-        SplunkHealthSourceSpec.QueryDTO.builder().name(randomAlphabetic(10)).query(randomAlphabetic(10)).build());
+    queryDTOS = Lists.newArrayList(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
+                                       .name(randomAlphabetic(10))
+                                       .query(randomAlphabetic(10))
+                                       .build(),
+        SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
+            .name(randomAlphabetic(10))
+            .query(randomAlphabetic(10))
+            .build());
     envIdentifier = "env";
     connectorIdentifier = "connectorId";
     productName = "Application Monitoring";

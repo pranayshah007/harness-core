@@ -31,6 +31,7 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactoryRegistryException;
@@ -91,45 +92,86 @@ public class ArtifactoryClientImpl {
   public List<Map<String, String>> getLabels(
       ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos) {
     log.debug("Retrieving label docker in artifactory");
-
-    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
-    ArtifactoryRequest repositoryRequest =
-        new ArtifactoryRequestImpl()
-            .apiUrl(format("api/storage/%s/%s/%s/manifest.json?properties", repositoryName, imageName, buildNos))
-            .method(GET)
-            .responseType(JSON);
     List<Map<String, String>> labels = new ArrayList<>();
 
     try {
-      ArtifactoryResponse response = artifactory.restCall(repositoryRequest);
-      handleErrorResponse(response);
+      ArtifactoryResponse response = fetchImageManifest(artifactoryConfig, imageName, repositoryName, buildNos);
+      labels = getLabels(response);
       Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
       Map<String, List<String>> properties = responseList.get("properties");
-
-      Map<String, String> filteredAndParsedLabels =
-          properties.entrySet()
-              .stream()
-              .filter(e -> e.getKey().startsWith("docker.label"))
-              .collect(Collectors.toMap(e -> e.getKey().replaceFirst("docker.label.", ""), e -> e.getValue().get(0)));
-      labels.add(filteredAndParsedLabels);
-
-      if (EmptyPredicate.isEmpty(filteredAndParsedLabels)) {
-        log.warn("Docker image doesn't have labels. Properties: {}", properties);
+      if (EmptyPredicate.isEmpty(labels) || EmptyPredicate.isEmpty(labels.get(0))) {
+        log.info("Docker image doesn't have labels. Properties: {}", properties);
       } else {
-        log.debug("Retrieving labels {} for image {} for repository {} for version {} was success",
-            filteredAndParsedLabels, imageName, repositoryName, buildNos);
+        log.debug("Retrieving labels {} for image {} for repository {} for version {} was success", labels.get(0),
+            imageName, repositoryName, buildNos);
       }
-
     } catch (Exception e) {
-      log.error("Failed to retrieve docker label in artifactory. Image name: {}, Repository Name: {}, Version: {}",
+      log.info("Failed to retrieve docker label in artifactory. Image name: {}, Repository Name: {}, Version: {}",
           imageName, repositoryName, buildNos);
       handleAndRethrow(e, USER);
     }
     return labels;
   }
 
+  private ArtifactoryResponse fetchImageManifest(ArtifactoryConfigRequest artifactoryConfig, String imageName,
+      String repositoryName, String build) throws IOException {
+    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
+    ArtifactoryRequest repositoryRequest =
+        new ArtifactoryRequestImpl()
+            .apiUrl(format("api/storage/%s/%s/%s/manifest.json?properties", repositoryName, imageName, build))
+            .method(GET)
+            .responseType(JSON);
+    ArtifactoryResponse response = null;
+    response = artifactory.restCall(repositoryRequest);
+    handleErrorResponse(response);
+    return response;
+  }
+
+  private List<Map<String, String>> getLabels(ArtifactoryResponse response) throws IOException {
+    List<Map<String, String>> labels = new ArrayList<>();
+    Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
+    Map<String, List<String>> properties = responseList.get("properties");
+
+    Map<String, String> filteredAndParsedLabels =
+        properties.entrySet()
+            .stream()
+            .filter(e -> e.getKey().startsWith("docker.label"))
+            .collect(Collectors.toMap(e -> e.getKey().replaceFirst("docker.label.", ""), e -> e.getValue().get(0)));
+    labels.add(filteredAndParsedLabels);
+    return labels;
+  }
+
+  private String getSHA(ArtifactoryResponse response) throws IOException {
+    Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
+    Map<String, List<String>> properties = responseList.get("properties");
+    List<String> sha = properties.get("docker.manifest.digest");
+    if (EmptyPredicate.isEmpty(sha)) {
+      return null;
+    }
+    return sha.get(0);
+  }
+
+  public ArtifactMetaInfo getArtifactMetaInfo(
+      ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String build) {
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+    try {
+      ArtifactoryResponse response = fetchImageManifest(artifactoryConfig, imageName, repositoryName, build);
+      String sha = getSHA(response);
+      artifactMetaInfo.setSha(sha);
+      artifactMetaInfo.setShaV2(sha);
+      List<Map<String, String>> labels = getLabels(response);
+      artifactMetaInfo.setLabels(labels.get(0));
+    } catch (Exception e) {
+      log.info(
+          "Failed to retrieve docker image manifest in artifactory. Image name: {}, Repository Name: {}, Version: {}",
+          imageName, repositoryName, build);
+      handleAndRethrow(e, USER);
+    }
+    return artifactMetaInfo;
+  }
+
   public boolean validateArtifactServer(ArtifactoryConfigRequest config) {
-    if (!connectableHttpUrl(getBaseUrl(config))) {
+    if (!connectableHttpUrl(getBaseUrl(config), false)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Artifactory URL is reachable from your delegate(s)",
           "The given artifactory URL is not reachable",
@@ -153,7 +195,7 @@ public class ArtifactoryClientImpl {
       log.error("Runtime exception occurred while validating artifactory", e);
       handleAndRethrow(e, USER);
     } catch (SocketTimeoutException e) {
-      log.error("Exception occurred while validating artifactory", e);
+      log.info("Exception occurred while validating artifactory", e);
       return true;
     } catch (Exception e) {
       log.error("Exception occurred while validating artifactory", e);
@@ -297,10 +339,10 @@ public class ArtifactoryClientImpl {
         log.debug("Retrieving repositories for packages {} success", packageTypes.toArray());
       }
     } catch (SocketTimeoutException e) {
-      log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
+      log.info(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
       return repositories;
     } catch (Exception e) {
-      log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
+      log.info(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
       handleAndRethrow(e, USER);
     }
     return repositories;
@@ -412,7 +454,7 @@ public class ArtifactoryClientImpl {
         throw new ArtifactoryServerException("Artifact path can not be empty", INVALID_ARTIFACT_SERVER, USER);
       }
     } catch (Exception e) {
-      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
+      log.info("Error occurred while retrieving File Paths from Artifactory server {}",
           artifactoryConfig.getArtifactoryUrl(), e);
       handleAndRethrow(e, USER);
     }
@@ -438,7 +480,7 @@ public class ArtifactoryClientImpl {
         }
       }
     } catch (Exception e) {
-      log.error("Failed to download the artifact of repository {} from path {}", repoKey, artifactPath, e);
+      log.info("Failed to download the artifact of repository {} from path {}", repoKey, artifactPath, e);
       String msg =
           "Failed to download the latest artifacts  of repository [" + repoKey + "] file path [" + artifactPath;
       throw new ArtifactoryServerException(
@@ -469,7 +511,7 @@ public class ArtifactoryClientImpl {
             "Unable to get artifact file size. The file probably does not exist", INVALID_ARTIFACT_SERVER, USER);
       }
     } catch (Exception e) {
-      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
+      log.info("Error occurred while retrieving File Paths from Artifactory server {}",
           artifactoryConfig.getArtifactoryUrl(), e);
       handleAndRethrow(e, USER);
     }
@@ -583,7 +625,7 @@ public class ArtifactoryClientImpl {
       }
       return artifactPaths;
     } catch (Exception e) {
-      log.error(
+      log.info(
           format("Error occurred while retrieving File Paths from Artifactory server %s", artifactory.getUsername()),
           e);
       handleAndRethrow(e, USER);

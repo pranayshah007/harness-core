@@ -8,6 +8,7 @@
 package software.wings.sm.states.spotinst;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.spotinst.model.SpotInstConstants.DEPLOYMENT_ERROR;
 import static io.harness.spotinst.model.SpotInstConstants.PHASE_PARAM;
@@ -29,6 +30,7 @@ import io.harness.delegate.task.spotinst.request.SpotinstTrafficShiftAlbDeployPa
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.delegate.task.spotinst.response.SpotinstTrafficShiftAlbDeployResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.tasks.ResponseData;
@@ -132,6 +134,15 @@ public class SpotinstTrafficShiftAlbDeployState extends State {
     }
     InstanceElementListParam instanceElementListParam =
         InstanceElementListParam.builder().instanceElements(instanceElements).build();
+
+    if (FAILED == executionStatus && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage(executionResponse.getErrorMessage())
+          .stateExecutionData(stateExecutionData)
+          .build();
+    }
 
     spotinstStateHelper.saveInstanceInfoToSweepingOutput(context, instanceElements);
 

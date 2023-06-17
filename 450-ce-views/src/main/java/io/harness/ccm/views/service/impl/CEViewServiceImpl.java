@@ -15,6 +15,7 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
@@ -106,7 +107,7 @@ public class CEViewServiceImpl implements CEViewService {
   private static final String DEFAULT_CLUSTER_FIELD_ID = "clusterName";
   private static final String DEFAULT_CLUSTER_FIELD_NAME = "Cluster Name";
 
-  private static final int VIEW_COUNT = 1000;
+  private static final int VIEW_COUNT = 10000;
 
   @Inject private CEViewDao ceViewDao;
   @Inject private CEViewFolderDao ceViewFolderDao;
@@ -268,12 +269,49 @@ public class CEViewServiceImpl implements CEViewService {
           if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
             viewFieldIdentifierSet.add(ViewFieldIdentifier.BUSINESS_MAPPING);
           }
+          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.COMMON) {
+            viewFieldIdentifierSet.addAll(getDataSourcesFromCloudProviderField(viewIdCondition));
+          }
         }
       }
     }
 
-    ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
+    setDataSources(ceView, viewFieldIdentifierSet);
     ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(final ViewIdCondition viewIdCondition) {
+    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
+    if (ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID.equals(viewIdCondition.getViewField().getFieldId())) {
+      for (final String value : viewIdCondition.getValues()) {
+        if (ViewFieldIdentifier.AWS.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.AWS);
+        } else if (ViewFieldIdentifier.GCP.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.GCP);
+        } else if (ViewFieldIdentifier.AZURE.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.AZURE);
+        } else if (ViewFieldIdentifier.CLUSTER.name().equals(value)) {
+          viewFieldIdentifiers.add(ViewFieldIdentifier.CLUSTER);
+        }
+      }
+    }
+    return viewFieldIdentifiers;
+  }
+
+  private void setDataSources(final CEView ceView, final Set<ViewFieldIdentifier> viewFieldIdentifierSet) {
+    if (ceView.getViewType() == ViewType.DEFAULT) {
+      if (DEFAULT_AZURE_VIEW_NAME.equals(ceView.getName())) {
+        ceView.setDataSources(Collections.singletonList(ViewFieldIdentifier.AZURE));
+      } else if (DEFAULT_AWS_VIEW_NAME.equals(ceView.getName())) {
+        ceView.setDataSources(Collections.singletonList(ViewFieldIdentifier.AWS));
+      } else if (DEFAULT_GCP_VIEW_NAME.equals(ceView.getName())) {
+        ceView.setDataSources(Collections.singletonList(ViewFieldIdentifier.GCP));
+      } else {
+        ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
+      }
+    } else {
+      ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
+    }
   }
 
   @Override

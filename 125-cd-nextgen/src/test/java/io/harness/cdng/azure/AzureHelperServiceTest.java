@@ -747,7 +747,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
   public void testGetAcrResponseDTO() {
     ArtifactDelegateResponse artifactDelegateResponse =
         new AcrArtifactDelegateResponse(ArtifactBuildDetailsNG.builder().number("tag").build(), ArtifactSourceType.ACR,
-            "subscription", "registry", "repository", "tag");
+            "subscription", "registry", "repository", "tag", null);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         ArtifactTaskExecutionResponse.builder()

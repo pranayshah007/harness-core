@@ -57,8 +57,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.UpdateOptions;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.time.Instant;
@@ -357,6 +360,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
+
     // For backward compatibility
     metricPackThresholds.forEach(metricPackThreshold
         -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));
@@ -565,6 +569,14 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
   }
 
   @Override
+  public List<TimeSeriesRecord> getLatestTimeSeriesRecords(String verificationTaskId, int count) {
+    return hPersistence.createQuery(TimeSeriesRecord.class, excludeAuthority)
+        .filter(TimeSeriesRecordKeys.verificationTaskId, verificationTaskId)
+        .order(Sort.descending(TimeSeriesRecordKeys.bucketStartTime))
+        .asList(new FindOptions().limit(count));
+  }
+
+  @Override
   public List<TimeSeriesRecordDTO> getDeploymentMetricTimeSeriesRecordDTOs(
       String verificationTaskId, Instant startTime, Instant endTime, Set<String> hosts) {
     List<TimeSeriesRecord> timeSeriesRecords = getTimeSeriesRecords(verificationTaskId, startTime, endTime, hosts);
@@ -659,7 +671,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                       + TimeSeriesGroupValue.TimeSeriesValueKeys.riskScore)
                                   .greaterThan(0);
     }
-    return timeSeriesRecordQuery.asList();
+    return timeSeriesRecordQuery.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override

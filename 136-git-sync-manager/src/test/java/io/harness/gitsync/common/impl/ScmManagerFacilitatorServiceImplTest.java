@@ -13,9 +13,9 @@ import static io.harness.rule.OwnerRule.HARI;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -367,19 +367,19 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testGetDecryptedScmConnector() {
     Map<ConnectorDetails, ScmConnector> decryptedConnectorMap = new HashMap<>();
     scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
-        getScope(accountIdentifier, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+        getScope(accountIdentifier, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(1);
-    scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(2);
     scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, null, projectIdentifier), "connectorRef-1", githubConnector);
+        decryptedConnectorMap, getScope(null, null, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(3);
-    scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector);
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(null, orgIdentifier, projectIdentifier), "connectorRef-1", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(3);
-    scmManagerFacilitatorService.getDecryptedScmConnector(
-        decryptedConnectorMap, getScope(null, orgIdentifier, projectIdentifier), "connectorRef-2", githubConnector);
+    scmManagerFacilitatorService.getDecryptedScmConnector(decryptedConnectorMap,
+        getScope(null, orgIdentifier, projectIdentifier), "connectorRef-2", githubConnector, repoName);
     assertThat(decryptedConnectorMap.size()).isEqualTo(4);
   }
 

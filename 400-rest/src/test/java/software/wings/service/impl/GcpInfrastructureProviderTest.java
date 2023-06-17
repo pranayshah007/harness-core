@@ -10,7 +10,7 @@ package software.wings.service.impl;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -29,8 +29,8 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -44,7 +44,7 @@ public class GcpInfrastructureProviderTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(containerService)
         .when(delegateProxyFactory)
-        .getV2(eq(ContainerService.class), Matchers.any(SyncTaskContext.class));
+        .getV2(eq(ContainerService.class), ArgumentMatchers.any(SyncTaskContext.class));
   }
 
   @Test

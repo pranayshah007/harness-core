@@ -59,9 +59,9 @@ public class GcsBucketsResource {
   @ApiOperation(value = "Gets GCS buckets list", nickname = "getGCSBucketList")
   public ResponseDTO<Map<String, String>> getListBuckets(@QueryParam("connectorRef") String gcpConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       GcsStoreConfig storeConfig = (GcsStoreConfig) bucketsResourceUtils.locateStoreConfigInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);

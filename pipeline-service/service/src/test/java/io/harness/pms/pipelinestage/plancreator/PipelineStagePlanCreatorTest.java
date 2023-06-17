@@ -12,10 +12,13 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExpressionMode;
@@ -40,6 +43,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 
 import java.io.IOException;
@@ -47,11 +51,14 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -61,12 +68,19 @@ public class PipelineStagePlanCreatorTest {
   @Mock KryoSerializer kryoSerializer;
   @Mock PMSPipelineServiceImpl pmsPipelineService;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks PipelineStagePlanCreator pipelineStagePlanCreator;
 
   private String ORG = "org";
   private String PROJ = "proj";
   private String PIPELINE = "pipeline";
   private String ACC = "acc";
+
+  @Before
+  public void setup() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACC, FeatureName.PIE_PROCESS_ON_JSON_NODE);
+  }
+
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -105,7 +119,7 @@ public class PipelineStagePlanCreatorTest {
     doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0);
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0, "acc");
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
@@ -130,17 +144,37 @@ public class PipelineStagePlanCreatorTest {
         + "  org: \"org\"\n"
         + "  project: \"project\"\n";
 
+    String pipelineYaml = "pipeline:\n"
+        + "  name: parent\n"
+        + "  identifier: parent\n"
+        + "  projectIdentifier: project\n"
+        + "  orgIdentifier: org\n"
+        + "  tags: {}\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        name: s1\n"
+        + "        identifier: s1\n"
+        + "        description: \"\"\n"
+        + "        type: Pipeline\n"
+        + "        spec:\n"
+        + "          org: org\n"
+        + "          pipeline: parent_pipeline\n"
+        + "          project: project\n"
+        + "          inputSetReferences: []\n"
+        + "          outputs: []\n";
+
     YamlField pipelineStageYamlField = YamlUtils.injectUuidInYamlField(yamlField);
 
     PlanCreationContextValue value = PlanCreationContextValue.newBuilder().setAccountIdentifier("acc").build();
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Collections.singletonMap("metadata", value))
                                   .currentField(pipelineStageYamlField)
+                                  .yaml(pipelineYaml)
                                   .build();
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
         .when(pmsGitSyncHelper)
@@ -148,8 +182,11 @@ public class PipelineStagePlanCreatorTest {
 
     PipelineStageNode pipelineStageNode = YamlUtils.read(yamlField, PipelineStageNode.class);
     assertThat(SecurityContextBuilder.getPrincipal()).isNull();
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
     PlanCreationResponse response =
         pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(yamlField, PipelineStageNode.class));
+    mockSettings.close();
     assertThat(SecurityContextBuilder.getPrincipal()).isNotNull();
     assertThat(response.getPlanNode()).isNotNull();
     PlanNode planNode = response.getPlanNode();
@@ -172,15 +209,35 @@ public class PipelineStagePlanCreatorTest {
 
     YamlField pipelineStageYamlField = YamlUtils.injectUuidInYamlField(ignoreFailureYamlField);
 
+    String pipelineYaml = "pipeline:\n"
+        + "  name: parent\n"
+        + "  identifier: parent\n"
+        + "  projectIdentifier: project\n"
+        + "  orgIdentifier: org\n"
+        + "  tags: {}\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        name: s1\n"
+        + "        identifier: s1\n"
+        + "        description: \"\"\n"
+        + "        type: Pipeline\n"
+        + "        spec:\n"
+        + "          org: org\n"
+        + "          pipeline: parent_pipeline\n"
+        + "          project: project\n"
+        + "          inputSetReferences: []\n"
+        + "          outputs: []\n";
+
     PlanCreationContextValue value = PlanCreationContextValue.newBuilder().setAccountIdentifier("acc").build();
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .globalContext(Collections.singletonMap("metadata", value))
                                   .currentField(pipelineStageYamlField)
+                                  .yaml(pipelineYaml)
                                   .build();
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(ignoreFailureYamlField).build()))
         .when(pmsPipelineService)
-        .getPipeline("acc", "org", "project", "childPipeline", false, false);
+        .getPipeline("acc", "org", "project", "childPipeline", false, false, false, true);
 
     doReturn(EntityGitDetails.builder().repoName("repo").repoName("repoName").branch("branch").build())
         .when(pmsGitSyncHelper)
@@ -188,7 +245,12 @@ public class PipelineStagePlanCreatorTest {
 
     doReturn(new byte[9]).when(kryoSerializer).asBytes(any());
     PipelineStageNode stageNode = YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class);
+
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
     pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class));
+    mockSettings.close();
+
     verify(pipelineStageHelper, times(1)).validateFailureStrategy(stageNode.getFailureStrategies());
   }
 

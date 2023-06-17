@@ -91,11 +91,13 @@ public class GoogleFunctionGenOnePrepareRollbackCommandTaskHandler extends Googl
         executionLogCallback.saveExecutionLog(JsonFormat.printer().print(existingFunctionOptional.get()));
         CreateFunctionRequest.Builder existingCreateFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
         CloudFunction existingFunction = existingFunctionOptional.get();
+        CloudFunction.Builder existingFunctionBuilder = existingFunction.toBuilder();
+        existingFunctionBuilder.setName(googleFunctionCommandTaskHelper.getResourceName(existingFunction.getName()));
 
         // set location
-        createFunctionRequestBuilder.setLocation(googleFunctionCommandTaskHelper.getFunctionParent(
+        existingCreateFunctionRequestBuilder.setLocation(googleFunctionCommandTaskHelper.getFunctionParent(
             googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()));
-        createFunctionRequestBuilder.setFunction(existingFunction);
+        existingCreateFunctionRequestBuilder.setFunction(existingFunctionBuilder.build());
 
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         return GoogleFunctionGenOnePrepareRollbackResponse.builder()

@@ -54,7 +54,7 @@ public class ExceptionManager {
       }
       return processedException;
     } catch (Exception ex) {
-      log.error("Exception occurred while handling error in exception manager", ex);
+      ExceptionManager.log.error("Exception occurred while handling error in exception manager", ex);
       String errorMessage = ex.getMessage() == null ? "Unexpected error" : ex.getMessage();
       return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_UNEXPECTED_ERROR,
           ExplanationException.EXPLANATION_UNEXPECTED_ERROR, new GeneralException(errorMessage));
@@ -99,7 +99,7 @@ public class ExceptionManager {
         if (exceptionHandler != null) {
           handledException = exceptionHandler.handleException(exception);
         } else {
-          log.error("Exception handler not registered for exception : ", exception);
+          log.info("Exception handler not registered for exception : ", exception);
           handledException = prepareUnhandledExceptionResponse(exception);
         }
         WingsException cascadedException = handledException;

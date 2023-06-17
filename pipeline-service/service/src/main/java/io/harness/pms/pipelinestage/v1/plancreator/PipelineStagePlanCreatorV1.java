@@ -9,6 +9,7 @@ package io.harness.pms.pipelinestage.v1.plancreator;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.PlanCreatorUtilsV1;
@@ -27,6 +28,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.PipelineStageStepParameters.PipelineStageStepParametersBuilder;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -51,6 +53,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.pipelinestage.PipelineStageOutputs;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
@@ -71,6 +74,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
   @Inject private PipelineStageHelper pipelineStageHelper;
   @Inject private PMSPipelineService pmsPipelineService;
   @Inject KryoSerializer kryoSerializer;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Override
   public Class<YamlField> getFieldClass() {
     return YamlField.class;
@@ -82,17 +86,23 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.PIPELINE_STAGE));
   }
 
-  public PipelineStageStepParameters getStepParameter(
-      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
-    return PipelineStageStepParameters.builder()
-        .pipeline(config.getPipeline())
-        .org(config.getOrg())
-        .project(config.getProject())
-        .stageNodeId(stageNodeId)
-        .inputSetReferences(config.getInputSetReferences())
-        .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
-        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
-        .build();
+  public PipelineStageStepParameters getStepParameter(PipelineStageConfig config, YamlField pipelineInputs,
+      String stageNodeId, String childPipelineVersion, String accountIdentifier) {
+    PipelineStageStepParametersBuilder builder =
+        PipelineStageStepParameters.builder()
+            .pipeline(config.getPipeline())
+            .org(config.getOrg())
+            .project(config.getProject())
+            .stageNodeId(stageNodeId)
+            .inputSetReferences(config.getInputSetReferences())
+            .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())));
+    if (pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.PIE_PROCESS_ON_JSON_NODE)) {
+      return builder
+          .pipelineInputsJsonNode(pipelineStageHelper.getInputSetJsonNode(pipelineInputs, childPipelineVersion))
+          .build();
+    } else {
+      return builder.pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion)).build();
+    }
   }
 
   public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {
@@ -118,13 +128,16 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     // Principal is added to fetch Git Entity
     setSourcePrincipal(ctx.getMetadata());
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(ctx.getAccountIdentifier(),
-        configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false);
+        configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false, false, true);
 
     if (childPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(String.format("Child pipeline does not exists %s ", configNode.getPipeline()));
     }
 
-    pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get(), stageNode.getName());
+    String parentPipelineIdentifier = ctx.getPipelineIdentifier();
+
+    pipelineStageHelper.validateNestedChainedPipeline(
+        childPipelineEntity.get(), stageNode.getName(), parentPipelineIdentifier);
     // Validate the failure-strategies once failure-strategies are supported with simplified YAML.
     //    pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
 
@@ -157,7 +170,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId, childPipelineEntity.get().getHarnessVersion()))
+                planNodeId, childPipelineEntity.get().getHarnessVersion(), ctx.getAccountIdentifier()))
             .whenCondition(RunInfoUtils.getStageWhenCondition(stageNode))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()

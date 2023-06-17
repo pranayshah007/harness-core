@@ -55,6 +55,9 @@ public abstract class LogClusterStateExecutor<T extends LogClusterState> extends
   @Override
   public AnalysisStatus getExecutionStatus(T analysisState) {
     if (!analysisState.getStatus().equals(AnalysisStatus.SUCCESS)) {
+      if (analysisState.getWorkerTaskIds() == null) {
+        return AnalysisStatus.CREATED;
+      }
       Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
           logClusterService.getTaskStatus(analysisState.getWorkerTaskIds());
       Map<LearningEngineTask.ExecutionStatus, Set<String>> statusTaskMap = new HashMap<>();

@@ -38,7 +38,7 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
     && chgrp -R 0 /opt/harness  \
     && chown -R 1001 /opt/harness
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV HOME=/opt/harness
 ENV JAVA_HOME=/opt/java/openjdk/

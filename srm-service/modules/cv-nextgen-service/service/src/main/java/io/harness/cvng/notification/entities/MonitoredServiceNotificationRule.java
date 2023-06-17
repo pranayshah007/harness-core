@@ -7,6 +7,7 @@
 
 package io.harness.cvng.notification.entities;
 
+import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 import io.harness.cvng.notification.beans.ErrorTrackingEventType;
 import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
@@ -45,7 +46,8 @@ public class MonitoredServiceNotificationRule extends NotificationRule {
   @Data
   public static class MonitoredServiceChangeImpactCondition extends MonitoredServiceNotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.CHANGE_IMPACT;
-    @NonNull List<MonitoredServiceChangeEventType> changeEventTypes;
+    @Deprecated List<MonitoredServiceChangeEventType> changeEventTypes;
+    List<ChangeCategory> changeCategories;
     @NonNull Double threshold;
     @NonNull long period;
   }
@@ -62,7 +64,8 @@ public class MonitoredServiceNotificationRule extends NotificationRule {
   @Data
   public static class MonitoredServiceChangeObservedCondition extends MonitoredServiceNotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.CHANGE_OBSERVED;
-    @NonNull List<MonitoredServiceChangeEventType> changeEventTypes;
+    @Deprecated List<MonitoredServiceChangeEventType> changeEventTypes;
+    List<ChangeCategory> changeCategories;
   }
 
   @SuperBuilder

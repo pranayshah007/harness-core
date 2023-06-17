@@ -17,6 +17,7 @@ import io.harness.ngtriggers.expressions.functors.PayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerPayloadFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -33,16 +34,22 @@ public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {
   private final String payload;
   private final TriggerPayload triggerPayload;
 
-  public TriggerExpressionEvaluator(
-      ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headerConfigs, String payload) {
+  public TriggerExpressionEvaluator(ParseWebhookResponse parseWebhookResponse, ArtifactData artifactData,
+      List<HeaderConfig> headerConfigs, String payload) {
     super(null);
     TriggerPayload.Builder builder = TriggerPayload.newBuilder();
     if (parseWebhookResponse != null) {
       if (parseWebhookResponse.hasPr()) {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPr(parseWebhookResponse.getPr()).build()).build();
+      } else if (parseWebhookResponse.hasRelease()) {
+        builder.setParsedPayload(ParsedPayload.newBuilder().setRelease(parseWebhookResponse.getRelease()).build())
+            .build();
       } else {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPush(parseWebhookResponse.getPush()).build()).build();
       }
+    }
+    if (artifactData != null) {
+      builder.setArtifactData(artifactData);
     }
     if (headerConfigs != null) {
       for (HeaderConfig config : headerConfigs) {

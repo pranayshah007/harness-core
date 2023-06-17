@@ -8,6 +8,13 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.DOWNLOAD_ARTIFACT_USING_CREDENTIALS_AND_SECURITY_TOKEN_BY_PROXY_PS;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.OUT_FILE;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.URI;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.X_AMZ_CONTENT_SHA256;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.X_AMZ_DATE;
+import static io.harness.delegate.task.winrm.DownloadWinRmScript.X_AMZ_SECURITY_TOKEN;
 
 import static software.wings.beans.AwsConfig.AwsConfigBuilder;
 
@@ -43,6 +50,7 @@ import java.util.SimpleTimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -72,18 +80,15 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
 
   public String getPowerShellCommand(AwsS3ArtifactDelegateConfig s3ArtifactDelegateConfig, String destinationPath) {
     AwsConnectionDetails connectionDetails = mapAwsConnectionDetails(s3ArtifactDelegateConfig, destinationPath);
-    return "$Headers = @{\n"
-        + "    Authorization = \"" + connectionDetails.authorizationHeader + "\"\n"
-        + "    \"x-amz-content-sha256\" = \"" + EMPTY_BODY_SHA256 + "\"\n"
-        + "    \"x-amz-date\" = \"" + connectionDetails.dateTimeStamp + "\"\n"
-        + (isEmpty(connectionDetails.awsToken) ? ""
-                                               : " \"x-amz-security-token\" = \"" + connectionDetails.awsToken + "\"\n")
-        + "}\n"
-        + " $ProgressPreference = 'SilentlyContinue'\n"
-        + " Invoke-WebRequest -Uri \"" + connectionDetails.awsEndpointUrl
-        + "\" -Headers $Headers -OutFile (New-Item -Path \"" + connectionDetails.targetPath + "\\"
-        + connectionDetails.artifactFileName + "\""
-        + " -Force)";
+    return DOWNLOAD_ARTIFACT_USING_CREDENTIALS_AND_SECURITY_TOKEN_BY_PROXY_PS
+        .replace(AUTHORIZATION, connectionDetails.authorizationHeader)
+        .replace(X_AMZ_CONTENT_SHA256, EMPTY_BODY_SHA256)
+        .replace(X_AMZ_DATE, connectionDetails.dateTimeStamp)
+        .replace(X_AMZ_SECURITY_TOKEN,
+            isEmpty(connectionDetails.awsToken) ? StringUtils.EMPTY
+                                                : " \"x-amz-security-token\" = \"" + connectionDetails.awsToken + "\"")
+        .replace(URI, connectionDetails.awsEndpointUrl)
+        .replace(OUT_FILE, connectionDetails.targetPath + "\\" + connectionDetails.artifactFileName);
   }
 
   public String getSshCommand(AwsS3ArtifactDelegateConfig s3ArtifactDelegateConfig, String destinationPath) {

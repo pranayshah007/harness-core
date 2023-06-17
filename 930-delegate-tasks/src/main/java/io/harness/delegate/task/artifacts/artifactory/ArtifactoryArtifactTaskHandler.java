@@ -34,7 +34,6 @@ import com.google.inject.Singleton;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -54,8 +53,6 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     ArtifactoryArtifactDelegateRequest attributesRequest =
         (ArtifactoryArtifactDelegateRequest) artifactSourceDelegateRequest;
 
-    List<Map<String, String>> labels;
-
     BuildDetailsInternal lastSuccessfulBuild;
 
     ArtifactoryConfigRequest artifactoryConfig =
@@ -72,22 +69,8 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
               attributesRequest.getArtifactPath(), attributesRequest.getRepositoryFormat(), attributesRequest.getTag());
     }
 
-    labels = artifactoryRegistryService.getLabels(artifactoryConfig, attributesRequest.getArtifactPath(),
-        attributesRequest.getRepositoryName(), lastSuccessfulBuild.getNumber());
-
-    ArtifactoryArtifactDelegateResponse artifactoryDockerArtifactDelegateResponse;
-
-    // Checking whether labels or not
-    if (EmptyPredicate.isNotEmpty(labels)) {
-      artifactoryDockerArtifactDelegateResponse = ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(
-          lastSuccessfulBuild, attributesRequest, labels.get(0));
-
-    }
-
-    else {
-      artifactoryDockerArtifactDelegateResponse =
-          ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(lastSuccessfulBuild, attributesRequest, null);
-    }
+    ArtifactoryArtifactDelegateResponse artifactoryDockerArtifactDelegateResponse =
+        ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(lastSuccessfulBuild, attributesRequest);
 
     return getSuccessTaskExecutionResponse(Collections.singletonList(artifactoryDockerArtifactDelegateResponse));
   }
@@ -163,7 +146,7 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     List<ArtifactoryArtifactDelegateResponse> artifactoryDockerArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())
-            .map(build -> ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(build, attributesRequest, null))
+            .map(build -> ArtifactoryRequestResponseMapper.toArtifactoryDockerResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(artifactoryDockerArtifactDelegateResponseList);
   }

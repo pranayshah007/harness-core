@@ -68,6 +68,7 @@ import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
@@ -123,12 +124,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
 
 @OwnedBy(CDP)
 @Singleton
+@Slf4j
 public class K8sStepHelper extends K8sHelmCommonStepHelper {
   private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
@@ -169,8 +170,19 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
   public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData) {
-    return queueK8sTask(
-        stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, TaskType.K8S_COMMAND_TASK_NG);
+    TaskType taskType = getK8sTaskType(k8sDeployRequest, ambiance);
+    return queueK8sTask(stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, taskType);
+  }
+
+  private TaskType getK8sTaskType(K8sDeployRequest k8sDeployRequest, Ambiance ambiance) {
+    if (k8sDeployRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {
+      return TaskType.K8S_COMMAND_TASK_NG_RANCHER;
+    }
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
+        && isNotEmpty(k8sDeployRequest.getServiceHooks())) {
+      return TaskType.K8S_COMMAND_TASK_NG_V2;
+    }
+    return TaskType.K8S_COMMAND_TASK_NG;
   }
 
   public List<String> renderValues(
@@ -182,7 +194,8 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     List<String> valuesFilesContentsWithoutComments = new ArrayList<>();
     if (cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_REMOVE_COMMENTS_FROM_VALUES_YAML)) {
-      valuesFilesContentsWithoutComments = removeCommentsFromValuesYamlFiles(valuesFileContents);
+      valuesFilesContentsWithoutComments =
+          K8sValuesFilesCommentsHandler.removeComments(valuesFileContents, manifestOutcome.getType());
     }
 
     List<String> renderedValuesFileContents = getValuesFileContents(ambiance,
@@ -193,24 +206,6 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     }
 
     return renderedValuesFileContents;
-  }
-
-  private List<String> removeCommentsFromValuesYamlFiles(List<String> valuesFiles) {
-    List<String> modifiedValuesFiles = new ArrayList<>();
-    DumperOptions options = new DumperOptions();
-    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-    options.setPrettyFlow(true);
-    Yaml yaml = new Yaml(options);
-    Map<String, String> map;
-    String str;
-    for (String values : valuesFiles) {
-      if (isNotEmpty(values)) {
-        map = yaml.load(values);
-        str = isNotEmpty(map) ? yaml.dump(map) : "";
-        modifiedValuesFiles.add(str);
-      }
-    }
-    return modifiedValuesFiles;
   }
 
   public List<String> renderPatches(
@@ -905,6 +900,17 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       default:
         return false;
     }
+  }
+
+  public boolean isDeclarativeRollbackEnabled(Ambiance ambiance) {
+    ManifestOutcome k8sManifestOutcome = null;
+    try {
+      ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
+      k8sManifestOutcome = getK8sSupportedManifestOutcome(manifestsOutcome.values());
+    } catch (Exception ex) {
+      log.warn("No manifest configured in service");
+    }
+    return isDeclarativeRollbackEnabled(k8sManifestOutcome);
   }
 
   public boolean isDeclarativeRollbackEnabled(ManifestOutcome manifestOutcome) {

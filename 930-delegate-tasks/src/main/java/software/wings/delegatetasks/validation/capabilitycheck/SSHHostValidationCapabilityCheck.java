@@ -25,6 +25,7 @@ import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.HostConnectionAttributes;
@@ -69,8 +70,12 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
       hostConnectionTest.setSshSessionTimeout(timeout);
       performTest(hostConnectionTest);
       capabilityResponseBuilder.validated(true);
+    } catch (JSchException e) {
+      log.error("Failed to validate host - public dns: {}, message: {}", capability.getValidationInfo().getPublicDns(),
+          ExceptionMessageSanitizer.sanitizeException(e).getMessage());
+      capabilityResponseBuilder.validated(false);
     } catch (Exception e) {
-      log.error("Failed to validate host - public dns:" + capability.getValidationInfo().getPublicDns(),
+      log.error("Failed to validate host - public dns: " + capability.getValidationInfo().getPublicDns(),
           ExceptionMessageSanitizer.sanitizeException(e));
       capabilityResponseBuilder.validated(false);
     }
@@ -78,8 +83,12 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
   }
 
   @VisibleForTesting
-  void performTest(SshSessionConfig hostConnectionTest) throws JSchException {
-    getSSHSession(hostConnectionTest).disconnect();
+  void performTest(SshSessionConfig hostConnectionTest) throws Exception {
+    if (hostConnectionTest.isUseSshClient()) {
+      SshClientManager.test(hostConnectionTest);
+    } else {
+      getSSHSession(hostConnectionTest).disconnect();
+    }
   }
 
   private void decryptCredentials(SettingAttribute hostConnectionAttributes,

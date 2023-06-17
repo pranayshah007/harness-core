@@ -17,7 +17,7 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface ChaosHttpClient {
-  @POST("driver/api/chaos/delegate-callback")
+  @POST("kserver/api/ng/delegateCallback")
   Call<ResponseDTO<Boolean>> pushTaskResponse(@Body ChaosApplyManifestResponse response);
 
   @POST("manager/api/query") Call<ResponseDTO<ChaosRerunResponse>> reRunWorkflow(@Body ChaosQuery query);

@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.entities.ArtifactDetails;
+import io.harness.entities.RollbackStatus;
+import io.harness.pms.contracts.execution.Status;
 
 import java.util.List;
 import javax.annotation.Nullable;
@@ -29,6 +31,10 @@ public class DeploymentSummaryDTO {
   String projectIdentifier;
   String pipelineExecutionId;
   String pipelineExecutionName;
+  String stageNodeExecutionId;
+  Status stageStatus;
+  String stageSetupId;
+  RollbackStatus rollbackStatus;
   // TODO create dto for artifact details
   @Setter ArtifactDetails artifactDetails;
   String deployedById;

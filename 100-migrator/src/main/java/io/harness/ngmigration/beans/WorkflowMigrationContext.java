@@ -33,6 +33,7 @@ public class WorkflowMigrationContext {
   private Workflow workflow;
   private CaseFormat identifierCaseFormat;
   private boolean templatizeStepParams;
+  private boolean workflowVarsAsPipeline;
 
   public static WorkflowMigrationContext newInstance(MigrationContext migrationContext, Workflow workflow) {
     return WorkflowMigrationContext.builder()
@@ -42,6 +43,7 @@ public class WorkflowMigrationContext {
         .stepExpressionFunctors(new ArrayList<>())
         .identifierCaseFormat(migrationContext.getInputDTO().getIdentifierCaseFormat())
         .templatizeStepParams(false)
+        .workflowVarsAsPipeline(false)
         .build();
   }
 }

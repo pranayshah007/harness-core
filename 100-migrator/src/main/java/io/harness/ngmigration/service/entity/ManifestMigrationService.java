@@ -157,9 +157,9 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    return migrateFile(auth, ngClient, inputDTO, yamlFile);
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    return migrateFile(ngClient, inputDTO, yamlFile);
   }
 
   @Override
@@ -176,7 +176,7 @@ public class ManifestMigrationService extends NgMigrationService {
       NGYamlFile override =
           ServiceVariableMigrationService.getBlankServiceOverride(migrationContext, envId, serviceId, null);
       NGYamlFile existingOverride =
-          ServiceVariableMigrationService.findExistingOverride(entities, migratedEntities, envId, serviceId);
+          ServiceVariableMigrationService.findExistingOverride(migrationContext, envId, serviceId);
       if (existingOverride != null) {
         override = existingOverride;
       } else {

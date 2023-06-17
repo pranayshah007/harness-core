@@ -30,6 +30,8 @@ public interface ProjectService {
 
   Optional<Project> get(String accountIdentifier, String orgIdentifier, String identifier);
 
+  Optional<Project> getConsideringCase(String accountIdentifier, String orgIdentifier, String identifier);
+
   Project update(String accountIdentifier, String orgIdentifier, String identifier, ProjectDTO project);
 
   PageResponse<ProjectDTO> listProjectsForUser(String userId, String accountId, PageRequest pageRequest);
@@ -41,7 +43,8 @@ public interface ProjectService {
   /**
    * Use this method with caution, verify that the pageable sort is able to make use of the indexes.
    */
-  Page<Project> listPermittedProjects(String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO);
+  Page<Project> listPermittedProjects(
+      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO, Boolean onlyFavorites);
 
   List<ProjectDTO> listPermittedProjects(String accountIdentifier, ProjectFilterDTO projectFilterDTO);
 
@@ -64,4 +67,6 @@ public interface ProjectService {
   Map<String, Integer> getProjectsCountPerOrganization(String accountIdentifier, List<String> orgIdentifiers);
 
   Long countProjects(String accountIdentifier);
+
+  boolean isFavorite(Project project, String userId);
 }

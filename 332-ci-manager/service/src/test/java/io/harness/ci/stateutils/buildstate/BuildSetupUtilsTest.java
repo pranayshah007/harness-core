@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.HARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -102,7 +102,8 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
     TIServiceConfig tiServiceConfig = TIServiceConfig.builder().baseUrl("endpoint").globalToken("token").build();
     when(tiServiceUtils.getTiServiceConfig()).thenReturn(tiServiceConfig);
     when(tiServiceUtils.getTIServiceToken(any())).thenReturn("token");
-    STOServiceConfig stoServiceConfig = STOServiceConfig.builder().baseUrl("endpoint").globalToken("token").build();
+    STOServiceConfig stoServiceConfig =
+        STOServiceConfig.builder().baseUrl("endpoint").internalUrl("endpoint").globalToken("token").build();
     when(stoServiceUtils.getStoServiceConfig()).thenReturn(stoServiceConfig);
     when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("token");
     when(executionSweepingOutputResolver.resolve(any(), any()))

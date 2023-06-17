@@ -24,7 +24,8 @@ public class MatrixConfigTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testSerDeser() throws IOException {
-    String yaml = "a: ['1','2']\n"
+    // Handling stringified list as well.
+    String yaml = "a: \"['1','2']\"\n"
         + "b: [2,3]\n"
         + "c: <+pipeline>\n"
         + "exclude:\n"

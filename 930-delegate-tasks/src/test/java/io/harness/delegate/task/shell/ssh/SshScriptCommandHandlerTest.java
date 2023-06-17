@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -54,7 +54,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)
@@ -73,7 +73,8 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   final NgCommandUnit scriptCommandUnit =
       ScriptCommandUnit.builder().name("test").command(COMMAND).workingDirectory("/test").build();
   final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-  final List<String> outputVariables = Arrays.asList("var");
+  final List<String> outputVariables = List.of("var");
+  final List<String> secretOutputVariables = List.of("secretVar");
 
   @Inject @InjectMocks final SshScriptCommandHandler sshScriptCommandHandler = new SshScriptCommandHandler();
 
@@ -88,7 +89,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldExecuteCommandWithSshExecutor() {
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables))
+    when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables, secretOutputVariables, null))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
     CommandExecutionStatus status =
@@ -107,7 +108,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldExecuteCommandWithScriptProcessExecutorOnDelegate() {
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(COMMAND, outputVariables))
+    when(scriptProcessExecutor.executeCommandString(COMMAND, outputVariables, secretOutputVariables, null))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
@@ -151,6 +152,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
         .artifactDelegateConfig(ArtifactoryArtifactDelegateConfig.builder().build())
         .commandUnits(Arrays.asList(scriptCommandUnit))
         .outputVariables(outputVariables)
+        .secretOutputVariables(secretOutputVariables)
         .host("host")
         .build();
   }

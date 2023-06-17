@@ -22,6 +22,9 @@ import io.harness.event.reconciliation.DetectionStatus;
 import io.harness.event.reconciliation.ReconcilationAction;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
+import io.harness.ng.core.common.beans.Generation;
+import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.user.UserAccountLevelData;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
@@ -624,5 +627,8 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(Artifact.Status.class, 50031);
     kryo.register(MongoExecutionTimeoutException.class, 50032);
     kryo.register(AWSKMSException.class, 50033);
+    kryo.register(UserAccountLevelData.class, 50034);
+    kryo.register(Generation.class, 50035);
+    kryo.register(UserSource.class, 50036);
   }
 }

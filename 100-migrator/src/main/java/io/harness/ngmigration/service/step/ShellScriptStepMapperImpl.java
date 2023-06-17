@@ -37,6 +37,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Variable;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.ShellScriptTemplate;
@@ -82,7 +83,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
 
   @Override
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     List<CgEntityId> refs = new ArrayList<>();
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
@@ -126,9 +127,11 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     ExecutionTarget executionTarget = null;
 
     if (!state.isExecuteOnDelegate()) {
+      ParameterField<String> connectorRef = MigratorUtility.getIdentifierWithScopeDefaultsRuntime(
+          migrationContext.getMigratedEntities(), state.getSshKeyRef(), NGMigrationEntityType.CONNECTOR);
       executionTarget = ExecutionTarget.builder()
                             .host(ParameterField.createValueField(state.getHost()))
-                            .connectorRef(ParameterField.createValueField("<+input>"))
+                            .connectorRef(connectorRef)
                             .workingDirectory(ParameterField.createValueField(state.getCommandPath()))
                             .build();
     }

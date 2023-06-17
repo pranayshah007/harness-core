@@ -13,8 +13,8 @@ java_library(
     deps = [
         "//:lombok",
         "//960-api-services/src/main/java/io/harness/shell:module",
-        "//970-api-services-beans:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-api-services-beans/src/main/java/io/harness/shell:module",
         "@maven//:com_google_inject_guice",
     ],
 )

@@ -63,6 +63,6 @@ public class ResourceGroupOpenApiResourceTest extends CategoryTest {
     assertThat(response.getEntity().toString()).contains("This contains APIs related to Harness Resource Type");
     Map<String, Object> apiResponseMap =
         new ObjectMapper().readValue(response.getEntity().toString(), new LinkedHashMap<String, Object>().getClass());
-    assertThat(((List) apiResponseMap.get("tags")).size()).isEqualTo(2);
+    assertThat(((List) apiResponseMap.get("tags")).size()).isEqualTo(3);
   }
 }

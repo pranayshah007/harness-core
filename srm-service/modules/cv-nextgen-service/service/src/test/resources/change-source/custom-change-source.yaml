@@ -1,0 +1,10 @@
+---
+eventIdentifier: "<string>"
+user: user@harness.io
+startTime: 1685996145000
+endTime: 1685996145000
+eventDetail:
+  description: "<String>"
+  changeEventDetailsLink: urlString
+  externalLinkToEntity: urlString
+  name: changeEventName

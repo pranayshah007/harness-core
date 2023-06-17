@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -106,7 +105,6 @@ public class NoOpGitAwarePersistenceImpl implements GitAwarePersistence {
   public <B extends GitSyncableEntity, Y extends YamlDTO> List<B> find(@NotNull Criteria criteria, Pageable pageable,
       String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass) {
     Query query = new Query(criteria).with(pageable);
-    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
     return mongoTemplate.find(query, entityClass);
   }
 

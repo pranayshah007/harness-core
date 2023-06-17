@@ -49,7 +49,7 @@ public class ArtifactoryArtifactDelegateResponse extends ArtifactDelegateRespons
   public String describe() {
     String dockerPullCommand = (RepositoryFormat.docker.name().equals(getRepositoryFormat())
                                    && getBuildDetails() != null && getBuildDetails().getMetadata() != null)
-        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        ? "\nTo pull image use: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
     return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nrepository: "
         + getRepositoryName() + "\nimagePath: " + getArtifactPath() + "\ntag: " + getTag() + "\nrepository type: "

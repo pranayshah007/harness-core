@@ -23,13 +23,12 @@ import static software.wings.delegatetasks.pcf.PcfTestConstants.getPcfConfig;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -95,7 +94,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -202,7 +201,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
                                        .urls(Arrays.asList("1.com", "2.com"))
                                        .build();
     doReturn(appDetails).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(appDetails).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(appDetails).when(pcfDeploymentManager).resizeApplication(any(), any());
     File f1 = new File("./test1");
     File f2 = new File("./test2");
     doReturn(f1).when(pcfCommandTaskHelper).downloadArtifactFromManager(any(), any(), any());
@@ -226,7 +225,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
         pcfSetupCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
     verify(pcfDeploymentManager, times(1)).createApplication(any(), any());
     verify(pcfDeploymentManager, times(3)).deleteApplication(any());
-    verify(pcfDeploymentManager, times(1)).resizeApplication(any());
+    verify(pcfDeploymentManager, times(1)).resizeApplication(any(), any());
     verify(pcfDeploymentManager, times(1)).unmapRouteMapForApplication(any(), anyList(), any());
 
     CfSetupCommandResponse cfSetupCommandResponse =
@@ -349,7 +348,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
                                               .runningInstances(0)
                                               .build();
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandSetupRequest cfCommandSetupRequest = CfCommandSetupRequest.builder().useAppAutoscalar(true).build();
 
@@ -395,7 +394,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
                                               .runningInstances(0)
                                               .build();
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandSetupRequest cfCommandSetupRequest = CfCommandSetupRequest.builder().useAppAutoscalar(true).build();
 
@@ -1054,8 +1053,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
 
     doReturn(activeApplication)
         .when(pcfCommandTaskBaseHelper)
-        .findActiveApplication(
-            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+        .findActiveApplication(eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), anyList());
 
     doReturn(null)
         .when(pcfCommandTaskBaseHelper)
@@ -1494,7 +1492,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
                                               .runningInstances(0)
                                               .build();
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig));
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig), any());
     ArgumentCaptor<String> appDeletedMsgCaptor = ArgumentCaptor.forClass(String.class);
 
     pcfSetupCommandTaskHandler.deleteOlderApplications(previousReleases, cfRequestConfig, setupRequest,
@@ -1513,7 +1511,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
     reset(executionLogCallback);
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
     ArgumentCaptor<String> appDeletedMsgCaptor1 = ArgumentCaptor.forClass(String.class);
-    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig));
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig), any());
     pcfSetupCommandTaskHandler.deleteOlderApplications(previousReleases, cfRequestConfig, setupRequest,
         cfAppAutoscalarRequestData, activeApplication, null, executionLogCallback);
     verify(pcfDeploymentManager, times(2)).deleteApplication(eq(cfRequestConfig));
@@ -1532,7 +1530,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
     previousReleases.remove(0);
     previousReleases.remove(1);
     ArgumentCaptor<String> appDeletedMsgCaptor2 = ArgumentCaptor.forClass(String.class);
-    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig));
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig), any());
     pcfSetupCommandTaskHandler.deleteOlderApplications(previousReleases, cfRequestConfig, setupRequest,
         cfAppAutoscalarRequestData, activeApplication, null, executionLogCallback);
     verify(pcfDeploymentManager, times(0)).deleteApplication(eq(cfRequestConfig));
@@ -1545,7 +1543,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
     previousReleases.remove(2);
     ArgumentCaptor<String> appDeletedMsgCaptor3 = ArgumentCaptor.forClass(String.class);
-    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig));
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(eq(cfRequestConfig), any());
     pcfSetupCommandTaskHandler.deleteOlderApplications(previousReleases, cfRequestConfig, setupRequest,
         cfAppAutoscalarRequestData, activeApplication, null, executionLogCallback);
     verify(pcfDeploymentManager, times(0)).deleteApplication(eq(cfRequestConfig));
@@ -1608,13 +1606,13 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
       throws PivotalClientApiException, IOException, ExecutionException {
     doReturn(executionLogCallback).when(logStreamingTaskClient).obtainLogCallback(anyString());
     doNothing().when(executionLogCallback).saveExecutionLog(anyString());
-    doNothing().when(pcfDeploymentManager).unmapRouteMapForApplication(any(), anyListOf(String.class), any());
+    doNothing().when(pcfDeploymentManager).unmapRouteMapForApplication(any(), anyList(), any());
     doReturn("PASSWORD".toCharArray()).when(pcfCommandTaskHelper).getPassword(any());
     doReturn(CfInternalConfig.builder().build()).when(secretDecryptionService).decrypt(any(), any(), anyBoolean());
     doNothing().when(pcfDeploymentManager).deleteApplication(any());
     doReturn(new File("artifact.war")).when(pcfCommandTaskHelper).downloadArtifactFromManager(any(), any(), any());
     doReturn(new File("manifest.yml")).when(pcfCommandTaskBaseHelper).createManifestYamlFileLocally(any());
-    doNothing().when(pcfCommandTaskBaseHelper).deleteCreatedFile(anyListOf(File.class));
+    doNothing().when(pcfCommandTaskBaseHelper).deleteCreatedFile(anyList());
     doReturn(previousReleases).when(pcfDeploymentManager).getDeployedServicesWithNonZeroInstances(any(), anyString());
 
     ApplicationDetail applicationDetails = ApplicationDetail.builder()
@@ -1629,7 +1627,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
                                                .urls(Arrays.asList("harness-prod1-pcf", "harness-prod2-pcf.com"))
                                                .build();
     doReturn(applicationDetails).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(applicationDetails).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetails).when(pcfDeploymentManager).resizeApplication(any(), any());
     doReturn(ApplicationDetail.builder()
                  .id("10")
                  .diskQuota(1)

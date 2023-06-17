@@ -137,13 +137,15 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .cleanUpIncompleteCanaryDeployRelease(true)
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
+            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(accountId));
 
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
-      Map<String, String> k8sCommandFlag =
-          k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags());
-      canaryRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
+      canaryRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
+    Map<String, String> k8sCommandFlag =
+        k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags());
+    canaryRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sCanaryDeployRequest k8sCanaryDeployRequest = canaryRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     TaskChainResponse response =

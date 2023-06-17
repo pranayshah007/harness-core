@@ -1,0 +1,50 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/artifact:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/collect/artifacts/common:module",
+        "//930-delegate-tasks/src/main/java/software/wings/utils/artifact:module",
+        "//950-delegate-tasks-beans:module",
+        "//960-api-services/src/main/java/io/harness/nexus:module",
+        "//960-api-services/src/main/java/io/harness/nexus/model:module",
+        "//960-api-services/src/main/java/software/wings/common:module",
+        "//960-api-services/src/main/java/software/wings/helpers/ext/artifactory:module",
+        "//970-api-services-beans/src/main/java/io/harness/delegate/beans/artifact:module",
+        "//970-api-services-beans/src/main/java/io/harness/nexus:module",
+        "//970-api-services-beans/src/main/java/software/wings/helpers/ext/jenkins:module",
+        "//970-api-services-beans/src/main/java/software/wings/utils:module",
+        "//980-commons/src/main/java/io/harness/artifact:module",
+        "//980-commons/src/main/java/io/harness/concurrent:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/network:module",
+        "//980-commons/src/main/java/io/harness/stream:module",
+        "//980-commons/src/main/java/io/harness/threading:module",
+        "//980-commons/src/main/java/software/wings/beans/artifact:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_intellij_annotations",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_converter_jaxb",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_harness_cv_data_collection_dsl",
+        "@maven//:javax_xml_stream_stax_api",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_sonatype_nexus_plugins_nexus_restlet1x_model",
+    ],
+)
+
+run_analysis_per_module()

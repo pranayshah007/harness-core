@@ -194,7 +194,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(160, "IACM_STEPS");
     entityTypeOrdinalMapping.put(161, "IACM");
     entityTypeOrdinalMapping.put(162, "CONTAINER_STEP");
-    entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLAN");
+    entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLUGIN");
     entityTypeOrdinalMapping.put(164, "IACM_TEMPLATE");
     entityTypeOrdinalMapping.put(165, "ELASTIGROUP_BG_STAGE_SETUP_STEP");
     entityTypeOrdinalMapping.put(166, "ELASTIGROUP_SWAP_ROUTE_STEP");
@@ -235,6 +235,22 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(201, "AWS_SECURITY_HUB");
     entityTypeOrdinalMapping.put(202, "CUSTOM_INGEST");
     entityTypeOrdinalMapping.put(203, "BACKSTAGE_ENVIRONMENT_VARIABLE");
+    entityTypeOrdinalMapping.put(204, "FOSSA");
+    entityTypeOrdinalMapping.put(205, "CODEQL");
+    entityTypeOrdinalMapping.put(206, "GIT_LEAKS");
+    entityTypeOrdinalMapping.put(207, "GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY");
+    entityTypeOrdinalMapping.put(208, "GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK");
+    entityTypeOrdinalMapping.put(209, "K8S_BLUE_GREEN_STAGE_SCALE_DOWN");
+    entityTypeOrdinalMapping.put(210, "AWS_SAM_BUILD");
+    entityTypeOrdinalMapping.put(211, "SEMGREP");
+    entityTypeOrdinalMapping.put(212, "SSCA_ENFORCEMENT");
+    entityTypeOrdinalMapping.put(213, "IDP_CONNECTOR");
+    entityTypeOrdinalMapping.put(214, "CD_SSCA_ENFORCEMENT");
+    entityTypeOrdinalMapping.put(215, "DOWNLOAD_MANIFESTS");
+    entityTypeOrdinalMapping.put(216, "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2");
+    entityTypeOrdinalMapping.put(217, "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2");
+    entityTypeOrdinalMapping.put(218, "COVERITY");
+
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

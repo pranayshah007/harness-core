@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.AcrArtifactSummary;
 import io.harness.cdng.artifact.ArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -76,6 +77,12 @@ public class AcrArtifactOutcome implements ArtifactOutcome {
    * dockerConfigJson for docker credentials base encoded.
    */
   String dockerConfigJsonSecret;
+
+  String digest;
+
+  Map<String, String> metadata;
+
+  Map<String, String> label;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

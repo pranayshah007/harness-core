@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-deployment
+  template:
+    metadata:
+      labels:
+        app: test-deployment
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-1
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-3
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-custom
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: test-deployment-green

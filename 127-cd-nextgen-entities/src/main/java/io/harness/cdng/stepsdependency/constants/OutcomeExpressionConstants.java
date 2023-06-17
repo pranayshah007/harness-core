@@ -39,6 +39,8 @@ public class OutcomeExpressionConstants {
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
+  public final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2 =
+      "serverlessAwsLambdaPrepareRollbackDataOutcomeV2";
   public final String SERVERLESS_FETCH_FILE_OUTCOME = "serverlessFetchFileOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
@@ -71,12 +73,17 @@ public class OutcomeExpressionConstants {
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
   public final String TAS_INBUILT_VARIABLES_OUTCOME = "pcf";
   public final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "googleFunctionPrepareRollbackOutcome";
+  public final String GOOGLE_FUNCTION_GEN_ONE_PREPARE_ROLLBACK_OUTCOME = "googleFunctionGenOnePrepareRollbackOutcome";
   public final String GOOGLE_FUNCTION_DEPLOY_OUTCOME = "googleFunctionDeployOutcome";
   public final String GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_OUTCOME = "googleFunctionDeployWithoutTrafficOutcome";
   public final String TAS_ROLLING_DEPLOY_OUTCOME = "TasRollingDeployOutcome";
   public final String ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME = "asgBlueGreenSwapServiceOutcome";
   public final String ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "asgBlueGreenPrepareRollbackDataOutcome";
   public final String ASG_BLUE_GREEN_DEPLOY_OUTCOME = "asgBlueGreenDeployOutcome";
+  public final String SERVICE_HOOKS = "hooks";
 
   public final String AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "awsLambdaFunctionPrepareRollbackOutcome";
+  public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
+  public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
+  public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
 }

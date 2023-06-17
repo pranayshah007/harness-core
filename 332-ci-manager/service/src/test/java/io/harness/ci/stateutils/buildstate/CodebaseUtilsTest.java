@@ -205,28 +205,13 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
     codebaseUtils.getGitConnector(null, null, false);
   }
 
-  @Test(expected = CIStageExecutionException.class)
-  @Owner(developers = JAMES_RICKS)
-  @Category(UnitTests.class)
-  public void testGetGitConnectorNullConnectorRefValue() {
-    CodeBase codeBase = CodeBase.builder().connectorRef(ParameterField.createValueField(null)).build();
-    codebaseUtils.getGitConnector(null, codeBase, false);
-  }
-
-  @Test(expected = CIStageExecutionException.class)
-  @Owner(developers = JAMES_RICKS)
-  @Category(UnitTests.class)
-  public void testGetGitConnectorNullConnectorRef() {
-    codebaseUtils.getGitConnector(null, null);
-  }
-
   @Test
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void testGetGitConnectorCodebase() {
     String connectorRefValue = "myConnectorRef";
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).build();
-    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue))).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue), eq(true))).thenReturn(connectorDetails);
     CodeBase codeBase = CodeBase.builder().connectorRef(ParameterField.createValueField(connectorRefValue)).build();
     final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, codeBase, false);
     assertThat(gitConnector).isEqualTo(connectorDetails);
@@ -238,7 +223,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   public void testGetGitConnector() {
     String connectorRefValue = "myConnectorRef";
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).build();
-    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue))).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue), eq(true))).thenReturn(connectorDetails);
     final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, connectorRefValue);
     assertThat(gitConnector).isEqualTo(connectorDetails);
   }

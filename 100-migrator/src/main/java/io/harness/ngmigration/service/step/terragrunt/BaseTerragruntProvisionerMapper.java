@@ -42,11 +42,16 @@ import io.harness.cdng.provision.terragrunt.TerragruntVarFileTypes;
 import io.harness.cdng.provision.terragrunt.TerragruntVarFileWrapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.expressions.step.TerragruntStepFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
-import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -56,13 +61,17 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.states.provision.TerragruntDestroyState;
 import software.wings.sm.states.provision.TerragruntProvisionState;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,7 +90,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
   }
 
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     TerragruntProvisionState state = (TerragruntProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();
@@ -149,7 +158,8 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                            .map(variable
                                -> StringNGVariable.builder()
                                       .name(variable.getName())
-                                      .value(ParameterField.createValueField(variable.getValue()))
+                                      .value(ParameterField.createValueField(
+                                          StringUtils.isNotBlank(variable.getValue()) ? variable.getValue() : ""))
                                       .type(NGVariableType.STRING)
                                       .build())
                            .collect(Collectors.toList()));
@@ -217,6 +227,12 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
   protected List<TerragruntVarFileWrapper> getVarFiles(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, TerragruntProvisionState state) {
     List<TerragruntVarFileWrapper> varFileWrappers = new ArrayList<>();
+
+    TerragruntVarFileWrapper remoteTerragruntVarFile = getRemoteTerragruntVarFile(entities, migratedEntities, state);
+    if (remoteTerragruntVarFile != null) {
+      varFileWrappers.add(remoteTerragruntVarFile);
+    }
+
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       String inlineContent = convertNameValuePairToContent(migratedEntities, state.getVariables());
       TerragruntVarFileWrapper wrapper = new TerragruntVarFileWrapper();
@@ -230,10 +246,11 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       varFileWrappers.add(wrapper);
     }
 
-    if (isEmpty(state.getTfVarFiles()) && state.getTfVarGitFileConfig() == null) {
-      return varFileWrappers;
-    }
+    return varFileWrappers;
+  }
 
+  private TerragruntVarFileWrapper getRemoteTerragruntVarFile(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, TerragruntProvisionState state) {
     TerragruntVarFileWrapper wrapper = new TerragruntVarFileWrapper();
     RemoteTerragruntVarFileSpec remoteTerragruntVarFileSpec = new RemoteTerragruntVarFileSpec();
     GitStore gitStore = null;
@@ -242,7 +259,10 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       gitStore.setFolderPath(ParameterField.ofNull());
       gitStore.setPaths(ParameterField.createValueField(state.getTfVarFiles()));
     } else if (state.getTfVarGitFileConfig() != null) {
-      GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
+      GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(
+          ParameterField.createValueField(MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities,
+              state.getTfVarGitFileConfig().getConnectorId(), NGMigrationEntityType.CONNECTOR,
+              NGMigrationConstants.RUNTIME_INPUT)));
       if (StringUtils.isNotBlank(state.getTfVarGitFileConfig().getBranch())) {
         storeBuilder.gitFetchType(FetchType.BRANCH);
         storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
@@ -262,9 +282,9 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                              .type(TerragruntVarFileTypes.Remote)
                              .spec(remoteTerragruntVarFileSpec)
                              .build());
-      varFileWrappers.add(wrapper);
+      return wrapper;
     }
-    return varFileWrappers;
+    return null;
   }
 
   protected ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(TerragruntProvisionState state) {
@@ -293,18 +313,25 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
 
   private GitStore getGitStore(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       TerragruntProvisionState state) {
-    GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
-
     CgEntityNode node =
         entities.getOrDefault(CgEntityId.builder().id(state.getProvisionerId()).type(INFRA_PROVISIONER).build(), null);
     if (node == null || node.getEntity() == null) {
-      return storeBuilder.branch(MigratorUtility.RUNTIME_INPUT)
+      return GitStore.builder()
+          .connectorRef(MigratorUtility.RUNTIME_INPUT)
+          .branch(MigratorUtility.RUNTIME_INPUT)
           .gitFetchType(FetchType.BRANCH)
           .folderPath(MigratorUtility.RUNTIME_INPUT)
           .build();
     }
+    GitStoreBuilder storeBuilder = GitStore.builder();
     TerragruntInfrastructureProvisioner provisioner = (TerragruntInfrastructureProvisioner) node.getEntity();
-
+    if (StringUtils.isNotBlank(provisioner.getSourceRepoSettingId())) {
+      storeBuilder.connectorRef(ParameterField.createValueField(
+          MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, provisioner.getSourceRepoSettingId(),
+              NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT)));
+    } else {
+      storeBuilder.connectorRef(MigratorUtility.RUNTIME_INPUT);
+    }
     if (StringUtils.isNotBlank(provisioner.getSourceRepoBranch())) {
       storeBuilder.gitFetchType(FetchType.BRANCH);
       storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));
@@ -361,33 +388,58 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
     return moduleConfig;
   }
 
-  protected AbstractStepNode getStepNode(Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode, CaseFormat identifierCaseFormat) {
+  protected AbstractStepNode getStepNode(MigrationContext context, GraphNode graphNode) {
     TerragruntProvisionState state = (TerragruntProvisionState) getState(graphNode);
     if (state.isRunPlanOnly()) {
-      TerragruntPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
-      TerragruntPlanStepInfo stepInfo = TerragruntPlanStepInfo.infoBuilder()
-                                            .delegateSelectors(getDelegateSelectors(state))
-                                            .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
-                                            .terragruntPlanExecutionData(executionData)
-                                            .build();
+      TerragruntPlanExecutionData executionData =
+          getPlanExecutionData(context.getEntities(), context.getMigratedEntities(), state);
+      TerragruntPlanStepInfo stepInfo =
+          TerragruntPlanStepInfo.infoBuilder()
+              .delegateSelectors(getDelegateSelectors(state))
+              .provisionerIdentifier(getProvisionerIdentifier(context, state.getProvisionerId()))
+              .terragruntPlanExecutionData(executionData)
+              .build();
       TerragruntPlanStepNode planStepNode = new TerragruntPlanStepNode();
-      baseSetup(graphNode, planStepNode, identifierCaseFormat);
+      baseSetup(graphNode, planStepNode, context.getInputDTO().getIdentifierCaseFormat());
       planStepNode.setTerragruntPlanStepInfo(stepInfo);
       return planStepNode;
     } else {
       TerragruntStepConfiguration stepConfiguration = new TerragruntStepConfiguration();
-      stepConfiguration.setTerragruntExecutionData(getExecutionData(entities, migratedEntities, state));
-      stepConfiguration.setTerragruntStepConfigurationType(TerragruntStepConfigurationType.INLINE);
-      TerragruntApplyStepInfo stepInfo = TerragruntApplyStepInfo.infoBuilder()
-                                             .delegateSelectors(getDelegateSelectors(state))
-                                             .terragruntStepConfiguration(stepConfiguration)
-                                             .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
-                                             .build();
+      stepConfiguration.setTerragruntExecutionData(
+          getExecutionData(context.getEntities(), context.getMigratedEntities(), state));
+      stepConfiguration.setTerragruntStepConfigurationType(state.isInheritApprovedPlan()
+              ? TerragruntStepConfigurationType.INHERIT_FROM_PLAN
+              : TerragruntStepConfigurationType.INLINE);
+      TerragruntApplyStepInfo stepInfo =
+          TerragruntApplyStepInfo.infoBuilder()
+              .delegateSelectors(getDelegateSelectors(state))
+              .terragruntStepConfiguration(stepConfiguration)
+              .provisionerIdentifier(getProvisionerIdentifier(context, state.getProvisionerId()))
+              .build();
       TerragruntApplyStepNode applyStepNode = new TerragruntApplyStepNode();
-      baseSetup(graphNode, applyStepNode, identifierCaseFormat);
+      baseSetup(graphNode, applyStepNode, context.getInputDTO().getIdentifierCaseFormat());
       applyStepNode.setTerragruntApplyStepInfo(stepInfo);
       return applyStepNode;
     }
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = "terragrunt";
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(
+                       graphNode.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(
+                       phaseStep.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(TerragruntStepFunctor::new)
+        .collect(Collectors.toList());
   }
 }

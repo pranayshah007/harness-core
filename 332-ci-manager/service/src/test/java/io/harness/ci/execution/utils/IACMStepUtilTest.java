@@ -18,8 +18,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entities.Stack;
-import io.harness.beans.entities.StackVariables;
+import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -30,7 +30,6 @@ import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
-import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.iacmserviceclient.IACMServiceUtils;
@@ -60,10 +59,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Mock HarnessImageUtils harnessImageUtils;
   @Mock IACMServiceUtils iacmServiceUtils;
   @InjectMocks private IACMStepsUtils iacmStepsUtils;
-  private Ambiance ambiance = Ambiance.newBuilder()
-                                  .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
-                                      "projectIdentfier", "orgIdentifier", "orgIdentifier"))
-                                  .build();
+  private final Ambiance ambiance = Ambiance.newBuilder()
+                                        .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
+                                            "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+                                        .build();
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -74,11 +73,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIACMGetConnectorRef() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
-    stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("initialise"));
+    setting.put("command", mapper.valueToTree("init"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))
@@ -86,14 +84,14 @@ public class IACMStepUtilTest extends CategoryTest {
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    Stack stack = Stack.builder()
-                      .provider_connector("awsTest")
-                      .repository_path("root")
-                      .provisioner_version("1.2.3")
-                      .provisioner("terraform")
-                      .build();
-    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
-    when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(new StackVariables[] {});
+    Workspace stack = Workspace.builder()
+                          .provider_connector("awsTest")
+                          .repository_path("root")
+                          .provisioner_version("1.2.3")
+                          .provisioner("terraform")
+                          .build();
+    when(iacmServiceUtils.getIACMWorkspaceInfo(any(), any(), any(), any())).thenReturn(stack);
+    when(iacmServiceUtils.getIacmWorkspaceEnvs(any(), any(), any(), any())).thenReturn(new WorkspaceVariables[] {});
     when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);
@@ -106,11 +104,12 @@ public class IACMStepUtilTest extends CategoryTest {
     when(connectorUtils.getConnectorDetails(any(), any()))
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
 
-    VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
-    assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ROOT_DIR")).isEqualTo("root");
-    assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
-    assertThat(vmPluginStep.getConnector().getConnectorType()).isEqualTo(ConnectorType.AWS);
+    Map<String, String> envVariables = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
+    assertThat(envVariables).hasSize(4);
+    assertThat(envVariables.get("PLUGIN_ROOT_DIR")).isEqualTo("root");
+    assertThat(envVariables.get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
+    ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo);
+    assertThat(connector.getConnectorType()).isEqualTo(ConnectorType.AWS);
   }
 
   @Test
@@ -118,18 +117,18 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDifferentStepsInputs() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    Stack stack = Stack.builder()
-                      .provider_connector("awsTest")
-                      .repository_path("root")
-                      .provisioner_version("1.2.3")
-                      .provisioner("terraform")
-                      .build();
-    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
-    when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(new StackVariables[] {});
+    Workspace stack = Workspace.builder()
+                          .provider_connector("awsTest")
+                          .repository_path("root")
+                          .provisioner_version("1.2.3")
+                          .provisioner("terraform")
+                          .build();
+    when(iacmServiceUtils.getIACMWorkspaceInfo(any(), any(), any(), any())).thenReturn(stack);
+    when(iacmServiceUtils.getIacmWorkspaceEnvs(any(), any(), any(), any())).thenReturn(new WorkspaceVariables[] {});
     when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);
@@ -141,41 +140,20 @@ public class IACMStepUtilTest extends CategoryTest {
     when(PluginSettingUtils.getConnectorSecretEnvMap(any())).thenReturn(map);
     when(connectorUtils.getConnectorDetails(any(), any()))
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
-    List<String> commands = Arrays.asList("initialise", "evaluate", "execute");
-    List<String> workflows = Arrays.asList("provision", "teardown");
+    List<String> commands = Arrays.asList("init", "plan", "plan-destroy", "apply", "destroy");
 
     for (int i = 0; i <= commands.size() - 1; i++) {
-      for (int j = 0; j <= workflows.size() - 1; j++) {
-        stepVars.put("WORKFLOW", ParameterField.createValueField(workflows.get(j)));
-        Map<String, JsonNode> setting = new HashMap<>();
-        ObjectMapper mapper = new ObjectMapper();
-        setting.put("operation", mapper.valueToTree(commands.get(i)));
-        PluginStepInfo stepInfo = PluginStepInfo.builder()
-                                      .envVariables(ParameterField.createValueField(stepVars))
-                                      .settings(ParameterField.createValueField(setting))
-                                      .build();
-        VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-        if (i == 0) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
-          assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("initialise");
-        }
-        if (i == 1) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
-          if (j == 0) {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan");
-          } else {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("evaluate-plan-destroy");
-          }
-        }
-        if (i == 2) {
-          assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
-          if (j == 0) {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-apply");
-          } else {
-            assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_OPERATIONS")).isEqualTo("execute-destroy");
-          }
-        }
-      }
+      stepVars.put("WORKFLOW", ParameterField.createValueField("workflow"));
+      Map<String, JsonNode> setting = new HashMap<>();
+      ObjectMapper mapper = new ObjectMapper();
+      setting.put("command", mapper.valueToTree(commands.get(i)));
+      PluginStepInfo stepInfo = PluginStepInfo.builder()
+                                    .envVariables(ParameterField.createValueField(stepVars))
+                                    .settings(ParameterField.createValueField(setting))
+                                    .build();
+      Map<String, String> vmPluginStep = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
+      assertThat(vmPluginStep.size()).isEqualTo(4);
+      assertThat(vmPluginStep.get("PLUGIN_COMMAND")).isEqualTo(commands.get(i));
     }
   }
 
@@ -184,11 +162,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIACMEnvVarsTransformation() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("STACK_ID", ParameterField.createValueField("stackID"));
-    stepVars.put("WORKFLOW", ParameterField.createValueField("provision"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("initialise"));
+    setting.put("command", mapper.valueToTree("init"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))
@@ -196,13 +173,13 @@ public class IACMStepUtilTest extends CategoryTest {
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
-    Stack stack = Stack.builder()
-                      .provider_connector("awsTest")
-                      .repository_path("root")
-                      .provisioner_version("1.2.3")
-                      .provisioner("terraform")
-                      .build();
-    when(iacmServiceUtils.getIACMStackInfo(any(), any(), any(), any())).thenReturn(stack);
+    Workspace stack = Workspace.builder()
+                          .provider_connector("awsTest")
+                          .repository_path("root")
+                          .provisioner_version("1.2.3")
+                          .provisioner("terraform")
+                          .build();
+    when(iacmServiceUtils.getIACMWorkspaceInfo(any(), any(), any(), any())).thenReturn(stack);
     when(harnessImageUtils.getHarnessImageConnectorDetailsForVM(any(), any()))
         .thenReturn(ConnectorDetails.builder().build());
     Mockito.mockStatic(IntegrationStageUtils.class);
@@ -215,17 +192,32 @@ public class IACMStepUtilTest extends CategoryTest {
     when(connectorUtils.getConnectorDetails(any(), any()))
         .thenReturn(ConnectorDetails.builder().connectorType(ConnectorType.AWS).build());
 
-    String[][] expectedResults = new String[][] {
-        {"{\"keytest2\":\"keyValue2\",\"keytest1\":\"keyValue1\"}",
-            "{\"keytest4\":\"keyValue4\",\"keytest3\":\"keyValue3\"}"},
-        {"{\"keytest2\":\"keyValue2\",\"keytest1\":\"${ngSecretManager.obtain(\"keytest1\", -871314908)}\"}",
-            "{\"keytest4\":\"keyValue4\",\"keytest3\":\"${ngSecretManager.obtain(\"keytest3\", -871314908)}\"}"},
-        {"{}", "{}"},
-
+    Map<String, String> expected1 = new HashMap<String, String>() {
+      {
+        put("PLUGIN_WS_ENV_VAR_keytest1", "keyValue1");
+        put("PLUGIN_WS_ENV_VAR_keytest2", "keyValue2");
+        put("PLUGIN_WS_TF_VAR_keytest3", "keyValue3");
+        put("PLUGIN_WS_TF_VAR_keytest4", "keyValue4");
+      }
     };
 
-    StackVariables[][] testCases = {
-        {StackVariables.builder()
+    Map<String, String> expected2 = new HashMap<String, String>() {
+      {
+        put("PLUGIN_WS_ENV_VAR_keytest1", "${ngSecretManager.obtain(\"keyValue1\", 0)}");
+        put("PLUGIN_WS_ENV_VAR_keytest2", "keyValue2");
+        put("PLUGIN_WS_TF_VAR_keytest3", "${ngSecretManager.obtain(\"keyValue3\", 0)}");
+        put("PLUGIN_WS_TF_VAR_keytest4", "keyValue4");
+      }
+    };
+
+    Map<String, String> expected3 = new HashMap<String, String>() {
+      {}
+    };
+
+    Map<String, String>[] expectedResults = (Map<String, String>[]) new Map[] {expected1, expected2, expected3};
+
+    WorkspaceVariables[][] testCases = {
+        {WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest1")
@@ -233,7 +225,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value("keyValue1")
                 .value_type("string")
                 .build(),
-            StackVariables.builder()
+            WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest2")
@@ -241,7 +233,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value("keyValue2")
                 .value_type("string")
                 .build(),
-            StackVariables.builder()
+            WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest3")
@@ -249,7 +241,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value("keyValue3")
                 .value_type("string")
                 .build(),
-            StackVariables.builder()
+            WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest4")
@@ -258,7 +250,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value_type("string")
                 .build()},
 
-        {StackVariables.builder()
+        {WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest1")
@@ -266,7 +258,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value("keyValue1")
                 .value_type("secret")
                 .build(),
-            StackVariables.builder()
+            WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest2")
@@ -274,7 +266,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value("keyValue2")
                 .value_type("string")
                 .build(),
-            StackVariables.builder()
+            WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest3")
@@ -282,7 +274,7 @@ public class IACMStepUtilTest extends CategoryTest {
                 .value("keyValue3")
                 .value_type("secret")
                 .build(),
-            StackVariables.builder()
+            WorkspaceVariables.builder()
                 .stack("123")
                 .account("abc")
                 .key("keytest4")
@@ -295,10 +287,30 @@ public class IACMStepUtilTest extends CategoryTest {
     };
 
     for (int i = 0; i < testCases.length; i++) {
-      when(iacmServiceUtils.getIacmStackEnvs(any(), any(), any(), any())).thenReturn(testCases[i]);
-      VmPluginStep vmPluginStep = iacmStepsUtils.injectIACMInfo(ambiance, stepInfo, null, null);
-      assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_ENV_VARS")).isEqualTo(expectedResults[i][0]);
-      assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_VARS")).isEqualTo(expectedResults[i][1]);
+      when(iacmServiceUtils.getIacmWorkspaceEnvs(any(), any(), any(), any())).thenReturn(testCases[i]);
+      Map<String, String> vmPluginStep = iacmStepsUtils.getIACMEnvVariables(ambiance, stepInfo);
+      for (Map.Entry<String, String> entry : expectedResults[i].entrySet()) {
+        assertThat(entry.getValue()).isEqualTo(vmPluginStep.get(entry.getKey()));
+      }
     }
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testIsIACMStep() {
+    Map<String, ParameterField<String>> stepVars = new HashMap<>();
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
+    Map<String, JsonNode> setting = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
+    setting.put("command", mapper.valueToTree("plan"));
+    PluginStepInfo stepInfo = PluginStepInfo.builder()
+                                  .envVariables(ParameterField.createValueField(stepVars))
+                                  .settings(ParameterField.createValueField(setting))
+                                  .build();
+    assertThat(iacmStepsUtils.isIACMStep(stepInfo)).isTrue();
+
+    PluginStepInfo stepInfo2 = PluginStepInfo.builder().settings(ParameterField.createValueField(setting)).build();
+    assertThat(iacmStepsUtils.isIACMStep(stepInfo2)).isFalse();
   }
 }

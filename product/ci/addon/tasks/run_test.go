@@ -394,7 +394,7 @@ func TestExecuteErrorWithOutput(t *testing.T) {
 	f.WriteString("abc xyz\n")
 	f.WriteString("abc1")
 	f.Close()
-
+	os.Remove(filePath)
 	e := runTask{
 		id:                "step1",
 		command:           "ls",
@@ -419,7 +419,6 @@ func TestExecuteErrorWithOutput(t *testing.T) {
 	cmd.EXPECT().Wait().Return(nil)
 
 	fs.EXPECT().Open(gomock.Any()).Return(nil, fmt.Errorf("Error while opening file"))
-
 	o, retries, err := e.Run(ctx)
 	assert.NotNil(t, err)
 	assert.Equal(t, len(o), 0)

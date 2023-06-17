@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.inject.Singleton;
 import dev.morphia.query.UpdateOperations;
@@ -58,6 +59,7 @@ public class NextGenLogCVConfig extends LogCVConfig {
     return DataCollectionDSLFactory.readLogDSL(dataSourceType);
   }
 
+  @JsonIgnore
   @Override
   public String getHostCollectionDSL() {
     throw new NotImplementedForHealthSourceException("Not implemented");

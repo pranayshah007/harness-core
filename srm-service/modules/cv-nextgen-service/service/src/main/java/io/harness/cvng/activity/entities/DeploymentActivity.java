@@ -80,6 +80,8 @@ public class DeploymentActivity extends Activity {
     verificationJobInstanceBuilder.newHostsTrafficSplitPercentage(this.getNewHostsTrafficSplitPercentage());
     verificationJobInstanceBuilder.dataCollectionDelay(this.getDataCollectionDelay());
     verificationJobInstanceBuilder.startTime(this.getVerificationStartTime());
+    verificationJobInstanceBuilder.planExecutionId(this.getPlanExecutionId());
+    verificationJobInstanceBuilder.stageStepId(this.getStageStepId());
   }
 
   @Override

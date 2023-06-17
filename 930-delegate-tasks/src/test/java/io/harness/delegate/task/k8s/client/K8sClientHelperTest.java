@@ -118,7 +118,7 @@ public class K8sClientHelperTest extends CategoryTest {
     LogCallback logCallback = mock(LogCallback.class);
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     ApiClient generatedClient =
-        k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, WORK_DIR, logCallback);
+        k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, WORK_DIR, logCallback, kubernetesConfig);
     assertThat(generatedClient).isEqualTo(apiCLient);
   }
 

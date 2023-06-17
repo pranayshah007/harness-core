@@ -8,11 +8,14 @@
 package io.harness.delegate.task.terraform.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.logging.LogLevel.ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
+import io.harness.exception.InterruptedRuntimeException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
@@ -32,6 +35,10 @@ public abstract class TerraformAbstractTaskHandler {
       LogCallback logCallback) throws Exception {
     try {
       return executeTaskInternal(taskParameters, delegateId, taskId, logCallback);
+    } catch (InterruptedRuntimeException | InterruptedException ex) {
+      log.error("Interrupted Exception received: {}", ex.getMessage());
+      logCallback.saveExecutionLog("Interrupt received.", ERROR, CommandExecutionStatus.RUNNING);
+      throw ex;
     } finally {
       terraformBaseHelper.performCleanupOfTfDirs(taskParameters, logCallback);
     }

@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -33,6 +35,7 @@ import software.wings.beans.UserInvite.UserInviteBuilder;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.UserService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -62,6 +65,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   @Inject private UserService userService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private UserServiceHelper userServiceHelper;
 
   private static final Integer MAX_RESULT_COUNT = 20;
   private static final String GIVEN_NAME = "givenName";
@@ -83,6 +87,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       userQuery.setActive(true);
       if (shouldUpdateUser(userQuery, user)) {
         updateUser(user.getUuid(), accountId, userQuery);
+        userService.updateUserAccountLevelDataForThisGen(accountId, user, CG, SCIM);
         log.info("SCIM: Creating user call for accountId {} with updation {}", accountId, userQuery);
       } else {
         log.info("SCIM: Creating user call for accountId {} with conflict {}", accountId, userQuery);
@@ -247,7 +252,7 @@ public class ScimUserServiceImpl implements ScimUserService {
                                 .equal(true);
 
     if (StringUtils.isNotEmpty(searchQuery)) {
-      userQuery.field(UserKeys.email).equal(searchQuery);
+      userQuery.field(UserKeys.email).equalIgnoreCase(searchQuery);
     }
     List<User> userList = userQuery.asList(new FindOptions().skip(startIndex).limit(count));
     return userList.stream().map(user -> buildUserResponse(user, accountId)).collect(Collectors.toList());
@@ -275,6 +280,9 @@ public class ScimUserServiceImpl implements ScimUserService {
         log.error("SCIM: Failed to update user: {}, patchOperation: {}", userId, patchOperation, ex);
       }
     });
+    if (patchOperationIncludesUserDeletion(patchRequest)) {
+      return null;
+    }
     return getUser(userId, accountId);
   }
 
@@ -308,8 +316,7 @@ public class ScimUserServiceImpl implements ScimUserService {
           patchOperation.getValue(String.class));
     }
 
-    if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !user.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       updateUser(patchOperation, user, UserKeys.email);
       log.info("SCIM: Updated user's {}, email from {} to email id: {}", userId, user.getEmail(),
@@ -365,6 +372,9 @@ public class ScimUserServiceImpl implements ScimUserService {
     if ("userName".equals(patchOperation.getPath())) {
       value = value.toLowerCase();
     }
+    if (UserKeys.name.equals(key)) {
+      userService.validateName(patchOperation.getValue(String.class));
+    }
     updateOperation.set(key, value);
     userService.updateUser(user.getUuid(), updateOperation);
   }
@@ -413,6 +423,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       boolean userUpdate = false;
       if (StringUtils.isNotEmpty(displayName) && !displayName.equals(user.getName())) {
         userUpdate = true;
+        userService.validateName(displayName);
         updateOperations.set(UserKeys.name, displayName);
         log.info("SCIM: Updating user's {} name: {}", userId, displayName);
       }
@@ -450,8 +461,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       final String userPrimaryEmail =
           isEmpty(userResource.getUserName()) ? null : userResource.getUserName().toLowerCase();
 
-      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
-          && !userPrimaryEmail.equals(user.getEmail())) {
+      if (userPrimaryEmail != null && !userPrimaryEmail.equals(user.getEmail())) {
         updateOperations.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
         log.info(
@@ -464,7 +474,11 @@ public class ScimUserServiceImpl implements ScimUserService {
       }
       log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,
           updateOperations, accountId);
-      return Response.status(Status.OK).entity(getUser(user.getUuid(), accountId)).build();
+      ScimUser updatedUser = null;
+      if (!putOperationIncludesUserDeletion(userResource)) {
+        updatedUser = getUser(user.getUuid(), accountId);
+      }
+      return Response.status(Status.OK).entity(updatedUser).build();
     }
   }
 
@@ -478,5 +492,28 @@ public class ScimUserServiceImpl implements ScimUserService {
       removeUserFromAllScimGroups(accountId, userId);
     }
     return true;
+  }
+
+  private boolean patchOperationIncludesUserDeletion(PatchRequest patchRequest) {
+    for (PatchOperation patchOperation : patchRequest.getOperations()) {
+      try {
+        boolean isActiveFalse = (patchOperation.getValue(ScimUserValuedObject.class) != null
+                                    && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive())
+            || ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+                && !(patchOperation.getValue(Boolean.class)));
+
+        if (isActiveFalse) {
+          return true;
+        }
+      } catch (JsonProcessingException e) {
+        log.error("Failed to parse the SCIM request while checking for user deletion operation", e);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  private boolean putOperationIncludesUserDeletion(ScimUser userResource) {
+    return userResource.getActive() != null && !userResource.getActive();
   }
 }

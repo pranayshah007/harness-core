@@ -8,20 +8,26 @@
 package io.harness.delegate.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_TOKEN_JWT_CACHE;
 
 import io.harness.annotations.dev.OwnedBy;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.jetbrains.annotations.NotNull;
+import org.redisson.api.RLocalCachedMap;
 
 @OwnedBy(DEL)
 @Singleton
 public class DelegateJWTCache {
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
+  @Inject @Named(DELEGATE_TOKEN_JWT_CACHE) RLocalCachedMap<String, DelegateJWTCacheValue> delegateTokenJWTRedisCache;
   ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
   private final Cache<String, DelegateJWTCacheValue> delegateJWTCache =
@@ -33,6 +39,10 @@ public class DelegateJWTCache {
     if (delegateTokenName == null) {
       return;
     }
+    if (enableRedisForDelegateService) {
+      setDelegateTokenJWTRedisCache(tokenHash, delegateJWTCacheValue);
+      return;
+    }
     try {
       readWriteLock.writeLock().lock();
       delegateJWTCache.put(tokenHash, delegateJWTCacheValue);
@@ -42,6 +52,10 @@ public class DelegateJWTCache {
   }
 
   public DelegateJWTCacheValue getDelegateJWTCache(String cacheKey) {
+    if (enableRedisForDelegateService) {
+      return delegateTokenJWTRedisCache.get(cacheKey);
+    }
+
     try {
       readWriteLock.readLock().lock();
       return delegateJWTCache.getIfPresent(cacheKey);
@@ -51,15 +65,18 @@ public class DelegateJWTCache {
   }
 
   public void invalidateJWTTokenCache(@NotNull String delegateTokenName, @NotNull String accountId) {
-    delegateJWTCache.asMap()
-        .entrySet()
-        .stream()
-        .filter(ent
-            -> delegateTokenName.equals(ent.getValue().getDelegateTokenName())
-                && accountId.equals(ent.getValue().getAccountId()))
-        .forEach(delegateJWTCacheValueEntry
-            -> setDelegateJWTCache(delegateJWTCacheValueEntry.getKey(),
-                delegateJWTCacheValueEntry.getValue().getDelegateTokenName(),
-                new DelegateJWTCacheValue(false, 0L, null, delegateJWTCacheValueEntry.getValue().getAccountId())));
+    if (enableRedisForDelegateService) {
+      delegateTokenJWTRedisCache.entrySet()
+          .stream()
+          .filter(ent
+              -> delegateTokenName.equals(ent.getValue().getDelegateTokenName())
+                  && accountId.equals(ent.getValue().getAccountId()))
+          .forEach(
+              delegateJWTCacheValueEntry -> delegateTokenJWTRedisCache.fastRemove(delegateJWTCacheValueEntry.getKey()));
+    }
+  }
+
+  private void setDelegateTokenJWTRedisCache(String tokenHash, DelegateJWTCacheValue delegateJWTCacheValue) {
+    delegateTokenJWTRedisCache.putIfAbsent(tokenHash, delegateJWTCacheValue);
   }
 }

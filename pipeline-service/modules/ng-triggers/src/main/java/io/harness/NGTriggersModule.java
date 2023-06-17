@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.TriggerConfiguration;
 import io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo;
 import io.harness.ngtriggers.helpers.TriggerHelper;
+import io.harness.ngtriggers.resource.NGTriggerEventHistoryResource;
+import io.harness.ngtriggers.resource.NGTriggerEventHistoryResourceImpl;
 import io.harness.ngtriggers.resource.NGTriggerResource;
 import io.harness.ngtriggers.resource.NGTriggerResourceImpl;
 import io.harness.ngtriggers.resource.NGTriggerWebhookConfigResource;
@@ -76,6 +78,7 @@ public class NGTriggersModule extends AbstractModule {
     bind(NGTriggerWebhookRegistrationService.class).to(NGTriggerWebhookRegistrationServiceImpl.class);
     bind(NGTriggerYamlSchemaService.class).to(NGTriggerYamlSchemaServiceImpl.class);
     bind(NGTriggerResource.class).to(NGTriggerResourceImpl.class);
+    bind(NGTriggerEventHistoryResource.class).to(NGTriggerEventHistoryResourceImpl.class);
     bind(NGTriggerWebhookConfigResource.class).to(NGTriggerWebhookConfigResourceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
     bind(WebhookConfigProvider.class).toInstance(new WebhookConfigProvider() {

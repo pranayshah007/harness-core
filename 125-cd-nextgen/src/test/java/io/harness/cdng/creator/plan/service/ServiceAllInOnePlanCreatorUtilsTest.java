@@ -68,7 +68,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
     Map<String, PlanCreationResponse> planCreationResponse = ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline,
         kryoSerializer, ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("my_service")).build(),
         EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ECS, null);
-    assertThat(planCreationResponse).hasSize(4);
+    assertThat(planCreationResponse).hasSize(5);
   }
 
   @Test
@@ -103,7 +103,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
                 .serviceRef(ParameterField.createExpressionField(true, "<+pipeline.name>", validator, true))
                 .build(),
             EnvironmentYamlV2.builder().build(), "serviceNodeId", "nextNodeId", ServiceDefinitionType.ECS, null);
-    assertThat(planCreationResponse).hasSize(4);
+    assertThat(planCreationResponse).hasSize(5);
   }
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)

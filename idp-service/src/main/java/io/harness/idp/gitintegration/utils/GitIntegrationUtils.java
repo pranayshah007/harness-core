@@ -6,16 +6,18 @@
  */
 package io.harness.idp.gitintegration.utils;
 
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.AZURE_HOST;
+
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.connector.DelegateSelectable;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -45,8 +47,8 @@ public class GitIntegrationUtils {
     return decryptedSecretValue.getDecryptedValue();
   }
 
-  public String getHostForConnector(ConnectorInfoDTO connectorInfoDTO, ConnectorType connectorType) {
-    switch (connectorType) {
+  public String getHostForConnector(ConnectorInfoDTO connectorInfoDTO) {
+    switch (connectorInfoDTO.getConnectorType()) {
       case GITHUB:
         GithubConnectorDTO configGithub = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
         return getHostFromURL(configGithub.getUrl());
@@ -57,8 +59,7 @@ public class GitIntegrationUtils {
         BitbucketConnectorDTO configBitbucket = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
         return getHostFromURL(configBitbucket.getUrl());
       case AZURE_REPO:
-        AzureRepoConnectorDTO configAzure = (AzureRepoConnectorDTO) connectorInfoDTO.getConnectorConfig();
-        return getHostFromURL(configAzure.getUrl());
+        return AZURE_HOST;
       default:
         return null;
     }
@@ -76,6 +77,12 @@ public class GitIntegrationUtils {
                && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE))
         ? true
         : false;
+  }
+
+  public boolean checkIfApiAccessEnabledForBitbucketConnector(ConnectorInfoDTO connectorInfoDTO) {
+    BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    BitbucketApiAccessDTO apiAccess = config.getApiAccess();
+    return (apiAccess != null) ? true : false;
   }
 
   public String replaceAccountScopeFromConnectorId(String connectorIdentifier) {

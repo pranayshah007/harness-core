@@ -15,6 +15,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.ARTIFACTORY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -24,6 +25,7 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.TimeoutException;
 import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
 import io.harness.logging.CommandExecutionStatus;
@@ -43,9 +45,11 @@ import software.wings.service.intfc.BuildService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.settings.SettingValue;
 
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +67,8 @@ public class BuildSourceTask extends AbstractDelegateRunnableTask {
   @Inject private Injector injector;
   @Inject private EncryptionService encryptionService;
 
+  @Inject private TimeLimiter timeLimiter;
+
   public BuildSourceTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -73,71 +79,87 @@ public class BuildSourceTask extends AbstractDelegateRunnableTask {
     throw new NotImplementedException("not implemented");
   }
 
+  private BuildSourceExecutionResponse runInternal(BuildSourceParameters buildSourceRequest) {
+    int limit = buildSourceRequest.getLimit();
+    String artifactStreamType = buildSourceRequest.getArtifactStreamType();
+    SettingValue settingValue = buildSourceRequest.getSettingValue();
+    BuildService service = getBuildService(artifactStreamType);
+    ArtifactStreamAttributes artifactStreamAttributes = buildSourceRequest.getArtifactStreamAttributes();
+    artifactStreamAttributes.setCollection(buildSourceRequest.isCollection());
+    if (isNotEmpty(buildSourceRequest.getSavedBuildDetailsKeys())) {
+      artifactStreamAttributes.setSavedBuildDetailsKeys(buildSourceRequest.getSavedBuildDetailsKeys());
+    }
+    String appId = buildSourceRequest.getAppId();
+    List<EncryptedDataDetail> encryptedDataDetails = buildSourceRequest.getEncryptedDataDetails();
+    BuildSourceRequestType buildSourceRequestType = buildSourceRequest.getBuildSourceRequestType();
+
+    List<BuildDetails> buildDetails = new ArrayList<>();
+
+    // if artifact collection is working fine with cache credentials then we continue fetching from
+    if (settingValue instanceof EncryptableSetting) {
+      if (buildSourceRequest.isShouldFetchSecretFromCache()) {
+        encryptionService.decrypt((EncryptableSetting) settingValue, encryptedDataDetails, true);
+      } else {
+        encryptionService.decrypt((EncryptableSetting) settingValue, encryptedDataDetails, false);
+      }
+    }
+
+    switch (buildSourceRequestType) {
+      case GET_BUILDS:
+        buildDetails = getBuilds(
+            limit, artifactStreamType, settingValue, service, artifactStreamAttributes, appId, encryptedDataDetails);
+        break;
+      case GET_LAST_SUCCESSFUL_BUILD:
+        BuildDetails lastSuccessfulBuild =
+            service.getLastSuccessfulBuild(appId, artifactStreamAttributes, settingValue, encryptedDataDetails);
+        if (lastSuccessfulBuild != null) {
+          buildDetails.add(lastSuccessfulBuild);
+        }
+        break;
+      case GET_BUILD:
+        BuildCollectParameters buildCollectParameters = buildSourceRequest.getBuildCollectParameters();
+        if (buildCollectParameters == null) {
+          throw new InvalidRequestException("Build collection parameters not set correctly");
+        }
+        BuildDetails buildDetail = getBuild(buildCollectParameters, limit, artifactStreamType, settingValue, service,
+            artifactStreamAttributes, appId, encryptedDataDetails);
+        if (buildDetail != null) {
+          buildDetails.add(buildDetail);
+        } else {
+          throw new InvalidRequestException(
+              String.format("Could not find requested build number %s for artifact stream type %s",
+                  buildCollectParameters.getBuildNo(), artifactStreamType));
+        }
+        break;
+      default:
+        throw new InvalidRequestException(
+            String.format("Unsupported build source request type: %s", buildSourceRequestType));
+    }
+
+    // NOTE: Here BuildSourceExecutionResponse::buildSourceResponse::stable is marked always true. When artifact
+    // streams are capable of pagination we'll need to get that from the getBuilds function above.
+    return BuildSourceExecutionResponse.builder()
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .buildSourceResponse(BuildSourceResponse.builder().buildDetails(buildDetails).stable(true).build())
+        .build();
+  }
+
   @Override
   public BuildSourceExecutionResponse run(TaskParameters parameters) {
     try {
       BuildSourceParameters buildSourceRequest = (BuildSourceParameters) parameters;
-      int limit = buildSourceRequest.getLimit();
-      String artifactStreamType = buildSourceRequest.getArtifactStreamType();
-      SettingValue settingValue = buildSourceRequest.getSettingValue();
-      BuildService service = getBuildService(artifactStreamType);
-      ArtifactStreamAttributes artifactStreamAttributes = buildSourceRequest.getArtifactStreamAttributes();
-      artifactStreamAttributes.setCollection(buildSourceRequest.isCollection());
-      if (isNotEmpty(buildSourceRequest.getSavedBuildDetailsKeys())) {
-        artifactStreamAttributes.setSavedBuildDetailsKeys(buildSourceRequest.getSavedBuildDetailsKeys());
+      if (buildSourceRequest.isTimeoutSupported()) {
+        return HTimeLimiter.callInterruptible(
+            timeLimiter, Duration.ofMillis(buildSourceRequest.getTimeout()), () -> runInternal(buildSourceRequest));
+      } else {
+        return runInternal(buildSourceRequest);
       }
-      String appId = buildSourceRequest.getAppId();
-      List<EncryptedDataDetail> encryptedDataDetails = buildSourceRequest.getEncryptedDataDetails();
-      BuildSourceRequestType buildSourceRequestType = buildSourceRequest.getBuildSourceRequestType();
-
-      List<BuildDetails> buildDetails = new ArrayList<>();
-
-      // if artifact collection is working fine with cache credentials then we continue fetching from
-      if (settingValue instanceof EncryptableSetting) {
-        if (buildSourceRequest.isShouldFetchSecretFromCache()) {
-          encryptionService.decrypt((EncryptableSetting) settingValue, encryptedDataDetails, true);
-        } else {
-          encryptionService.decrypt((EncryptableSetting) settingValue, encryptedDataDetails, false);
-        }
-      }
-
-      switch (buildSourceRequestType) {
-        case GET_BUILDS:
-          buildDetails = getBuilds(
-              limit, artifactStreamType, settingValue, service, artifactStreamAttributes, appId, encryptedDataDetails);
-          break;
-        case GET_LAST_SUCCESSFUL_BUILD:
-          BuildDetails lastSuccessfulBuild =
-              service.getLastSuccessfulBuild(appId, artifactStreamAttributes, settingValue, encryptedDataDetails);
-          if (lastSuccessfulBuild != null) {
-            buildDetails.add(lastSuccessfulBuild);
-          }
-          break;
-        case GET_BUILD:
-          BuildCollectParameters buildCollectParameters = buildSourceRequest.getBuildCollectParameters();
-          if (buildCollectParameters == null) {
-            throw new InvalidRequestException("Build collection parameters not set correctly");
-          }
-          BuildDetails buildDetail = getBuild(buildCollectParameters, limit, artifactStreamType, settingValue, service,
-              artifactStreamAttributes, appId, encryptedDataDetails);
-          if (buildDetail != null) {
-            buildDetails.add(buildDetail);
-          } else {
-            throw new InvalidRequestException(
-                String.format("Could not find requested build number %s for artifact stream type %s",
-                    buildCollectParameters.getBuildNo(), artifactStreamType));
-          }
-          break;
-        default:
-          throw new InvalidRequestException(
-              String.format("Unsupported build source request type: %s", buildSourceRequestType));
-      }
-
-      // NOTE: Here BuildSourceExecutionResponse::buildSourceResponse::stable is marked always true. When artifact
-      // streams are capable of pagination we'll need to get that from the getBuilds function above.
+    } catch (TimeoutException te) {
+      ExceptionLogger.logProcessedMessages(te, DELEGATE, log);
       return BuildSourceExecutionResponse.builder()
-          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .buildSourceResponse(BuildSourceResponse.builder().buildDetails(buildDetails).stable(true).build())
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .errorMessage(ExceptionUtils.getMessage(te))
+          .isTimeoutError(true)
           .build();
     } catch (WingsException ex) {
       ExceptionLogger.logProcessedMessages(ex, DELEGATE, log);
@@ -146,7 +168,7 @@ public class BuildSourceTask extends AbstractDelegateRunnableTask {
           .errorMessage(ExceptionUtils.getMessage(ex))
           .build();
     } catch (Exception ex) {
-      log.error("Exception in processing BuildSource task [{}]", ex);
+      log.error("Exception in processing BuildSource task [%s]", ex);
       return BuildSourceExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(ex))

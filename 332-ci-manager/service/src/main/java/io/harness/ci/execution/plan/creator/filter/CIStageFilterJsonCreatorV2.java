@@ -18,10 +18,13 @@ import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -36,6 +39,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
@@ -61,6 +65,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject K8InitializeTaskUtils k8InitializeTaskUtils;
   @Inject ValidationUtils validationUtils;
+  @Inject private CILicenseService ciLicenseService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -76,6 +81,13 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, IntegrationStageNode stageNode) {
     log.info("Received filter creation request for integration stage {}", stageNode.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
+
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
     String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
 
@@ -108,7 +120,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
       } else if (ciCodeBase.getConnectorRef().getValue() != null) {
         try {
           ConnectorDetails connectorDetails =
-              connectorUtils.getConnectorDetails(baseNGAccess, ciCodeBase.getConnectorRef().getValue());
+              connectorUtils.getConnectorDetails(baseNGAccess, ciCodeBase.getConnectorRef().getValue(), true);
           String repoName = getGitRepo(connectorUtils.retrieveURL(connectorDetails));
           ciFilterBuilder.repoName(repoName);
         } catch (Exception exception) {
@@ -117,28 +129,32 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
       }
     }
 
-    validateStage(stageNode);
+    validateStage(stageNode, accountId);
 
     log.info("Successfully created filter for integration stage {}", stageNode.getIdentifier());
     return ciFilterBuilder.build();
   }
 
-  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
+  private void validateRuntime(IntegrationStageConfig integrationStageConfig, String accountId) {
     Runtime runtime = integrationStageConfig.getRuntime();
-    if (runtime != null && (runtime.getType() == Runtime.Type.CLOUD || runtime.getType() == Runtime.Type.DOCKER)) {
+    if (runtime != null && runtime.getType() == Runtime.Type.DOCKER) {
       return;
+    } else if (runtime != null && runtime.getType() == Runtime.Type.CLOUD) {
+      Platform platform = integrationStageConfig.getPlatform().getValue();
+      OSType os = platform.getOs().getValue();
+      validationUtils.validateHostedStage(integrationStageConfig.getExecution(), os, accountId);
     } else {
       throw new CIStageExecutionException(
           "Infrastructure or runtime field with type Cloud (for vm) or type Docker (for docker) is mandatory for execution");
     }
   }
 
-  private void validateStage(IntegrationStageNode stageNode) {
+  private void validateStage(IntegrationStageNode stageNode, String accountId) {
     IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      validateRuntime(integrationStageConfig);
+      validateRuntime(integrationStageConfig, accountId);
     } else {
       if (infrastructure.getType() == Infrastructure.Type.VM) {
         validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
@@ -165,7 +181,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     }
 
     Set<EntityDetailProtoDTO> result = new HashSet<>();
-    if (ciCodeBase != null) {
+    if (ciCodeBase != null && ParameterField.isNotNull(ciCodeBase.getConnectorRef())) {
       String fullQualifiedDomainName =
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode()) + PATH_CONNECTOR
           + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + ciCodeBase.getConnectorRef();
@@ -176,7 +192,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
 
     IntegrationStageConfig integrationStage = stageNode.getIntegrationStageConfig();
     if (integrationStage.getInfrastructure() == null) {
-      validateRuntime(integrationStage);
+      validateRuntime(integrationStage, accountIdentifier);
     } else {
       if (integrationStage.getInfrastructure().getType() == KUBERNETES_DIRECT) {
         K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) integrationStage.getInfrastructure();

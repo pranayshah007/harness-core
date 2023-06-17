@@ -16,7 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.OptionUtils;
 import io.harness.rule.Owner;
+import io.harness.yaml.options.Options;
 import io.harness.yaml.registry.Registry;
 import io.harness.yaml.registry.RegistryCredential;
 
@@ -43,9 +45,10 @@ public class PipelineYamlHelperTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testGetRegistry() {
-    Optional<Registry> optionalRegistry = PipelineYamlHelper.getRegistry(pipelineYamlV1);
-    assertThat(optionalRegistry.isPresent()).isTrue();
-    Registry registry = optionalRegistry.get();
+    Optional<Options> optionalOptions = OptionUtils.getOptions(pipelineYamlV1);
+    assertThat(optionalOptions.isPresent()).isTrue();
+    Registry registry = optionalOptions.get().getRegistry();
+    assertThat(registry).isNotNull();
     List<RegistryCredential> credentials = registry.getCredentials();
     assertThat(credentials).hasSize(2);
     assertThat(credentials.get(0).getName().fetchFinalValue()).isEqualTo("account.docker");
@@ -59,8 +62,8 @@ public class PipelineYamlHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetRegistryIfNotPresent() {
     String yaml = "version: 1";
-    Optional<Registry> optionalRegistry = PipelineYamlHelper.getRegistry(yaml);
-    assertThat(optionalRegistry.isEmpty()).isTrue();
+    Optional<Options> optionalOptions = OptionUtils.getOptions(yaml);
+    assertThat(optionalOptions.isEmpty()).isTrue();
   }
 
   private String readFile(String filename) {

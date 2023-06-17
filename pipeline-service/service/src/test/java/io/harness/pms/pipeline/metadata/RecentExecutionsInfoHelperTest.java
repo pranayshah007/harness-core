@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.metadata;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper.NUM_RECENT_EXECUTIONS;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
@@ -26,6 +27,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.noop.AcquiredNoopLock;
 import io.harness.observer.Subject.Informant0;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.RecentExecutionInfo;
@@ -72,7 +74,7 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
   public void testOnExecutionStart() {
     doReturn(AcquiredNoopLock.builder().build())
         .when(persistentLocker)
-        .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
+        .waitToAcquireLockOptional(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
     PipelineMetadataV2 pipelineMetadata =
         PipelineMetadataV2.builder().recentExecutionInfoList(new LinkedList<>()).build();
     doReturn(Optional.of(pipelineMetadata))
@@ -96,13 +98,40 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testOnExecutionStartForRollbackModeExecution() {
+    recentExecutionsInfoHelper.onExecutionStart(null, null, null, null,
+        PlanExecution.builder()
+            .metadata(ExecutionMetadata.newBuilder().setExecutionMode(PIPELINE_ROLLBACK).build())
+            .build());
+    verify(persistentLocker, times(0)).waitToAcquireLockOptional(any(), any(), any());
+    verify(pipelineMetadataService, times(0)).getMetadata(any(), any(), any(), any());
+    verify(pipelineMetadataService, times(0)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testOnExecutionUpdateForRollbackModeExecution() {
+    recentExecutionsInfoHelper.onExecutionUpdate(
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(PIPELINE_ROLLBACK).build())
+            .build(),
+        null);
+    verify(persistentLocker, times(0)).waitToAcquireLockOptional(any(), any(), any());
+    verify(pipelineMetadataService, times(0)).getMetadata(any(), any(), any(), any());
+    verify(pipelineMetadataService, times(0)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testUpdateMetadata() {
     List<String> testList = new ArrayList<>();
     Informant0<List<RecentExecutionInfo>> subject =
         (List<RecentExecutionInfo> recentExecutionInfoList) -> testList.add("testString");
     doReturn(AcquiredNoopLock.builder().build())
         .when(persistentLocker)
-        .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
+        .waitToAcquireLockOptional(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
     PipelineMetadataV2 pipelineMetadata =
         PipelineMetadataV2.builder().recentExecutionInfoList(new LinkedList<>()).build();
     doReturn(Optional.of(pipelineMetadata))
@@ -124,7 +153,7 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
     };
     doReturn(null)
         .when(persistentLocker)
-        .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
+        .waitToAcquireLockOptional(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
     recentExecutionsInfoHelper.updateMetadata(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject, PlanExecution.builder().build());
     verify(pipelineMetadataService, times(0)).getMetadata(any(), any(), any(), any());
@@ -139,7 +168,7 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
     };
     doReturn(AcquiredNoopLock.builder().build())
         .when(persistentLocker)
-        .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
+        .waitToAcquireLockOptional(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
     doReturn(Optional.empty())
         .when(pipelineMetadataService)
         .getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
@@ -157,7 +186,7 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
     };
     doReturn(AcquiredNoopLock.builder().build())
         .when(persistentLocker)
-        .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
+        .waitToAcquireLockOptional(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
     List<RecentExecutionInfo> recentExecutionInfoList = new ArrayList<>();
     // Adding recentExecutions.
     for (int i = 0; i < NUM_RECENT_EXECUTIONS; i++) {

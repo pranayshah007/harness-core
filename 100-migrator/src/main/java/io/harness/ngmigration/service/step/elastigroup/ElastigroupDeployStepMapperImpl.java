@@ -28,7 +28,6 @@ import software.wings.sm.State;
 import software.wings.sm.states.spotinst.SpotInstDeployState;
 
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 
 public class ElastigroupDeployStepMapperImpl extends StepMapper {
   @Override
@@ -85,7 +84,6 @@ public class ElastigroupDeployStepMapperImpl extends StepMapper {
     SpotInstDeployState state1 = (SpotInstDeployState) getState(stepYaml1);
     SpotInstDeployState state2 = (SpotInstDeployState) getState(stepYaml2);
     return state1.getDownsizeInstanceUnitType() == state2.getDownsizeInstanceUnitType()
-        && StringUtils.equals(state1.getName(), state2.getName())
         && CompareUtils.compareObjects(state1.getDownsizeInstanceCount(), state2.getDownsizeInstanceCount())
         && CompareUtils.compareObjects(state1.getInstanceCount(), state2.getInstanceCount());
   }

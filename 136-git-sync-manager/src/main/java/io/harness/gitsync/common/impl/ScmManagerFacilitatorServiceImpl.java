@@ -50,6 +50,8 @@ import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.helper.FileBatchResponseMapper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.PRFileListMapper;
@@ -344,6 +346,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     return scmClient.getRepoDetails(decryptedConnector);
   }
+
   @Override
   public CreateBranchResponse createNewBranch(
       Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName) {
@@ -355,20 +358,24 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
   @Override
   public CreateFileResponse createFile(CreateGitFileRequestDTO createGitFileRequestDTO) {
     Scope scope = createGitFileRequestDTO.getScope();
-    final ScmConnector decryptedConnector =
-        gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
-            scope.getProjectIdentifier(), createGitFileRequestDTO.getScmConnector());
-    GitFileDetails gitFileDetails = getGitFileDetails(createGitFileRequestDTO);
+    ScmConnector scmConnector = createGitFileRequestDTO.getScmConnector();
+    gitSyncConnectorHelper.setUserGitCredsInConnectorIfPresent(scope.getAccountIdentifier(), scmConnector);
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    GitFileDetails gitFileDetails = getGitFileDetails(
+        createGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), scmConnector));
     return scmClient.createFile(decryptedConnector, gitFileDetails, createGitFileRequestDTO.isUseGitClient());
   }
 
   @Override
   public UpdateFileResponse updateFile(UpdateGitFileRequestDTO updateGitFileRequestDTO) {
     Scope scope = updateGitFileRequestDTO.getScope();
-    final ScmConnector decryptedConnector =
-        gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
-            scope.getProjectIdentifier(), updateGitFileRequestDTO.getScmConnector());
-    GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
+    ScmConnector scmConnector = updateGitFileRequestDTO.getScmConnector();
+    gitSyncConnectorHelper.setUserGitCredsInConnectorIfPresent(scope.getAccountIdentifier(), scmConnector);
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    GitFileDetails gitFileDetails = getGitFileDetails(
+        updateGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), scmConnector));
     return scmClient.updateFile(decryptedConnector, gitFileDetails, updateGitFileRequestDTO.isUseGitClient());
   }
 
@@ -395,6 +402,12 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
     return scmClient.getLatestCommit(decryptedConnector, branch, null);
+  }
+
+  @Override
+  public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
+    gitSyncConnectorHelper.decryptGitAccessDTO(userDetailsRequestDTO.getGitAccessDTO());
+    return scmClient.getUserDetails(userDetailsRequestDTO);
   }
 
   public ListFilesInCommitResponse listFiles(Scope scope, ScmConnector scmConnector, ListFilesInCommitRequest request) {
@@ -441,8 +454,8 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         new HashMap<>();
 
     gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      ScmConnector decryptedScmConnector = getDecryptedScmConnector(
-          decryptedConnectorMap, request.getScope(), request.getConnectorRef(), request.getScmConnector());
+      ScmConnector decryptedScmConnector = getDecryptedScmConnector(decryptedConnectorMap, request.getScope(),
+          request.getConnectorRef(), request.getScmConnector(), request.getRepo());
       getBatchFileRequestIdentifierGitFileRequestV2Map.put(identifier,
           GitFileRequestV2.builder()
               .scope(request.getScope())
@@ -464,8 +477,8 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @VisibleForTesting
   ScmConnector getDecryptedScmConnector(Map<ConnectorDetails, ScmConnector> decryptedConnectorMap, Scope scope,
-      String connectorRef, ScmConnector scmConnector) {
-    ConnectorDetails key = ConnectorDetails.builder().scope(scope).connectorRef(connectorRef).build();
+      String connectorRef, ScmConnector scmConnector, String repo) {
+    ConnectorDetails key = ConnectorDetails.builder().scope(scope).connectorRef(connectorRef).repo(repo).build();
     ScmConnector decryptedScmConnector = decryptedConnectorMap.get(key);
     if (decryptedScmConnector == null) {
       decryptedScmConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(

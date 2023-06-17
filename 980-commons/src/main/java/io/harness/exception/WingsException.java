@@ -19,11 +19,14 @@ import static io.harness.exception.WingsException.ReportTarget.REST_API;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
@@ -201,6 +204,10 @@ public class WingsException extends RuntimeException {
     }
 
     return result;
+  }
+
+  public List<ResponseMessage> getResponseMessages() {
+    return new ArrayList<>(0);
   }
 
   @Deprecated

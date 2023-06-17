@@ -7,12 +7,19 @@
 
 package io.harness.delegate.task.artifacts.githubpackages;
 
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -66,6 +73,17 @@ public class GithubPackagesArtifactTaskHandler
           attributesRequest.getOrg());
     }
 
+    if (attributesRequest.getPackageType().equals("maven")) {
+      String url = githubPackagesRegistryService.fetchDownloadUrl(
+          GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
+          attributesRequest.getPackageType(), attributesRequest.getOrg(), attributesRequest.getArtifactId(),
+          attributesRequest.getUser(), attributesRequest.getExtension(), attributesRequest.getRepository(),
+          attributesRequest.getPackageName(), lastSuccessfulBuild.getNumber(), attributesRequest.getGroupId());
+      Map<String, String> metaData = lastSuccessfulBuild.getMetadata();
+      metaData.put(ArtifactMetadataKeys.url, url);
+      lastSuccessfulBuild.setMetadata(metaData);
+    }
+
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
         GithubPackagesRequestResponseMapper.toGithubPackagesResponse(lastSuccessfulBuild, attributesRequest);
 
@@ -90,6 +108,20 @@ public class GithubPackagesArtifactTaskHandler
       GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
 
       secretDecryptionService.decrypt(githubTokenSpecDTO, attributes.getEncryptedDataDetails());
+    }
+    GithubAuthenticationDTO githubAuthenticationDTO = githubConnectorDTO.getAuthentication();
+    if (githubAuthenticationDTO != null && GitAuthType.HTTP.equals(githubAuthenticationDTO.getAuthType())) {
+      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+          (GithubHttpCredentialsDTO) githubAuthenticationDTO.getCredentials();
+      if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+        GithubUsernamePasswordDTO githubUsernamePasswordDTO =
+            (GithubUsernamePasswordDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        secretDecryptionService.decrypt(githubUsernamePasswordDTO, attributes.getEncryptedDataDetails());
+      } else if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        GithubUsernameTokenDTO githubUsernameTokenDTO =
+            (GithubUsernameTokenDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        secretDecryptionService.decrypt(githubUsernameTokenDTO, attributes.getEncryptedDataDetails());
+      }
     }
   }
 

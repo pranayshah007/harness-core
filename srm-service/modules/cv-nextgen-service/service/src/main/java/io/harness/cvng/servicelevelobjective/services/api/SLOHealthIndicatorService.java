@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.api;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -21,9 +22,19 @@ public interface SLOHealthIndicatorService {
   SLOHealthIndicator getBySLOEntity(AbstractServiceLevelObjective serviceLevelObjective);
 
   List<SLOHealthIndicator> getBySLOIdentifiers(
-      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
+      ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers, boolean childResource);
   List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers);
+
+  List<SLOHealthIndicator> get(ProjectParams projectParams);
+
   void upsert(AbstractServiceLevelObjective serviceLevelObjective);
   void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
-  SLOGraphData getGraphData(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
+
+  void delete(ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
+  SLOGraphData getGraphData(
+      ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective, TimeRangeParams filter);
+
+  boolean getFailedState(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective);
+
+  String getScopedIdentifier(SLOHealthIndicator sloHealthIndicator);
 }

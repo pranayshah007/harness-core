@@ -9,6 +9,7 @@ package io.harness.ngtriggers.service;
 
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,10 +60,29 @@ public class NGTriggerEventServiceImplTest {
   public void setup() throws Exception {}
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testFormEventCriteria() {
+    Criteria criteria = ngTriggerEventService.formEventCriteria(
+        ACCOUNT_ID, "eventCorrelationId", Collections.singletonList(ExecutionStatus.ABORTED));
+    assertThat(criteria).isNotNull();
+    assertThat(criteria.toString())
+        .isEqualTo(new Criteria()
+                       .andOperator(new Criteria()
+                                        .and(TriggerEventHistoryKeys.accountId)
+                                        .is(ACCOUNT_ID)
+                                        .and(TriggerEventHistoryKeys.eventCorrelationId)
+                                        .is("eventCorrelationId")
+                                        .and(TriggerEventHistoryKeys.finalStatus)
+                                        .in(Collections.singletonList(ExecutionStatus.ABORTED)))
+                       .toString());
+  }
+
+  @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testFormCriteriaInvalidRegex() {
-    Criteria criteria = ngTriggerEventService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+    Criteria criteria = ngTriggerEventService.formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         PIPELINE_IDENTIFIER, IDENTIFIER, "a^s", Arrays.asList(ExecutionStatus.ABORTED));
     assertThat(criteria).isNotNull();
   }
@@ -84,7 +104,7 @@ public class NGTriggerEventServiceImplTest {
                                            .build();
 
     Page<TriggerEventHistory> eventHistoryPage = new PageImpl<>(Collections.singletonList(eventHistory), pageable, 1);
-    Criteria criteria = ngTriggerEventService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+    Criteria criteria = ngTriggerEventService.formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         PIPELINE_IDENTIFIER, IDENTIFIER, "a^s", Arrays.asList(ExecutionStatus.ABORTED));
     doReturn(eventHistoryPage).when(triggerEventHistoryRepository).findAll(criteria, pageable);
 

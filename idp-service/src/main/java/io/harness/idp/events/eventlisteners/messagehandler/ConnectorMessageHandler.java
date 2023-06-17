@@ -28,7 +28,7 @@ public class ConnectorMessageHandler implements EventMessageHandler {
   private GitIntegrationService gitIntegrationService;
 
   @Override
-  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
+  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws Exception {
     EventListenerLogger.logForEventReceived(message);
     switch (action) {
       case UPDATE_ACTION:

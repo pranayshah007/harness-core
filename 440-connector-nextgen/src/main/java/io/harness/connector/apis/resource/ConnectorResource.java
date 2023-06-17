@@ -32,6 +32,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.beans.SortOrder.OrderType;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
@@ -41,6 +42,7 @@ import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
@@ -50,6 +52,8 @@ import io.harness.connector.utils.FieldValues;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
@@ -287,16 +291,16 @@ public class ConnectorResource {
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
-      @BeanParam PageRequest pageRequest) {
+      @QueryParam("version") String version, @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
-      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
     }
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
         orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches, getPageRequest(pageRequest))));
+        getDistinctFromBranches, getPageRequest(pageRequest), version)));
   }
 
   @POST
@@ -336,7 +340,7 @@ public class ConnectorResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
-      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
     }
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(accountIdentifier, connectorListFilter,
@@ -353,11 +357,12 @@ public class ConnectorResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns created Connector")
       })
+  @FeatureRestrictionCheck(FeatureRestrictionName.MULTIPLE_CONNECTORS)
   public ResponseDTO<ConnectorResponseDTO>
   create(@RequestBody(required = true,
              description = "Details of the Connector to create") @Valid @NotNull ConnectorDTO connector,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connector.getConnectorInfo().getIdentifier())) {
       throw new InvalidRequestException(

@@ -224,8 +224,6 @@ public class CfCommandTaskHelperNG {
         case GOOGLE_CLOUD_STORAGE_ARTIFACT:
           artifactStream = downloadFromGoogleCloudStorage(artifactConfig, artifactResponseBuilder, logCallback);
           break;
-        case CUSTOM_ARTIFACT:
-          break;
         default:
           throw NestedExceptionUtils.hintWithExplanationException("Use supported artifact registry",
               format("Registry of type '%s' is not supported yet", artifactConfig.getSourceType().getDisplayName()),
@@ -880,7 +878,7 @@ public class CfCommandTaskHelperNG {
     cfRequestConfig.setApplicationName(cfServiceData.getName());
     cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
 
-    ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig);
+    ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
     pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);
@@ -1068,7 +1066,7 @@ public class CfCommandTaskHelperNG {
       autoscalarRequestData.setExpectedEnabled(true);
       pcfCommandTaskBaseHelper.disableAutoscalarSafe(autoscalarRequestData, executionLogCallback);
     }
-    ApplicationDetail applicationDetail = cfDeploymentManager.resizeApplication(cfRequestConfig);
+    ApplicationDetail applicationDetail = cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
 
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");

@@ -15,8 +15,8 @@ import static io.harness.rule.OwnerRule.SHREYAS;
 import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -83,7 +83,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     secretManagerServiceClient = mock(SecretManagerServiceClient.class);
     listSecretsPagedResponse = mock(SecretManagerServiceClient.ListSecretsPagedResponse.class);
     when(gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig)).thenReturn(googleCredentials);
-    when(gcpSecretsManagerEncryptor.getGcpSecretsManagerClient(any(GoogleCredentials.class)))
+    when(gcpSecretsManagerEncryptor.getGcpSecretsManagerClient(any(GcpSecretsManagerConfig.class)))
         .thenReturn(secretManagerServiceClient);
 
     when(gcpSecretsManagerEncryptor.getProjectId(any(GoogleCredentials.class))).thenReturn(mockedProjectId);

@@ -132,6 +132,7 @@ public class SignupServiceImpl implements SignupService {
   private static final String VERIFY_URL_GENERATION_FAILED = "Failed to generate verify url";
   private static final String EMAIL = "email";
   private static final String VISITOR_TOKEN_KEY = "visitor_token";
+  private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
 
   private static final String GA_CLIENT_ID_KEY = "ga_client_id";
   private static final String REFERER_URL_KEY = "refererURL";
@@ -186,6 +187,38 @@ public class SignupServiceImpl implements SignupService {
       }
     });
     return user;
+  }
+  /**
+   * Signup in non email verification blocking flow
+   */
+  @Override
+  public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
+    UserInfo userInfo = null;
+    String email = dto.getEmail().toLowerCase();
+    String password = dto.getPassword();
+    AccountDTO account = AccountDTO.builder().name(dto.getName()).companyName(dto.getCompanyName()).build();
+    log.info("DTO: {}, companyName: {}, name: {}", dto, dto.getCompanyName(), dto.getName());
+
+    try {
+      userInfo = getResponse(
+          userClient.createMarketplaceUserAndCompleteSignup(inviteId, marketPlaceToken, email, password, dto),
+          getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
+    } catch (InvalidRequestException e) {
+      if (e.getMessage().contains("User with this email is already registered")) {
+        log.error("User with this email is already registered: {}", e);
+        sendFailedTelemetryEvent(email, dto.getUtmInfo(), e, account, "Create Marketplace user and complete signup");
+        throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);
+      }
+      throw e;
+    } catch (Exception e) {
+      log.error("Unable to finish marketplace provision flow: {}", e);
+      sendFailedTelemetryEvent(email, dto.getUtmInfo(), e, account, "Create Marketplace user and complete signup");
+      throw e;
+    }
+
+    sendSucceedTelemetryEvent(email, dto.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo, SignupType.MARKETPLACE,
+        userInfo.getAccounts().get(0).getAccountName(), null, null, null);
+    return userInfo;
   }
 
   /**

@@ -20,6 +20,10 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$STATIC_SCHEMA_FILE_URL" ]]; then
+  export STATIC_SCHEMA_FILE_URL; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_FILE_URL)' $CONFIG_FILE
+fi
+
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
 yq -i 'del(.grpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
@@ -123,19 +127,27 @@ if [[ "" != "$TEMPLATE_SERVICE_SECRET" ]]; then
 fi
 
 if [[ "" != "$CI_MANAGER_BASE_URL" ]]; then
-  export CI_MANAGER_BASE_URL; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
+  export CI_MANAGER_BASE_URL;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
-  export CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
-  export CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_SECRET" ]]; then
-  export CI_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_SECRET;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+  yq -i '.ciServiceSecret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_MANAGER_BASE_URL" ]]; then
@@ -262,6 +274,14 @@ if [[ "" != "$PMS_API_BASE_URL" ]]; then
   export PMS_API_BASE_URL; yq -i '.pmsApiBaseUrl=env(PMS_API_BASE_URL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
   yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
@@ -370,6 +390,10 @@ if [[ "" != "$REDIS_TIMEOUT" ]]; then
   export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$REDIS_SUBSCRIPTIONS_PER_CONNECTION" ]]; then
+  export REDIS_SUBSCRIPTIONS_PER_CONNECTION; yq -i '.singleServerConfig.subscriptionsPerConnection=env(REDIS_SUBSCRIPTIONS_PER_CONNECTION)' $REDISSON_CACHE_FILE
+fi
+
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
@@ -424,6 +448,11 @@ if [[ "" != "$EVENTS_FRAMEWORK_SNAPSHOT_REDIS_SENTINELS" ]]; then
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFrameworkSnapshotDebezium.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
+fi
+
+if [[ "" != "$ALLOWED_ORIGINS" ]]; then
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

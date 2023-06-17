@@ -8,7 +8,6 @@ package io.harness.idp.configmanager.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 
@@ -20,9 +19,10 @@ public class AppConfigMapper {
   public AppConfig toDTO(AppConfigEntity appConfigEntity) {
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(appConfigEntity.getConfigId());
+    appConfig.setConfigName(appConfigEntity.getConfigName());
     appConfig.setConfigs(appConfigEntity.getConfigs());
-    appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setEnabledDisabledAt(appConfigEntity.getEnabledDisabledAt());
+    appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setCreated(appConfigEntity.getCreatedAt());
     appConfig.setUpdated(appConfigEntity.getLastModifiedAt());
     return appConfig;
@@ -33,7 +33,7 @@ public class AppConfigMapper {
         .accountIdentifier(accountIdentifier)
         .configId(appConfig.getConfigId())
         .configs(appConfig.getConfigs())
-        .enabled(appConfig.isEnabled())
+        .configName(appConfig.getConfigName())
         .build();
   }
 }

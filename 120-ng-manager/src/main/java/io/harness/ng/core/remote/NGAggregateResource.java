@@ -128,7 +128,8 @@ public class NGAggregateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam("hasModule") @DefaultValue("true") boolean hasModule,
       @QueryParam(NGResourceFilterConstants.MODULE_TYPE_KEY) ModuleType moduleType,
-      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm, @BeanParam PageRequest pageRequest) {
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam("isFavorite") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
@@ -137,7 +138,7 @@ public class NGAggregateResource {
     Set<String> permittedOrgIds = organizationService.getPermittedOrganizations(accountIdentifier, orgIdentifier);
     ProjectFilterDTO projectFilterDTO = getProjectFilterDTO(searchTerm, permittedOrgIds, hasModule, moduleType);
     return ResponseDTO.newResponse(getNGPageResponse(aggregateProjectService.listProjectAggregateDTO(
-        accountIdentifier, getPageRequest(pageRequest), projectFilterDTO)));
+        accountIdentifier, getPageRequest(pageRequest), projectFilterDTO, onlyFavorites)));
   }
 
   private ProjectFilterDTO getProjectFilterDTO(

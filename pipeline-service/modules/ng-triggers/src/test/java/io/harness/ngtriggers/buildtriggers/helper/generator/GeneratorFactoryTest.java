@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -152,6 +153,46 @@ public class GeneratorFactoryTest extends CategoryTest {
   public void testAcrPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
     assertType("acr_pipeline_artifact_snippet_runtime_all.yaml", "ng-trigger-artifact-acr.yaml",
         AcrPollingItemGenerator.class);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGCRPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
+    assertType("gcr_pipeline_artifact_snippet_runtime_all.yaml", "ng-trigger-artifact-gcr.yaml",
+        GcrPollingItemGenerator.class);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testS3PollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
+    assertType(
+        "s3_pipeline_artifact_snippet_runtime_all.yaml", "ng-trigger-artifact-s3.yaml", S3PollingItemGenerator.class);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testAMIPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
+    assertType("ami_pipeline_artifact_snippet_runtime_all.yaml", "ng-trigger-artifact-ami.yaml",
+        AMIPollingItemGenerator.class);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testAzureIPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
+    assertType("azure_pipeline_artifact_snippet_runtime_all.yaml", "ng-trigger-artifact-azure.yaml",
+        AzureArtifactsPollingItemGenerator.class);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGithubIPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
+    assertType("github_pipeline_artifact_snippet_runtime_all.yaml", "ng-trigger-artifact-github.yaml",
+        GithubPackagesPollingItemGenerator.class);
   }
 
   private void assertType(String pipelinePath, String triggerYmlPath, Class expectedGeneratprClass) throws Exception {

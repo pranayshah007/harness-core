@@ -8,6 +8,7 @@
 package io.harness.cvng.verificationjob.services.impl;
 
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
+import static io.harness.cvng.beans.activity.ActivityVerificationStatus.IN_PROGRESS;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.VERIFICATION_FAILED;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.VERIFICATION_PASSED;
 import static io.harness.cvng.beans.job.VerificationJobType.CANARY;
@@ -20,16 +21,19 @@ import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.CVConstants;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO;
 import io.harness.cvng.analysis.beans.CanaryAdditionalInfo;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
@@ -45,9 +49,13 @@ import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
@@ -79,11 +87,13 @@ import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -95,6 +105,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.web.server.ResponseStatusException;
 
 public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationJobInstanceServiceImpl verificationJobInstanceService;
@@ -753,6 +764,11 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
               .deploymentStartTime(now.minus(Duration.ofMinutes(2)))
               .startTime(now.plusSeconds(i))
               .executionStatus(ExecutionStatus.QUEUED)
+              .planExecutionId("planExecutionId")
+              .nodeExecutionId("nodeExecutionId")
+              .stageStepId("stageStepId")
+              .monitoredServiceType(MonitoredServiceSpecType.DEFAULT)
+              .planExecutionId("")
               .resolvedJob(
                   TestVerificationJob.builder()
                       .accountId(accountId)
@@ -775,7 +791,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstanceKeys.newVersionHosts, VerificationJobInstanceKeys.newHostsTrafficSplitPercentage,
         VerificationJobInstanceKeys.progressLogs, VerificationJobInstanceKeys.cvConfigMap,
         VerificationJobInstanceKeys.appliedDeploymentAnalysisTypeMap, VerificationJobInstanceKeys.verificationStatus,
-        VerificationJobInstanceKeys.name);
+        VerificationJobInstanceKeys.name, VerificationJobInstanceKeys.isBaseline,
+        VerificationJobInstanceKeys.baselineType);
     verificationJobInstances.forEach(verificationJobInstance -> {
       List<Field> fields = ReflectionUtils.getAllDeclaredAndInheritedFields(VerificationJobInstance.class);
       fields.stream().filter(field -> !nullableFields.contains(field.getName())).forEach(field -> {
@@ -945,6 +962,112 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfigsAfterSaving.size()).isEqualTo(1);
   }
 
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testPinOrUnpinBaseline_pinBaseline_verificationStatusNotPassed() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    VerifyStepPathParams verifyStepPathParams = VerifyStepPathParams.builder()
+                                                    .verifyStepExecutionId(verificationJobInstance.getUuid())
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .accountIdentifier(accountId)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .build();
+    try {
+      verificationJobInstanceService.pinOrUnpinBaseline(verifyStepPathParams, true);
+      fail("Expected ResponseStatusException to be thrown");
+    } catch (ResponseStatusException e) {
+    }
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testPinOrUnpinBaseline_pinBaseline_verificationTypeNotTest() {
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance("envIdentifier", ExecutionStatus.SUCCESS, CANARY);
+    VerifyStepPathParams verifyStepPathParams = VerifyStepPathParams.builder()
+                                                    .verifyStepExecutionId(verificationJobInstance.getUuid())
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .accountIdentifier(accountId)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .build();
+    try {
+      verificationJobInstanceService.pinOrUnpinBaseline(verifyStepPathParams, true);
+      fail("Expected ResponseStatusException to be thrown");
+    } catch (ResponseStatusException e) {
+    }
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testPinOrUnpinBaseline_pinBaseline_success() {
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance("envIdentifier", ExecutionStatus.SUCCESS, TEST);
+    VerifyStepPathParams verifyStepPathParams = VerifyStepPathParams.builder()
+                                                    .verifyStepExecutionId(verificationJobInstance.getUuid())
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .accountIdentifier(accountId)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .build();
+    Baseline baseline = verificationJobInstanceService.pinOrUnpinBaseline(verifyStepPathParams, true);
+    assertThat(baseline.isBaseline()).isTrue();
+
+    ServiceEnvironmentParams serviceEnvironmentParams =
+        ServiceEnvironmentParams.builder()
+            .orgIdentifier(orgIdentifier)
+            .accountIdentifier(accountId)
+            .projectIdentifier(projectIdentifier)
+            .environmentIdentifier(verificationJobInstance.getResolvedJob().getEnvIdentifier())
+            .serviceIdentifier(verificationJobInstance.getResolvedJob().getServiceIdentifier())
+            .build();
+    Optional<VerificationJobInstance> optionalBaselineVerificationJobInstance =
+        verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(serviceEnvironmentParams);
+
+    VerificationJobInstance baselineVerificationJobInstance = optionalBaselineVerificationJobInstance.get();
+    String baselineVerificationJobInstanceId = baselineVerificationJobInstance.getUuid();
+    assertThat(baselineVerificationJobInstanceId).contains(verificationJobInstance.getUuid());
+
+    assertThat(baselineVerificationJobInstance.getValidUntil().getYear())
+        .isEqualTo(Date.from(OffsetDateTime.now().plus(CVConstants.BASELINE_RETENTION_DURATION).toInstant()).getYear());
+
+    baseline = verificationJobInstanceService.pinOrUnpinBaseline(verifyStepPathParams, false);
+    assertThat(baseline.isBaseline()).isFalse();
+
+    VerificationJobInstance unpinnedBaselineVerificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
+    assertThat(unpinnedBaselineVerificationJobInstance.getIsBaseline()).isFalse();
+    Instant baselineVerificationCreatedAt = Instant.ofEpochMilli(baselineVerificationJobInstance.getCreatedAt());
+    Instant expectedBaselineVerificationValidUntil =
+        baselineVerificationCreatedAt.plus(CVConstants.MAX_DATA_RETENTION_DURATION);
+    assertThat(unpinnedBaselineVerificationJobInstance.getValidUntil())
+        .isEqualTo(Date.from(expectedBaselineVerificationValidUntil));
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetDeploymentVerificationJobInstanceSummary_verificationTypeIsSimple() {
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance("dev", ExecutionStatus.SUCCESS, VerificationJobType.SIMPLE);
+    DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =
+        verificationJobInstanceService.getDeploymentVerificationJobInstanceSummary(
+            Lists.newArrayList(verificationJobInstance.getUuid()));
+    assertThat(deploymentVerificationJobInstanceSummary.getEnvironmentName()).isEqualTo("Harness dev");
+    assertThat(deploymentVerificationJobInstanceSummary.getVerificationJobInstanceId())
+        .isEqualTo(verificationJobInstance.getUuid());
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityId()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getActivityStartTime()).isZero();
+    assertThat(deploymentVerificationJobInstanceSummary.getJobName())
+        .isEqualTo(verificationJobInstance.getResolvedJob().getJobName());
+    assertThat(deploymentVerificationJobInstanceSummary.getProgressPercentage()).isEqualTo(100);
+    assertThat(deploymentVerificationJobInstanceSummary.getRisk()).isNull();
+    assertThat(deploymentVerificationJobInstanceSummary.getStatus()).isEqualTo(IN_PROGRESS);
+    assertThat(deploymentVerificationJobInstanceSummary.getAdditionalInfo().getType())
+        .isEqualTo(VerificationJobType.SIMPLE);
+  }
+
   private CVConfig newCVConfig() {
     return builderFactory.splunkCVConfigBuilder()
         .connectorIdentifier(connectorId)
@@ -1032,6 +1155,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         return builderFactory.testVerificationJobBuilder().build();
       case CANARY:
         return builderFactory.canaryVerificationJobBuilder().build();
+      case SIMPLE:
+        return builderFactory.simpleVerificationJobBuilder().build();
       default:
         throw new IllegalStateException("Not implemented: " + verificationJobType);
     }

@@ -7,15 +7,15 @@
 
 package io.harness.app.CIDashboard;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -140,7 +140,7 @@ public class CIDashboardsApisTest extends CategoryTest {
 
     doReturn(statusAndTime)
         .when(ciOverviewDashboardServiceImpl)
-        .queryCalculatorForStatusAndTime(anyString(), anyObject(), anyLong(), anyLong());
+        .queryCalculatorForStatusAndTime(anyString(), any(), any(), anyLong(), anyLong());
 
     DashboardBuildsHealthInfo resultBuildHealth = ciOverviewDashboardServiceImpl.getDashBoardBuildHealthInfoWithRate(
         "acc", "org", "pro", startInterval, endInterval, previousInterval);
@@ -189,14 +189,14 @@ public class CIDashboardsApisTest extends CategoryTest {
 
     doReturn(statusAndTime)
         .when(ciOverviewDashboardServiceImpl)
-        .queryCalculatorForStatusAndTime(anyString(), anyObject(), anyLong(), anyLong());
+        .queryCalculatorForStatusAndTime(anyString(), any(), any(), anyLong(), anyLong());
 
     Mockito.mockStatic(NGRestUtils.class);
     when(NGRestUtils.getResponse(any()))
         .thenReturn(Collections.singletonList(ProjectDTO.builder().orgIdentifier("org").identifier("pro").build()));
 
     DashboardBuildExecutionInfo resultBuildExecution = ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals(
-        "acc", "org", "pro", startInterval, endInterval);
+        "acc", "org", "pro", null, startInterval, endInterval);
 
     List<BuildExecutionInfo> buildExecutionInfoList = new ArrayList<>();
     buildExecutionInfoList.add(BuildExecutionInfo.builder()
@@ -223,8 +223,11 @@ public class CIDashboardsApisTest extends CategoryTest {
                                    .time(1619740800000L)
                                    .builds(BuildCount.builder().total(1).success(1).failed(0).build())
                                    .build());
-    DashboardBuildExecutionInfo expectedBuildExecution =
-        DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
+    DashboardBuildExecutionInfo expectedBuildExecution = DashboardBuildExecutionInfo.builder()
+                                                             .buildExecutionInfoList(buildExecutionInfoList)
+                                                             .buildRate(1.5)
+                                                             .buildRateChangeRate(-100.0)
+                                                             .build();
 
     assertThat(resultBuildExecution).isEqualTo(expectedBuildExecution);
 
@@ -232,12 +235,12 @@ public class CIDashboardsApisTest extends CategoryTest {
         .thenReturn(Arrays.asList(ProjectDTO.builder().orgIdentifier("org1").identifier("pro1").build(),
             ProjectDTO.builder().orgIdentifier("org2").identifier("proj2").build()));
 
-    resultBuildExecution =
-        ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals("acc", null, null, startInterval, endInterval);
+    resultBuildExecution = ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals(
+        "acc", null, null, null, startInterval, endInterval);
     assertThat(resultBuildExecution).isEqualTo(expectedBuildExecution);
     assertThatThrownBy(()
                            -> ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals(
-                               "acc", "org", "proj", startInterval, endInterval))
+                               "acc", "org", "proj", null, startInterval, endInterval))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -691,5 +694,29 @@ public class CIDashboardsApisTest extends CategoryTest {
     when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
 
     assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitterCount("accountId"));
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetHostedCreditUsage() throws SQLException {
+    final long expectedResult = 100L;
+    ResultSet resultSet = mock(ResultSet.class);
+    Connection connection = mock(Connection.class);
+    PreparedStatement statement = mock(PreparedStatement.class);
+    when(statement.executeQuery()).thenReturn(resultSet);
+    when(connection.prepareStatement(any())).thenReturn(statement);
+    when(timeScaleDBService.getDBConnection()).thenReturn(connection);
+    final int[] count = {0};
+    when(resultSet.next()).then((Answer<Boolean>) invocation -> {
+      if (count[0] <= 1) {
+        count[0]++;
+        return true;
+      }
+      return false;
+    });
+    when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
+
+    assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getHostedCreditUsage("accountId"));
   }
 }

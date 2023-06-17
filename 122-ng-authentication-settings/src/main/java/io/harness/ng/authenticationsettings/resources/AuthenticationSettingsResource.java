@@ -20,6 +20,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.OAuthSettings;
@@ -49,12 +50,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -117,6 +120,28 @@ public class AuthenticationSettingsResource {
         ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
     AuthenticationSettingsResponse response =
         authenticationSettingsService.getAuthenticationSettings(accountIdentifier);
+    return new RestResponse<>(response);
+  }
+
+  @GET
+  @Path("/v2")
+  @ApiOperation(
+      value = "Get authentication settings version 2 for an account", nickname = "getAuthenticationSettingsV2")
+  @Operation(operationId = "getAuthenticationSettingsV2",
+      summary = "Gets authentication settings version 2 for the given Account ID",
+      description = "Gets authentication settings version 2 for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully returns authentication settings of an Account")
+      })
+  public RestResponse<AuthenticationSettingsResponse>
+  getAuthenticationSettingsV2(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      "accountIdentifier") @NotNull String accountIdentifier) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    AuthenticationSettingsResponse response =
+        authenticationSettingsService.getAuthenticationSettingsV2(accountIdentifier);
     return new RestResponse<>(response);
   }
 
@@ -274,7 +299,15 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret) {
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
+          "friendlySamlName") String friendlySamlName,
+      @Parameter(description = "Enable Just in time user provision") @FormDataParam("jitEnabled") @DefaultValue(
+          "false") Boolean jitEnabled,
+      @Parameter(description = "Optional Key to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @Parameter(description = "Optional Value to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
@@ -282,12 +315,14 @@ public class AuthenticationSettingsResource {
           new BoundedInputStream(uploadedInputStream, mainConfiguration.getFileUploadLimits().getCommandUploadLimit()));
       final MultipartBody.Part formData =
           MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
-      SSOConfig response =
-          authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName, groupMembershipAttr,
-              authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId, clientSecret);
+      SSOConfig response = authenticationSettingsService.uploadSAMLMetadata(accountId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
+    } catch (InvalidRequestException e) {
+      throw e;
     } catch (Exception e) {
-      throw new GeneralException("Error while creating new SAML Config", e);
+      throw new GeneralException("Invalid SAML configuration! Please upload a valid metadata file", e);
     }
   }
 
@@ -317,22 +352,77 @@ public class AuthenticationSettingsResource {
       @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
       @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
       @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
-          "clientSecret") String clientSecret) {
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Enable Just in time user provision") @FormDataParam("jitEnabled") @DefaultValue(
+          "false") Boolean jitEnabled,
+      @Parameter(description = "Optional Key to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @Parameter(description = "Optional Value to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     try {
-      MultipartBody.Part formData = null;
-      if (uploadedInputStream != null) {
-        byte[] bytes = IOUtils.toByteArray(new BoundedInputStream(
-            uploadedInputStream, mainConfiguration.getFileUploadLimits().getCommandUploadLimit()));
-        formData = MultipartBody.Part.createFormData("file", null, RequestBody.create(MultipartBody.FORM, bytes));
-      }
-      SSOConfig response =
-          authenticationSettingsService.updateSAMLMetadata(accountId, formData, displayName, groupMembershipAttr,
-              authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId, clientSecret);
+      MultipartBody.Part formData = getMultipartBodyFromInputStream(uploadedInputStream);
+      SSOConfig response = authenticationSettingsService.updateSAMLMetadata(accountId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, jitEnabled, jitValidationKey, jitValidationValue);
       return new RestResponse<>(response);
+    } catch (InvalidRequestException e) {
+      throw e;
     } catch (Exception e) {
-      throw new GeneralException("Error while editing saml-config", e);
+      throw new GeneralException("Invalid SAML configuration! Please upload a valid metadata file", e);
+    }
+  }
+
+  @Multipart
+  @PUT
+  @Path("/saml-metadata-upload/{samlSSOId}")
+  @Consumes("multipart/form-data")
+  @ApiOperation(value = "Edit SAML Config for a given SAML SSO Id", nickname = "updateSamlMetaDataForSamlSSOId")
+  @Operation(operationId = "updateSamlMetaDataForSamlSSOId", summary = "Update SAML metadata for a given SAML SSO Id",
+      description = "Updates SAML metadata of the SAML configuration with given SSO Id, configured for an account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully updated SAML metadata of SAML setting configured for an account")
+      })
+  public RestResponse<SSOConfig>
+  updateSamlMetaDataForSamlSSOId(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                     NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
+      @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId,
+      @Parameter(description = "SAML Metadata input file") @FormDataParam("file") InputStream uploadedInputStream,
+      @Parameter(description = "Input file metadata") @FormDataParam(
+          "fileMetadata") FormDataContentDisposition fileDetail,
+      @Parameter(description = "Display Name of the SAML") @FormDataParam("displayName") String displayName,
+      @Parameter(description = "Group membership attribute") @FormDataParam(
+          "groupMembershipAttr") String groupMembershipAttr,
+      @Parameter(description = "Specify whether or not to enable authorization") @FormDataParam("authorizationEnabled")
+      Boolean authorizationEnabled, @Parameter(description = "Logout URL") @FormDataParam("logoutUrl") String logoutUrl,
+      @Parameter(description = "SAML metadata Identifier") @FormDataParam("entityIdentifier") String entityIdentifier,
+      @Parameter(description = "SAML provider type") @FormDataParam("samlProviderType") String samlProviderType,
+      @Parameter(description = "Optional SAML clientId for Azure SSO") @FormDataParam("clientId") String clientId,
+      @Parameter(description = "Optional SAML clientSecret reference string for Azure SSO") @FormDataParam(
+          "clientSecret") String clientSecret,
+      @Parameter(description = "Friendly name of the app on SAML SSO provider end in Harness") @FormDataParam(
+          "friendlySamlName") String friendlySamlName,
+      @Parameter(description = "Enable Just in time user provision") @FormDataParam("jitEnabled") @DefaultValue(
+          "false") Boolean jitEnabled,
+      @Parameter(description = "Optional Key to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationKey") String jitValidationKey,
+      @Parameter(description = "Optional Value to match in SAML assertion for Just in time user provision")
+      @FormDataParam("jitValidationValue") String jitValidationValue) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    try {
+      MultipartBody.Part formData = getMultipartBodyFromInputStream(uploadedInputStream);
+      SSOConfig response = authenticationSettingsService.updateSAMLMetadata(accountId, samlSSOId, formData, displayName,
+          groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+          clientSecret, friendlySamlName, jitEnabled, jitValidationKey, jitValidationValue);
+      return new RestResponse<>(response);
+    } catch (InvalidRequestException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new GeneralException("Error while editing saml-config " + samlSSOId, e);
     }
   }
 
@@ -355,6 +445,49 @@ public class AuthenticationSettingsResource {
     return new RestResponse<>(response);
   }
 
+  @DELETE
+  @Path("/saml-metadata/{samlSSOId}/delete")
+  @ApiOperation(value = "Delete SAML Config for given SAML sso id", nickname = "deleteSamlMetaDataForSamlSSOId")
+  @Operation(operationId = "deleteSamlMetaDataForSamlSSOId", summary = "Delete SAML meta data for given SAML sso id",
+      description = "Deletes SAML metadata for the given Account and SAML sso id",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully deleted SAML meta associated with a SAML SSO setting id")
+      })
+  public RestResponse<SSOConfig>
+  deleteSamlMetadataForSamlSSOId(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                     NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), DELETE_AUTHSETTING_PERMISSION);
+    SSOConfig response = authenticationSettingsService.deleteSAMLMetadata(accountIdentifier, samlSSOId);
+    return new RestResponse<>(response);
+  }
+
+  @PUT
+  @Path("/saml-metadata-upload/{samlSSOId}/authentication")
+  @ApiOperation(value = "Enables or disables authentication for the given SAML sso id",
+      nickname = "enableDisableAuthenticationForSAMLSetting")
+  @Operation(operationId = "enableDisableAuthenticationForSAMLSetting",
+      summary = "Update authentication enabled or not for given SAML setting",
+      description = "Updates if authentication is enabled or not for given SAML setting in Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully updated login allowed status for SAML setting in account")
+      })
+  public RestResponse<Boolean>
+  enableDisableLoginForSAMLSetting(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                       NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @NotNull @QueryParam("enable") @DefaultValue("true") Boolean enable,
+      @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    authenticationSettingsService.updateAuthenticationForSAMLSetting(accountIdentifier, samlSSOId, enable);
+    return new RestResponse<>(true);
+  }
+
   @GET
   @Path("/saml-login-test")
   @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTest")
@@ -370,6 +503,26 @@ public class AuthenticationSettingsResource {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
     LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTest(accountId);
+    return new RestResponse<>(response);
+  }
+
+  @GET
+  @Path("/saml-login-test/{samlSSOId}")
+  @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTestV2")
+  @Operation(operationId = "getSamlLoginTestV2", summary = "Test SAML connectivity",
+      description = "Tests SAML connectivity for the given Account ID and SAML setting.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns connectivity status")
+      })
+  public RestResponse<LoginTypeResponse>
+  getSamlLoginTestV2(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
+      @Parameter(description = "Saml Settings Identifier") @PathParam("samlSSOId") String samlSSOId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTestV2(accountId, samlSSOId);
     return new RestResponse<>(response);
   }
 
@@ -499,5 +652,13 @@ public class AuthenticationSettingsResource {
     boolean response =
         authenticationSettingsService.setSessionTimeoutAtAccountLevel(accountIdentifier, sessionTimeoutSettings);
     return new RestResponse<>(response);
+  }
+
+  private MultipartBody.Part getMultipartBodyFromInputStream(InputStream uploadedInputStream) throws IOException {
+    return uploadedInputStream == null ? null
+                                       : MultipartBody.Part.createFormData("file", null,
+                                           RequestBody.create(MultipartBody.FORM,
+                                               IOUtils.toByteArray(new BoundedInputStream(uploadedInputStream,
+                                                   mainConfiguration.getFileUploadLimits().getCommandUploadLimit()))));
   }
 }

@@ -82,7 +82,10 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
    * Tag regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
-
+  /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
   /**
    * Identifier for artifact.
    */
@@ -133,6 +136,9 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
     if (!ParameterField.isNull(acrArtifactSpecConfig.getTagRegex())) {
       resultantConfig = resultantConfig.withTagRegex(acrArtifactSpecConfig.getTagRegex());
     }
+    if (!ParameterField.isNull(acrArtifactSpecConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(acrArtifactSpecConfig.getDigest());
+    }
     return resultantConfig;
   }
 
@@ -147,5 +153,10 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   @ApiModelProperty(hidden = true)
   public List<ParameterField<String>> getStringParameterFields() {
     return Arrays.asList(connectorRef, subscriptionId, registry, repository, tag, tagRegex);
+  }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkTagAndTagRegex(tag, tagRegex);
   }
 }

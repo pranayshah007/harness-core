@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -171,7 +171,9 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
       awsSecretsManagerEncryptor.createSecret(
           awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, awsSecretsManagerConfig);
     } catch (SecretManagementDelegateException ex) {
-      assertThat(ex.getMessage()).isEqualTo("Secret creation failed after 3 retries. Random runtime exception");
+      assertThat(ex.getMessage())
+          .isEqualTo(String.format("Secret with name [%s] creation failed after 3 retries. Random runtime exception",
+              awsSecretsManagerConfig.getName()));
     }
   }
 
@@ -348,7 +350,9 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
       awsSecretsManagerEncryptor.updateSecret(
           awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, oldRecord, awsSecretsManagerConfig);
     } catch (SecretManagementDelegateException ex) {
-      assertThat(ex.getMessage()).isEqualTo("Secret update failed after 3 retries. Random runtime exception");
+      assertThat(ex.getMessage())
+          .isEqualTo(String.format("Secret with name [%s] update failed after 3 retries. Random runtime exception",
+              awsSecretsManagerConfig.getName()));
     }
   }
 
@@ -666,7 +670,9 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
           awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
       fail("fetch secret value should throw exception");
     } catch (SecretManagementDelegateException ex) {
-      assertThat(ex.getMessage()).isEqualTo("Fetching secret failed after 3 retries. Random runtime exception");
+      assertThat(ex.getMessage())
+          .isEqualTo(String.format("Secret with name [%s] fetching failed after 3 retries. Random runtime exception",
+              awsSecretsManagerConfig.getName()));
     }
   }
 

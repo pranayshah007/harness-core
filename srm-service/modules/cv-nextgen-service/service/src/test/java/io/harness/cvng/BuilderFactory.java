@@ -9,6 +9,7 @@ package io.harness.cvng;
 
 import static io.harness.cvng.beans.TimeSeriesThresholdActionType.IGNORE;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -105,7 +106,6 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDe
 import io.harness.cvng.core.beans.monitoredService.RiskCategoryDTO;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.PagerDutyChangeSourceSpec;
@@ -232,6 +232,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMet
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
@@ -249,6 +250,8 @@ import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob.SimpleVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -270,6 +273,7 @@ import com.google.common.collect.Sets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -281,7 +285,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -381,12 +384,10 @@ public class BuilderFactory {
         .tags(new HashMap<>())
         .dependencies(Sets.newHashSet(ServiceDependencyDTO.builder().monitoredServiceIdentifier("service1").build(),
             ServiceDependencyDTO.builder().monitoredServiceIdentifier("service2").build()))
-        .sources(
-            MonitoredServiceDTO.Sources.builder()
-                .healthSources(
-                    Arrays.asList(createHealthSource(CVMonitoringCategory.ERRORS)).stream().collect(Collectors.toSet()))
-                .changeSources(Sets.newHashSet(getHarnessCDChangeSourceDTOBuilder().build()))
-                .build());
+        .sources(MonitoredServiceDTO.Sources.builder()
+                     .healthSources(new HashSet<>(List.of(createHealthSource(CVMonitoringCategory.ERRORS))))
+                     .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
+                     .build());
   }
 
   public HeatMapBuilder heatMapBuilder() {
@@ -775,58 +776,64 @@ public class BuilderFactory {
   }
 
   public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
-      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, String metricName, String identifier,
-      HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory, boolean isDeploymentEnabled,
-      boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
+      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, List<String> metricNameList,
+      String identifier, HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
     MetricResponseMapping responseMapping = MetricResponseMapping.builder()
                                                 .metricValueJsonPath(metricValueJSONPath)
                                                 .timestampJsonPath(timestampJsonPath)
                                                 .serviceInstanceJsonPath(serviceInstanceJsonPath)
                                                 .build();
-
-    CustomHealthMetricDefinition metricDefinition =
-        CustomHealthMetricDefinition.builder()
-            .groupName(groupName)
-            .metricName(metricName)
-            .queryType(queryType)
-            .metricResponseMapping(responseMapping)
-            .requestDefinition(CustomHealthRequestDefinition.builder().method(CustomHealthMethod.GET).build())
-            .identifier(identifier)
-            .analysis(
-                HealthSourceMetricDefinition.AnalysisDTO.builder()
-                    .deploymentVerification(HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
-                                                .enabled(isDeploymentEnabled)
+    List<CustomHealthMetricDefinition> metricDefinitionList = new ArrayList<>();
+    for (String metricName : metricNameList) {
+      CustomHealthMetricDefinition metricDefinition =
+          CustomHealthMetricDefinition.builder()
+              .groupName(groupName)
+              .metricName(metricName)
+              .queryType(queryType)
+              .metricResponseMapping(responseMapping)
+              .requestDefinition(CustomHealthRequestDefinition.builder().method(CustomHealthMethod.GET).build())
+              .identifier(identifier)
+              .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
+                            .deploymentVerification(
+                                HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
+                                    .enabled(isDeploymentEnabled)
+                                    .build())
+                            .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
+                                                .enabled(isLiveMonitoringEnabled)
                                                 .build())
-                    .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
-                                        .enabled(isLiveMonitoringEnabled)
-                                        .build())
-                    .build())
-            .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(isSliEnabled).build())
-            .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
-            .build();
-
-    List<CustomHealthMetricDefinition> customHealthSourceSpecs = new ArrayList<>();
-    customHealthSourceSpecs.add(metricDefinition);
-    return CustomHealthSourceMetricSpec.builder().metricDefinitions(customHealthSourceSpecs).build();
+                            .build())
+              .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(isSliEnabled).build())
+              .riskProfile(RiskProfile.builder().category(CVMonitoringCategory.PERFORMANCE).build())
+              .build();
+      metricDefinitionList.add(metricDefinition);
+    }
+    return CustomHealthSourceMetricSpec.builder().metricDefinitions(metricDefinitionList).build();
   }
 
-  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilder(String metricName, boolean isDeploymentEnabled,
-      boolean isLiveMonitoringEnabled, boolean isSliEnabled, MetricResponseMapping responseMapping, String group,
-      HealthSourceQueryType queryType, CustomHealthMethod method, CVMonitoringCategory category, String requestBody) {
-    CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
-        CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
-            .metricName(metricName)
-            .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
-            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
-            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
-            .metricResponseMapping(responseMapping)
-            .requestDefinition(CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
-            .build();
+  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilder(List<String> metricNameList,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled,
+      MetricResponseMapping responseMapping, String group, HealthSourceQueryType queryType, CustomHealthMethod method,
+      CVMonitoringCategory category, String requestBody) {
+    List<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition> customMetricDefinitionList =
+        new ArrayList<>();
+    for (String metricName : metricNameList) {
+      CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
+          CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+              .metricName(metricName)
+              .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
+              .deploymentVerification(
+                  AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
+              .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
+              .metricResponseMapping(responseMapping)
+              .requestDefinition(
+                  CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
+              .build();
+      customMetricDefinitionList.add(metricDefinition);
+    }
 
     return CustomHealthMetricCVConfig.builder()
-        .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
-          { add(metricDefinition); }
-        })
+        .metricDefinitions(customMetricDefinitionList)
         .groupName(group)
         .queryType(queryType)
         .category(category)
@@ -1003,10 +1010,6 @@ public class BuilderFactory {
         .identifier("customIdentifier");
   }
 
-  public ChangeSourceDTOBuilder getHarnessCDChangeSourceDTOBuilder() {
-    return getChangeSourceDTOBuilder(ChangeSourceType.HARNESS_CD).spec(new HarnessCDChangeSourceSpec());
-  }
-
   public ChangeSourceDTOBuilder getPagerDutyChangeSourceDTOBuilder() {
     return getChangeSourceDTOBuilder(ChangeSourceType.PAGER_DUTY)
         .spec(PagerDutyChangeSourceSpec.builder()
@@ -1052,7 +1055,7 @@ public class BuilderFactory {
         .deploymentTag("deploymentTag")
         .stageId("stageId")
         .pipelineId("pipelineId")
-        .planExecutionId("executionId")
+        .planExecutionId(generateUuid())
         .artifactType("artifactType")
         .artifactTag("artifactTag")
         .activityName(generateUuid())
@@ -1105,6 +1108,8 @@ public class BuilderFactory {
                     DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
                 .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                 .build())
+        .activityStartTime(clock.instant())
+        .activityEndTime(clock.instant())
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
@@ -1142,9 +1147,13 @@ public class BuilderFactory {
         .workflowEndTime(clock.instant())
         .workflowStartTime(clock.instant())
         .workflowId("workflowId")
-        .workflowExecutionId("workflowExecutionId")
+        .workflowExecutionId(generateUuid())
         .activityName(generateUuid())
         .activityEndTime(clock.instant())
+        .appId(generateUuid())
+        .serviceId(generateUuid())
+        .environmentId(generateUuid())
+        .name(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1178,6 +1187,9 @@ public class BuilderFactory {
         .pagerDutyUrl("https://myurl.com/pagerduty/token")
         .eventId("eventId")
         .activityName("New pager duty incident")
+        .status(generateUuid())
+        .htmlUrl(generateUuid())
+        .pagerDutyUrl(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1192,6 +1204,8 @@ public class BuilderFactory {
         .type(ChangeSourceType.KUBERNETES.getActivityType())
         .activityStartTime(clock.instant())
         .activityName("K8 Activity")
+        .resourceType(KubernetesResourceType.ConfigMap)
+        .action(Action.Add)
         .resourceVersion("resource-version")
         .relatedAppServices(Arrays.asList(
             RelatedAppMonitoredService.builder().monitoredServiceIdentifier("dependent_service").build()));
@@ -1368,6 +1382,37 @@ public class BuilderFactory {
                        .type(SLOTargetType.ROLLING)
                        .sloTargetPercentage(80.0)
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
+        .notificationRuleRefs(Collections.emptyList())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
+  public ServiceLevelObjectiveV2DTOBuilder getSimpleCalendarServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.CALENDER)
+                       .sloTargetPercentage(80.0)
+                       .spec(CalenderSLOTargetSpec.builder()
+                                 .spec(CalenderSLOTargetSpec.MonthlyCalenderSpec.builder().dayOfMonth(2).build())
+                                 .build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
                   .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
@@ -1615,6 +1660,19 @@ public class BuilderFactory {
         .duration(RuntimeParameter.builder().value("10m").build());
   }
 
+  public SimpleVerificationJobBuilder simpleVerificationJobBuilder() {
+    return SimpleVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+
   public BlueGreenVerificationJobBuilder blueGreenVerificationJobBuilder() {
     return BlueGreenVerificationJob.builder()
         .accountId(context.getAccountId())
@@ -1708,6 +1766,9 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setAccountId(String accountId) {
+      projectParams.setAccountIdentifier(accountId);
+    }
     public void setOrgIdentifier(String orgIdentifier) {
       projectParams.setOrgIdentifier(orgIdentifier);
     }
@@ -1883,6 +1944,7 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeDurationBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeDuration")
         .name("downtime OneTime Duration")
@@ -1902,6 +1964,7 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.DURATION)
                             .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
@@ -1917,7 +1980,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeEndTimeBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusMinutes(30);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeEndTime")
         .name("downtime OneTime EndTime")
@@ -1937,9 +2002,13 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.END_TIME)
-                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder().endTime(endTime).build())
+                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder()
+                                      .endTime(endTime)
+                                      .endDateTime(dtf.format(endDateTime))
+                                      .build())
                             .build())
                   .build())
         .build();
@@ -1947,7 +2016,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getRecurringDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofDays(365).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusDays(365);
     return DowntimeDTO.builder()
         .identifier("downtimeRecurring")
         .name("downtime Recurring")
@@ -1967,12 +2038,14 @@ public class BuilderFactory {
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .downtimeDuration(DowntimeDuration.builder()
                                                   .durationValue(30)
                                                   .durationType(DowntimeDurationType.MINUTES)
                                                   .build())
                             .recurrenceEndTime(endTime)
+                            .recurrenceEndDateTime(dtf.format(endDateTime))
                             .downtimeRecurrence(DowntimeRecurrence.builder()
                                                     .recurrenceValue(1)
                                                     .recurrenceType(DowntimeRecurrenceType.WEEK)

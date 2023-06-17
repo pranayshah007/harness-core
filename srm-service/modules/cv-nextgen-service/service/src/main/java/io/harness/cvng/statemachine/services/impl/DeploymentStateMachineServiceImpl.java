@@ -18,12 +18,10 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
-import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.DeploymentMetricHostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
@@ -86,24 +84,19 @@ public class DeploymentStateMachineServiceImpl extends AnalysisStateMachineServi
       VerificationJobInstance verificationJobInstance, CVConfig cvConfigForDeployment) {
     switch (cvConfigForDeployment.getVerificationType()) {
       case TIME_SERIES:
-        if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
+        if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST
+            || verificationJobInstance.getResolvedJob().getType() == VerificationJobType.SIMPLE) {
           TestTimeSeriesAnalysisState testTimeSeriesAnalysisState = TestTimeSeriesAnalysisState.builder().build();
           testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           testTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(testTimeSeriesAnalysisState);
-        } else if (featureFlagService.isFeatureFlagEnabled(
-                       stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
+        } else {
           DeploymentMetricHostSamplingState deploymentMetricHostSamplingState = new DeploymentMetricHostSamplingState();
           deploymentMetricHostSamplingState.setStatus(AnalysisStatus.CREATED);
           deploymentMetricHostSamplingState.setInputs(inputForAnalysis);
           inputForAnalysis.setVerificationJobInstanceId(verificationJobInstance.getUuid());
           deploymentMetricHostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
           stateMachine.setCurrentState(deploymentMetricHostSamplingState);
-        } else {
-          CanaryTimeSeriesAnalysisState canaryTimeSeriesAnalysisState = CanaryTimeSeriesAnalysisState.builder().build();
-          canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
-          canaryTimeSeriesAnalysisState.setInputs(inputForAnalysis);
-          stateMachine.setCurrentState(canaryTimeSeriesAnalysisState);
         }
         break;
       case LOG:

@@ -65,6 +65,8 @@ import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.JgitSshAuthRequest;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.git.model.PushResultGit;
 
 import software.wings.misc.CustomUserGitConfigSystemReader;
@@ -92,6 +94,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -273,12 +276,14 @@ public class GitClientV2Impl implements GitClientV2 {
           // This enhances performance of the clone command when there is no need for a checked out branch.
           .setNoCheckout(noCheckout);
     } else {
-      Map<String, Ref> refs = listRemote(request);
+      ListRemoteRequest listRemoteRequest = buildListRemoteRequestFromGitBaseRequest(request);
+      ListRemoteResult listRemoteResult = listRemote(listRemoteRequest);
+      Map<String, String> refs = listRemoteResult.getRemoteList();
       if (refs.containsKey(REFS_HEADS + request.getBranch())) {
         cloneCommand.setBranch(isEmpty(request.getBranch()) ? null : request.getBranch());
         cloneCommand.setNoCheckout(noCheckout);
       } else {
-        String branchToClone = refs.get("HEAD").getTarget().getName();
+        String branchToClone = refs.get("HEAD");
         cloneCommand.setBranch(branchToClone);
         cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
         cloneCommand.setNoCheckout(true);
@@ -301,11 +306,13 @@ public class GitClientV2Impl implements GitClientV2 {
         if (!request.isUnsureOrNonExistentBranch()) {
           checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint(ORIGIN + request.getBranch());
         } else {
-          Map<String, Ref> refs = listRemote(request);
+          ListRemoteRequest listRemoteRequest = buildListRemoteRequestFromGitBaseRequest(request);
+          ListRemoteResult listRemoteResult = listRemote(listRemoteRequest);
+          Map<String, String> refs = listRemoteResult.getRemoteList();
           if (refs.containsKey(REFS_HEADS + request.getBranch())) {
             checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint(ORIGIN + request.getBranch());
           } else {
-            String branchToClone = refs.get("HEAD").getTarget().getName();
+            String branchToClone = refs.get("HEAD");
             checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK)
                 .setStartPoint(ORIGIN + branchToClone.replace(REFS_HEADS, ""));
           }
@@ -353,7 +360,8 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.info(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
 
       if (e instanceof InvalidRemoteException || e.getCause() instanceof NoRemoteRepositoryException) {
         return "Invalid git repo " + repoUrl;
@@ -394,12 +402,18 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.error(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
         String message = e.getMessage();
-        if (containsUrlError(message)) {
+        if (message.contains("not authorized")) {
+          throw SCMRuntimeException.builder()
+              .message("Please check your credentials (potential token expiration issue)")
+              .errorCode(ErrorCode.SCM_UNAUTHORIZED)
+              .build();
+        } else if (containsUrlError(message)) {
           throw SCMRuntimeException.builder()
               .message("Couldn't connect to given repo")
               .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
@@ -428,8 +442,20 @@ public class GitClientV2Impl implements GitClientV2 {
         .handle(Exception.class)
         .withMaxAttempts(GIT_COMMAND_RETRY)
         .withBackoff(5, 10, ChronoUnit.SECONDS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event -> {
+          if (event.getLastFailure() instanceof TransportException) {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure().getMessage());
+          } else {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          }
+        })
+        .onFailure(event -> {
+          if (event.getFailure() instanceof TransportException) {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure().getMessage());
+          } else {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure());
+          }
+        });
   }
   @Override
   public DiffResult diff(DiffRequest request) {
@@ -1244,10 +1270,13 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public Map<String, Ref> listRemote(GitBaseRequest request) {
+  public ListRemoteResult listRemote(ListRemoteRequest request) {
     try {
       LsRemoteCommand lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(Git.lsRemoteRepository(), request);
-      return lsRemoteCommand.setRemote(request.getRepoUrl()).callAsMap();
+      Map<String, Ref> lsRemoteCommandResult = lsRemoteCommand.setRemote(request.getRepoUrl()).callAsMap();
+      Map<String, String> remoteList = new HashMap<>();
+      lsRemoteCommandResult.forEach((k, v) -> remoteList.put(k, v.getTarget().getName()));
+      return ListRemoteResult.builder().remoteList(remoteList).build();
     } catch (GitAPIException e) {
       log.error(GIT_YAML_LOG_PREFIX + "Error in listing remote: " + ExceptionSanitizer.sanitizeForLogging(e));
       throw new YamlException("Error in listing remote", USER);
@@ -1510,5 +1539,19 @@ public class GitClientV2Impl implements GitClientV2 {
     }
 
     return null;
+  }
+
+  private ListRemoteRequest buildListRemoteRequestFromGitBaseRequest(GitBaseRequest request) {
+    return ListRemoteRequest.builder()
+        .repoUrl(request.getRepoUrl())
+        .branch(request.getBranch())
+        .commitId(request.getCommitId())
+        .authRequest(request.getAuthRequest())
+        .connectorId(request.getConnectorId())
+        .accountId(request.getAccountId())
+        .repoType(request.getRepoType())
+        .disableUserGitConfig(request.getDisableUserGitConfig())
+        .unsureOrNonExistentBranch(request.isUnsureOrNonExistentBranch())
+        .build();
   }
 }

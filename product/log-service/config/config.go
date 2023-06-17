@@ -48,11 +48,14 @@ type Config struct {
 	}
 
 	Redis struct {
-		Endpoint             string `envconfig:"LOG_SERVICE_REDIS_ENDPOINT"`
-		Password             string `envconfig:"LOG_SERVICE_REDIS_PASSWORD" secret:"true"`
-		SSLEnabled           bool   `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
-		CertPath             string `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
-		DisableExpiryWatcher bool   `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
+		Endpoint             string   `envconfig:"LOG_SERVICE_REDIS_ENDPOINT"`
+		Password             string   `envconfig:"LOG_SERVICE_REDIS_PASSWORD" secret:"true"`
+		SSLEnabled           bool     `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
+		CertPath             string   `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
+		DisableExpiryWatcher bool     `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
+		UseSentinel          bool     `envconfig:"LOG_SERVICE_REDIS_USE_SENTINEL"`
+		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
+		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
 	}
 
 	// Whether to use secret env variables as they are, or talk to GCP secret
@@ -61,6 +64,14 @@ type Config struct {
 		Enabled     bool   `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_ENABLED"`
 		GcpProject  string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_PROJECT"`
 		GcpJsonPath string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_JSON_PATH"`
+	}
+
+	GenAI struct {
+		Endpoint          string `envconfig:"LOG_SERVICE_GENAI_ENDPOINT"`
+		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET"`
+		Provider          string `envconfig:"LOG_SERVICE_GENAI_PROVIDER" default:"azureopenai"`
+		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
+		UseJSONResponse   bool   `envconfig:"LOG_SERVICE_GENAI_USE_JSON_RESPONSE" default:"false"`
 	}
 }
 

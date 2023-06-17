@@ -200,6 +200,7 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
       builder.credentialsRef(ParameterField.createValueField(
           MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getWinRmConnectionAttributes(), CONNECTOR)
               .toSecretRefStringValue()));
+      builder.hostFilter(HostFilter.builder().type(HostFilterType.ALL).spec(AllHostsFilter.builder().build()).build());
       if (isNotEmpty(pdcInfra.getHostNames())) {
         builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
       }

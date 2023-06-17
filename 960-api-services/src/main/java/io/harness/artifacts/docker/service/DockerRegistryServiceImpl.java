@@ -339,7 +339,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       String authHeader = getBasicAuthHeader(dockerConfig, true);
       Function<Headers, String> getToken = headers -> getToken(dockerConfig, headers, registryRestClient);
       // Note: We try & fetch the labels. If we cannot fetch the labels that means the image does not exist
-      DockerRegistryUtils.getSingleTagLabels(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
+      DockerRegistryUtils.verifyImageTag(dockerConfig, registryRestClient, getToken, authHeader, imageName, tag);
       return processBuildResponse(dockerConfig.getDockerRegistryUrl(), imageName, tag);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
@@ -361,7 +361,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   public boolean validateCredentials(DockerInternalConfig dockerConfig) {
     String connectableHttpUrl =
         generateConnectivityUrl(dockerConfig.getDockerRegistryUrl(), dockerConfig.getProviderType());
-    if (!connectableHttpUrl(connectableHttpUrl)) {
+    if (!connectableHttpUrl(connectableHttpUrl, false)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Docker Registry URL is correct & reachable from your delegate(s)",
           "The given Docker Registry URL may be incorrect or not reachable from your delegate(s)",
@@ -385,7 +385,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
         basicAuthHeader = getBasicAuthHeader(dockerConfig, true);
         response = registryRestClient.getApiVersion(basicAuthHeader).execute();
-        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(),
+                dockerConfig)) { // unauthorized
           dockerRegistryToken = fetchToken(dockerConfig, registryRestClient, response.headers());
           if (dockerRegistryToken != null) {
             String token = dockerRegistryToken.getToken();
@@ -477,7 +478,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
   }
 
-  private String getToken(
+  public String getToken(
       DockerInternalConfig dockerConfig, Headers headers, DockerRegistryRestClient registryRestClient) {
     String authHeaderValue = headers.get(AUTHENTICATE_HEADER);
     if (!cachedBearerTokens.containsKey(authHeaderValue)) {
@@ -551,7 +552,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       return true;
     }
 
-    log.error("Request not successful. Reason: {}", response);
+    log.info("Request not successful. Reason: {}", response);
     int code = response.code();
     switch (code) {
       case 403:

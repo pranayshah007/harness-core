@@ -16,8 +16,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -337,7 +337,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     // testing array of strings as argument
     assertEquals(engineExpressionEvaluator.evaluateExpression("<+dummy.get([\"arg1\",\"arg2\"])>"), expressionResponse);
     ArgumentCaptor<String[]> arrayArgumentCaptor = ArgumentCaptor.forClass(String[].class);
-    verify(remoteExpressionFunctor, times(3)).get(arrayArgumentCaptor.capture());
+    verify(remoteExpressionFunctor, times(1)).get(arrayArgumentCaptor.capture());
     String[] argsArray = arrayArgumentCaptor.getValue();
     assertEquals(argsArray.length, 2);
     assertEquals(argsArray[0], "arg1");

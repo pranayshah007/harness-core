@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.ROHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -38,6 +38,7 @@ import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewField;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -58,6 +59,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Mock private CEViewDao ceViewDao;
   @Mock private CEViewFolderDao ceViewFolderDao;
   @Mock private CEReportScheduleDao ceReportScheduleDao;
+  @Mock private FeatureFlagService featureFlagService;
 
   private static final String ACCOUNT_ID = "account_id";
   private static final String VIEW_NAME = "view_name";
@@ -125,7 +127,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void shouldThrowExceptionViewsExceedLimit() {
-    doReturn(new ArrayList<CEView>(Collections.nCopies(1000, null))).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
+    doReturn(new ArrayList<CEView>(Collections.nCopies(10000, null))).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
     assertThatExceptionOfType(InvalidRequestException.class).isThrownBy(() -> ceViewService.save(ceView(), false));
   }
 

@@ -12,8 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepOutcome;
 import io.harness.ssca.client.SSCAServiceClient;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
@@ -30,9 +33,10 @@ import retrofit2.Response;
 @OwnedBy(HarnessTeam.SSCA)
 public class CdSscaOrchestrationStep extends AbstractContainerStep {
   @Inject private SSCAServiceClient sscaServiceClient;
+  @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
-  public Outcome produceOutcome(Ambiance ambiance, StepElementParameters stepParameters) {
+  public StepResponse.StepOutcome produceOutcome(Ambiance ambiance, StepElementParameters stepParameters) {
     Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
 
     if (stageLevel.isEmpty()) {
@@ -46,16 +50,26 @@ public class CdSscaOrchestrationStep extends AbstractContainerStep {
       return null;
     }
 
-    return CdSscaOrchestrationStepOutcome.builder()
-        .sbomArtifact(PublishedSbomArtifact.builder()
-                          .id(response.getArtifact().getId())
-                          .url(response.getArtifact().getUrl())
-                          .imageName(response.getArtifact().getName())
-                          .isSbomAttested(response.getAttestation().isAttested())
-                          .sbomName(response.getSbom().getName())
-                          .sbomUrl(response.getSbom().getUrl())
-                          .stepExecutionId(stepExecutionId)
-                          .build())
+    CdSscaOrchestrationStepOutcome stepOutcome =
+        CdSscaOrchestrationStepOutcome.builder()
+            .sbomArtifact(PublishedSbomArtifact.builder()
+                              .id(response.getArtifact().getId())
+                              .url(response.getArtifact().getUrl())
+                              .imageName(response.getArtifact().getName())
+                              .isSbomAttested(response.getAttestation().isAttested())
+                              .sbomName(response.getSbom().getName())
+                              .sbomUrl(response.getSbom().getUrl())
+                              .stepExecutionId(stepExecutionId)
+                              .build())
+            .build();
+
+    String outputName = "artifact_" + stepExecutionId;
+    sdkGraphVisualizationDataService.publishStepDetailInformation(
+        ambiance, stepOutcome, outputName, StepCategory.STAGE);
+    return StepResponse.StepOutcome.builder()
+        .outcome(stepOutcome)
+        .name(outputName)
+        .group(StepOutcomeGroup.STAGE.name())
         .build();
   }
 

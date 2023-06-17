@@ -110,7 +110,8 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
       while (configIterator.hasNext()) {
         rollbackConfig = configIterator.next();
 
-        if (rollbackConfig.getPipelineExecutionId().equals(ambiance.getPlanExecutionId())) {
+        if (rollbackConfig.getPipelineExecutionId().equals(
+                AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))) {
           if (currentConfig == null) {
             currentConfig = rollbackConfig;
           }
@@ -158,9 +159,8 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
         builder.tfModuleSourceInheritSSH(rollbackConfig.isUseConnectorCredentials());
       }
       if (rollbackConfig.getFileStoreConfig() != null) {
-        builder.fileStoreConfigFiles(terraformStepHelper.getFileStoreFetchFilesConfig(
-            rollbackConfig.getFileStoreConfig().toFileStorageStoreConfig(), ambiance,
-            TerraformStepHelper.TF_CONFIG_FILES));
+        builder.fileStoreConfigFiles(
+            terraformStepHelper.prepareTerraformConfigFileInfo(rollbackConfig.getFileStoreConfig(), ambiance));
       }
 
       if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CD_TERRAFORM_CLOUD_CLI_NG)) {

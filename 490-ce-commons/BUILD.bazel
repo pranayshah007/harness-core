@@ -18,6 +18,7 @@ java_library(
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
         "//940-secret-manager-client:module",
+        "//945-account-mgmt:module",
         "//950-ng-authentication-service:module",
         "//954-connector-beans:module",
         "//959-psql-database-models:module",

@@ -100,15 +100,23 @@ public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       RatioServiceLevelIndicator ratioServiceLevelIndicator = (RatioServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getEventType().equals(ratioServiceLevelIndicator.getEventType()));
       Preconditions.checkArgument(this.getThresholdValue().equals(ratioServiceLevelIndicator.getThresholdValue()));
       Preconditions.checkArgument(this.getThresholdType().equals(ratioServiceLevelIndicator.getThresholdType()));
-      if (this.getConsiderConsecutiveMinutes() != null) {
+      if (this.getConsiderConsecutiveMinutes() != null
+          || ratioServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
+        Preconditions.checkArgument(this.getConsiderConsecutiveMinutes() != null);
+        Preconditions.checkArgument(ratioServiceLevelIndicator.getConsiderConsecutiveMinutes() != null);
         Preconditions.checkArgument(
             this.getConsiderConsecutiveMinutes().equals(ratioServiceLevelIndicator.getConsiderConsecutiveMinutes()));
       }
-      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null
+          || ratioServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+        Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null);
+        Preconditions.checkArgument(
+            ratioServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad() != null);
         Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad().equals(
             ratioServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad()));
       }

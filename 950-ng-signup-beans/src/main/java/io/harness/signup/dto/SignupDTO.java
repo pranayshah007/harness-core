@@ -28,6 +28,8 @@ import lombok.Data;
 public class SignupDTO {
   String email;
   String password;
+  String companyName;
+  String name;
   UtmInfo utmInfo;
   String intent;
   SignupAction signupAction;

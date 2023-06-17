@@ -46,6 +46,7 @@ import io.harness.redis.RedissonClientFactory;
 import io.harness.resourcegroup.ResourceGroupModule;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
 import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
+import io.harness.resourcegroup.v1.remote.dto.ZendeskConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.morphia.ResourceGroupSerializer;
 import io.harness.threading.ExecutorModule;
@@ -166,6 +167,13 @@ public class ResourceGroupServiceModule extends AbstractModule {
     return appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation() == null
         ? MONGO
         : appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation();
+  }
+
+  @Provides
+  @Named("zendeskApiConfiguration")
+  @Singleton
+  ZendeskConfig getZendeskConfig() {
+    return appConfig.getZendeskConfig();
   }
 
   @Provides

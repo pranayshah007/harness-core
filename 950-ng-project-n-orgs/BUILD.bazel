@@ -18,6 +18,9 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//120-ng-manager/modules/favorites/contracts/src/main/java/io/harness/favorites:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/entities:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/services:module",
         "//958-migration-sdk:module",
         "//960-ng-core-beans:module",
         "//960-persistence:module",

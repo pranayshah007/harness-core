@@ -13,9 +13,9 @@ import static io.harness.rule.OwnerRule.BOOPESH;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -26,7 +26,6 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ProjectDTO;
@@ -82,14 +81,19 @@ public class UserResourceTest extends CategoryTest {
     verify(projectService).listProjectsForUser(any(), eq(ACCOUNT), eq(pageRequest));
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testRemoveExternallyManagedUser() {
     String userId = randomAlphabetic(10);
     Optional<UserInfo> userInfo = Optional.ofNullable(UserInfo.builder().externallyManaged(true).uuid(userId).build());
-    doReturn(userInfo).when(ngUserService).getUserById(userId);
+    doReturn(userInfo).when(ngUserService).getUserByIdAndAccount(userId, ACCOUNT);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT, FeatureName.PL_USER_DELETION_V2);
+
     userResource.removeUser(userId, ACCOUNT, null, null);
+
+    verify(userResource).removeUserInternal(userId, ACCOUNT, null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    verify(ngUserService).removeUser(userId, ACCOUNT);
   }
 
   @Test

@@ -9,12 +9,14 @@ package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.SATHISH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
@@ -35,8 +37,8 @@ import io.harness.delegate.beans.git.GitCommandParams;
 import io.harness.delegate.beans.git.GitCommandType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.git.model.CommitAndPushResult;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
@@ -66,12 +68,8 @@ public class NGGitCommandTaskTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doNothing()
-        .when(gitDecryptionHelper)
-        .decryptGitConfig(any(GitConfigDTO.class), anyListOf(EncryptedDataDetail.class));
-    doNothing()
-        .when(gitDecryptionHelper)
-        .decryptApiAccessConfig(any(ScmConnector.class), anyListOf(EncryptedDataDetail.class));
+    doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), anyList());
+    doNothing().when(gitDecryptionHelper).decryptApiAccessConfig(any(ScmConnector.class), anyList());
   }
 
   @Test
@@ -100,11 +98,31 @@ public class NGGitCommandTaskTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGitListRemote() {
+    ListRemoteResult gitListRemoteResult = ListRemoteResult.builder().build();
+    doReturn(gitListRemoteResult)
+        .when(gitService)
+        .listRemote(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
+    TaskParameters params = GitCommandParams.builder()
+                                .gitConfig(GitConfigDTO.builder().build())
+                                .gitCommandType(GitCommandType.LIST_REMOTE)
+                                .build();
+
+    GitCommandExecutionResponse response = (GitCommandExecutionResponse) ngGitCommandTask.run(params);
+    assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandStatus.SUCCESS);
+    assertThat(response.getGitCommandResult()).isEqualTo(gitListRemoteResult);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testGitCommitAndPush() {
     CommitAndPushResult gitCommitAndPushResult = CommitAndPushResult.builder().build();
-    doReturn(gitCommitAndPushResult).when(gitService).commitAndPush(any(GitConfigDTO.class), any(), anyString(), any());
+    doReturn(gitCommitAndPushResult)
+        .when(gitService)
+        .commitAndPush(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
     TaskParameters params = GitCommandParams.builder()
                                 .gitConfig(GitConfigDTO.builder().build())
                                 .gitCommandType(GitCommandType.COMMIT_AND_PUSH)

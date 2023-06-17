@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
@@ -171,6 +172,10 @@ public class NGVariablesUtils {
             String.format("Value not provided for required variable: %s", variable.getName()));
       }
       return null;
+    }
+    if (variable.isRequired() && !value.isExpression() && ObjectUtils.isEmpty(value.getValue())) {
+      throw new InvalidRequestException(
+          String.format("Value not provided for required variable: %s", variable.getName()));
     }
     return value;
   }

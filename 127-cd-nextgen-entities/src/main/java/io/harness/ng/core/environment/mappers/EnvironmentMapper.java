@@ -85,7 +85,7 @@ public class EnvironmentMapper {
   }
 
   private void validateOrThrow(NGEnvironmentConfig ngEnvironmentConfig) {
-    JavaxValidator.validateOrThrow(ngEnvironmentConfig);
+    JavaxValidator.validateBeanOrThrow(ngEnvironmentConfig);
   }
 
   public Environment toNGEnvironmentEntity(String accountId, EnvironmentRequestDTO dto) {

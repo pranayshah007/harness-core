@@ -15,6 +15,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//960-api-services/src/main/java/io/harness/terraformcloud/model:module",
         "//980-commons/src/main/java/io/harness/network:module",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
         "@maven//:com_intellij_annotations",

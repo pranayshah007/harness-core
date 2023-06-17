@@ -46,6 +46,8 @@ public class NGCommonEntityConstants {
   public static final String GROUP_IDENTIFIER_KEY = "groupIdentifier";
   public static final String GROUP_IDENTIFIERS_KEY = "groupIdentifiers";
   public static final String NAME_KEY = "name";
+
+  public static final String VERSION_FIELD = "version";
   public static final String DELEGATE_IDENTIFIER_KEY = "delegateIdentifier";
   public static final String DRAFT_KEY = "skipValidation";
   public static final String TAGS_KEY = "tags";
@@ -63,6 +65,7 @@ public class NGCommonEntityConstants {
   public static final String REPO_URL = "repoURL";
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
+  public static final String STAGE_KEY = "stageExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
@@ -151,11 +154,24 @@ public class NGCommonEntityConstants {
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
   public static final String ENV_PARAM_MESSAGE = "Environment Identifier for the Entity.";
 
+  public static final String SERVICE_OVERRIDES_IDENTIFIER = "Service Overrides Identifier for Entity.";
+
+  public static final String ENV_REF_PARAM_MESSAGE = "Environment Reference for the Entity.";
+
   public static final String INFRADEF_PARAM_MESSAGE = "Infrastructure Definition Identifier for the Entity.";
   // Service Overrides
   public static final String SERVICE_IDENTIFIER_KEY = "serviceIdentifier";
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the Entity.";
+  public static final String SERVICE_REF_PARAM_MESSAGE = "Service Reference for Entity";
   public static final String VARIABLE_OVERRIDE_PARAM_MESSAGE = "Variable Overrides for an Environment";
+
+  public static final String START_TIME_PARAM_MESSAGE = "Start Time of the Interval for the Entity.";
+  public static final String END_TIME_PARAM_MESSAGE = "End Time of the Interval for the Entity.";
+  public static final String ARTIFACT_PARAM_MESSAGE =
+      "Fully Qualified Name of the Artifact (artifactPath:artifactVersion). For eg. in case of docker it would be imagePath:tag";
+  public static final String ARTIFACT_PATH_PARAM_MESSAGE = "Image/ArtifactPath of the Artifact";
+  public static final String ARTIFACT_VERSION_PARAM_MESSAGE = "Version of the Artifact";
+  public static final String STATUS_PARAM_MESSAGE = "Deployment status";
 
   // Infrastructures
   public static final String DEPLOY_TO_ALL = "deployToAll";
@@ -191,4 +207,5 @@ public class NGCommonEntityConstants {
   public static final String FILE_STORE_FUNCTOR = "fileStore";
   public static final String PLAN_NAME = "planName";
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
+  public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
 }

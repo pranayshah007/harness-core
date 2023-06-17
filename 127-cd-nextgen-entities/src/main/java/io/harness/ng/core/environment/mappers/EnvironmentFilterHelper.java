@@ -32,6 +32,7 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -306,27 +307,39 @@ public class EnvironmentFilterHelper {
     return new Criteria().orOperator(criteriaForNames.toArray(new Criteria[0]));
   }
 
+  // Todo: This code handles all four cases where request and entity in DB can contain any of environment Ref or
+  // identifier. Clean up in future after successful migration
   public Criteria createCriteriaForGetServiceOverrides(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    Criteria criteria;
+    Criteria baseCriteria;
+    final String qualifiedEnvironmentRef;
+    final String environmentIdentifier;
     String[] envRefSplit =
         org.apache.commons.lang3.StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
-      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef);
+      baseCriteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+      qualifiedEnvironmentRef =
+          IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, environmentRef);
+      environmentIdentifier = environmentRef;
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
+      baseCriteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
           envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
-      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(envIdentifierRef.getIdentifier());
+      qualifiedEnvironmentRef = environmentRef;
+      environmentIdentifier = envIdentifierRef.getIdentifier();
     }
+    // to exclude other type of overrides present in V2
+    baseCriteria.and(NGServiceOverridesEntityKeys.type).is(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+    baseCriteria.andOperator(
+        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(environmentIdentifier),
+            Criteria.where(NGServiceOverridesEntityKeys.environmentRef).is(qualifiedEnvironmentRef)));
 
     if (isNotBlank(serviceRef)) {
-      criteria.and(NGServiceOverridesEntityKeys.serviceRef).is(serviceRef);
+      baseCriteria.and(NGServiceOverridesEntityKeys.serviceRef).is(serviceRef);
     }
 
-    return criteria;
+    return baseCriteria;
   }
 
   public static Update getUpdateOperations(Environment environment) {
@@ -353,16 +366,31 @@ public class EnvironmentFilterHelper {
     return update;
   }
 
+  // Should not be used for Overrides V2
+  @Deprecated
   public static Update getUpdateOperationsForServiceOverride(NGServiceOverridesEntity serviceOverridesEntity) {
+    String qualifiedEnvironmentRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
+        serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
+        serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef());
+    String identifier = generateServiceOverrideIdentifier(serviceOverridesEntity);
+    ServiceOverridesType type = ServiceOverridesType.ENV_SERVICE_OVERRIDE;
     Update update = new Update();
     update.set(NGServiceOverridesEntityKeys.accountId, serviceOverridesEntity.getAccountId());
     update.set(NGServiceOverridesEntityKeys.orgIdentifier, serviceOverridesEntity.getOrgIdentifier());
     update.set(NGServiceOverridesEntityKeys.projectIdentifier, serviceOverridesEntity.getProjectIdentifier());
-    update.set(NGServiceOverridesEntityKeys.environmentRef, serviceOverridesEntity.getEnvironmentRef());
+    update.set(NGServiceOverridesEntityKeys.environmentRef, qualifiedEnvironmentRef);
     update.set(NGServiceOverridesEntityKeys.serviceRef, serviceOverridesEntity.getServiceRef());
     update.set(NGServiceOverridesEntityKeys.yaml, serviceOverridesEntity.getYaml());
     update.setOnInsert(NGServiceOverridesEntityKeys.createdAt, System.currentTimeMillis());
     update.set(NGServiceOverridesEntityKeys.lastModifiedAt, System.currentTimeMillis());
+    // for service override v2
+    update.set(NGServiceOverridesEntityKeys.identifier, identifier);
+    update.set(NGServiceOverridesEntityKeys.type, type);
     return update;
+  }
+
+  private static String generateServiceOverrideIdentifier(NGServiceOverridesEntity serviceOverridesEntity) {
+    return String.join("_", serviceOverridesEntity.getEnvironmentRef(), serviceOverridesEntity.getServiceRef())
+        .replace(".", "_");
   }
 }

@@ -20,8 +20,8 @@ import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -72,7 +72,6 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.ExecutionHelper;
-import io.harness.pms.triggers.beans.TriggerPlanExecArgs;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -170,7 +169,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Test
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
-  public void testGetTriggerPlanExecArgs() throws Exception {
+  public void testGetPipelineEntityToExecute() throws Exception {
     PipelineEntity pipelineEntity =
         PipelineEntity.builder().repo("repo").filePath("filePath").connectorRef("connectorRef").build();
 
@@ -200,10 +199,9 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .when(pmsPipelineService)
         .getPipeline("ACCOUNT_ID", "ORG_IDENTIFIER", "PROJ_IDENTIFIER", "PIPELINE_IDENTIFIER", false, false);
     when(pmsGitSyncHelper.serializeGitSyncBranchContext(any())).thenReturn(ByteString.copyFrom(new byte[2]));
-    TriggerPlanExecArgs triggerPlanExecArgs =
-        triggerExecutionHelper.getTriggerPlanExecArgs(triggerDetails, triggerWebhookEvent);
-    assertThat(triggerPlanExecArgs.getPipelineEntity()).isEqualToComparingFieldByField(pipelineEntity);
-    assertThat(triggerPlanExecArgs.getGitSyncBranchContextByteString()).isNotNull();
+    PipelineEntity pipelineEntityToExecute =
+        triggerExecutionHelper.getPipelineEntityToExecute(triggerDetails, triggerWebhookEvent);
+    assertThat(pipelineEntityToExecute).isEqualToComparingFieldByField(pipelineEntity);
   }
 
   @Test
@@ -431,6 +429,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         .fetchExpandedPipelineJSONFromYaml(pipelineEntityV1.getAccountId(), pipelineEntityV1.getOrgIdentifier(),
             pipelineEntityV1.getProjectIdentifier(), pipelineEntityV1.getYaml(),
             OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
+    doReturn(false).when(pmsFeatureFlagHelper).isEnabled("acc", FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION);
     triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
         triggerDetails, payloadBuilder.build(), triggerWebhookEvent, null, null);
   }

@@ -12,6 +12,7 @@ import static io.harness.beans.FeatureName.CLOUDFORMATION_CHANGE_SET;
 import static io.harness.beans.FeatureName.CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SKIP_BASED_ON_STACK_STATUSES;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -40,6 +41,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.GitFile;
@@ -280,9 +282,12 @@ public class CloudFormationCreateStackState extends CloudFormationState {
             }, e -> e.getValue()));
       }
 
+      boolean isTimeoutFailureSupported =
+          featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, executionContext.getAccountId());
       builder.stackNameSuffix(getStackNameSuffix(executionContext, provisioner.getUuid()))
           .customStackName(useCustomStackName ? executionContext.renderExpression(customStackName) : StringUtils.EMPTY)
           .commandType(CloudFormationCommandType.CREATE_STACK)
+          .timeoutSupported(isTimeoutFailureSupported)
           .accountId(executionContext.getApp().getAccountId())
           .appId(executionContext.getApp().getUuid())
           .activityId(activityId)
@@ -622,6 +627,13 @@ public class CloudFormationCreateStackState extends CloudFormationState {
 
     if (ExecutionStatus.FAILED == executionStatus) {
       activityService.updateStatus(activityId, appId, executionStatus);
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .failureTypes(FailureType.TIMEOUT)
+            .errorMessage("Timed out while waiting for task to complete")
+            .build();
+      }
       return ExecutionResponse.builder()
           .executionStatus(ExecutionStatus.FAILED)
           .errorMessage(executionResponse.getErrorMessage())

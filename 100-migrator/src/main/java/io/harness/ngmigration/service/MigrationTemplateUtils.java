@@ -35,10 +35,14 @@ public class MigrationTemplateUtils {
   @Inject InfrastructureResourceClient infrastructureResourceClient;
 
   public JsonNode getTemplateInputs(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+    return getTemplateInputs(ngEntityDetail, accountIdentifier, "");
+  }
+
+  public JsonNode getTemplateInputs(NgEntityDetail ngEntityDetail, String accountIdentifier, String versionLabel) {
     try {
-      String response =
-          NGRestUtils.getResponse(templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(),
-              accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), "", false));
+      String response = NGRestUtils.getResponse(
+          templateResourceClient.getTemplateInputsYaml(ngEntityDetail.getIdentifier(), accountIdentifier,
+              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), versionLabel, false));
       if (response == null || StringUtils.isBlank(response)) {
         return null;
       }

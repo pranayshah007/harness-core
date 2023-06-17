@@ -2,7 +2,7 @@
    {
      "moduleName": "CI",
      "displayName": "Continuous Integration",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-integration",
@@ -30,9 +30,19 @@
      ]
    },
    {
-     "moduleName": "FF",
+     "moduleName": "CHAOS",
+     "displayName": "Chaos Engineering",
+     "version": "",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/chaos-engineering",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
+     "moduleName": "CF",
      "displayName": "Feature Flags",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/feature-flags",
@@ -42,7 +52,7 @@
    {
      "moduleName": "SRM",
      "displayName": "Service Reliability Management",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/service-reliability-management",
@@ -55,7 +65,7 @@
      "version": "Coming Soon",
      "lastModifiedAt": "",
      "versionUrl": "",
-     "releaseNotesLink": "https://developer.harness.io/docs/security-testing-orchestration",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/security-testing-orchestration",
      "microservicesVersionInfo": [
      ]
    },
@@ -65,7 +75,7 @@
      "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
-     "releaseNotesLink": "https://developer.harness.io/release-notes/harness-platform",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/platform",
      "microservicesVersionInfo": [
      ]
    },
@@ -74,7 +84,7 @@
      "displayName": "Delegate (if set to auto-upgrade)",
      "version": "Coming Soon",
      "lastModifiedAt": "",
-     "releaseNotesLink": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/delegate",
      "versionUrl": "",
      "microservicesVersionInfo": [
      ]

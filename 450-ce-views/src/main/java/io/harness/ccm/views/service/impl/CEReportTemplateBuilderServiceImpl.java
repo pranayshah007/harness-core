@@ -10,12 +10,15 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
+
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewTimeRangeType;
 import io.harness.ccm.views.graphql.QLCESortOrder;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
@@ -47,6 +50,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -65,6 +69,8 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryLabelPositions;
@@ -82,10 +88,10 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   @Inject private ViewsBillingService viewsBillingService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
-  @Inject @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
-  @Inject ClickHouseService clickHouseService;
-  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
-  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject @Named("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
+  @Inject private ClickHouseService clickHouseService;
+  @Inject private ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
 
   // For table construction
   private static final String TABLE_START =
@@ -106,10 +112,9 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String ROW_START = "<tr>";
   private static final String ROW_END = "</tr>";
   private static final String COST_TREND = "<span style=\"font-size: 15px; color: %s\">( %s | %s )</span>";
-  private static final String PERSPECTIVE_URL_TEMPLATE =
-      "/account/%s/continuous-efficiency/perspective-explorer/%s/%s?defaultGroupBy=fieldId=%s%%26fieldName=%s%%26identifier=%s%%26identifierName=%s&defaultTimeRange=%s";
-  private static final String PERSPECTIVE_DEFAULT_URL_TEMPLATE =
-      "/account/%s/continuous-efficiency/perspective-explorer/%s/%s";
+
+  private static final String NG_PATH_CONST = "ng/";
+  private static final String PERSPECTIVE_URL_FORMAT = "/account/%s/ce/perspectives/%s/name/%s";
 
   // Template keys
   private static final String VIEW_NAME = "VIEW_NAME";
@@ -120,9 +125,10 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String TOTAL_COST_LAST_WEEK = "TOTAL_COST_LAST_WEEK";
   private static final String TABLE = "TABLE";
   private static final String CHART = "CHART";
-  private static final String PERSPECTIVE_URL = "PERSPECTIVE_URL";
+  private static final String URL = "url";
 
   // Constants
+  private static final String EMPTY_STRING = "";
   private static final String WEEK = "WEEK";
   private static final String DAY = "DAY";
   private static final String THIRTY_DAYS = "30 DAYS";
@@ -136,7 +142,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String UPWARD_ARROW = "&uarr;";
   private static final String DOWNWARD_ARROW = "&darr;";
   private static final String PERCENT = "%";
-  private static final Integer DEFAULT_LIMIT = Integer.MAX_VALUE - 1;
+  private static final int DEFAULT_LIMIT = 10_000;
   private static final Integer DEFAULT_OFFSET = 0;
   private static final Color[] COLORS = {new Color(72, 165, 243), new Color(147, 133, 241), new Color(83, 205, 124),
       new Color(255, 188, 9), new Color(243, 92, 97), new Color(55, 214, 203), new Color(236, 97, 181),
@@ -151,13 +157,13 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
   @Override
   public Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName) {
-    return getTemplatePlaceholders(accountId, viewId, null, bigQuery, cloudProviderTableName);
+      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName, String baseUrl) {
+    return getTemplatePlaceholders(accountId, viewId, null, bigQuery, cloudProviderTableName, baseUrl);
   }
 
   @Override
-  public Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, String reportId, BigQuery bigQuery, String cloudProviderTableName) {
+  public Map<String, String> getTemplatePlaceholders(String accountId, String viewId, String reportId,
+      BigQuery bigQuery, String cloudProviderTableName, String baseUrl) {
     Map<String, String> templatePlaceholders = new HashMap<>();
 
     // Get cloud provider table name here
@@ -181,14 +187,18 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
       filters.add(getTimeFilter(getStartOfMonth(true), QLCEViewTimeFilterOperator.AFTER));
       filters.add(getTimeFilter(getStartOfMonth(false) - 1000, QLCEViewTimeFilterOperator.BEFORE));
     }
-    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    List<QLCEViewGroupBy> groupBy = getGroupBy(accountId, viewId, view);
 
-    // Todo: Pass default group by to cover cost categories
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, false);
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
+    }
+
     // Generating Trend data
-    QLCEViewTrendInfo trendData = viewsBillingService
-                                      .getTrendStatsDataNg(filters, Collections.emptyList(), aggregationFunction,
-                                          viewsQueryHelper.buildQueryParams(accountId, false))
-                                      .getTotalCost();
+    QLCEViewTrendInfo trendData =
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregationFunction, viewQueryParams).getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }
@@ -208,7 +218,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     groupBy.add(QLCEViewGroupBy.builder()
                     .timeTruncGroupBy(QLCEViewTimeTruncGroupBy.builder().resolution(QLCEViewTimeGroupType.DAY).build())
                     .build());
-    List<QLCEViewTimeSeriesData> chartData = null;
+    List<QLCEViewTimeSeriesData> chartData;
     if (isClickHouseEnabled) {
       chartData =
           clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNgForReport(filters, groupBy, aggregationFunction,
@@ -251,9 +261,29 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Generating table for report
     templatePlaceholders.put(TABLE, generateTable(tableData, entity, currency));
-    templatePlaceholders.put(PERSPECTIVE_URL, getPerspectiveUrl(view));
+    templatePlaceholders.put(URL, getPerspectiveUrl(view, baseUrl));
 
     return templatePlaceholders;
+  }
+
+  @NotNull
+  private List<QLCEViewGroupBy> getGroupBy(String accountId, String viewId, CEView view) {
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    if (Objects.nonNull(view.getViewVisualization()) && Objects.nonNull(view.getViewVisualization().getGroupBy())) {
+      groupBy = viewsQueryHelper.getDefaultViewGroupBy(view);
+    } else {
+      log.warn("GroupBy is not present in view: {} for accountId: {}. Setting to default product groupBy", viewId,
+          accountId);
+      groupBy.add(QLCEViewGroupBy.builder()
+                      .entityGroupBy(QLCEViewFieldInput.builder()
+                                         .fieldId("product")
+                                         .fieldName("Product")
+                                         .identifier(ViewFieldIdentifier.COMMON)
+                                         .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
+                                         .build())
+                      .build());
+    }
+    return groupBy;
   }
 
   private List<QLCEViewAggregation> getTotalCostAggregation() {
@@ -482,19 +512,16 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     return byteArrayOutputStream.toByteArray();
   }
 
-  public String getPerspectiveUrl(CEView view) {
-    String defaultUrl =
-        String.format(PERSPECTIVE_DEFAULT_URL_TEMPLATE, view.getAccountId(), view.getUuid(), view.getName());
+  public String getPerspectiveUrl(CEView view, String baseUrl) {
     try {
-      return String.format(PERSPECTIVE_URL_TEMPLATE, view.getAccountId(), view.getUuid(), view.getName(),
-          view.getViewVisualization().getGroupBy().getFieldId(),
-          view.getViewVisualization().getGroupBy().getFieldName(),
-          view.getViewVisualization().getGroupBy().getIdentifier(),
-          view.getViewVisualization().getGroupBy().getIdentifierName(), view.getViewTimeRange().getViewTimeRangeType());
-    } catch (Exception e) {
-      log.info("Can't create explorer Url for perspective : {}", view.getUuid());
+      URIBuilder uriBuilder = new URIBuilder(baseUrl);
+      uriBuilder.setPath(NG_PATH_CONST);
+      uriBuilder.setFragment(format(PERSPECTIVE_URL_FORMAT, view.getAccountId(), view.getUuid(), view.getName()));
+      return uriBuilder.toString();
+    } catch (URISyntaxException e) {
+      log.error("Error in forming View URL for Scheduled Report", e);
     }
-    return defaultUrl;
+    return EMPTY_STRING;
   }
 
   private Currency getDestinationCurrency(String accountId) {

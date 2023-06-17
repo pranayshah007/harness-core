@@ -24,6 +24,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.NO_APPS_ASSIGNED;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Base.CREATED_AT_KEY;
@@ -157,6 +158,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -265,14 +267,20 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private List<EntitySummaryStats> getEntitySummaryStats(
       String entityIdColumn, String entityNameColumn, String groupByEntityType, Query<Instance> query) {
     List<EntitySummaryStats> entitySummaryStatsList = new ArrayList<>();
-    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-        .createAggregation(Instance.class)
-        .match(query)
-        .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
-            grouping(entityNameColumn, grouping("$first", entityNameColumn)))
-        .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
-            projection("entityName", entityNameColumn), projection("count"))
-        .sort(descending("count"))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+            .createAggregation(Instance.class)
+            .match(query)
+            .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
+                grouping(entityNameColumn, grouping("$first", entityNameColumn)))
+            .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
+                projection("entityName", entityNameColumn), projection("count"))
+            .sort(descending("count"));
+    int limit = wingsPersistence.getMaxDocumentLimit(Instance.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(FlatEntitySummaryStats.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -286,10 +294,15 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private long getInstanceCount(Query<Instance> query) {
     AtomicLong totalCount = new AtomicLong();
-    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-        .createAggregation(Instance.class)
-        .match(query)
-        .group("_id", grouping("count", accumulator("$sum", 1)))
+    AggregationPipeline aggregationPipeline = wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+                                                  .createAggregation(Instance.class)
+                                                  .match(query)
+                                                  .group("_id", grouping("count", accumulator("$sum", 1)));
+    int limit = wingsPersistence.getMaxDocumentLimit(Instance.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(InstanceCount.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -300,12 +313,18 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<EntitySummaryStats> getEnvironmentTypeSummaryStats(Query<Instance> query) {
     List<EntitySummaryStats> entitySummaryStatsList = Lists.newArrayList();
-    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-        .createAggregation(Instance.class)
-        .match(query)
-        .group(Group.id(grouping("envType")), grouping("count", accumulator("$sum", 1)))
-        .project(projection("_id").suppress(), projection("envType", "_id.envType"), projection("count"))
-        .sort(ascending("_id.envType"))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+            .createAggregation(Instance.class)
+            .match(query)
+            .group(Group.id(grouping("envType")), grouping("count", accumulator("$sum", 1)))
+            .project(projection("_id").suppress(), projection("envType", "_id.envType"), projection("count"))
+            .sort(ascending("_id.envType"));
+    int limit = wingsPersistence.getMaxDocumentLimit(Instance.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(EnvironmentSummaryStats.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -403,6 +422,48 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   }
 
   @Override
+  public int consumeAppInstancesForAccount(String accountId, long timestamp, Consumer<Instance> instanceConsumer) {
+    return consumeInstancesForAccount(accountId, timestamp, new ArrayList<>(), instanceConsumer);
+  }
+
+  // CONTAINS EXACTLY THE SAME EXECUTION FLOW THAN getInstancesForAccount
+  private int consumeInstancesForAccount(
+      String accountId, long timestamp, List<String> projectedFields, Consumer<Instance> instanceConsumer) {
+    int count = 0;
+    Query<Instance> query = constructInstanceQueryForAccount(accountId, projectedFields);
+
+    if (timestamp > 0) {
+      query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
+
+      Query<Instance> cloneQuery = constructInstanceQueryForAccount(accountId, projectedFields);
+      cloneQuery.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
+      cloneQuery.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
+      FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
+      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "accountId_deletedAt_createdAt"));
+
+      try (HIterator<Instance> iterator = new HIterator<>(cloneQuery.limit(NO_LIMIT).fetch(findOptions))) {
+        for (Instance instance : iterator) {
+          instanceConsumer.accept(instance);
+          count++;
+        }
+      }
+    }
+
+    query.filter(InstanceKeys.isDeleted, false);
+
+    try (HIterator<Instance> iterator =
+             new HIterator<>(query.limit(NO_LIMIT).fetch(wingsPersistence.analyticNodePreferenceOptions()))) {
+      for (Instance instance : iterator) {
+        instanceConsumer.accept(instance);
+        count++;
+      }
+    }
+
+    log.info("Instances reported {}", count);
+    return count;
+  }
+
+  @Override
   @Nonnull
   public List<Instance> getAppInstancesForAccount(String accountId, long timestamp) {
     return getInstancesForAccount(accountId, timestamp, new ArrayList<>());
@@ -423,11 +484,12 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
       findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "accountId_deletedAt_createdAt"));
 
-      instanceSet.addAll(cloneQuery.asList(findOptions));
+      instanceSet.addAll(cloneQuery.limit(NO_LIMIT).asList(findOptions));
     }
 
-    instanceSet.addAll(
-        query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
+    instanceSet.addAll(query.filter(InstanceKeys.isDeleted, false)
+                           .limit(NO_LIMIT)
+                           .asList(wingsPersistence.analyticNodePreferenceOptions()));
 
     int counter = instanceSet.size();
 
@@ -491,24 +553,31 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     List<AggregationInfo> instanceInfoList = new ArrayList<>();
-    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-        .createAggregation(Instance.class)
-        .match(query)
-        .group(Group.id(grouping("serviceId"), grouping("envId"), grouping("lastArtifactId")),
-            grouping("count", accumulator("$sum", 1)),
-            grouping("appInfo", grouping("$first", projection("id", "appId"), projection("name", "appName"))),
-            grouping(
-                "serviceInfo", grouping("$first", projection("id", "serviceId"), projection("name", "serviceName"))),
-            grouping("envInfo",
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+            .createAggregation(Instance.class)
+            .match(query)
+            .group(Group.id(grouping("serviceId"), grouping("envId"), grouping("lastArtifactId")),
+                grouping("count", accumulator("$sum", 1)),
+                grouping("appInfo", grouping("$first", projection("id", "appId"), projection("name", "appName"))),
+                grouping("serviceInfo",
+                    grouping("$first", projection("id", "serviceId"), projection("name", "serviceName"))),
+                grouping("envInfo",
+                    grouping("$first", projection("id", "envId"), projection("name", "envName"),
+                        projection("type", "envType"))),
+                grouping("artifactInfo",
+                    grouping("$first", projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
+                        projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
+                        projection("deployedAt", "lastDeployedAt"),
+                        projection("sourceName", "lastArtifactSourceName"))),
                 grouping(
-                    "$first", projection("id", "envId"), projection("name", "envName"), projection("type", "envType"))),
-            grouping("artifactInfo",
-                grouping("$first", projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
-                    projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
-                    projection("deployedAt", "lastDeployedAt"), projection("sourceName", "lastArtifactSourceName"))),
-            grouping(
-                "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))))
-        .sort(ascending("_id.serviceId"), ascending("_id.envId"), descending("count"))
+                    "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))))
+            .sort(ascending("_id.serviceId"), ascending("_id.envId"), descending("count"));
+    int limit = wingsPersistence.getMaxDocumentLimit(query.getEntityClass());
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(AggregationInfo.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -532,21 +601,28 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     List<ServiceAggregationInfo> serviceAggregationInfoList = new ArrayList<>();
-    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-        .createAggregation(Instance.class)
-        .match(query)
-        .group(Group.id(grouping("envId"), grouping("lastArtifactId")), grouping("count", accumulator("$sum", 1)),
-            grouping("appInfo", grouping("$first", projection("id", "appId"), projection("name", "appName"))),
-            grouping("envInfo",
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+            .createAggregation(Instance.class)
+            .match(query)
+            .group(Group.id(grouping("envId"), grouping("lastArtifactId")), grouping("count", accumulator("$sum", 1)),
+                grouping("appInfo", grouping("$first", projection("id", "appId"), projection("name", "appName"))),
+                grouping("envInfo",
+                    grouping("$first", projection("id", "envId"), projection("name", "envName"),
+                        projection("type", "envType"))),
+                grouping("artifactInfo",
+                    grouping("$first", projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
+                        projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
+                        projection("deployedAt", "lastDeployedAt"),
+                        projection("sourceName", "lastArtifactSourceName"))),
                 grouping(
-                    "$first", projection("id", "envId"), projection("name", "envName"), projection("type", "envType"))),
-            grouping("artifactInfo",
-                grouping("$first", projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
-                    projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
-                    projection("deployedAt", "lastDeployedAt"), projection("sourceName", "lastArtifactSourceName"))),
-            grouping(
-                "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))))
-        .sort(ascending("_id.envId"), descending("count"))
+                    "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))))
+            .sort(ascending("_id.envId"), descending("count"));
+    int limit = wingsPersistence.getMaxDocumentLimit(query.getEntityClass());
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(ServiceAggregationInfo.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -908,27 +984,33 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     List<AggregationInfo> instanceInfoList = new ArrayList<>();
-    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
-        .createAggregation(Instance.class)
-        .match(query)
-        .group(Group.id(grouping("envId"), grouping("infraMappingId"), grouping("lastArtifactId")),
-            grouping("count", accumulator("$sum", 1)),
-            grouping("appInfo", grouping("$first", projection("id", "appId"), projection("name", "appName"))),
-            grouping("infraMappingInfo",
-                grouping("$first", projection("id", "infraMappingId"), projection("name", "infraMappingName"))),
-            grouping("envInfo",
-                grouping(
-                    "$first", projection("id", "envId"), projection("name", "envName"), projection("type", "envType"))),
-            grouping("helmChartInfo",
-                grouping("$first", projection("name", "instanceInfo.helmChartInfo.name"),
-                    projection("version", "instanceInfo.helmChartInfo.version"),
-                    projection("repoUrl", "instanceInfo.helmChartInfo.repoUrl"))),
-            grouping("artifactInfo",
-                grouping("$last", projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
-                    projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
-                    projection("deployedAt", "lastDeployedAt"), projection("sourceName", "lastArtifactSourceName"),
-                    projection("lastWorkflowExecutionId", "lastWorkflowExecutionId"))))
-        .sort(descending("count"))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
+            .createAggregation(Instance.class)
+            .match(query)
+            .group(Group.id(grouping("envId"), grouping("infraMappingId"), grouping("lastArtifactId")),
+                grouping("count", accumulator("$sum", 1)),
+                grouping("appInfo", grouping("$first", projection("id", "appId"), projection("name", "appName"))),
+                grouping("infraMappingInfo",
+                    grouping("$first", projection("id", "infraMappingId"), projection("name", "infraMappingName"))),
+                grouping("envInfo",
+                    grouping("$first", projection("id", "envId"), projection("name", "envName"),
+                        projection("type", "envType"))),
+                grouping("helmChartInfo",
+                    grouping("$first", projection("name", "instanceInfo.helmChartInfo.name"),
+                        projection("version", "instanceInfo.helmChartInfo.version"),
+                        projection("repoUrl", "instanceInfo.helmChartInfo.repoUrl"))),
+                grouping("artifactInfo",
+                    grouping("$last", projection("id", "lastArtifactId"), projection("name", "lastArtifactName"),
+                        projection("buildNo", "lastArtifactBuildNum"), projection("streamId", "lastArtifactStreamId"),
+                        projection("deployedAt", "lastDeployedAt"), projection("sourceName", "lastArtifactSourceName"),
+                        projection("lastWorkflowExecutionId", "lastWorkflowExecutionId"))))
+            .sort(descending("count"));
+    int limit = wingsPersistence.getMaxDocumentLimit(query.getEntityClass());
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(AggregationInfo.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(Instance.class), TimeUnit.MILLISECONDS)
@@ -1117,7 +1199,8 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .greaterThanOrEq(fromTimestamp)
                                         .field(Instance.CREATED_AT_KEY)
                                         .lessThanOrEq(rhsCreatedAt)
-                                        .project(InstanceKeys.appId, true);
+                                        .project(InstanceKeys.appId, true)
+                                        .limit(NO_LIMIT);
 
     instanceQuery.project(InstanceKeys.uuid, false);
 
@@ -1513,6 +1596,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                                        .createAggregation(Instance.class)
                                                        .match(query)
                                                        .group(Group.id(grouping(InstanceKeys.serviceId)));
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
     final Iterator<String> aggregateForCount =
         HPersistence.retry(()
                                -> aggregationPipelineCount.aggregate(String.class,
@@ -1533,6 +1619,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   public ServiceInstanceDashboard getServiceInstanceDashboardFiltered(
       String accountId, String appId, String serviceId, PageRequest<WorkflowExecution> pageRequest) {
     return getServiceInstanceDashboard(accountId, appId, serviceId, pageRequest);
+  }
+
+  @Override
+  public boolean isInstanceConsumerEnabled(String accountId) {
+    return featureFlagService.isEnabled(FeatureName.SPG_CG_STATS_INSTANCE_CONSUMER, accountId);
   }
 
   private ServiceInfoResponseSummary createServiceSummary(ServiceInfoSummary item) {

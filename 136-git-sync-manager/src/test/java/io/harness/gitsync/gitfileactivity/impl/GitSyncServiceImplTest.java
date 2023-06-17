@@ -13,7 +13,7 @@ import static io.harness.gitsync.core.beans.GitCommit.GitCommitProcessingStatus.
 import static io.harness.rule.OwnerRule.ABHINAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.OwnedBy;

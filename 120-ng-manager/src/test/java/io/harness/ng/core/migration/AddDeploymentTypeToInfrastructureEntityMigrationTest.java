@@ -43,19 +43,19 @@ public class AddDeploymentTypeToInfrastructureEntityMigrationTest extends NgMana
       + "    envIdentifier: ENV_IDENTIFIER\n";
 
   private static final String expectedYaml = "infrastructureDefinition:\n"
-      + "  name: \"IDENTIFIER1\"\n"
-      + "  identifier: \"IDENTIFIER1\"\n"
-      + "  description: \"1st infra\"\n"
+      + "  name: IDENTIFIER1\n"
+      + "  identifier: IDENTIFIER1\n"
+      + "  description: 1st infra\n"
       + "  tags: {}\n"
-      + "  type: \"KubernetesDirect\"\n"
+      + "  type: KubernetesDirect\n"
       + "  spec:\n"
-      + "    connectorRef: \"k8s_master_url\"\n"
-      + "    namespace: \"default\"\n"
-      + "    releaseName: \"release-<+INFRA_KEY>\"\n"
-      + "  orgIdentifier: \"ORG_ID\"\n"
-      + "  projectIdentifier: \"PROJECT_ID\"\n"
-      + "  envIdentifier: \"ENV_IDENTIFIER\"\n"
-      + "  deploymentType: \"Kubernetes\"\n";
+      + "    connectorRef: k8s_master_url\n"
+      + "    namespace: default\n"
+      + "    releaseName: release-<+INFRA_KEY>\n"
+      + "  orgIdentifier: ORG_ID\n"
+      + "  projectIdentifier: PROJECT_ID\n"
+      + "  envIdentifier: ENV_IDENTIFIER\n"
+      + "  deploymentType: Kubernetes\n";
 
   @Test
   @Owner(developers = INDER)

@@ -16,11 +16,11 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -39,6 +39,7 @@ import io.harness.delegate.task.k8s.K8sScaleRequest;
 import io.harness.delegate.task.k8s.K8sScaleResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.exception.WingsException;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -128,7 +129,9 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .thenReturn(true);
     when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutIntervalInMillis))
         .thenReturn(pods);
-    when(k8sTaskHelperBase.tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class))).thenReturn(pods);
+    when(k8sTaskHelperBase.tagNewPods(anyList(), anyList())).thenReturn(pods);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
 
     K8sDeployResponse response = k8sScaleRequestHandler.executeTaskInternal(
         scaleRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
@@ -143,7 +146,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .getCurrentReplicas(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback));
     verify(k8sTaskHelperBase, times(1))
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
-    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyList(), anyList());
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
   }
@@ -189,10 +192,12 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .thenReturn(true);
     when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutIntervalInMillis))
         .thenReturn(pods);
-    when(k8sTaskHelperBase.tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class))).thenReturn(pods);
+    when(k8sTaskHelperBase.tagNewPods(anyList(), anyList())).thenReturn(pods);
     when(k8sTaskHelperBase.doStatusCheck(
              any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback), eq(true)))
         .thenReturn(true);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
 
     K8sDeployResponse response = k8sScaleRequestHandler.executeTaskInternal(
         scaleRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
@@ -209,7 +214,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyList(), anyList());
   }
 
   @Test
@@ -279,6 +284,8 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .thenThrow(thrownException);
     when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutIntervalInMillis))
         .thenReturn(pods);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
 
     assertThatThrownBy(()
                            -> k8sScaleRequestHandler.executeTaskInternal(
@@ -291,7 +298,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(1))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyList(), anyList());
     verify(k8sTaskHelperBase, times(0))
         .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback));
   }
@@ -323,6 +330,8 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
                                           .versioned(false)
                                           .build();
 
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
     RuntimeException thrownException = new RuntimeException("Failed to list pods");
     when(k8sTaskHelperBase.getCurrentReplicas(
              any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback)))
@@ -338,7 +347,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(0))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyList(), anyList());
     verify(k8sTaskHelperBase, times(0))
         .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback));
   }
@@ -369,7 +378,9 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
                                           .namespace(namespace)
                                           .versioned(false)
                                           .build();
-
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenThrow(new WingsException(
+            "Invalid Kubernetes resource name " + scaleRequest.getWorkload() + ". Should be in format Kind/Name"));
     assertThatThrownBy(()
                            -> k8sScaleRequestHandler.executeTaskInternal(
                                scaleRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress))
@@ -382,7 +393,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(0))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyList(), anyList());
     verify(k8sTaskHelperBase, times(0))
         .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback));
   }
@@ -412,6 +423,8 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
                                           .namespace(namespace)
                                           .versioned(false)
                                           .build();
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
 
     when(k8sTaskHelperBase.getCurrentReplicas(
              any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback)))
@@ -429,7 +442,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(0))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(0)).tagNewPods(anyList(), anyList());
     verify(k8sTaskHelperBase, times(0))
         .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback));
   }
@@ -472,7 +485,9 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .thenReturn(1);
     when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutIntervalInMillis))
         .thenReturn(pods);
-    when(k8sTaskHelperBase.tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class))).thenReturn(pods);
+    when(k8sTaskHelperBase.tagNewPods(anyList(), anyList())).thenReturn(pods);
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
 
     K8sDeployResponse response = k8sScaleRequestHandler.executeTaskInternal(
         scaleRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
@@ -489,7 +504,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(2), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyList(), anyList());
   }
 
   @Test
@@ -526,6 +541,8 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
     doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
 
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
     when(k8sTaskHelperBase.getCurrentReplicas(
              any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback)))
         .thenReturn(1);
@@ -534,7 +551,7 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .thenReturn(true);
     when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutIntervalInMillis))
         .thenReturn(pods);
-    when(k8sTaskHelperBase.tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class))).thenReturn(pods);
+    when(k8sTaskHelperBase.tagNewPods(anyList(), anyList())).thenReturn(pods);
     when(k8sTaskHelperBase.doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback)))
         .thenReturn(true);
 
@@ -553,6 +570,6 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
         .scale(any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(10), eq(logCallback), eq(true));
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
-    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
+    verify(k8sTaskHelperBase, times(1)).tagNewPods(anyList(), anyList());
   }
 }

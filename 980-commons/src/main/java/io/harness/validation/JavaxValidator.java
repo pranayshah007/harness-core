@@ -19,7 +19,7 @@ import javax.validation.Validator;
 
 @Singleton
 public class JavaxValidator {
-  public static void validateOrThrow(Object obj) {
+  public static void validateBeanOrThrow(Object obj) {
     Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
     Set<ConstraintViolation<Object>> violations = validator.validate(obj);
     if (isNotEmpty(violations)) {

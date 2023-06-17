@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmDeployBaseStepInfo.HelmDeployBaseStepInfoKeys;
 import io.harness.cdng.helm.NativeHelmDeployOutcome.NativeHelmDeployOutcomeBuilder;
@@ -33,6 +34,7 @@ import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCmdResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCommandRequestNG;
+import io.harness.delegate.task.helm.HelmInstallCommandRequestNG.HelmInstallCommandRequestNGBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -74,6 +76,7 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -191,12 +194,17 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
     List<String> manifestFilesContents =
         nativeHelmStepHelper.renderValues(manifestOutcome, ambiance, valuesFileContents);
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+    HelmDeployStepParams helmDeployStepParams = (HelmDeployStepParams) stepParameters.getSpec();
 
-    boolean ignoreHelmHistFailure = CDStepHelper.getParameterFieldBooleanValue(
-        ((HelmDeployStepParams) stepParameters.getSpec()).getIgnoreReleaseHistFailStatus(),
-        HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
+    boolean ignoreHelmHistFailure =
+        CDStepHelper.getParameterFieldBooleanValue(helmDeployStepParams.getIgnoreReleaseHistFailStatus(),
+            HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
 
-    HelmInstallCommandRequestNG helmCommandRequest =
+    boolean skipSteadyStateCheck =
+        CDStepHelper.getParameterFieldBooleanValue(helmDeployStepParams.getSkipSteadyStateCheck(),
+            HelmDeployBaseStepInfoKeys.skipSteadyStateCheck, stepParameters);
+
+    HelmInstallCommandRequestNGBuilder helmCommandRequestBuilder =
         HelmInstallCommandRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .commandName(HELM_COMMAND_NAME)
@@ -214,10 +222,17 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
                 AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_STEADY_STATE_CHECK_1_16))
             .useLatestKubectlVersion(
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NEW_KUBECTL_VERSION))
+            .releaseHistoryPrefix(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
             .shouldOpenFetchFilesLogStream(true)
             .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
-            .build();
+            .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
+            .skipSteadyStateCheck(skipSteadyStateCheck);
 
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
+      helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));
+    }
+    HelmInstallCommandRequestNG helmCommandRequest = helmCommandRequestBuilder.build();
     if (!ParameterField.isNull(stepParameters.getTimeout())) {
       helmCommandRequest.setTimeoutInMillis(
           NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue()));

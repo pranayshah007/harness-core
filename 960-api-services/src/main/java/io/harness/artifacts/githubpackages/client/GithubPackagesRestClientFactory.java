@@ -10,9 +10,13 @@ package io.harness.artifacts.githubpackages.client;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 
 @OwnedBy(CDC)
 public interface GithubPackagesRestClientFactory {
   GithubPackagesRestClient getGithubPackagesRestClient(GithubPackagesInternalConfig githubPackagesInternalConfig);
+  DockerRegistryRestClient getGithubPackagesDockerRestClient(GithubPackagesInternalConfig githubPackagesInternalConfig);
+  GithubPackagesMavenRestClient getGithubPackagesMavenRestClient(
+      GithubPackagesInternalConfig githubPackagesInternalConfig);
 }

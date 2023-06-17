@@ -11,13 +11,14 @@ import static io.harness.rule.OwnerRule.HANTANG;
 
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.credit.remote.admin.AdminCreditHttpClient;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.marketplace.gcp.GcpMarketPlaceApiHandler;
 import io.harness.rest.RestResponse;
@@ -63,6 +64,7 @@ public class AccountResourceTest extends CategoryTest {
   private static SampleDataProviderService sampleDataProviderService = mock(SampleDataProviderService.class);
   private static HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupService.class);
   private static AdminLicenseHttpClient adminLicenseHttpClient = mock(AdminLicenseHttpClient.class);
+  private static AdminCreditHttpClient adminCreditHttpClient = mock(AdminCreditHttpClient.class);
   private static Provider<SampleDataProviderService> sampleDataProviderServiceProvider =
       (Provider<SampleDataProviderService>) mock(Provider.class);
 
@@ -71,7 +73,7 @@ public class AccountResourceTest extends CategoryTest {
       ResourceTestRule.builder()
           .instance(new AccountResource(accountService, userService, licenseServiceProvider, accountPermissionUtils,
               featureService, jobScheduler, gcpMarketPlaceApiHandler, sampleDataProviderServiceProvider,
-              mock(AuthService.class), harnessUserGroupService, adminLicenseHttpClient,
+              mock(AuthService.class), harnessUserGroupService, adminLicenseHttpClient, adminCreditHttpClient,
               mock(DelegateAuthService.class)))
           .build();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();

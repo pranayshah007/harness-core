@@ -38,7 +38,7 @@ public class GoogleFunctionsGenOneRollbackStepNode extends CdAbstractStepNode {
   @JsonProperty("type")
   @NotNull
   GoogleFunctionsGenOneRollbackStepNode.StepType type =
-      GoogleFunctionsGenOneRollbackStepNode.StepType.CloudFunctionRollbackGenOne;
+      GoogleFunctionsGenOneRollbackStepNode.StepType.RollbackCloudFunctionGenOne;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   GoogleFunctionsGenOneRollbackStepInfo googleFunctionsGenOneRollbackStepInfo;
@@ -54,7 +54,7 @@ public class GoogleFunctionsGenOneRollbackStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    CloudFunctionRollbackGenOne(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
+    RollbackCloudFunctionGenOne(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
     @Getter String name;
     StepType(String name) {
       this.name = name;

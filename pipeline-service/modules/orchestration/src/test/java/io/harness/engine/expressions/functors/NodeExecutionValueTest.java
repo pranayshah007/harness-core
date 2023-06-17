@@ -158,7 +158,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                               StrategyMetadata.newBuilder()
                                   .setMatrixMetadata(MatrixMetadata.newBuilder().putMatrixValues("os", "test").build())
                                   .setCurrentIteration(2)
-                                  .build()))
+                                  .build(),
+                              false))
                           .build())
             .nodeId(node4.getUuid())
             .name(node4.getName())

@@ -15,15 +15,20 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
+import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -76,14 +81,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anySetOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
@@ -108,6 +113,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.event.model.EventType;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserAlreadyPresentException;
@@ -116,9 +122,11 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -130,6 +138,7 @@ import software.wings.beans.AccountRole;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.EmailVerificationToken;
 import software.wings.beans.Event.Type;
 import software.wings.beans.LicenseInfo;
@@ -157,6 +166,7 @@ import software.wings.security.JWT_CATEGORY;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.SecretManager;
+import software.wings.security.UserThreadLocal;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.AuthenticationUtils;
 import software.wings.security.authentication.MarketPlaceConfig;
@@ -222,6 +232,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -304,7 +315,7 @@ public class UserServiceTest extends WingsBaseTest {
   @Inject WingsPersistence realWingsPersistence;
   @Mock PortalConfig portalConfig;
 
-  @Mock UserServiceHelper userServiceHelper;
+  @Inject @InjectMocks UserServiceHelper userServiceHelper;
 
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
@@ -317,9 +328,7 @@ public class UserServiceTest extends WingsBaseTest {
   public void setupMocks() {
     when(featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, ACCOUNT_ID)).thenReturn(true);
     when(configuration.getSupportEmail()).thenReturn(SUPPORT_EMAIL);
-    doNothing()
-        .when(userServiceLimitChecker)
-        .limitCheck(Mockito.anyString(), anyListOf(User.class), anySetOf(String.class));
+    doNothing().when(userServiceLimitChecker).limitCheck(Mockito.anyString(), anyList(), anySet());
 
     when(wingsPersistence.createQuery(User.class)).thenReturn(query);
     when(query.filter(any(), any())).thenReturn(query);
@@ -620,6 +629,16 @@ public class UserServiceTest extends WingsBaseTest {
     marketPlace.setProductCode(ffProductCode);
     user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
+
+    // AWS marketplace signUp for CI
+    String ciProductCode = "CI";
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceProductCode("").build());
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceFfProductCode(ciProductCode).build());
+    marketPlace.setProductCode(ciProductCode);
+    user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
+    assertThat(user).isEqualTo(savedUser);
   }
 
   /**
@@ -654,14 +673,12 @@ public class UserServiceTest extends WingsBaseTest {
     when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
         .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(ACCOUNT_ID)).thenReturn(PORTAL_URL + "/");
-
     userService.register(userBuilder.build());
 
     verify(wingsPersistence).saveAndGet(eq(User.class), userArgumentCaptor.capture());
     assertThat(BCrypt.checkpw(new String(PASSWORD), userArgumentCaptor.getValue().getPasswordHash())).isTrue();
     assertThat(userArgumentCaptor.getValue().isEmailVerified()).isFalse();
     assertThat(userArgumentCaptor.getValue().getCompanyName()).isEqualTo(COMPANY_NAME);
-
     verify(emailDataNotificationService).send(emailDataArgumentCaptor.capture());
     assertThat(emailDataArgumentCaptor.getValue().getTo().get(0)).isEqualTo(USER_EMAIL);
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo(SIGNUP_EMAIL_TEMPLATE_NAME);
@@ -947,20 +964,63 @@ public class UserServiceTest extends WingsBaseTest {
    * Should delete user flow V2.
    */
   @Test
-  @Owner(developers = BOOPESH)
+  @Owner(developers = {BOOPESH, SHASHANK})
   @Category(UnitTests.class)
-  public void shouldDeleteUserV2() {
-    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+  public void shouldDeleteUserV2WithAccountLevelDataFFOff() {
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .build();
+    User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
-    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
-    when(userGroupService.list(ACCOUNT_ID,
-             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
-        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
-    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);
     verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void shouldDeleteUserV2WithAccountLevelDataFFOn() {
+    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    Account account = Account.Builder.anAccount()
+                          .withAccountName(ACCOUNT_NAME)
+                          .withCompanyName(COMPANY_NAME)
+                          .withUuid(ACCOUNT_ID)
+                          .build();
+    User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
+    when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence).findAndDelete(any(), any());
+    verify(cache).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+
+    user.getUserAccountLevelDataMap().remove(ACCOUNT_ID);
+    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, NG, UserSource.MANUAL);
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence, times(1)).findAndDelete(any(), any());
+    verify(cache, times(2)).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
   }
   /**
    * Should fetch user.
@@ -1545,6 +1605,16 @@ public class UserServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateNameThrowsInvalidArgumentsException() {
+    final String blankName = "  ";
+    assertThatThrownBy(() -> userService.validateName(blankName)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+  @Test
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testJWTToken() {
@@ -1702,16 +1772,17 @@ public class UserServiceTest extends WingsBaseTest {
     Account account = getAccount(PAID);
     account.setUuid("accountId");
 
-    User user = anUser()
-                    .name(userName)
-                    .appId(generateUuid())
-                    .defaultAccountId(account.getUuid())
-                    .token(token)
-                    .accounts(Arrays.asList(account))
-                    .email("emailId")
-                    .emailVerified(true)
-                    .uuid("userId")
-                    .build();
+    User user =
+        anUser()
+            .name("Evil<img src=https://poc.shellcode.se/spongebob-ninja.jpg><h1>Hacker</h1><svg/onload=alert()>")
+            .appId(generateUuid())
+            .defaultAccountId(account.getUuid())
+            .token(token)
+            .accounts(Arrays.asList(account))
+            .email("emailId")
+            .emailVerified(true)
+            .uuid("userId")
+            .build();
 
     userService.sendAccountLockedNotificationMail(user, 2);
     verify(emailDataNotificationService, times(1)).send(any(EmailData.class));
@@ -1932,6 +2003,52 @@ public class UserServiceTest extends WingsBaseTest {
 
     assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
     verify(signupService, times(1)).sendEmail(any(), anyString(), any());
+  }
+
+  /**
+   * Should fetch user.
+   */
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void userWithSupportAccounts() {
+    Account account = Account.Builder.anAccount().withUuid(generateUuid()).build();
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
+    List<Account> accountList = Arrays.asList(account);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
+    User user = userService.get(USER_ID, true);
+    assertThat(user.getSupportAccounts().size()).isEqualTo(1);
+    assertThat(user.getSupportAccounts().get(0).getUuid()).isEqualTo(account.getUuid());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGenerateCannySsoJwt() {
+    String returnToUrl = "https://harness-io.canny.io/admin/settings/sso-redirect?works=true";
+    String cannyBaseUrl = "https://canny.io/api/redirects/sso";
+    String companyId = "123456789";
+    when(configuration.getPortal().getCannyBaseUrl()).thenReturn(cannyBaseUrl);
+    when(configuration.getPortal().getJwtCannySecret()).thenReturn("yv7TV4NsP4fps8pLdGuVdV8CHgJT3wCaFgTEg7dKcanzKN7C");
+
+    User user = userBuilder.build();
+    UserThreadLocal.set(user);
+
+    CannySsoLoginResponse cannySsoLoginResponse = userService.generateCannySsoJwt(returnToUrl, companyId);
+
+    assertThat(cannySsoLoginResponse.getUserId()).isEqualTo(user.getUuid());
+
+    String redirectUrl = cannySsoLoginResponse.getRedirectUrl();
+    String cannyBaseUrlResult = redirectUrl.split("\\?")[0];
+    assertThat(cannyBaseUrlResult).isEqualTo(cannyBaseUrl);
+
+    String queryParams = redirectUrl.split("\\?")[1];
+    String companyIdResult = queryParams.split("&")[0];
+    assertThat(companyIdResult).isEqualTo("companyID=" + companyId);
+
+    String returnToUrlResult = redirectUrl.split("&")[2];
+    assertThat(returnToUrlResult).isEqualTo("redirect=" + returnToUrl);
   }
 
   private List<Account> getAccounts() {

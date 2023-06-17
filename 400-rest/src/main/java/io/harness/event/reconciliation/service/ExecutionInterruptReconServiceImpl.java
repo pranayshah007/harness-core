@@ -9,6 +9,7 @@ package io.harness.event.reconciliation.service;
 
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.addTimeQuery;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.performReconciliationHelper;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -104,7 +105,7 @@ public class ExecutionInterruptReconServiceImpl implements DeploymentReconServic
     addTimeQuery(
         query, durationStartTs, durationEndTs, ExecutionInterruptKeys.createdAt, ExecutionInterruptKeys.lastUpdatedAt);
 
-    try (HIterator<ExecutionInterrupt> iterator = new HIterator<>(query.fetch())) {
+    try (HIterator<ExecutionInterrupt> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
       for (ExecutionInterrupt executionInterrupt : iterator) {
         checkAndAddIfRequired(executionInterrupt);
       }

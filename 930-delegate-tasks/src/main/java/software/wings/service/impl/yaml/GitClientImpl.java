@@ -61,6 +61,8 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.ssh.SshFactory;
+import io.harness.shell.ssh.client.jsch.JschConnection;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -1038,7 +1040,7 @@ public class GitClientImpl implements GitClient {
       Collection<Ref> refs = lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true).call();
       log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Git validation failed [{}]", e);
+      log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Git validation failed [{}]", e.getMessage());
 
       if (e instanceof InvalidRemoteException || e.getCause() instanceof NoRemoteRepositoryException) {
         return "Invalid git repo " + repoUrl;
@@ -1324,7 +1326,11 @@ public class GitClientImpl implements GitClient {
       protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        return getSSHSession(sshSessionConfig);
+        if (sshSessionConfig.isUseSshClient()) {
+          return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
+        } else {
+          return getSSHSession(sshSessionConfig);
+        }
       }
 
       @Override

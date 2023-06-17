@@ -10,7 +10,6 @@ package io.harness.connector.impl;
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.beans.FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
@@ -129,7 +128,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -226,18 +224,30 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
       Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable) {
     Page<Connector> connectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, null);
+    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+  }
+
+  @Override
+  public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    Page<Connector> connectors =
+        listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+            includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, version);
     return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
   }
 
   private Page<Connector> listHelper(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
-      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable) {
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
     Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
-    Criteria criteria =
-        filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier, projectIdentifier,
-            filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope, isBuiltInSMDisabled);
+    Criteria criteria = filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope,
+        isBuiltInSMDisabled, version);
     Page<Connector> connectors;
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
@@ -1174,9 +1184,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches, Pageable pageable) {
-    filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.KUBERNETES_CLUSTER}));
+    filterProperties.setTypes(List.of(ConnectorType.KUBERNETES_CLUSTER));
     Page<Connector> k8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, null);
 
     List<String> k8sConnectorRefList = new ArrayList<>();
     for (Connector k8sConnector : k8sConnectors) {
@@ -1184,32 +1194,33 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     log.info("k8sConnectorRefList {}", k8sConnectorRefList);
 
-    filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.CE_KUBERNETES_CLUSTER}));
+    Pageable ccmK8sPageable = getPageRequest(0, 100, null);
+    filterProperties.setTypes(List.of(ConnectorType.CE_KUBERNETES_CLUSTER));
     filterProperties.setCcmConnectorFilter(CcmConnectorFilter.builder().k8sConnectorRef(k8sConnectorRefList).build());
-    Page<Connector> ccmk8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
-    log.info("ccmk8sConnectors count elements: {} pages: {}", ccmk8sConnectors.getTotalElements(),
-        ccmk8sConnectors.getTotalPages());
-    return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmk8sConnectors);
+    Page<Connector> ccmK8sConnectors =
+        listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+            includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, ccmK8sPageable, null);
+    log.info("ccmK8sConnectors count elements: {} pages: {}", ccmK8sConnectors.getTotalElements(),
+        ccmK8sConnectors.getTotalPages());
+    return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmK8sConnectors);
+  }
+
+  @Override
+  public Long countConnectors(String accountIdentifier) {
+    return connectorRepository.countByAccountIdentifierAndDeletedIsFalse(accountIdentifier);
   }
 
   private Boolean isBuiltInSMDisabled(String accountIdentifier) {
-    Boolean isBuiltInSMDisabled = false;
-
-    if (isNgSettingsFFEnabled(accountIdentifier)) {
-      isBuiltInSMDisabled = parseBoolean(
-          NGRestUtils
-              .getResponse(settingsClient.getSetting(
-                  SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
-              .getValue());
-    }
-    return isBuiltInSMDisabled;
+    return parseBoolean(
+        NGRestUtils
+            .getResponse(settingsClient.getSetting(
+                SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+            .getValue());
   }
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
     return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
   }
 
@@ -1225,10 +1236,5 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(
         accountClient.isFeatureFlagEnabled(PL_FORCE_DELETE_CONNECTOR_SECRET.name(), accountIdentifier));
-  }
-
-  @VisibleForTesting
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }

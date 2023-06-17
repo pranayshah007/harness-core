@@ -72,18 +72,16 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
   }
 
   boolean checkTriggerEligibility(TriggerDetails triggerDetails) {
-    boolean result = false;
+    boolean result = true;
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(triggerDetails);
-      ngTriggerService.updateTriggerWithValidationStatus(triggerDetails.getNgTriggerEntity(), validationResult);
+      ngTriggerService.updateTriggerWithValidationStatus(triggerDetails.getNgTriggerEntity(), validationResult, true);
 
       if (!validationResult.isSuccess()) {
         log.error("Error while requesting pipeline execution for Build Trigger: "
             + TriggerHelper.getTriggerRef(triggerDetails.getNgTriggerEntity()));
         result = false;
       }
-
-      result = true;
     } catch (Exception e) {
       log.error(String.format("Failed while validating trigger: %s during Build Event Processing",
                     TriggerHelper.getTriggerRef(triggerDetails.getNgTriggerEntity())),

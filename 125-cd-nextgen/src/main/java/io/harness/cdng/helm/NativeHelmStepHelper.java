@@ -24,6 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -53,6 +54,7 @@ import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandRequestNG;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
@@ -73,6 +75,7 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -103,6 +106,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDP)
@@ -112,6 +116,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
+  public static final String RELEASE_HISTORY_PREFIX = "harness.";
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private CDStepHelper cdStepHelper;
@@ -120,14 +125,14 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   public TaskChainResponse queueNativeHelmTask(StepElementParameters stepElementParameters,
       HelmCommandRequestNG helmCommandRequest, Ambiance ambiance,
       NativeHelmExecutionPassThroughData executionPassThroughData) {
+    TaskType taskType = getHelmTaskType(helmCommandRequest, ambiance);
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {helmCommandRequest})
-                            .taskType(TaskType.HELM_COMMAND_TASK_NG.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
-
-    String taskName = TaskType.HELM_COMMAND_TASK_NG.getDisplayName() + " : " + helmCommandRequest.getCommandName();
+    String taskName = taskType.getDisplayName() + " : " + helmCommandRequest.getCommandName();
     HelmSpecParameters helmSpecParameters = (HelmSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
         referenceFalseKryoSerializer, helmSpecParameters.getCommandUnits(), taskName,
@@ -138,6 +143,17 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
         .chainEnd(true)
         .passThroughData(executionPassThroughData)
         .build();
+  }
+
+  private TaskType getHelmTaskType(HelmCommandRequestNG helmCommandRequest, Ambiance ambiance) {
+    if (helmCommandRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {
+      return TaskType.HELM_COMMAND_TASK_NG_RANCHER;
+    }
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
+        && isNotEmpty(helmCommandRequest.getServiceHooks())) {
+      return TaskType.HELM_COMMAND_TASK_NG_V2;
+    }
+    return TaskType.HELM_COMMAND_TASK_NG;
   }
 
   public List<String> renderValues(
@@ -281,6 +297,17 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
       }
     }
     return helmChartManifest;
+  }
+
+  public String getReleaseHistoryPrefix(Ambiance ambiance) {
+    boolean renameReleaseHistoryFFEnabled = cdFeatureFlagHelper.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG);
+
+    if (!renameReleaseHistoryFFEnabled) {
+      return StringUtils.EMPTY;
+    }
+
+    return RELEASE_HISTORY_PREFIX;
   }
 
   private List<ManifestOutcome> getOrderedManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {

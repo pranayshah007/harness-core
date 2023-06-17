@@ -20,6 +20,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceWithConnectorSpec;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
@@ -54,8 +55,11 @@ public class SetupUsageEventServiceImpl implements SetupUsageEventService {
     IdentifierRefProtoDTO referredByIdentifier = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
         projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
         monitoredServiceDTO.getIdentifier());
-    EntityDetailProtoDTO referredByEntity =
-        EntityDetailProtoDTO.newBuilder().setIdentifierRef(referredByIdentifier).setType(MONITORED_SERVICE).build();
+    EntityDetailProtoDTO referredByEntity = EntityDetailProtoDTO.newBuilder()
+                                                .setIdentifierRef(referredByIdentifier)
+                                                .setName(monitoredServiceDTO.getName())
+                                                .setType(MONITORED_SERVICE)
+                                                .build();
 
     List<EntityDetailProtoDTO> referredConnectorEntities =
         getReferredConnectorEntities(projectParams, monitoredServiceDTO);
@@ -69,12 +73,15 @@ public class SetupUsageEventServiceImpl implements SetupUsageEventService {
   }
 
   @Override
-  public void sendDeleteEventsForMonitoredService(ProjectParams projectParams, String identifier) {
+  public void sendDeleteEventsForMonitoredService(ProjectParams projectParams, MonitoredService monitoredService) {
     IdentifierRefProtoDTO referredByIdentifier =
         identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(projectParams.getAccountIdentifier(),
-            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), identifier);
-    EntityDetailProtoDTO referredByEntity =
-        EntityDetailProtoDTO.newBuilder().setIdentifierRef(referredByIdentifier).setType(MONITORED_SERVICE).build();
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), monitoredService.getIdentifier());
+    EntityDetailProtoDTO referredByEntity = EntityDetailProtoDTO.newBuilder()
+                                                .setIdentifierRef(referredByIdentifier)
+                                                .setName(monitoredService.getName())
+                                                .setType(MONITORED_SERVICE)
+                                                .build();
 
     // Send empty dependency events
     sendEvents(projectParams.getAccountIdentifier(), referredByEntity, new ArrayList<>(), CONNECTORS);

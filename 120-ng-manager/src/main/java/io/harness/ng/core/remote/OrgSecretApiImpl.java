@@ -31,7 +31,6 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.OrgSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
-import io.harness.spec.server.ng.v1.model.SecretValidationMetadata;
 import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 import io.harness.utils.ApiUtils;
 
@@ -105,8 +104,8 @@ public class OrgSecretApiImpl implements OrgSecretApi {
 
   @Override
   public Response getOrgScopedSecrets(String org, List<String> secret, List<String> type, Boolean recursive,
-      String searchTerm, Integer page, Integer limit, String account) {
-    return getSecrets(account, org, secret, type, recursive, searchTerm, page, limit);
+      String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
+    return getSecrets(account, org, secret, type, recursive, searchTerm, page, limit, sort, order);
   }
 
   @Override
@@ -133,14 +132,14 @@ public class OrgSecretApiImpl implements OrgSecretApi {
   }
 
   @Override
-  public Response validateOrgSecretRef(String org, @Valid SecretValidationMetadata body, String account) {
+  public Response validateOrgSecretRef(String org, @Valid SecretRequest body, String harnessAccount) {
     boolean isValid;
+    SecretDTOV2 secretDto = secretApiUtils.toSecretDto(body.getSecret());
     try {
-      isValid = ngEncryptedDataService.validateSecretRef(
-          account, null, null, body.getSecretManagerIdentifier(), body.getSecretRefPath());
+      isValid = ngEncryptedDataService.validateSecretRef(harnessAccount, org, null, secretDto);
     } catch (Exception e) {
-      log.error("Secret path reference failed for secret on secretManager: {}, org: {}, account: {}",
-          body.getSecretManagerIdentifier(), org, account);
+      log.error("Secret path reference failed for secret: {}, account: {}, org:{}", secretDto.getName(), harnessAccount,
+          body.getSecret().getOrg());
       throw e;
     }
     if (isValid) {
@@ -196,10 +195,10 @@ public class OrgSecretApiImpl implements OrgSecretApi {
   }
 
   private Response getSecrets(String account, String org, List<String> secret, List<String> type, Boolean recursive,
-      String searchTerm, Integer page, Integer limit) {
+      String searchTerm, Integer page, Integer limit, String sort, String order) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-    Page<SecretResponseWrapper> secretPage =
-        ngSecretService.list(account, org, null, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(account, org, null, secret, secretTypes, recursive,
+        searchTerm, null, false, ApiUtils.getPageRequest(page, limit, sort, order));
     List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =

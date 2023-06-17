@@ -31,7 +31,7 @@ import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnitConstants;
 import software.wings.beans.container.HelmChartSpecification;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest.HelmRollbackCommandRequestBuilder;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
@@ -102,8 +102,8 @@ public class HelmRollbackState extends HelmDeployState {
             .variableOverridesYamlFiles(helmValueOverridesYamlFilesEvaluated)
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(FeatureName.HELM_MERGE_CAPABILITIES, context.getAccountId()))
-            .useNewKubectlVersion(
-                featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()));
+            .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
+            .skipSteadyStateCheck(isSkipSteadyStateCheck());
 
     if (getGitFileConfig() != null) {
       requestBuilder.gitFileConfig(getGitFileConfig());

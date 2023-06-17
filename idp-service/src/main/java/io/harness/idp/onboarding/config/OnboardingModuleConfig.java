@@ -10,7 +10,6 @@ package io.harness.idp.onboarding.config;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,8 +21,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingModuleConfig {
+  String descriptionForEntitySelected;
+  String descriptionForSampleEntity;
+  boolean useGitServiceGrpcForSingleEntityPush;
   String tmpPathForCatalogInfoYamlStore;
   String catalogInfoLocationDefaultPath;
-  List<String> sampleEntities;
   Map<String, String> harnessCiCdAnnotations;
 }

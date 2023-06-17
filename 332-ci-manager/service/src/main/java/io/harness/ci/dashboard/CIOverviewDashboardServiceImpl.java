@@ -7,6 +7,7 @@
 
 package io.harness.core.ci.services;
 
+import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
 import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -21,6 +22,7 @@ import io.harness.app.beans.entities.BuildFailureInfo;
 import io.harness.app.beans.entities.BuildHealth;
 import io.harness.app.beans.entities.BuildInfo;
 import io.harness.app.beans.entities.BuildRepositoryCount;
+import io.harness.app.beans.entities.CIDashboardHelper;
 import io.harness.app.beans.entities.CIUsageResult;
 import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
@@ -38,6 +40,7 @@ import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -68,6 +71,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   @Inject private ProjectClient projectClient;
   private static final String tableNameServiceAndInfra = "service_infra_info";
   private static final String tableName = "pipeline_execution_summary_ci";
+  private static final String tableNameStageSummary = "stage_execution_summary_ci";
+
   private static final long HR_IN_MS = 60 * 60 * 1000;
   private static final long DAY_IN_MS = 24 * HR_IN_MS;
 
@@ -92,8 +97,34 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     long timestamp = System.currentTimeMillis();
     long totalTries = 0;
     String query = "select count(distinct moduleinfo_author_id) from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
-        + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
+        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
+
+    while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, accountId);
+        statement.setLong(2, timestamp);
+        statement.setLong(3, timestamp - 30 * DAY_IN_MS);
+        resultSet = statement.executeQuery();
+        return resultSet.next() ? resultSet.getLong(1) : 0L;
+      } catch (SQLException ex) {
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return -1L;
+  }
+
+  public long getHostedCreditUsage(String accountId) {
+    long timestamp = System.currentTimeMillis();
+    long totalTries = 0;
+    String query = "select sum(stagebuildtime*buildmultiplier/60000) from " + tableNameStageSummary
+        + " where accountidentifier=? and infratype ='HostedVm' "
+        + " and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -118,8 +149,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   public UsageDataDTO getActiveCommitter(String accountId, long timestamp) {
     long totalTries = 0;
     String query = "select distinct moduleinfo_author_id, projectidentifier , orgidentifier from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
-        + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
+        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -159,8 +190,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return null;
   }
 
-  public StatusAndTime queryCalculatorForStatusAndTime(
-      String accountId, List<OrgProjectIdentifier> orgProjectIdentifiers, long startInterval, long endInterval) {
+  public StatusAndTime queryCalculatorForStatusAndTime(String accountId,
+      List<OrgProjectIdentifier> orgProjectIdentifiers, GroupBy groupBy, long startInterval, long endInterval) {
     if (isEmpty(accountId)) {
       throw new InvalidRequestException("Account ID cannot be empty");
     }
@@ -172,8 +203,12 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     if (startInterval <= 0 && endInterval <= 0) {
       throw new InvalidRequestException("Timestamp must be a positive long");
     }
+    String startTsQuery = "startts";
+    if (groupBy != null) {
+      startTsQuery = "time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", startts) as startts";
+    }
 
-    String selectStatusQuery = "select status, startts from " + tableName + " where accountid=?";
+    String selectStatusQuery = "select status, " + startTsQuery + " from " + tableName + " where accountid=?";
     String orgIds = orgProjectIdentifiers.stream()
                         .map(OrgProjectIdentifier::getOrgIdentifier)
                         .distinct()
@@ -282,7 +317,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         OrgProjectIdentifier.builder().orgIdentifier(orgId).projectIdentifier(projectId).build();
 
     StatusAndTime statusAndTime = queryCalculatorForStatusAndTime(
-        accountId, Collections.singletonList(orgProjectIdentifier), previousStartInterval, endInterval);
+        accountId, Collections.singletonList(orgProjectIdentifier), null, previousStartInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
@@ -292,7 +327,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       long currentEpochValue = time.get(i);
       if (currentEpochValue >= startInterval && currentEpochValue < endInterval) {
         currentTotal++;
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+            || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
           currentSuccess++;
         } else if (failedList.contains(status.get(i))) {
           currentFailed++;
@@ -302,7 +338,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       // previous interval record
       if (currentEpochValue >= previousStartInterval && currentEpochValue < startInterval) {
         previousTotal++;
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+            || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
           previousSuccess++;
         } else if (failedList.contains(status.get(i))) {
           previousFailed++;
@@ -321,32 +358,42 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   @Override
   public DashboardBuildExecutionInfo getBuildExecutionBetweenIntervals(
-      String accountId, String orgId, String projectId, long startInterval, long endInterval) {
+      String accountId, String orgId, String projectId, GroupBy groupBy, long startInterval, long endInterval) {
     List<ProjectDTO> accessibleProjectList = NGRestUtils.getResponse(projectClient.getProjectList(accountId, null));
     List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(accessibleProjectList);
     List<OrgProjectIdentifier> orgProjectIdentifiers =
         getOrgProjectIdentifierList(orgProjectIdentifierList, orgId, projectId);
 
-    startInterval = getStartingDateEpochValue(startInterval);
-    endInterval = getStartingDateEpochValue(endInterval);
+    Long intervalInMs = DAY_IN_MS;
+    if (groupBy != null) {
+      intervalInMs = groupBy.getNoOfMilliseconds();
+    }
 
-    endInterval = endInterval + DAY_IN_MS;
+    startInterval = getStartingDateEpochValue(startInterval, intervalInMs);
+    endInterval = getStartingDateEpochValue(endInterval, intervalInMs);
+    long previousInterval = startInterval - (endInterval - startInterval);
+
+    endInterval = endInterval + intervalInMs;
 
     List<BuildExecutionInfo> buildExecutionInfoList = new ArrayList<>();
 
     StatusAndTime statusAndTime =
-        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, startInterval, endInterval);
+        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, groupBy, previousInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
     long startDateCopy = startInterval;
     long endDateCopy = endInterval;
+    long currentBuildsCount = getCountForInterval(time, startInterval, endInterval);
+    long previousBuildsCount = getCountForInterval(time, previousInterval, startInterval);
+
     while (startDateCopy < endDateCopy) {
       long total = 0, success = 0, failed = 0, expired = 0, aborted = 0;
       for (int i = 0; i < time.size(); i++) {
-        if (startDateCopy == getStartingDateEpochValue(time.get(i))) {
+        if (startDateCopy == getStartingDateEpochValue(time.get(i), intervalInMs)) {
           total++;
-          if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+          if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+              || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
             success++;
           } else if (status.get(i).contentEquals(ExecutionStatus.EXPIRED.name())) {
             expired++;
@@ -360,10 +407,23 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       BuildCount buildCount =
           BuildCount.builder().total(total).success(success).expired(expired).aborted(aborted).failed(failed).build();
       buildExecutionInfoList.add(BuildExecutionInfo.builder().time(startDateCopy).builds(buildCount).build());
-      startDateCopy = startDateCopy + DAY_IN_MS;
+      startDateCopy = startDateCopy + intervalInMs;
     }
 
-    return DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
+    double noOfBuckets = Math.ceil(((endInterval - startInterval) * 1.0) / intervalInMs);
+    double currentBuildRate = CIDashboardHelper.truncate(currentBuildsCount / noOfBuckets);
+    double previousBuildRate = CIDashboardHelper.truncate(previousBuildsCount / noOfBuckets);
+    double changeRate = getChangeRate(currentBuildRate, previousBuildRate);
+
+    return DashboardBuildExecutionInfo.builder()
+        .buildExecutionInfoList(buildExecutionInfoList)
+        .buildRate(currentBuildRate)
+        .buildRateChangeRate(changeRate)
+        .build();
+  }
+
+  private long getCountForInterval(List<Long> time, long startInterval, long endInterval) {
+    return time.stream().filter(timeEpoch -> timeEpoch >= startInterval && timeEpoch < endInterval).count();
   }
 
   public List<BuildFailureInfo> queryCalculatorBuildFailureInfo(
@@ -425,6 +485,15 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       }
       buildFailureInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
     }
+  }
+
+  private double getChangeRate(double previousValue, double newValue) {
+    double change = newValue - previousValue;
+    if (change == 0) {
+      return 0;
+    }
+    double rate = previousValue != 0 ? (change * 100.0) / previousValue : Double.MAX_VALUE;
+    return CIDashboardHelper.truncate(rate);
   }
 
   private void parseResultToBuildFailureInfo(
@@ -728,7 +797,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
             buildCountMap.put(variableEpochValue, buildCountMap.get(variableEpochValue) + 1);
 
-            if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+            if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+                || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
               success++;
             }
 
@@ -748,7 +818,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
                 author = authorInfo.get(i);
               }
             }
-          } else if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+          } else if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())
+              || status.get(i).contentEquals(ExecutionStatus.IGNOREFAILED.name())) {
             previousSuccess++;
           }
         }
@@ -820,6 +891,10 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   public long getStartingDateEpochValue(long epochValue) {
     return epochValue - epochValue % DAY_IN_MS;
+  }
+
+  public long getStartingDateEpochValue(long epochValue, long interval) {
+    return epochValue - epochValue % interval;
   }
 
   private void setPrepareStatement(

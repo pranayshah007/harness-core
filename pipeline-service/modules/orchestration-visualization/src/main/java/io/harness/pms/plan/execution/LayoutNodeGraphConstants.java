@@ -26,4 +26,6 @@ public class LayoutNodeGraphConstants {
   public String FAILURE_INFO_DTO = BASE_KEY + ".failureInfoDTO";
   public String SKIP_INFO = BASE_KEY + ".skipInfo";
   public String EXECUTION_INPUT_CONFIGURED = BASE_KEY + ".executionInputConfigured";
+  public String EDGE_LAYOUT_LIST = BASE_KEY + ".edgeLayoutList";
+  public String NEXT_IDS = EDGE_LAYOUT_LIST + ".nextIds";
 }

@@ -34,15 +34,15 @@ import io.harness.cdng.gitops.beans.ClusterResponse;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.mappers.ClusterEntityMapper;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.EnvironmentValidationHelper;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -59,6 +59,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -325,7 +326,7 @@ public class ClusterResource {
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "list");
 
     // NG Clusters
-    Page<Cluster> entities = clusterService.list(
+    Page<Cluster> entities = getClustersForEnvId(
         page, size, accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, identifiers, sort);
 
     // Account level clusters
@@ -467,5 +468,22 @@ public class ClusterResource {
     String exceptionMessage = format("unable to %s gitops cluster(s)", action);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.ENVIRONMENT, envIdentifier), permission, exceptionMessage);
+  }
+
+  private Page<Cluster> getClustersForEnvId(int page, int size, String accountId, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String searchTerm, Collection<String> identifiers,
+      List<String> sort) {
+    String[] strings = envIdentifier.split("\\.");
+    if (strings.length == 2) {
+      projectIdentifier = null;
+      envIdentifier = strings[1];
+      if (strings[0].equals("account")) {
+        orgIdentifier = null;
+      }
+    } else if (strings.length != 1) {
+      throw new InvalidRequestException("Environment identifier cannot contain dots.");
+    }
+    return clusterService.list(
+        page, size, accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, identifiers, sort);
   }
 }

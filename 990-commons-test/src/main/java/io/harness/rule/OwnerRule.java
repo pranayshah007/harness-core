@@ -91,6 +91,7 @@ public class OwnerRule implements TestRule {
   public static final String ACHYUTH = "achyuth.prakash";
   public static final String ADWAIT = "adwait.bhandare";
   public static final String ADARSH = "adarsh.agarwal";
+  public static final String ADITYA = "aditya.kashyap";
   public static final String ADITHYA = "adithya.viswanathan";
   public static final String AKRITI = "akriti.garg";
   public static final String ALEKSANDAR = "aleksandar.radisavljevic";
@@ -256,6 +257,7 @@ public class OwnerRule implements TestRule {
   public static final String NICOLAS = "nicolas.bantar";
   public static final String SAINATH = "sainath.batthala";
   public static final String MOHIT_GARG = "mohit.garg";
+  public static final String YAGYANSH = "yagyansh.bhatia";
   public static final String AKASH_NAGARAJAN = "akash.nagarajan";
   public static final String KANHAIYA = "kanhaiya.rathi";
   public static final String ABHINAV_MITTAL = "abhinav.mittal";
@@ -337,6 +339,7 @@ public class OwnerRule implements TestRule {
           .put(ABHISHEK, defaultUserInfo(ABHISHEK).slack("U03F6BDAKTN").team(CDC).build())
           .put(ACHYUTH, defaultUserInfo(ACHYUTH).slack("U024FAWEZL7").team(CDP).build())
           .put(ADARSH, defaultUserInfo(ADARSH).slack("U01Q02K5LUR").team(CE).build())
+          .put(ADITYA, defaultUserInfo(ADITYA).slack("U04K54YP9U1").team(PL).build())
           .put(ADITHYA, defaultUserInfo(ADITHYA).slack("U03AKHX2LTB").team(PL).build())
           .put(ALEKSANDAR, defaultUserInfo(ALEKSANDAR).slack("U012MKR5FUZ").team(CI).build())
           .put(ALLEN, defaultUserInfo(ALLEN).slack("U01QCSY8518").team(GTM).build())
@@ -496,6 +499,7 @@ public class OwnerRule implements TestRule {
           .put(DEEPAK_PUTHRAYA, defaultUserInfo(DEEPAK_PUTHRAYA).slack("U018SBXS5M1").team(CDC).build())
           .put(SAINATH, defaultUserInfo(SAINATH).slack("U01FN5EH3PF").team(CDP).build())
           .put(MOHIT_GARG, defaultUserInfo(MOHIT_GARG).slack("U01F9DBKYA3").team(DX).build())
+          .put(YAGYANSH, defaultUserInfo(YAGYANSH).slack("U0531QUNF0F").team(CDC).build())
           .put(AKASH_NAGARAJAN, defaultUserInfo(AKASH_NAGARAJAN).slack("U01GDEF032R").team(DX).build())
           .put(PIYUSH, defaultUserInfo(PIYUSH).slack("U01G9QYDMAA").team(PL).build())
           .put(ABHINAV_MITTAL, defaultUserInfo(ABHINAV_MITTAL).slack("U01Q893534N").team(CDC).build())

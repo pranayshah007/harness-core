@@ -59,6 +59,7 @@ import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
+import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -77,7 +78,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisionerMapper {
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ARMProvisionState state = (ARMProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

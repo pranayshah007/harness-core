@@ -100,7 +100,8 @@ public class VerifyStepMetricsAnalysisUtils {
     }
     List<String> appliedThresholds = hostData.getAppliedThresholdIds();
     for (String appliedThreshold : appliedThresholds) {
-      if (metricThresholdMap.get(appliedThreshold).getThresholdType() == MetricThresholdType.FAIL_FAST) {
+      MetricThreshold threshold = metricThresholdMap.get(appliedThreshold);
+      if (threshold != null && threshold.getThresholdType() == MetricThresholdType.FAIL_FAST) {
         return AnalysisReason.CUSTOM_FAIL_FAST_THRESHOLD;
       }
     }
@@ -315,7 +316,8 @@ public class VerifyStepMetricsAnalysisUtils {
   public static void populateRawMetricDataInMetricAnalysis(AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
       Map<String, List<TimeSeriesRecordDTO>> controlNodesRawData,
       Map<String, List<TimeSeriesRecordDTO>> testNodesRawData, MetricsAnalysis metricsAnalysis) {
-    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST
+        || appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.SIMPLE) {
       populateRawMetricDataInMetricAnalysisForLoadTestAnalysis(controlNodesRawData, testNodesRawData, metricsAnalysis);
     } else {
       populateRawMetricDataInMetricAnalysisForCanaryAndRollingAnalysis(
@@ -574,5 +576,29 @@ public class VerifyStepMetricsAnalysisUtils {
                              .thenComparing(node -> ((AnalysedDeploymentTestDataNode) node).getNodeIdentifier()));
     }
   }
+
+  public static void transformAnalysisResultsAndReasonsforSimpleVerification(List<MetricsAnalysis> metricsAnalyses) {
+    CollectionUtils.emptyIfNull(metricsAnalyses)
+        .forEach(VerifyStepMetricsAnalysisUtils::transformAnalysisResultAndReasonForSingleMetric);
+  }
+
+  private static void transformAnalysisResultAndReasonForSingleMetric(MetricsAnalysis metricsAnalysis) {
+    List<AnalysedDeploymentTestDataNode> testDataNodes = metricsAnalysis.getTestDataNodes();
+    CollectionUtils.emptyIfNull(testDataNodes)
+        .forEach(testDataNode -> transformAnalysisResultAndReasonForSingleNode(metricsAnalysis, testDataNode));
+  }
+
+  private static void transformAnalysisResultAndReasonForSingleNode(
+      MetricsAnalysis metricsAnalysis, AnalysedDeploymentTestDataNode testDataNode) {
+    if (testDataNode.getAnalysisResult() == AnalysisResult.NO_ANALYSIS
+        && testDataNode.getAnalysisReason() == AnalysisReason.NO_CONTROL_DATA) {
+      testDataNode.setAnalysisResult(AnalysisResult.HEALTHY);
+      testDataNode.setAnalysisReason(AnalysisReason.NO_FAIL_FAST_THRESHOLD_BREACHED);
+      if (metricsAnalysis.getAnalysisResult() == AnalysisResult.NO_ANALYSIS) {
+        metricsAnalysis.setAnalysisResult(AnalysisResult.HEALTHY);
+      }
+    }
+  }
+
   private VerifyStepMetricsAnalysisUtils() {}
 }

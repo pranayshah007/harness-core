@@ -13,6 +13,7 @@ import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.usergroups.UserGroupClient;
@@ -42,15 +43,20 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
   @Override
   public void sync(String identifier, Scope scope) {
     HarnessScopeParams scopeParams = ScopeMapper.toParams(scope);
+    Optional<UserGroupDTO> userGroupDTOOpt = Optional.empty();
     try {
-      Optional<UserGroupDTO> userGroupDTOOpt = Optional.ofNullable(
+      userGroupDTOOpt = Optional.ofNullable(
           NGRestUtils.getResponse(userGroupClient.getUserGroup(identifier, scopeParams.getAccountIdentifier(),
                                       scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier()),
               "Could not find the user group with the given identifier"));
       if (userGroupDTOOpt.isPresent()) {
         userGroupService.upsert(UserGroupFactory.buildUserGroup(userGroupDTOOpt.get()));
-      } else {
+      }
+    } catch (InvalidRequestException e) {
+      if (userGroupDTOOpt.isEmpty()) {
         deleteIfPresent(identifier, scope);
+      } else {
+        throw e;
       }
     } catch (Exception e) {
       log.error("Exception while syncing user groups", e);

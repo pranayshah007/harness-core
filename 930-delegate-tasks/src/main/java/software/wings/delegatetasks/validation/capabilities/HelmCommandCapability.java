@@ -16,8 +16,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
-
 import java.time.Duration;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -56,5 +54,17 @@ public class HelmCommandCapability implements ExecutionCapability {
     return isNotEmpty(commandRequest.getHelmVersion().name())
         ? String.format("Capability reach Helm version : %s ", commandRequest.getHelmVersion().name())
         : null;
+  }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    // Delegate(s) missing the {criteria}, make sure to include {criteria} with the following delegates : [h1,h2]
+    return isNotEmpty(fetchCapabilityBasis())
+        ? String.format("Delegate(s) missing the %s, make sure to include version with the following delegates",
+            fetchCapabilityBasis())
+        : ExecutionCapability.super.getCapabilityValidationError();
   }
 }

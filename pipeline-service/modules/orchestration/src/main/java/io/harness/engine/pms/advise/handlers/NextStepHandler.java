@@ -72,8 +72,9 @@ public class NextStepHandler implements AdviserResponseHandler {
 
   @VisibleForTesting
   Node createIdentityNodeIfRequired(Node nextNode, NodeExecution prevNodeExecution, ExecutionMode executionMode) {
-    // If nextNode already instance of IdentityPlanNode, or if in rollback mode, the plan node received is to be
-    // preserved, then return the node as is.
+    // if in rollback mode, the plan node received is to be preserved, then return the node as is.
+    // For failed nodes, we need to create different identity nodes corresponding to each node executions,
+    // in case parent is an identity plan node.
     if (checkIfSameNodeIsRequired(nextNode, executionMode)) {
       return nextNode;
     }
@@ -88,16 +89,48 @@ public class NextStepHandler implements AdviserResponseHandler {
     if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
           prevNodeExecution.getOriginalNodeExecutionId(), NodeProjectionUtils.withNextId);
+
+      // Pass the "NextNodeId" of the original node execution as the last parameter in the mapPlanNodeToIdentityNode()
+      // function to designate it as the identity node for that NodeExecution.
+      String nextNodeId = getNextNodeId(originalNodeExecution);
       Node identityNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), nextNode,
-          nextNode.getIdentifier(), nextNode.getName(), nextNode.getStepType(), originalNodeExecution.getNextId());
+          nextNode.getIdentifier(), nextNode.getName(), nextNode.getStepType(), nextNodeId);
       planService.saveIdentityNodesForMatrix(Collections.singletonList(identityNode), prevNodeExecution.getPlanId());
       return identityNode;
     }
     return nextNode;
   }
 
+  /*
+  In retry failure strategy, with single node id, we have multiple node execution.
+  Next node id should be equal to last retried node execution id. OriginalNodeExecution NextNodeId will be the  first
+  retried node id hence we are fetching latest retried node execution fetchNodeExecutionForPlanNodeAndRetriedId().
+   */
+  private String getNextNodeId(NodeExecution originalNodeExecution) {
+    NodeExecution nextNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        originalNodeExecution.getNextId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
+
+    // Making a db call only if nextNodeExecution was retried else return originalNodeExecution.getNextId()
+    if (nextNodeExecution.getOldRetry()) {
+      // Due to multiple combinations of planNodeId and oldRetry as false, we are adding the third parameters
+      // (retryListId) eg -> in strategy
+      NodeExecution nextNonRetriedNodeExecution =
+          nodeExecutionService.fetchNodeExecutionForPlanNodeAndRetriedId(nextNodeExecution.getPlanExecutionId(),
+              nextNodeExecution.getNodeId(), false, Collections.singletonList(originalNodeExecution.getNextId()));
+
+      return nextNonRetriedNodeExecution != null ? nextNonRetriedNodeExecution.getUuid()
+                                                 : originalNodeExecution.getNextId();
+    }
+    return originalNodeExecution.getNextId();
+  }
+
   boolean checkIfSameNodeIsRequired(Node nextNode, ExecutionMode executionMode) {
-    return nextNode.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE)
-        || (ExecutionModeUtils.isRollbackMode(executionMode) && ((PlanNode) nextNode).isPreserveInRollbackMode());
+    //  For nodes (before retry stage) without strategy, we would still return IdentityPlanNode because of last
+    //  return statement in createIdentityNodeIfRequired.
+    boolean isRollbackMode = ExecutionModeUtils.isRollbackMode(executionMode);
+    if (nextNode.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
+      return isRollbackMode;
+    }
+    return isRollbackMode && ((PlanNode) nextNode).isPreserveInRollbackMode();
   }
 }

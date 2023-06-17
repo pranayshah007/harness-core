@@ -10,6 +10,7 @@ package io.harness.steps.shellscript;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.filters.WithSecretRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
@@ -26,7 +27,9 @@ import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,7 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDC)
 @RecasterAlias("io.harness.cdng.pipeline.stepinfo.ShellScriptStepInfo")
 public class ShellScriptStepInfo
-    extends ShellScriptBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+    extends ShellScriptBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector, WithSecretRef {
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
   List<NGVariable> environmentVariables;
 
@@ -84,5 +87,15 @@ public class ShellScriptStepInfo
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractSecretRefs() {
+    Map<String, ParameterField<String>> secretRefMap = new HashMap<>();
+    if (executionTarget != null && executionTarget.getConnectorRef() != null) {
+      secretRefMap.put("executionTarget.connectorRef", executionTarget.getConnectorRef());
+    }
+
+    return secretRefMap;
   }
 }

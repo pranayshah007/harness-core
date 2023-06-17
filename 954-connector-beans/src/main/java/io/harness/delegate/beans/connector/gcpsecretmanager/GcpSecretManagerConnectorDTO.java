@@ -13,7 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -23,7 +26,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,6 +34,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Data
 @Builder
@@ -49,14 +52,38 @@ public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements 
 
   @ApiModelProperty(dataType = "string")
   @Schema(description = SecretManagerDescriptionConstants.GOOGLE_SECRET_MANAGER_CREDENTIALS)
-  @NotNull
   @SecretReference
   SecretRefData credentialsRef;
 
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) Set<String> delegateSelectors;
 
+  @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
+  Boolean assumeCredentialsOnDelegate;
+
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return GcpSecretManagerConnectorOutcomeDTO.builder()
+        .isDefault(isDefault)
+        .credentialsRef(credentialsRef)
+        .delegateSelectors(delegateSelectors)
+        .assumeCredentialsOnDelegate(assumeCredentialsOnDelegate)
+        .build();
+  }
+
+  @Override
+  public void validate() {
+    if (BooleanUtils.isTrue(assumeCredentialsOnDelegate)) {
+      if (this.delegateSelectors == null) {
+        throw new InvalidRequestException("delegateSelectors cannot be null");
+      }
+      if (this.delegateSelectors.isEmpty()) {
+        throw new InvalidRequestException("delegateSelectors cannot be empty");
+      }
+    }
   }
 }

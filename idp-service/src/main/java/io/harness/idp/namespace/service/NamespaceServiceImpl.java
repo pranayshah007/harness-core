@@ -23,8 +23,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
+@Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class NamespaceServiceImpl implements NamespaceService {
   private NamespaceRepository namespaceRepository;
@@ -68,5 +70,17 @@ public class NamespaceServiceImpl implements NamespaceService {
     Optional<NamespaceEntity> namespaceEntity =
         namespaceRepository.findByAccountIdentifierAndIsDeleted(accountIdentifier, false);
     return namespaceEntity.isPresent();
+  }
+
+  @Override
+  public NamespaceEntity createPREnvDefaultMappingEntry(String accountIdentifier, String namespace) {
+    NamespaceEntity existingMappingEntry =
+        namespaceRepository.findByAccountIdentifierAndId(accountIdentifier, namespace);
+    if (existingMappingEntry == null) {
+      NamespaceEntity namespaceEntity =
+          NamespaceEntity.builder().id(namespace).accountIdentifier(accountIdentifier).build();
+      return namespaceRepository.save(namespaceEntity);
+    }
+    return existingMappingEntry;
   }
 }

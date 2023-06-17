@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -576,7 +576,11 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
     Cost lastDayCost = Cost.builder().cpu(BigDecimal.valueOf(100)).memory(BigDecimal.valueOf(100)).build();
     computedRecommendationWriter.setContainerLevelCost(containerRecommendationMap, lastDayCost);
 
-    assertThat(containerRecommendationMap.get("c1").getLastDayCost()).isNull();
+    final Offset<BigDecimal> costOffset = offset(BigDecimal.valueOf(0.09D));
+    assertThat(containerRecommendationMap.get("c1").getLastDayCost().getCpu())
+        .isCloseTo(BigDecimal.valueOf(100), costOffset);
+    assertThat(containerRecommendationMap.get("c1").getLastDayCost().getMemory())
+        .isCloseTo(BigDecimal.valueOf(100), costOffset);
   }
 
   @Test

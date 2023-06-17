@@ -47,7 +47,8 @@ public class CloudformationConfigDAL {
             .filter(CloudformationConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
             .filter(CloudformationConfigKeys.provisionerIdentifier, provisionerIdentifier)
             .order(Sort.descending(CloudformationConfigKeys.createdAt));
-    query.and(query.criteria(CloudformationConfigKeys.stageExecutionId).notEqual(ambiance.getStageExecutionId()));
+    query.and(query.criteria(CloudformationConfigKeys.stageExecutionId)
+                  .notEqual(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance)));
     return query.get();
   }
 
@@ -58,7 +59,8 @@ public class CloudformationConfigDAL {
             .filter(CloudformationConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
             .filter(CloudformationConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
             .filter(CloudformationConfigKeys.provisionerIdentifier, provisionerIdentifier)
-            .filter(CloudformationConfigKeys.stageExecutionId, ambiance.getStageExecutionId());
+            .filter(
+                CloudformationConfigKeys.stageExecutionId, AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance));
 
     persistence.delete(query);
   }

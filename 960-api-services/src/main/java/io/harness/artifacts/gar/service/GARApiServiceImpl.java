@@ -28,6 +28,7 @@ import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
@@ -313,8 +314,9 @@ public class GARApiServiceImpl implements GarApiService {
   private ArtifactMetaInfo getArtifactMetaInfoHelper(Response<DockerImageManifestResponse> response, String image) {
     if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
       return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, image);
-    } else if (!GARUtils.checkIfResponseNull(response)) {
-      isSuccessful(response.code(), response.errorBody().toString());
+    } else if (!GARUtils.checkIfResponseNull(response)
+        && !isSuccessful(response.code(), response.errorBody().toString())) {
+      throw new InvalidRequestException(COULD_NOT_FETCH_IMAGE_MANIFEST);
     }
     return null;
   }

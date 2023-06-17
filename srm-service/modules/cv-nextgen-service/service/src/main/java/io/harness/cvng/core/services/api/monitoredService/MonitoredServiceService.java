@@ -19,6 +19,7 @@ import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceChangeDetailSLO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServicePlatformResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceWithHealthSources;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
@@ -32,6 +33,7 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
@@ -58,6 +60,11 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
   PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams, List<String> environmentIdentifiers,
       Integer offset, Integer pageSize, String filter);
+
+  PageResponse<MonitoredServicePlatformResponse> getMSPlatformList(ProjectParams projectParams,
+      List<String> environmentIdentifiers, Integer offset, Integer pageSize, String filter,
+      MonitoredServiceType monitoredServiceType, boolean hideNotConfiguredServices);
+
   List<MonitoredServiceWithHealthSources> getAllWithTimeSeriesHealthSources(ProjectParams projectParams);
   MonitoredServiceDTO getApplicationMonitoredServiceDTO(ServiceEnvironmentParams serviceEnvironmentParams);
   MonitoredServiceDTO getMonitoredServiceDTO(MonitoredServiceParams monitoredServiceParams);
@@ -75,7 +82,10 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   List<MonitoredService> listWithFilter(@NonNull ProjectParams projectParams, List<String> identifiers, String filter);
 
   PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, List<String> environmentIdentifiers,
-      Integer offset, Integer pageSize, String filter, boolean servicesAtRiskFilter);
+      Integer offset, Integer pageSize, String filter, MonitoredServiceType monitoredServiceType,
+      boolean servicesAtRiskFilter);
+
+  List<String> listConnectorRefs(MonitoredServiceDTO monitoredServiceDTO);
 
   List<EnvironmentResponse> listEnvironments(String accountId, String orgIdentifier, String projectIdentifier);
   MonitoredServiceResponse createDefault(
@@ -118,4 +128,6 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
   long countUniqueEnabledServices(String accountId);
+
+  List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams);
 }

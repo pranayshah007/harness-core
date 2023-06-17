@@ -7,8 +7,10 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -57,6 +59,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -357,5 +360,35 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
             planExecutionId, Sets.newHashSet(PlanExecutionSummaryKeys.accountId));
 
     assertThat(pipelineExecutionSummaryWithProjections).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testHandleNodeExecutionUpdateFromGraphUpdateForPRBStage() {
+    Ambiance basicAmbiance =
+        Ambiance.newBuilder().addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build()).build();
+    StepType prbStepType =
+        StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("PIPELINE_ROLLBACK_STAGE").build();
+    String prevStageId = "prevStageId";
+    String prevStageNodeId = "prevStageNodeId";
+    String nodeId = "nodeId";
+    NodeExecution currentNodeExecution = NodeExecution.builder()
+                                             .ambiance(basicAmbiance)
+                                             .stepType(prbStepType)
+                                             .previousId(prevStageId)
+                                             .nodeId(nodeId)
+                                             .status(RUNNING)
+                                             .build();
+    NodeExecution prevNodeExecution = NodeExecution.builder().nodeId(prevStageNodeId).build();
+    doReturn(prevNodeExecution).when(nodeExecutionService).get(prevStageId);
+    Update update = new Update();
+    pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(null, currentNodeExecution, update);
+    Document updateObject = update.getUpdateObject();
+    assertThat(updateObject).hasSize(1);
+    Document setObjects = (Document) updateObject.get("$set");
+    String expectedKey = "layoutNodeMap.prevStageNodeId.edgeLayoutList.nextIds";
+    assertThat(setObjects).containsKey(expectedKey);
+    assertThat(setObjects.get(expectedKey)).isEqualTo(Collections.singletonList("nodeId"));
   }
 }

@@ -30,4 +30,5 @@ import lombok.experimental.SuperBuilder;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_TARGET_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 public abstract class SLOTargetSpec {
   @JsonIgnore public abstract SLOTargetType getType();
+  @JsonIgnore public abstract boolean isErrorBudgetResetEnabled();
 }

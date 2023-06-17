@@ -96,6 +96,11 @@ mktPlaceConfig:
   awsMarketPlaceProductCode: awsMktPlaceProductCodePlaceHolder
   awsMarketPlaceCeProductCode: awsMktPlaceCeProductCodePlaceHolder
   awsMarketPlaceFfProductCode: awsMktPlaceFfProductCodePlaceHolder
+  awsMarketPlaceCiProductCode: awsMktPlaceCiProductCodePlaceHolder
+  awsMarketPlaceStoProductCode: awsMktPlaceStoProductCodePlaceHolder
+  awsMarketPlaceSrmProductCode: awsMktPlaceSrmProductCodePlaceHolder
+  awsMarketPlaceCdProductCode: awsMktPlaceCdProductCodePlaceHolder
+  awsMarketPlaceCcmProductCode: awsMktPlaceCcmProductCodePlaceHolder
   azureMarketplaceAccessKey: "ZWRlZDEzMjMtYTk5Zi00MDc0LWJmMjMtOWFhZTYzN2M4ZGQy"
   azureMarketplaceSecretKey: "UmU4QmtxZkdKal9aWWhyTjlCTU5zRnFIcFNAXUI9ODc="
 
@@ -211,6 +216,7 @@ smtp:
   port: 465
   fromAddress: noreply@harness.io
   useSSL: true
+  startTLS: false
   username: smtp_username_placeholder
   password: "smtp_password_placeholder"
 
@@ -321,6 +327,7 @@ mongo:
     mongoTagValue: none
   aliasDBName: harness
   maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 100000000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -360,13 +367,14 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: ef2d02fb
+scmVersion: f1024c6b
 
 ngAuthUIEnabled: false
 
 portal:
   url: https://localhost:8000
   zendeskBaseUrl: "https://harnesssupport.zendesk.com"
+  cannyBaseUrl: "https://canny.io/api/redirects/sso"
   gatewayPathPrefix: "gateway/"
   allowedOrigins: http://localhost:8000, https://localhost:8000, https://127.0.0.1:8000, https://localhost:8181, https://127.0.0.1:8181, http://127.0.0.1:8000
   companyName: Harness Inc
@@ -374,6 +382,7 @@ portal:
   jwtPasswordSecret: a8SGF1CQMHN6pnCJgz32kLn1tebrXnw6MtWto8xI
   jwtExternalServiceSecret: nhUmut2NMcUnsR01OgOz0e51MZ51AqUwrOATJ3fJ
   jwtZendeskSecret: RdL7j9ZdCz6TVSHO7obJRS6ywYLJjH8tdfPP39i4MbevKjVo
+  jwtCannySecret: yv7TV4NsP4fps8pLdGuVdV8CHgJT3wCaFgTEg7dKcanzKN7C
   jwtMultiAuthSecret: 5E1YekVGldTSS5Kt0GHlyWrJ6fJHmee9nXSBssefAWSOgdMwAvvbvJalnYENZ0H0EealN0CxHh34gUCN
   jwtSsoRedirectSecret: qY4GXZAlPJQPEV8JCPTNhgmDmnHZSAgorzGxvOY03Xptr8N9xDfAYbwGohr2pCRLfFG69vBQaNpeTjcV
   jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
@@ -606,15 +615,15 @@ pipelineConfig:
   envStateTimeout: -1
   approvalStateTimeout: -1
 
-currentJre: openjdk11014_9
-migrateToJre: openjdk11014_9
+currentJre: openjdk11019_7
+migrateToJre: openjdk11019_7
 
 jreConfigs:
-  openjdk11014_9:
-    version: 11.0.14
-    jreDirectory: jdk-11.0.14+9-jre
-    jreMacDirectory: jdk-11.0.14+9-jre
-    jreTarPath: jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
+  openjdk11019_7:
+    version: 11.0.19
+    jreDirectory: jdk-11.0.19+7-jre
+    jreMacDirectory: jdk-11.0.19+7-jre
+    jreTarPath: jre/openjdk-11.0.19_7/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.19_7.tar.gz
 
 cdnConfig:
   url: https://qa.harness.io
@@ -753,6 +762,8 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
+runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground
@@ -773,3 +784,4 @@ disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
 redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
 
 lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}
+moveGitPollingToRunnable: ${MOVE_GIT_POLLING_TO_RUNNABLE:-true}

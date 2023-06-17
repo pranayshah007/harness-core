@@ -30,13 +30,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -135,7 +135,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     doReturn(kubernetesResources)
         .when(k8sTaskHelperBase)
         .readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
-    doReturn(true).when(k8sTaskHelperBase).dryRunManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(true).when(k8sTaskHelperBase).dryRunManifests(any(), any(), any(), any());
     doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true)
         .when(k8sTaskHelperBase)
@@ -164,7 +164,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     when(k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean())).thenReturn(emptyList());
 
     k8sRollingDeployTaskHandler.init(rollingDeployTaskParams, delegateTaskParams, executionLogCallback);
-    verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
     verify(k8sTaskHelperBase, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
@@ -189,7 +189,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     when(k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean())).thenReturn(emptyList());
 
     k8sRollingDeployTaskHandler.init(rollingDeployTaskParams, delegateTaskParams, executionLogCallback);
-    verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
     verify(k8sTaskHelperBase, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
@@ -263,7 +263,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
         K8sRollingDeployTaskParameters.builder()
             .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
             .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     verify(k8sTaskHelper, times(1))
         .fetchManifestFilesAndWriteToDirectory(
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
@@ -288,8 +288,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
@@ -301,7 +300,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .skipAddingSelectorToDeployment(false)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(k8sTaskHelper, times(1))
         .fetchManifestFilesAndWriteToDirectory(
@@ -309,12 +308,12 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     verify(releaseHandler).getReleaseHistory(any(), any());
     verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), anyBoolean());
     verify(k8sTaskHelperBase, times(1))
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
             anyBoolean(), any());
-    verify(k8sRollingBaseHandler, times(1)).addLabelsInDeploymentSelectorForCanary(eq(false), eq(false), any(), any());
+    verify(k8sRollingBaseHandler, times(1))
+        .addLabelsInDeploymentSelectorForCanary(eq(false), eq(false), any(), any(), any());
   }
 
   @Test
@@ -336,8 +335,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     K8sRollingDeployTaskHandler handler = spy(k8sRollingDeployTaskHandler);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
@@ -349,7 +347,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .skipAddingSelectorToDeployment(true)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     verify(k8sTaskHelper, times(1))
         .fetchManifestFilesAndWriteToDirectory(
@@ -357,13 +355,13 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     verify(releaseHandler).getReleaseHistory(any(), any());
     verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(any(), anyBoolean());
     verify(k8sTaskHelperBase, times(1))
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
             anyBoolean(), any());
     verify(handler, never()).prune(any(), any(), any());
-    verify(k8sRollingBaseHandler, times(1)).addLabelsInDeploymentSelectorForCanary(eq(true), eq(true), any(), any());
+    verify(k8sRollingBaseHandler, times(1))
+        .addLabelsInDeploymentSelectorForCanary(eq(true), eq(true), any(), any(), any());
   }
 
   @Test
@@ -385,8 +383,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     K8sRollingDeployTaskHandler handler = spy(k8sRollingDeployTaskHandler);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
@@ -413,7 +410,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                 .isInCanaryWorkflow(true)
                                 .useDeclarativeRollback(true)
                                 .build(),
-                            K8sDelegateTaskParams.builder().build()))
+                            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build()))
         .withMessageContaining("reason");
 
     verify(executionLogCallback, times(1)).saveExecutionLog("Invalid argument(s): reason", ERROR, FAILURE);
@@ -594,8 +591,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
 
     handler.executeTaskInternal(K8sRollingDeployTaskParameters.builder()
                                     .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
@@ -603,7 +599,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .isInCanaryWorkflow(false)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
@@ -619,7 +615,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .isInCanaryWorkflow(false)
                                     .useDeclarativeRollback(false)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     captor = ArgumentCaptor.forClass(List.class);
     verify(k8sTaskHelperBase, times(2))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
@@ -635,7 +631,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .useDeclarativeRollback(false)
                                     .isInCanaryWorkflow(false)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     captor = ArgumentCaptor.forClass(List.class);
     verify(k8sTaskHelperBase, times(3))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
@@ -668,8 +664,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
 
     handler.executeTaskInternal(K8sRollingDeployTaskParameters.builder()
                                     .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
@@ -678,7 +673,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .skipVersioningForAllK8sObjects(true)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(releaseHandler).getReleaseHistory(any(), any());
@@ -729,7 +724,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                     .inheritManifests(true)
                                     .useDeclarativeRollback(true)
                                     .build(),
-        K8sDelegateTaskParams.builder().build());
+        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(handler, times(0)).init(any(), any(), any());
@@ -768,8 +763,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
             any(K8sDelegateManifestConfig.class), any(), any(ExecutionLogCallback.class), anyLong());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
 
     K8sTaskExecutionResponse k8sTaskExecutionResponse =
         handler.executeTaskInternal(K8sRollingDeployTaskParameters.builder()
@@ -778,7 +772,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                         .skipVersioningForAllK8sObjects(true)
                                         .exportManifests(true)
                                         .build(),
-            K8sDelegateTaskParams.builder().build());
+            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
     assertThat(k8sTaskExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(((K8sRollingDeployResponse) k8sTaskExecutionResponse.getK8sTaskResponse()).getResources()).isNotNull();
 
@@ -807,7 +801,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
                                    .isInCanaryWorkflow(false)
                                    .useDeclarativeRollback(true)
                                    .build(),
-                               K8sDelegateTaskParams.builder().build()))
+                               K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build()))
         .isEqualTo(thrownException);
   }
 

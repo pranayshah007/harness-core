@@ -40,7 +40,7 @@ public class AzureClient extends AzureClientBase {
   protected AzureResourceManager getAzureClientByContext(AzureClientContext context) {
     AzureConfig azureConfig = context.getAzureConfig();
     String subscriptionId = context.getSubscriptionId();
-    return getAzureClient(azureConfig, subscriptionId);
+    return getAzureClient(azureConfig, subscriptionId, context.isExtendedReadTimeout());
   }
 
   protected AzureResourceManager getAzureClientWithDefaultSubscription(AzureConfig azureConfig) {
@@ -48,17 +48,27 @@ public class AzureClient extends AzureClientBase {
   }
 
   protected HttpPipeline getAzureHttpPipeline(AzureConfig azureConfig, String subscriptionId) {
-    return AzureUtils.getAzureHttpPipeline(getAuthenticationTokenCredentials(azureConfig),
+    return getAzureHttpPipeline(azureConfig, subscriptionId, false);
+  }
+
+  protected HttpPipeline getAzureHttpPipeline(
+      AzureConfig azureConfig, String subscriptionId, boolean useExtendedReadTimeout) {
+    return AzureUtils.getAzureHttpPipeline(getAuthenticationTokenCredentials(azureConfig, useExtendedReadTimeout),
         AzureUtils.getAzureProfile(azureConfig.getTenantId(), subscriptionId,
             AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())),
         AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())),
-        AzureUtils.getAzureHttpClient());
+        AzureUtils.getAzureHttpClient(useExtendedReadTimeout));
   }
 
   protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
+    return getAzureClient(azureConfig, subscriptionId, false);
+  }
+
+  protected AzureResourceManager getAzureClient(
+      AzureConfig azureConfig, String subscriptionId, boolean useExtendedReadTimeout) {
     try {
       AzureResourceManager.Authenticated authenticated =
-          AzureResourceManager.authenticate(getAzureHttpPipeline(azureConfig, subscriptionId),
+          AzureResourceManager.authenticate(getAzureHttpPipeline(azureConfig, subscriptionId, useExtendedReadTimeout),
               AzureUtils.getAzureProfile(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
 
       if (isBlank(subscriptionId)) {
@@ -125,7 +135,11 @@ public class AzureClient extends AzureClientBase {
   }
 
   protected TokenCredential getAuthenticationTokenCredentials(AzureConfig azureConfig) {
-    HttpClient httpClient = AzureUtils.getAzureHttpClient();
+    return getAuthenticationTokenCredentials(azureConfig, false);
+  }
+
+  protected TokenCredential getAuthenticationTokenCredentials(AzureConfig azureConfig, boolean useExtendedReadTimeout) {
+    HttpClient httpClient = AzureUtils.getAzureHttpClient(useExtendedReadTimeout);
     switch (azureConfig.getAzureAuthenticationType()) {
       case SERVICE_PRINCIPAL_CERT:
         switch (azureConfig.getAzureCertAuthenticationType()) {

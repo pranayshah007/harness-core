@@ -53,8 +53,11 @@ public class SLODashboardWidget {
   @NotNull double sloTargetPercentage;
   @NotNull List<Point> errorBudgetBurndown;
   @NotNull List<Point> sloPerformanceTrend;
+  @NotNull boolean isTotalErrorBudgetApplicable;
   @NotNull boolean isRecalculatingSLI;
   @NotNull boolean isCalculatingSLI;
+
+  SLOError sloError;
   @Value
   @Builder
   public static class BurnRate {
@@ -96,6 +99,18 @@ public class SLODashboardWidget {
             ChronoUnit.DAYS.between(startTime.atZone(zoneId).toLocalDate(), endTime.atZone(zoneId).toLocalDate()) + 1;
         return (errorBudgetSpentPercentage()) / days;
       }
+    }
+    public static SLOGraphDataBuilder getSloGraphDataBuilder(double errorBudgetRemainingPercentage,
+        long errorBudgetRemaining, List<Point> errorBudgetBurndown, List<Point> sloPerformanceTrend,
+        boolean isRecalculatingSLI, boolean isCalculatingSLI, long totalErrorBudgetFromGraph) {
+      return SLODashboardWidget.SLOGraphData.builder()
+          .errorBudgetBurndown(errorBudgetBurndown)
+          .errorBudgetRemaining(errorBudgetRemaining)
+          .sloPerformanceTrend(sloPerformanceTrend)
+          .isRecalculatingSLI(isRecalculatingSLI)
+          .isCalculatingSLI(isCalculatingSLI)
+          .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
+          .totalErrorBudgetFromGraph(totalErrorBudgetFromGraph);
     }
   }
 

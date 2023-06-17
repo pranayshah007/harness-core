@@ -11,7 +11,6 @@ import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.lock.mongo.MongoPersistentLocker.LOCKS_STORE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -28,7 +27,6 @@ import io.harness.ccm.CEPerpetualTaskHandler;
 import io.harness.ccm.KubernetesClusterHandler;
 import io.harness.ccm.cluster.ClusterRecordHandler;
 import io.harness.ccm.cluster.ClusterRecordObserver;
-import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.ClusterRecordServiceImpl;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -37,7 +35,6 @@ import io.harness.commandlibrary.client.CommandLibraryServiceClientModule;
 import io.harness.config.DatadogConfig;
 import io.harness.config.PublisherConfiguration;
 import io.harness.config.WorkersConfiguration;
-import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateGroup;
@@ -49,7 +46,6 @@ import io.harness.event.EventsModule;
 import io.harness.event.usagemetrics.EventsModuleHelper;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
-import io.harness.exception.WingsException;
 import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
@@ -96,7 +92,6 @@ import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
-import io.harness.service.intfc.DelegateTokenService;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
 import io.harness.state.inspection.StateInspectionServiceImpl;
@@ -119,7 +114,6 @@ import software.wings.app.MainConfiguration;
 import software.wings.app.MainConfiguration.AssetsConfigurationMixin;
 import software.wings.app.ManagerExecutorModule;
 import software.wings.app.ManagerQueueModule;
-import software.wings.app.ObserversHelper;
 import software.wings.app.SSOModule;
 import software.wings.app.SearchModule;
 import software.wings.app.SignupModule;
@@ -130,11 +124,8 @@ import software.wings.dl.WingsPersistence;
 import software.wings.exception.GenericExceptionMapper;
 import software.wings.exception.JsonProcessingExceptionMapper;
 import software.wings.exception.WingsExceptionMapper;
-import software.wings.filter.AuditRequestFilter;
-import software.wings.filter.AuditResponseFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
-import software.wings.licensing.LicenseService;
 import software.wings.security.ThreadLocalUserProvider;
 import software.wings.security.authentication.totp.TotpModule;
 import software.wings.service.impl.AccountServiceImpl;
@@ -157,23 +148,14 @@ import software.wings.service.impl.artifact.ArtifactStreamSettingAttributePTaskM
 import software.wings.service.impl.infrastructuredefinition.InfrastructureDefinitionServiceImpl;
 import software.wings.service.impl.workflow.WorkflowServiceImpl;
 import software.wings.service.impl.yaml.YamlPushServiceImpl;
-import software.wings.service.intfc.AccountService;
-import software.wings.service.intfc.ApplicationManifestService;
-import software.wings.service.intfc.ArtifactStreamService;
-import software.wings.service.intfc.AuditService;
-import software.wings.service.intfc.DelegateProfileService;
-import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.InfrastructureDefinitionServiceObserver;
-import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.InfrastructureMappingServiceObserver;
-import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.account.AccountCrudObserver;
 import software.wings.service.intfc.applicationmanifest.ApplicationManifestServiceObserver;
 import software.wings.service.intfc.artifact.ArtifactStreamServiceObserver;
 import software.wings.service.intfc.entitycrud.EntityCrudOperationObserver;
 import software.wings.service.intfc.manipulation.SettingsServiceManipulationObserver;
 import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;
-import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.sm.StateMachineExecutor;
 import software.wings.sm.StateStatusUpdate;
 
@@ -370,8 +352,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
       registerAtmosphereStreams(environment, injector);
     }
 
-    initializeFeatureFlags(configuration, injector);
-
     if (isManager()) {
       registerHealthChecksManager(environment, injector);
     }
@@ -414,25 +394,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
         }
       }
     });
-
-    String deployMode = configuration.getDeployMode().name();
-
-    if (DeployMode.isOnPrem(deployMode)) {
-      LicenseService licenseService = injector.getInstance(LicenseService.class);
-      String encryptedLicenseInfoBase64String = System.getenv(LicenseService.LICENSE_INFO);
-      log.info("Encrypted license info read from environment {}", encryptedLicenseInfoBase64String);
-      if (isEmpty(encryptedLicenseInfoBase64String)) {
-        log.error("No license info is provided");
-      } else {
-        try {
-          log.info("Updating license info read from environment {}", encryptedLicenseInfoBase64String);
-          licenseService.updateAccountLicenseForOnPrem(encryptedLicenseInfoBase64String);
-          log.info("Updated license info read from environment {}", encryptedLicenseInfoBase64String);
-        } catch (WingsException ex) {
-          log.error("Error while updating license info", ex);
-        }
-      }
-    }
 
     injector.getInstance(EventsModuleHelper.class).initialize();
     registerDatadogPublisherIfEnabled(configuration);
@@ -688,16 +649,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     }
   }
 
-  private void initializeFeatureFlags(MainConfiguration mainConfiguration, Injector injector) {
-    injector.getInstance(FeatureFlagService.class)
-        .initializeFeatureFlags(mainConfiguration.getDeployMode(), mainConfiguration.getFeatureNames());
-
-    // Required to Publish Feature Flag Events to Events Framework
-    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      injector.getInstance(AccountService.class).updateFeatureFlagsForOnPremAccount();
-    }
-  }
-
   private void registerHealthChecksManager(Environment environment, Injector injector) {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("WingsApp", healthService);
@@ -731,13 +682,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
         && !configuration.getEventsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
       persistence.register(Store.builder().name("events").build(), configuration.getEventsMongo().getUri());
     }
-  }
-
-  private void registerAuditResponseFilter(Environment environment, Injector injector) {
-    environment.servlets()
-        .addFilter("AuditResponseFilter", injector.getInstance(AuditResponseFilter.class))
-        .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
-    environment.jersey().register(injector.getInstance(AuditRequestFilter.class));
   }
 
   private void registerCorsFilter(MainConfiguration configuration, Environment environment) {
@@ -778,63 +722,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
   private void registerTraceFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(TraceFilter.class));
-  }
-
-  /**
-   * All the observers that belong to manager
-   *
-   * @param injector
-   * @param delegateServiceImpl
-   */
-  private void registerManagerObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
-    YamlPushServiceImpl yamlPushService = (YamlPushServiceImpl) injector.getInstance(Key.get(YamlPushService.class));
-    AuditServiceImpl auditService = (AuditServiceImpl) injector.getInstance(Key.get(AuditService.class));
-    yamlPushService.getEntityCrudSubject().register(auditService);
-
-    AuditServiceHelper auditServiceHelper = injector.getInstance(Key.get(AuditServiceHelper.class));
-    auditServiceHelper.getEntityCrudSubject().register(auditService);
-
-    ClusterRecordHandler clusterRecordHandler = injector.getInstance(Key.get(ClusterRecordHandler.class));
-    AppManifestCloudProviderPTaskManager appManifestCloudProviderPTaskManager =
-        injector.getInstance(Key.get(AppManifestCloudProviderPTaskManager.class));
-    SettingsServiceImpl settingsService = (SettingsServiceImpl) injector.getInstance(Key.get(SettingsService.class));
-    settingsService.getSubject().register(clusterRecordHandler);
-    settingsService.getSubject().register(appManifestCloudProviderPTaskManager);
-    settingsService.getArtifactStreamSubject().register(
-        injector.getInstance(Key.get(ArtifactStreamSettingAttributePTaskManager.class)));
-
-    KubernetesClusterHandler kubernetesClusterHandler = injector.getInstance(Key.get(KubernetesClusterHandler.class));
-    delegateServiceImpl.getSubject().register(kubernetesClusterHandler);
-
-    InfrastructureDefinitionServiceImpl infrastructureDefinitionService =
-        (InfrastructureDefinitionServiceImpl) injector.getInstance(Key.get(InfrastructureDefinitionService.class));
-    infrastructureDefinitionService.getSubject().register(clusterRecordHandler);
-
-    InfrastructureMappingServiceImpl infrastructureMappingService =
-        (InfrastructureMappingServiceImpl) injector.getInstance(Key.get(InfrastructureMappingService.class));
-    infrastructureMappingService.getSubject().register(clusterRecordHandler);
-
-    CEPerpetualTaskHandler cePerpetualTaskHandler = injector.getInstance(Key.get(CEPerpetualTaskHandler.class));
-    ClusterRecordServiceImpl clusterRecordService =
-        (ClusterRecordServiceImpl) injector.getInstance(Key.get(ClusterRecordService.class));
-    clusterRecordService.getSubject().register(cePerpetualTaskHandler);
-
-    ArtifactStreamServiceImpl artifactStreamService =
-        (ArtifactStreamServiceImpl) injector.getInstance(Key.get(ArtifactStreamService.class));
-    artifactStreamService.getSubject().register(injector.getInstance(Key.get(ArtifactStreamPTaskManager.class)));
-
-    AccountServiceImpl accountService = (AccountServiceImpl) injector.getInstance(Key.get(AccountService.class));
-    accountService.getAccountCrudSubject().register(
-        (DelegateProfileServiceImpl) injector.getInstance(Key.get(DelegateProfileService.class)));
-    accountService.getAccountCrudSubject().register(injector.getInstance(Key.get(CEPerpetualTaskHandler.class)));
-    accountService.getAccountCrudSubject().register(
-        (DelegateTokenServiceImpl) injector.getInstance(Key.get(DelegateTokenService.class)));
-
-    ApplicationManifestServiceImpl applicationManifestService =
-        (ApplicationManifestServiceImpl) injector.getInstance(Key.get(ApplicationManifestService.class));
-    applicationManifestService.getSubject().register(injector.getInstance(Key.get(ManifestPerpetualTaskManger.class)));
-
-    ObserversHelper.registerSharedObservers(injector);
   }
 
   private void registerJerseyProviders(Environment environment, Injector injector) {

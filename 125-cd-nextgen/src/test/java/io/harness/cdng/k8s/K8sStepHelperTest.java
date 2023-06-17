@@ -40,14 +40,15 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -118,6 +119,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -148,12 +150,15 @@ import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.k8s.K8sDeployRequest;
+import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestType;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
@@ -207,6 +212,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
@@ -770,44 +776,6 @@ public class K8sStepHelperTest extends CategoryTest {
     LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
         (LocalFileStoreDelegateConfig) openshiftManifestDelegateConfig.getStoreDelegateConfig();
     assertThat(localFileStoreDelegateConfig.getFilePaths()).isEqualTo(asList("/path/to/openshift/template.yaml"));
-  }
-
-  @Test
-  @Owner(developers = ACHYUTH)
-  @Category(UnitTests.class)
-  public void shouldRemoveCommentsBeforeRendering() {
-    String commentOnly = "  # comment\r\n";
-    String commentInSameLineAndNextLine = "  # defining name  \n"
-        + "name: hello  # this is not a good name \r \n"
-        + "# just adding some comments for testing \n"
-        + "key: value\n";
-    String hashInValue = "baseurl: \"https://abc.xyz/#/api\" # shouldn't remove the hash in url";
-    String nestedValues = "key: value\n"
-        + "metadata:\n"
-        + "  name: global-route # what is global route\n"
-        + "  namespace: default";
-
-    String op1 = "";
-    String op2 = "name: hello\n"
-        + "key: value\n";
-    String op3 = "baseurl: https://abc.xyz/#/api\n";
-    String op4 = "key: value\n"
-        + "metadata:\n"
-        + "  name: global-route\n"
-        + "  namespace: default\n";
-
-    List<String> valuesFiles = asList(commentOnly, commentInSameLineAndNextLine, hashInValue, nestedValues);
-
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(FeatureName.CDS_REMOVE_COMMENTS_FROM_VALUES_YAML));
-    doReturn(op1).when(engineExpressionService).renderExpression(any(), eq(op1), anyBoolean());
-    doReturn(op2).when(engineExpressionService).renderExpression(any(), eq(op2), anyBoolean());
-    doReturn(op3).when(engineExpressionService).renderExpression(any(), eq(op3), anyBoolean());
-    doReturn(op4).when(engineExpressionService).renderExpression(any(), eq(op4), anyBoolean());
-
-    List<String> renderedValuesFiles = k8sStepHelper.renderValues(
-        OpenshiftManifestOutcome.builder().build(), Ambiance.newBuilder().build(), valuesFiles);
-    assertThat(renderedValuesFiles).isNotEmpty();
-    assertThat(renderedValuesFiles).containsExactlyInAnyOrder(op1, op2, op3, op4);
   }
 
   @Test
@@ -1942,9 +1910,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2073,9 +2041,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(localStoreFetchFilesResultMap.get("helmOverride3").getLocalStoreFileContents().get(0)).isEqualTo("Test");
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2168,9 +2136,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2297,9 +2265,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(localStoreFetchFilesResultMap.get("helmOverride3").getLocalStoreFileContents().get(0)).isEqualTo("Test");
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2391,9 +2359,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2674,9 +2642,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -2797,9 +2765,9 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(localStoreFetchFilesResultMap.get("helmOverride3").getLocalStoreFileContents().get(0)).isEqualTo("Test");
     List<ManifestFiles> manifestFiles = passThroughData.getManifestFiles();
     assertThat(manifestFiles.size()).isEqualTo(0);
-    ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    ArgumentCaptor<Object> taskParametersArgumentCaptor = ArgumentCaptor.forClass(Object.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
-    TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
+    TaskParameters taskParameters = (TaskParameters) taskParametersArgumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(HelmValuesFetchRequest.class);
     HelmValuesFetchRequest helmValuesFetchRequest = (HelmValuesFetchRequest) taskParameters;
     assertThat(helmValuesFetchRequest.getTimeout()).isNotNull();
@@ -3466,7 +3434,7 @@ public class K8sStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithNonProdEnvType() {
     doReturn(NON_PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     K8sSpecParameters k8sSpecParameters = K8sRollingStepParameters.infoBuilder().build();
     TaskChainResponse taskChainResponse = k8sStepHelper.queueK8sTask(
         StepElementParameters.builder().spec(k8sSpecParameters).build(),
@@ -3501,7 +3469,7 @@ public class K8sStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldCreateTaskRequestWithProdEnvType() {
     doReturn(PROD).when(stepHelper).getEnvironmentType(ambiance);
-
+    doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
     K8sSpecParameters k8sSpecParameters = K8sRollingStepParameters.infoBuilder().build();
     TaskChainResponse taskChainResponse = k8sStepHelper.queueK8sTask(
         StepElementParameters.builder().spec(k8sSpecParameters).build(),
@@ -4800,6 +4768,55 @@ public class K8sStepHelperTest extends CategoryTest {
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent.size()).isEqualTo(2);
     assertThat(valuesFilesContent.get(1)).isEqualTo("replicaCount: 3");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testK8sTaskTypeRancher() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testK8sTaskTypeHooks() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testK8sTaskType() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG);
+  }
+
+  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
+    try (MockedStatic<K8sTaskCapabilityHelper> mock = mockStatic(K8sTaskCapabilityHelper.class)) {
+      mock.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
+          .thenReturn(emptyList());
+      StepElementParameters stepElementParameters = mock(StepElementParameters.class);
+      K8sSpecParameters specParameters = mock(K8sSpecParameters.class);
+      doReturn(specParameters).when(stepElementParameters).getSpec();
+      K8sExecutionPassThroughData passThroughData = mock(K8sExecutionPassThroughData.class);
+      ServiceHookDelegateConfig hook = mock(ServiceHookDelegateConfig.class);
+      K8sDeployRequest k8sDeployRequest = K8sRollingDeployRequest.builder()
+                                              .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                                              .serviceHooks(List.of(hook))
+                                              .build();
+      ArgumentCaptor<TaskType> taskTypeArgumentCaptor = ArgumentCaptor.forClass(TaskType.class);
+
+      k8sStepHelper.queueK8sTask(stepElementParameters, k8sDeployRequest, ambiance, passThroughData);
+
+      verify(k8sStepHelper, times(1))
+          .queueK8sTask(eq(stepElementParameters), eq(k8sDeployRequest), eq(ambiance), eq(passThroughData),
+              taskTypeArgumentCaptor.capture());
+      assertThat(taskTypeArgumentCaptor.getValue()).isEqualTo(expectedTaskType);
+    }
   }
 
   @Test

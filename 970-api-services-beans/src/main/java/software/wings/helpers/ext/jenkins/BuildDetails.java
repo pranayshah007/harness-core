@@ -36,6 +36,7 @@ public class BuildDetails {
   private String buildFullDisplayName;
   private String artifactFileSize;
   private String uiDisplayName;
+  private Long updateTime;
   private BuildStatus status;
   private Map<String, String> buildParameters = new HashMap<>();
   private Map<String, String> metadata = new HashMap<>();
@@ -56,6 +57,14 @@ public class BuildDetails {
     public String getDisplayName() {
       return displayName;
     }
+  }
+
+  public Long getUpdateTime() {
+    return updateTime;
+  }
+
+  public void setUpdateTime(Long updateTime) {
+    this.updateTime = updateTime;
   }
 
   public String getBuildDisplayName() {
@@ -249,7 +258,9 @@ public class BuildDetails {
     private String buildFullDisplayName;
     private String artifactFileSize;
     private BuildStatus status;
+    private Long updateTime;
     private Map<String, String> metadata = new HashMap<>();
+    private Map<String, String> labels = new HashMap<>();
     private String uiDisplayName;
     private List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
 
@@ -341,6 +352,16 @@ public class BuildDetails {
       return this;
     }
 
+    public Builder withLabels(Map<String, String> labels) {
+      this.labels = labels;
+      return this;
+    }
+
+    public Builder withUpdateTime(Long updateTime) {
+      this.updateTime = updateTime;
+      return this;
+    }
+
     public Builder withStatus(BuildStatus status) {
       this.status = status;
       return this;
@@ -374,6 +395,7 @@ public class BuildDetails {
           .withArtifactFileSize(artifactFileSize)
           .withMetadata(metadata)
           .withStatus(status)
+          .withUpdateTime(updateTime)
           .withUiDisplayName(uiDisplayName)
           .withArtifactDownloadMetadata(artifactFileMetadata);
     }
@@ -396,6 +418,7 @@ public class BuildDetails {
       buildDetails.setArtifactFileSize(artifactFileSize);
       buildDetails.setMetadata(metadata);
       buildDetails.setStatus(status);
+      buildDetails.setUpdateTime(updateTime);
       buildDetails.setUiDisplayName(uiDisplayName);
       buildDetails.setArtifactFileMetadataList(artifactFileMetadata);
       return buildDetails;

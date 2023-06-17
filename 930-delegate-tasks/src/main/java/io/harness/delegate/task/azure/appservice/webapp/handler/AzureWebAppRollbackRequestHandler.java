@@ -92,7 +92,7 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
     log.info("Rollback using container artifact");
     azureSecretHelper.decryptAzureWebAppRollbackParameters(taskRequest.getPreDeploymentData());
     AzureWebClientContext azureWebClientContext =
-        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig, true);
     AzureAppServiceDockerDeploymentContext dockerDeploymentContext =
         toAzureAppServiceDockerDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);
 
@@ -117,7 +117,7 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
       AzureWebAppRollbackRequest taskRequest, AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {
     log.info("Rollback using package artifact");
     AzureWebClientContext azureWebClientContext =
-        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig, true);
     try (AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
              new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH)) {
       AzureAppServicePackageDeploymentContext deploymentContext = toAzureAppServicePackageDeploymentContext(
@@ -207,7 +207,8 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
 
   private void swapSlots(
       AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider, AzureWebAppRollbackRequest taskRequest) {
-    AzureWebClientContext webClientContext = buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+    AzureWebClientContext webClientContext =
+        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig, true);
     azureAppServiceResourceUtilities.swapSlots(webClientContext, logCallbackProvider,
         taskRequest.getInfrastructure().getDeploymentSlot(), taskRequest.getTargetSlot(),
         taskRequest.getTimeoutIntervalInMin());

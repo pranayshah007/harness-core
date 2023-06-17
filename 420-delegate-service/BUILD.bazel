@@ -24,6 +24,8 @@ java_library(
         "//clients/queue-service/java-client:module",
         "@maven//:io_dropwizard_modules_dropwizard_protobuf",
         "@maven//:ru_vyarus_guice_validator",
+    ] + [
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
     ],
 )
 
@@ -54,7 +56,6 @@ java_library(
         "//953-events-api:module",
         "//955-alert-beans:module",
         "//955-delegate-beans:module",
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//955-filters-sdk:module",
         "//955-outbox-sdk:module",
         "//956-feature-flag-beans:module",
@@ -85,7 +86,6 @@ java_library(
         "@maven//:commons_io_commons_io",
         "@maven//:de_bwaldvogel_mongo_java_server_core",
         "@maven//:de_bwaldvogel_mongo_java_server_memory_backend",
-        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_process",
         "@maven//:dev_morphia_morphia_core",
         "@maven//:io_fabric8_fabric8_utils",
         "@maven//:junit_junit",

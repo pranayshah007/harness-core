@@ -13,9 +13,9 @@ import java.util.Map;
 public interface CEReportTemplateBuilderService {
   // For ad-hoc reports
   Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName);
+      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName, String baseUrl);
 
   // For batch-job scheduled reports
-  Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, String reportId, BigQuery bigQuery, String cloudProviderTableName);
+  Map<String, String> getTemplatePlaceholders(String accountId, String viewId, String reportId, BigQuery bigQuery,
+      String cloudProviderTableName, String baseUrl);
 }

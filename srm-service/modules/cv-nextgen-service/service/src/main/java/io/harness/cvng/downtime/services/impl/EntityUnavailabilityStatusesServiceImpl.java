@@ -7,8 +7,9 @@
 package io.harness.cvng.downtime.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.downtime.beans.DataCollectionFailureInstanceDetails;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeInstanceDetails;
 import io.harness.cvng.downtime.beans.EntityType;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
@@ -16,11 +17,16 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses.EntityUnavailabilityStatusesKeys;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.EntityUnavailabilityStatusesEntityAndDTOTransformer;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetails;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,12 +35,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabilityStatusesService {
+public class EntityUnavailabilityStatusesServiceImpl
+    implements EntityUnavailabilityStatusesService, SecondaryEventDetailsService {
   @Inject private HPersistence hPersistence;
 
   @Inject private Clock clock;
-
-  @Inject private MonitoredServiceService monitoredServiceService;
 
   @Inject private EntityUnavailabilityStatusesEntityAndDTOTransformer statusesEntityAndDTOTransformer;
 
@@ -105,7 +110,7 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
-  public EntityUnavailabilityStatuses getInstanceById(String uuid) {
+  public EntityUnavailabilityStatuses getInstanceByUuid(String uuid) {
     return hPersistence.get(EntityUnavailabilityStatuses.class, uuid);
   }
 
@@ -128,6 +133,14 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
+  public EntityUnavailabilityStatuses getMinStartTimeInstanceWithStatus(
+      ProjectParams projectParams, EntityType entityType, String entityIdentifier, EntityUnavailabilityStatus status) {
+    return getAllInstancesQuery(projectParams, entityType, entityIdentifier)
+        .filter(EntityUnavailabilityStatusesKeys.status, status)
+        .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+        .get();
+  }
+  @Override
   public List<EntityUnavailabilityStatusesDTO> getAllInstances(
       ProjectParams projectParams, long startTime, long endTime) {
     List<EntityUnavailabilityStatuses> allInstances =
@@ -147,6 +160,57 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
         .collect(Collectors.toList());
   }
 
+  @Override
+  public List<EntityUnavailabilityStatuses> getAllInstancesEntity(
+      ProjectParams projectParams, long startTime, long endTime) {
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .disableValidation()
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(EntityUnavailabilityStatusesKeys.startTime)
+        .lessThanOrEq(endTime)
+        .field(EntityUnavailabilityStatusesKeys.endTime)
+        .greaterThanOrEq(startTime)
+        .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+        .asList();
+  }
+
+  @Override
+  public void updateStatusOfEntity(EntityType entityType, String entityId, long startTime, long endTime,
+      EntityUnavailabilityStatus prevStatus, EntityUnavailabilityStatus newStatus) {
+    Query<EntityUnavailabilityStatuses> entityUnavailabilityStatusesQuery =
+        hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+            .disableValidation()
+            .filter(EntityUnavailabilityStatusesKeys.entityType, entityType)
+            .filter(EntityUnavailabilityStatusesKeys.entityIdentifier, entityId)
+            .filter(EntityUnavailabilityStatusesKeys.startTime, startTime)
+            .filter(EntityUnavailabilityStatusesKeys.endTime, endTime)
+            .filter(EntityUnavailabilityStatusesKeys.status, prevStatus);
+    UpdateOperations<EntityUnavailabilityStatuses> updateOperations =
+        hPersistence.createUpdateOperations(EntityUnavailabilityStatuses.class);
+    updateOperations.set(EntityUnavailabilityStatusesKeys.status, newStatus);
+    hPersistence.update(entityUnavailabilityStatusesQuery, updateOperations);
+  }
+
+  @Override
+  public void updateDCPassedToDCRestoredForAllEntities(
+      EntityType entityType, String entityId, long startTime, long endTime) {
+    Query<EntityUnavailabilityStatuses> query =
+        hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+            .disableValidation()
+            .filter(EntityUnavailabilityStatusesKeys.entityType, entityType)
+            .filter(EntityUnavailabilityStatusesKeys.entityIdentifier, entityId)
+            .filter(EntityUnavailabilityStatusesKeys.status, EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED)
+            .field(EntityUnavailabilityStatusesKeys.startTime)
+            .greaterThanOrEq(startTime)
+            .field(EntityUnavailabilityStatusesKeys.endTime)
+            .lessThanOrEq(endTime);
+    UpdateOperations<EntityUnavailabilityStatuses> updateOperations =
+        hPersistence.createUpdateOperations(EntityUnavailabilityStatuses.class);
+    updateOperations.set(EntityUnavailabilityStatusesKeys.status, EntityUnavailabilityStatus.DATA_RESTORED);
+    hPersistence.update(query, updateOperations);
+  }
   @Override
   public List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
       ProjectParams projectParams, long startTime, long endTime) {
@@ -186,6 +250,23 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
         .stream()
         .map(status -> statusesEntityAndDTOTransformer.getDto(status))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType) {
+    EntityUnavailabilityStatuses instance = getInstanceByUuid(uuids.get(0));
+    SecondaryEventDetails details = null;
+    if (eventType == SecondaryEventsType.DOWNTIME) {
+      details = DowntimeInstanceDetails.builder().build();
+    } else if (eventType == SecondaryEventsType.DATA_COLLECTION_FAILURE) {
+      details = DataCollectionFailureInstanceDetails.builder().build();
+    }
+    return SecondaryEventDetailsResponse.builder()
+        .type(eventType)
+        .startTime(instance.getStartTime())
+        .endTime(instance.getEndTime())
+        .details(details)
+        .build();
   }
 
   @Override

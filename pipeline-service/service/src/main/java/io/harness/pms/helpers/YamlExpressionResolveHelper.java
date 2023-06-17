@@ -18,7 +18,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
+import io.harness.ngtriggers.expressions.NGTriggerExpressionEvaluatorProvider;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -43,13 +46,21 @@ public class YamlExpressionResolveHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private NodeExecutionService nodeExecutionService;
 
-  public String resolveExpressionsInYaml(String yamlString, String planExecutionId) {
+  @Inject private NGTriggerExpressionEvaluatorProvider ngTriggerExpressionEvaluatorProvider;
+
+  public String resolveExpressionsInYaml(
+      String yamlString, String planExecutionId, ResolveInputYamlType resolveInputYamlType) {
     Optional<NodeExecution> nodeExecution = nodeExecutionService.getPipelineNodeExecutionWithProjections(
         planExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
 
     if (nodeExecution.isPresent()) {
-      EngineExpressionEvaluator engineExpressionEvaluator =
-          pmsEngineExpressionService.prepareExpressionEvaluator(nodeExecution.get().getAmbiance());
+      EngineExpressionEvaluator engineExpressionEvaluator;
+      if (resolveInputYamlType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+        engineExpressionEvaluator = ngTriggerExpressionEvaluatorProvider.get(nodeExecution.get().getAmbiance());
+      } else {
+        engineExpressionEvaluator =
+            pmsEngineExpressionService.prepareExpressionEvaluator(nodeExecution.get().getAmbiance());
+      }
       try {
         YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlString));
         YamlField pipelineYamlField = yamlField.getNode().getField("pipeline");
@@ -59,7 +70,7 @@ public class YamlExpressionResolveHelper {
 
         JsonNode resolvedYamlNode = yamlField.getNode().getCurrJsonNode();
         YamlUtils.removeUuid(resolvedYamlNode);
-        return YamlPipelineUtils.writeString(resolvedYamlNode).replace("---\n", "");
+        return YamlPipelineUtils.writeYamlString(resolvedYamlNode);
 
       } catch (IOException ex) {
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
@@ -110,7 +121,8 @@ public class YamlExpressionResolveHelper {
       YamlNode parentNode, int childIndex, String childValue, EngineExpressionEvaluator engineExpressionEvaluator) {
     ArrayNode object = (ArrayNode) parentNode.getCurrJsonNode();
     if (EngineExpressionEvaluator.hasExpressions(childValue)) {
-      String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
+      String resolvedExpression = engineExpressionEvaluator.renderExpression(
+          childValue, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       // Update node value only if expression was successfully resolved
       if (isExpressionResolved(resolvedExpression) && !resolvedExpression.equals(childValue)) {
         object.set(childIndex, resolvedExpression);
@@ -125,7 +137,8 @@ public class YamlExpressionResolveHelper {
       return;
     }
     if (EngineExpressionEvaluator.hasExpressions(childValue)) {
-      String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
+      String resolvedExpression = engineExpressionEvaluator.renderExpression(
+          childValue, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       // Update node value only if expression was successfully resolved
       if (isExpressionResolved(resolvedExpression) && !resolvedExpression.equals(childValue)) {
         objectNode.put(childName, resolvedExpression);

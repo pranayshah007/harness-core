@@ -26,6 +26,9 @@ public interface NGEncryptedDataService {
 
   NGEncryptedData createSecretFile(String accountIdentifier, SecretDTOV2 dto, InputStream inputStream);
 
+  NGEncryptedData createSecretFile(
+      String accountIdentifier, SecretDTOV2 dto, String encryptionKey, String encryptedValue);
+
   List<EncryptedDataDetail> getEncryptionDetails(NGAccess ngAccess, DecryptableEntity object);
 
   NGEncryptedData get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
@@ -46,6 +49,9 @@ public interface NGEncryptedDataService {
   DecryptedSecretValue decryptSecret(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
-  boolean validateSecretRef(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String secretManagerId, String secretRefPath);
+  boolean validateSecretRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO);
+
+  boolean isSecretManagerReadOnly(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretManagerId);
 }

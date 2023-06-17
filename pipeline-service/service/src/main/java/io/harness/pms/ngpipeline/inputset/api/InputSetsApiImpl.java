@@ -24,16 +24,22 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetImportRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
@@ -45,6 +51,7 @@ import com.google.inject.Inject;
 import java.util.Objects;
 import java.util.Optional;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -127,6 +134,29 @@ public class InputSetsApiImpl implements InputSetsApi {
   }
 
   @Override
+  public Response importInputSetFromGit(@NotNull String pipeline, @OrgIdentifier String org,
+      @ProjectIdentifier String project, String inputSet, @Valid InputSetImportRequestBody body,
+      String harnessAccount) {
+    GitImportInfo gitImportInfo = body.getGitImportInfo();
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(gitImportInfo.getBranchName())
+                                                 .connectorRef(gitImportInfo.getConnectorRef())
+                                                 .filePath(gitImportInfo.getFilePath())
+                                                 .repoName(gitImportInfo.getRepoName())
+                                                 .build());
+    InputSetImportRequestDTO inputSetImportRequestDTO =
+        InputSetImportRequestDTO.builder()
+            .inputSetName(body.getInputSetImportRequest().getInputSetName())
+            .inputSetDescription(body.getInputSetImportRequest().getInputSetDescription())
+            .build();
+    InputSetEntity inputSetEntity = pmsInputSetService.importInputSetFromRemote(harnessAccount, org, project, pipeline,
+        inputSet, inputSetImportRequestDTO, Boolean.TRUE.equals(body.getGitImportInfo().isIsForceImport()));
+    InputSetMoveConfigResponseBody inputSetMoveConfigResponseBody = new InputSetMoveConfigResponseBody();
+    inputSetMoveConfigResponseBody.setInputSetIdentifier(inputSetEntity.getIdentifier());
+    return Response.ok().entity(inputSetMoveConfigResponseBody).build();
+  }
+
+  @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response listInputSets(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, Integer page, Integer limit,
@@ -194,5 +224,22 @@ public class InputSetsApiImpl implements InputSetsApi {
     InputSetMoveConfigResponseBody responseBody = new InputSetMoveConfigResponseBody();
     responseBody.setInputSetIdentifier(movedInputSetEntity.getIdentifier());
     return Response.ok().entity(responseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response updateInputSetGitMetadata(@ResourceIdentifier @NotNull String pipeline, @OrgIdentifier String org,
+      @ProjectIdentifier String project, @ResourceIdentifier String inputSet, @Valid GitMetadataUpdateRequestBody body,
+      @AccountIdentifier String harnessAccount) {
+    String inputSetAfterUpdate = pmsInputSetService.updateGitMetadata(harnessAccount, org, project, pipeline, inputSet,
+        PMSUpdateGitDetailsParams.builder()
+            .connectorRef(body.getConnectorRef())
+            .repoName(body.getRepoName())
+            .filePath(body.getFilePath())
+            .build());
+
+    GitMetadataUpdateResponseBody gitMetadataUpdateResponseBody = new GitMetadataUpdateResponseBody();
+    gitMetadataUpdateResponseBody.setEntityIdentifier(inputSetAfterUpdate);
+    return Response.ok().entity(gitMetadataUpdateResponseBody).build();
   }
 }
