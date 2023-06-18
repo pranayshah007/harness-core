@@ -60,11 +60,11 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
+    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-go-github/download/v0.37.0/rules_go-v0.37.0.zip",
-        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
-        #"https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+        "https://harness-artifactory.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip",
+        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
 )
 
@@ -3924,6 +3924,13 @@ go_repository(
     version = "v1.5.1",
 )
 
+go_repository(
+    name = "com_github_golang_jwt_jwt_v5",
+    importpath = "github.com/golang-jwt/jwt/v5",
+    sum = "h1:1n1XNM9hk7O9mnQoNBGolZvzebBQ7p93ULHRc28XJUE=",
+    version = "v5.0.0",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -4600,7 +4607,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.9")
+go_register_toolchains(version = "1.20.4")
 
 gazelle_dependencies()
 
@@ -4986,7 +4993,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.56-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.60-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5587,11 +5594,13 @@ maven_install(
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
+        "software.amazon.awssdk:account:2.20.74",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
         "https://search.maven.org/artifact/",
+        "https://mvnrepository.com/artifact/",
     ],
     version_conflict_policy = "pinned",
 )

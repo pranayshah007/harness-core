@@ -66,7 +66,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecutor {
-  @VisibleForTesting protected Integer dataCollectionTimeoutInMilliSeconds = 180000;
+  @VisibleForTesting protected Integer dataCollectionTimeoutInMilliSeconds = 600_000;
   @Inject private CVNextGenServiceClient cvNextGenServiceClient;
   @Inject private SecretDecryptionService secretDecryptionService;
 
