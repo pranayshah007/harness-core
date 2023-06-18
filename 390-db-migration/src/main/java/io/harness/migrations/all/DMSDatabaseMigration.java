@@ -23,6 +23,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.store.Store;
 
 import com.google.inject.Inject;
+import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import dev.morphia.Morphia;
@@ -76,8 +77,10 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
       // If we enter wrong DMS_MONGO_URI in config, ensureIndexes function will fail to create indexes.
       indexManager.ensureIndexes(
           IndexManager.Mode.AUTO, persistence.getDatastore(Store.builder().name(DMS).build()), morphia, dmsStore);
+
       for (String collection : entityList) {
         log.info("working for entity {}", collection);
+
         // Check if the migratian if already toggled. If yes, don't proceed.
         Class<?> collectionClass = getClassForCollectionName(collection);
         DelegateMigrationFlag delegateMigrationFlag =
@@ -87,6 +90,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         if (delegateMigrationFlag != null && delegateMigrationFlag.isEnabled()) {
           continue;
         }
+
         if (toggleOnlyCollection.contains(collection)) {
           if (checkIndexCount(collection)) {
             if (collection.equals(DELEGATE_TASK)) {
@@ -106,6 +110,8 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
             migrateCollection(collection);
           } catch (Exception ex) {
             log.warn("Migration for collection {} failed in attempt 1 with exception {}", collection, ex);
+            // Delete all documents from collection, not dropping collection as it will delete indexes also.
+            persistence.getCollection(dmsStore, collection).remove(new BasicDBObject());
             migrateCollection(collection);
           }
         }
@@ -161,7 +167,6 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
 
     Query<PersistentEntity> query = persistence.createQueryForCollection(collection);
-    long documentCountBeforeMigration = query.count();
     int insertDocCount = 0;
 
     try (HIterator<PersistentEntity> records = new HIterator<>(query.fetch())) {
@@ -176,6 +181,10 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
           }
         } catch (Exception ex) {
           log.warn("Exception occured while copying data", ex);
+        } finally {
+          if (insertDocCount % 1000 == 0) {
+            bulkWriteOperation = persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
+          }
         }
       }
     }
@@ -187,7 +196,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         log.warn("Exception occured while copying data", ex);
       }
     }
-    return verifyWriteOperation(documentCountBeforeMigration, collection);
+    return verifyWriteOperation(insertDocCount, collection);
   }
 
   private boolean postToggleCorrectness(Class<?> cls) {
