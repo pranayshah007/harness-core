@@ -808,7 +808,9 @@ public enum FeatureName {
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
       HarnessTeam.CDP),
-  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI);
+  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
+  SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS(
+      "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {

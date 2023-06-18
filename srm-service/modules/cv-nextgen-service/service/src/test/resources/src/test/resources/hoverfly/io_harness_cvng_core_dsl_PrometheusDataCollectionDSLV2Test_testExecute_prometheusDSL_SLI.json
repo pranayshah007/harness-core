@@ -1,0 +1,68 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query_range"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "prometheus.demo.do.prometheus.io"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1686824460"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "avg(prometheus_http_requests_total{code=\"200\",job=\"prometheus\"})"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1686824160"
+          } ],
+          "step" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAA/0zOTWoEIRQE4LvUWsS/Z6vnyK5xIR0XAzMQWg0J4t0DHafxLR9fFdVRaqqtIKC048ilgOEz1YTQcebSnvXj9ysj4JXq+fgBm1+EveOV6/k4EPpg+E7PlgvCvkvrrFNGWsGgNmM0J09KO+FJGUT2BkpNQNzf52gVbgrHtbg79CK0+RckuZRemM1KL2gVRkyh+TbzTvgVzJ1k+ZW+OiRiHHGMPwAAAP//AQAA///esHaFIAEAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "190" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Sat, 17 Jun 2023 15:50:40 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "Caddy" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2023-06-17T15:50:41Z"
+  }
+}
