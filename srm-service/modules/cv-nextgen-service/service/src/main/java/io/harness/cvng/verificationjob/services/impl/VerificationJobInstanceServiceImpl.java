@@ -727,6 +727,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
         preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+        log.info("Postprocessing Pre-Deployment Data Collection Info : {}", verificationJob.getIdentifier());
         dataCollectionInfoMapper.postProcessDataCollectionInfo(
             preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
@@ -754,6 +755,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         // Keeping this simple for now.
         dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+        log.info("Postprocessing Post Deployment Data Collection Info : {}", verificationJob.getIdentifier());
         dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         dataCollectionTasks.add(
             DeploymentDataCollectionTask.builder()

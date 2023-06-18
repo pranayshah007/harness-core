@@ -22,7 +22,9 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PrometheusDataCollectionInfoMapper
     extends MetricDataCollectionInfoMapper<PrometheusDataCollectionInfo, PrometheusCVConfig> {
   @Inject private FeatureFlagService featureFlagService;
@@ -58,8 +60,11 @@ public class PrometheusDataCollectionInfoMapper
   @Override
   public void postProcessDataCollectionInfo(PrometheusDataCollectionInfo dataCollectionInfo,
       PrometheusCVConfig cvConfig, VerificationTask.TaskType taskType) {
-    if (featureFlagService.isFeatureFlagEnabled(
-            cvConfig.getAccountId(), FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())) {
+    boolean featureFlagEnabled = featureFlagService.isFeatureFlagEnabled(
+        cvConfig.getAccountId(), FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name());
+    log.info("SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS : {} for account {}", featureFlagEnabled,
+        cvConfig.getAccountId());
+    if (featureFlagEnabled) {
       if (dataCollectionInfo.isCollectHostData()) {
         dataCollectionInfo.setDataCollectionDsl(DataCollectionDSLFactory.readMetricDSL(DataSourceType.PROMETHEUS));
         // wrong as filters are already added. TODO
