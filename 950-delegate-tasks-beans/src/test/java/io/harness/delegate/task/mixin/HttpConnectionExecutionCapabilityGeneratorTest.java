@@ -14,6 +14,7 @@ import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGe
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,6 +81,59 @@ public class HttpConnectionExecutionCapabilityGeneratorTest extends CategoryTest
     assertThat(capability.getPath()).isEqualTo("path/1/2/3");
     assertThat(capability.getUrl()).isNull();
     assertThat(capability.getQuery()).isNull();
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testBuildHttpConnectionExecutionCapabilityWithIgnoreResponseCode() {
+    HttpConnectionExecutionCapability capability =
+        buildHttpConnectionExecutionCapability("http://domain.com:8080/path/1/2/3?q1=1&q2=2", PATH, null);
+    capability.setIgnoreResponseCode(true);
+    assertThat(capability.getHost()).isEqualTo("domain.com");
+    assertThat(capability.getScheme()).isEqualTo("http");
+    assertThat(capability.getPort()).isEqualTo(8080);
+    assertThat(capability.getPath()).isEqualTo("path/1/2/3");
+    assertThat(capability.getUrl()).isNull();
+    assertThat(capability.getQuery()).isNull();
+    assertThat(capability.getHeaders()).isNull();
+    assertThat(capability.isIgnoreResponseCode()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testBuildHttpConnectionExecutionCapabilityWithIgnoreResponseCodeLevelQuery() {
+    HttpConnectionExecutionCapability capability =
+        buildHttpConnectionExecutionCapability("http://domain.com:8080/path/1/2/3?q1=1&q2=2", QUERY, null);
+    capability.setIgnoreResponseCode(true);
+    assertThat(capability.getHost()).isEqualTo("domain.com");
+    assertThat(capability.getScheme()).isEqualTo("http");
+    assertThat(capability.getPort()).isEqualTo(8080);
+    assertThat(capability.getPath()).isEqualTo("path/1/2/3");
+    assertThat(capability.getUrl()).isNull();
+    assertThat(capability.getQuery()).isEqualTo("q1=1&q2=2");
+    assertThat(capability.getHeaders()).isNull();
+    assertThat(capability.isIgnoreResponseCode()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testBuildHttpConnectionExecutionCapabilityWithIgnoreResponseCodeLevelQueryWithHeaders() {
+    HttpConnectionExecutionCapability capability =
+        buildHttpConnectionExecutionCapability("http://domain.com:8080/path/1/2/3?q1=1&q2=2",
+            Collections.singletonList(KeyValuePair.builder().key("x-api-key").value("1234").build()), QUERY, null);
+    capability.setIgnoreResponseCode(true);
+    assertThat(capability.getHost()).isEqualTo("domain.com");
+    assertThat(capability.getScheme()).isEqualTo("http");
+    assertThat(capability.getPort()).isEqualTo(8080);
+    assertThat(capability.getPath()).isEqualTo("path/1/2/3");
+    assertThat(capability.getUrl()).isNull();
+    assertThat(capability.getQuery()).isEqualTo("q1=1&q2=2");
+    assertThat(capability.isIgnoreResponseCode()).isTrue();
+    assertThat(capability.getHeaders().get(0).getKey()).isEqualTo("x-api-key");
+    assertThat(capability.getHeaders().get(0).getValue()).isEqualTo("1234");
   }
 
   @Test
