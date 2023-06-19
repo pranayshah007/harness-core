@@ -3615,6 +3615,12 @@ public class UserServiceImpl implements UserService {
   private String createCannyToken(User user) {
     String jwtCannySecret = configuration.getPortal().getJwtCannySecret();
 
+    if (StringUtils.isEmpty(jwtCannySecret)) {
+      String errorMessage = "Canny secret is either null or empty.";
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
     HashMap<String, Object> userData = new HashMap<>();
     userData.put(UserKeys.email, user.getEmail());
     userData.put("id", user.getUuid());
@@ -3625,8 +3631,9 @@ public class UserServiceImpl implements UserService {
     try {
       jwtCannySecretBytes = jwtCannySecret.getBytes("UTF-8");
     } catch (UnsupportedEncodingException ex) {
-      log.error("Error while encoding the canny secret to bytes", ex);
-      throw new InvalidRequestException("Error while encoding the canny secret to bytes", ex);
+      String errorMessage = "Error while encoding the canny secret to bytes";
+      log.error(errorMessage, ex);
+      throw new InvalidRequestException(errorMessage, ex);
     }
 
     return Jwts.builder()
