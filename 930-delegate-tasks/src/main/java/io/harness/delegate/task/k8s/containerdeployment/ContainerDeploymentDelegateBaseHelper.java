@@ -34,13 +34,14 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.rancher.RancherConfigType;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.delegate.task.k8s.rancher.RancherClusterActionDTO;
-import io.harness.delegate.task.k8s.rancher.RancherClusterActionHelper;
+import io.harness.delegate.task.k8s.rancher.RancherKubeConfigGenerator;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -85,7 +86,7 @@ public class ContainerDeploymentDelegateBaseHelper {
   @Inject private EncryptionService encryptionService;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
   @Inject private AwsEKSV2DelegateTaskHelper awsEKSDelegateTaskHelper;
-  @Inject private RancherClusterActionHelper rancherClusterActionHelper;
+  @Inject private RancherKubeConfigGenerator rancherKubeConfigGenerator;
 
   public static final LoadingCache<String, Object> lockObjects =
       CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build(CacheLoader.from(Object::new));
@@ -178,16 +179,33 @@ public class ContainerDeploymentDelegateBaseHelper {
           eksK8sInfraDelegateConfig.getNamespace(), logCallback);
     } else if (clusterConfigDTO instanceof RancherK8sInfraDelegateConfig) {
       RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig = (RancherK8sInfraDelegateConfig) clusterConfigDTO;
-      RancherClusterActionDTO clusterActionDTO = RancherClusterActionDTO.builder()
-                                                     .clusterName(rancherK8sInfraDelegateConfig.getCluster())
-                                                     .connector(rancherK8sInfraDelegateConfig.getRancherConnectorDTO())
-                                                     .namespace(rancherK8sInfraDelegateConfig.getNamespace())
-                                                     .logCallback(logCallback)
-                                                     .build();
-      return rancherClusterActionHelper.createKubernetesConfig(clusterActionDTO);
-    } else {
-      throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
+      return rancherKubeConfigGenerator.createKubernetesConfig(
+          getRancherClusterActionDTO(logCallback, rancherK8sInfraDelegateConfig));
     }
+    throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
+  }
+
+  private RancherClusterActionDTO getRancherClusterActionDTO(
+      LogCallback logCallback, RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
+    String rancherUrl = rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getRancherUrl();
+    String bearerToken =
+        String.valueOf(getRancherAuthDto(rancherK8sInfraDelegateConfig).getPasswordRef().getDecryptedValue());
+    return RancherClusterActionDTO.builder()
+        .clusterUrl(rancherUrl)
+        .bearerToken(bearerToken)
+        .clusterName(rancherK8sInfraDelegateConfig.getCluster())
+        .namespace(rancherK8sInfraDelegateConfig.getNamespace())
+        .logCallback(logCallback)
+        .build();
+  }
+
+  private RancherConnectorBearerTokenAuthenticationDTO getRancherAuthDto(
+      RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
+    return (RancherConnectorBearerTokenAuthenticationDTO) rancherK8sInfraDelegateConfig.getRancherConnectorDTO()
+        .getConfig()
+        .getConfig()
+        .getCredentials()
+        .getAuth();
   }
 
   private char[] getGcpServiceAccountKeyFileContent(GcpConnectorCredentialDTO gcpCredentials) {

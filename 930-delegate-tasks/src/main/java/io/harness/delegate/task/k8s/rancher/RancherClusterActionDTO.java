@@ -9,7 +9,6 @@ package io.harness.delegate.task.k8s.rancher;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.logging.LogCallback;
 
 import lombok.Builder;
@@ -19,8 +18,9 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class RancherClusterActionDTO {
-  RancherConnectorDTO connector;
   String namespace;
   String clusterName;
+  String clusterUrl;
+  String bearerToken;
   LogCallback logCallback;
 }
