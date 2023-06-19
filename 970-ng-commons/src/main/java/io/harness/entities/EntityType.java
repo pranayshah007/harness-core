@@ -614,7 +614,10 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
   @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
   DOWNLOAD_SERVERLESS_MANIFESTS(ModuleType.CD, EntityTypeConstants.DOWNLOAD_SERVERLESS_MANIFESTS, IdentifierRef.class,
-      EntityYamlRootNames.DOWNLOAD_SERVERLESS_MANIFESTS);
+      EntityYamlRootNames.DOWNLOAD_SERVERLESS_MANIFESTS),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
+  SERVERLESS_AWS_LAMBDA_PACKAGE_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2,
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PACKAGE_V2);
 
   private final ModuleType moduleType;
   String yamlName;

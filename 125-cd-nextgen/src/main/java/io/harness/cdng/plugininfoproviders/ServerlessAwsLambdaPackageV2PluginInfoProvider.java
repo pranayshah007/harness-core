@@ -33,6 +33,7 @@ import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -88,7 +89,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginInfoProvider {
+public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private OutcomeService outcomeService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
@@ -110,26 +111,26 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
-    ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
-        (ServerlessAwsLambdaDeployV2StepInfo) cdAbstractStepNode.getStepSpecType();
+    ServerlessAwsLambdaPackageV2StepInfo serverlessAwsLambdaPackageV2StepInfo =
+        (ServerlessAwsLambdaPackageV2StepInfo) cdAbstractStepNode.getStepSpecType();
 
-    Builder pluginDetailsBuilder = getPluginDetailsBuilder(serverlessAwsLambdaDeployV2StepInfo.getResources(),
-        serverlessAwsLambdaDeployV2StepInfo.getRunAsUser(), usedPorts);
+    Builder pluginDetailsBuilder = getPluginDetailsBuilder(serverlessAwsLambdaPackageV2StepInfo.getResources(),
+        serverlessAwsLambdaPackageV2StepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
 
-    if (ParameterField.isNotNull(serverlessAwsLambdaDeployV2StepInfo.getConnectorRef())
-        || isNotEmpty(serverlessAwsLambdaDeployV2StepInfo.getConnectorRef().getValue())) {
-      imageDetails = getImageDetails(serverlessAwsLambdaDeployV2StepInfo);
+    if (ParameterField.isNotNull(serverlessAwsLambdaPackageV2StepInfo.getConnectorRef())
+        || isNotEmpty(serverlessAwsLambdaPackageV2StepInfo.getConnectorRef().getValue())) {
+      imageDetails = getImageDetails(serverlessAwsLambdaPackageV2StepInfo);
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image
-      StepImageConfig stepImageConfig = pluginExecutionConfig.getServerlessAwsLambdaDeployV2StepImageConfig();
+      StepImageConfig stepImageConfig = pluginExecutionConfig.getServerlessAwsLambdaPackageV2StepImageConfig();
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(ambiance, serverlessAwsLambdaDeployV2StepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(ambiance, serverlessAwsLambdaPackageV2StepInfo));
     PluginCreationResponse response = getPluginCreationResponse(pluginDetailsBuilder);
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
                                       .setIdentifier(cdAbstractStepNode.getIdentifier())
@@ -155,7 +156,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
 
   public Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
-    PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
+    Builder pluginDetailsBuilder = PluginDetails.newBuilder();
 
     PluginContainerResources pluginContainerResources = PluginContainerResources.newBuilder()
                                                             .setCpu(PluginInfoProviderHelper.getCPU(resources))
@@ -180,15 +181,15 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
 
   @Override
   public boolean isSupported(String stepType) {
-    if (stepType.equals(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)) {
+    if (stepType.equals(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)) {
       return true;
     }
     return false;
   }
 
   public Map<String, String> getEnvironmentVariables(
-      Ambiance ambiance, ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo) {
-    ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaDeployV2StepInfo.getEnvVariables();
+      Ambiance ambiance, ServerlessAwsLambdaPackageV2StepInfo serverlessAwsLambdaPackageV2StepInfo) {
+    ParameterField<Map<String, String>> envVariables = serverlessAwsLambdaPackageV2StepInfo.getEnvVariables();
 
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     ManifestOutcome serverlessManifestOutcome = getServerlessManifestOutcome(manifestsOutcome.values());
@@ -246,14 +247,15 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
       }
     }
 
-    ParameterField<List<String>> deployCommandOptions = serverlessAwsLambdaDeployV2StepInfo.getDeployCommandOptions();
+    ParameterField<List<String>> packageCommandOptions =
+        serverlessAwsLambdaPackageV2StepInfo.getPackageCommandOptions();
 
     HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap = new HashMap<>();
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", gitPaths.get(0));
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
     serverlessPrepareRollbackEnvironmentVariablesMap.put(
-        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+        "PLUGIN_PACKAGE_COMMAND_OPTIONS", String.join(" ", packageCommandOptions.getValue()));
 
     if (awsAccessKey != null) {
       serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_AWS_ACCESS_KEY", awsAccessKey);

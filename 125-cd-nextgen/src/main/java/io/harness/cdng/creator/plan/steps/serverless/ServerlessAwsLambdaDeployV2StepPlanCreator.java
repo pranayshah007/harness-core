@@ -7,7 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps.serverless;
 
-import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2;
+import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,7 +45,7 @@ public class ServerlessAwsLambdaDeployV2StepPlanCreator
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, ServerlessAwsLambdaDeployV2StepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    String packageStepFqn = getExecutionStepFqn(ctx.getCurrentField(), SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2);
+    String packageStepFqn = getExecutionStepFqn(ctx.getCurrentField(), SERVERLESS_AWS_LAMBDA_PACKAGE_V2);
     ServerlessAwsLambdaDeployV2StepParameters serverlessAwsLambdaDeployV2StepParameters =
         (ServerlessAwsLambdaDeployV2StepParameters) ((StepElementParameters) stepParameters).getSpec();
     serverlessAwsLambdaDeployV2StepParameters.setPackageStepFqn(packageStepFqn);
