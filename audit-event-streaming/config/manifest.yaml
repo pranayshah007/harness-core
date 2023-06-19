@@ -1,2 +1,8 @@
+BUILD_SCRIPT_PATH: audit-event-streaming/build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/dist/audit-event-streaming/Dockerfile-cie-jdk
+CONTEXT_PATH: /harness/harness-core/dist/audit-event-streaming
+ARTIFACT_REPO: harness/feature-audit-event-streaming-openjdk-8u242
 HELM_CHART_REPO: harness-core/audit-event-streaming/chart
+HELM_PUBLISH_REPO: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
+BUILD_STEP_RESOURCE_CPU: 1000m
+BUILD_STEP_RESOURCE_MEMORY: 3Gi
