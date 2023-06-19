@@ -7,6 +7,8 @@
 
 package io.harness.expression;
 
+import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
+
 import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.serializer.JsonUtils;
 
@@ -41,7 +43,7 @@ public class JsonFunctor implements ExpressionFunctor {
         return list.get(0);
       }
     }
-    return contextMap != null && contextMap.containsKey("resolveObjectsViaJSONSelect") ? object : null;
+    return contextMap != null && contextMap.containsKey(RESOLVE_OBJECTS_VIA_JSON_SELECT) ? object : null;
   }
 
   public Object list(String path, String json) {

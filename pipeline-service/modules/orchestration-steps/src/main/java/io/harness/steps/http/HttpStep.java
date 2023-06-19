@@ -9,6 +9,7 @@ package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.CDS_ENCODE_HTTP_STEP_URL;
+import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -333,7 +334,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
     contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
     if (resolveObjectsViaJSONSelect) {
-      contextMap.put("resolveObjectsViaJSONSelect", "true");
+      contextMap.put(RESOLVE_OBJECTS_VIA_JSON_SELECT, "true");
     }
     return contextMap;
   }

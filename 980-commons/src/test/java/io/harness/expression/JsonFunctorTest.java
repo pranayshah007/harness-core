@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+@OwnedBy(HarnessTeam.CDC)
 public class JsonFunctorTest extends CategoryTest {
   @Test
   @Owner(developers = ABHINAV_MITTAL)
