@@ -27,6 +27,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.ci.app.InspectCommand;
 import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
@@ -53,6 +56,7 @@ import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.GeneralException;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
@@ -64,6 +68,7 @@ import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -177,7 +182,7 @@ import ru.vyarus.guice.validator.ValidationModule;
 @OwnedBy(CI)
 public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
-  public static final Store HARNESS_STORE = Store.builder().name("harness").build();
+  public static final Store HARNESSCI_STORE = Store.builder().name(DbAliases.CIMANAGER).build();
   private static final String APP_NAME = "CI Manager Service Application";
 
   public static void main(String[] args) throws Exception {
@@ -281,6 +286,23 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       @Override
       public UserProvider userProvider() {
         return new NoopUserProvider();
+      }
+    });
+
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return configuration.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return configuration.getFeatureFlagConfig();
       }
     });
 
@@ -489,10 +511,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   }
 
   private static void registerStores(CIManagerConfiguration config, Injector injector) {
-    final String ciMongo = config.getHarnessCIMongo().getUri();
-    if (isNotEmpty(ciMongo) && !ciMongo.equals(config.getHarnessMongo().getUri())) {
-      final HPersistence hPersistence = injector.getInstance(HPersistence.class);
-      hPersistence.register(HARNESS_STORE, config.getHarnessMongo().getUri());
+    final HPersistence hPersistence = injector.getInstance(HPersistence.class);
+    if (isNotEmpty(config.getHarnessCIMongo().getUri())) {
+      hPersistence.register(HARNESSCI_STORE, config.getHarnessCIMongo().getUri());
     }
   }
 
