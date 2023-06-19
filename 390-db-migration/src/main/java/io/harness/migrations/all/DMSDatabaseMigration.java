@@ -110,8 +110,6 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
             migrateCollection(collection);
           } catch (Exception ex) {
             log.warn("Migration for collection {} failed in attempt 1 with exception {}", collection, ex);
-            // Delete all documents from collection, not dropping collection as it will delete indexes also.
-            persistence.getCollection(dmsStore, collection).remove(new BasicDBObject());
             migrateCollection(collection);
           }
         }
