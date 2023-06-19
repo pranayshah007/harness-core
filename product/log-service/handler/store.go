@@ -6,8 +6,14 @@
 package handler
 
 import (
+	"archive/zip"
+	"bufio"
+	"context"
+	"fmt"
+	"github.com/harness/harness-core/product/log-service/stream"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/harness/harness-core/product/log-service/logger"
@@ -170,5 +176,111 @@ func HandleDelete(store store.Store) http.HandlerFunc {
 			WithField("time", time.Now().Format(time.RFC3339)).
 			Infoln("api: successfully deleted object")
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// HandleDownload returns an http.HandlerFunc that downloads
+// a blob from the datastore and copies to the http.Response.
+func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		st := time.Now()
+		h := w.Header()
+		h.Set("Access-Control-Allow-Origin", "*")
+		ctx := r.Context()
+
+		accountID := r.FormValue(accountIDParam)
+		prefix := ""
+		if r.URL.Query().Get("prefix") != "" {
+			prefix = r.URL.Query().Get("prefix")
+		}
+
+		out, _ := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix))
+
+		zipPrefix := prefix + "_logs.zip"
+
+		go func(s store.Store) {
+			fmt.Println("entrou na go routine")
+			pipeRead, pipeWrite := io.Pipe()
+			defer pipeRead.Close()
+			//archive, err := os.Create("archive.zip")
+			//if err != nil {
+			//	panic(err)
+			//}
+			//defer archive.Close()
+			//zipWriter := zip.NewWriter(archive)
+
+			zipWriter := zip.NewWriter(pipeWrite)
+			defer zipWriter.Close()
+
+			fmt.Println("starting loop through keys")
+			for batch, keys := range out {
+				keys := keys
+				batch := batch
+				fmt.Println("starting download batch ", batch)
+				for _, key := range keys {
+					fileDownloaded, err := s.Download(context.Background(), key)
+					if err != nil {
+						fmt.Println("erro ao baixar arquivo")
+						return
+					}
+					zipFile, err := zipWriter.Create(key)
+					//if err != nil {
+					//	fmt.Println("erro ao zipar arquivo")
+					//	return
+					//}
+					_, err = io.Copy(zipFile, fileDownloaded)
+					if err != nil {
+						fmt.Println("erro ao copiar arquivo para o zip")
+						return
+					}
+				}
+			}
+			//pipeWrite.Close()
+
+			zipWriter.Close()
+			pipeWrite.Close()
+			//go func() {
+			//br := bufio.NewReader(pipeRead)
+			bufr := bufio.NewReader(pipeRead)
+			//str, err := bufr.ReadString('\n')
+			//fmt.Println("ReadString.err", err)
+			//fmt.Println("ReadString str", str)
+			_ = s.Upload(context.Background(), zipPrefix, bufr)
+			//}()
+
+			fmt.Println("terminou a go routine")
+
+			os.Create("archive.zip")
+
+			//zipWriter.Close()
+			//pipeWrite.Close()
+			zipWriter.Close()
+			return
+		}(s)
+
+		link, err := s.DownloadLink(ctx, zipPrefix, time.Hour)
+		if err != nil {
+			WriteNotFound(w, err)
+			logger.FromRequest(r).
+				WithError(err).
+				WithField("prefix", prefix).
+				Errorln("api: cannot generate the download url")
+		} else {
+			WriteJSON(w, struct {
+				Link    string        `json:"link"`
+				Expires time.Duration `json:"expires"`
+			}{
+				link, time.Hour,
+			}, 200)
+			//WriteJSON(w, struct {
+			//	ListKeys map[int][]string `json:"keys"`
+			//}{out}, 200)
+
+			logger.FromRequest(r).
+				WithField("prefix", prefix).
+				WithField("latency", time.Since(st)).
+				WithField("time", time.Now().Format(time.RFC3339)).
+				Infoln("api: successfully downloaded object")
+		}
 	}
 }

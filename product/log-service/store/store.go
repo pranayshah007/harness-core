@@ -31,4 +31,7 @@ type Store interface {
 
 	// Ping pings the store for readiness
 	Ping() error
+
+	DownloadPrefix(ctx context.Context, prefix string) (io.ReadCloser, error)
+	ListBlobPrefix(ctx context.Context, prefix string) (map[int][]string, error)
 }

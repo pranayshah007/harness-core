@@ -104,6 +104,23 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 		return sr
 	}())
 
+	// Blob zip store endpoints
+	// Format: /blob/prefix?accountID=&prefix=&pipeline_name=&execution_id=
+	r.Mount("/blob/prefix", func() http.Handler {
+		sr := chi.NewRouter()
+		if !config.Auth.DisableAuth {
+			sr.Use(AuthMiddleware(config, ngClient))
+		}
+
+		sr.Post("/", HandleUpload(store))
+		sr.Delete("/", HandleDelete(store))
+		sr.Get("/", HandleListBlobWithPrefix(store, stream))
+		sr.Post("/link/upload", HandleUploadLink(store))
+		sr.Post("/link/download", HandleDownloadLink(store))
+
+		return sr
+	}())
+
 	// Log intelligence endpoints
 	// Format: /rca?accountID=&key=
 	r.Mount("/rca", func() http.Handler {

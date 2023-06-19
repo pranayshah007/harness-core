@@ -1,0 +1,7 @@
+{"level":"INFO","pos":0,"out":"-----","time":"2022-07-06T13:29:24.821092Z","args":null}
+{"level":"INFO","pos":0,"out":"\u001b[1;97m\u001b[40mFetching jira issue to check approval/rejection criteria\u001b[0m","time":"2022-07-06T13:29:24.903857Z","args":null}
+{"level":"INFO","pos":0,"out":"Jira url: https://harness.atlassian.net/","time":"2022-07-06T13:29:25.338324Z","args":null}
+{"level":"INFO","pos":0,"out":"Jira task: Q23X0f2PTSOMWlOWDo8NCw","time":"2022-07-06T13:29:25.471145Z","args":null}
+{"level":"INFO","pos":0,"out":"Issue url: https://harness.atlassian.net/browse/TJI-100984","time":"2022-07-06T13:29:26.569894Z","args":null}
+{"level":"INFO","pos":0,"out":"Evaluating approval criteria...","time":"2022-07-06T13:29:26.639061Z","args":null}
+{"level":"INFO","pos":0,"out":"\u001b[0;96m\u001b[40mApproval criteria has been met\u001b[0m","time":"2022-07-06T13:29:26.701051Z","args":null}

@@ -110,7 +110,14 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	})
 }
 
+func (s *Store) DownloadPrefix(ctx context.Context, prefix string) (io.ReadCloser, error) {
+	return nil, errors.New("not implemented, use the s3 Datastore")
+}
+
 // Ping pings the store for readiness
 func (s *Store) Ping() error {
 	return nil
+}
+func (s *Store) ListBlobPrefix(ctx context.Context, prefix string) (map[int][]string, error) {
+	return nil, errors.New("not implemented, use the s3 Datastore")
 }
