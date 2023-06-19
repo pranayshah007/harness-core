@@ -21,6 +21,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -511,7 +512,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     int page = 0;
     int size = 2;
     Page<ConnectorResponseDTO> connectorResponseDTOList =
-        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null);
+        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null, emptyList());
     if (connectorResponseDTOList.getContent().size() == 1) {
       throw new InvalidRequestException(
           String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
@@ -748,8 +749,9 @@ public class ConnectorServiceImpl implements ConnectorService {
 
   @Override
   public ConnectorStatistics getConnectorStatistics(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return defaultConnectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
+    return defaultConnectorService.getConnectorStatistics(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
   }
 
   @Override
@@ -790,9 +792,32 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory, String version) {
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds) {
     return defaultConnectorService.list(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        type, category, sourceCategory, version, connectorIds);
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    return defaultConnectorService.listAll(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
+        version);
+  }
+
+  @Override
+  public Page<Connector> listAll(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
+      ConnectorCategory sourceCategory, String version) {
+    return defaultConnectorService.listAll(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
         type, category, sourceCategory, version);
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return defaultConnectorService.listAll(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   @Override

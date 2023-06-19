@@ -17,6 +17,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.git.model.ChangeType;
 
@@ -38,7 +39,18 @@ public interface ConnectorCrudService {
 
   Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory, String version);
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds);
+
+  Page<Connector> listAll(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier,
+      String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version);
+
+  Page<Connector> listAll(int page, int size, String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String searchTerm, ConnectorType type, ConnectorCategory category, ConnectorCategory sourceCategory,
+      String version);
+
+  Page<Connector> listAll(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   Optional<ConnectorResponseDTO> get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);

@@ -14,13 +14,14 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 
+import java.util.List;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(DX)
 public interface ConnectorFilterService {
   Criteria createCriteriaFromConnectorFilter(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String searchTerm, ConnectorType type, ConnectorCategory category, ConnectorCategory sourceCategory,
-      boolean isBuiltInSMDisabled, String version);
+      boolean isBuiltInSMDisabled, String version, List<String> connectorIds);
 
   Criteria createCriteriaFromConnectorListQueryParams(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String filterIdentifier, String searchTerm, FilterPropertiesDTO filterProperties,

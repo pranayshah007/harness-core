@@ -386,7 +386,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
         ConnectorFilterPropertiesDTO.builder().types(Arrays.asList(NEXUS, DOCKER, KUBERNETES_CLUSTER)).build();
     Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(accountIdentifier, connectorFilterPropertiesDTO,
-        orgIdentifier, projectIdentifier, "", "", false, false, pageable, null);
+        orgIdentifier, projectIdentifier, "", "", false, false, pageable);
     assertThat(connectorDTOS).isNotNull();
     assertThat(connectorDTOS.getTotalElements()).isEqualTo(3);
     List<ConnectorType> connectorTypes =

@@ -21,6 +21,8 @@ import static io.harness.ng.core.utils.URLDecoderUtility.getDecodedString;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import static java.util.Collections.emptyList;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -42,6 +44,7 @@ import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.services.ConnectorHeartbeatService;
@@ -88,6 +91,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
@@ -104,6 +108,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.data.domain.Page;
 import retrofit2.http.Body;
 
 @Api("/connectors")
@@ -252,10 +257,17 @@ public class ConnectorResource {
               + "CLOUD_PROVIDER, SECRET_MANAGER, CLOUD_COST, ARTIFACTORY, CODE_REPO,  "
               + "MONITORING and TICKETING") @QueryParam(SOURCE_CATEGORY_KEY) ConnectorCategory sourceCategory,
       @QueryParam("version") String version, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(page, size, accountIdentifier,
+          orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory, version, emptyList())));
+    }
+    Page<Connector> allConnectors = connectorService.listAll(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, searchTerm, type, category, sourceCategory, version);
+    List<Connector> permittedConnectors = connectorRbacHelper.getPermitted(allConnectors.getContent());
+    List<String> connectorIds = permittedConnectors.stream().map(Connector::getId).collect(Collectors.toList());
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(page, size, accountIdentifier, orgIdentifier,
-        projectIdentifier, searchTerm, type, category, sourceCategory, version)));
+        projectIdentifier, searchTerm, type, category, sourceCategory, version, connectorIds)));
   }
 
   @POST
@@ -292,12 +304,23 @@ public class ConnectorResource {
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
       @QueryParam("version") String version, @BeanParam PageRequest pageRequest) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
     }
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
+          orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+          getDistinctFromBranches, getPageRequest(pageRequest), version)));
+    }
+    Page<Connector> allConnectors = connectorService.listAll(accountIdentifier, connectorListFilter, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches,
+        getPageRequest(pageRequest), version);
+
+    List<Connector> permittedConnectors = connectorRbacHelper.getPermitted(allConnectors.getContent());
+    List<String> connectorIds = permittedConnectors.stream().map(Connector::getId).collect(Collectors.toList());
+    connectorListFilter.setConnectorIds(connectorIds);
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
         orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
         getDistinctFromBranches, getPageRequest(pageRequest), version)));
@@ -337,12 +360,21 @@ public class ConnectorResource {
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
       @BeanParam PageRequest pageRequest) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
     }
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(accountIdentifier,
+          connectorListFilter, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+          includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, getPageRequest(pageRequest))));
+    }
+
+    Page<Connector> allConnectors = connectorService.listAll(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<Connector> permittedConnectors = connectorRbacHelper.getPermitted(allConnectors.getContent());
+    List<String> connectorIds = permittedConnectors.stream().map(Connector::getId).collect(Collectors.toList());
+    connectorListFilter.setConnectorIds(connectorIds);
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(accountIdentifier, connectorListFilter,
         orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
         getDistinctFromBranches, getPageRequest(pageRequest))));
@@ -561,10 +593,16 @@ public class ConnectorResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
       String projectIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      return ResponseDTO.newResponse(
+          connectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier, emptyList()));
+    }
+    Page<Connector> allConnectors = connectorService.listAll(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<Connector> permittedConnectors = connectorRbacHelper.getPermitted(allConnectors.getContent());
+    List<String> connectorIds = permittedConnectors.stream().map(Connector::getId).collect(Collectors.toList());
     return ResponseDTO.newResponse(
-        connectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier));
+        connectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier, connectorIds));
   }
 
   @POST

@@ -12,6 +12,7 @@ import static io.harness.connector.ConnectivityStatus.SUCCESS;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 
 import static java.util.stream.Collectors.toList;
@@ -33,6 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -777,5 +779,163 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(connectorResponseDTOOptional.isPresent()).isTrue();
     assertThat(connectorResponseDTOOptional.get().getConnector().getName()).isEqualTo(name);
     assertThat(connectorResponseDTOOptional.get().getConnector().getIdentifier()).isEqualTo(identifier);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listAll_Connectors_ReturnsAllConnectors() {
+    createConnector(identifier, name);
+    Page<Connector> connectors = connectorService.listAll(accountIdentifier, null, null);
+    assertThat(connectors.getTotalElements()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listAllByConnectorType_ReturnsAllByConnectorType() throws IOException {
+    String connectorIdentifier1 = "harnessSecretManger";
+    String connectorIdentifier2 = "connectorIdentifier2";
+    String connectorIdentifier3 = "connectorIdentifier3";
+
+    final Connector connector = LocalConnector.builder().harnessManaged(true).isDefault(false).build();
+    connector.setAccountIdentifier(accountIdentifier);
+    connector.setIdentifier(connectorIdentifier1);
+    connector.setName("Harness Vault");
+    connector.setScope(Scope.ACCOUNT);
+    connector.setFullyQualifiedIdentifier(accountIdentifier + "/" + connectorIdentifier1);
+    connector.setType(ConnectorType.LOCAL);
+    mongoTemplate.save(connector);
+    createConnector(connectorIdentifier2, name + "2");
+    createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    Page<Connector> connectors =
+        connectorService.listAll(0, 10, accountIdentifier, null, null, null, ConnectorType.LOCAL, null, null, null);
+    assertThat(connectors.getTotalElements()).isEqualTo(1);
+    List<String> connectorIdentifierList = connectors.stream().map(con -> con.getIdentifier()).collect(toList());
+    assertThat(connectorIdentifierList).contains(connectorIdentifier1);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listAllByFilter_ReturnsAllByFilter() throws IOException {
+    String connectorIdentifier1 = "harnessSecretManger";
+    String connectorIdentifier2 = "connectorIdentifier2";
+    String connectorIdentifier3 = "connectorIdentifier3";
+
+    final Connector connector = LocalConnector.builder().harnessManaged(true).isDefault(false).build();
+    connector.setAccountIdentifier(accountIdentifier);
+    connector.setIdentifier(connectorIdentifier1);
+    connector.setName("Harness Vault");
+    connector.setScope(Scope.ACCOUNT);
+    connector.setFullyQualifiedIdentifier(accountIdentifier + "/" + connectorIdentifier1);
+    connector.setType(ConnectorType.LOCAL);
+    mongoTemplate.save(connector);
+    createConnector(connectorIdentifier2, name + "2");
+    createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder().connectorNames(List.of("Harness Vault")).build();
+    Pageable pageable = Pageable.ofSize(10);
+    Page<Connector> connectors = connectorService.listAll(accountIdentifier, connectorFilterPropertiesDTO, null, null,
+        null, null, Boolean.FALSE, Boolean.FALSE, pageable, null);
+    assertThat(connectors.getTotalElements()).isEqualTo(1);
+    List<String> connectorIdentifierList = connectors.stream().map(con -> con.getIdentifier()).collect(toList());
+    assertThat(connectorIdentifierList).contains(connectorIdentifier1);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listAllConnectorsByConnectorIds_ReturnsAllConnectorsByFilterIds() throws IOException {
+    String connectorIdentifier1 = "harnessSecretManger";
+    String connectorIdentifier2 = "connectorIdentifier2";
+    String connectorIdentifier3 = "connectorIdentifier3";
+
+    final Connector connector = LocalConnector.builder().harnessManaged(true).isDefault(false).build();
+    connector.setAccountIdentifier(accountIdentifier);
+    connector.setIdentifier(connectorIdentifier1);
+    connector.setName("Harness Vault");
+    connector.setScope(Scope.ACCOUNT);
+    connector.setFullyQualifiedIdentifier(accountIdentifier + "/" + connectorIdentifier1);
+    connector.setType(ConnectorType.LOCAL);
+    Connector savedConnector = mongoTemplate.save(connector);
+    createConnector(connectorIdentifier2, name + "2");
+    createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    List<String> connectorIds = List.of(savedConnector.getId());
+    Page<ConnectorResponseDTO> connectorSummaryDTOSList =
+        connectorService.list(0, 10, accountIdentifier, null, null, null, null, null, null, null, connectorIds);
+    assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(1);
+    List<String> connectorIdentifierList =
+        connectorSummaryDTOSList.stream()
+            .map(connectorSummaryDTO -> connectorSummaryDTO.getConnector().getIdentifier())
+            .collect(toList());
+    assertThat(connectorIdentifierList).contains(connectorIdentifier1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.JIMIT_GANDHI)
+  @Category({UnitTests.class})
+  public void listAllConnectorsByIdentifier_ReturnsAllConnectorsByIdentifiers() throws IOException {
+    String connectorIdentifier1 = "harnessSecretManger";
+    String connectorIdentifier2 = "connectorIdentifier2";
+    String connectorIdentifier3 = "connectorIdentifier3";
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+
+    final Connector connector = LocalConnector.builder().harnessManaged(true).isDefault(false).build();
+    connector.setAccountIdentifier(accountIdentifier);
+    connector.setIdentifier(connectorIdentifier1);
+    connector.setName("Harness Vault");
+    connector.setScope(Scope.ACCOUNT);
+    connector.setFullyQualifiedIdentifier(accountIdentifier + "/" + connectorIdentifier1);
+    connector.setType(ConnectorType.LOCAL);
+
+    mongoTemplate.save(connector);
+    createConnector(connectorIdentifier2, name + "2");
+    createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder().connectorIdentifiers(List.of(connectorIdentifier2)).build();
+    Pageable pageable = Pageable.ofSize(10);
+
+    Page<ConnectorResponseDTO> connectorSummaryDTOSList = connectorService.list(
+        accountIdentifier, connectorFilterPropertiesDTO, null, null, "", "", false, false, pageable, null);
+    assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(1);
+    List<String> connectorIdentifierList =
+        connectorSummaryDTOSList.stream()
+            .map(connectorSummaryDTO -> connectorSummaryDTO.getConnector().getIdentifier())
+            .collect(toList());
+    assertThat(connectorIdentifierList).contains(connectorIdentifier2);
   }
 }
