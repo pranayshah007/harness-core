@@ -10,6 +10,8 @@ package io.harness.delegate.utils;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactUtilities;
+import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
@@ -26,6 +28,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +36,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 public class GithubPackageUtils {
+  private static final String MAVEN_PACKAGE_TYPE = "maven";
+  private static final String NUGET_PACKAGE_TYPE = "nuget";
+  private static final String METADATA_URL = "url";
+
   public static GithubPackagesArtifactDelegateConfig getGithubPackagesArtifactDelegateConfig(
       SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
     if (!(artifactDelegateConfig instanceof GithubPackagesArtifactDelegateConfig)) {
@@ -67,6 +74,21 @@ public class GithubPackageUtils {
             (GithubUsernameTokenDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
         secretDecryptionService.decrypt(githubUsernameTokenDTO, encryptedDataDetails);
       }
+    }
+  }
+
+  public String getBasicAuthHeader(GithubPackagesInternalConfig githubPackagesInternalConfig) {
+    return ArtifactUtilities.getBasicAuthHeader(githubPackagesInternalConfig.hasCredentials(),
+        githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken().toCharArray());
+  }
+
+  public String getArtifactFileName(String packageType, Map<String, String> metadata) {
+    final String artifactUrl = metadata.get(METADATA_URL);
+    switch (packageType) {
+      case MAVEN_PACKAGE_TYPE:
+        return ArtifactUtilities.getArtifactName(artifactUrl);
+      default:
+        throw new InvalidRequestException("Invalid packageType: %s for Github package artifact");
     }
   }
 }

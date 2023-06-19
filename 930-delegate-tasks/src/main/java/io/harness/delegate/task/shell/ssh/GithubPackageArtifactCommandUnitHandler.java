@@ -63,7 +63,8 @@ public class GithubPackageArtifactCommandUnitHandler extends ArtifactCommandUnit
     GithubPackagesInternalConfig githubPackagesInternalConfig =
         GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(githubConnectorDTO);
 
-    String artifactName = githubPackagesArtifactDelegateConfig.getPackageName();
+    String artifactName = GithubPackageUtils.getArtifactFileName(
+        githubPackagesArtifactDelegateConfig.getPackageType(), githubPackagesArtifactDelegateConfig.getMetadata());
     String artifactUrl = githubPackagesArtifactDelegateConfig.getArtifactUrl();
 
     logCallback.saveExecutionLog(color(format("Downloading GithubPackage artifact with identifier: %s",
@@ -101,7 +102,8 @@ public class GithubPackageArtifactCommandUnitHandler extends ArtifactCommandUnit
     GithubPackagesInternalConfig githubPackagesInternalConfig =
         GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(githubConnectorDTO);
 
-    String artifactName = githubPackagesArtifactDelegateConfig.getPackageName();
+    String artifactName = GithubPackageUtils.getArtifactFileName(
+        githubPackagesArtifactDelegateConfig.getPackageType(), githubPackagesArtifactDelegateConfig.getMetadata());
     context.getArtifactMetadata().put(ArtifactMetadataKeys.artifactName, artifactName);
 
     String artifactUrl = githubPackagesArtifactDelegateConfig.getArtifactUrl();
