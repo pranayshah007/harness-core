@@ -279,13 +279,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public Map<String, String> evaluateOutputVariables(
       Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
-    boolean resolveObjectsViaJSONSelect;
-    if (pmsFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT)) {
-      resolveObjectsViaJSONSelect = true;
-    } else {
-      resolveObjectsViaJSONSelect = false;
-    }
+    final boolean resolveObjectsViaJSONSelect = pmsFeatureFlagHelper.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT);
     if (outputVariables != null) {
       Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse, resolveObjectsViaJSONSelect);
       outputVariables.keySet().forEach(name -> {
