@@ -24,7 +24,7 @@ public class CdEnumFilter extends EnumFeatureFlagFilter {
 
   public CdEnumFilter() {
     put(FeatureName.NG_SVC_ENV_REDESIGN, Sets.newHashSet(ServiceDefinitionType.CUSTOM_DEPLOYMENT));
-    put(FeatureName.CDS_TAS_NG, Sets.newHashSet(ServiceDefinitionType.TAS));
+    put(FeatureName.NG_SVC_ENV_REDESIGN, Sets.newHashSet(ServiceDefinitionType.TAS));
   }
 
   @Override

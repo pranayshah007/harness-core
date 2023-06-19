@@ -54,6 +54,8 @@ import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -195,10 +197,23 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void applyRefreshTokenAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
+      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
+      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      if (!isNull(serviceNowConnectorDTO.getAuth())
+          && ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowConnectorDTO.getAuth().getAuthType())
+          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_REFRESH_TOKEN_AUTH)) {
+        throw new InvalidRequestException("Unsupported servicenow auth type provided : Refresh Token Grant");
+      }
+    }
+  }
+
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
+    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -304,6 +319,7 @@ public class ConnectorServiceImpl implements ConnectorService {
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
+    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =

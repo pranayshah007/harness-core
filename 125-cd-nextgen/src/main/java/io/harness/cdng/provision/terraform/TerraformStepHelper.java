@@ -25,7 +25,6 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
@@ -1203,16 +1202,6 @@ public class TerraformStepHelper {
     String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
     log.info("Task Successfully queued with taskId: {}", taskId);
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformSecretCleanupTaskNotifyCallback(), taskId);
-  }
-
-  public void checkIfTerraformCloudCliIsEnabled(
-      FeatureName featurename, boolean isTerraformCloudCli, Ambiance ambiance) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), featurename) && isTerraformCloudCli) {
-      throw new AccessDeniedException(
-          format("'%s' is not enabled for account '%s'. Please contact harness customer care to enable FF.",
-              FeatureName.CD_TERRAFORM_CLOUD_CLI_NG.name(), AmbianceUtils.getAccountId(ambiance)),
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
   }
 
   public Map<String, String> getTerraformCliFlags(List<TerraformCliOptionFlag> commandFlags) {

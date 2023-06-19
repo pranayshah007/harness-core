@@ -8,6 +8,7 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.azure.AzureConfigContext;
@@ -51,8 +53,15 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConfigType;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
+import io.harness.delegate.task.k8s.rancher.RancherClusterActionHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
@@ -98,6 +107,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
   @Mock LogCallback logCallback;
   @Mock private AwsEKSV2DelegateTaskHelper awsEKSDelegateTaskHelper;
+  @Mock private RancherClusterActionHelper rancherClusterActionHelper;
 
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   private static final String WORK_DIR = "./repository/k8s";
@@ -446,5 +456,41 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(eksK8sInfraDelegateConfig, WORK_DIR);
     verify(awsEKSDelegateTaskHelper, times(1)).getKubeConfig(eq(awsConnectorDTO), eq("eks"), eq("default"), eq(null));
     verify(kubernetesContainerService).getConfigFileContent(any());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testCreateKubernetesConfigRancher() {
+    RancherK8sInfraDelegateConfig delegateConfig = RancherK8sInfraDelegateConfig.builder().build();
+    containerDeploymentDelegateBaseHelper.createKubernetesConfig(delegateConfig, "", logCallback);
+
+    verify(rancherClusterActionHelper, times(1)).createKubernetesConfig(any());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testRancherClusterConfigDecryption() {
+    RancherConnectorDTO rancherConnectorDTO =
+        RancherConnectorDTO.builder().config(RancherConnectorConfigDTO.builder().build()).build();
+    containerDeploymentDelegateBaseHelper.decryptRancherClusterConfig(rancherConnectorDTO, emptyList());
+    verify(secretDecryptionService, times(0)).decrypt(any(DecryptableEntity.class), anyList());
+
+    RancherConnectorBearerTokenAuthenticationDTO authDTO =
+        RancherConnectorBearerTokenAuthenticationDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetails = emptyList();
+    rancherConnectorDTO =
+        RancherConnectorDTO.builder()
+            .config(
+                RancherConnectorConfigDTO.builder()
+                    .configType(RancherConfigType.MANUAL_CONFIG)
+                    .config(RancherConnectorConfigAuthDTO.builder()
+                                .credentials(RancherConnectorConfigAuthCredentialsDTO.builder().auth(authDTO).build())
+                                .build())
+                    .build())
+            .build();
+    containerDeploymentDelegateBaseHelper.decryptRancherClusterConfig(rancherConnectorDTO, encryptedDataDetails);
+    verify(secretDecryptionService, times(1)).decrypt(authDTO, encryptedDataDetails);
   }
 }

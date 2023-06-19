@@ -22,6 +22,7 @@ java_library(
         "//:lombok",
         "//332-ssca/cd:module",
         "//878-ng-common-utilities:module",
+        "//878-ng-common-utilities/src/main/java/io/harness/beans/common:module",
         "//880-pipeline-cd-commons:module",
         "//950-telemetry:module",
         "//953-yaml-commons:module",

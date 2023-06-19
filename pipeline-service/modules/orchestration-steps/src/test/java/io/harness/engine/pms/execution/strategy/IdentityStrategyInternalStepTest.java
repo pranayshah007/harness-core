@@ -15,6 +15,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -338,7 +339,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
 
     // nodeExecution formation
     NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
+    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(anyString(), anySet());
 
     StepResponse stepResponse = identityStrategyInternalStep.handleChildResponse(ambiance, identityParams, null);
     verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");

@@ -48,6 +48,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -118,6 +119,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
 import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -148,12 +150,15 @@ import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.k8s.K8sDeployRequest;
+import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestType;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
@@ -207,6 +212,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
@@ -4762,6 +4768,55 @@ public class K8sStepHelperTest extends CategoryTest {
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent.size()).isEqualTo(2);
     assertThat(valuesFilesContent.get(1)).isEqualTo("replicaCount: 3");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testK8sTaskTypeRancher() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testK8sTaskTypeHooks() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testK8sTaskType() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG);
+  }
+
+  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
+    try (MockedStatic<K8sTaskCapabilityHelper> mock = mockStatic(K8sTaskCapabilityHelper.class)) {
+      mock.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
+          .thenReturn(emptyList());
+      StepElementParameters stepElementParameters = mock(StepElementParameters.class);
+      K8sSpecParameters specParameters = mock(K8sSpecParameters.class);
+      doReturn(specParameters).when(stepElementParameters).getSpec();
+      K8sExecutionPassThroughData passThroughData = mock(K8sExecutionPassThroughData.class);
+      ServiceHookDelegateConfig hook = mock(ServiceHookDelegateConfig.class);
+      K8sDeployRequest k8sDeployRequest = K8sRollingDeployRequest.builder()
+                                              .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                                              .serviceHooks(List.of(hook))
+                                              .build();
+      ArgumentCaptor<TaskType> taskTypeArgumentCaptor = ArgumentCaptor.forClass(TaskType.class);
+
+      k8sStepHelper.queueK8sTask(stepElementParameters, k8sDeployRequest, ambiance, passThroughData);
+
+      verify(k8sStepHelper, times(1))
+          .queueK8sTask(eq(stepElementParameters), eq(k8sDeployRequest), eq(ambiance), eq(passThroughData),
+              taskTypeArgumentCaptor.capture());
+      assertThat(taskTypeArgumentCaptor.getValue()).isEqualTo(expectedTaskType);
+    }
   }
 
   @Test

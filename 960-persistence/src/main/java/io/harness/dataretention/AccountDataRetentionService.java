@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AccountDataRetentionService {
   public static final int BATCH = 1024;
   private static final long ACCEPTABLE_DIFFERENCE_IN_TIMESTAMP = 60000;
+  private static final int NO_LIMIT = Integer.MAX_VALUE;
 
   @Inject private HPersistence persistence;
 
@@ -62,7 +63,7 @@ public class AccountDataRetentionService {
       query.project(AccountDataRetentionEntity.VALID_UNTIL_KEY, true);
       query.project(AccountDataRetentionEntity.CREATED_AT_KEY, true);
 
-      try (HIterator<T> entities = new HIterator<>(query.fetch())) {
+      try (HIterator<T> entities = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
         for (T entity : entities) {
           Long accountDataRetention = accounts.get(entity.getAccountId());
 

@@ -20,6 +20,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -32,8 +33,14 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.beans.connector.rancher.RancherConfigType;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
+import io.harness.delegate.task.k8s.rancher.RancherClusterActionDTO;
+import io.harness.delegate.task.k8s.rancher.RancherClusterActionHelper;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -78,6 +85,7 @@ public class ContainerDeploymentDelegateBaseHelper {
   @Inject private EncryptionService encryptionService;
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
   @Inject private AwsEKSV2DelegateTaskHelper awsEKSDelegateTaskHelper;
+  @Inject private RancherClusterActionHelper rancherClusterActionHelper;
 
   public static final LoadingCache<String, Object> lockObjects =
       CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build(CacheLoader.from(Object::new));
@@ -168,6 +176,15 @@ public class ContainerDeploymentDelegateBaseHelper {
       AwsConnectorDTO awsConnectorDTO = eksK8sInfraDelegateConfig.getAwsConnectorDTO();
       return awsEKSDelegateTaskHelper.getKubeConfig(awsConnectorDTO, eksK8sInfraDelegateConfig.getCluster(),
           eksK8sInfraDelegateConfig.getNamespace(), logCallback);
+    } else if (clusterConfigDTO instanceof RancherK8sInfraDelegateConfig) {
+      RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig = (RancherK8sInfraDelegateConfig) clusterConfigDTO;
+      RancherClusterActionDTO clusterActionDTO = RancherClusterActionDTO.builder()
+                                                     .clusterName(rancherK8sInfraDelegateConfig.getCluster())
+                                                     .connector(rancherK8sInfraDelegateConfig.getRancherConnectorDTO())
+                                                     .namespace(rancherK8sInfraDelegateConfig.getNamespace())
+                                                     .logCallback(logCallback)
+                                                     .build();
+      return rancherClusterActionHelper.createKubernetesConfig(clusterActionDTO);
     } else {
       throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
     }
@@ -210,6 +227,11 @@ public class ContainerDeploymentDelegateBaseHelper {
       EksK8sInfraDelegateConfig k8sEksInfraDelegateConfig = (EksK8sInfraDelegateConfig) k8sInfraDelegateConfig;
       decryptAwsClusterConfig(
           k8sEksInfraDelegateConfig.getAwsConnectorDTO(), k8sEksInfraDelegateConfig.getEncryptionDataDetails());
+    } else if (k8sInfraDelegateConfig instanceof RancherK8sInfraDelegateConfig) {
+      RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig =
+          (RancherK8sInfraDelegateConfig) k8sInfraDelegateConfig;
+      decryptRancherClusterConfig(rancherK8sInfraDelegateConfig.getRancherConnectorDTO(),
+          rancherK8sInfraDelegateConfig.getEncryptionDataDetails());
     }
   }
 
@@ -219,25 +241,38 @@ public class ContainerDeploymentDelegateBaseHelper {
       KubernetesClusterDetailsDTO clusterDetailsDTO =
           (KubernetesClusterDetailsDTO) clusterConfigDTO.getCredential().getConfig();
       KubernetesAuthCredentialDTO authCredentialDTO = clusterDetailsDTO.getAuth().getCredentials();
-      secretDecryptionService.decrypt(authCredentialDTO, encryptedDataDetails);
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(authCredentialDTO, encryptedDataDetails);
+      decryptAndStoreSecretsForSanitization(authCredentialDTO, encryptedDataDetails);
     }
   }
 
   public void decryptGcpClusterConfig(GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     if (gcpConnectorDTO.getCredential().getGcpCredentialType() == MANUAL_CREDENTIALS) {
       GcpManualDetailsDTO gcpCredentialSpecDTO = (GcpManualDetailsDTO) gcpConnectorDTO.getCredential().getConfig();
-      secretDecryptionService.decrypt(gcpCredentialSpecDTO, encryptedDataDetails);
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gcpCredentialSpecDTO, encryptedDataDetails);
+      decryptAndStoreSecretsForSanitization(gcpCredentialSpecDTO, encryptedDataDetails);
     }
   }
 
   public void decryptAwsClusterConfig(AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     if (awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS) {
       AwsCredentialSpecDTO awsCredentialSpecDTO = awsConnectorDTO.getCredential().getConfig();
-      secretDecryptionService.decrypt(awsCredentialSpecDTO, encryptedDataDetails);
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsCredentialSpecDTO, encryptedDataDetails);
+      decryptAndStoreSecretsForSanitization(awsCredentialSpecDTO, encryptedDataDetails);
     }
+  }
+
+  public void decryptRancherClusterConfig(
+      RancherConnectorDTO rancherConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    if (RancherConfigType.MANUAL_CONFIG == rancherConnectorDTO.getConfig().getConfigType()) {
+      RancherConnectorConfigAuthDTO connectorConfigAuthDTO = rancherConnectorDTO.getConfig().getConfig();
+      RancherConnectorConfigAuthenticationSpecDTO authenticationSpecDTO =
+          connectorConfigAuthDTO.getCredentials().getAuth();
+      decryptAndStoreSecretsForSanitization(authenticationSpecDTO, encryptedDataDetails);
+    }
+  }
+
+  private void decryptAndStoreSecretsForSanitization(
+      DecryptableEntity decryptableEntity, List<EncryptedDataDetail> encryptedDataDetails) {
+    secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetails);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(decryptableEntity, encryptedDataDetails);
   }
 
   public String createKubeConfig(KubernetesConfig kubernetesConfig) {

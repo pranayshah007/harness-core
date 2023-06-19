@@ -362,8 +362,8 @@ public class PrometheusDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
             .otherEnvVariables(params)
             .baseUrl("http://35.226.185.156:8080/")
             .build();
-    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
-        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, System.out::println);
     assertThat(timeSeriesRecords).hasSize(90);
     assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1658778508000L);
     assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("g1");

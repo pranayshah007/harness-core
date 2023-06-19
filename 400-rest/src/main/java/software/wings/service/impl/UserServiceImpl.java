@@ -157,6 +157,7 @@ import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.EmailVerificationToken;
 import software.wings.beans.EmailVerificationToken.EmailVerificationTokenKeys;
 import software.wings.beans.EntityType;
@@ -267,6 +268,8 @@ import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -303,6 +306,7 @@ import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
@@ -3599,6 +3603,45 @@ public class UserServiceImpl implements UserService {
       redirectUrl += "&return_to=" + returnToUrl;
     }
     return ZendeskSsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  @Override
+  public CannySsoLoginResponse generateCannySsoJwt(String returnToUrl, String companyID) {
+    User user = UserThreadLocal.get();
+    String jwtToken = createCannyToken(user);
+
+    String redirectUrl =
+        String.format("%s?companyID=%s&ssoToken=%s", configuration.getPortal().getCannyBaseUrl(), companyID, jwtToken);
+
+    if (StringUtils.isNotEmpty(returnToUrl)) {
+      redirectUrl += "&redirect=" + returnToUrl;
+    }
+    log.info("Canny login: successfully created jwt token and redirect URL for user {}", user.getUuid());
+    return CannySsoLoginResponse.builder().redirectUrl(redirectUrl).userId(user.getUuid()).build();
+  }
+
+  private String createCannyToken(User user) {
+    String jwtCannySecret = configuration.getPortal().getJwtCannySecret();
+
+    HashMap<String, Object> userData = new HashMap<>();
+    userData.put(UserKeys.email, user.getEmail());
+    userData.put("id", user.getUuid());
+    userData.put(UserKeys.name, user.getName());
+    userData.put(UserKeys.companyName, user.getCompanyName());
+
+    byte[] jwtCannySecretBytes;
+    try {
+      jwtCannySecretBytes = jwtCannySecret.getBytes("UTF-8");
+    } catch (UnsupportedEncodingException ex) {
+      log.error("Error while encoding the canny secret to bytes", ex);
+      throw new InvalidRequestException("Error while encoding the canny secret to bytes", ex);
+    }
+
+    return Jwts.builder()
+        .setIssuedAt(new Date())
+        .setClaims(userData)
+        .signWith(SignatureAlgorithm.HS256, jwtCannySecretBytes)
+        .compact();
   }
 
   private Role ensureRolePresent(String roleId) {

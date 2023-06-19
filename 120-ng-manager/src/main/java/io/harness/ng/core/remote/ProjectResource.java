@@ -20,7 +20,7 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PER
 import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
-import static io.harness.ng.core.remote.ProjectMapper.toResponseWrapper;
+import static io.harness.ng.core.remote.ProjectMapper.toResponseWithFavouritesInfo;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 import static io.harness.utils.PageUtils.getPageRequest;
 
@@ -37,6 +37,9 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.favorites.ResourceType;
+import io.harness.favorites.entities.Favorite;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ActiveProjectsCountDTO;
@@ -53,6 +56,7 @@ import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.UserHelperService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -125,6 +129,8 @@ import org.springframework.data.domain.Page;
 public class ProjectResource {
   private final ProjectService projectService;
   private final OrganizationService organizationService;
+  private final FavoritesService favoritesService;
+  private final UserHelperService userHelperService;
 
   @POST
   @ApiOperation(value = "Create a Project", nickname = "postProject")
@@ -146,7 +152,10 @@ public class ProjectResource {
       @RequestBody(required = true,
           description = "Details of the Project to create") @NotNull @Valid ProjectRequest projectDTO) {
     Project createdProject = projectService.create(accountIdentifier, orgIdentifier, projectDTO.getProject());
-    return ResponseDTO.newResponse(createdProject.getVersion().toString(), toResponseWrapper(createdProject));
+    return ResponseDTO.newResponse(createdProject.getVersion().toString(),
+        ProjectMapper.toProjectResponseBuilder(createdProject)
+            .isFavorite(projectService.isFavorite(createdProject, userHelperService.getUserId()))
+            .build());
   }
 
   @GET
@@ -174,8 +183,10 @@ public class ProjectResource {
       throw new NotFoundException(
           String.format("Project with orgIdentifier [%s] and identifier [%s] not found", orgIdentifier, identifier));
     }
-    return ResponseDTO.newResponse(
-        projectOptional.get().getVersion().toString(), toResponseWrapper(projectOptional.get()));
+    return ResponseDTO.newResponse(projectOptional.get().getVersion().toString(),
+        ProjectMapper.toProjectResponseBuilder(projectOptional.get())
+            .isFavorite(projectService.isFavorite(projectOptional.get(), userHelperService.getUserId()))
+            .build());
   }
 
   @GET
@@ -202,7 +213,7 @@ public class ProjectResource {
           description =
               "This would be used to filter Projects. Any Project having the specified string in its Name, ID and Tag would be filtered.")
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @BeanParam PageRequest pageRequest) {
+      @QueryParam("isFavorite") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
@@ -216,9 +227,11 @@ public class ProjectResource {
             .moduleType(moduleType)
             .identifiers(identifiers)
             .build();
-    Page<Project> projects =
-        projectService.listPermittedProjects(accountIdentifier, getPageRequest(pageRequest), projectFilterDTO);
-    return ResponseDTO.newResponse(getNGPageResponse(projects.map(ProjectMapper::toResponseWrapper)));
+    Page<Project> projects = projectService.listPermittedProjects(
+        accountIdentifier, getPageRequest(pageRequest), projectFilterDTO, onlyFavorites);
+    List<Favorite> favoriteProjects = favoritesService.getFavorites(
+        accountIdentifier, null, null, userHelperService.getUserId(), ResourceType.PROJECT.toString());
+    return ResponseDTO.newResponse(getNGPageResponse(toResponseWithFavouritesInfo(projects, favoriteProjects)));
   }
 
   @GET
@@ -245,8 +258,9 @@ public class ProjectResource {
       @QueryParam(NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers,
       @Parameter(description = "Filter Projects by module type") @QueryParam(
           NGResourceFilterConstants.MODULE_TYPE_KEY) ModuleType moduleType,
-      @Parameter(description = "Filter Projects by searching for this word in Name, Id, and Tag")
-      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm, @BeanParam PageRequest pageRequest) {
+      @Parameter(description = "Filter Projects by searching for this word in Name, Id, and Tag") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam("isFavorite") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
@@ -259,9 +273,11 @@ public class ProjectResource {
                                             .moduleType(moduleType)
                                             .identifiers(identifiers)
                                             .build();
-    Page<Project> projects =
-        projectService.listPermittedProjects(accountIdentifier, getPageRequest(pageRequest), projectFilterDTO);
-    return ResponseDTO.newResponse(getNGPageResponse(projects.map(ProjectMapper::toResponseWrapper)));
+    Page<Project> projects = projectService.listPermittedProjects(
+        accountIdentifier, getPageRequest(pageRequest), projectFilterDTO, onlyFavorites);
+    List<Favorite> favoriteProjects = favoritesService.getFavorites(
+        accountIdentifier, null, null, userHelperService.getUserId(), ResourceType.PROJECT.toString());
+    return ResponseDTO.newResponse(getNGPageResponse(toResponseWithFavouritesInfo(projects, favoriteProjects)));
   }
 
   @PUT
@@ -292,7 +308,10 @@ public class ProjectResource {
     projectDTO.getProject().setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Project updatedProject =
         projectService.update(accountIdentifier, orgIdentifier, identifier, projectDTO.getProject());
-    return ResponseDTO.newResponse(updatedProject.getVersion().toString(), toResponseWrapper(updatedProject));
+    return ResponseDTO.newResponse(updatedProject.getVersion().toString(),
+        ProjectMapper.toProjectResponseBuilder(updatedProject)
+            .isFavorite(projectService.isFavorite(updatedProject, userHelperService.getUserId()))
+            .build());
   }
 
   @DELETE

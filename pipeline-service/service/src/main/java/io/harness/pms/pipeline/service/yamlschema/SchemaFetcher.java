@@ -15,17 +15,21 @@ import io.harness.SchemaCacheKey;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.SchemaCacheUtils;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import javax.cache.Cache;
@@ -40,6 +44,8 @@ public class SchemaFetcher {
   @Inject @Named("schemaDetailsCache") Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache;
   @Inject @Named("partialSchemaCache") Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Inject private SchemaGetterFactory schemaGetterFactory;
+
+  @Inject @Named("staticSchemaCache") Cache<SchemaCacheKey, String> staticSchemaCache;
 
   /**
    * Schema is taken from cache, so every modification will affect cache value.
@@ -116,5 +122,26 @@ public class SchemaFetcher {
     SchemaGetter schemaGetter = schemaGetterFactory.obtainGetter(accountId, entityType.getEntityProduct());
     return schemaGetter.fetchStepYamlSchema(
         orgIdentifier, projectIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
+  }
+
+  @Nullable
+  public JsonNode fetchStaticYamlSchema(String accountId, String staticYamlRepoUrl) {
+    log.info("[PMS] Fetching static schema");
+    try (ResponseTimeRecorder ignore = new ResponseTimeRecorder("Fetching Static Schema")) {
+      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().build();
+
+      if (staticSchemaCache.containsKey(schemaCacheKey)) {
+        log.info("[PMS_SCHEMA] Fetching static schema from cache for account {}", accountId);
+        return JsonUtils.readTree(staticSchemaCache.get(schemaCacheKey));
+      }
+
+      JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(new URL(staticYamlRepoUrl));
+      staticSchemaCache.put(schemaCacheKey, JsonPipelineUtils.getJsonString(jsonNode));
+
+      return jsonNode;
+    } catch (Exception e) {
+      log.warn(format("[PMS] Unable to get static schema"), e);
+      return null;
+    }
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.adfs.AdfsConstants.ADFS_CLIENT_ASSERTION_TYPE;
 import static io.harness.adfs.AdfsConstants.ADFS_GRANT_TYPE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.ADFS_ERROR;
+import static io.harness.eraro.ErrorCode.SERVICENOW_REFRESH_TOKEN_ERROR;
 import static io.harness.rule.OwnerRule.NAMANG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,14 +34,17 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.AdfsAuthException;
 import io.harness.exception.HintException;
+import io.harness.exception.ServiceNowOIDCException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 import io.harness.security.ADFSAuthHelper;
 import io.harness.serializer.JsonUtils;
+import io.harness.servicenow.auth.refreshtoken.RefreshTokenAuthNgHelper;
 
 import software.wings.delegatetasks.utils.UrlUtility;
 
@@ -75,6 +79,10 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
   private static final String ADFS_URL = "https://adfs.test.com";
   private static final String RESOURCE_ID = "https://resource.of.servicenow.in.adfs.com";
   private static final String BEARER_TOKEN = "Bearer testtoken&&%$%^%$testtoken";
+  private static final String CLIENT_SECRET = "clientSecret";
+  private static final String TOKEN_URL = "https://dev.okta.com/oauth/v1/token/";
+  private static final String SCOPE = "openid email";
+  private static final String REFRESH_TOKEN = "##$$refreshToken$$##";
 
   private static final String JWT_TOKEN = "test jwt token";
   private static String loadResource(String resourcePath) {
@@ -430,6 +438,80 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
       when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
       assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
           .isInstanceOf(HintException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetAuthTokenWhenRefreshTokenWhenTokenGenerationThrowingException() {
+    // refresh token
+    ServiceNowConnectorDTO serviceNowConnectorDTO =
+        ServiceNowConnectorDTO.builder()
+            .auth(ServiceNowAuthenticationDTO.builder()
+                      .authType(ServiceNowAuthType.REFRESH_TOKEN)
+                      .credentials(
+                          ServiceNowRefreshTokenDTO.builder()
+                              .refreshTokenRef(
+                                  SecretRefData.builder().decryptedValue(REFRESH_TOKEN.toCharArray()).build())
+                              .scope(SCOPE)
+                              .tokenUrl(TOKEN_URL)
+                              .clientSecretRef(
+                                  SecretRefData.builder().decryptedValue(CLIENT_SECRET.toCharArray()).build())
+                              .clientIdRef(SecretRefData.builder().decryptedValue(CLIENT_ID.toCharArray()).build())
+                              .build())
+                      .build())
+            .build();
+
+    try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, true))
+          .thenThrow(new ServiceNowOIDCException(
+              "Error fetching access token", SERVICENOW_REFRESH_TOKEN_ERROR, WingsException.USER));
+
+      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+          .isInstanceOf(ServiceNowOIDCException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetAuthTokenWhenRefreshToken() {
+    // refresh token
+    ServiceNowConnectorDTO serviceNowConnectorDTO =
+        ServiceNowConnectorDTO.builder()
+            .auth(ServiceNowAuthenticationDTO.builder()
+                      .authType(ServiceNowAuthType.REFRESH_TOKEN)
+                      .credentials(
+                          ServiceNowRefreshTokenDTO.builder()
+                              .refreshTokenRef(
+                                  SecretRefData.builder().decryptedValue(REFRESH_TOKEN.toCharArray()).build())
+                              .scope(SCOPE)
+                              .tokenUrl(TOKEN_URL)
+                              .clientSecretRef(
+                                  SecretRefData.builder().decryptedValue(CLIENT_SECRET.toCharArray()).build())
+                              .clientIdRef(SecretRefData.builder().decryptedValue(CLIENT_ID.toCharArray()).build())
+                              .build())
+                      .build())
+            .build();
+
+    try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, CLIENT_SECRET, SCOPE, TOKEN_URL, true))
+          .thenReturn(BEARER_TOKEN);
+
+      assertThat(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO)).isEqualTo(BEARER_TOKEN);
+    }
+
+    // client secret null
+    ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO =
+        (ServiceNowRefreshTokenDTO) serviceNowConnectorDTO.getAuth().getCredentials();
+    serviceNowRefreshTokenDTO.setClientSecretRef(SecretRefData.builder().build());
+
+    try (MockedStatic<RefreshTokenAuthNgHelper> ignored = Mockito.mockStatic(RefreshTokenAuthNgHelper.class)) {
+      when(RefreshTokenAuthNgHelper.getAuthToken(REFRESH_TOKEN, CLIENT_ID, null, SCOPE, TOKEN_URL, true))
+          .thenReturn(BEARER_TOKEN);
+
+      assertThat(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO)).isEqualTo(BEARER_TOKEN);
     }
   }
 }

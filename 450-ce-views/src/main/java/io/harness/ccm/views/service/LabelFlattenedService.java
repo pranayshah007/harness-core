@@ -10,12 +10,10 @@ package io.harness.ccm.views.service;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 
-import java.util.List;
 import java.util.Map;
 
 @OwnedBy(CE)
 public interface LabelFlattenedService {
-  Map<String, String> getLabelsKeyAndColumnMapping(String accountId, List<QLCEViewFilterWrapper> filters);
+  Map<String, String> getLabelsKeyAndColumnMapping(String accountId);
 }

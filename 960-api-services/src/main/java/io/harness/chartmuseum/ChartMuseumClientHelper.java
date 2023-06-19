@@ -13,7 +13,10 @@ import static io.harness.chartmuseum.ChartMuseumConstants.ADDRESS_BIND_ERROR;
 import static io.harness.chartmuseum.ChartMuseumConstants.AWS_ACCESS_KEY_ID;
 import static io.harness.chartmuseum.ChartMuseumConstants.AWS_SECRET_ACCESS_KEY;
 import static io.harness.chartmuseum.ChartMuseumConstants.BUCKET_REGION_ERROR_CODE;
+import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_HOST;
 import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_START_RETRIES;
+import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_URL;
+import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVICE_START_TIMEOUT;
 import static io.harness.chartmuseum.ChartMuseumConstants.HEALTH_CHECK_TIME_GAP_SECONDS;
 import static io.harness.chartmuseum.ChartMuseumConstants.INVALID_ACCESS_KEY_ID_ERROR;
 import static io.harness.chartmuseum.ChartMuseumConstants.INVALID_ACCESS_KEY_ID_ERROR_CODE;
@@ -36,13 +39,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.network.Http;
 import io.harness.shell.ScriptProcessExecutor;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,6 +107,11 @@ public class ChartMuseumClientHelper {
 
       if (waitForServerReady(process, port)) {
         log.info(stringBuffer.toString());
+
+        if (waitForServiceReady(port)) {
+          log.info("Chart museum service available at  port {}", port);
+        }
+
         break;
       } else {
         String processOutput = stringBuffer.toString();
@@ -213,6 +224,40 @@ public class ChartMuseumClientHelper {
       }
     }
 
+    return false;
+  }
+
+  protected static boolean waitForServiceReady(int port) {
+    log.info("Waiting for chart museum service to get ready");
+    if (Http.connectableHost(CHART_MUSEUM_SERVER_HOST, port, CHART_MUSEUM_SERVICE_START_TIMEOUT)) {
+      if (isServiceUpAndRunning(port)) {
+        return true;
+      }
+    }
+    log.error("Chart museum service failed to start!");
+    return false;
+  }
+
+  private static boolean isServiceUpAndRunning(int port) {
+    HttpURLConnection connection = null;
+    try {
+      connection = (HttpURLConnection) new URL(
+          format("%s/health", CHART_MUSEUM_SERVER_URL.replace("${PORT}", String.valueOf(port))))
+                       .openConnection();
+      connection.setRequestMethod("GET");
+      connection.connect();
+      int code = connection.getResponseCode();
+      log.info("Chart museum health status response code {}", code);
+      if (code >= 200 && code < 300) {
+        return true;
+      }
+    } catch (IOException e) {
+      log.error("Failed to check chart museum health API", e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
+    }
     return false;
   }
 

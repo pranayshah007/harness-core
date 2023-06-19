@@ -330,9 +330,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   }
 
   private void registerEventConsumers(final Injector injector) {
-    final ExecutorService entityCRUDConsumerExecutor =
+    final ExecutorService observerEventConsumerExecutor =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
-    entityCRUDConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
+    observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
   }
 
   private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {

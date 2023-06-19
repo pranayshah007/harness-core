@@ -179,8 +179,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.17
-  liteEngineImage: harness/ci-lite-engine:1.16.17
+  addonImage: harness/ci-addon:1.16.19
+  liteEngineImage: harness/ci-lite-engine:1.16.19
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:

@@ -12,7 +12,6 @@ import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -94,10 +93,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-
-    if (isTerraformCloudCli) {
-      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-    }
 
     List<EntityDetail> entityDetailList = new ArrayList<>();
 

@@ -11,6 +11,8 @@ import static io.harness.ccm.billing.GcpServiceAccountServiceImpl.getCredentials
 
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.BillingDataPipelineConfig;
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.BlobId;
@@ -22,6 +24,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,13 +35,14 @@ import org.springframework.stereotype.Service;
 public class GoogleCloudStorageServiceImpl {
   private static final String GOOGLE_CREDENTIALS_PATH = "GOOGLE_CREDENTIALS_PATH";
   private BatchMainConfig config;
+  @Autowired private FeatureFlagService featureFlagService;
 
   @Autowired
   public GoogleCloudStorageServiceImpl(BatchMainConfig config) {
     this.config = config;
   }
 
-  public void uploadObject(String objectName, String filePath) throws IOException {
+  public void uploadObject(String objectName, String filePath, String accountId) throws IOException {
     BillingDataPipelineConfig dataPipelineConfig = config.getBillingDataPipelineConfig();
     boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
     GoogleCredentials sourceCredentials;
@@ -57,17 +62,21 @@ public class GoogleCloudStorageServiceImpl {
     for (String bucket : new String[] {bucketName, backupBucketName}) {
       BlobId blobId = BlobId.of(bucket, objectName);
       BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-      try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
-        log.info("avro fileSize: {}MB", fileChannel.size() / (1024 * 1024));
-        try (WritableByteChannel writableChannel = storage.writer(blobInfo)) {
-          ByteBuffer buffer = ByteBuffer.allocate(dataPipelineConfig.getBufferSizeInMB() * 1024 * 1024);
-          int i = 0;
-          while (fileChannel.read(buffer) != -1) {
-            log.info("Buffer Size: {}MB. Processing chunk :: {}", buffer.capacity() / (1024 * 1024), i);
-            buffer.flip();
-            writableChannel.write(buffer);
-            buffer.clear();
-            i++;
+      if (!featureFlagService.isEnabled(FeatureName.RECOMMENDATION_EFFICIENCY_VIEW_UI, accountId)) {
+        storage.create(blobInfo, Files.readAllBytes(Paths.get(filePath)));
+      } else {
+        try (FileChannel fileChannel = new FileInputStream(filePath).getChannel()) {
+          log.info("avro fileSize: {}MB", fileChannel.size() / (1024 * 1024));
+          try (WritableByteChannel writableChannel = storage.writer(blobInfo)) {
+            ByteBuffer buffer = ByteBuffer.allocate(dataPipelineConfig.getBufferSizeInMB() * 1024 * 1024);
+            int i = 0;
+            while (fileChannel.read(buffer) != -1) {
+              log.info("Buffer Size: {}MB. Processing chunk :: {}", buffer.capacity() / (1024 * 1024), i);
+              buffer.flip();
+              writableChannel.write(buffer);
+              buffer.clear();
+              i++;
+            }
           }
         }
       }

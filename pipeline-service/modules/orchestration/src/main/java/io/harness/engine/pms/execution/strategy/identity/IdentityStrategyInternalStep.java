@@ -17,6 +17,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -34,6 +35,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,7 +94,8 @@ public class IdentityStrategyInternalStep
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    NodeExecution originalNodeExecution = nodeExecutionService.get(identityParams.getOriginalNodeExecutionId());
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.status));
     // Copying the outcomes
     pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
     return StepResponse.builder().status(originalNodeExecution.getStatus()).build();

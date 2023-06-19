@@ -42,6 +42,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -123,7 +124,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testUpdate() {
+  public void testUpdate() throws IOException {
     NGServiceOverridesEntity ngServiceOverridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
     ngServiceOverridesEntity.setSpec(
         ServiceOverridesSpec.builder()
@@ -273,16 +274,22 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   }
 
   private void createDbTestDataForListCall() {
-    NGServiceOverridesEntity entity0 = NGServiceOverridesEntity.builder()
-                                           .identifier("id0")
-                                           .accountId(ACCOUNT_IDENTIFIER)
-                                           .orgIdentifier(ORG_IDENTIFIER)
-                                           .projectIdentifier(PROJECT_IDENTIFIER)
-                                           .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
-                                           .environmentRef(ENVIRONMENT_REF)
-                                           .serviceRef(SERVICE_REF)
-                                           .spec(ServiceOverridesSpec.builder().build())
-                                           .build();
+    NGServiceOverridesEntity entity0 =
+        NGServiceOverridesEntity.builder()
+            .identifier("id0")
+            .accountId(ACCOUNT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .environmentRef(ENVIRONMENT_REF)
+            .serviceRef(SERVICE_REF)
+            .spec(
+                ServiceOverridesSpec.builder()
+                    .variables(List.of(
+                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                        StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+                    .build())
+            .build();
 
     NGServiceOverridesEntity entity1 =
         NGServiceOverridesEntity.builder()
@@ -340,7 +347,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testUpsertForCreate() {
+  public void testUpsertForCreate() throws IOException {
     Pair<NGServiceOverridesEntity, Boolean> upsertResult = serviceOverridesServiceV2.upsert(basicOverrideEntity);
     assertThat(upsertResult).isNotNull();
     assertThat(upsertResult.getRight()).isTrue();
@@ -350,7 +357,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testUpsertForUpdate() {
+  public void testUpsertForUpdate() throws IOException {
     NGServiceOverridesEntity overridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
 
     overridesEntity.setSpec(

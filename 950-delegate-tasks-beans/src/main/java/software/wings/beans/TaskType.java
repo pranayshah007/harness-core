@@ -488,7 +488,9 @@ public enum TaskType {
   RANCHER_LIST_CLUSTERS_TASK_NG(TaskGroup.K8S_NG, "Rancher list clusters task for NG"),
   COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   NOTIFY_WEBHOOK(TaskGroup.NOTIFICATION),
-  SERVERLESS_ROLLBACK_V2_TASK(TaskGroup.SERVERLESS_NG, "Serverless Rollback V2 Task");
+  SERVERLESS_ROLLBACK_V2_TASK(TaskGroup.SERVERLESS_NG, "Serverless Rollback V2 Task"),
+  K8S_COMMAND_TASK_NG_RANCHER(TaskGroup.K8S_NG, "K8s Task for NG Rancher deployments", true),
+  HELM_COMMAND_TASK_NG_RANCHER(TaskGroup.HELM, "Helm Task for NG Rancher deployments", true);
 
   private final TaskGroup taskGroup;
   private final String displayName;

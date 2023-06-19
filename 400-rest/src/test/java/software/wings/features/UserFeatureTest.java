@@ -42,6 +42,14 @@ public class UserFeatureTest extends WingsBaseTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
+  public void testUserLimitTrial() {
+    int limit = usersFeature.getMaxUsageAllowed("TRIAL");
+    assertThat(limit).isEqualTo(100);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
   public void testUserLimitPaid() {
     int limit = usersFeature.getMaxUsageAllowed("PAID");
     assertThat(limit).isEqualTo(50000);
