@@ -41,7 +41,7 @@ import org.apache.commons.io.input.ReaderInputStream;
 
 @OwnedBy(PL)
 @Slf4j
-public class HarnessSMEncryptionDecryptionHandler {
+public class HarnessSMEncryptionDecryptionHandlerNG {
   @Inject protected DelegateFileManagerBase delegateFileManager;
   @Inject private DelegateManagerEncryptionDecryptionHarnessSMClient delegateManagerEncryptionDecryptionHarnessSMClient;
   public static final String ON_FILE_STORAGE = "onFileStorage";
@@ -52,9 +52,10 @@ public class HarnessSMEncryptionDecryptionHandler {
     EncryptedRecordData record;
     try {
       EncryptData encryptData = EncryptData.builder().content(content).build();
-      record = execute(
-          delegateManagerEncryptionDecryptionHarnessSMClient.encryptHarnessSMSecret(config.getAccountId(), encryptData))
+      record = execute(delegateManagerEncryptionDecryptionHarnessSMClient.encryptHarnessSMSecretNG(
+                           config.getAccountId(), encryptData))
                    .getResource();
+
     } catch (Exception e) {
       log.error("Not able to encrypt harness SM secrets", e);
       throw e;
@@ -82,9 +83,10 @@ public class HarnessSMEncryptionDecryptionHandler {
     log.info("Making api call for decryption of TF plan for Harness SM");
     long startTime = Instant.now().getEpochSecond();
     DecryptedRecord decryptedRecord;
+
     try {
       EncryptedSMData encryptedSMData = EncryptedRecordDataToEncryptedSMDataMapper.toEncryptedSMData(record);
-      decryptedRecord = execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecret(
+      decryptedRecord = execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecretNG(
                                     config.getAccountId(), encryptedSMData))
                             .getResource();
     } catch (Exception e) {

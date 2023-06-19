@@ -48,6 +48,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -149,13 +150,15 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
+    EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
+
     if (!isTerraformCloudCli) {
       exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
       exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
       builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
       builder.saveTerraformHumanReadablePlan(
           !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
-      builder.encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters));
+      builder.encryptionConfig(secretManagerEncryptionConfig);
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
     }
     ParameterField<Boolean> skipTerraformRefreshCommand =
@@ -193,6 +196,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
+            .encryptDecryptPlanForHarnessSMOnManager(
+                helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig))
             .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 

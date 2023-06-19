@@ -9,6 +9,7 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_NG;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -637,9 +638,20 @@ public class TerraformStepHelper {
         AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance));
 
-    return SecretManagerConfigMapper.fromDTO(secretManagerClientService.getSecretManager(
-        identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
-        identifierRef.getIdentifier(), false));
+    SecretManagerConfig secretManagerConfig =
+        SecretManagerConfigMapper.fromDTO(secretManagerClientService.getSecretManager(
+            identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+            identifierRef.getProjectIdentifier(), identifierRef.getIdentifier(), false));
+    if (cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG)
+        && isHarnessSecretManager(secretManagerConfig)) {
+      secretManagerConfig.maskSecrets();
+    }
+    return secretManagerConfig;
+  }
+
+  public boolean isHarnessSecretManager(SecretManagerConfig secretManagerConfig) {
+    return secretManagerConfig != null && secretManagerConfig.isGlobalKms();
   }
 
   public Map<String, String> getEnvironmentVariablesMap(Map<String, Object> inputVariables) {
@@ -1283,5 +1295,10 @@ public class TerraformStepHelper {
             "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
       }
     }
+  }
+
+  public boolean tfPlanEncryptionOnManager(String accountId, EncryptionConfig encryptionConfig) {
+    return cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG)
+        && isHarnessSecretManager((SecretManagerConfig) encryptionConfig);
   }
 }

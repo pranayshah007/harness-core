@@ -45,6 +45,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandlerNG;
 import io.harness.delegate.task.terragrunt.files.DownloadResult;
 import io.harness.delegate.task.terragrunt.files.FetchFilesResult;
 import io.harness.delegate.task.terragrunt.files.TerragruntDownloadService;
@@ -104,6 +105,7 @@ public class TerragruntTaskService {
   @Inject private DecryptionHelper decryptionHelper;
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
   @Inject TerraformBaseHelper terraformBaseHelper;
+  @Inject private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandler;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -400,10 +402,18 @@ public class TerragruntTaskService {
   }
 
   public void saveTerraformPlanContentToFile(EncryptionConfig encryptionConfig, EncryptedRecordData encryptedTfPlan,
-      String scriptDirectory, String accountId, String terraformOutputFileName) throws IOException {
+      String scriptDirectory, String accountId, String terraformOutputFileName,
+      boolean encryptDecryptPlanForHarnessSMOnManager, boolean isNG) throws IOException {
     File tfPlanFile = Paths.get(scriptDirectory, terraformOutputFileName).toFile();
-    byte[] decryptedTerraformPlan =
-        encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+
+    byte[] decryptedTerraformPlan;
+
+    if (encryptDecryptPlanForHarnessSMOnManager) {
+      decryptedTerraformPlan =
+          harnessSMEncryptionDecryptionHandler.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+    } else {
+      decryptedTerraformPlan = encryptDecryptHelper.getDecryptedContent(encryptionConfig, encryptedTfPlan, accountId);
+    }
     FileUtils.copyInputStreamToFile(new ByteArrayInputStream(decryptedTerraformPlan), tfPlanFile);
   }
 

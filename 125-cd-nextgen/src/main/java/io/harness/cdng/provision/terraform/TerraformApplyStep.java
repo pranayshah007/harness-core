@@ -251,6 +251,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
                     : inheritOutput.getEnvironmentVariables())
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            .encryptDecryptPlanForHarnessSMOnManager(
+                helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .useOptimizedTfPlan(true)
             .build();
 

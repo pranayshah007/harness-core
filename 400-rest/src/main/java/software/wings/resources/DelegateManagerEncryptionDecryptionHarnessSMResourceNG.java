@@ -19,7 +19,7 @@ import io.harness.security.encryption.EncryptedRecordData;
 import software.wings.beans.DecryptedRecord;
 import software.wings.beans.EncryptedRecord;
 import software.wings.beans.EncryptedSMData;
-import software.wings.service.impl.DelegateManagerEncryptionDecryptionHarnessSMServiceImpl;
+import software.wings.service.impl.DelegateManagerEncryptionDecryptionHarnessSMServiceNGImpl;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -31,21 +31,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import retrofit.http.Body;
 
-@Api("/encryption")
-@Path("/encryption")
+@Api("/encryption-ng")
+@Path("/encryption-ng")
 @Produces("application/json")
 @Slf4j
 @OwnedBy(CDP)
-public class DelegateManagerEncryptionDecryptionHarnessSMResource {
-  @Inject DelegateManagerEncryptionDecryptionHarnessSMServiceImpl encryptionDecryptionService;
+public class DelegateManagerEncryptionDecryptionHarnessSMResourceNG {
+  @Inject DelegateManagerEncryptionDecryptionHarnessSMServiceNGImpl encryptionDecryptionService;
 
   @DelegateAuth
   @POST
   @Path("/encrypt-harness-sm-secret")
-  public RestResponse<EncryptedRecordData> encryptHarnessSMSecret(
+  public RestResponse<EncryptedRecordData> encryptHarnessSMSecretNG(
       @NotNull @QueryParam("accountId") String accountId, @NotNull EncryptedRecord encryptedRecord) {
     try {
-      return new RestResponse<>(encryptionDecryptionService.encryptData(accountId, encryptedRecord.getContent()));
+      return new RestResponse<>(encryptionDecryptionService.encryptDataNG(accountId, encryptedRecord.getContent()));
     } catch (Exception e) {
       log.error(format("Unable to encrypt the content for harness secret manager for account %s", accountId), e);
       throw e;
@@ -55,11 +55,11 @@ public class DelegateManagerEncryptionDecryptionHarnessSMResource {
   @DelegateAuth
   @POST
   @Path("/decrypt-harness-sm-secret")
-  public RestResponse<DecryptedRecord> decryptHarnessSMSecret(
+  public RestResponse<DecryptedRecord> decryptHarnessSMSecretNG(
       @NotNull @QueryParam("accountId") String accountId, @NotNull @Body EncryptedSMData encryptedSMData) {
     try {
       return new RestResponse<>(
-          encryptionDecryptionService.decryptData(accountId, encryptedSMData.toEncryptedRecordData()));
+          encryptionDecryptionService.decryptDataNG(accountId, encryptedSMData.toEncryptedRecordData()));
     } catch (Exception e) {
       log.error(format("Unable to decrypt the content for harness secret manager for account %s", accountId), e);
       throw e;
