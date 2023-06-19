@@ -48,6 +48,7 @@ import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
+import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.helper.RuleStoreType;
 import io.harness.ccm.views.service.GovernanceRuleService;
@@ -685,6 +686,7 @@ public class GovernanceRuleResource {
                 .isDryRun(governanceAdhocEnqueueDTO.getIsDryRun())
                 .policy(governanceAdhocEnqueueDTO.getPolicy())
                 .ruleCloudProviderType(governanceAdhocEnqueueDTO.getRuleCloudProviderType())
+                .executionType(RuleExecutionType.EXTERNAL)
                 .build();
         log.info("enqueued: {}", governanceJobEnqueueDTO);
         ruleExecutionId.add(governanceRuleService.enqueueAdhoc(accountId, governanceJobEnqueueDTO));
