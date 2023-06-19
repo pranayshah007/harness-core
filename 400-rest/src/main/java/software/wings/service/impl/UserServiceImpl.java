@@ -3315,11 +3315,6 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, false);
-  }
-
-  @Override
-  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
@@ -3328,9 +3323,6 @@ public class UserServiceImpl implements UserService {
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {
       accounts.forEach(account -> software.wings.service.impl.LicenseUtils.decryptLicenseInfo(account, false));
-    }
-    if (includeSupportAccounts) {
-      loadSupportAccounts(user);
     }
 
     return user;

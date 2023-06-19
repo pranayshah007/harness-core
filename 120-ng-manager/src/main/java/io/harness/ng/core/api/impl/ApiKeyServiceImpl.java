@@ -9,7 +9,6 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_API_KEY_LIMIT;
@@ -318,15 +317,13 @@ public class ApiKeyServiceImpl implements ApiKeyService {
           throw new InvalidArgumentsException(String.format(
               "User [%s] not authenticated to create api key for user [%s]", userId.get(), parentIdentifier));
         }
-        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get(), true);
+        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
         if (userInfo.isEmpty()) {
           throw new InvalidArgumentsException(String.format("No user found with id: [%s]", userId.get()));
         }
 
-        List<GatewayAccountRequestDTO> userAccounts = new ArrayList<>(userInfo.get().getAccounts());
-        if (isNotEmpty(userInfo.get().getSupportAccounts())) {
-          userAccounts.addAll(userInfo.get().getSupportAccounts());
-        }
+        List<GatewayAccountRequestDTO> userAccounts = userInfo.get().getAccounts();
+
         if (userAccounts == null
             || userAccounts.stream()
                    .filter(account -> account.getUuid().equals(accountIdentifier))

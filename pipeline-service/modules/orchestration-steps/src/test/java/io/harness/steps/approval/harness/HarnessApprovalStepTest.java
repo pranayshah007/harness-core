@@ -224,7 +224,7 @@ public class HarnessApprovalStepTest {
     parameters.setSpec(specParameters);
 
     Call userCall = mock(Call.class);
-    when(userClient.getUserById(any(), anyBoolean())).thenReturn(userCall);
+    when(userClient.getUserById(any())).thenReturn(userCall);
     when(userCall.execute()).thenReturn(Response.success(new RestResponse(Optional.of(UserInfo.builder().build()))));
 
     AsyncTimeoutResponseData responseData = AsyncTimeoutResponseData.builder().build();

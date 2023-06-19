@@ -18,7 +18,6 @@ import static io.harness.signup.services.impl.SignupServiceImpl.FAILED_EVENT_NAM
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -246,7 +245,7 @@ public class SignupServiceImplTest extends CategoryTest {
 
     Call<RestResponse<Optional<UserInfo>>> getUserByIdCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
-    when(userClient.getUserById(any(), anyBoolean())).thenReturn(getUserByIdCall);
+    when(userClient.getUserById(any())).thenReturn(getUserByIdCall);
     when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
 

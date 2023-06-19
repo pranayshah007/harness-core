@@ -11,14 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GAURAV_NANDA;
-import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -224,7 +222,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                         .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID).build()))
                         .build()))
         .when(ngUserService)
-        .getUserById(any(), anyBoolean());
+        .getUserById(any());
 
     // Act
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
@@ -243,26 +241,9 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                         .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(randomAccountId).build()))
                         .build()))
         .when(ngUserService)
-        .getUserById(any(), anyBoolean());
+        .getUserById(any());
 
     // Act
-    apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
-  }
-
-  @Test
-  @Owner(developers = JENNY)
-  @Category(UnitTests.class)
-  public void validateParentIdentifier_WithSupportUser_noExceptionThrown() {
-    doReturn(
-        Optional.of(UserInfo.builder()
-                        .email(TEST_USER_EMAIL)
-                        .uuid(TEST_PRINCIPAL)
-                        .accounts(List.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID).build()))
-                        .supportAccounts(List.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID2).build()))
-                        .build()))
-        .when(ngUserService)
-        .getUserById(any(), anyBoolean());
-
     apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
   }
 }
