@@ -268,6 +268,7 @@ func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	}
 
 	prompt := generatePrompt(r, logs, promptTmpl)
+	logrus.Debug(prompt)
 	client := genAIClient{endpoint: endpoint, secret: secret}
 
 	temp := genAITemperature
@@ -554,7 +555,7 @@ func getKeys(r *http.Request) ([]string, error) {
 func retrieveFromDB(ctx context.Context, id string, mongoDB *mongodb.MongoDb) (
 	*RCAReport, error) {
 	if id == "" {
-		logrus.Error("id is required field")
+		logrus.Warn("id is required field to retrieve rca from DB")
 		return nil, errors.New("id is required")
 	}
 
