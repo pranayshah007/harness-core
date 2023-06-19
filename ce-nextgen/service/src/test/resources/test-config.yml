@@ -79,6 +79,8 @@ ngManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+distributedLockImplementation: NOOP
+
 grpcClient:
   target: localhost:9880
   authority: localhost
