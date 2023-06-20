@@ -19,9 +19,22 @@ message ExecutionInfrastructure {
   LogConfig log_config = 1;
   repeated Secret secret = 2;
   oneof {
-      K8sInfraSpec k8Infraspec = 3;
-      // VMInfraSpec vmInfraSpec = 4;
+    K8sInfraSpec k8Infraspec = 3;
+    // VMInfraSpec vmInfraSpec = 4;
   }
+}
+
+message ContainerSpec {
+  string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
+                    // can be left out if plugin can execute a single type of task
+  PluginSource source = 2;            // Source for the plugin
+  string image_tag = 3;               // Docker image tag
+  repeated int64 port = 4;            // Port exposed for the container
+  ResourceRequirements resource = 5;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  map<string, string> env = 6;        // Env variables
+  repeated string command = 7;        // Commands to be executed
+  repeated string arg = 8;            // Args to be passed
+  string working_dir = 9;             // Working dir that all tasks have read/write access to
 }
 
 message K8sInfraSpec {
@@ -32,27 +45,17 @@ message K8sInfraSpec {
   SecurityContext security_context = 5;  // Startup user id for the execution infra
   string working_dir = 6;                // Working dir that all tasks have read/write access to
   repeated Resource resources = 7;       // Any global resources like shared volumes
+  map<string, ContainerSpec> aux_container_specs = 8;  // Spec for auxiliary containers that facilitate task execution
 }
 
 message K8SStep {
   string id = 1;           // Id for the step
-  StepRuntime runtime = 2;           // Environment in which the task should run
-}
-
-/*
-  Defines the environment under which the step needs to be executed.
- */
-message StepRuntime {
-  string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
-  // can be left out if plugin can execute a single type of task
-  PluginSource source = 2;
-  ImagePull uses = 3;  // source dependant location of the plugin (e.g. docker image tag, git repo etc...)
-  ResourceRequirements resource = 6;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
-  map<string, string> env = 8;
-  repeated string command = 9;
-  repeated string arg = 10;
-  SecurityContext security_context = 11;  // Startup user id for the execution infra
-  string working_dir = 12;                // Working dir that all tasks have read/write access to
+  ExecutionMode mode = 2;  // Is step going to be executed once or periodically
+  ExecutionPriority priority =
+      3;  // Priority of the step. Under heavier load, higher priority steps may have precedence
+  ExecutionType execution_type = 4;      // Type of the step
+  ContainerSpec container_spec = 5;      // Spec for the container environment
+  SecurityContext security_context = 6;  // Startup user id for the execution infra
 }
 
 /*
