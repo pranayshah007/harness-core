@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -26,12 +25,10 @@ import io.harness.expression.common.ExpressionMode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.TimeoutParameters;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -55,11 +52,9 @@ public class WaitForExecutionInputHelper {
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
-  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   public boolean waitForExecutionInput(Ambiance ambiance, String nodeExecutionId, PlanNode node) {
-    if (!pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_EXECUTION_INPUT)
-        || EmptyPredicate.isEmpty(node.getExecutionInputTemplate())) {
+    if (EmptyPredicate.isEmpty(node.getExecutionInputTemplate())) {
       return false;
     }
     // If instance is already there then that means we have already processed the user input.

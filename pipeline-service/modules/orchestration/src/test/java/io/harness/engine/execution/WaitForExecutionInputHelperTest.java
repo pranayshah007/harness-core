@@ -16,12 +16,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -37,7 +35,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import java.util.EnumSet;
@@ -56,14 +53,12 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private ExecutionInputService executionInputService;
   @InjectMocks private WaitForExecutionInputHelper waitForExecutionInputHelper;
-  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(pmsFeatureFlagService.isEnabled("accountId", FeatureName.NG_EXECUTION_INPUT)).thenReturn(true);
   }
 
   @Test
