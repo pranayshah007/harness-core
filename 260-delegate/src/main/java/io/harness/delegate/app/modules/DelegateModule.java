@@ -91,6 +91,7 @@ import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
+import io.harness.connector.task.rancher.RancherValidationHandler;
 import io.harness.connector.task.terraformcloud.TerraformCloudValidationHandler;
 import io.harness.cvng.CVNGDataCollectionDelegateServiceImpl;
 import io.harness.cvng.K8InfoDataServiceImpl;
@@ -2401,6 +2402,8 @@ public class DelegateModule extends AbstractModule {
         .to(NotSupportedValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.TERRAFORM_CLOUD.getDisplayName())
         .to(TerraformCloudValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.RANCHER.getDisplayName())
+        .to(RancherValidationHandler.class);
   }
 
   private void bindExceptionHandlers() {
