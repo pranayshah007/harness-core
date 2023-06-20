@@ -348,7 +348,6 @@ public enum FeatureName {
   CVNG_LICENSE_ENFORCEMENT,
   SRM_SLO_TOGGLE,
   SERVICE_DASHBOARD_V2,
-  CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   USE_CDC_FOR_PIPELINE_HANDLER,
