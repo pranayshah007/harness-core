@@ -42,6 +42,7 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
   private static final String BARRIERS_FIELD = "barriers";
   private static final String SPEC_FIELD = "spec";
   private static final String BARRIER_REF_FIELD = "barrierRef";
+  private static final String INPUTS = "inputs";
 
   private final Map<String, BarrierSetupInfo> barrierIdentifierMap;
   @Getter private final Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap;
@@ -63,6 +64,10 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
   @Override
   public VisitElementResult visitElement(Object currentElement) {
     YamlNode element = (YamlNode) currentElement;
+
+    if (element.getFieldName().equals(INPUTS)) {
+      return VisitElementResult.SKIP_SUBTREE;
+    }
 
     addMetadataIfFlowControlNode(element);
     addMetadataIfStageNode(element);
