@@ -71,10 +71,10 @@ public class ServiceTokenGenerator {
       JWTCreator.Builder jwtBuilder =
           JWT.create()
               .withIssuer("Harness Inc")
-              .withIssuedAt(new Date())
               .withExpiresAt(new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(tokenDuration.toHours())))
               .withNotBefore(new Date(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1)))
-              .withIssuedAt(new Date());
+              // added leeway of 1 min to IssuedAt claim as well to avoid minor clock drifts between microservices
+              .withIssuedAt(new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)));
 
       addPrincipalToJWTBuilder(jwtBuilder, principal);
       return jwtBuilder.sign(algorithm);
