@@ -15,6 +15,7 @@ import io.harness.delegate.service.core.util.K8SResourceHelper;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1CapabilitiesBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
@@ -28,8 +29,10 @@ import io.kubernetes.client.openapi.models.V1SecurityContextBuilder;
 import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-public class ContainerBuilder {
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+public class ContainerFactory {
   private static final String PLUGIN_DOCKER_IMAGE_NAME = "plugins/docker";
   private static final String PLUGIN_ECR_IMAGE_NAME = "plugins/ecr";
   private static final String PLUGIN_ACR_IMAGE_NAME = "plugins/acr";
@@ -52,6 +55,8 @@ public class ContainerBuilder {
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
   private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
   public static final int RESERVED_LE_PORT = 20001;
+
+  private final K8SRunnerConfig config;
 
   public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()
@@ -94,7 +99,6 @@ public class ContainerBuilder {
   }
 
   public V1ContainerBuilder createLEContainer(final ResourceRequirements resource) {
-    // TODO: See how to share ports to LE, possibly env var?
     return new V1ContainerBuilder()
         .withName(LE_CONTAINER_NAME)
         .withImage(getLeImage())
@@ -107,13 +111,13 @@ public class ContainerBuilder {
 
   private Map<String, String> getLeEnvVars() {
     final var envVars = ImmutableMap.<String, String>builder();
-    envVars.put(HARNESS_WORKSPACE, ContainerBuilder.WORKING_DIR);
+    envVars.put(HARNESS_WORKSPACE, ContainerFactory.WORKING_DIR);
     envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
     envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
-    envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE, "delegate-service"); // Todo: make per delegate
+    envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE,
+        "delegate-service"); // Fixme: LE Can't start without it. Should use service discovery instead
     envVars.put(DELEGATE_SERVICE_ID_VARIABLE, "delegate-grpc-service"); // fixme: What's this for?
-    envVars.put(
-        HARNESS_ACCOUNT_ID_VARIABLE, "kmpySmUISimoRrJL6NL73w"); // TODO: How do we get these mandatory fields to runner
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
     //    envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     //    envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     //    envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
@@ -135,17 +139,13 @@ public class ContainerBuilder {
   }
 
   @NonNull
-  // TODO: possible to pull from private repo or have CI/CD/STO specific addon (CI Addon has TI & STO specific code).
-  // It should belong to runner startup config not PL because it's a property of a runner not our SaaS system, but that
-  // means you need to reconfigure runner to upgrade. Maybe through upgrade (e.g. put in config map that upgrader
-  // updates)? Extra considerations for imagePullSecrets for private repos
   private String getAddonImage() {
-    return "harness/ci-addon:1.16.7";
+    return config.getCiAddonImage();
   }
 
   @NonNull
   private String getLeImage() {
-    return "harness/ci-lite-engine:1.16.7"; // TODO: Same as for Addon image
+    return config.getLeImage();
   }
 
   @NonNull
@@ -186,8 +186,6 @@ public class ContainerBuilder {
     return image.startsWith(DOCKER_IMAGE_NAME) && image.contains(DIND_TAG);
   }
 
-  // TODO: Make sure LE has max(all) resources and other containers min resources (runner should handle that not
-  // manager)
   private V1ResourceRequirements getResources(final String cpu, final String memory) {
     final var limitBuilder = ImmutableMap.<String, Quantity>builder();
     final var requestBuilder = ImmutableMap.<String, Quantity>builder();
