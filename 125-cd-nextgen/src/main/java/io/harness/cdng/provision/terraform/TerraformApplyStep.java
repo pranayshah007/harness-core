@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 
@@ -116,6 +117,20 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
       Optional<EntityDetail> bcFileEntityDetails = TerraformStepHelper.prepareEntityDetailForBackendConfigFiles(
           accountId, orgIdentifier, projectIdentifier, backendConfig);
       bcFileEntityDetails.ifPresent(entityDetailList::add);
+    }
+
+    if (stepParametersSpec.getConfiguration().getEncryptOutputSecretManager() != null
+        && stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef() != null
+        && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
+      String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
+          stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
+
+      IdentifierRef secretManagerIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
+      EntityDetail entityDetail =
+          EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(secretManagerIdentifierRef).build();
+      entityDetailList.add(entityDetail);
+      helper.validateSecretManager(ambiance, secretManagerIdentifierRef);
     }
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);
@@ -338,7 +353,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       helper.saveRollbackDestroyConfigInline(stepParameters, terraformTaskNGResponse, ambiance);
-      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs());
+      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
@@ -358,7 +373,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
-      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs());
+      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
@@ -367,8 +382,24 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     return stepResponseBuilder.build();
   }
 
-  private void addStepOutcome(Ambiance ambiance, StepResponseBuilder stepResponseBuilder, String outputs) {
-    TerraformApplyOutcome terraformApplyOutcome = new TerraformApplyOutcome(helper.parseTerraformOutputs(outputs));
+  private void addStepOutcome(Ambiance ambiance, StepResponseBuilder stepResponseBuilder, String outputs,
+      TerraformApplyStepParameters stepParameters) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    TerraformApplyOutcome terraformApplyOutcome;
+    if (stepParameters.getConfiguration().getEncryptOutputSecretManager() != null
+        && stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef() != null
+        && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
+      String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
+          stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
+      String provisionerId = ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
+
+      terraformApplyOutcome = new TerraformApplyOutcome(
+          helper.encryptTerraformJsonOutput(outputs, ambiance, secretManagerRef, provisionerId));
+    } else {
+      terraformApplyOutcome = new TerraformApplyOutcome(helper.parseTerraformOutputs(outputs));
+    }
+
     provisionerOutputHelper.saveProvisionerOutputByStepIdentifier(ambiance, terraformApplyOutcome);
     addStepOutcomeToStepResponse(stepResponseBuilder, terraformApplyOutcome);
   }

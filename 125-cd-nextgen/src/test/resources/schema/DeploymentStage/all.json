@@ -20759,6 +20759,9 @@
             "$ref": "#/definitions/TerraformCliOptionFlag"
           }
         },
+        "encryptOutput": {
+          "$ref": "#/definitions/TerraformEncryptOutput"
+        },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
         }
@@ -21433,6 +21436,18 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerraformEncryptOutput": {
+      "type": "object",
+      "required": [
+        "outputSecretManagerRef"
+      ],
+      "properties": {
+        "outputSecretManagerRef": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformExecutionData": {
       "type": "object",
       "required": [
@@ -21702,6 +21717,9 @@
           "items": {
             "$ref": "#/definitions/TerraformCliOptionFlag"
           }
+        },
+        "encryptOutput": {
+          "$ref": "#/definitions/TerraformEncryptOutput"
         },
         "skipRefreshCommand": {
           "oneOf": [

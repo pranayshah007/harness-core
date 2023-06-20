@@ -807,7 +807,6 @@ public enum FeatureName {
   PIE_PROCESS_ON_JSON_NODE(
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
       PIPELINE),
-
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
   PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
   CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
@@ -815,7 +814,9 @@ public enum FeatureName {
       "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
   CCM_COMM_SETUP("It is used for enabling the setup flow of commitment orchestrator in CCM.", HarnessTeam.CE),
   CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
-      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC);
+      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
+  CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
+      "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

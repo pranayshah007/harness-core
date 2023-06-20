@@ -23,7 +23,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.executions.CDPipelineEndEventHandler;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
+import io.harness.cdng.provision.terraform.executions.TFApplyExecutionDetailsKey;
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
@@ -73,8 +75,12 @@ public class CDPipelineEndEventHandlerTest extends CategoryTest {
   public void testHandleEventPmsEndPipelineEvent() {
     String panExecutionId = "panExecutionId";
     TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey = mock(TFPlanExecutionDetailsKey.class);
+    TFApplyExecutionDetailsKey tfApplyExecutionDetailsKey = mock(TFApplyExecutionDetailsKey.class);
+
     List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList =
         Collections.singletonList(mock(TerraformPlanExecutionDetails.class));
+    List<TerraformApplyExecutionDetails> terraformApplyExecutionDetails =
+        Collections.singletonList(mock(TerraformApplyExecutionDetails.class));
     List<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetailsList =
         Collections.singletonList(mock(TerraformCloudPlanExecutionDetails.class));
     Ambiance ambiance =
@@ -96,9 +102,13 @@ public class CDPipelineEndEventHandlerTest extends CategoryTest {
             .build();
     doReturn(mock(AccountDTO.class)).when(accountService).getAccount(any());
     doReturn(tfPlanExecutionDetailsKey).when(helper).createTFPlanExecutionDetailsKey(eq(ambiance));
+    doReturn(tfApplyExecutionDetailsKey).when(helper).createTFApplyExecutionDetailsKey(eq(ambiance));
     doReturn(terraformPlanExecutionDetailsList)
         .when(helper)
         .getAllPipelineTFPlanExecutionDetails(eq(tfPlanExecutionDetailsKey));
+    doReturn(terraformApplyExecutionDetails)
+        .when(helper)
+        .getAllPipelineTFApplyExecutionDetails(eq(tfApplyExecutionDetailsKey));
     doReturn(terraformCloudPlanExecutionDetailsList)
         .when(terraformCloudPlanExecutionDetailsService)
         .listAllPipelineTFCloudPlanExecutionDetails(any(), any());
@@ -112,6 +122,11 @@ public class CDPipelineEndEventHandlerTest extends CategoryTest {
     verify(helper).cleanupTfPlanJson(terraformPlanExecutionDetailsList);
     verify(helper).cleanupTfPlanHumanReadable(terraformPlanExecutionDetailsList);
     verify(helper).cleanupAllTerraformPlanExecutionDetails(tfPlanExecutionDetailsKey);
+
+    verify(helper).createTFApplyExecutionDetailsKey(ambiance);
+    verify(helper).getAllPipelineTFApplyExecutionDetails(tfApplyExecutionDetailsKey);
+    verify(helper).cleanupTerraformJsonOutputSecret(terraformApplyExecutionDetails);
+    verify(helper).cleanupAllTerraformApplyExecutionDetails(tfApplyExecutionDetailsKey);
 
     verify(terraformCloudStepHelper).cleanupTfPlanJson(terraformCloudPlanExecutionDetailsList);
     verify(terraformCloudStepHelper).cleanupPolicyCheckJson(terraformCloudPlanExecutionDetailsList);

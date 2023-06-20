@@ -56,7 +56,10 @@ import io.harness.cdng.pipeline.executions.TerraformSecretCleanupTaskNotifyCallb
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigBuilder;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigKeys;
 import io.harness.cdng.provision.terraform.TerraformInheritOutput.TerraformInheritOutputBuilder;
+import io.harness.cdng.provision.terraform.executions.TFApplyExecutionDetailsKey;
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetails;
+import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
@@ -101,7 +104,10 @@ import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -113,6 +119,8 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -147,6 +155,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 @Slf4j
 @Singleton
@@ -160,10 +169,14 @@ public class TerraformStepHelper {
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%d";
   public static final String TF_BACKEND_CONFIG_FILE = "TF_BACKEND_CONFIG_FILE";
   public static final String USE_CONNECTOR_CREDENTIALS = "useConnectorCredentials";
+  public static final String TF_JSON_OUTPUT_SECRET_FORMAT = "terraform_output_%s_%s";
+  public static final String TF_ENCRYPTED_JSON_OUTPUT_NAME = "TF_JSON_OUTPUT_ENCRYPTED";
+  public static final String TF_JSON_OUTPUT_SECRET_IDENTIFIER_FORMAT = "<+secrets.getValue(\"%s\")>";
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
+  @Inject TerraformApplyExecutionDetailsService terraformApplyExecutionDetailsService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -178,6 +191,7 @@ public class TerraformStepHelper {
   @Inject private FileStoreService fileStoreService;
   @Inject DelegateServiceGrpcClient delegateServiceGrpcClient;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
+  @Inject private SecretCrudService ngSecretService;
 
   public static Optional<EntityDetail> prepareEntityDetailForBackendConfigFiles(
       String accountId, String orgIdentifier, String projectIdentifier, TerraformBackendConfig config) {
@@ -526,6 +540,27 @@ public class TerraformStepHelper {
     terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
   }
 
+  public void saveTerraformApplyExecutionDetails(
+      Ambiance ambiance, String provisionerIdentifier, String tfEncryptedJsonOutputSecretId) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformApplyExecutionDetails terraformApplyExecutionDetails =
+        TerraformApplyExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId(provisionerIdentifier)
+            .tfEncryptedJsonOutputSecretId(tfEncryptedJsonOutputSecretId)
+            .build();
+
+    terraformApplyExecutionDetailsService.save(terraformApplyExecutionDetails);
+  }
+
   public void cleanupTfPlanJson(List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
     for (TerraformPlanExecutionDetails terraformPlanExecutionDetails : terraformPlanExecutionDetailsList) {
       if (isNotEmpty(terraformPlanExecutionDetails.getTfPlanJsonFieldId())
@@ -557,9 +592,25 @@ public class TerraformStepHelper {
         .build();
   }
 
+  public TFApplyExecutionDetailsKey createTFApplyExecutionDetailsKey(Ambiance ambiance) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    return TFApplyExecutionDetailsKey.builder()
+        .scope(Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build())
+        .pipelineExecutionId(planExecutionId)
+        .build();
+  }
+
   public List<TerraformPlanExecutionDetails> getAllPipelineTFPlanExecutionDetails(
       TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey) {
     return terraformPlanExectionDetailsService.listAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);
+  }
+
+  public List<TerraformApplyExecutionDetails> getAllPipelineTFApplyExecutionDetails(
+      TFApplyExecutionDetailsKey tfApplyExecutionDetailsKey) {
+    return terraformApplyExecutionDetailsService.listAllPipelineTFApplyExecutionDetails(tfApplyExecutionDetailsKey);
   }
 
   public Map<EncryptionConfig, List<EncryptedRecordData>> getEncryptedTfPlanWithConfig(
@@ -877,6 +928,47 @@ public class TerraformStepHelper {
     return outputs;
   }
 
+  public Map<String, Object> encryptTerraformJsonOutput(
+      String terraformOutputString, Ambiance ambiance, String secretManagerRef, String provisionerId) {
+    Map<String, Object> outputs = new LinkedHashMap<>();
+    if (isEmpty(terraformOutputString)) {
+      return outputs;
+    }
+
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    IdentifierRef secretManagerIdentifierRef =
+        IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
+
+    String secretIdentifier =
+        format(TF_JSON_OUTPUT_SECRET_FORMAT, provisionerId, RandomStringUtils.randomAlphanumeric(6));
+
+    SecretDTOV2 tfJsonOutputSecretDTO =
+        SecretDTOV2.builder()
+            .name(secretIdentifier)
+            .identifier(secretIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .type(SecretType.SecretText)
+            .spec(SecretTextSpecDTO.builder()
+                      .secretManagerIdentifier(secretManagerIdentifierRef.getIdentifier())
+                      .valueType(ValueType.Inline)
+                      .value(terraformOutputString)
+                      .build())
+            .build();
+
+    try {
+      ngSecretService.create(accountId, tfJsonOutputSecretDTO);
+      outputs.put(TF_ENCRYPTED_JSON_OUTPUT_NAME, format(TF_JSON_OUTPUT_SECRET_IDENTIFIER_FORMAT, secretIdentifier));
+      saveTerraformApplyExecutionDetails(ambiance, provisionerId, secretIdentifier);
+    } catch (Exception exception) {
+      log.error("Encryption of terraform json output failed with error: ", exception);
+    }
+    return outputs;
+  }
+
   public String getLatestFileId(String entityId) {
     try {
       return CGRestUtils.getResponse(fileService.get().getLatestFileId(entityId, FileBucket.TERRAFORM_STATE));
@@ -1184,12 +1276,30 @@ public class TerraformStepHelper {
     }
   }
 
+  public void cleanupAllTerraformApplyExecutionDetails(TFApplyExecutionDetailsKey tfApplyExecutionDetailsKey) {
+    boolean deleteSuccess =
+        terraformApplyExecutionDetailsService.deleteAllTerraformApplyExecutionDetails(tfApplyExecutionDetailsKey);
+    if (!deleteSuccess) {
+      log.warn("Unable to delete the TerraformApplyExecutionDetails");
+    }
+  }
+
   public void cleanupTerraformVaultSecret(
       Ambiance ambiance, List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList, String pipelineId) {
     Map<EncryptionConfig, List<EncryptedRecordData>> encryptedTfPlanWithConfig =
         getEncryptedTfPlanWithConfig(terraformPlanExecutionDetailsList);
     encryptedTfPlanWithConfig.forEach((encryptionConfig, listEncryptedPlan) -> {
       runCleanupTerraformSecretTask(ambiance, encryptionConfig, listEncryptedPlan, pipelineId);
+    });
+  }
+
+  public void cleanupTerraformJsonOutputSecret(
+      List<TerraformApplyExecutionDetails> terraformApplyExecutionDetailsList) {
+    terraformApplyExecutionDetailsList.forEach(eD -> {
+      if (isNotEmpty(eD.getTfEncryptedJsonOutputSecretId())) {
+        ngSecretService.delete(eD.getAccountIdentifier(), eD.getOrgIdentifier(), eD.getProjectIdentifier(),
+            eD.getTfEncryptedJsonOutputSecretId(), false);
+      }
     });
   }
 
