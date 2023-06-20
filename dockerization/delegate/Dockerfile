@@ -54,7 +54,7 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && mkdir -m 777 -p client-tools/go-template/v0.4.2 \
   && curl -s -L -o client-tools/go-template/v0.4.2/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.2/bin/linux/$TARGETARCH/go-template \
   && mkdir -m 777 -p client-tools/harness-pywinrm/v0.4-dev \
-  && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://storage.googleapis.com/harness-cdn-binary-source-cd-play/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$TARGETARCH/harness-pywinrm \
+  && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://qa.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$TARGETARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/chartmuseum/v0.15.0 \
   && curl -s -L -o client-tools/chartmuseum/v0.15.0/chartmuseum https://app.harness.io/public/shared/tools/chartmuseum/release/v0.15.0/bin/linux/$TARGETARCH/chartmuseum \
   && mkdir -m 777 -p client-tools/tf-config-inspect/v1.2 \
