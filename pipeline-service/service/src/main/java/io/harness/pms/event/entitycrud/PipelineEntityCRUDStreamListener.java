@@ -26,12 +26,15 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.preflight.service.PreflightService;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.GraphGenerationService;
 import io.harness.steps.barriers.service.BarrierService;
 
@@ -63,8 +66,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final NodeExecutionService nodeExecutionService;
   private final NGTriggerEventsService ngTriggerEventsService;
   private final PlanExecutionService planExecutionService;
-
   private final PlanExpansionService planExpansionService;
+  private final NGSettingsClient ngSettingsClient;
 
   @Inject
   public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
@@ -73,7 +76,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
       InterruptService interruptService, GraphGenerationService graphGenerationService,
       NodeExecutionService nodeExecutionService, NGTriggerEventsService ngTriggerEventsService,
-      PlanExecutionService planExecutionService, PlanExpansionService planExpansionService) {
+      PlanExecutionService planExecutionService, PlanExpansionService planExpansionService,
+      NGSettingsClient ngSettingsClient) {
     this.ngTriggerService = ngTriggerService;
     this.pipelineMetadataService = pipelineMetadataService;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
@@ -87,6 +91,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     this.planExecutionService = planExecutionService;
     this.ngTriggerEventsService = ngTriggerEventsService;
     this.planExpansionService = planExpansionService;
+    this.ngSettingsClient = ngSettingsClient;
   }
 
   @Override
@@ -139,12 +144,28 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     String projectIdentifier = entityChangeDTO.getProjectIdentifier().getValue();
     String pipelineIdentifier = entityChangeDTO.getIdentifier().getValue();
 
-    deletePipelineMetadataDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    deletePipelineExecutionsDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    try {
+      String retainPipelineExecutionDetailsAfterDelete =
+          NGRestUtils
+              .getResponse(ngSettingsClient.getSetting(
+                  NGPipelineSettingsConstant.DO_NOT_DELETE_PIPELINE_EXECUTION_DETAILS.getName(), accountId, null, null))
+              .getValue();
+      if ("true".equals(retainPipelineExecutionDetailsAfterDelete)) {
+        log.info(String.format(
+            "Retaining metadata and execution details for pipeline with identifier: %s", pipelineIdentifier));
+      } else {
+        deletePipelineMetadataDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+        deletePipelineExecutionsDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+        log.info("Processed deleting metadata and execution details for given pipeline");
+      }
+      return true;
+    } catch (Exception ex) {
+      log.debug(String.format("Could not fetch setting: %s",
+                    NGPipelineSettingsConstant.DO_NOT_DELETE_PIPELINE_EXECUTION_DETAILS.getName()),
+          ex);
+    }
 
-    log.info("Processed deleting metadata and execution details for given pipeline");
-
-    return true;
+    return false;
   }
 
   // Delete all pipeline metadata details related to given pipeline identifier.
