@@ -479,13 +479,24 @@ public class ProjectServiceImpl implements ProjectService {
     return projectRepository.findAll(criteria, pageable);
   }
 
+  @Override
+  public List<Favorite> getProjectFavorites(
+      String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
+    if (projectFilterDTO != null && projectFilterDTO.getOrgIdentifiers().size() > 0) {
+      List<Favorite> favorites = new ArrayList<>();
+      for (String orgIdentifier : projectFilterDTO.getOrgIdentifiers()) {
+        favorites.addAll(favoritesService.getFavorites(
+            accountIdentifier, orgIdentifier, null, userId, ResourceType.PROJECT.toString()));
+      }
+      return favorites;
+    }
+    return favoritesService.getFavorites(accountIdentifier, null, null, userId, ResourceType.PROJECT.toString());
+  }
+
   private void updateFilterPropertiesFromFavorites(
       String accountIdentifier, ProjectFilterDTO projectFilterDTO, String userId) {
-    List<String> favoriteIds =
-        favoritesService.getFavorites(accountIdentifier, null, null, userId, ResourceType.PROJECT.toString())
-            .stream()
-            .map(Favorite::getResourceIdentifier)
-            .collect(Collectors.toList());
+    List<Favorite> favorites = getProjectFavorites(accountIdentifier, projectFilterDTO, userId);
+    List<String> favoriteIds = favorites.stream().map(Favorite::getResourceIdentifier).collect(Collectors.toList());
     if (favoriteIds.isEmpty()) {
       favoriteIds.add("NO_MATCH");
     }

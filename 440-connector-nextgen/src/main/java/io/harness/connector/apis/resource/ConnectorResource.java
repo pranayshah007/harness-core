@@ -303,7 +303,8 @@ public class ConnectorResource {
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
-      @QueryParam("version") String version, @BeanParam PageRequest pageRequest) {
+      @QueryParam("version") String version, @QueryParam("onlyFavorites") @DefaultValue("false") Boolean onlyFavorites,
+      @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));
@@ -312,7 +313,7 @@ public class ConnectorResource {
             Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
       return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
           orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-          getDistinctFromBranches, getPageRequest(pageRequest), version)));
+          getDistinctFromBranches, getPageRequest(pageRequest), version, onlyFavorites)));
     }
     Page<Connector> allConnectors = connectorService.listAll(accountIdentifier, connectorListFilter, orgIdentifier,
         projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches,
@@ -323,7 +324,7 @@ public class ConnectorResource {
     connectorListFilter.setConnectorIds(connectorIds);
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
         orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches, getPageRequest(pageRequest), version)));
+        getDistinctFromBranches, getPageRequest(pageRequest), version, onlyFavorites)));
   }
 
   @POST

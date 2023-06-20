@@ -70,7 +70,7 @@ public class AggregateProjectServiceImplTest extends CategoryTest {
 
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     aggregateProjectService = spy(new AggregateProjectServiceImpl(
-        projectService, organizationService, ngUserService, executorService, userHelperService));
+        projectService, organizationService, ngUserService, executorService, userHelperService, favoritesService));
   }
 
   private Project getProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {

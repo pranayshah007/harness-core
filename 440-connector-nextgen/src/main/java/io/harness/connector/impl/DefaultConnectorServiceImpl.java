@@ -90,6 +90,9 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ConnectorValidationException;
+import io.harness.favorites.ResourceType;
+import io.harness.favorites.entities.Favorite;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.common.dtos.GitSyncConfigDTO;
@@ -121,6 +124,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.UserHelperService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -134,12 +138,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DuplicateKeyException;
@@ -157,6 +163,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   private final ConnectorMapper connectorMapper;
   private final ConnectorRepository connectorRepository;
   private final ConnectorFilterService filterService;
+  private UserHelperService userHelperService;
+  private FavoritesService favoritesService;
   private Map<String, ConnectionValidator> connectionValidatorMap;
   private final CatalogueHelper catalogueHelper;
   private final ProjectService projectService;
@@ -240,12 +248,35 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
-      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
-      String version) {
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable, String version,
+      Boolean onlyFavorites) {
+    if (BooleanUtils.isTrue(onlyFavorites)) {
+      updateFilterPropertiesFromFavorites(
+          accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, userHelperService.getUserId());
+    }
     Page<Connector> connectors =
         listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
             includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, version);
     return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+  }
+
+  private void updateFilterPropertiesFromFavorites(String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier, String userId) {
+    List<String> favoriteIds = favoritesService
+                                   .getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId,
+                                       ResourceType.CONNECTOR.toString())
+                                   .stream()
+                                   .map(Favorite::getResourceIdentifier)
+                                   .collect(Collectors.toList());
+    List<String> filterConnectorIdentifiers = filterProperties.getConnectorIdentifiers();
+    if (favoriteIds.isEmpty()) {
+      favoriteIds.add("NO_MATCH");
+    }
+    if (filterConnectorIdentifiers == null) {
+      filterConnectorIdentifiers = new ArrayList<>();
+    }
+    filterConnectorIdentifiers.addAll(favoriteIds);
+    filterProperties.setConnectorIdentifiers(filterConnectorIdentifiers);
   }
 
   private Page<Connector> listHelper(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
@@ -281,6 +312,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Page<Connector> connectors) {
     Page<ConnectorResponseDTO> connectorResponseDTOPage = connectors.map(connectorMapper::writeDTO);
     populateGitMetadata(accountIdentifier, orgIdentifier, projectIdentifier, connectorResponseDTOPage.getContent());
+    populateFavoriteInformation(accountIdentifier, orgIdentifier, projectIdentifier, userHelperService.getUserId(),
+        connectorResponseDTOPage.getContent());
     return connectorResponseDTOPage;
   }
 
@@ -364,6 +397,19 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         }
       }
     });
+  }
+
+  private void populateFavoriteInformation(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userId, List<ConnectorResponseDTO> connectorResponseList) {
+    Set<String> favoriteIds = favoritesService
+                                  .getFavorites(accountIdentifier, orgIdentifier, projectIdentifier, userId,
+                                      ResourceType.CONNECTOR.toString())
+                                  .stream()
+                                  .map(Favorite::getResourceIdentifier)
+                                  .collect(Collectors.toSet());
+    connectorResponseList.forEach(connectorResponseDTO
+        -> connectorResponseDTO.setIsFavorite(
+            favoriteIds.contains(connectorResponseDTO.getConnector().getIdentifier())));
   }
 
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,

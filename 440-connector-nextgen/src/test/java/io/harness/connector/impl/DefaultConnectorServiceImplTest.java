@@ -930,7 +930,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     Pageable pageable = Pageable.ofSize(10);
 
     Page<ConnectorResponseDTO> connectorSummaryDTOSList = connectorService.list(
-        accountIdentifier, connectorFilterPropertiesDTO, null, null, "", "", false, false, pageable, null);
+        accountIdentifier, connectorFilterPropertiesDTO, null, null, "", "", false, false, pageable, null, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(1);
     List<String> connectorIdentifierList =
         connectorSummaryDTOSList.stream()
