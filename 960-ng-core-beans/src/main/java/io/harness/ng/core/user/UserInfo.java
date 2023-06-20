@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
+import io.harness.ng.core.dto.UserPreferenceDataDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.harness.ng.core.dto.UserPreferenceDataDTO;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AccessLevel;

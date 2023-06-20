@@ -394,7 +394,7 @@ public class UserResourceNG {
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserWithPreferenceDataByEmailId(
       @PathParam("emailId") String emailId, @QueryParam("accountId") @NotEmpty String accountId) {
-    User user = userService.getUserByEmail(emailId, false);
+    User user = userService.getUserByEmail(emailId, accountId);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUserWithPreferenceData(user, accountId)));
   }
   @GET

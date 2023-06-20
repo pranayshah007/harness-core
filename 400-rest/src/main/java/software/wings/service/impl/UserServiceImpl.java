@@ -2857,8 +2857,9 @@ public class UserServiceImpl implements UserService {
   public User updateUserAccountLevelPreference(
       User user, String accountId, UserPreferenceDataDTO userPreferenceDataDTO) {
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    UserPreferenceData userPreferenceData = userServiceHelper.mapUserPreferenceDTOToData(userPreferenceDataDTO);
+
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      UserPreferenceData userPreferenceData = userServiceHelper.mapUserPreferenceDTOToData(userPreferenceDataDTO);
       userServiceHelper.updateUserPreferenceData(accountId, user, userPreferenceData, updateOperations);
     }
     return updateUser(user.getUuid(), updateOperations);
