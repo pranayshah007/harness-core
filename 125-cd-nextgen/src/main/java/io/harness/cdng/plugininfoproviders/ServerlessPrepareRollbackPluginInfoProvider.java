@@ -29,7 +29,6 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
@@ -63,6 +62,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
@@ -87,7 +87,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfoProvider {
+public class ServerlessPrepareRollbackPluginInfoProvider implements PluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private OutcomeService outcomeService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;

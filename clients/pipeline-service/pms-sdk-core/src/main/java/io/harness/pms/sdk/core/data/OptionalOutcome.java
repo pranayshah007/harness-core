@@ -15,4 +15,5 @@ import lombok.Value;
 public class OptionalOutcome {
   boolean found;
   Outcome outcome;
+  String outcomeJson;
 }

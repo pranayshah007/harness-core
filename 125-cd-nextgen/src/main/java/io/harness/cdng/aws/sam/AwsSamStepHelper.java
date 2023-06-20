@@ -8,11 +8,13 @@
 package io.harness.cdng.aws.sam;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -20,7 +22,18 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
+import io.harness.cdng.plugininfoproviders.AwsSamPluginInfoProviderHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSamServerInstanceInfo;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
@@ -29,20 +42,26 @@ import io.harness.delegate.task.stepstatus.StepOutput;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,6 +70,9 @@ import org.apache.commons.lang3.StringUtils;
 public class AwsSamStepHelper {
   @Inject protected OutcomeService outcomeService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
+
+  @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
 
@@ -95,6 +117,20 @@ public class AwsSamStepHelper {
         envVarMap.put("PLUGIN_VALUES_YAML_FILE_PATH", valuesYamlPath);
       }
     }
+
+    ManifestsOutcome manifestsOutcome =
+        (ManifestsOutcome) outcomeService
+            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+            .getOutcome();
+
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
+        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
+            manifestsOutcome.values());
+
+    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+        awsSamDirectoryManifestOutcome);
+
+    envVarMap.put("PLUGIN_SAM_DIR", samDir);
   }
 
   public List<ServerInstanceInfo> fetchServerInstanceInfoFromDelegateResponse(
@@ -154,5 +190,19 @@ public class AwsSamStepHelper {
         }
       }
     }
+
+    ManifestsOutcome manifestsOutcome =
+        (ManifestsOutcome) outcomeService
+            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+            .getOutcome();
+
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
+        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
+            manifestsOutcome.values());
+
+    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+        awsSamDirectoryManifestOutcome);
+
+    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
   }
 }

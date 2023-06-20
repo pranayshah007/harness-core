@@ -99,4 +99,12 @@ public class OutcomeGrpcServiceImpl implements OutcomeService {
         .outcome(PmsOutcomeMapper.convertJsonToOutcome(response.getOutcome()))
         .build();
   }
+
+  @Override
+  public OptionalOutcome resolveOptionalAsJson(Ambiance ambiance, RefObject refObject) {
+    OutcomeResolveOptionalBlobResponse response =
+        PmsGrpcClientUtils.retryAndProcessException(outcomeProtoServiceBlockingStub::resolveOptional,
+            OutcomeResolveOptionalBlobRequest.newBuilder().setAmbiance(ambiance).setRefObject(refObject).build());
+    return OptionalOutcome.builder().found(response.getFound()).outcomeJson(response.getOutcome()).build();
+  }
 }

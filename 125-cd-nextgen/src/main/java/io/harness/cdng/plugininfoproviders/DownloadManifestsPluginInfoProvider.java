@@ -16,7 +16,6 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
-import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -25,6 +24,7 @@ import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.YamlUtils;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider {
+public class DownloadManifestsPluginInfoProvider implements PluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private OutcomeService outcomeService;
 

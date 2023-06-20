@@ -7,31 +7,22 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
-import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
-import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.expression.PluginExpressionResolver;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
@@ -40,44 +31,45 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 import io.harness.steps.container.execution.plugin.StepImageConfig;
-import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.ConnectorUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.jooq.tools.StringUtils;
 
+// Todo(Sainath): Merge AwsSamDeployPluginInfoProvider and AwsSamBuildPluginInfoProvider two pluginInfoProvider
 @OwnedBy(HarnessTeam.CDP)
-public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
-  @Inject private CDExpressionResolver cdExpressionResolver;
+public class AwsSamDeployPluginInfoProvider implements PluginInfoProvider {
+  @Inject private PluginExpressionResolver pluginExpressionResolver;
+
   @Inject private OutcomeService outcomeService;
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
-  @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
-
-  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
+  @Inject private ConnectorUtils connectorUtils;
 
   @Override
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
-    CdAbstractStepNode cdAbstractStepNode;
+    AbstractStepNode cdAbstractStepNode;
 
     try {
-      cdAbstractStepNode = YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
+      cdAbstractStepNode = YamlUtils.read(stepJsonNode, AbstractStepNode.class);
     } catch (IOException e) {
       throw new ContainerPluginParseException(
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
@@ -127,31 +119,23 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     ParameterField<String> stackName = awsSamDeployStepInfo.getStackName();
 
     // Resolve Expressions
-    cdExpressionResolver.updateExpressions(ambiance, deployCommandOptions);
+    pluginExpressionResolver.updateExpressions(ambiance, deployCommandOptions);
 
-    // todo: Fetch from infrastructure outcome
-    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+    OptionalOutcome infrastructureOutcome = outcomeService.resolveOptionalAsJson(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-    AwsSamInfrastructureOutcome awsSamInfrastructureOutcome = (AwsSamInfrastructureOutcome) infrastructureOutcome;
-
-    String awsConnectorRef = awsSamInfrastructureOutcome.getConnectorRef();
+    String awsConnectorRef = JsonUtils.jsonPath(infrastructureOutcome.getOutcomeJson(), "connectorRef");
 
     String awsAccessKey = null;
     String awsSecretKey = null;
-    String region = ((AwsSamInfrastructureOutcome) infrastructureOutcome).getRegion();
+    String region = JsonUtils.jsonPath(infrastructureOutcome.getOutcomeJson(), "region");
 
     if (awsConnectorRef != null) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
-      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(awsConnectorRef,
-          ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+      ConnectorDetails connectorDTO = connectorUtils.getConnectorDetails(ngAccess, awsConnectorRef);
 
-      Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(identifierRef.getAccountIdentifier(),
-          identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
-
-      ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnector();
-      ConnectorConfigDTO connectorConfigDTO = connectorInfoDTO.getConnectorConfig();
+      ConnectorConfigDTO connectorConfigDTO = connectorDTO.getConnectorConfig();
       AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorConfigDTO;
       AwsCredentialDTO awsCredentialDTO = awsConnectorDTO.getCredential();
       AwsCredentialSpecDTO awsCredentialSpecDTO = awsCredentialDTO.getConfig();
@@ -173,19 +157,6 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
 
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService
-            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
-            .getOutcome();
-
-    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
-        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
-            manifestsOutcome.values());
-
-    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
-        awsSamDirectoryManifestOutcome);
-
-    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
     samDeployEnvironmentVariablesMap.put(
         "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());

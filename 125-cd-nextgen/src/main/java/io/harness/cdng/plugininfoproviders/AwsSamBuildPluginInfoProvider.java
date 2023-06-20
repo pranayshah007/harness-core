@@ -14,12 +14,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
-import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
-import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -28,7 +22,9 @@ import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.expression.PluginExpressionResolver;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
@@ -38,7 +34,7 @@ import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
@@ -57,8 +53,8 @@ import java.util.Set;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
-  @Inject private CDExpressionResolver cdExpressionResolver;
+public class AwsSamBuildPluginInfoProvider implements PluginInfoProvider {
+  @Inject private PluginExpressionResolver pluginExpressionResolver;
   @Inject PluginExecutionConfig pluginExecutionConfig;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
@@ -70,10 +66,10 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
-    CdAbstractStepNode cdAbstractStepNode;
+    AbstractStepNode cdAbstractStepNode;
 
     try {
-      cdAbstractStepNode = YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
+      cdAbstractStepNode = YamlUtils.read(stepJsonNode, AbstractStepNode.class);
     } catch (IOException e) {
       throw new ContainerPluginParseException(
           String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
@@ -166,20 +162,6 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
         samBuildEnvironmentVariablesMap.put("PLUGIN_PRIVATE_REGISTRY_PASSWORD", password);
       }
     }
-
-    ManifestsOutcome manifestsOutcome =
-        (ManifestsOutcome) outcomeService
-            .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
-            .getOutcome();
-
-    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
-        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
-            manifestsOutcome.values());
-
-    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
-        awsSamDirectoryManifestOutcome);
-
-    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
     samBuildEnvironmentVariablesMap.put(
         "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
 

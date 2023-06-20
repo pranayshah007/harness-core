@@ -28,4 +28,6 @@ public interface OutcomeService extends Resolver<Outcome> {
   Outcome fetchOutcome(@NonNull String outcomeInstanceId);
 
   OptionalOutcome resolveOptional(Ambiance ambiance, RefObject refObject);
+
+  OptionalOutcome resolveOptionalAsJson(Ambiance ambiance, RefObject refObject);
 }
