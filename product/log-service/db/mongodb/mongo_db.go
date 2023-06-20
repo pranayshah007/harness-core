@@ -50,13 +50,13 @@ func New(username, password, connStr string, enableSecondary bool) (*MongoDb, er
 		}
 		logrus.Infof("successfully pinged MongoDB Analytics Server")
 	}
-	tidb := &MongoDb{
+	mongoDb := &MongoDb{
 		Client:            primaryClient,
 		Database:          primaryClient.Database(dbName),
 		SecondaryClient:   secondaryClient,
 		SecondaryDatabase: secondaryClient.Database(dbName),
 	}
-	return tidb, nil
+	return mongoDb, nil
 }
 
 func getMongoClient(username, password, connStr string, primary bool) (*mongo.Client, error) {

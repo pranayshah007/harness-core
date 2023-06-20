@@ -120,6 +120,23 @@ migrate -source file://product/log-service/migrations/mongodb -database mongodb:
 ```
 migrate script: https://github.com/golang-migrate/migrate
 
+# MongoDB schema
+
+```
+{
+  log_id: <string>,
+  rca: <string>,
+  detailed_rca: [
+    {
+      error: <string>,
+      cause: <string>,
+      remediation: <string>,
+    }
+  ],
+  vote: UPVOTE/DOWNVOTE/UNKNOWN
+}
+```
+
 # Storage
 
 ## Write to store
