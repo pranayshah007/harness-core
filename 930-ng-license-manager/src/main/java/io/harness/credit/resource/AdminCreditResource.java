@@ -59,8 +59,8 @@ public class AdminCreditResource {
 
   @POST
   @Path("/create")
-  @ApiOperation(value = "Purchase credit for an account", nickname = "createCredit")
-  @Operation(operationId = "createCredit", summary = "Purchase the credits of an account",
+  @ApiOperation(value = "Admin Level purchase credit for an account", nickname = "adminCreateCredit")
+  @Operation(operationId = "adminCreateCredit", summary = "Admin level purchase credit for an account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -77,9 +77,11 @@ public class AdminCreditResource {
 
   @GET
   @Path("{accountIdentifier}")
-  @ApiOperation(value = "Get Credits purchase history of an Account in expiry time ascending order",
-      nickname = "getCreditsByAccount")
-  @Operation(operationId = "getCreditsByAccount", summary = "Gets Credits Purchase History By Account ",
+  @ApiOperation(
+      value = "Admin level get purchase history of credits for an Account in an ascending order of the expiry time",
+      nickname = "adminGetCreditsByAccount")
+  @Operation(operationId = "adminGetCreditsByAccount",
+      summary = "Admin level get purchase history of credits for an Account in an ascending order of the expiry time",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

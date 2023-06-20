@@ -151,7 +151,8 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
               color("\nDecrypting terraform plan before applying\n", LogColor.White, LogWeight.Bold));
           taskService.saveTerraformPlanContentToFile(applyTaskParameters.getPlanSecretManager(),
               applyTaskParameters.getEncryptedTfPlan(), terragruntContext.getScriptDirectory(),
-              applyTaskParameters.getAccountId(), TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+              applyTaskParameters.getAccountId(), TERRAFORM_PLAN_FILE_OUTPUT_NAME,
+              applyTaskParameters.isEncryptDecryptPlanForHarnessSMOnManager(), true);
           applyLogCallback.saveExecutionLog(color("Using approved terraform plan \n", LogColor.White, LogWeight.Bold));
         } else {
           String planName = TERRAFORM_PLAN_FILE_OUTPUT_NAME;

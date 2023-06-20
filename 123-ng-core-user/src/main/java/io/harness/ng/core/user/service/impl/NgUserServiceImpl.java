@@ -752,7 +752,7 @@ public class NgUserServiceImpl implements NgUserService {
     if (userMetadataOpt.isPresent()) {
       return;
     }
-    Optional<UserInfo> userInfoOptional = getUserById(userId, false);
+    Optional<UserInfo> userInfoOptional = getUserById(userId);
     UserInfo userInfo = userInfoOptional.orElseThrow(
         () -> new InvalidRequestException(String.format("User with id %s doesn't exists", userId)));
 
@@ -852,8 +852,8 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
   @Override
-  public Optional<UserInfo> getUserById(String userId, boolean includeSupportAccounts) {
-    return CGRestUtils.getResponse(userClient.getUserById(userId, includeSupportAccounts));
+  public Optional<UserInfo> getUserById(String userId) {
+    return CGRestUtils.getResponse(userClient.getUserById(userId));
   }
 
   @Override
@@ -1023,7 +1023,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<String> listUserAccountIds(String userId) {
-    Optional<UserInfo> userInfoOptional = getUserById(userId, false);
+    Optional<UserInfo> userInfoOptional = getUserById(userId);
     if (userInfoOptional.isPresent()) {
       return userInfoOptional.get()
           .getAccounts()

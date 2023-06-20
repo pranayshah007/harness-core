@@ -33,7 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PipelineYamlHelperTest extends CategoryTest {
+public class SimplifiedPipelineYamlHelperTest extends CategoryTest {
   private String pipelineYamlV1;
 
   @Before

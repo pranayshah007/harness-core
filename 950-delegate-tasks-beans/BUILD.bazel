@@ -17,6 +17,11 @@ java_library(
     deps = [
         "//:lombok",
         "//950-delegate-tasks-beans/src/main/proto:950_delegate_tasks_beans_java_proto",
+        "//951-delegate-task-commons/src/main/java/io/harness/beans:module",
+        "//951-delegate-task-commons/src/main/java/io/harness/delegate/beans:module",
+        "//951-delegate-task-commons/src/main/java/io/harness/delegate/beans/executioncapability:module",
+        "//951-delegate-task-commons/src/main/java/io/harness/serializer/morphia:module",
+        "//951-delegate-task-commons/src/main/java/software/wings/beans:module",
         "//952-scm-java-client:module",
         "//954-connector-beans:module",
         "//955-cg-yaml:module",

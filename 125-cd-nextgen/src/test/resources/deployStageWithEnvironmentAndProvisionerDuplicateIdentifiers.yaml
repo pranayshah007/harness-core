@@ -1,0 +1,157 @@
+name: deployStage
+identifier: deployStage
+description: ""
+type: Deployment
+spec:
+  deploymentType: Ssh
+  service:
+    serviceRef: ServiceWithArtifact
+    serviceInputs:
+      serviceDefinition:
+        type: Ssh
+        spec:
+          artifacts:
+            primary:
+              primaryArtifactRef: <+input>
+              sources: <+input>
+  environment:
+    environmentRef: envRef
+    deployToAll: false
+    provisioner:
+      steps:
+        - parallel:
+            - step:
+                type: ShellScriptProvision
+                name: ProvisionerName
+                identifier: duplicateIdentifier
+                spec:
+                  source:
+                    type: Inline
+                    spec:
+                      script: echo 'test'
+                  environmentVariables: []
+                timeout: 10m
+            - stepGroup:
+                name: parallelStageGroupFromTemplate
+                identifier: parallelStageGroupFromTemplate
+                template:
+                  templateRef: stepGroupTrmplate
+                  versionLabel: v1
+            - step:
+                name: parallelStepFromTemplate
+                identifier: parallelStepFromTemplate
+                template:
+                  templateRef: account.Default_ISS_Virtual_Directory_PowerShell
+                  versionLabel: v1
+                  templateInputs:
+                    type: Command
+                    spec:
+                      environmentVariables:
+                        - name: ReleaseNo
+                          type: String
+                          value: <+input>
+                        - name: AppPoolName
+                          type: String
+                          value: <+input>
+                        - name: AppPoolDotNetVersion
+                          type: String
+                          value: <+input>
+                        - name: DownloadDirectory
+                          type: String
+                          value: <+input>
+                        - name: AppPhysicalDirectory
+                          type: String
+                          value: <+input>
+                        - name: DestinationDirectory
+                          type: String
+                          value: <+input>
+        - stepGroup:
+            name: serialStepGroupFromTemplate
+            identifier: serialStepGroupFromTemplate
+            template:
+              templateRef: stepGroupTemplate
+              versionLabel: v1
+        - step:
+            name: serialStepFromTemplate
+            identifier: serialStepFromTemplate
+            template:
+              templateRef: account.Default_ISS_Virtual_Directory_PowerShell
+              versionLabel: v1
+              templateInputs:
+                type: Command
+                spec:
+                  environmentVariables:
+                    - name: ReleaseNo
+                      type: String
+                      value: <+input>
+                    - name: AppPoolName
+                      type: String
+                      value: <+input>
+                    - name: AppPoolDotNetVersion
+                      type: String
+                      value: <+input>
+                    - name: DownloadDirectory
+                      type: String
+                      value: <+input>
+                    - name: AppPhysicalDirectory
+                      type: String
+                      value: <+input>
+                    - name: DestinationDirectory
+                      type: String
+                      value: <+input>
+        - step:
+            type: ShellScriptProvision
+            name: ProvisionerName2
+            identifier: duplicateIdentifier
+            spec:
+              source:
+                type: Inline
+                spec:
+                  script: echo 'test'
+              environmentVariables: []
+            timeout: 10m
+    infrastructureDefinitions:
+      - identifier: infraIdentifier
+  execution:
+    steps:
+      - step:
+          name: Deploy
+          identifier: Deploy
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables: []
+            outputVariables: []
+            commandUnits:
+              - identifier: Setup_Runtime_Paths
+                name: Setup Runtime Paths
+                type: Script
+                spec:
+                  shell: Bash
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        # Execute as root and pass environment variables
+                        # su -p -
+
+                        # Execute as root via user credentials (with root privileges)
+                        # sudo -E su -p -
+
+                        # Creating runtime, backup and staging folders:
+
+                        mkdir -p $HOME/<+service.name>/<+env.name>/runtime
+                        mkdir -p $HOME/<+service.name>/<+env.name>/backup
+                        mkdir -p $HOME/<+service.name>/<+env.name>/staging
+    rollbackSteps: []
+tags: {}
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback

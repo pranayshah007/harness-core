@@ -243,6 +243,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .environmentVariables(inheritOutput.getEnvironmentVariables() == null
                     ? new HashMap<>()
                     : inheritOutput.getEnvironmentVariables())
+            .encryptDecryptPlanForHarnessSMOnManager(
+                helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)

@@ -29,6 +29,7 @@ java_library(
         "//955-delegate-beans:module",
         "//960-continuous-features:module",
         "//960-yaml-sdk:module",
+        "//980-commons/src/main/java/io/harness/beans/constants:module",
         "//999-annotations:module",
         "//clients/ci:module",
         "//clients/notification:module",

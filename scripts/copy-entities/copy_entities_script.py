@@ -10,6 +10,7 @@ import yaml
 import sys
 from codecs import encode
 from abc import ABC, abstractmethod
+import ssl
 
 accountIdentifier = sys.argv[1]
 from_projectIdentifier = sys.argv[2]
@@ -26,12 +27,13 @@ pipeline_endpoint = "/gateway/pipeline/api/pipelines"
 input_set_endpoint = "/gateway/pipeline/api/inputSets"
 routing_and_accountId_param = "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier
 source_query_param = routing_and_accountId_param+"&orgIdentifier="+from_orgIdentifier+"&projectIdentifier="+from_projectIdentifier
+ssl._create_default_https_context = ssl._create_unverified_context
 conn = http.client.HTTPSConnection("app.harness.io")
 headers = {
   'x-api-key': apikey,
   'content-type': 'application/json'
   }
-Entities = ["Secret","Service","Environment","Connector","Template","Pipeline"]
+Entities = ["Connector","Secret","Service","Environment","Template","Pipeline"]
 success_failure_count = [[0 for i in range(3)] for j in range(len(Entities))]
 global success_count
 global failure_count
@@ -97,6 +99,33 @@ class ImportExport(ABC):
   def create_entity(self, payload):
     pass
 
+
+class Connector(ImportExport):
+  def list_entity(self):
+     url_connector_list = connector_endpoint+"/listV2"+source_query_param+"&pageIndex=0&pageSize=10"
+     return list_entity(url_connector_list, "Connector")
+
+  def list_entity_paginated(self, j):
+    url_connector_list_paginated = connector_endpoint+"/listV2"+source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
+    return list_entity(url_connector_list_paginated, "Connector")
+
+  def get_entity_identifier(self, response_list_entity, i):
+    return response_list_entity["data"]["content"][i]["connector"]["identifier"]
+
+  def get_entity(self, response_list_connector, i):
+    url_get_connector = connector_endpoint+"/"+response_list_connector["data"]["content"][i]["connector"]["identifier"]+ source_query_param
+    return get_response_data("GET",url_get_connector,"")
+
+  def get_payload(self, response_get_entity):
+    return modify_payload(response_get_entity["data"],"connector")
+
+  def create_entity(self, payload):
+    if json.loads(payload)["connector"]["identifier"] == "harnessSecretManager":
+      return {'status': 'SUCCESS'}
+    url_create_connector = connector_endpoint+routing_and_accountId_param
+    return create_and_print_entity(url_create_connector, payload)
+
+
 class Secret(ImportExport):
   def list_entity(self):
     url_secret_list = secret_endpoint + source_query_param+"&pageIndex=0&pageSize=10"
@@ -119,6 +148,7 @@ class Secret(ImportExport):
   def create_entity(self, payload):
     url_create_secret = secret_endpoint + "?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&projectIdentifier="+to_projectIdentifier+"&orgIdentifier=" + to_orgIdentifier
     return create_and_print_entity(url_create_secret, payload)
+
 
 class Environment(ImportExport):
   def list_entity(self):
@@ -160,36 +190,28 @@ class Service(ImportExport):
     return get_response_data("GET", url_get_service, "")
 
   def get_payload(self, response_get_entity):
-    return json.dumps([json.loads(modify_payload(yaml.safe_load(response_get_entity["data"]["service"]["yaml"]), "service"))["service"]])
+    service_yaml = response_get_entity["data"]["service"]["yaml"]
+    service_identifier = response_get_entity["data"]["service"]["identifier"]
+    service_name = response_get_entity["data"]["service"]["name"]
+
+    payload = {
+      "name": service_name,
+      "identifier": service_identifier,
+      "tags": {},
+      "projectIdentifier": to_projectIdentifier,
+      "orgIdentifier": to_orgIdentifier,
+      "yaml": service_yaml
+    }
+    return json.dumps(payload)
+
 
   def create_entity(self, payload):
-    url_create_service = service_endpoint + "/batch"+routing_and_accountId_param
+    url_create_service = service_endpoint +routing_and_accountId_param
+    print("create Entity Payload")
+    print(payload)
     return create_and_print_entity(url_create_service, payload)
 
-class Connector(ImportExport):
-  def list_entity(self):
-     url_connector_list = connector_endpoint+"/listV2"+source_query_param+"&pageIndex=0&pageSize=10"
-     return list_entity(url_connector_list, "Connector")
 
-  def list_entity_paginated(self, j):
-    url_connector_list_paginated = connector_endpoint+"/listV2"+source_query_param+"&pageIndex="+str(j)+"&pageSize=10"
-    return list_entity(url_connector_list_paginated, "Connector")
-
-  def get_entity_identifier(self, response_list_entity, i):
-    return response_list_entity["data"]["content"][i]["connector"]["identifier"]
-
-  def get_entity(self, response_list_connector, i):
-    url_get_connector = connector_endpoint+"/"+response_list_connector["data"]["content"][i]["connector"]["identifier"]+ source_query_param
-    return get_response_data("GET",url_get_connector,"")
-
-  def get_payload(self, response_get_entity):
-    return modify_payload(response_get_entity["data"],"connector")
-
-  def create_entity(self, payload):
-    if json.loads(payload)["connector"]["identifier"] == "harnessSecretManager":
-      return {'status': 'SUCCESS'}
-    url_create_connector = connector_endpoint+routing_and_accountId_param
-    return create_and_print_entity(url_create_connector, payload)
 
 class Template(ImportExport):
   def list_entity(self):
@@ -236,6 +258,8 @@ class Pipeline(ImportExport):
 
   def create_entity(self, payload):
     url_create_pipeline = pipeline_endpoint+"?routingId="+accountIdentifier+"&accountIdentifier="+accountIdentifier+"&orgIdentifier="+to_orgIdentifier+"&projectIdentifier="+to_projectIdentifier+"&pipelineIdentifier="+json.loads(payload)["pipeline"]["identifier"]+"&pipelineName="+json.loads(payload)["pipeline"]["name"]
+
+    url_create_pipeline = url_create_pipeline.replace(" ", "%20")
     response_create_pipeline = create_and_print_entity(url_create_pipeline, payload)
     export_input_set(json.loads(payload)["pipeline"]["identifier"])
     return response_create_pipeline
@@ -277,5 +301,3 @@ for n in range(0,len(Entities)):
   for i in range(0,success_failure_count[n][1]):
     print(success_failure_count[n][2][i])
     print('\n')
-
-

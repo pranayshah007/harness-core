@@ -29,6 +29,7 @@ import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.LabelsHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
@@ -42,6 +43,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
+import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Lists;
@@ -179,6 +181,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .parentStageInfo(ambiance.getMetadata().getPipelineStageInfo())
             .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(metadata.getGitSyncBranchContext()))
             .tags(pipelineEntity.get().getTags())
+            .labels(LabelsHelper.getLabels(planExecutionMetadata.getYaml(), pipelineEntity.get().getHarnessVersion()))
             .modules(new ArrayList<>(modules))
             .isLatestExecution(true)
             .retryExecutionMetadata(RetryExecutionMetadata.builder()
@@ -193,6 +196,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .executionMode(metadata.getExecutionMode())
+            .pipelineVersion(PipelineYamlHelper.getVersion(pipelineEntity.get().getYaml()))
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     notificationHelper.sendNotification(

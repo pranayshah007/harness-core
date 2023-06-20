@@ -8,6 +8,8 @@
 package io.harness.service.impl;
 
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
+import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 
 import static java.lang.String.format;
 
@@ -15,6 +17,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.authenticator.DelegateSecretManager;
+import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -51,6 +55,7 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.atmosphere.cpr.BroadcasterFactory;
 
 @Singleton
 @Slf4j
@@ -63,13 +68,15 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private final HPersistence persistence;
   private final OutboxService outboxService;
   private final DelegateSecretManager delegateSecretManager;
+  private final BroadcasterFactory broadcasterFactory;
 
   @Inject
-  public DelegateNgTokenServiceImpl(
-      HPersistence persistence, OutboxService outboxService, DelegateSecretManager delegateSecretManager) {
+  public DelegateNgTokenServiceImpl(HPersistence persistence, OutboxService outboxService,
+      DelegateSecretManager delegateSecretManager, BroadcasterFactory broadcasterFactory) {
     this.persistence = persistence;
     this.outboxService = outboxService;
     this.delegateSecretManager = delegateSecretManager;
+    this.broadcasterFactory = broadcasterFactory;
   }
 
   @Override
@@ -126,7 +133,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     // mins.
 
     publishRevokeTokenAuditEvent(updatedDelegateToken);
-
+    List<Delegate> delegates = persistence.createQuery(Delegate.class)
+                                   .filter(DelegateKeys.accountId, accountId)
+                                   .filter(DelegateKeys.delegateTokenName, tokenName)
+                                   .asList();
+    delegates.forEach(delegate -> {
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true).broadcast(SELF_DESTRUCT + delegate.getUuid());
+      log.warn("Sent self destruct command to delegate {} due to revoked token", delegate.getUuid());
+    });
     return getDelegateTokenDetails(updatedDelegateToken, false);
   }
 

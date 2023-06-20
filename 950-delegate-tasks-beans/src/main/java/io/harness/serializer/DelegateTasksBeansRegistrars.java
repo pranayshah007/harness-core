@@ -18,6 +18,7 @@ import io.harness.serializer.kryo.DelegateBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.DelegateTasksBeansMorphiaRegistrar;
+import io.harness.serializer.morphia.DelegateTasksCommonsBeansMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import dev.morphia.converters.TypeConverter;
@@ -47,6 +48,7 @@ public class DelegateTasksBeansRegistrars {
           .addAll(ApiServiceBeansRegistrars.morphiaRegistrars)
           .addAll(PersistenceRegistrars.morphiaRegistrars)
           .add(DelegateTasksBeansMorphiaRegistrar.class)
+          .add(DelegateTasksCommonsBeansMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(FileServiceCommonsRegistrars.morphiaRegistrars)
           .addAll(RbacCoreRegistrars.morphiaRegistrars)

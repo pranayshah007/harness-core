@@ -99,6 +99,7 @@ import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.beans.connector.rancher.RancherTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
@@ -2822,8 +2823,11 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   }
 
   private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
-    try (MockedStatic<K8sTaskCapabilityHelper> mock = mockStatic(K8sTaskCapabilityHelper.class)) {
-      mock.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
+    try (MockedStatic<K8sTaskCapabilityHelper> mockK8s = mockStatic(K8sTaskCapabilityHelper.class);
+         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class)) {
+      mockK8s.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
+          .thenReturn(emptyList());
+      mockRancher.when(() -> RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any()))
           .thenReturn(emptyList());
       doReturn(Optional.empty()).when(cdStepHelper).getServiceHooksOutcome(ambiance);
       HelmSpecParameters stepParams = HelmDeployStepParams.infoBuilder().build();

@@ -389,6 +389,7 @@ import io.harness.delegate.task.scm.ScmGitRefTask;
 import io.harness.delegate.task.scm.ScmGitWebhookTask;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTask;
 import io.harness.delegate.task.scm.ScmPushTask;
+import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2CommandTask;
 import io.harness.delegate.task.serverless.ServerlessCommandTask;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessGitFetchTask;
@@ -2253,6 +2254,9 @@ public class DelegateModule extends AbstractModule {
     // RANCHER NG
     mapBinder.addBinding(TaskType.RANCHER_TEST_CONNECTION_TASK_NG).toInstance(RancherTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.RANCHER_LIST_CLUSTERS_TASK_NG).toInstance(RancherListClustersDelegateTask.class);
+
+    mapBinder.addBinding(TaskType.SERVERLESS_ROLLBACK_V2_TASK)
+        .toInstance(ServerlessAwsLambdaRollbackV2CommandTask.class);
   }
 
   private void registerSecretManagementBindings() {

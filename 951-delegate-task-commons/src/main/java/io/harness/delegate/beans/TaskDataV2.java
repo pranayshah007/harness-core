@@ -7,10 +7,8 @@
 
 package io.harness.delegate.beans;
 
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SerializationFormat;
 
 import java.util.Map;
@@ -22,7 +20,6 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TaskDataV2Keys")
-@TargetModule(HarnessModule._955_DELEGATE_BEANS)
 @OwnedBy(HarnessTeam.DEL)
 public class TaskDataV2 {
   public static final long DEFAULT_SYNC_CALL_TIMEOUT = 60 * 1000L;

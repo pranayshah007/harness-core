@@ -10,4 +10,5 @@ package io.harness.ssca.beans.tools;
 public interface SbomToolConstants {
   String SYFT = "Syft";
   String SPDX_JSON = "spdx-json";
+  String CYCLONEDX_JSON = "cyclonedx-json";
 }

@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.CDS_ENABLE_TRIGGER_YAML_VALIDATION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
@@ -101,6 +102,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
@@ -161,7 +163,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Mock PollingSubscriptionHelper pollingSubscriptionHelper;
 
   @Mock KryoSerializer kryoSerializer;
-
+  @Mock NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
   @Mock PollingResourceClient pollingResourceClient;
 
   TriggerValidationHandler triggerValidationHandler;
@@ -649,8 +651,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testCreateCustomWebhookTrigger() {
-    when(pmsFeatureFlagService.isEnabled(anyString(), eq(FeatureName.CDS_ENABLE_TRIGGER_YAML_VALIDATION)))
-        .thenReturn(false);
+    when(pmsFeatureFlagService.isEnabled(anyString(), eq(CDS_ENABLE_TRIGGER_YAML_VALIDATION))).thenReturn(false);
     ngTriggerMetadata = NGTriggerMetadata.builder()
                             .webhook(WebhookMetadata.builder().custom(CustomMetadata.builder().build()).build())
                             .build();
@@ -947,5 +948,36 @@ public class NGTriggerServiceImplTest extends CategoryTest {
         .isEqualTo(StatusResult.FAILED);
     assertThat(entityAfterUpdate1.getValue().getTriggerStatus().getValidationStatus().getDetailedMessage())
         .isEqualTo("message");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testIncorrectNameInYaml() {
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId(ACCOUNT_ID)
+                                          .orgIdentifier(ORG_IDENTIFIER)
+                                          .projectIdentifier(PROJ_IDENTIFIER)
+                                          .identifier(IDENTIFIER)
+                                          .yaml("yaml")
+                                          .build();
+    NGTriggerEntity oldNgTriggerEntity = NGTriggerEntity.builder()
+                                             .accountId(ACCOUNT_ID)
+                                             .orgIdentifier(ORG_IDENTIFIER)
+                                             .projectIdentifier(PROJ_IDENTIFIER)
+                                             .identifier(IDENTIFIER)
+                                             .yaml("yaml")
+                                             .build();
+    when(pmsFeatureFlagService.isEnabled(any(), eq(CDS_ENABLE_TRIGGER_YAML_VALIDATION))).thenReturn(Boolean.TRUE);
+    doThrow(new InvalidYamlException("message", null, null))
+        .when(ngTriggerYamlSchemaService)
+        .validateTriggerYaml("yaml", PROJ_IDENTIFIER, ORG_IDENTIFIER, IDENTIFIER);
+    assertThatThrownBy(() -> ngTriggerServiceImpl.create(ngTriggerEntity))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("message");
+
+    assertThatThrownBy(() -> ngTriggerServiceImpl.update(ngTriggerEntity, oldNgTriggerEntity))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("message");
   }
 }

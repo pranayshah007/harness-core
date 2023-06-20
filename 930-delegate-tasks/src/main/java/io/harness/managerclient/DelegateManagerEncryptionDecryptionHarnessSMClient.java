@@ -33,12 +33,12 @@ public interface DelegateManagerEncryptionDecryptionHarnessSMClient {
   Call<RestResponse<DecryptedRecord>> decryptHarnessSMSecret(
       @Query("accountId") String accountId, @Body EncryptedSMData encryptedSMData);
 
-  @POST("encryption/encrypt-harness-sm-secret-ng")
+  @POST("encryption-ng/encrypt-harness-sm-secret")
   @Consumes({"application/x-protobuf"})
   Call<RestResponse<EncryptedRecordData>> encryptHarnessSMSecretNG(
       @Query("accountId") String accountId, @Body EncryptData encryptData);
 
-  @POST("encryption/decrypt-harness-sm-secret-ng")
+  @POST("encryption-ng/decrypt-harness-sm-secret")
   @Consumes({"application/x-protobuf"})
   Call<RestResponse<DecryptedRecord>> decryptHarnessSMSecretNG(
       @Query("accountId") String accountId, @Body EncryptedSMData encryptedSMData);

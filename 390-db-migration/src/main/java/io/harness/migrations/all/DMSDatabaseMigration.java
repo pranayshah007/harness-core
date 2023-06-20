@@ -161,7 +161,6 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
 
     Query<PersistentEntity> query = persistence.createQueryForCollection(collection);
-    long documentCountBeforeMigration = query.count();
     int insertDocCount = 0;
 
     try (HIterator<PersistentEntity> records = new HIterator<>(query.fetch())) {
@@ -171,11 +170,14 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
           bulkWriteOperation.insert(morphia.toDBObject(record));
           if (insertDocCount % 1000 == 0) {
             bulkWriteOperation.execute();
-            // re-intialize bulk write object
-            bulkWriteOperation = persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
           }
         } catch (Exception ex) {
           log.warn("Exception occured while copying data", ex);
+        } finally {
+          if (insertDocCount % 1000 == 0) {
+            // re-intialize bulk write object
+            bulkWriteOperation = persistence.getCollection(dmsStore, collection).initializeUnorderedBulkOperation();
+          }
         }
       }
     }
@@ -187,7 +189,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         log.warn("Exception occured while copying data", ex);
       }
     }
-    return verifyWriteOperation(documentCountBeforeMigration, collection);
+    return verifyWriteOperation(insertDocCount, collection);
   }
 
   private boolean postToggleCorrectness(Class<?> cls) {

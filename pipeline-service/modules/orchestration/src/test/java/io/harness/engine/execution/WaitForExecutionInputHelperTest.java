@@ -16,12 +16,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -37,10 +35,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
-import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Optional;
 import org.junit.Before;
@@ -57,20 +53,18 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private ExecutionInputService executionInputService;
   @InjectMocks private WaitForExecutionInputHelper waitForExecutionInputHelper;
-  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(pmsFeatureFlagService.isEnabled("accountId", FeatureName.NG_EXECUTION_INPUT)).thenReturn(true);
   }
 
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testWaitForExecutionInput() throws IOException {
+  public void testWaitForExecutionInput() {
     String nodeExecutionId = "nodeExecutionId";
     String template = "template";
     NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).build();
@@ -88,9 +82,9 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
                             .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
                             .putSetupAbstractions("accountId", "accountId")
                             .build();
-    doReturn(YamlUtils.readTree(resolvedFieldYaml).getNode().getCurrJsonNode())
+    doReturn(YamlUtils.readYamlTree(resolvedFieldYaml).getNode().getCurrJsonNode())
         .when(pmsEngineExpressionService)
-        .resolve(ambiance, YamlNode.getNodeYaml(fieldYaml, ambiance),
+        .resolve(ambiance, YamlNode.getNodeYaml(YamlUtils.readYamlTree(fieldYaml).getNode(), ambiance.getLevelsList()),
             ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     waitForExecutionInputHelper.waitForExecutionInput(
         ambiance, nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());

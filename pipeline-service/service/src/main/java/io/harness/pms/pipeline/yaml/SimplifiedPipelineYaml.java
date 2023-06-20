@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityName;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,8 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PipelineYaml {
+public class SimplifiedPipelineYaml {
   @JsonProperty("version") String version;
   @JsonProperty("name") @EntityName String name;
+  Map<String, String> labels;
 }

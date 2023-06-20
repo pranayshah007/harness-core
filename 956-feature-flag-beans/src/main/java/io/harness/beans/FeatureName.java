@@ -290,7 +290,6 @@ public enum FeatureName {
   CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
   CCM_LABELS_FLATTENING("Use flattened label's columns in BigQuery", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
-  NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
@@ -300,6 +299,7 @@ public enum FeatureName {
   CV_FAIL_ON_EMPTY_NODES,
   HELM_VERSION_3_8_0,
   DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
+  DELEGATE_TASK_CAPACITY_CHECK("Enable delegate task capacity check", HarnessTeam.DEL),
   YAML_GIT_CONNECTOR_NAME,
   STOP_SHOWING_RUNNING_EXECUTIONS,
   ARTIFACT_STREAM_METADATA_ONLY,
@@ -806,12 +806,16 @@ public enum FeatureName {
   PIE_PROCESS_ON_JSON_NODE(
       "When FF is enabled, all processing like merging inputs, expression resolution, etc. will be done on jsonNode instead of yaml",
       PIPELINE),
-
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
   PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
   CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
   SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS(
-      "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV);
+      "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
+  CCM_COMM_SETUP("It is used for enabling the setup flow of commitment orchestrator in CCM.", HarnessTeam.CE),
+  CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
+      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
+  CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
+      "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

@@ -549,7 +549,8 @@ public class CENextGenModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return MONGO;
+    return configuration.getDistributedLockImplementation() == null ? MONGO
+                                                                    : configuration.getDistributedLockImplementation();
   }
 
   @Provides
