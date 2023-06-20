@@ -9,6 +9,7 @@ import (
 	"archive/zip"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/harness/harness-core/product/log-service/stream"
 	"io"
 	"net/http"
@@ -193,81 +194,83 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 			prefix = r.URL.Query().Get("prefix")
 		}
 
-		executionID := ""
-		if r.URL.Query().Get("executionID") != "" {
-			executionID = r.URL.Query().Get("executionID")
-		}
-
 		out, _ := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix))
 
-		zipPrefix := prefix + "_" + executionID + "_logs.zip"
+		zipPrefix := uuid.NewString() + "_logs.zip"
 
 		go func(s store.Store, r http.Request) {
-			fmt.Println("entrou na go routine")
 			var wg sync.WaitGroup
 			internal, cancel := context.WithCancel(context.Background())
 			logger.WithContext(internal, logger.FromRequest(&r))
+
+			logger.FromRequest(&r).
+				WithField("prefix", prefix).
+				WithField("time", time.Now().Format(time.RFC3339)).
+				Infoln("ziplog: starting zip and upload log files")
 
 			pipeRead, pipeWrite := io.Pipe()
 
 			zipWriter := zip.NewWriter(pipeWrite)
 
-			fmt.Println("starting loop through keys")
-			for batch, keys := range out {
+			// zip
+			for _, keys := range out {
 				keys := keys
-				batch := batch
-				fmt.Println(batch)
 				wg.Add(1)
 				go func() {
-					defer wg.Done()
-					defer fmt.Println("Finish zip keys")
-					fmt.Println("starting download keys", batch)
-					for _, key := range keys {
-						zipFile, err := zipWriter.Create(key)
-						if err != nil {
-							fmt.Println("erro ao criar arquivo no zip")
-							cancel()
-							return
-						}
-						fileDownloaded, err := s.Download(internal, key)
-						if err != nil {
-							fmt.Println("erro ao baixar arquivo")
-							cancel()
-							return
-						}
-						_, err = io.Copy(zipFile, fileDownloaded)
-						if err != nil {
-							fmt.Println("erro ao copiar conteudo do arquivo para o arquivo zip")
-							cancel()
-							return
-						}
-						err = fileDownloaded.Close()
-						if err != nil {
-							fmt.Println("erro ao fechar reader do arquivo")
-							cancel()
-							return
-						}
+					logger.FromRequest(&r).
+						WithField("prefix", prefix).
+						WithField("time", time.Now().Format(time.RFC3339)).
+						Infoln("ziplog: start zip files")
+
+					err := zipFile(cancel, internal, keys, zipWriter, s, &wg)
+					if err != nil {
+						logger.FromRequest(&r).
+							WithError(err).
+							WithField("prefix", prefix).
+							WithField("time", time.Now().Format(time.RFC3339)).
+							Warnln("ziplog: cannot create file to zip")
 					}
-					fmt.Println("finalizou o zip")
+
+					logger.FromRequest(&r).
+						WithField("prefix", prefix).
+						WithField("time", time.Now().Format(time.RFC3339)).
+						Infoln("ziplog: successfully zip created")
 				}()
 			}
 
+			// upload
 			go func() {
-				fmt.Println("Start upload")
+				logger.FromRequest(&r).
+					WithField("prefix", prefix).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					Infoln("ziplog: start upload to zip")
+
 				err := s.Upload(internal, zipPrefix, pipeRead)
 				if err != nil {
 					fmt.Println("erro ao fazer o upload do arquivo zip")
+					logger.FromRequest(&r).
+						WithError(err).
+						WithField("prefix", prefix).
+						WithField("time", time.Now().Format(time.RFC3339)).
+						Warnln("ziplog: cannot upload zip to s3")
 					cancel()
-				} else {
-					fmt.Println("upload com sucesso")
+					return
 				}
+
+				logger.FromRequest(&r).
+					WithField("prefix", prefix).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					Infoln("ziplog: successfully zip file updated to s3")
 			}()
 
 			go func() {
 				wg.Wait()
-				fmt.Println("fechando os pipewriter e zipwriter")
 				zipWriter.Close()
 				pipeWrite.Close()
+				logger.FromRequest(&r).
+					WithField("prefix", prefix).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					Infoln("ziplog: zip and pipe closed")
 			}()
 
 			return
@@ -297,26 +300,27 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 	}
 }
 
-func zipFile(ctx context.Context, keys []string, batch int, zipWriter *zip.Writer, s store.Store) error {
+func zipFile(cancel context.CancelFunc, internal context.Context, keys []string, zipWriter *zip.Writer, s store.Store, wg *sync.WaitGroup) error {
+	defer wg.Done()
 	for _, key := range keys {
 		zipFile, err := zipWriter.Create(key)
 		if err != nil {
-			fmt.Println("erro ao criar arquivo no zip")
+			cancel()
 			return err
 		}
-		fileDownloaded, err := s.Download(ctx, key)
+		fileDownloaded, err := s.Download(internal, key)
 		if err != nil {
-			fmt.Println("erro ao baixar arquivo")
+			cancel()
 			return err
 		}
 		_, err = io.Copy(zipFile, fileDownloaded)
 		if err != nil {
-			fmt.Println("erro ao copiar conteudo do arquivo para o arquivo zip")
+			cancel()
 			return err
 		}
 		err = fileDownloaded.Close()
 		if err != nil {
-			fmt.Println("erro ao fechar reader do arquivo")
+			cancel()
 			return err
 		}
 	}
