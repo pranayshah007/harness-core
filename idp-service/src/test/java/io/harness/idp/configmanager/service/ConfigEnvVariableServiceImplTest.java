@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.configmanager.services;
+package io.harness.idp.configmanager.service;
 
 import static io.harness.rule.OwnerRule.DEVESH;
 
@@ -19,7 +19,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
 import io.harness.idp.configmanager.repositories.ConfigEnvVariablesRepository;
-import io.harness.idp.configmanager.service.ConfigEnvVariablesServiceImpl;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
