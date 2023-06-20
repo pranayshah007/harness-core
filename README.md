@@ -6,6 +6,7 @@ harness-core Project Dev environment setup instructions
 
 #### Please go through the following wiki page to setup local environment to build harness-core with bazel. Minimal and required steps are written in below wiki page.
 #### You can ignore steps 1 to 3 in "Prerequisities" section and can ignore steps 1 to 3 in "Build" section after following the below wiki.
+#### On Ubuntu machines do not use ext4 as it run out of inodes, pls make use of btfs file system
 ```
 https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+local+system+to+build+and+run+backend+code+harness-core+using+Bazel.
 ```
