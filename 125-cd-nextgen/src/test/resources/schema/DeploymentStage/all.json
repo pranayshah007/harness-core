@@ -5304,11 +5304,6 @@
         }
       ]
     },
-    "DeploymentMetaData": {
-      "type": "object",
-      "discriminator": "deploymentType",
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "DeploymentStageConfig": {
       "type": "object",
       "required": [
@@ -5317,6 +5312,9 @@
       "properties": {
         "customDeploymentRef": {
           "$ref": "#/definitions/StepTemplateRef"
+        },
+        "deploymentMetadata": {
+          "$ref": "#/definitions/GoogleCloudFunctionDeploymentMetaData"
         },
         "deploymentType": {
           "type": "string",
@@ -5367,22 +5365,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
-        {
-          "if": {
-            "properties": {
-              "deploymentType": {
-                "const": "GoogleCloudFunctions"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "deploymentMetadata": {
-                "$ref": "#/definitions/GoogleCloudFunctionDeploymentMetaData"
-              }
-            }
-          }
-        },
         {
           "oneOf": [
             {
@@ -8090,22 +8072,15 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GoogleCloudFunctionDeploymentMetaData": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/DeploymentMetaData"
+      "type": "object",
+      "properties": {
+        "environmentType": {
+          "type": "string"
         },
-        {
-          "type": "object",
-          "properties": {
-            "environmentType": {
-              "type": "string"
-            },
-            "metadata": {
-              "type": "string"
-            }
-          }
+        "metadata": {
+          "type": "string"
         }
-      ],
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GoogleCloudFunctionGenOneDefinitionManifest": {
