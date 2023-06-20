@@ -343,7 +343,6 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
 import io.harness.delegate.task.helm.HelmDeployServiceNG;
-import io.harness.delegate.task.helm.HelmFetchChartManifestTask;
 import io.harness.delegate.task.helm.HelmFetchChartVersionTaskNG;
 import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
@@ -2096,7 +2095,6 @@ public class DelegateModule extends AbstractModule {
         .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK).toInstance(K8sTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS).toInstance(CommandTaskNG.class);
-    mapBinder.addBinding(TaskType.HELM_FETCH_CHART_MANIFEST_TASK).toInstance(HelmFetchChartManifestTask.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
