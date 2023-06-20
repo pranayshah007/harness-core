@@ -19,11 +19,14 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -32,15 +35,16 @@ import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.KubernetesHelperService;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -58,17 +62,18 @@ public class K8sInstanceSyncV2Helper {
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
 
   public KubernetesConfig getKubernetesConfig(
-      ConnectorInfoDTO connectorDTO, K8sDeploymentReleaseDetails releaseDetails, String namespace) {
-    K8sInfraDelegateConfig k8sInfraDelegateConfig = getK8sInfraDelegateConfig(connectorDTO, releaseDetails, namespace);
+      ConnectorInfoDTO connectorDTO, KubernetesCloudClusterConfig kubernetesCloudClusterConfig, String namespace) {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig =
+        getK8sInfraDelegateConfig(connectorDTO, kubernetesCloudClusterConfig, namespace);
     return containerBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null);
   }
 
   private K8sInfraDelegateConfig getK8sInfraDelegateConfig(
-      ConnectorInfoDTO connectorDTO, K8sDeploymentReleaseDetails releaseDetails, String namespace) {
+      ConnectorInfoDTO connectorDTO, KubernetesCloudClusterConfig kubernetesCloudClusterConfig, String namespace) {
     try {
+      KubernetesHelperService.validateNamespace(namespace);
       switch (connectorDTO.getConnectorType()) {
         case KUBERNETES_CLUSTER:
-          KubernetesHelperService.validateNamespace(namespace);
           return DirectK8sInfraDelegateConfig.builder()
               .namespace(namespace)
               .kubernetesClusterConfigDTO((KubernetesClusterConfigDTO) connectorDTO.getConnectorConfig())
@@ -76,35 +81,40 @@ public class K8sInstanceSyncV2Helper {
               .build();
 
         case GCP:
-          KubernetesHelperService.validateNamespace(namespace);
-          KubernetesHelperService.validateCluster(releaseDetails.getK8sCloudClusterConfig().getClusterName());
+          KubernetesHelperService.validateCluster(kubernetesCloudClusterConfig.getClusterName());
           return GcpK8sInfraDelegateConfig.builder()
               .namespace(namespace)
-              .cluster(releaseDetails.getK8sCloudClusterConfig().getClusterName())
+              .cluster(kubernetesCloudClusterConfig.getClusterName())
               .gcpConnectorDTO((GcpConnectorDTO) connectorDTO.getConnectorConfig())
               .build();
 
         case AZURE:
-          KubernetesHelperService.validateNamespace(namespace);
-          KubernetesHelperService.validateSubscription(releaseDetails.getK8sCloudClusterConfig().getSubscriptionId());
-          KubernetesHelperService.validateResourceGroup(releaseDetails.getK8sCloudClusterConfig().getResourceGroup());
-          KubernetesHelperService.validateCluster(releaseDetails.getK8sCloudClusterConfig().getClusterName());
+          KubernetesHelperService.validateSubscription(kubernetesCloudClusterConfig.getSubscriptionId());
+          KubernetesHelperService.validateResourceGroup(kubernetesCloudClusterConfig.getResourceGroup());
+          KubernetesHelperService.validateCluster(kubernetesCloudClusterConfig.getClusterName());
           return AzureK8sInfraDelegateConfig.builder()
               .namespace(namespace)
-              .cluster(releaseDetails.getK8sCloudClusterConfig().getClusterName())
-              .subscription(releaseDetails.getK8sCloudClusterConfig().getSubscriptionId())
-              .resourceGroup(releaseDetails.getK8sCloudClusterConfig().getResourceGroup())
+              .cluster(kubernetesCloudClusterConfig.getClusterName())
+              .subscription(kubernetesCloudClusterConfig.getSubscriptionId())
+              .resourceGroup(kubernetesCloudClusterConfig.getResourceGroup())
               .azureConnectorDTO((AzureConnectorDTO) connectorDTO.getConnectorConfig())
-              .useClusterAdminCredentials(releaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials())
+              .useClusterAdminCredentials(kubernetesCloudClusterConfig.isUseClusterAdminCredentials())
               .build();
 
         case AWS:
-          KubernetesHelperService.validateNamespace(namespace);
-          KubernetesHelperService.validateCluster(releaseDetails.getK8sCloudClusterConfig().getClusterName());
+          KubernetesHelperService.validateCluster(kubernetesCloudClusterConfig.getClusterName());
           return EksK8sInfraDelegateConfig.builder()
               .namespace(namespace)
-              .cluster(releaseDetails.getK8sCloudClusterConfig().getClusterName())
+              .cluster(kubernetesCloudClusterConfig.getClusterName())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+              .build();
+
+        case RANCHER:
+          KubernetesHelperService.validateCluster(kubernetesCloudClusterConfig.getClusterName());
+          return RancherK8sInfraDelegateConfig.builder()
+              .namespace(namespace)
+              .cluster(kubernetesCloudClusterConfig.getClusterName())
+              .rancherConnectorDTO((RancherConnectorDTO) connectorDTO.getConnectorConfig())
               .build();
 
         default:
@@ -121,17 +131,22 @@ public class K8sInstanceSyncV2Helper {
   }
 
   public List<ServerInstanceInfo> getServerInstanceInfoList(
-      K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) {
+      K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {
     long timeoutMillis =
         K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
-    try {
-      List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
-          requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
-      return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
-    } catch (Exception ex) {
-      log.warn("Unable to get list of server instances, namespace: {}, releaseName: {}", requestData.getNamespace(),
-          requestData.getReleaseName(), ex);
-      return Collections.emptyList();
-    }
+
+    List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
+        requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
+    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
+  }
+  public List<ServerInstanceInfo> getServerInstanceInfoList(
+      NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {
+    long timeoutMillis =
+        K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
+
+    List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(
+        requestData.getKubernetesConfig(), requestData.getReleaseName(), requestData.getNamespace(), timeoutMillis);
+    return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
+        containerInfoList, requestData.getHelmChartInfo(), HelmVersion.valueOf(requestData.getHelmVersion()));
   }
 }

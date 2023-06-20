@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -52,6 +53,8 @@ public class PipelineInfoConfigV1 {
   @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.PIPELINE_IDENTIFIER_PATTERN) String id;
 
   @Singular @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<StageElementWrapperConfig> stages;
+
+  @VariableExpression Map<String, String> labels;
 
   public String getId() {
     return IdentifierGeneratorUtils.getId(name);

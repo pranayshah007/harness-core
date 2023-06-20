@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
@@ -25,18 +26,22 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -273,6 +278,21 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testRegisterWithHealthReport() {
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_INCIDENT).build();
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setWebhookUrl("webhookurl");
+    changeEventService.registerWithHealthReport(
+        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier());
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    assertThat(activityFromDb).isNotNull();
+    assertThat(((CustomChangeActivity) activityFromDb).getCustomChangeEvent().getMsHealthReport()).isNotNull();
+  }
+
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetPaginated() {
@@ -468,6 +488,28 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(0);
     assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(0);
     assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(0.0, offset(0.1));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testTextSearchQueryForAggregation() {
+    // testing query as our test MongoServer doesn't support text search:
+    // https://github.com/bwaldvogel/mongo-java-server
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier("acoountId")
+                                      .orgIdentifier("org")
+                                      .projectIdentifier("project")
+                                      .build();
+    Query<ActivityBucket> activityQuery =
+        changeEventService.createQueryForActivityBucket(Instant.parse("2023-01-31T00:00:00.00Z"),
+            Instant.parse("2023-01-31T10:00:00.00Z"), projectParams, Arrays.asList("monitoredServiceIdentifier"),
+            "searchText", Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
+            Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES), false);
+
+    assertThat(activityQuery.toString())
+        .isEqualTo(
+            "{ {\"$text\": {\"$search\": \"searchText\"}, \"$and\": [{\"type\": {\"$in\": [\"DEPLOYMENT\"]}}, {\"bucketTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"bucketTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}], \"accountId\": \"acoountId\", \"orgIdentifier\": \"org\", \"projectIdentifier\": \"project\", \"monitoredServiceIdentifiers\": {\"$in\": [\"monitoredServiceIdentifier\"]}}  }");
   }
 
   @Test

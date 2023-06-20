@@ -13,6 +13,7 @@ import static io.harness.notification.NotificationServiceConstants.MAILSERVICE;
 import static io.harness.notification.NotificationServiceConstants.MSTEAMSSERVICE;
 import static io.harness.notification.NotificationServiceConstants.PAGERDUTYSERVICE;
 import static io.harness.notification.NotificationServiceConstants.SLACKSERVICE;
+import static io.harness.notification.NotificationServiceConstants.WEBHOOKSERVICE;
 
 import static java.time.Duration.ofSeconds;
 
@@ -46,6 +47,7 @@ import io.harness.notification.service.NotificationTemplateServiceImpl;
 import io.harness.notification.service.PagerDutyServiceImpl;
 import io.harness.notification.service.SeedDataPopulaterServiceImpl;
 import io.harness.notification.service.SlackServiceImpl;
+import io.harness.notification.service.WebhookServiceImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.notification.service.api.NotificationSettingsService;
@@ -216,6 +218,7 @@ public class NotificationServiceModule extends AbstractModule {
     bind(ChannelService.class).annotatedWith(Names.named(SLACKSERVICE)).to(SlackServiceImpl.class);
     bind(ChannelService.class).annotatedWith(Names.named(PAGERDUTYSERVICE)).to(PagerDutyServiceImpl.class);
     bind(ChannelService.class).annotatedWith(Names.named(MSTEAMSSERVICE)).to(MSTeamsServiceImpl.class);
+    bind(ChannelService.class).annotatedWith(Names.named(WEBHOOKSERVICE)).to(WebhookServiceImpl.class);
     bind(NotificationService.class).to(NotificationServiceImpl.class);
     bind(NotificationTemplateService.class).to(NotificationTemplateServiceImpl.class);
     bindMessageConsumer();

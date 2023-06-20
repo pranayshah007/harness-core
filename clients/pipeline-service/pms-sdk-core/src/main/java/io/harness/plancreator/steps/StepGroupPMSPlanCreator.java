@@ -10,7 +10,6 @@ package io.harness.plancreator.steps;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
@@ -160,7 +159,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
   }
 
   private void addNextStepAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
-    if (currentField.checkIfParentIsParallel(STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return;
     }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(
@@ -176,7 +175,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
   }
 
   private void addOnSuccessAdviser(YamlField currentField, List<AdviserObtainment> adviserObtainments) {
-    if (currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
+    if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)) {
       return;
     }
     YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(

@@ -13,7 +13,9 @@ import requests
 
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, update_connector_data_sync_status, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event, \
+    flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries, add_msp_markup_column_to_schema,\
+    MSPMARKUP
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import storage
@@ -100,11 +102,14 @@ def main(event, context):
     verify_existence_of_required_conversion_factors(jsonData)
     update_fx_rate_column_in_raw_table(jsonData)
 
+    get_msp_markups(jsonData)
+    update_msp_markups_in_raw_table(jsonData)
+
     ingest_data_to_awscur(jsonData)
     ingest_data_to_preagg(jsonData)
     ingest_data_to_unified(jsonData)
     update_connector_data_sync_status(jsonData, PROJECTID, client)
-    ingest_data_to_costagg(jsonData)
+    # ingest_data_to_costagg(jsonData)
     if jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") and jsonData["ccmPreferredCurrency"]:
         trigger_historical_cost_update_in_preferred_currency(jsonData)
 
@@ -226,6 +231,53 @@ def get_preferred_currency(jsonData):
 
     if not jsonData["ccmPreferredCurrency"]:
         print_("No preferred-currency found for account %s" % jsonData.get("accountId"))
+
+
+def get_msp_markups(jsonData):
+    jsonData["markups"] = None
+    table = "%s.%s.%s" % (PROJECTID, CEINTERNALDATASET, MSPMARKUP)
+    query = """SELECT condition
+                FROM `%s`
+                WHERE accountId="%s";
+                """ % (table, jsonData.get("accountId"))
+    print_(query)
+    try:
+        query_job = client.query(query)
+        results = query_job.result()  # wait for job to complete
+        for row in results:
+            jsonData["markups"] = row.condition
+            break
+    except Exception as e:
+        print_(e)
+        print_("Failed to fetch markups for account", "WARN")
+
+
+def update_msp_markups_in_raw_table(jsonData):
+    print_("Altering raw awsBilling Table - adding markup column")
+    query = "ALTER TABLE `%s` \
+        ADD COLUMN IF NOT EXISTS mspMarkupMultiplier FLOAT64;" % (jsonData["tableId"])
+    try:
+        print_(query)
+        query_job = client.query(query)
+        query_job.result()
+    except Exception as e:
+        # Error Running Alter Query
+        print_(e)
+    else:
+        print_("Finished Altering awsBilling Table")
+
+    if jsonData["markups"] is not None:
+        markups = jsonData["markups"].replace("awsUsageaccountid", "usageaccountid").replace("awsServicecode", "servicename")
+        query = """UPDATE `%s` 
+                    SET mspMarkupMultiplier = %s
+                    WHERE TRUE;""" % (jsonData["tableId"], markups)
+        print_(query)
+        try:
+            query_job = client.query(query)
+            query_job.result()  # wait for job to complete
+        except Exception as e:
+            print_(e)
+            print_("Failed to update mspMarkup column in raw table %s" % (jsonData["tableId"]), "WARN")
 
 
 def update_fx_rate_column_in_raw_table(jsonData):
@@ -514,8 +566,10 @@ def create_dataset_and_tables(jsonData):
     pre_aggragated_table_ref = dataset.table(PREAGGREGATED)
     unified_table_ref = dataset.table(UNIFIED)
     currencyConversionFactorUserInput_table_ref = dataset.table(CURRENCYCONVERSIONFACTORUSERINPUT)
+    label_keys_to_column_mapping_table_ref = dataset.table(LABELKEYSTOCOLUMNMAPPING)
 
-    for table_ref in [aws_cur_table_ref, pre_aggragated_table_ref, unified_table_ref, currencyConversionFactorUserInput_table_ref]:
+    for table_ref in [aws_cur_table_ref, pre_aggragated_table_ref, unified_table_ref,
+                      currencyConversionFactorUserInput_table_ref, label_keys_to_column_mapping_table_ref]:
         if not if_tbl_exists(client, table_ref):
             print_("%s table does not exists, creating table..." % table_ref)
             createTable(client, table_ref)
@@ -532,6 +586,7 @@ def create_dataset_and_tables(jsonData):
                  "%s.%s" % (ds, "unifiedTable"),
                  "%s.%s" % (ds, "preAggregated")]
     add_currency_preferences_columns_to_schema(client, table_ids)
+    add_msp_markup_column_to_schema(client, table_ids)
 
     return True
 
@@ -702,8 +757,8 @@ def ingest_data_to_awscur(jsonData):
         tags_query = "null AS tags "
 
     desirable_columns = ["resourceid", "usagestartdate", "productname", "productfamily", "servicecode", "servicename", "blendedrate", "blendedcost",
-                      "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
-                      "usagetype", "lineitemtype", "effectivecost", "billingentity", "instanceFamily", "marketOption", "usageamount"]
+                         "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
+                         "usagetype", "lineitemtype", "effectivecost", "billingentity", "instanceFamily", "marketOption", "usageamount"]
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
     available_columns = ", ".join(f"{w}" for w in available_columns)
@@ -713,8 +768,8 @@ def ingest_data_to_awscur(jsonData):
 
     query = """
     DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' and usageaccountid IN (%s);
-    INSERT INTO `%s` (%s, amortisedCost, netAmortisedCost, tags, fxRateSrcToDest, ccmPreferredCurrency) 
-        SELECT %s, %s, %s, %s, %s as fxRateSrcToDest, %s as ccmPreferredCurrency 
+    INSERT INTO `%s` (%s, amortisedCost, netAmortisedCost, tags, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier) 
+        SELECT %s, %s, %s, %s, %s as fxRateSrcToDest, %s as ccmPreferredCurrency, %s as mspMarkupMultiplier
         FROM `%s` table 
         WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s';
      """ % (tableName, date_start, date_end, jsonData["usageaccountid"],
@@ -722,6 +777,7 @@ def ingest_data_to_awscur(jsonData):
             select_available_columns, amortised_cost_query, net_amortised_cost_query, tags_query,
             ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
             (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
+            ("mspMarkupMultiplier" if jsonData["markups"] else "cast(1 as float64)"),
             jsonData["tableId"],
             date_start, date_end)
     # Configure the query job.
@@ -745,9 +801,13 @@ def ingest_data_to_awscur(jsonData):
 
 
 def prepare_select_query(jsonData, columns_list):
-    if jsonData["ccmPreferredCurrency"]:
-        cost_columns = ["blendedcost", "unblendedcost", "effectivecost"]
+    cost_columns = ["blendedcost", "unblendedcost", "effectivecost"]
+    if jsonData["ccmPreferredCurrency"] and jsonData["markups"]:
+        return ", ".join(f"( {w} {'* fxRateSrcToDest * mspMarkupMultiplier' if w in cost_columns else ''} ) as {w}" for w in columns_list)
+    elif jsonData["ccmPreferredCurrency"]:
         return ", ".join(f"( {w} {'* fxRateSrcToDest' if w in cost_columns else ''} ) as {w}" for w in columns_list)
+    elif jsonData["markups"]:
+        return ", ".join(f"( {w} {'* mspMarkupMultiplier' if w in cost_columns else ''} ) as {w}" for w in columns_list)
     else:
         return ", ".join(f"{w}" for w in columns_list)
 
@@ -755,43 +815,45 @@ def prepare_select_query(jsonData, columns_list):
 def prep_amortised_cost_query(jsonData, cols):
     # Prep amortised cost calculation query based on available cols
     fx_rate_multiplier_query = "*fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else ""
+    msp_markup_multiplier_query = "*mspMarkupMultiplier" if jsonData["markups"] else ""
     query = """CASE  
                     WHEN (lineitemtype = 'SavingsPlanNegation') THEN 0
                     WHEN (lineitemtype = 'SavingsPlanUpfrontFee') THEN 0 
             """
     if "SavingsPlanEffectiveCost".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'SavingsPlanCoveredUsage') THEN (SavingsPlanEffectiveCost{fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'SavingsPlanCoveredUsage') THEN (SavingsPlanEffectiveCost{fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "TotalCommitmentToDate".lower() in cols and "UsedCommitment".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'SavingsPlanRecurringFee') THEN ((TotalCommitmentToDate - UsedCommitment){fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'SavingsPlanRecurringFee') THEN ((TotalCommitmentToDate - UsedCommitment){fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "EffectiveCost".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'DiscountedUsage') THEN (EffectiveCost{fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'DiscountedUsage') THEN (EffectiveCost{fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "UnusedAmortizedUpfrontFeeForBillingPeriod".lower() in cols and "UnusedRecurringFee".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'RIFee') THEN ((UnusedAmortizedUpfrontFeeForBillingPeriod + UnusedRecurringFee){fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'RIFee') THEN ((UnusedAmortizedUpfrontFeeForBillingPeriod + UnusedRecurringFee){fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "ReservationARN".lower() in cols:
         query = query + f"WHEN ((lineitemtype = 'Fee') AND (ReservationARN <> '')) THEN 0 \n"
-    query = query + f" ELSE (UnblendedCost{fx_rate_multiplier_query}) END amortisedCost \n"
+    query = query + f" ELSE (UnblendedCost{fx_rate_multiplier_query}{msp_markup_multiplier_query}) END amortisedCost \n"
     print_(query)
     return query
 
 def prep_net_amortised_cost_query(jsonData, cols):
     # Prep net amortised cost calculation query based on available cols
     fx_rate_multiplier_query = "*fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else ""
+    msp_markup_multiplier_query = "*mspMarkupMultiplier" if jsonData["markups"] else ""
     query = """CASE  
                     WHEN (lineitemtype = 'SavingsPlanNegation') THEN 0
                     WHEN (lineitemtype = 'SavingsPlanUpfrontFee') THEN 0 
             """
     if "NetSavingsPlanEffectiveCost".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'SavingsPlanCoveredUsage') THEN (NetSavingsPlanEffectiveCost{fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'SavingsPlanCoveredUsage') THEN (NetSavingsPlanEffectiveCost{fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "TotalCommitmentToDate".lower() in cols and "UsedCommitment".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'SavingsPlanRecurringFee') THEN ((TotalCommitmentToDate - UsedCommitment){fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'SavingsPlanRecurringFee') THEN ((TotalCommitmentToDate - UsedCommitment){fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "NetEffectiveCost".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'DiscountedUsage') THEN (NetEffectiveCost{fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'DiscountedUsage') THEN (NetEffectiveCost{fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "NetUnusedAmortizedUpfrontFeeForBillingPeriod".lower() in cols and "NetUnusedRecurringFee".lower() in cols:
-        query = query + f"WHEN (lineitemtype = 'RIFee') THEN ((NetUnusedAmortizedUpfrontFeeForBillingPeriod + NetUnusedRecurringFee){fx_rate_multiplier_query}) \n"
+        query = query + f"WHEN (lineitemtype = 'RIFee') THEN ((NetUnusedAmortizedUpfrontFeeForBillingPeriod + NetUnusedRecurringFee){fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     if "ReservationARN".lower() in cols:
         query = query + f"WHEN ((lineitemtype = 'Fee') AND (ReservationARN <> '')) THEN 0 \n"
     if "NetUnblendedCost".lower() in cols:
-        query = query + f" ELSE (NetUnblendedCost{fx_rate_multiplier_query}) \n"
+        query = query + f" ELSE (NetUnblendedCost{fx_rate_multiplier_query}{msp_markup_multiplier_query}) \n"
     else:
         query = query + f" ELSE 0 \n"
     query = query + f"END netAmortisedCost \n"
@@ -839,12 +901,12 @@ def ingest_data_to_preagg(jsonData):
 
     insert_columns = """startTime, awsBlendedRate, awsBlendedCost, awsUnblendedRate, awsUnblendedCost, cost,
                         awsServicecode, region, awsAvailabilityzone, awsUsageaccountid,
-                        awsUsagetype, cloudProvider, fxRateSrcToDest, ccmPreferredCurrency"""
+                        awsUsagetype, cloudProvider, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier"""
 
     select_columns = """TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, min(blendedrate) AS awsBlendedRate, sum(blendedcost) AS awsBlendedCost,
                     min(unblendedrate) AS awsUnblendedRate, sum(unblendedcost) AS awsUnblendedCost, sum(unblendedcost) AS cost,
                     servicename AS awsServicecode, region, availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,
-                    usagetype AS awsUsagetype, "AWS" AS cloudProvider, max(fxRateSrcToDest), max(ccmPreferredCurrency)"""
+                    usagetype AS awsUsagetype, "AWS" AS cloudProvider, max(fxRateSrcToDest), max(ccmPreferredCurrency), max(mspMarkupMultiplier)"""
 
     group_by = """awsServicecode, region, awsAvailabilityzone, awsUsageaccountid, awsUsagetype, startTime"""
     # Amend query as per columns availability
@@ -895,7 +957,7 @@ def ingest_data_to_unified(jsonData):
     date_end = "%s-%s-%s" % (year, month, monthrange(int(year), int(month))[1])
     print_("Loading into %s table..." % tableName)
 
-    insert_columns = """product, startTime, fxRateSrcToDest, ccmPreferredCurrency, 
+    insert_columns = """product, startTime, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier, 
                     awsBlendedRate, awsBlendedCost,awsUnblendedRate, 
                     awsEffectiveCost, awsAmortisedCost, 
                     awsNetAmortisedCost, awsLineItemType,
@@ -903,7 +965,7 @@ def ingest_data_to_unified(jsonData):
                     awsAvailabilityzone, awsUsageaccountid, 
                     cloudProvider, awsBillingEntity, labels"""
 
-    select_columns = """productname AS product, TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, fxRateSrcToDest, ccmPreferredCurrency, 
+    select_columns = """productname AS product, TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier,
                     blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate, 
                     effectivecost as awsEffectiveCost, amortisedCost as awsAmortisedCost, 
                     netAmortisedCost as awsNetAmortisedCost, lineitemtype as awsLineItemType,
@@ -924,7 +986,7 @@ def ingest_data_to_unified(jsonData):
                FROM `%s.awscur_%s` 
                WHERE usageaccountid IN (%s);
      """ % (tableName, date_start, date_end,
-                jsonData["usageaccountid"],
+            jsonData["usageaccountid"],
             tableName, insert_columns,
             select_columns,
             ds, jsonData["awsCurTableSuffix"],
@@ -941,13 +1003,23 @@ def ingest_data_to_unified(jsonData):
             )
         ]
     )
-    query_job = client.query(query, job_config=job_config)
     try:
-        query_job.result()
+        run_bq_query_with_retries(client, query, max_retry_count=3, job_config=job_config)
+        flatten_label_keys_in_table(client, jsonData.get("accountId"), PROJECTID, jsonData["datasetName"], UNIFIED,
+                                    "labels", fetch_ingestion_filters(jsonData))
     except Exception as e:
         print_(query)
         raise e
     print_("Loaded into %s table..." % tableName)
+
+
+def fetch_ingestion_filters(jsonData):
+    year, month = jsonData["reportYear"], jsonData["reportMonth"]
+    date_start = "%s-%s-01" % (year, month)
+    date_end = "%s-%s-%s" % (year, month, monthrange(int(year), int(month))[1])
+
+    return """ DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
+    AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) """ % (date_start, date_end, jsonData["usageaccountid"])
 
 
 def ingest_data_to_costagg(jsonData):

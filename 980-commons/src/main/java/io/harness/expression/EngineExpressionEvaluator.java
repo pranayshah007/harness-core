@@ -63,12 +63,14 @@ public class EngineExpressionEvaluator {
   public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
   public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
   public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
+  public static final String PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT =
+      "PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT";
 
   private static final int MAX_DEPTH = 15;
 
   private final JexlEngine engine;
   @Getter private final VariableResolverTracker variableResolverTracker;
-  private final Map<String, Object> contextMap;
+  @Getter private final Map<String, Object> contextMap;
   @Getter private final Map<String, String> staticAliases;
   private boolean initialized;
 
@@ -257,8 +259,23 @@ public class EngineExpressionEvaluator {
         StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
         Object evaluatedExpression = evaluateInternalV2(replacerResponse, ctx);
 
+        // If expression is evaluated as null, check if prefix combinations can give any valid result or not, we should
+        // do recursive check only if render expression was modified to avoid cyclic loop
+        if (evaluatedExpression == null && replacerResponse.isOriginalExpressionAltered()) {
+          Object evaluateExpressionBlock =
+              evaluateExpressionBlock(replacerResponse.getFinalExpressionValue(), ctx, depth - 1, expressionMode);
+          if (evaluateExpressionBlock == null && replacerResponse.isOnlyRenderedExpressions()) {
+            return replacerResponse.getFinalExpressionValue();
+          } else {
+            return evaluateExpressionBlock;
+          }
+        }
+
         // If the evaluated expression has nested expressions again, then evaluate else return
         if (evaluatedExpression instanceof String && hasExpressions((String) evaluatedExpression)) {
+          if (evaluatedExpression.equals(expression)) {
+            return evaluatedExpression;
+          }
           return evaluateExpressionInternal((String) evaluatedExpression, ctx, depth - 1, expressionMode);
         }
         return evaluatedExpression;
@@ -268,9 +285,14 @@ public class EngineExpressionEvaluator {
       }
     } catch (JexlException ex) {
       log.error(format("Failed to evaluate final expression: %s", expression), ex);
+
+      // In case of expressions inside expressions, if we are unable to resolve an expression, we return the expression
+      // until which the resolution has happened correctly(If expression mode is
+      // RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED).
       if (expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
         return expression;
       }
+
       if (ex.getCause() instanceof EngineFunctorException) {
         throw new EngineExpressionEvaluationException(
             (EngineFunctorException) ex.getCause(), createExpression(expression));
@@ -578,7 +600,7 @@ public class EngineExpressionEvaluator {
         return engine.createScript(expression).execute(ctx);
       } catch (Exception e) {
         if (response.isOnlyRenderedExpressions()) {
-          return expression;
+          return null;
         }
         throw e;
       }
@@ -588,7 +610,7 @@ public class EngineExpressionEvaluator {
       return jexlExpression.evaluate(ctx);
     } catch (Exception e) {
       if (response.isOnlyRenderedExpressions()) {
-        return expression;
+        return null;
       }
       throw e;
     }
@@ -709,8 +731,8 @@ public class EngineExpressionEvaluator {
         if (value == null) {
           unresolvedExpressions.add(expression);
         }
-        if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
-          // Use the asJson only when the FF is enabled.
+        // Use the asJson only when the FF is not disabled.
+        if (!ctx.isFeatureFlagEnabled(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT)) {
           if (isAnyCollection(value)) {
             return JsonUtils.asJson(value);
           }

@@ -20,6 +20,7 @@ import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.utils.ViewFieldUtils;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -38,10 +39,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ViewsQueryBuilderTest extends CategoryTest {
-  @Inject @InjectMocks ViewsQueryBuilder viewsQueryBuilder;
+  @Mock private FeatureFlagService featureFlagService;
+  @Inject @InjectMocks private ViewsQueryBuilder viewsQueryBuilder;
 
   private QLCEViewTimeFilter endTimeFilter;
   private QLCEViewTimeFilter startTimeFilter;

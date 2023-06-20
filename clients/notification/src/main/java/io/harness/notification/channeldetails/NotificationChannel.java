@@ -34,7 +34,8 @@ import lombok.extern.slf4j.Slf4j;
   @JsonSubTypes.Type(value = EmailChannel.class, name = NotificationChannelType.EMAIL)
   , @JsonSubTypes.Type(value = SlackChannel.class, name = NotificationChannelType.SLACK),
       @JsonSubTypes.Type(value = PagerDutyChannel.class, name = NotificationChannelType.PAGERDUTY),
-      @JsonSubTypes.Type(value = MSTeamChannel.class, name = NotificationChannelType.MSTEAMS)
+      @JsonSubTypes.Type(value = MSTeamChannel.class, name = NotificationChannelType.MSTEAMS),
+      @JsonSubTypes.Type(value = WebhookChannel.class, name = NotificationChannelType.WEBHOOK)
 })
 @Slf4j
 public abstract class NotificationChannel {

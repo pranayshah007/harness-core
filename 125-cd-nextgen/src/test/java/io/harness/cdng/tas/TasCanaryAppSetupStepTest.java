@@ -587,7 +587,7 @@ public class TasCanaryAppSetupStepTest extends CDNGTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testValidateResourcesFFEnabled() {
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_TAS_NG));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     tasCanaryAppSetupStep.validateResources(getAmbiance(), stepElementParametersFromManifest);
   }
 
@@ -595,7 +595,7 @@ public class TasCanaryAppSetupStepTest extends CDNGTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testValidateResourcesFFDisabled() {
-    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_TAS_NG));
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     assertThatThrownBy(() -> tasCanaryAppSetupStep.validateResources(getAmbiance(), stepElementParametersFromManifest))
         .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
   }

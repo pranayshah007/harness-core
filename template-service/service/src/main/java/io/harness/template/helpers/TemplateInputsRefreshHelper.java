@@ -26,7 +26,6 @@ import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.yaml.TemplateRefHelper;
-import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -74,12 +73,12 @@ public class TemplateInputsRefreshHelper {
         getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap, loadFromCache);
 
     // Returning the Refreshed YAML corresponding to the ResMap
-    String inputsRefreshYaml = TemplateYamlUtils.writeYamlString(refreshedTemplateInputsMap);
+    String inputsRefreshYaml = YamlUtils.writeYamlString(refreshedTemplateInputsMap);
     String resolvedTemplatesYaml = inputsRefreshYaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false);
-      resolvedTemplatesYaml = TemplateYamlUtils.writeYamlString(resolvedTemplatesMap);
+      resolvedTemplatesYaml = YamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     RefreshResponseDTO ngManagerRefreshResponseDto =
         NGRestUtils.getResponse(ngManagerReconcileClient.refreshYaml(accountId, orgId, projectId,
@@ -163,7 +162,7 @@ public class TemplateInputsRefreshHelper {
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;
     try {
-      NGTemplateConfig templateConfig = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
+      NGTemplateConfig templateConfig = YamlUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
     } catch (IOException e) {
       log.error("Could not read template yaml", e);

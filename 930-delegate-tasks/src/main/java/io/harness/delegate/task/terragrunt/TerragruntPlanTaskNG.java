@@ -39,6 +39,7 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
+import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandlerNG;
 import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -77,6 +78,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
   @Inject private TerragruntTaskService taskService;
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
   @Inject private TerraformBaseHelper terraformHelper;
+  @Inject private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNg;
 
   public TerragruntPlanTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -166,8 +168,14 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
                                             .withFileName(planName)
                                             .build();
 
-        tfPlanEncryptedRecord = (EncryptedRecordData) encryptDecryptHelper.encryptFile(
-            planFile, planTaskParameters.getPlanName(), planTaskParameters.getPlanSecretManager(), planDelegateFile);
+        if (planTaskParameters.isEncryptDecryptPlanForHarnessSMOnManager()) {
+          tfPlanEncryptedRecord = (EncryptedRecordData) harnessSMEncryptionDecryptionHandlerNg.encryptFile(
+              planFile, planTaskParameters.getPlanSecretManager(), planDelegateFile);
+        } else {
+          tfPlanEncryptedRecord = (EncryptedRecordData) encryptDecryptHelper.encryptFile(
+              planFile, planTaskParameters.getPlanName(), planTaskParameters.getPlanSecretManager(), planDelegateFile);
+        }
+
         planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
@@ -236,7 +244,6 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
       FileUtils.deleteQuietly(new File(baseDir));
     }
   }
-
   @Override
   public boolean isSupportingErrorFramework() {
     return true;

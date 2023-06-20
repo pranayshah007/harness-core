@@ -209,6 +209,13 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
   }
 
   @Override
+  public List<ACL> getByAclQueryStringIn(Collection<String> aclQueries) {
+    Query query = new Query(Criteria.where(ACLKeys.aclQueryString).in(aclQueries));
+    query.fields().include(ACLKeys.aclQueryString).include(ACLKeys.condition).include(ACLKeys.conditional);
+    return mongoTemplate.find(query, ACL.class);
+  }
+
+  @Override
   public void cleanCollection() {
     mongoTemplate.dropCollection(getCollectionName());
     mongoTemplate.createCollection(getCollectionName());

@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
@@ -53,6 +54,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -81,6 +83,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
   @Inject private StepHelper stepHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private TerraformStepHelper terraformStepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class getStepParametersClass() {
@@ -141,6 +144,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
         helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepParameters.getType()));
     ParameterField<Boolean> exportTgPlanJsonField = planStepParameters.getConfiguration().getExportTerragruntPlanJson();
 
+    EncryptionConfig planSecretManagerConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
     builder.entityId(entityId)
         .workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()))
         .configFilesStore(helper.getGitFetchFilesConfig(
@@ -162,13 +166,14 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
                 : TerragruntCommandType.DESTROY)
         .exportJsonPlan(!ParameterField.isNull(exportTgPlanJsonField)
             && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField))
-        .planSecretManager(helper.getEncryptionConfig(ambiance, planStepParameters))
+        .planSecretManager(planSecretManagerConfig)
         .stateFileId(helper.getLatestFileId(entityId))
         .planName(helper.getTerragruntPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
             planStepParameters.getProvisionerIdentifier().getValue()))
         .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
         .encryptedDataDetailList(helper.getEncryptionDetails(configuration.getConfigFiles().getStore().getSpec(),
             configuration.getBackendConfig(), configuration.getVarFiles(), ambiance))
+        .encryptDecryptPlanForHarnessSMOnManager(helper.tfPlanEncryptionOnManager(accountId, planSecretManagerConfig))
         .build();
 
     TaskData taskData = TaskData.builder()

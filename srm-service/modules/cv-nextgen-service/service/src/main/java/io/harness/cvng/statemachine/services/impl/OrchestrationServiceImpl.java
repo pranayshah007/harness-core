@@ -43,6 +43,7 @@ import com.google.inject.Inject;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -67,6 +68,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
+
+  @Inject private Clock clock;
 
   @Override
   public void queueAnalysis(AnalysisInput analysisInput) {
@@ -246,6 +249,11 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       }
       if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
           && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
+        try (AnalysisStateMachineContext stateMachineContext =
+                 new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
+          metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
+              Duration.between(clock.instant(), currentlyExecutingStateMachine.getAnalysisStartTime()));
+        }
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());
       }
@@ -301,8 +309,10 @@ public class OrchestrationServiceImpl implements OrchestrationService {
 
     if (analysisStateMachine != null && ignoredCount < STATE_MACHINE_IGNORE_LIMIT) {
       stateMachineService.initiateStateMachine(verificationTaskId, analysisStateMachine);
-      stateMachineEventPublisherService.registerTaskComplete(
-          analysisStateMachine.getAccountId(), analysisStateMachine.getVerificationTaskId());
+      if (analysisStateMachine.getCurrentState().orchestrateViaEvent()) {
+        stateMachineEventPublisherService.registerTaskComplete(
+            analysisStateMachine.getAccountId(), analysisStateMachine.getVerificationTaskId());
+      }
     }
     if (analysisStateMachine == null) {
       updateStatusOfOrchestrator(verificationTaskId, AnalysisOrchestratorStatus.WAITING);

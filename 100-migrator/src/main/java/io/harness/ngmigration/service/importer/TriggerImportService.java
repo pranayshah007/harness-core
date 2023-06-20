@@ -131,8 +131,8 @@ public class TriggerImportService implements ImportService {
                                                              .build(),
                                                       yamlFile -> yamlFile));
 
-    PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
+    PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
     workflowImportService.createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO);
 
     List<Trigger> triggers = discoveryResult.getEntities()
@@ -197,8 +197,8 @@ public class TriggerImportService implements ImportService {
             .enabled(false)
             .pipelineIdentifier(pipelineDetail.getIdentifier())
             .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
-            .inputYaml(
-                migrationTemplateUtils.getPipelineInput(pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
+            .inputYaml(migrationTemplateUtils.getPipelineInput(
+                inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
             .build();
 
     return NgTriggerConfigSchemaWrapper.builder().trigger(triggerConfig).build();

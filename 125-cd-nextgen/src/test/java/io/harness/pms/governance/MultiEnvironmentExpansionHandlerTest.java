@@ -162,12 +162,12 @@ public class MultiEnvironmentExpansionHandlerTest extends CategoryTest {
     doReturn(List.of(InfrastructureEntity.builder()
                          .identifier("my_infra_with_ns_runtime")
                          .type(InfrastructureType.KUBERNETES_DIRECT)
-                         .yaml(YamlUtils.write(config0))
+                         .yaml(YamlUtils.writeYamlString(config0))
                          .build(),
                  InfrastructureEntity.builder()
                      .identifier("my_infra")
                      .type(InfrastructureType.ECS)
-                     .yaml(YamlUtils.write(config1))
+                     .yaml(YamlUtils.writeYamlString(config1))
                      .build()))
         .when(infrastructureEntityService)
         .getAllInfrastructureFromIdentifierList(anyString(), anyString(), anyString(), eq("my_environment"), anyList());

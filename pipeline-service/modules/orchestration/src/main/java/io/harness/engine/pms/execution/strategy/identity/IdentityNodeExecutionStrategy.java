@@ -20,7 +20,6 @@ import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
-import io.harness.engine.pms.advise.handlers.MarkAsFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
 import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
@@ -180,8 +179,7 @@ public class IdentityNodeExecutionStrategy
     return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
         || adviserResponseHandler instanceof MarkSuccessAdviseHandler
         || adviserResponseHandler instanceof RetryAdviserResponseHandler
-        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler
-        || adviserResponseHandler instanceof MarkAsFailureAdviseHandler;
+        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
   }
 
   @Override

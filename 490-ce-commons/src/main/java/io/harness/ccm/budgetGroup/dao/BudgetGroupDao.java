@@ -8,6 +8,7 @@
 package io.harness.ccm.budgetGroup.dao;
 
 import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
+import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroup.BudgetGroupKeys;
@@ -143,6 +144,15 @@ public class BudgetGroupDao {
   public List<BudgetGroup> list(String accountId, Integer count, Integer startIndex) {
     Query<BudgetGroup> query =
         hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.accountId).equal(accountId);
+    return query.asList(new FindOptions().skip(startIndex).limit(count));
+  }
+
+  public List<BudgetGroup> list(String accountId, List<BudgetPeriod> budgetPeriods, Integer count, Integer startIndex) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
+                                   .field(BudgetGroupKeys.accountId)
+                                   .equal(accountId)
+                                   .field(BudgetGroupKeys.period)
+                                   .in(budgetPeriods);
     return query.asList(new FindOptions().skip(startIndex).limit(count));
   }
 

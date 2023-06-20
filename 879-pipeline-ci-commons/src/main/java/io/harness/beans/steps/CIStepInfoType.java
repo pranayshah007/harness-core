@@ -47,6 +47,7 @@ public enum CIStepInfoType {
   CHECKMARX(CI_LITE_ENGINE, "Checkmarx"),
   CLAIR(CI_LITE_ENGINE, "Clair"),
   CODEQL(CI_LITE_ENGINE, "CodeQL"),
+  COVERITY(CI_LITE_ENGINE, "Coverity"),
   DATA_THEOREM(CI_LITE_ENGINE, "DataTheorem"),
   DOCKER_CONTENT_TRUST(CI_LITE_ENGINE, "DockerContentTrust"),
   CUSTOM_INGEST(CI_LITE_ENGINE, "CustomIngest"),

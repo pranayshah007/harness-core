@@ -6,17 +6,17 @@ metadata:
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:
-    - http:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
         paths:
           - backend:
               service:
                 name: harness-manager
                 port:
-                  number: {{ .Values.service.port }}
+                  number: {{ $.Values.service.port }}
             path: /api
             pathType: ImplementationSpecific
-      {{- range .Values.global.ingress.hosts }}
-      host: {{ . | quote }}
       {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:

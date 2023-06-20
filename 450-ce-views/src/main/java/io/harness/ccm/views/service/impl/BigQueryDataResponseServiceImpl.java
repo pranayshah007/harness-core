@@ -61,7 +61,7 @@ public class BigQueryDataResponseServiceImpl implements DataResponseService {
   public Map<String, Double> getCostBucketEntityCost(final List<QLCEViewFilterWrapper> filters,
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final String cloudProviderTableName, final ViewQueryParams queryParams, final boolean skipRoundOff,
-      final BusinessMapping sharedCostBusinessMapping) {
+      final BusinessMapping sharedCostBusinessMapping, final Map<String, String> labelsKeyAndColumnMapping) {
     BigQuery bigQuery = bigQueryService.get();
     final Map<String, Double> entityCosts = new HashMap<>();
     final List<QLCEViewGroupBy> businessMappingGroupBy =
@@ -70,7 +70,7 @@ public class BigQueryDataResponseServiceImpl implements DataResponseService {
         viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
     final SelectQuery query = viewBillingServiceHelper.getQuery(modifiedFilters, groupBy, businessMappingGroupBy,
         aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMapping,
-        Collections.emptyList());
+        Collections.emptyList(), labelsKeyAndColumnMapping);
     final TableResult result = getTableResultWithLimitAndOffset(bigQuery, query);
 
     if (Objects.isNull(result)) {

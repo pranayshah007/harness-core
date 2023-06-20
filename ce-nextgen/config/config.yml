@@ -103,6 +103,8 @@ ngManagerClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+distributedLockImplementation: MONGO
   
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
@@ -132,7 +134,7 @@ featureFlagConfig:
 deploymentClusterName: ""
 
 gcpConfig:
-  gcpProjectId: gcpProjectIdPlaceHolder
+  gcpProjectId: ccm-play
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
   gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
   gcpAzureConnectorCrudPubSubTopic: "ce-azure-connector-crud"
@@ -264,3 +266,13 @@ clickHouseConfig:
   password: ""
   
 isClickHouseEnabled: false
+
+aiEngineConfig:
+  genAIService:
+    model: text-bison
+    temperature: 0.1
+    maxDecodeSteps: 1024
+    topP: 0.8
+    topK: 40
+    apiEndpoint: http://35.202.125.234/complete
+    genAIServiceSecret: placeholder

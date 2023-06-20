@@ -15,6 +15,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/exceptionhandler/core:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/tasklogging:module",
         "//950-delegate-tasks-beans:module",
+        "//951-delegate-task-commons/src/main/java/io/harness/delegate/beans:module",
         "//955-delegate-beans:module",
         "//957-cg-beans/src/main/java/io/harness/delegate/beans:module",
         "//970-api-services-beans/src/main/java/io/harness/globalcontex:module",

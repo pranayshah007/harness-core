@@ -46,6 +46,9 @@ public interface NextGenService {
 
   int getEnvironmentCount(String accountId, String orgIdentifier, String projectIdentifier);
 
+  List<ConnectorResponseDTO> listConnector(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope);
+
   ProjectDTO getProject(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   ProjectDTO getCachedProject(String accountIdentifier, String orgIdentifier, String projectIdentifier);
@@ -57,6 +60,9 @@ public interface NextGenService {
   Map<String, String> getServiceIdNameMap(ProjectParams projectParams, List<String> serviceIdentifiers);
 
   Map<String, String> getEnvironmentIdNameMap(ProjectParams projectParams, List<String> environmentIdentifiers);
+
+  void validateConnectorIdList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope);
 
   List<ProjectDTO> listAccessibleProjects(String accountIdentifier);
 }

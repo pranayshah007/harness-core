@@ -62,9 +62,9 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
         throw new InvalidRequestException("No build exist for the given file path.");
       }
     } else {
-      List<BuildDetails> builds =
-          awsApiHelperService.listBuilds(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
-              s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePathRegex());
+      List<BuildDetails> builds = awsApiHelperService.listBuilds(awsInternalConfig,
+          s3ArtifactDelegateRequest.getRegion(), s3ArtifactDelegateRequest.getBucketName(),
+          s3ArtifactDelegateRequest.getFilePathRegex(), s3ArtifactDelegateRequest.isShouldFetchObjectMetadata());
 
       if (builds.isEmpty()) {
         throw new InvalidRequestException("No last successful build");
@@ -73,6 +73,9 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
       builds = builds.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
 
       buildDetails = builds.get(builds.size() - 1);
+
+      buildDetails = awsApiHelperService.getBuild(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
+          s3ArtifactDelegateRequest.getBucketName(), buildDetails.getArtifactPath());
     }
 
     artifactTaskExecutionResponse =
@@ -89,7 +92,8 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
 
     List<BuildDetails> builds = awsApiHelperService.listBuilds(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
-        s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePathRegex());
+        s3ArtifactDelegateRequest.getBucketName(), s3ArtifactDelegateRequest.getFilePathRegex(),
+        s3ArtifactDelegateRequest.isShouldFetchObjectMetadata());
 
     if (builds.isEmpty()) {
       throw new InvalidRequestException("No builds");

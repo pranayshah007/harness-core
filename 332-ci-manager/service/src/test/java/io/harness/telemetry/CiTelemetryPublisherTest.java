@@ -65,7 +65,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     ModuleLicense moduleLicense = null;
     List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);
@@ -104,7 +104,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 0L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     List<ModuleLicense> moduleLicenses = Collections.emptyList();
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
@@ -115,15 +115,15 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
-    firstAccountExpectedMap.put("ci_license_developers_used", null);
-    firstAccountExpectedMap.put("ci_credits_used", null);
+    firstAccountExpectedMap.put("ci_credits_used", 500L);
+    firstAccountExpectedMap.put("ci_license_developers_used", 0L);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
-    secondAccountExpectedMap.put("ci_license_developers_used", null);
-    secondAccountExpectedMap.put("ci_credits_used", null);
+    secondAccountExpectedMap.put("ci_credits_used", 500L);
+    secondAccountExpectedMap.put("ci_license_developers_used", 0L);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();
@@ -142,7 +142,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     List<ModuleLicense> moduleLicenses = Collections.emptyList();
     doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
@@ -153,15 +153,15 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
-    firstAccountExpectedMap.put("ci_license_developers_used", null);
-    firstAccountExpectedMap.put("ci_credits_used", null);
+    firstAccountExpectedMap.put("ci_license_developers_used", 20L);
+    firstAccountExpectedMap.put("ci_credits_used", 500L);
     firstAccountExpectedMap.put("account_deploy_type", null);
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
     secondAccountExpectedMap.put("group_id", "acc2");
-    secondAccountExpectedMap.put("ci_license_developers_used", null);
-    secondAccountExpectedMap.put("ci_credits_used", null);
+    secondAccountExpectedMap.put("ci_license_developers_used", 20L);
+    secondAccountExpectedMap.put("ci_credits_used", 500L);
     secondAccountExpectedMap.put("account_deploy_type", null);
 
     telemetryPublisher.recordTelemetry();
@@ -180,7 +180,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     long creditUsage = 500L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
-    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any());
+    doReturn(creditUsage).when(ciOverviewDashboardService).getHostedCreditUsage(any(), anyLong(), anyLong());
     doReturn(false).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
     ModuleLicense moduleLicense = null;
     List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);

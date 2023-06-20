@@ -10,7 +10,6 @@ package io.harness.pms.merger.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipeline;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
-import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
 import static io.harness.rule.OwnerRule.BRIJESH;
@@ -23,8 +22,10 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +51,10 @@ public class InputSetMergeHelperTest extends CategoryTest {
 
   private void assertStringEqualToFile(String result, String filename) {
     String expected = readFile(filename);
+    assertThat(result).isEqualTo(expected);
+  }
+  private void assertStringEqualToFile(JsonNode result, String filename) {
+    JsonNode expected = YamlUtils.readAsJsonNode(readFile(filename));
     assertThat(result).isEqualTo(expected);
   }
 
@@ -105,19 +110,22 @@ public class InputSetMergeHelperTest extends CategoryTest {
     String runtimeInputForAppAndPQ2File = "runtimeInputForAppAndPQ2.yaml";
     String runtimeInputForAppAndPQ2 = readFile(runtimeInputForAppAndPQ2File);
 
-    String mergedResult1 = InputSetMergeHelper.mergeInputSetsForGivenStages(template,
-        Arrays.asList(runtimeInputForQaStageAndAppAndPQ2, runtimeInputForAppAndPQ2), false,
-        Collections.singletonList("qaStage"));
+    JsonNode mergedResult1 = InputSetMergeHelper.mergeInputSetsForGivenStages(YamlUtils.readAsJsonNode(template),
+        Arrays.asList(YamlUtils.readAsJsonNode(runtimeInputForQaStageAndAppAndPQ2),
+            YamlUtils.readAsJsonNode(runtimeInputForAppAndPQ2)),
+        false, Collections.singletonList("qaStage"));
     assertStringEqualToFile(mergedResult1, "mergedRuntimeInputsForQAStage.yaml");
 
-    String mergedResult2 = InputSetMergeHelper.mergeInputSetsForGivenStages(template,
-        Arrays.asList(runtimeInputForQaStageAndAppAndPQ2, runtimeInputForAppAndPQ2), false,
-        Arrays.asList("qaStage", "pq2"));
+    JsonNode mergedResult2 = InputSetMergeHelper.mergeInputSetsForGivenStages(YamlUtils.readAsJsonNode(template),
+        Arrays.asList(YamlUtils.readAsJsonNode(runtimeInputForQaStageAndAppAndPQ2),
+            YamlUtils.readAsJsonNode(runtimeInputForAppAndPQ2)),
+        false, Arrays.asList("qaStage", "pq2"));
     assertStringEqualToFile(mergedResult2, "mergedRuntimeInputForQAStageAndPQ2.yaml");
 
-    String mergedResult3 = InputSetMergeHelper.mergeInputSetsForGivenStages(template,
-        Arrays.asList(runtimeInputForQaStageAndAppAndPQ2, runtimeInputForAppAndPQ2), false,
-        Arrays.asList("qaStage4", "pq2"));
+    JsonNode mergedResult3 = InputSetMergeHelper.mergeInputSetsForGivenStages(YamlUtils.readAsJsonNode(template),
+        Arrays.asList(YamlUtils.readAsJsonNode(runtimeInputForQaStageAndAppAndPQ2),
+            YamlUtils.readAsJsonNode(runtimeInputForAppAndPQ2)),
+        false, Arrays.asList("qaStage4", "pq2"));
     assertStringEqualToFile(mergedResult3, "mergedRuntimeInputForQAStage4AndPQ2.yaml");
   }
 
@@ -138,9 +146,9 @@ public class InputSetMergeHelperTest extends CategoryTest {
         + "    - stage:\n"
         + "        identifier: s1\n"
         + "        key: s1Value1";
-    String mergedYaml = InputSetMergeHelper.mergeInputSetsForGivenStages(
-        pipelineYaml, Collections.singletonList(yamlForS1), false, Collections.singletonList("s2"));
-    assertThat(mergedYaml).isEqualTo(pipelineYaml);
+    JsonNode mergedYaml = InputSetMergeHelper.mergeInputSetsForGivenStages(YamlUtils.readAsJsonNode(pipelineYaml),
+        Collections.singletonList(YamlUtils.readAsJsonNode(yamlForS1)), false, Collections.singletonList("s2"));
+    assertThat(mergedYaml).isEqualTo(YamlUtils.readAsJsonNode(pipelineYaml));
   }
 
   @Test
@@ -189,19 +197,20 @@ public class InputSetMergeHelperTest extends CategoryTest {
     String inputSetYaml1 = readFile(inputSet1);
     String inputSet2 = "inputSet2.yml";
     String inputSetYaml2 = readFile(inputSet2);
-    List<String> inputSetYamlList = new ArrayList<>();
-    inputSetYamlList.add(inputSetYaml1);
-    inputSetYamlList.add(inputSetYaml2);
+    List<JsonNode> inputSetYamlList = new ArrayList<>();
+    inputSetYamlList.add(YamlUtils.readAsJsonNode(inputSetYaml1));
+    inputSetYamlList.add(YamlUtils.readAsJsonNode(inputSetYaml2));
 
     String filename = "pipeline-extensive.yml";
     String yaml = readFile(filename);
     String templateYaml = createTemplateFromPipeline(yaml);
 
-    String mergedYaml = mergeInputSets(templateYaml, inputSetYamlList, false);
+    JsonNode mergedYaml =
+        InputSetMergeHelper.mergeInputSets(YamlUtils.readAsJsonNode(templateYaml), inputSetYamlList, false);
 
     String inputSetMerged = "input12-merged.yml";
     String inputSetYamlMerged = readFile(inputSetMerged);
-    assertThat(mergedYaml).isEqualTo(inputSetYamlMerged);
+    assertThat(YamlUtils.writeYamlString(mergedYaml)).isEqualTo(inputSetYamlMerged);
   }
 
   @Test
@@ -365,8 +374,8 @@ public class InputSetMergeHelperTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testMergeInputSetsV1() {
-    List<String> inputSetYamlList = new ArrayList<>();
-    inputSetYamlList.add("version: 1\n"
+    List<JsonNode> inputSetYamlList = new ArrayList<>();
+    inputSetYamlList.add(YamlUtils.readAsJsonNode("version: 1\n"
         + "name: partialset1\n"
         + "inputs:\n"
         + "  image: alpine\n"
@@ -376,9 +385,9 @@ public class InputSetMergeHelperTest extends CategoryTest {
         + "  clone:\n"
         + "    ref:\n"
         + "      type: commit\n"
-        + "      name: asdf");
+        + "      name: asdf"));
 
-    inputSetYamlList.add("version: 1\n"
+    inputSetYamlList.add(YamlUtils.readAsJsonNode("version: 1\n"
         + "name: partialset2\n"
         + "inputs:\n"
         + "  count: 1\n"
@@ -387,7 +396,7 @@ public class InputSetMergeHelperTest extends CategoryTest {
         + "  clone:\n"
         + "    ref:\n"
         + "      type: tag\n"
-        + "      name: main");
+        + "      name: main"));
 
     Set<String> possibleResponses = Set.of("options:\n"
             + "  clone:\n"
@@ -409,19 +418,21 @@ public class InputSetMergeHelperTest extends CategoryTest {
             + "    ref:\n"
             + "      type: tag\n"
             + "      name: main\n");
-    String mergedInputSetYaml = InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
-    assertThat(possibleResponses.contains(mergedInputSetYaml)).isTrue();
+    JsonNode mergedInputSetYaml = InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
+    assertThat(possibleResponses.contains(YamlUtils.writeYamlString(mergedInputSetYaml))).isTrue();
 
-    inputSetYamlList = Arrays.asList("inputs:\n  a: a", "inputs:\n  b: b", "inputs:\n  c: c");
-    assertThat(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList))
+    inputSetYamlList = Arrays.asList(YamlUtils.readAsJsonNode("inputs:\n  a: a"),
+        YamlUtils.readAsJsonNode("inputs:\n  b: b"), YamlUtils.readAsJsonNode("inputs:\n  c: c"));
+    assertThat(YamlUtils.writeYamlString(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList)))
         .isEqualTo("inputs:\n"
             + "  a: a\n"
             + "  b: b\n"
             + "  c: c\n");
 
-    inputSetYamlList = Arrays.asList("options:\n  clone:\n    ref:\n      type: branch\n      name: harness-core",
-        "options:\n  clone:\n    ref:\n      type: tag");
-    assertThat(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList))
+    inputSetYamlList = Arrays.asList(
+        YamlUtils.readAsJsonNode("options:\n  clone:\n    ref:\n      type: branch\n      name: harness-core"),
+        YamlUtils.readAsJsonNode("options:\n  clone:\n    ref:\n      type: tag"));
+    assertThat(YamlUtils.writeYamlString(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList)))
         .isEqualTo("options:\n"
             + "  clone:\n"
             + "    ref:\n"

@@ -109,6 +109,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
@@ -487,14 +488,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
           new EnumMap<>(ServiceOverridesType.class);
 
-      boolean isOverridesV2enabled =
-          ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0);
+      boolean isOverridesV2enabled = isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
+
       if (isOverridesV2enabled) {
         if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
           resolve(ambiance, parameters.getInfraId());
         }
         mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            accountId, orgIdentifier, projectIdentifier, parameters, environment.get());
+            accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), logCallback);
       }
 
       NGEnvironmentConfig ngEnvironmentConfig;
@@ -590,7 +591,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceStepOverrideHelper.saveFinalManifestsToSweepingOutputV2(ngServiceV2InfoConfig, ambiance,
             ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT, mergedOverrideV2Configs, scopedEnvironmentRef);
         serviceStepOverrideHelper.saveFinalConfigFilesToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
-            ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT, ambiance, scopedEnvironmentRef);
+            scopedEnvironmentRef, ambiance, ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+        serviceStepOverrideHelper.saveFinalAppSettingsToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
+            ambiance, ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+        serviceStepOverrideHelper.saveFinalConnectionStringsToSweepingOutputV2(ngServiceV2InfoConfig,
+            mergedOverrideV2Configs, ambiance, ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
       } else {
         serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
             servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
@@ -599,15 +604,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
             servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
             ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+
+        serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
+            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+            ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+
+        serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
+            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+            ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
       }
-
-      serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
-          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-          ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
-
-      serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
-          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-          ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
 
       serviceStepOverrideHelper.prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(
           servicePartResponse.getNgServiceConfig(), ambiance, ServiceStepV3Constants.SERVICE_HOOKS_SWEEPING_OUTPUT);
@@ -926,7 +931,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     return variablesOutcome;
   }
 
-  // Todo : confirm this behaviour with @Yogesh
   private Map<String, Object> getFinalVariablesMap(NGServiceV2InfoConfig serviceV2InfoConfig,
       Map<String, Object> envOrOverrideVariables, NGLogCallback logCallback) {
     List<NGVariable> variableList = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getVariables();
@@ -1100,6 +1104,18 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private String generateEnvGlobalOverrideV2Identifier(String envRef) {
     return String.join("_", envRef).replace(".", "_");
+  }
+
+  private boolean isOverridesV2Enabled(String accountId, String orgId, String projectId) {
+    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0)
+        && isOverridesV2SettingEnabled(accountId, orgId, projectId);
+  }
+
+  private boolean isOverridesV2SettingEnabled(String accountId, String orgId, String projectId) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
+        .getValue()
+        .equals("true");
   }
 
   @Data

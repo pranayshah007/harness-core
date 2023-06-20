@@ -8,6 +8,7 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE;
 
 import static java.lang.String.join;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.ExecutionStatusResponseData;
+import io.harness.ff.FeatureFlagService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
@@ -48,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class ForkState extends State {
   @Inject transient KryoSerializer kryoSerializer;
+  @Inject private transient FeatureFlagService featureFlagService;
   @SchemaIgnore private List<String> forkStateNames = new ArrayList<>();
 
   /**
@@ -124,6 +127,10 @@ public class ForkState extends State {
     for (ResponseData status : response.values()) {
       ExecutionStatus executionStatus = ((ExecutionStatusResponseData) status).getExecutionStatus();
       if (executionStatus != ExecutionStatus.SUCCESS) {
+        if (isRejectStatusPriority(context, executionStatus)) {
+          executionResponseBuilder.executionStatus(executionStatus);
+          break;
+        }
         executionResponseBuilder.executionStatus(executionStatus);
       }
     }
@@ -131,6 +138,11 @@ public class ForkState extends State {
     log.info("Fork state execution completed - displayName:{}, executionStatus:{}", getName(),
         executionResponse.getExecutionStatus());
     return executionResponse;
+  }
+
+  private boolean isRejectStatusPriority(ExecutionContext context, ExecutionStatus executionStatus) {
+    return executionStatus == ExecutionStatus.REJECTED
+        && featureFlagService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, context.getAccountId());
   }
 
   @Override

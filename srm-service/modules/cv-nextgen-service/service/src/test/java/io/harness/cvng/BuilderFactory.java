@@ -250,6 +250,8 @@ import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob;
+import io.harness.cvng.verificationjob.entities.SimpleVerificationJob.SimpleVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -283,7 +285,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -383,12 +384,10 @@ public class BuilderFactory {
         .tags(new HashMap<>())
         .dependencies(Sets.newHashSet(ServiceDependencyDTO.builder().monitoredServiceIdentifier("service1").build(),
             ServiceDependencyDTO.builder().monitoredServiceIdentifier("service2").build()))
-        .sources(
-            MonitoredServiceDTO.Sources.builder()
-                .healthSources(
-                    Arrays.asList(createHealthSource(CVMonitoringCategory.ERRORS)).stream().collect(Collectors.toSet()))
-                .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
-                .build());
+        .sources(MonitoredServiceDTO.Sources.builder()
+                     .healthSources(new HashSet<>(List.of(createHealthSource(CVMonitoringCategory.ERRORS))))
+                     .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
+                     .build());
   }
 
   public HeatMapBuilder heatMapBuilder() {
@@ -1661,6 +1660,19 @@ public class BuilderFactory {
         .duration(RuntimeParameter.builder().value("10m").build());
   }
 
+  public SimpleVerificationJobBuilder simpleVerificationJobBuilder() {
+    return SimpleVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+
   public BlueGreenVerificationJobBuilder blueGreenVerificationJobBuilder() {
     return BlueGreenVerificationJob.builder()
         .accountId(context.getAccountId())
@@ -2095,6 +2107,7 @@ public class BuilderFactory {
                          .externalLinkToEntity("externalLink")
                          .description("desc")
                          .name("name")
+                         .webhookUrl("webhookUrl")
                          .build());
   }
 }

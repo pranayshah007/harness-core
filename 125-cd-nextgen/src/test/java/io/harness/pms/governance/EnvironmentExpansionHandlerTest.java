@@ -119,7 +119,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
     doReturn(Optional.of(InfrastructureEntity.builder()
                              .identifier("my_infra")
                              .type(InfrastructureType.ECS)
-                             .yaml(YamlUtils.write(config1))
+                             .yaml(YamlUtils.writeYamlString(config1))
                              .build()))
         .when(infrastructureEntityService)
         .get(anyString(), anyString(), anyString(), eq("my_environment"), eq("my_infra"));
@@ -142,7 +142,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
     doReturn(Optional.of(InfrastructureEntity.builder()
                              .identifier("my_infra_with_ns_runtime")
                              .type(InfrastructureType.KUBERNETES_DIRECT)
-                             .yaml(YamlUtils.write(config2))
+                             .yaml(YamlUtils.writeYamlString(config2))
                              .build()))
         .when(infrastructureEntityService)
         .get(anyString(), anyString(), anyString(), eq("my_environment"), eq("my_infra_with_ns_runtime"));
@@ -167,7 +167,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
     doReturn(Optional.of(InfrastructureEntity.builder()
                              .identifier("infra_without_connectorRef")
                              .type(InfrastructureType.KUBERNETES_DIRECT)
-                             .yaml(YamlUtils.write(configWithoutConnectorRef))
+                             .yaml(YamlUtils.writeYamlString(configWithoutConnectorRef))
                              .build()))
         .when(infrastructureEntityService)
         .get(anyString(), anyString(), anyString(), eq("my_environment"), eq("infra_without_connectorRef"));

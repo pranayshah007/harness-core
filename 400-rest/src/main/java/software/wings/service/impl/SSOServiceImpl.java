@@ -121,12 +121,14 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO) {
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO,
+      Boolean jitEnabled, String jitValidationKey, String jitValidationValue) {
     try {
       String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
       groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false, null);
+          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false, null, jitEnabled,
+          jitValidationKey, jitValidationValue);
       return getAccountAccessManagementSettings(accountId, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
@@ -146,7 +148,8 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig updateSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO, Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue) {
     try {
       SamlSettings settings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
           ? ssoSettingService.getSamlSettingsByAccountId(accountId)
@@ -158,7 +161,8 @@ public class SSOServiceImpl implements SSOService {
             accountId));
       }
       return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
-          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType, null, isNGSSO);
+          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType, null, isNGSSO,
+          jitEnabled, jitValidationKey, jitValidationValue);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
@@ -168,12 +172,12 @@ public class SSOServiceImpl implements SSOService {
   public SSOConfig updateSamlConfiguration(String accountId, String samlSSOId, InputStream inputStream,
       String displayName, String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl,
       String entityIdentifier, String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName,
-      boolean isNGSSO) {
+      boolean isNGSSO, Boolean jitEnabled, String jitValidationKey, String jitValidationValue) {
     try {
       SamlSettings settings = ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
       return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
           displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType,
-          friendlySamlName, isNGSSO);
+          friendlySamlName, isNGSSO, jitEnabled, jitValidationKey, jitValidationValue);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
@@ -439,8 +443,8 @@ public class SSOServiceImpl implements SSOService {
 
   private SamlSettings buildAndUploadSamlSettings(String accountId, String fileAsString, String displayName,
       String groupMembershipAttr, String logoutUrl, String entityIdentifier, String samlProviderType, String clientId,
-      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase, String samlSSOId)
-      throws SamlException, URISyntaxException {
+      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase, String samlSSOId,
+      boolean jitEnabled, String jitValidationKey, String jitValidationValue) throws SamlException, URISyntaxException {
     SamlClient samlClient = samlClientService.getSamlClient(entityIdentifier, fileAsString);
 
     SamlSettings samlSettings = SamlSettings.builder()
@@ -452,6 +456,9 @@ public class SSOServiceImpl implements SSOService {
                                     .groupMembershipAttr(groupMembershipAttr)
                                     .entityIdentifier(entityIdentifier)
                                     .friendlySamlName(friendlySamlName)
+                                    .jitEnabled(jitEnabled)
+                                    .jitValidationKey(jitValidationKey)
+                                    .jitValidationValue(jitValidationValue)
                                     .build();
 
     samlSettings.setSamlProviderType(getSAMLProviderType(samlProviderType));
@@ -809,7 +816,8 @@ public class SSOServiceImpl implements SSOService {
   private SSOConfig updateAndGetSamlSsoConfigInternal(String groupMembershipAttr, Boolean authorizationEnabled,
       InputStream inputStream, SamlSettings settings, String displayName, String clientId, char[] clientSecret,
       String accountId, String logoutUrl, String entityIdentifier, String samlProviderType, String friendlySamlName,
-      boolean isNGSSO) throws IOException, SamlException, URISyntaxException {
+      boolean isNGSSO, boolean jitEnabled, String jitValidationKey, String jitValidationValue)
+      throws IOException, SamlException, URISyntaxException {
     String fileAsString =
         null != inputStream ? IOUtils.toString(inputStream, Charset.defaultCharset()) : settings.getMetaDataFile();
     groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
@@ -825,7 +833,8 @@ public class SSOServiceImpl implements SSOService {
     }
 
     buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-        samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, true, settings.getUuid());
+        samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, true, settings.getUuid(), jitEnabled,
+        jitValidationKey, jitValidationValue);
     return getAccountAccessManagementSettings(accountId, isNGSSO);
   }
 

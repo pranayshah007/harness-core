@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
@@ -102,8 +103,8 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
-    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
+        .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(true);
     when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(config);
 
@@ -128,8 +129,8 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
-    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
+        .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(false);
 
     Set<String> secretList =
@@ -148,8 +149,8 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
-    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
+        .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(true);
     when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(null);
 
@@ -170,8 +171,8 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
-    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
+        .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
     when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(config);
 
@@ -196,8 +197,8 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
-    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
+        .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(false);
 
     Set<String> secretList =
@@ -216,8 +217,8 @@ public class VmPluginCompatibleStepSerializerTest {
 
     when(ciFeatureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId))
         .thenReturn(true);
-    when(ciFeatureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)).thenReturn(true);
-    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any())).thenReturn("pluginName");
+    when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
+        .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
     when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(null);
 

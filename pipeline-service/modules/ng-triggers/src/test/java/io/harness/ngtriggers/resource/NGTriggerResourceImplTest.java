@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -128,7 +127,6 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.NG_SETTINGS))).thenReturn(true);
     when(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
         .thenReturn(request);
     when(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION, "", "", "")).thenReturn(request);
@@ -454,7 +452,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdate() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -483,7 +481,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateAccess() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -517,7 +515,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateNotPresent() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.empty())
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -543,7 +541,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateInvalidYamlError() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -570,7 +568,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateException() throws Exception {
-    doThrow(new EntityNotFoundException("exception")).when(ngTriggerService).update(any());
+    doThrow(new EntityNotFoundException("exception")).when(ngTriggerService).update(any(), any());
     doReturn(Optional.empty())
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -596,7 +594,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdateWithGitSync() throws Exception {
-    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any());
+    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any(), any());
     doReturn(Optional.of(ngTriggerEntityGitSync))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);

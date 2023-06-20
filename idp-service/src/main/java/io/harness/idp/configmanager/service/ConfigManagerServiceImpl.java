@@ -12,9 +12,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.mappers.AppConfigMapper;
@@ -22,7 +23,9 @@ import io.harness.idp.configmanager.mappers.MergedAppConfigMapper;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
@@ -32,6 +35,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -47,13 +51,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   private K8sClient k8sClient;
   private NamespaceService namespaceService;
   private ConfigEnvVariablesService configEnvVariablesService;
-
   private BackstageEnvVariableService backstageEnvVariableService;
+  private PluginsProxyInfoService pluginsProxyInfoService;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
-  private static final String PLUGIN_SAVE_UNSUCCESSFUL =
-      "Plugin config saving is unsuccessful for plugin - % in account - %s";
   private static final String NO_PLUGIN_ENABLED_FOR_ACCOUNT = "No plugin is enabled for account - %s";
   private static final String BASE_APP_CONFIG_PATH = "baseappconfig.yaml";
   private static final String BASE_APP_CONFIG_PATH_QA = "baseappconfig-qa.yaml";
@@ -73,6 +75,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       "Invalid schema for merged app-config.yaml for account - %s";
 
   private static final long baseTimeStamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000;
+  private static final String HARNESS_CI_CD_PLUGIN_IDENTIFIER = "harness-ci-cd";
+
+  private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
+      "Invalid json schema for integrations config for account - %s";
+
+  private static final String TARGET_TO_REPLACE_IN_GIT_INTEGRATION_CONFIG = "HOST_VALUE";
 
   @Override
   public Map<String, Boolean> getAllPluginIdsMap(String accountIdentifier) {
@@ -83,13 +91,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
-    Optional<AppConfigEntity> pluginConfig = appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
-        accountIdentifier, pluginId, ConfigType.PLUGIN);
-    if (pluginConfig.isEmpty()) {
+  public AppConfig getAppConfig(String accountIdentifier, String configId, ConfigType configType) {
+    Optional<AppConfigEntity> config =
+        appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(accountIdentifier, configId, configType);
+    if (config.isEmpty()) {
       return null;
     }
-    return pluginConfig.map(AppConfigMapper::toDTO).get();
+    return config.map(AppConfigMapper::toDTO).get();
   }
 
   @Override
@@ -99,11 +107,19 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     appConfigEntity.setConfigType(configType);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
     appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
+
+    List<ProxyHostDetail> pluginProxyHostDetails =
+        pluginsProxyInfoService.insertProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
+    if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
+      appConfigEntity.setEnabled(true);
+    }
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
     AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    returnedConfig.setProxy(pluginProxyHostDetails);
     return returnedConfig;
   }
 
@@ -112,6 +128,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       throws Exception {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
+
+    List<ProxyHostDetail> proxyHostDetailList =
+        pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
@@ -120,6 +140,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+    returnedConfig.setProxy(proxyHostDetailList);
     return returnedConfig;
   }
 
@@ -134,11 +155,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   @Override
   public AppConfig toggleConfigForAccount(
-      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) {
+      String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType) throws ExecutionException {
     AppConfigEntity updatedData = null;
     Boolean createdNewConfig = false;
 
-    if (isEnabled == true) {
+    if (isEnabled) {
       AppConfigEntity appConfigEntity =
           appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, configId);
 
@@ -162,8 +183,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       updatedData = appConfigRepository.updateConfigEnablement(accountIdentifier, configId, isEnabled, configType);
     }
 
-    if (isEnabled == false) {
+    if (!isEnabled) {
       configEnvVariablesService.deleteConfigEnvVariables(accountIdentifier, configId);
+      pluginsProxyInfoService.deleteProxyHostDetailsForPlugin(accountIdentifier, configId);
     }
 
     if (isPluginWithNoConfig(accountIdentifier, configId)) {
@@ -218,8 +240,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
             accountIdentifier, envVariablesForEnabledPlugins);
 
+    List<ProxyHostDetail> proxyHostDetailForEnabledPlugins =
+        pluginsProxyInfoService.getProxyHostDetailsForMultiplePluginIds(accountIdentifier, enabledPluginIdsForAccount);
+
     return mergedPluginConfigs.config(ConfigManagerUtils.asYaml(mergedPluginConfig.toString()))
-        .envVariables(envVariableAndSecretList);
+        .envVariables(envVariableAndSecretList)
+        .proxy(proxyHostDetailForEnabledPlugins);
   }
 
   @Override
@@ -286,6 +312,41 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     if (!ConfigManagerUtils.isValidSchema(config, pluginSchema)) {
       throw new InvalidRequestException(String.format(INVALID_PLUGIN_CONFIG_PROVIDED, configId));
     }
+  }
+
+  @Override
+  public void createOrUpdateAppConfigForGitIntegrations(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO, String integrationConfigs, String connectorType) {
+    try {
+      saveAndMergeAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO, integrationConfigs, connectorType);
+    } catch (Exception e) {
+      log.error("Error in saving and merging app config for git integration in account - {} for connector type - {} ",
+          accountIdentifier, connectorInfoDTO.getConnectorType().toString(), e);
+    }
+  }
+
+  public void saveAndMergeAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+      String integrationConfigs, String connectorTypeAsString) throws Exception {
+    ConnectorType connectorType = connectorInfoDTO.getConnectorType();
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+    log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
+    integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_GIT_INTEGRATION_CONFIG, host);
+
+    String schemaForIntegrations =
+        ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(connectorTypeAsString);
+    if (!ConfigManagerUtils.isValidSchema(integrationConfigs, schemaForIntegrations)) {
+      log.error(String.format(INVALID_SCHEMA_FOR_INTEGRATIONS, accountIdentifier));
+    }
+
+    AppConfig appConfig = new AppConfig();
+    appConfig.setConfigId(connectorType.toString());
+    appConfig.setConfigs(integrationConfigs);
+    appConfig.setEnabled(true);
+
+    saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
+    mergeAndSaveAppConfig(accountIdentifier);
+
+    log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
   }
 
   private List<AppConfigEntity> getAllEnabledPlugins(String accountIdentifier) {

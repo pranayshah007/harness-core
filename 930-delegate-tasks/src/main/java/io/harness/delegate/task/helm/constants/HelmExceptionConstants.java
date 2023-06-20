@@ -57,6 +57,8 @@ public class HelmExceptionConstants {
     public static final String DEFAULT_HINT_HELM_RENDER_CHART = "Failed to render helm chart";
     public static final String DEFAULT_HINT_HELM_ROLLBACK = "Failed to rollback helm chart";
     public static final String HINT_UNKNOWN_COMMAND_FLAG = "Helm incorrect command flag";
+    public static final String HINT_RESOURCE_ALREADY_EXISTS =
+        "Try to reinstall the resource under the new release or change the resource name";
 
     public Hints() {
       throw new UnsupportedOperationException("not supported");
@@ -96,6 +98,8 @@ public class HelmExceptionConstants {
     public static final String DEFAULT_EXPLAIN_RENDER_CHART =
         "Unable to render helm chart, please check logs for further details";
     public static final String DEFAULT_EXPLAIN_ROLLBACK = "Unable to rollback helm chart. ";
+    public static final String EXPLAIN_RESOURCE_ALREADY_EXISTS =
+        "The resource is already part of different helm release";
     public Explanations() {
       throw new UnsupportedOperationException("not supported");
     }
@@ -115,6 +119,7 @@ public class HelmExceptionConstants {
     public static final String UNKNOWN_COMMAND_FLAG = "unknown flag";
     public static final String NO_DEPLOYED_RELEASES = "no deployed releases";
     public static final String TIMEOUT_EXCEPTION = "timed out";
+    public static final String RESOURCE_ALREADY_EXISTS = "exists and cannot be imported into the current release";
 
     public HelmCliErrorMessages() {
       throw new UnsupportedOperationException("not supported");

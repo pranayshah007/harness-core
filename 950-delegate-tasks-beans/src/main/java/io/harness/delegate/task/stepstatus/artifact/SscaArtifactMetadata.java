@@ -23,6 +23,7 @@ public class SscaArtifactMetadata implements ArtifactMetadataSpec {
   String registryType;
   String registryUrl;
   String imageName;
+  String imageTag;
   String digest;
   String sbomName;
   String sbomUrl;

@@ -27,6 +27,9 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -60,10 +63,19 @@ public class K8EventHandler {
   }
 
   public void stopEventWatch(Watch<CoreV1Event> watch) {
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    executorService.submit(() -> {
+      try {
+        watch.close();
+      } catch (IOException e) {
+        log.warn("failed to stop event watch", e);
+      }
+    });
     try {
-      watch.close();
-    } catch (IOException e) {
-      log.error("failed to stop event watch", e);
+      executorService.shutdown();
+      executorService.awaitTermination(30, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      log.warn("failed to stop event watch", e);
     }
   }
 

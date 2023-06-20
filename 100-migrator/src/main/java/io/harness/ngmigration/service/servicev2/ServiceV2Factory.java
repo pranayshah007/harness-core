@@ -27,7 +27,7 @@ public class ServiceV2Factory {
   private static final ServiceV2Mapper nativeHelmServiceV2Mapper = new NativeHelmServiceV2Mapper();
   private static final ServiceV2Mapper ecsServiceV2Mapper = new EcsServiceV2Mapper();
   private static final ServiceV2Mapper azureWebappServiceV2Mapper = new AzureWebappServiceV2Mapper();
-  private static final ServiceV2Mapper elastigroupServiceV2Mapper = new ElastigroupServiceV2Mapper();
+  private static final ServiceV2Mapper elastigroupServiceV2Mapper = new AmiServiceV2Mapper();
   private static final ServiceV2Mapper pcfServiceV2Mapper = new PcfServiceV2Mapper();
   private static final ServiceV2Mapper customDeploymentServiceV2Mapper = new CustomDeploymentServiceV2Mapper();
   private static final ServiceV2Mapper awsLambdaServiceV2Mapper = new AwsLambdaServiceV2Mapper();

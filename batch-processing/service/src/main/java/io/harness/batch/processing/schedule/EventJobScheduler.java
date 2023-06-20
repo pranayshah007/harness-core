@@ -7,6 +7,11 @@
 
 package io.harness.batch.processing.schedule;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
+import static io.harness.ccm.budget.BudgetPeriod.MONTHLY;
+import static io.harness.ccm.budget.BudgetPeriod.QUARTERLY;
+import static io.harness.ccm.budget.BudgetPeriod.WEEKLY;
+import static io.harness.ccm.budget.BudgetPeriod.YEARLY;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
@@ -47,6 +52,7 @@ import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -54,6 +60,8 @@ import io.harness.logging.AutoLogContext;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -327,33 +335,65 @@ public class EventJobScheduler {
   @Scheduled(cron = "${scheduler-jobs-config.budgetAlertsJobCron}")
   public void runBudgetAlertsJob() {
     try {
-      budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
+      budgetAlertsService.sendBudgetAndBudgetGroupAlerts(Arrays.asList(WEEKLY, MONTHLY, QUARTERLY, YEARLY));
       log.info("Budget & Budget Groups alerts sent");
     } catch (Exception ex) {
       log.error("Exception while running budgetAlertsJob", ex);
     }
   }
 
+  @Scheduled(cron = "${scheduler-jobs-config.dailyBudgetAlertsJobCron}")
+  public void runDailyBudgetAlertsJob() {
+    try {
+      budgetAlertsService.sendBudgetAndBudgetGroupAlerts(Arrays.asList(DAILY));
+      log.info("Daily Budget & Budget Groups alerts sent");
+    } catch (Exception ex) {
+      log.error("Exception while running dailyBudgetAlertsJob", ex);
+    }
+  }
+
   @Scheduled(cron = "${scheduler-jobs-config.budgetCostUpdateJobCron}")
   public void runBudgetCostUpdateJob() {
     try {
-      budgetCostUpdateService.updateCosts();
+      budgetCostUpdateService.updateCosts(Arrays.asList(WEEKLY, MONTHLY, QUARTERLY, YEARLY));
       log.info("Costs updated for budgets & budget groups");
     } catch (Exception ex) {
       log.error("Exception while running runBudgetCostUpdateJob", ex);
     }
   }
 
+  @Scheduled(cron = "${scheduler-jobs-config.dailyBudgetCostUpdateJobCron}")
+  public void runDailyBudgetCostUpdateJob() {
+    try {
+      budgetCostUpdateService.updateCosts(Arrays.asList(DAILY));
+      log.info("Costs updated for daily budgets & budget groups");
+    } catch (Exception ex) {
+      log.error("Exception while running dailyBudgetCostUpdateJob", ex);
+    }
+  }
+
   // Run once a day, midnight
-  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCron}")
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCronAws}")
   public void runGovernanceRecommendationJob() {
     try {
-      log.info("generateRecommendation Running");
-      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabled()) {
-        governanceRecommendationService.generateRecommendation();
+      log.info("generateRecommendation Running for AWS");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabledAws()) {
+        governanceRecommendationService.generateRecommendation(Collections.singletonList(ConnectorType.CE_AWS));
       }
     } catch (Exception e) {
-      log.error("Exception while running runGovernanceRecommendationJob", e);
+      log.error("Exception while running runGovernanceRecommendationJob for AWS", e);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCronAzure}")
+  public void runGovernanceRecommendationJobForAzure() {
+    try {
+      log.info("generateRecommendation Running for Azure");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabledAzure()) {
+        governanceRecommendationService.generateRecommendation(Collections.singletonList(ConnectorType.CE_AZURE));
+      }
+    } catch (Exception e) {
+      log.error("Exception while running runGovernanceRecommendationJob for Azure", e);
     }
   }
 

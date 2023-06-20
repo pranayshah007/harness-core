@@ -508,7 +508,6 @@ public class AccountServiceImpl implements AccountService {
       updateNextGenEnabled(account.getUuid(), true);
       featureFlagService.enableAccount(FeatureName.CENG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
-      featureFlagService.enableAccount(FeatureName.CING_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);

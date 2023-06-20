@@ -7,12 +7,17 @@
 
 package io.harness.k8s.model;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.k8s.model.Kind.SCALABLE_WORKLOAD_KINDS;
+
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.exception.WingsException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +32,16 @@ public class KubernetesResourceId {
   private String name;
   private String namespace;
   private boolean versioned;
+
+  public static List<KubernetesResourceId> findScalableKubernetesResourceId(List<String> kindNameRefs) {
+    if (isNotEmpty(kindNameRefs)) {
+      return kindNameRefs.stream()
+          .map(KubernetesResourceId::createKubernetesResourceIdFromNamespaceKindName)
+          .filter(k8sResourceId -> SCALABLE_WORKLOAD_KINDS.contains(Kind.fromString(k8sResourceId.getKind())))
+          .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
 
   public static KubernetesResourceId createKubernetesResourceIdFromNamespaceKindName(String kindName) {
     String splitArray[] = kindName.trim().split("/");

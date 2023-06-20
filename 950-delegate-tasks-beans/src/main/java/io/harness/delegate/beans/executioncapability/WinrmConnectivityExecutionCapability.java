@@ -77,4 +77,14 @@ public class WinrmConnectivityExecutionCapability implements ExecutionCapability
     String host = fetchCapabilityBasis();
     return isNotEmpty(host) ? String.format("Capability to connect %s with %s", host, authScheme) : null;
   }
+
+  /**
+   * Error message to show mostly in delegate selection log if none of the delegates passed the validation check
+   */
+  @Override
+  public String getCapabilityValidationError() {
+    return isNotEmpty(getCapabilityToString())
+        ? String.format("Following delegate(s) doesn't have %s", getCapabilityToString())
+        : ExecutionCapability.super.getCapabilityValidationError();
+  }
 }

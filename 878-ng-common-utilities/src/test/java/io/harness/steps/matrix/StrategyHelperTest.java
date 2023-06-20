@@ -40,8 +40,7 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
-  private static final String JSON_FOR_STEP_EXPANSION = "---\n"
-      + "  - __uuid: step1\n"
+  private static final String JSON_FOR_STEP_EXPANSION = "  - __uuid: step1\n"
       + "    step:\n"
       + "      type: Http\n"
       + "      strategy:\n"
@@ -86,8 +85,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "      identifier: 3_3\n"
       + "      name: 4_3\n";
 
-  private static final String JSON_FOR_STEP_GROUP_EXPANSION = "---\n"
-      + "  - __uuid: stepGroupParent\n"
+  private static final String JSON_FOR_STEP_GROUP_EXPANSION = "  - __uuid: stepGroupParent\n"
       + "    stepGroup:\n"
       + "      __uuid: sg1\n"
       + "      identifier: searching\n"
@@ -197,8 +195,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "            identifier: 3_3\n"
       + "            name: 4_3\n";
 
-  private static final String EXPECTED_JSON_FOR_PARALLEL = "---\n"
-      + "  - parallel:\n"
+  private static final String EXPECTED_JSON_FOR_PARALLEL = "  - parallel:\n"
       + "      - __uuid: parallel1\n"
       + "        step:\n"
       + "          __uuid: test\n"
@@ -649,7 +646,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
         expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(executionWrapperConfig.getUuid()))
         .isTrue();
     List<ExecutionWrapperConfig> executionWrapperConfigs = expandedExecutionWrapperInfo.getExpandedExecutionConfigs();
-    String yaml = YamlUtils.write(executionWrapperConfigs);
+    String yaml = YamlUtils.writeYamlString(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(JSON_FOR_STEP_EXPANSION);
   }
 
@@ -666,7 +663,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     List<ExecutionWrapperConfig> executionWrapperConfigs =
         strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty())
             .getExpandedExecutionConfigs();
-    String yaml = YamlUtils.write(executionWrapperConfigs);
+    String yaml = YamlUtils.writeYamlString(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(JSON_FOR_STEP_GROUP_EXPANSION);
   }
 
@@ -683,7 +680,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     List<ExecutionWrapperConfig> executionWrapperConfigs =
         strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty())
             .getExpandedExecutionConfigs();
-    String yaml = YamlUtils.write(executionWrapperConfigs);
+    String yaml = YamlUtils.writeYamlString(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(EXPECTED_JSON_FOR_PARALLEL);
   }
 

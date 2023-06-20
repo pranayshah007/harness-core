@@ -67,6 +67,8 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
+import io.harness.ff.FeatureFlagModule;
+import io.harness.ff.FeatureFlagService;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
@@ -120,6 +122,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import io.dropwizard.jackson.Jackson;
 import java.util.HashSet;
 import java.util.Map;
@@ -387,6 +390,11 @@ public class CIManagerServiceModule extends AbstractModule {
       }
     });
     install(new CICacheRegistrar());
+    if (configurationOverride.getServiceHeader() == AuthorizationServiceHeader.CI_MANAGER) {
+      install(FeatureFlagModule.getInstance());
+    } else {
+      bind(FeatureFlagService.class).toProvider(Providers.of(null));
+    }
   }
 
   private void registerEventListeners() {

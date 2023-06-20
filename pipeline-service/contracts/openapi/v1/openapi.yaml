@@ -19,7 +19,7 @@ tags:
     x-displayName: 'Input Sets [Beta]'
   - name: Approvals
     description: This contains APIs for Approvals.
-    x-displayName: 'Approvals [Beta]'
+    x-displayName: 'Approvals'
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -581,7 +581,7 @@ paths:
                 example-resp:
                   value: |
                     {}
-      description: Gets Approval Instances by Execution Id
+      description: Gets Approval Instances by Execution Id [Beta]
       security:
         - x-api-key: []
       parameters:
@@ -3327,7 +3327,7 @@ components:
                 identifier: example_pipeline
                 name: ExamplePipeline
                 description: Pipeline Description
-                tags: 
+                tags:
                   example-tag-1: example-tag-1-value
                   example-tag-2: example-tag-2-value
                 git_details:
@@ -3460,7 +3460,7 @@ components:
                 identifier: example_pipeline
                 name: ExamplePipeline
                 description: Pipeline Description
-                tags: 
+                tags:
                   example-tag-1: example-tag-1-value
                   example-tag-2: example-tag-2-value
                 git_details:

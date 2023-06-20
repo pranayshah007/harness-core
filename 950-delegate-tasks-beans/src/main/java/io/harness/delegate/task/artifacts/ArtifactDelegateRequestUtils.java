@@ -79,10 +79,11 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
-  public EcrArtifactDelegateRequest getEcrDelegateRequest(String imagePath, String tag, String tagRegex,
-      List<String> tagsList, String region, String connectorRef, AwsConnectorDTO awsConnectorDTO,
+  public EcrArtifactDelegateRequest getEcrDelegateRequest(String registryId, String imagePath, String tag,
+      String tagRegex, List<String> tagsList, String region, String connectorRef, AwsConnectorDTO awsConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return EcrArtifactDelegateRequest.builder()
+        .registryId(registryId)
         .imagePath(trim(imagePath))
         .tag(trim(tag))
         .tagRegex(trim(tagRegex))
@@ -309,6 +310,7 @@ public class ArtifactDelegateRequestUtils {
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .shouldFetchObjectMetadata(true)
         .build();
   }
 
@@ -359,11 +361,18 @@ public class ArtifactDelegateRequestUtils {
   private String trim(String str) {
     return str == null ? null : str.trim();
   }
-
   public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
       String packageType, String version, String versionRegex, String org, String connectorRef,
       GithubConnectorDTO githubConnector, List<EncryptedDataDetail> encryptionDetails,
       ArtifactSourceType artifactSourceType) {
+    return getGithubPackagesDelegateRequest(packageName, packageType, version, versionRegex, org, connectorRef,
+        githubConnector, encryptionDetails, artifactSourceType, null, null, null, null, null);
+  }
+  public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
+      String packageType, String version, String versionRegex, String org, String connectorRef,
+      GithubConnectorDTO githubConnector, List<EncryptedDataDetail> encryptionDetails,
+      ArtifactSourceType artifactSourceType, String artifactId, String repository, String user, String extension,
+      String groupId) {
     return GithubPackagesArtifactDelegateRequest.builder()
         .packageName(packageName)
         .githubConnectorDTO(githubConnector)
@@ -373,7 +382,12 @@ public class ArtifactDelegateRequestUtils {
         .encryptedDataDetails(encryptionDetails)
         .sourceType(artifactSourceType)
         .packageType(packageType)
+        .artifactId(artifactId)
+        .repository(repository)
+        .user(user)
         .org(org)
+        .groupId(groupId)
+        .extension(extension)
         .build();
   }
 
@@ -450,8 +464,8 @@ public class ArtifactDelegateRequestUtils {
   }
 
   public static GoogleCloudStorageArtifactDelegateRequest getGoogleCloudStorageArtifactDelegateRequest(String bucket,
-      String project, String artifactPath, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      String project, String artifactPath, String artifactPathRegex, GcpConnectorDTO gcpConnectorDTO,
+      String connectorRef, List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return GoogleCloudStorageArtifactDelegateRequest.builder()
         .bucket(bucket)
         .project(project)
@@ -460,6 +474,7 @@ public class ArtifactDelegateRequestUtils {
         .connectorRef(connectorRef)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .artifactPathRegex(artifactPathRegex)
         .build();
   }
 }

@@ -22,6 +22,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validation.OneOfField;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -48,6 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("environmentYamlV2")
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.environment.yaml.EnvironmentYamlV2")
+@OneOfField(fields = {"infrastructureDefinition", "infrastructureDefinitions"})
 public class EnvironmentYamlV2 implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

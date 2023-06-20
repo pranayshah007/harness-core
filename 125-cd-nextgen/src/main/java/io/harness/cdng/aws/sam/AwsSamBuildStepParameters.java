@@ -16,6 +16,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +33,10 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsSamBuildStepParameters")
 @RecasterAlias("io.harness.cdng.aws.sam.AwsSamBuildStepParameters")
 public class AwsSamBuildStepParameters extends AwsSamBaseStepInfo implements AwsSamSpecParameters, StepParameters {
-  ParameterField<List<String>> deployCommandOptions;
+  ParameterField<List<String>> buildCommandOptions;
   ParameterField<String> samBuildDockerRegistryConnectorRef;
+
+  @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamBuildStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
@@ -41,11 +44,12 @@ public class AwsSamBuildStepParameters extends AwsSamBaseStepInfo implements Aws
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
 
-      ParameterField<List<String>> deployCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
-      ParameterField<String> samVersion) {
+      ParameterField<List<String>> buildCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
+      ParameterField<String> samVersion, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, samVersion);
-    this.deployCommandOptions = deployCommandOptions;
+    this.buildCommandOptions = buildCommandOptions;
     this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
 }

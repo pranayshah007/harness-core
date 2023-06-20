@@ -31,7 +31,6 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,11 +52,6 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
   @Inject private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
 
   @Override
-  protected String getAccountId(PerpetualTaskExecutionParams params) {
-    return AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class).getAccountId();
-  }
-
-  @Override
   protected InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params) {
     K8sInstanceSyncPerpetualTaskParamsV2 taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class);
@@ -76,7 +70,7 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
 
   @Override
   protected List<ServerInstanceInfo> retrieveServiceInstances(
-      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) {
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) throws Exception {
     List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
 
     Set<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList =
@@ -94,10 +88,9 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     for (K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails : k8sDeploymentReleaseDetailsList) {
       Set<PodDetailsRequest> distinctPodDetailsRequestList =
           getDistinctPodDetailsRequestList(instanceSyncV2Request, k8sDeploymentReleaseDetails);
-      serverInstanceInfos.addAll(distinctPodDetailsRequestList.stream()
-                                     .map(k8sInstanceSyncV2Helper::getServerInstanceInfoList)
-                                     .flatMap(Collection::stream)
-                                     .collect(Collectors.toList()));
+      for (PodDetailsRequest podDetailsRequest : distinctPodDetailsRequestList) {
+        serverInstanceInfos.addAll(k8sInstanceSyncV2Helper.getServerInstanceInfoList(podDetailsRequest));
+      }
     }
     return serverInstanceInfos;
   }
@@ -126,8 +119,8 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     return namespaces.stream()
         .map(namespace
             -> PodDetailsRequest.builder()
-                   .kubernetesConfig(
-                       k8sInstanceSyncV2Helper.getKubernetesConfig(connectorDTO, releaseDetails, namespace))
+                   .kubernetesConfig(k8sInstanceSyncV2Helper.getKubernetesConfig(
+                       connectorDTO, releaseDetails.getK8sCloudClusterConfig(), namespace))
                    .namespace(namespace)
                    .releaseName(releaseName)
                    .build())

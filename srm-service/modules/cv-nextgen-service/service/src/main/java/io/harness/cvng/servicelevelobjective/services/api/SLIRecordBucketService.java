@@ -16,9 +16,15 @@ import java.util.List;
 public interface SLIRecordBucketService {
   void create(List<SLIRecordParam> sliRecordList, String sliId, int sliVersion);
 
+  SLIRecordBucket getFirstSLIRecord(String sliId, Instant timestampInclusive);
+
   SLIRecordBucket getLastSLIRecord(String sliId, Instant startTimeStamp);
 
   SLIRecordBucket getLatestSLIRecord(String sliId);
 
   List<SLIRecordBucket> getSLIRecords(String sliId, Instant startTime, Instant endTime);
+
+  List<SLIRecordBucket> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes);
+
+  List<SLIRecordBucket> getSLIRecordsWithSLIVersion(String sliId, Instant startTime, Instant endTime, int sliVersion);
 }

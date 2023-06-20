@@ -47,8 +47,13 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
    */
   public abstract String getInfrastructureKind();
 
-  public boolean isInstanceSyncV2Enabled() {
+  public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
     return false;
+  }
+
+  public InfrastructureOutcome getInfrastructureOutcome(
+      String infrastructureKind, DeploymentInfoDTO deploymentInfoDTO, String connectorRef) {
+    throw new UnsupportedOperationException();
   }
 
   // Used for Dashboarding purposes

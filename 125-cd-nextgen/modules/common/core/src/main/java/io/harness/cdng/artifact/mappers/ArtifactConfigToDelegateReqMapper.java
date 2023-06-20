@@ -213,11 +213,37 @@ public class ArtifactConfigToDelegateReqMapper {
       versionRegex = "*";
     }
 
+    if (ParameterField.isNotNull(artifactConfig.getPackageType())
+        && artifactConfig.getPackageType().getValue().equals("maven")) {
+      verifyArtifactConfigForGithubPackagesMavenType(artifactConfig);
+      String user = ParameterField.isNotNull(artifactConfig.getUser()) ? artifactConfig.getUser().getValue() : "";
+      String org = ParameterField.isNotNull(artifactConfig.getOrg()) ? artifactConfig.getOrg().getValue() : "";
+      if (StringUtils.isBlank(user) && StringUtils.isBlank(org)) {
+        throw new InvalidRequestException("Please provide User or Organization field");
+      }
+      return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
+          artifactConfig.getPackageType().getValue(), version, versionRegex, org, connectorRef, connectorDTO,
+          encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES, artifactConfig.getArtifactId().getValue(),
+          artifactConfig.getRepository().getValue(), user,
+          ParameterField.isNotNull(artifactConfig.getExtension()) ? artifactConfig.getExtension().getValue() : "",
+          artifactConfig.getGroupId().getValue());
+    }
     return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
         artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getOrg().getValue(),
         connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES);
   }
+  void verifyArtifactConfigForGithubPackagesMavenType(GithubPackagesArtifactConfig artifactConfig) {
+    if (ParameterField.isBlank(artifactConfig.getArtifactId())) {
+      throw new InvalidRequestException("ArtifactId field cannot be blank");
+    }
 
+    if (ParameterField.isBlank(artifactConfig.getGroupId())) {
+      throw new InvalidRequestException("GroupId field cannot be blank");
+    }
+    if (ParameterField.isBlank(artifactConfig.getRepository())) {
+      throw new InvalidRequestException("Repository field cannot be blank");
+    }
+  }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,
       AzureArtifactsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     String versionRegex = artifactConfig.getVersionRegex().getValue();
@@ -320,7 +346,12 @@ public class ArtifactConfigToDelegateReqMapper {
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
     if (isLastPublishedExpression(buildNumber)) {
-      buildNumber = getTagRegex(buildNumber);
+      if (ParameterField.isNotNull(artifactConfig.getBuild())
+          && tagHasInputValidator(artifactConfig.getBuild().getInputSetValidator(), buildNumber)) {
+        buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+      } else {
+        buildNumber = getTagRegex(buildNumber);
+      }
     }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
@@ -536,10 +567,14 @@ public class ArtifactConfigToDelegateReqMapper {
         && tagHasInputValidator(ecrArtifactConfig.getTag().getInputSetValidator(), tag)) {
       tagRegex = ecrArtifactConfig.getTag().getInputSetValidator().getParameters();
     }
+    String registryId = null;
+    if (ParameterField.isNotNull(ecrArtifactConfig.getRegistryId())) {
+      registryId = ecrArtifactConfig.getRegistryId().getValue();
+    }
 
-    return ArtifactDelegateRequestUtils.getEcrDelegateRequest(ecrArtifactConfig.getImagePath().getValue(), tag,
-        tagRegex, null, ecrArtifactConfig.getRegion().getValue(), connectorRef, awsConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.ECR);
+    return ArtifactDelegateRequestUtils.getEcrDelegateRequest(registryId, ecrArtifactConfig.getImagePath().getValue(),
+        tag, tagRegex, null, ecrArtifactConfig.getRegion().getValue(), connectorRef, awsConnectorDTO,
+        encryptedDataDetails, ArtifactSourceType.ECR);
   }
 
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(NexusRegistryArtifactConfig artifactConfig,
@@ -707,12 +742,12 @@ public class ArtifactConfigToDelegateReqMapper {
         : artifactConfig.getArtifactDirectory().getValue();
 
     if (isLastPublishedExpression(artifactPath)) {
-      artifactPathFilter = artifactPath.equals(ACCEPT_ALL_REGEX) ? "*" : artifactPath;
+      artifactPathFilter = "*";
     }
 
     if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
         && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
-      artifactPathFilter = artifactConfig.getTag().getInputSetValidator().getParameters();
+      artifactPathFilter = artifactConfig.getArtifactPath().getInputSetValidator().getParameters();
     }
 
     return ArtifactDelegateRequestUtils.getArtifactoryGenericArtifactDelegateRequest(
@@ -756,7 +791,19 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucket name.");
     }
+
+    String artifactPathRegex = null;
+    if (isLastPublishedExpression(artifactPath)) {
+      if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
+          && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
+        artifactPathRegex = artifactConfig.getArtifactPath().getInputSetValidator().getParameters();
+      } else {
+        artifactPathRegex = getTagRegex(artifactPath);
+      }
+      artifactPath = "";
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudStorageArtifactDelegateRequest(bucket, project, artifactPath,
-        gcpConnectorDTO, connectorRef, encryptedDataDetails, ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
+        artifactPathRegex, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
   }
 }

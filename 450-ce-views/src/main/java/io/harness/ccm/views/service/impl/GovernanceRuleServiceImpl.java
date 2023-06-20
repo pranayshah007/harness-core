@@ -135,19 +135,19 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   @Override
   public void custodianValidate(Rule rule) {
     try {
-      String fileName = String.join(rule.getName(), rule.getAccountId(), ".yaml");
-
-      FileWriter fw = new FileWriter(fileName, true);
+      String fileName = String.join("/", "/tmp", String.join("_", rule.getName(), rule.getAccountId() + ".yaml"));
+      File file = new File(fileName);
+      FileWriter fw = new FileWriter(file, true);
       BufferedWriter bw = new BufferedWriter(fw);
       bw.write(rule.getRulesYaml());
       bw.newLine();
       bw.close();
 
+      log.info("rule yaml: \n{}\n", rule.getRulesYaml());
       final ArrayList<String> Validatecmd = Lists.newArrayList("custodian", "validate", fileName);
       String processResult = getProcessExecutor().command(Validatecmd).readOutput(true).execute().outputString();
       log.info("{}", processResult);
 
-      File file = new File(fileName);
       file.delete();
 
       if (processResult.contains("Configuration invalid")) {
@@ -274,6 +274,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
                                                             .ruleEnforcementId("") // This is adhoc run
                                                             .policy(governanceJobEnqueueDTO.getPolicy())
                                                             .isOOTB(governanceJobEnqueueDTO.getIsOOTB())
+                                                            .executionType(governanceJobEnqueueDTO.getExecutionType())
                                                             .build();
       Gson gson = new GsonBuilder().create();
       String json = gson.toJson(governanceJobDetailsAWS);

@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.serviceoverrides.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
@@ -25,7 +26,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -35,12 +35,13 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
-import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideSettingsUpdateResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
@@ -56,6 +57,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -181,6 +183,7 @@ public class ServiceOverridesResource {
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be created") @NonNull
       @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    checkNonEmptyIdentifierAndThrow(requestDTOV2.getIdentifier());
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity serviceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -200,7 +203,7 @@ public class ServiceOverridesResource {
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -221,7 +224,7 @@ public class ServiceOverridesResource {
   upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -314,7 +317,7 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
-        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, false);
+        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, false);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 
@@ -336,7 +339,7 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
-        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, false);
+        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, false);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 
@@ -358,7 +361,11 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
-        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, true);
+        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, true);
+    OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
+        serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
+            accountId, orgIdentifier, projectIdentifier, true, true);
+    serviceOverrideMigrationResponseDTO.setOverrideV2SettingsUpdateResponseDTO(overrideV2SettingsUpdateResponseDTO);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 
@@ -382,7 +389,11 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
-        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, true);
+        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, true);
+    OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
+        serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
+            accountId, orgIdentifier, projectIdentifier, false, true);
+    serviceOverrideMigrationResponseDTO.setOverrideV2SettingsUpdateResponseDTO(overrideV2SettingsUpdateResponseDTO);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 
@@ -396,7 +407,7 @@ public class ServiceOverridesResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns Updated Settings Details")
       })
-  public ResponseDTO<ServiceOverrideSettingsUpdateResponseDTO>
+  public ResponseDTO<OverrideV2SettingsUpdateResponseDTO>
   settingsUpdate(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -404,10 +415,17 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Boolean field to decide whether to also update settings of all lower scoped entities.")
-      @QueryParam("migrateChildren") Boolean migrateChildren) {
-    ServiceOverrideSettingsUpdateResponseDTO serviceOverrideSettingsUpdateResponseDTO =
+      @QueryParam("updateChildren") boolean updateChildren) {
+    OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
         serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
-            accountId, orgIdentifier, projectIdentifier, migrateChildren, false);
-    return ResponseDTO.newResponse(serviceOverrideSettingsUpdateResponseDTO);
+            accountId, orgIdentifier, projectIdentifier, updateChildren, false);
+    return ResponseDTO.newResponse(overrideV2SettingsUpdateResponseDTO);
+  }
+
+  private void checkNonEmptyIdentifierAndThrow(String identifier) {
+    if (isNotEmpty(identifier)) {
+      throw new InvalidRequestException(
+          "Service Override Identifier field is harness internal, should not be given in request");
+    }
   }
 }

@@ -259,9 +259,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         PartialPlanCreator planCreator = planCreatorOptional.get();
         Class<?> cls = planCreator.getFieldClass();
         String executionInputTemplate = "";
-        if (ctx.getMetadata().getIsExecutionInputEnabled()) {
-          executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
-        }
+        executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
 
         try {

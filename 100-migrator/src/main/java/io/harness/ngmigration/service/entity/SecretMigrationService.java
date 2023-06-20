@@ -219,6 +219,7 @@ public class SecretMigrationService extends NgMigrationService {
                                         .secret(secretDTOV2)
                                         .build())
                               .ngEntityDetail(NgEntityDetail.builder()
+                                                  .entityType(NGMigrationEntityType.SECRET)
                                                   .identifier(identifier)
                                                   .orgIdentifier(orgIdentifier)
                                                   .projectIdentifier(projectIdentifier)

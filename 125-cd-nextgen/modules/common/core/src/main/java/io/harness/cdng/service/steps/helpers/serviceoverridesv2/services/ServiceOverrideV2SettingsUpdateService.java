@@ -7,12 +7,12 @@
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 
-import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideSettingsUpdateResponseDTO;
+import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateResponseDTO;
 
 import lombok.NonNull;
 
 public interface ServiceOverrideV2SettingsUpdateService {
   @NonNull
-  ServiceOverrideSettingsUpdateResponseDTO settingsUpdateToV2(
-      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren, boolean isRevert);
+  OverrideV2SettingsUpdateResponseDTO settingsUpdateToV2(
+      @NonNull String accountId, String orgId, String projectId, boolean updateChildren, boolean isRevert);
 }

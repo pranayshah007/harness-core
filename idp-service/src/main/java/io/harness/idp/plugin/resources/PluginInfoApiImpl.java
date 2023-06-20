@@ -10,6 +10,7 @@ package io.harness.idp.plugin.resources;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -74,7 +75,7 @@ public class PluginInfoApiImpl implements PluginInfoApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response postPluginRequest(@Valid RequestPlugin pluginRequest, String harnessAccount) {
+  public Response postPluginRequest(@Valid RequestPlugin pluginRequest, @AccountIdentifier String harnessAccount) {
     pluginInfoService.savePluginRequest(harnessAccount, pluginRequest);
     return Response.status(Response.Status.CREATED).build();
   }

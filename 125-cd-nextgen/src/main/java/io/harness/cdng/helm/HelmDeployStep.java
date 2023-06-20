@@ -194,10 +194,15 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
     List<String> manifestFilesContents =
         nativeHelmStepHelper.renderValues(manifestOutcome, ambiance, valuesFileContents);
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+    HelmDeployStepParams helmDeployStepParams = (HelmDeployStepParams) stepParameters.getSpec();
 
-    boolean ignoreHelmHistFailure = CDStepHelper.getParameterFieldBooleanValue(
-        ((HelmDeployStepParams) stepParameters.getSpec()).getIgnoreReleaseHistFailStatus(),
-        HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
+    boolean ignoreHelmHistFailure =
+        CDStepHelper.getParameterFieldBooleanValue(helmDeployStepParams.getIgnoreReleaseHistFailStatus(),
+            HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
+
+    boolean skipSteadyStateCheck =
+        CDStepHelper.getParameterFieldBooleanValue(helmDeployStepParams.getSkipSteadyStateCheck(),
+            HelmDeployBaseStepInfoKeys.skipSteadyStateCheck, stepParameters);
 
     HelmInstallCommandRequestNGBuilder helmCommandRequestBuilder =
         HelmInstallCommandRequestNG.builder()
@@ -221,7 +226,8 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
             .shouldOpenFetchFilesLogStream(true)
             .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
             .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG));
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
+            .skipSteadyStateCheck(skipSteadyStateCheck);
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));

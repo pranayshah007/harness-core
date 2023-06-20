@@ -46,7 +46,6 @@ import org.springframework.stereotype.Service;
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
 @Hidden
-@InternalApi
 @Slf4j
 @Service
 @OwnedBy(CE)
@@ -54,14 +53,14 @@ public class ManagedAccountResource {
   @Inject private ManagedAccountService managedAccountService;
 
   @POST
+  @InternalApi
   @ApiOperation(value = "Create managed account record", nickname = "createManagedAccount")
   @Operation(operationId = "createManagedAccount", summary = "Create managed account record",
       responses = { @ApiResponse(description = "Returns id of object created") })
   public ResponseDTO<String>
-  save(@Parameter(description = "Account id of the msp account") @QueryParam(
-           "accountIdentifier") @AccountIdentifier String accountIdentifier,
-      @RequestBody(required = true, description = "Managed Account") @NotNull @Valid ManagedAccount managedAccount) {
-    return ResponseDTO.newResponse(managedAccountService.save(managedAccount));
+  save(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
+       @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId) {
+    return ResponseDTO.newResponse(managedAccountService.save(accountIdentifier, managedAccountId));
   }
 
   @GET
@@ -86,6 +85,7 @@ public class ManagedAccountResource {
   }
 
   @PUT
+  @InternalApi
   @ApiOperation(value = "Update managed account", nickname = "updateManagedAccount")
   @Operation(operationId = "updateManagedAccount", summary = "Update managed account record",
       responses = { @ApiResponse(description = "Returns managed account record") })
@@ -97,6 +97,7 @@ public class ManagedAccountResource {
   }
 
   @DELETE
+  @InternalApi
   @ApiOperation(value = "Delete managed account", nickname = "deleteManagedAccount")
   @Operation(operationId = "deleteManagedAccount", summary = "Delete managed account record",
       responses = { @ApiResponse(description = "Returns boolean indicating deletion status") })

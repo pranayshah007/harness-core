@@ -7,12 +7,9 @@
 
 package io.harness.cdng.creator.plan.stage;
 
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.deploymentmetadata.DeploymentMetaData;
+import io.harness.cdng.deploymentmetadata.GoogleCloudFunctionDeploymentMetaData;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
@@ -34,7 +31,6 @@ import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
@@ -91,8 +87,7 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   PipelineInfrastructure infrastructure;
   @NotNull @VariableExpression(skipVariableExpression = true) ExecutionElementConfig execution;
 
-  @JsonTypeInfo(use = NAME, property = "deploymentType", include = EXTERNAL_PROPERTY, visible = true)
-  DeploymentMetaData deploymentMetadata;
+  GoogleCloudFunctionDeploymentMetaData deploymentMetadata;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

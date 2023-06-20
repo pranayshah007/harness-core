@@ -10,10 +10,14 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_RATE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONITORED_SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ORG_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PROJECT_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -234,8 +238,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       SimpleServiceLevelObjective simpleServiceLevelObjective =
           (SimpleServiceLevelObjective) saveServiceLevelObjectiveV2Entity(
               projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
-      sloTimeScaleService.upsertServiceLevelObjective(simpleServiceLevelObjective);
       sloHealthIndicatorService.upsert(simpleServiceLevelObjective);
+      sloTimeScaleService.upsertServiceLevelObjective(simpleServiceLevelObjective);
       return getSLOResponse(simpleServiceLevelObjective.getIdentifier(), projectParams);
     } else {
       CompositeServiceLevelObjective compositeServiceLevelObjective =
@@ -493,16 +497,21 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
   @Override
   public boolean forceDelete(ProjectParams projectParams, String identifier) {
-    AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
-    if (serviceLevelObjective != null) {
+    return forceDelete(projectParams, Collections.singletonList(identifier));
+  }
+
+  @Override
+  public boolean forceDelete(ProjectParams projectParams, List<String> identifiers) {
+    List<AbstractServiceLevelObjective> serviceLevelObjectives = get(projectParams, identifiers);
+    List<String> sliIdentifiers = new ArrayList<>();
+    List<String> notiRuleRefs = new ArrayList<>();
+    for (AbstractServiceLevelObjective serviceLevelObjective : serviceLevelObjectives) {
       if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-        serviceLevelIndicatorService.deleteByIdentifier(
-            projectParams, ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators());
-        notificationRuleService.delete(projectParams,
-            serviceLevelObjective.getNotificationRuleRefs()
-                .stream()
-                .map(NotificationRuleRef::getNotificationRuleRef)
-                .collect(Collectors.toList()));
+        sliIdentifiers.addAll(((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators());
+        notiRuleRefs.addAll(serviceLevelObjective.getNotificationRuleRefs()
+                                .stream()
+                                .map(NotificationRuleRef::getNotificationRuleRef)
+                                .collect(Collectors.toList()));
       } else {
         String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
             serviceLevelObjective.getAccountId(), serviceLevelObjective.getUuid());
@@ -513,12 +522,22 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         }
       }
     }
-    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
-    sloHealthIndicatorService.delete(projectParams, identifier);
-    annotationService.delete(projectParams, identifier);
-    sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
+    serviceLevelIndicatorService.deleteByIdentifier(projectParams, sliIdentifiers);
+    notificationRuleService.delete(projectParams, notiRuleRefs);
+    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifiers);
+    sloHealthIndicatorService.delete(projectParams, identifiers);
+    annotationService.delete(projectParams, identifiers);
+    for (String identifier : identifiers) {
+      sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
+    }
 
-    return hPersistence.delete(serviceLevelObjective);
+    return hPersistence.delete(
+        hPersistence.createQuery(AbstractServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveV2Keys.accountId, projectParams.getAccountIdentifier())
+            .filter(ServiceLevelObjectiveV2Keys.orgIdentifier, projectParams.getOrgIdentifier())
+            .filter(ServiceLevelObjectiveV2Keys.projectIdentifier, projectParams.getProjectIdentifier())
+            .field(ServiceLevelObjectiveV2Keys.identifier)
+            .in(identifiers));
   }
 
   @Override
@@ -838,12 +857,16 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     .build());
             serviceIdentifier = monitoredService.getServiceIdentifier();
           }
+          Map<String, Object> entityDetails = new HashMap<>();
+          entityDetails.put(ENTITY_NAME, serviceLevelObjective.getName());
+          entityDetails.put(ENTITY_IDENTIFIER, serviceLevelObjective.getIdentifier());
+          if (monitoredService != null) {
+            entityDetails.put(SERVICE_IDENTIFIER, serviceIdentifier);
+            entityDetails.put(MONITORED_SERVICE_IDENTIFIER, monitoredServiceIdentifierOptional.orElse(null));
+          }
           Map<String, String> templateData =
               notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
-                  .getTemplateData(projectParams, serviceLevelObjective.getName(),
-                      serviceLevelObjective.getIdentifier(), serviceIdentifier,
-                      monitoredServiceIdentifierOptional.orElse(null), condition,
-                      notificationData.getTemplateDataMap());
+                  .getTemplateData(projectParams, entityDetails, condition, notificationData.getTemplateDataMap());
           List<String> fieldsCantBeNull = new ArrayList<>();
           if (serviceLevelObjective.getType() == ServiceLevelObjectiveType.COMPOSITE) {
             fieldsCantBeNull.add(SERVICE_NAME);
@@ -1178,19 +1201,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                                      -> ((SLONotificationRule) notificationRule)
                                             .getConditions()
                                             .stream()
-                                            .filter(sloNotificationRuleCondition
+                                            .anyMatch(sloNotificationRuleCondition
                                                 -> sloNotificationRuleCondition.getType()
-                                                    == NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
-                                            .findAny()
-                                            .isPresent())
+                                                    == NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES))
                                  .collect(Collectors.toList());
       if (!notificationRuleList.isEmpty()) {
         throw new InvalidArgumentsException(String.format(
             "Invalid notification with identifier: %s. Request based composite SLOs can't have notifications for condition [Error Budget Remaining].",
-            String.join(",",
-                notificationRuleList.stream()
-                    .map(notificationRule -> notificationRule.getIdentifier())
-                    .collect(Collectors.toList()))));
+            notificationRuleList.stream().map(NotificationRule::getIdentifier).collect(Collectors.joining(","))));
       }
     }
   }

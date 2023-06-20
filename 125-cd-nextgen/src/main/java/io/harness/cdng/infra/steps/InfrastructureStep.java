@@ -40,6 +40,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
@@ -264,7 +265,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
         || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sAwsInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sRancherInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
           cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
 

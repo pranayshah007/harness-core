@@ -7,6 +7,7 @@
 
 package io.harness.core.ci.services;
 
+import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
 import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -96,8 +97,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     long timestamp = System.currentTimeMillis();
     long totalTries = 0;
     String query = "select count(distinct moduleinfo_author_id) from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
-        + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
+        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -118,12 +119,18 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return -1L;
   }
 
-  public long getHostedCreditUsage(String accountId) {
-    long timestamp = System.currentTimeMillis();
+  public long getHostedCreditUsage(String accountId, long startInterval, long endInterval) {
+    if (startInterval <= 0 && endInterval <= 0) {
+      throw new InvalidRequestException("Timestamp must be a positive long");
+    }
+    startInterval = getStartingDateEpochValue(startInterval);
+    endInterval = getStartingDateEpochValue(endInterval);
+    endInterval = endInterval + DAY_IN_MS;
+
     long totalTries = 0;
     String query = "select sum(stagebuildtime*buildmultiplier/60000) from " + tableNameStageSummary
         + " where accountidentifier=? and infratype ='HostedVm' "
-        + " and startts<=? and startts>=?;";
+        + " and startts>=? and startts<=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;
@@ -131,8 +138,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(query)) {
         statement.setString(1, accountId);
-        statement.setLong(2, timestamp);
-        statement.setLong(3, timestamp - 30 * DAY_IN_MS);
+        statement.setLong(2, startInterval);
+        statement.setLong(3, endInterval);
         resultSet = statement.executeQuery();
         return resultSet.next() ? resultSet.getLong(1) : 0L;
       } catch (SQLException ex) {
@@ -148,8 +155,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   public UsageDataDTO getActiveCommitter(String accountId, long timestamp) {
     long totalTries = 0;
     String query = "select distinct moduleinfo_author_id, projectidentifier , orgidentifier from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
-        + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and (trigger_type='"
+        + WEBHOOK + "' OR (trigger_type='" + MANUAL + "' AND user_source='GIT')) and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       totalTries++;

@@ -63,8 +63,6 @@ public class PlanNode implements Node {
 
   @Deprecated String serviceName;
 
-  // Skip
-  String skipCondition;
   String whenCondition;
 
   // stage fqn
@@ -98,7 +96,6 @@ public class PlanNode implements Node {
             buildAdvisorObtainmentsForExecutionMode(planNodeProto.getAdviserObtainmentsForExecutionModeMap()))
         .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
         .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
-        .skipCondition(planNodeProto.getSkipCondition())
         .whenCondition(planNodeProto.getWhenCondition())
         .skipExpressionChain(planNodeProto.getSkipExpressionChain())
         .skipGraphType(planNodeProto.getSkipType())

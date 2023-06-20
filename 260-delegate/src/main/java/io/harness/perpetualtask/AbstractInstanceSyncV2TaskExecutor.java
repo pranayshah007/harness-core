@@ -31,19 +31,22 @@ import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncStatus;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncV2Request;
+import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import io.github.resilience4j.retry.Retry;
+import io.vavr.CheckedRunnable;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -59,13 +62,16 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private SecretDecryptionService secretDecryptionService;
 
+  private final Retry retry = buildRetryAndRegisterListeners();
+
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     log.info("Running the K8s InstanceSync perpetual task executor for task id: {}", taskId);
-    String accountId = getAccountId(params);
     AtomicInteger batchInstanceCount = new AtomicInteger(0);
     AtomicInteger batchReleaseDetailsCount = new AtomicInteger(0);
+    InstanceSyncV2Request instanceSyncV2Request = createRequest(taskId.getId(), params);
+    String accountId = instanceSyncV2Request.getAccountId();
     InstanceSyncResponseV2.Builder responseBuilder =
         InstanceSyncResponseV2.newBuilder().setPerpetualTaskId(taskId.getId()).setAccountId(accountId);
     try {
@@ -84,8 +90,6 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                 .build());
         return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
       }
-
-      InstanceSyncV2Request instanceSyncV2Request = createRequest(taskId.getId(), params);
 
       long totalPages = instanceSyncTaskDetails.getDetails().getTotalPages();
 
@@ -144,16 +148,16 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
           .build();
       return serverInstanceInfos;
     } catch (Exception ex) {
-      log.error("Failed to fetch InstanceSyncTaskDetails for perpetual task Id: {} for accountId: {}",
+      log.warn("Failed to fetch InstanceSyncTaskDetails for perpetual task Id: {} for accountId: {}",
           instanceSyncV2Request.getPerpetualTaskId(), instanceSyncV2Request.getAccountId());
       instanceSyncData
-          .setStatus(
-              InstanceSyncStatus.newBuilder()
-                  .setIsSuccessful(false)
-                  .setErrorMessage(format("Failed to fetch serverInstanceInfos for DeploymentReleaseDetails [%s]",
-                      deploymentReleaseDetails))
-                  .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
-                  .build())
+          .setStatus(InstanceSyncStatus.newBuilder()
+                         .setIsSuccessful(false)
+                         .setErrorMessage(
+                             format("Failed to fetch serverInstanceInfos for DeploymentReleaseDetails [%s] due to [%s]",
+                                 deploymentReleaseDetails, ex.getMessage()))
+                         .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
+                         .build())
           .setTaskInfoId(deploymentReleaseDetails.getTaskInfoId())
           .build();
       return Collections.emptyList();
@@ -198,20 +202,27 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
     return false;
   }
 
-  protected abstract String getAccountId(@NotNull PerpetualTaskExecutionParams params);
-
   protected abstract InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params);
 
   protected abstract List<ServerInstanceInfo> retrieveServiceInstances(
-      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details);
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) throws Exception;
 
   private void publishInstanceSyncResult(PerpetualTaskId taskId, String accountId, InstanceSyncResponseV2 response) {
+    CheckedRunnable runnable = Retry.decorateCheckedRunnable(retry,
+        () -> execute(delegateAgentManagerClient.processInstanceSyncNGResultV2(taskId.getId(), accountId, response)));
     try {
-      execute(delegateAgentManagerClient.processInstanceSyncNGResultV2(taskId.getId(), accountId, response));
+      Try.run(runnable);
     } catch (Exception e) {
       String errorMsg = format(
           "Failed to publish Instance Sync v2 result PerpetualTaskId [%s], accountId [%s]", taskId.getId(), accountId);
-      log.error(errorMsg + ", InstanceSyncResponseV2: {}", response, e);
+      log.warn(errorMsg + ", InstanceSyncResponseV2: {}", response, e);
     }
+  }
+
+  private Retry buildRetryAndRegisterListeners() {
+    final Retry exponentialRetry =
+        RetryHelper.getExponentialRetry(this.getClass().getSimpleName(), new Class[] {Exception.class});
+    RetryHelper.registerEventListeners(exponentialRetry);
+    return exponentialRetry;
   }
 }

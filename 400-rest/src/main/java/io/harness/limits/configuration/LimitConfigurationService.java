@@ -34,6 +34,17 @@ public interface LimitConfigurationService extends OwnedByAccount {
   @Nullable ConfiguredLimit getOrDefault(String accountId, ActionType actionType);
 
   /**
+   * First tries to get a limit configured with given accountId.
+   * If no limit is configured for this accountId, then it gets the "global limit"
+   *
+   * @param accountId the account for which to fetch the limit
+   * @param globalAccountId the global account for which to fetch the limit
+   * @param actionType action for which to fetch the limit
+   * @return configured limit, or null if no limit is configured for this account and there is no default.
+   */
+  @Nullable ConfiguredLimit getOrDefaultToGlobal(String accountId, String globalAccountId, ActionType actionType);
+
+  /**
    * Gt a limit configured with given accountId without resorting to default limits.
    *
    * @param accountId the account for which to fetch the limit

@@ -33,10 +33,9 @@ public interface InstanceSyncPerpetualTaskInfoService {
   InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier);
 
-  InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV2(
+  InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1OrV2(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
-
-  InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1(
+  InstanceSyncPerpetualTaskInfoDTO updateLastSuccessfulRun(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
 
   List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId);

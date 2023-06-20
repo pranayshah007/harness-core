@@ -11,8 +11,10 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filters.WithConnectorRef;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.SscaConstants;
@@ -56,7 +58,17 @@ public class CdSscaEnforcementStepInfo extends CdSscaEnforcementBaseStepInfo imp
   @Override
   @JsonIgnore
   public String getFacilitatorType() {
-    return null;
+    return OrchestrationFacilitatorType.ASYNC;
+  }
+
+  @Override
+  public SpecParameters getSpecParameters() {
+    return CdSscaEnforcementSpecParameters.builder()
+        .source(source)
+        .policy(policy)
+        .verifyAttestation(verifyAttestation)
+        .infrastructure(infrastructure)
+        .build();
   }
 
   @Override

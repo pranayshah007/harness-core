@@ -125,7 +125,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(parameters);
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
-    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
+    int batchSize = config.getBatchQueryConfig().getBillingDataQueryBatchSize();
 
     BillingDataReader billingDataReader = new BillingDataReader(billingDataService, jobConstants.getAccountId(),
         Instant.ofEpochMilli(jobConstants.getJobStartTime()), Instant.ofEpochMilli(jobConstants.getJobEndTime()),
@@ -167,14 +167,15 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       instanceBillingDataList = billingDataReader.getNext();
       List<ClusterBillingData> clusterBillingDataList =
           getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
-      log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
+      log.info("clusterBillingDataList size: {}", clusterBillingDataList.size());
       writeDataToAvro(
           jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
       avroFileWithSchemaExists = true;
     } while (instanceBillingDataList.size() == batchSize);
 
     final String gcsObjectName = String.format(gcsObjectNameFormat, jobConstants.getAccountId(), billingDataFileName);
-    googleCloudStorageService.uploadObject(gcsObjectName, defaultParentWorkingDirectory + gcsObjectName);
+    googleCloudStorageService.uploadObject(
+        gcsObjectName, defaultParentWorkingDirectory + gcsObjectName, jobConstants.getAccountId());
 
     // Delete file once upload is complete
     File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());

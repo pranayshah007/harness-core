@@ -35,6 +35,7 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.SessionTimeoutSettings;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.validator.NGVariableNameValidator;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
@@ -52,6 +53,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +70,8 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   private final EnforcementClientService enforcementClientService;
   private final UserGroupService userGroupService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private static final String ALLOWED_CHARS_STRING_DEFAULT =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ";
 
   @Override
   public AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier) {
@@ -191,6 +196,9 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
                                              .friendlySamlName(friendlySAMLName)
                                              .authenticationEnabled(samlSettings.isAuthenticationEnabled())
+                                             .jitEnabled(samlSettings.isJitEnabled())
+                                             .jitValidationKey(samlSettings.getJitValidationKey())
+                                             .jitValidationValue(samlSettings.getJitValidationValue())
                                              .build();
 
         if (null != samlSettings.getSamlProviderType()) {
@@ -238,12 +246,37 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     return RequestBody.create(MultipartBody.FORM, string);
   }
 
+  private boolean isValidLogoutUrl(String logoutUrl) {
+    String pattern = "^(https?://)[^\\s/$.?#-].[^\\s]*$";
+    Pattern urlPattern = Pattern.compile(pattern);
+    Matcher urlMatcher = urlPattern.matcher(logoutUrl);
+    return urlMatcher.matches();
+  }
+
+  public static boolean isValidString(String inputString) {
+    String regexPattern = "^[" + Pattern.quote(ALLOWED_CHARS_STRING_DEFAULT) + "]+$";
+    return inputString.trim().matches(regexPattern);
+  }
+
+  private void validateStringLengthAndFormat(String value, String fieldName) {
+    if (value != null && (value.length() > NGVariableNameValidator.MAX_ALLOWED_LENGTH || !isValidString(value))) {
+      throw new InvalidRequestException(
+          fieldName + " can be 128 characters long and can contain alphanumeric characters.,-_");
+    }
+  }
+  private void validateLogoutUrl(String logoutUrl) {
+    if (logoutUrl != null && !isValidLogoutUrl(logoutUrl)) {
+      throw new InvalidRequestException("Invalid logoutUrl " + logoutUrl);
+    }
+  }
+
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public SSOConfig uploadSAMLMetadata(@NotNull @AccountIdentifier String accountId,
       @NotNull MultipartBody.Part inputStream, @NotNull String displayName, String groupMembershipAttr,
       @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
-      String clientId, String clientSecret, String friendlySamlName) {
+      String clientId, String clientSecret, String friendlySamlName, @NotNull Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue) {
     SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountId));
     if (samlSettings != null && !ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
       throw new InvalidRequestException(String.format(
@@ -251,6 +284,11 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
               + " for Multiple IdP support",
           accountId));
     }
+    validateLogoutUrl(logoutUrl);
+
+    validateStringLengthAndFormat(displayName, "Name");
+    validateStringLengthAndFormat(friendlySamlName, "Display Name");
+
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -260,16 +298,21 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
     RequestBody friendlySamlNamePart = createPartFromString(friendlySamlName);
-    return getResponse(managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart,
-        groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart, friendlySamlNamePart));
+    RequestBody jitEnabledPart = createPartFromString(String.valueOf(jitEnabled));
+    RequestBody jitValidationKeyPart = createPartFromString(jitValidationKey);
+    RequestBody jitValidationValuePart = createPartFromString(jitValidationValue);
+    return getResponse(
+        managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart, groupMembershipAttrPart,
+            authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart, clientIdPart,
+            clientSecretPart, friendlySamlNamePart, jitEnabledPart, jitValidationKeyPart, jitValidationValuePart));
   }
 
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, MultipartBody.Part inputStream,
       String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, String clientSecret) {
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret,
+      @NotNull Boolean jitEnabled, String jitValidationKey, String jitValidationValue) {
     // when FF is enabled, avoid using this API, which can result in discrepancy of SAML setting update
     checkMultipleIdpSupportFF(accountId, "update");
     if (ngFeatureFlagHelperService.isEnabled(accountId, PL_ENABLE_MULTIPLE_IDP_SUPPORT)) {
@@ -278,6 +321,9 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
               + "'saml-metadata-upload/{samlSSOId}' to update a SAML setting when Multiple IdP support is enabled on account",
           accountId));
     }
+    validateLogoutUrl(logoutUrl);
+    validateStringLengthAndFormat(displayName, "Name");
+
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -286,9 +332,12 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
+    RequestBody jitEnabledPart = createPartFromString(String.valueOf(jitEnabled));
+    RequestBody jitValidationKeyPart = createPartFromString(jitValidationKey);
+    RequestBody jitValidationValuePart = createPartFromString(jitValidationValue);
     return getResponse(managerClient.updateSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart));
+        clientIdPart, clientSecretPart, jitEnabledPart, jitValidationKeyPart, jitValidationValuePart));
   }
 
   @Override
@@ -296,7 +345,12 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   public SSOConfig updateSAMLMetadata(@NotNull @AccountIdentifier String accountId, @NotNull String samlSSOId,
       MultipartBody.Part inputStream, String displayName, String groupMembershipAttr,
       @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier, String samlProviderType,
-      String clientId, String clientSecret, String friendlySamlName) {
+      String clientId, String clientSecret, String friendlySamlName, @NotNull Boolean jitEnabled,
+      String jitValidationKey, String jitValidationValue) {
+    validateLogoutUrl(logoutUrl);
+    validateStringLengthAndFormat(displayName, "Name");
+    validateStringLengthAndFormat(friendlySamlName, "Display Name");
+
     RequestBody displayNamePart = createPartFromString(displayName);
     RequestBody groupMembershipAttrPart = createPartFromString(groupMembershipAttr);
     RequestBody authorizationEnabledPart = createPartFromString(String.valueOf(authorizationEnabled));
@@ -306,9 +360,13 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
     RequestBody friendlySamlNamePart = createPartFromString(friendlySamlName);
-    return getResponse(managerClient.updateSAMLMetadata(accountId, samlSSOId, inputStream, displayNamePart,
-        groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
-        clientIdPart, clientSecretPart, friendlySamlNamePart));
+    RequestBody jitEnabledPart = createPartFromString(String.valueOf(jitEnabled));
+    RequestBody jitValidationKeyPart = createPartFromString(jitValidationKey);
+    RequestBody jitValidationValuePart = createPartFromString(jitValidationValue);
+    return getResponse(
+        managerClient.updateSAMLMetadata(accountId, samlSSOId, inputStream, displayNamePart, groupMembershipAttrPart,
+            authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart, clientIdPart,
+            clientSecretPart, friendlySamlNamePart, jitEnabledPart, jitValidationKeyPart, jitValidationValuePart));
   }
 
   @Override

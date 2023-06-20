@@ -9,6 +9,7 @@ package io.harness.chartmuseum;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.AMAZON_S3_COMMAND_TEMPLATE;
+import static io.harness.chartmuseum.ChartMuseumConstants.AMAZON_S3_COMMAND_TEMPLATE_DEBUG;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
@@ -16,7 +17,9 @@ import io.harness.beans.version.Version;
 import java.io.IOException;
 import java.util.Map;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(CDP)
 public class ChartmuseumS3Client extends AbstractChartmuseumClient {
   private final String bucket;
@@ -45,7 +48,8 @@ public class ChartmuseumS3Client extends AbstractChartmuseumClient {
   public ChartMuseumServer start() throws IOException {
     Map<String, String> environment =
         clientHelper.getEnvForAwsConfig(accessKey, secretKey, useEc2IamCredentials, useIRSA);
-    String evaluatedArguments = AMAZON_S3_COMMAND_TEMPLATE.replace("${BUCKET_NAME}", bucket)
+    String evaluatedArguments = (log.isDebugEnabled() ? AMAZON_S3_COMMAND_TEMPLATE_DEBUG : AMAZON_S3_COMMAND_TEMPLATE)
+                                    .replace("${BUCKET_NAME}", bucket)
                                     .replace("${FOLDER_PATH}", basePath == null ? "" : basePath)
                                     .replace("${REGION}", region);
 

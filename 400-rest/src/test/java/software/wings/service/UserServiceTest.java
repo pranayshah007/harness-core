@@ -137,6 +137,7 @@ import software.wings.beans.AccountRole;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.EmailVerificationToken;
 import software.wings.beans.Event.Type;
 import software.wings.beans.LicenseInfo;
@@ -164,6 +165,7 @@ import software.wings.security.JWT_CATEGORY;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.SecretManager;
+import software.wings.security.UserThreadLocal;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.AuthenticationUtils;
 import software.wings.security.authentication.MarketPlaceConfig;
@@ -2000,6 +2002,35 @@ public class UserServiceTest extends WingsBaseTest {
 
     assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.USER_INVITED_SUCCESSFULLY);
     verify(signupService, times(1)).sendEmail(any(), anyString(), any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGenerateCannySsoJwt() {
+    String returnToUrl = "https://harness-io.canny.io/admin/settings/sso-redirect?works=true";
+    String cannyBaseUrl = "https://canny.io/api/redirects/sso";
+    String companyId = "123456789";
+    when(configuration.getPortal().getCannyBaseUrl()).thenReturn(cannyBaseUrl);
+    when(configuration.getPortal().getJwtCannySecret()).thenReturn("yv7TV4NsP4fps8pLdGuVdV8CHgJT3wCaFgTEg7dKcanzKN7C");
+
+    User user = userBuilder.build();
+    UserThreadLocal.set(user);
+
+    CannySsoLoginResponse cannySsoLoginResponse = userService.generateCannySsoJwt(returnToUrl, companyId);
+
+    assertThat(cannySsoLoginResponse.getUserId()).isEqualTo(user.getUuid());
+
+    String redirectUrl = cannySsoLoginResponse.getRedirectUrl();
+    String cannyBaseUrlResult = redirectUrl.split("\\?")[0];
+    assertThat(cannyBaseUrlResult).isEqualTo(cannyBaseUrl);
+
+    String queryParams = redirectUrl.split("\\?")[1];
+    String companyIdResult = queryParams.split("&")[0];
+    assertThat(companyIdResult).isEqualTo("companyID=" + companyId);
+
+    String returnToUrlResult = redirectUrl.split("&")[2];
+    assertThat(returnToUrlResult).isEqualTo("redirect=" + returnToUrl);
   }
 
   private List<Account> getAccounts() {

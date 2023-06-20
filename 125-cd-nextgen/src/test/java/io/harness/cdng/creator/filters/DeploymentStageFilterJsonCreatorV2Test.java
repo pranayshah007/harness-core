@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.filters;
 
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -359,6 +360,50 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     assertThatExceptionOfType(InvalidYamlRuntimeException.class)
         .isThrownBy(() -> filterCreator.getFilter(ctx, node))
         .withMessageContaining("cannot save a stage template that propagates service from another stage");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidationEnvironmentProvisioners() throws IOException {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(new YamlField(new YamlNode("stage", new ObjectNode(null))))
+                                    .build();
+
+    final DeploymentStageNode node = getDeploymentStageNodeFromYaml("deployStageWithEnvironmentAndProvisioner.yaml");
+
+    PipelineFilter filter = filterCreator.getFilter(ctx, node);
+
+    assertThat(filter).isNotNull();
+    assertThat(filter.toJson())
+        .isEqualTo("{\"deploymentTypes\":[],\"environmentNames\":[],\"serviceNames\":[],\"infrastructureTypes\":[]}");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidationEnvironmentProvisionersWithDuplicateIdentifiers() throws IOException {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(new YamlField(new YamlNode("stage", new ObjectNode(null))))
+                                    .build();
+
+    final DeploymentStageNode node =
+        getDeploymentStageNodeFromYaml("deployStageWithEnvironmentAndProvisionerDuplicateIdentifiers.yaml");
+
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(
+            "Environment contains duplicates provisioner identifiers [duplicateIdentifier], stage []");
   }
 
   private Object[][] getDeploymentStageConfigWithFilters() throws IOException {

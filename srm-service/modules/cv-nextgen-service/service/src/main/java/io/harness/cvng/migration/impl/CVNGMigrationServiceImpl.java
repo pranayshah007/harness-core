@@ -51,6 +51,10 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
 
     log.info("[Migration] - Checking for new backgroundMigrations");
     if (cvngSchemaVersion < maxBackgroundVersion) {
+      hPersistence.update(hPersistence.createQuery(CVNGSchema.class),
+          hPersistence.createUpdateOperations(CVNGSchema.class)
+              .set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.RUNNING));
+      log.info("Enqueuing CVNGSchema");
       executorService.submit(() -> {
         try {
           callInterruptible21(timeLimiter, Duration.ofHours(2), () -> {
@@ -64,15 +68,15 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                 } catch (Exception ex) {
                   log.error("Error while running migration {}", migration.getSimpleName(), ex);
                   onFailure();
+                  break;
                 }
                 final UpdateOperations<CVNGSchema> updateOperations =
                     hPersistence.createUpdateOperations(CVNGSchema.class);
                 updateOperations.set(CVNGSchema.VERSION, i);
-                updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
                 hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
-                log.info("Done enqueuing CVNGSchema");
               }
             }
+            onCompletion();
             log.info("[Migration] - Migration complete");
             return true;
           });
@@ -82,6 +86,13 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
         }
       });
     }
+  }
+
+  private void onCompletion() {
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+    log.info("Done enqueuing CVNGSchema");
   }
 
   private void onFailure() {

@@ -24,16 +24,14 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.CDC)
-@Value
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "ServiceOverrideRequest", description = "This is the Service Override Request entity defined in Harness")
+@Schema(name = "ServiceOverrideSpec", description = "This is the Service Override Spec entity defined in Harness")
 @JsonInclude(NON_EMPTY)
 public class ServiceOverridesSpec {
   List<NGVariable> variables;

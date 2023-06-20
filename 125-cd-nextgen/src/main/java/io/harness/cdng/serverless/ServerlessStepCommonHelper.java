@@ -35,6 +35,8 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
@@ -43,6 +45,7 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult;
+import io.harness.delegate.beans.serverless.StackDetails;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
@@ -55,6 +58,7 @@ import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
+import io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request;
 import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
@@ -89,6 +93,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -97,17 +102,23 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
@@ -143,6 +154,16 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
           ambiance, stepElementParameters, infrastructureOutcome, serverlessManifestOutcome, serverlessStepHelper);
     }
     return taskChainResponse;
+  }
+
+  @NotNull
+  public String convertByte64ToString(String input) {
+    return new String(Base64.getDecoder().decode(input));
+  }
+
+  public StackDetails getStackDetails(String stackDetailsString) throws JsonProcessingException {
+    ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    return objectMapper.readValue(stackDetailsString, StackDetails.class);
   }
 
   public TaskChainResponse executeNextLink(ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance,
@@ -252,6 +273,29 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                             .build();
     String taskName =
         TaskType.SERVERLESS_COMMAND_TASK.getDisplayName() + " : " + serverlessCommandRequest.getCommandName();
+    ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
+    return TaskChainResponse.builder()
+        .taskRequest(taskRequest)
+        .chainEnd(isChainEnd)
+        .passThroughData(passThroughData)
+        .build();
+  }
+
+  public TaskChainResponse queueServerlessTaskWithTaskType(StepElementParameters stepElementParameters,
+      ServerlessRollbackV2Request serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
+      boolean isChainEnd, TaskType taskType) {
+    TaskData taskData = TaskData.builder()
+                            .parameters(new Object[] {serverlessCommandRequest})
+                            .taskType(taskType.name())
+                            .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                            .async(true)
+                            .build();
+    String taskName = TaskType.SERVERLESS_COMMAND_TASK.getDisplayName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
         referenceFalseKryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
@@ -634,5 +678,34 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return serverlessEntityHelper.getConnectorInfoDTO(connectorId, ngAccess);
+  }
+
+  public void verifyPluginImageIsProvider(ParameterField<String> image) {
+    if (ParameterField.isNull(image) || image.getValue() == null) {
+      throw new InvalidRequestException("Plugin Image must be provided");
+    }
+  }
+
+  public void putValuesYamlEnvVars(Ambiance ambiance,
+      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters,
+      Map<String, String> envVarMap) {
+    OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput =
+        executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                serverlessAwsLambdaPrepareRollbackV2StepParameters.getDownloadManifestsFqn() + "."
+                + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
+
+    if (serverlessValuesYamlDataOptionalOutput.isFound()) {
+      ServerlessValuesYamlDataOutcome awsSamValuesYamlDataOutcome =
+          (ServerlessValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
+
+      String valuesYamlContent = awsSamValuesYamlDataOutcome.getValuesYamlContent();
+      String valuesYamlPath = awsSamValuesYamlDataOutcome.getValuesYamlPath();
+
+      if (StringUtils.isNotBlank(valuesYamlContent) && StringUtils.isNotBlank(valuesYamlPath)) {
+        envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", valuesYamlContent);
+        envVarMap.put("PLUGIN_VALUES_YAML_FILE_PATH", valuesYamlPath);
+      }
+    }
   }
 }

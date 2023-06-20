@@ -18,14 +18,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 import io.harness.spec.server.idp.v1.model.AppConfigResponse;
 
+import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -91,7 +92,7 @@ public class AppConfigApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testTogglePluginForAccount() {
+  public void testTogglePluginForAccount() throws ExecutionException {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);
@@ -107,7 +108,7 @@ public class AppConfigApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testTogglePluginForAccountError() {
+  public void testTogglePluginForAccountError() throws ExecutionException {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
     AppConfig appConfig = new AppConfig();
     appConfigRequest.setAppConfig(appConfig);

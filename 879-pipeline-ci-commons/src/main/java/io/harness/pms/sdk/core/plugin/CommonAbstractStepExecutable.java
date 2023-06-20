@@ -20,12 +20,14 @@ import static io.harness.steps.StepUtils.buildAbstractions;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
+import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
@@ -35,6 +37,7 @@ import io.harness.beans.sweepingoutputs.StepArtifactSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.executable.CiAsyncExecutable;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -78,7 +81,11 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
+import io.harness.product.ci.engine.proto.PluginStep;
+import io.harness.product.ci.engine.proto.RunStep;
+import io.harness.product.ci.engine.proto.RunTestsStep;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CIStageOutputRepository;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
@@ -91,9 +98,12 @@ import com.google.inject.Inject;
 import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -115,6 +125,8 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
   @Inject private BasePluginCompatibleSerializer basePluginCompatibleSerializer;
+  @Inject protected CIStageOutputRepository ciStageOutputRepository;
+  @Inject protected CIFeatureFlagService featureFlagService;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -194,6 +206,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     OSType os = getK8OS(k8StageInfraDetails.getInfrastructure());
     UnitStep unitStep = serialiseStepWrapper(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
         getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance, stageDetails);
+    unitStep = injectOutputVarsAsEnvVars(unitStep, accountId, ambiance.getStageExecutionId());
     String liteEngineTaskId =
         queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId);
 
@@ -205,6 +218,56 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
         .addCallbackIds(liteEngineTaskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
         .build();
+  }
+
+  public UnitStep injectOutputVarsAsEnvVars(UnitStep stepInfo, String accountId, String stageExecutionId) {
+    if (!featureFlagService.isEnabled(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV, accountId)) {
+      return stepInfo;
+    }
+
+    Optional<CIStageOutput> ciStageOutputResponse =
+        ciStageOutputRepository.findFirstByStageExecutionId(stageExecutionId);
+    if (ciStageOutputResponse.isPresent()) {
+      CIStageOutput ciStageOutput = ciStageOutputResponse.get();
+      Map<String, String> outputs = ciStageOutput.getOutputs();
+      if (outputs.isEmpty()) {
+        return stepInfo;
+      }
+      if (stepInfo.hasRun()) {
+        outputs.putAll(stepInfo.getRun().getEnvironmentMap());
+        RunStep runStep = RunStep.newBuilder(stepInfo.getRun()).putAllEnvironment(outputs).build();
+        return UnitStep.newBuilder(stepInfo).setRun(runStep).build();
+      } else if (stepInfo.hasPlugin()) {
+        outputs.putAll(stepInfo.getPlugin().getEnvironmentMap());
+        PluginStep pluginStep = PluginStep.newBuilder(stepInfo.getPlugin()).putAllEnvironment(outputs).build();
+        return UnitStep.newBuilder(stepInfo).setPlugin(pluginStep).build();
+      } else if (stepInfo.hasRunTests()) {
+        outputs.putAll(stepInfo.getRunTests().getEnvironmentMap());
+        RunTestsStep runTestsStep = RunTestsStep.newBuilder(stepInfo.getRunTests()).putAllEnvironment(outputs).build();
+        return UnitStep.newBuilder(stepInfo).setRunTests(runTestsStep).build();
+      }
+    }
+    return stepInfo;
+  }
+
+  public void populateCIStageOutputs(Map<String, String> outputVariables, String accountId, String stageExecutionId) {
+    if (!featureFlagService.isEnabled(FeatureName.CI_OUTPUT_VARIABLES_AS_ENV, accountId)) {
+      return;
+    }
+    if (Objects.isNull(outputVariables) || outputVariables.isEmpty()) {
+      return;
+    }
+
+    Optional<CIStageOutput> ciStageOutputResponse =
+        ciStageOutputRepository.findFirstByStageExecutionId(stageExecutionId);
+    CIStageOutput ciStageOutput =
+        CIStageOutput.builder().outputs(new HashMap<String, String>()).stageExecutionId(stageExecutionId).build();
+    if (ciStageOutputResponse.isPresent()) {
+      ciStageOutput = ciStageOutputResponse.get();
+    }
+    Map<String, String> outputs = ciStageOutput.getOutputs();
+    outputVariables.entrySet().stream().forEach(entry -> outputs.put(entry.getKey(), entry.getValue()));
+    ciStageOutputRepository.save(ciStageOutput);
   }
 
   private UnitStep serialiseStepWrapper(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
@@ -364,6 +427,8 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     }
     if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       if (stepStatus.getOutput() != null) {
+        populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
+            ambiance.getStageExecutionId());
         StepResponse.StepOutcome stepOutcome =
             StepResponse.StepOutcome.builder()
                 .outcome(

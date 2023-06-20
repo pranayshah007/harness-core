@@ -14,10 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.Trimmed;
 import io.harness.favorites.ResourceType;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
+import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Data;
@@ -46,4 +50,19 @@ public class Favorite {
   @NotEmpty ResourceType resourceType;
   @NotEmpty @Trimmed String resourceIdentifier;
   @CreatedDate Long created;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdentifier_userIdentifier_orgIdentifier_projectIdentifier_resourceType_resourceId_idx")
+                 .field(FavoriteKeys.accountIdentifier)
+                 .field(FavoriteKeys.userIdentifier)
+                 .field(FavoriteKeys.orgIdentifier)
+                 .field(FavoriteKeys.projectIdentifier)
+                 .field(FavoriteKeys.resourceType)
+                 .field(FavoriteKeys.resourceIdentifier)
+                 .unique(true)
+                 .build())
+        .build();
+  }
 }

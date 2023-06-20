@@ -15,6 +15,8 @@ import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PrincipalContextData;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
 
 import com.google.inject.Inject;
@@ -33,5 +35,14 @@ public class UserHelperService {
       throw new InvalidRequestException("Not authorized to update in current context");
     }
     return (UserPrincipal) ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+  }
+
+  public String getUserId() {
+    if (SourcePrincipalContextBuilder.getSourcePrincipal() != null
+        && SourcePrincipalContextBuilder.getSourcePrincipal().getType() == PrincipalType.USER) {
+      UserPrincipal userPrincipal = (UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
+      return userPrincipal.getName();
+    }
+    return null;
   }
 }

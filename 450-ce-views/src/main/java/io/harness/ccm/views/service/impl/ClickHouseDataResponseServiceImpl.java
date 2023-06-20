@@ -67,7 +67,7 @@ public class ClickHouseDataResponseServiceImpl implements DataResponseService {
   public Map<String, Double> getCostBucketEntityCost(final List<QLCEViewFilterWrapper> filters,
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final String cloudProviderTableName, final ViewQueryParams queryParams, final boolean skipRoundOff,
-      final BusinessMapping sharedCostBusinessMapping) {
+      final BusinessMapping sharedCostBusinessMapping, final Map<String, String> labelsKeyAndColumnMapping) {
     final Map<String, Double> entityCosts = new HashMap<>();
     final List<QLCEViewGroupBy> businessMappingGroupBy =
         viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
@@ -75,7 +75,7 @@ public class ClickHouseDataResponseServiceImpl implements DataResponseService {
         viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
     final SelectQuery query = viewBillingServiceHelper.getQuery(modifiedFilters, groupBy, businessMappingGroupBy,
         aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMapping,
-        Collections.emptyList());
+        Collections.emptyList(), labelsKeyAndColumnMapping);
     query.addCustomization(new PgLimitClause(MAX_LIMIT_VALUE));
     query.addCustomization(new PgOffsetClause(0));
     log.info("Query for shared cost (with limit as {}): {}", MAX_LIMIT_VALUE, query);

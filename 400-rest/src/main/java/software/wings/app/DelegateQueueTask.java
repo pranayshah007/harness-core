@@ -8,6 +8,7 @@
 package software.wings.app;
 
 import static io.harness.beans.DelegateTask.Status.QUEUED;
+import static io.harness.beans.FeatureName.DELEGATE_TASK_CAPACITY_CHECK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -19,7 +20,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
-import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
@@ -32,7 +33,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.version.VersionInfoManager;
 
-import software.wings.beans.TaskType;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
 import software.wings.service.intfc.AssignDelegateService;
@@ -153,6 +153,12 @@ public class DelegateQueueTask implements Runnable {
           alreadyTriedDelegates.clear();
           broadcastRoundCount++;
           nextInterval = (long) broadcastRoundCount * BROADCAST_INTERVAL;
+          if (featureFlagService.isEnabled(DELEGATE_TASK_CAPACITY_CHECK, delegateTask.getAccountId())) {
+            // If this FF is enabled then reset broadcastRoundCount to 0
+            // as we want to keep rebroadcasting until the task expires.
+            // The nextInterval for rebroadcast in this case will always be 1 minute.
+            broadcastRoundCount = 0;
+          }
         }
         alreadyTriedDelegates.addAll(broadcastToDelegates);
 
@@ -184,8 +190,7 @@ public class DelegateQueueTask implements Runnable {
   }
 
   private void rebroadcastDelegateTaskUsingTaskData(DelegateTask delegateTask) {
-    try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
-             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
+    try (AutoLogContext ignore1 = DelegateLogContextHelper.getLogContext(delegateTask);
          AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
       log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ", delegateTask.getUuid(),
           delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(), delegateTask.getBroadcastToDelegateIds());
@@ -195,8 +200,7 @@ public class DelegateQueueTask implements Runnable {
   }
 
   private void rebroadcastDelegateTaskUsingTaskDataV2(DelegateTask delegateTask) {
-    try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getTaskDataV2().getTaskType(),
-             TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
+    try (AutoLogContext ignore1 = DelegateLogContextHelper.getLogContext(delegateTask);
          AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
       log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ", delegateTask.getUuid(),
           delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(), delegateTask.getBroadcastToDelegateIds());
