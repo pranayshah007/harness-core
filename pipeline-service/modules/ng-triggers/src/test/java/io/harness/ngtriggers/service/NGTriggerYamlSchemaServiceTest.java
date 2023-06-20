@@ -12,11 +12,13 @@ import static io.harness.rule.OwnerRule.MEET;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.ngtriggers.service.impl.NGTriggerYamlSchemaServiceImpl;
 import io.harness.rule.Owner;
@@ -75,5 +77,12 @@ public class NGTriggerYamlSchemaServiceTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerYamlSchemaServiceImpl.validateTriggerYaml(yaml, projectId, orgIdentifier, ""))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("error");
+
+    doThrow(new InvalidRequestException("message"))
+        .when(yamlSchemaValidator)
+        .processAndHandleValidationMessage(YamlPipelineUtils.getMapper().readTree(yaml), validationMessages, yaml);
+    assertThatThrownBy(() -> ngTriggerYamlSchemaServiceImpl.validateTriggerYaml(yaml, projectId, orgIdentifier, ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Error while validating trigger yaml");
   }
 }

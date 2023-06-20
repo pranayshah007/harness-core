@@ -160,6 +160,10 @@ public class ContainerStepExecutionResponseHelper {
     log.info("Received step {} response {} in {} milliseconds ", stepIdentifier, stepStatus.getStepExecutionStatus(),
         (currentTime - startTime) / 1000);
 
+    if (outcome != null) {
+      stepResponseBuilder.stepOutcome(outcome);
+    }
+
     if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       if (stepStatus.getOutput() != null) {
         StepResponse.StepOutcome stepOutcome =
@@ -170,10 +174,6 @@ public class ContainerStepExecutionResponseHelper {
                 .name("output")
                 .build();
         stepResponseBuilder.stepOutcome(stepOutcome);
-      }
-
-      if (outcome != null) {
-        stepResponseBuilder.stepOutcome(outcome);
       }
 
       return stepResponseBuilder.status(Status.SUCCEEDED).build();

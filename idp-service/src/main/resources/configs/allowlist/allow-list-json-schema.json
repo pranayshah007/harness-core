@@ -38,8 +38,7 @@
                 "type": "object",
                 "additionalProperties": false,
                 "required": [
-                  "host",
-                  "paths"
+                  "host"
                 ],
                 "properties": {
                   "host": {

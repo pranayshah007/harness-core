@@ -80,6 +80,7 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     assertEquals(returnList.get(0).getHarnessSecretIdentifier(), TEST_SECRET_IDENTIFIER);
 
     // Test for empty env variables
+    when(backstageEnvVariableService.createOrUpdate(any(), any())).thenReturn(Collections.emptyList());
     appConfig.setEnvVariables(Arrays.asList());
     returnList = configEnvVariablesServiceImpl.insertConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(returnList.size(), 0);
@@ -113,6 +114,7 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     assertEquals(returnList.get(0).getHarnessSecretIdentifier(), TEST_SECRET_IDENTIFIER);
 
     // Test for empty env variables
+    when(backstageEnvVariableService.createOrUpdate(any(), any())).thenReturn(Collections.emptyList());
     appConfig.setEnvVariables(Arrays.asList());
     returnList = configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(0, returnList.size());

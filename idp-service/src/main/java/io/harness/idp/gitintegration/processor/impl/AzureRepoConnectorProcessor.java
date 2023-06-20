@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoHttpCr
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
@@ -44,6 +45,7 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.AZURE_REPO_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not AzureRepo connector for accountId: [%s]", connectorIdentifier,
@@ -70,6 +72,8 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
 
     secrets.put(Constants.AZURE_REPO_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.AZURE_REPO_TOKEN));
+    configManagerService.createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO,
+        ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString), connectorTypeAsString);
     return secrets;
   }
 

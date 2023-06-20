@@ -35,8 +35,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -84,29 +84,9 @@ public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBas
         DataSourceType.DATADOG_METRICS);
 
     DatadogMetricCVConfig datadogMetricCVConfig =
-        builderFactory.datadogMetricCVConfigBuilder()
-            .metricInfoList(Arrays.asList(
-                DatadogMetricCVConfig.MetricInfo.builder()
-                    .query("docker.cpu.usage{cluster-name:chi-play}.rollup(avg, 60)")
-                    .groupingQuery("docker.cpu.usage{cluster-name:chi-play} by {pod_name}.rollup(avg, 60)")
-                    .metric("docker.cpu.usage")
-                    .metricType(TimeSeriesMetricType.RESP_TIME)
-                    .identifier("cpu")
-                    .metricName("cpu")
-                    .isManualQuery(true)
-                    .serviceInstanceIdentifierTag("pod_name")
-                    .build(),
-                DatadogMetricCVConfig.MetricInfo.builder()
-                    .query("kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60)")
-                    .groupingQuery("kubernetes.memory.usage{cluster-name:chi-play} by {pod_name}.rollup(avg, 60)")
-                    .metric("kubernetes.memory.usage")
-                    .metricType(TimeSeriesMetricType.RESP_TIME)
-                    .identifier("memory")
-                    .metricName("memory")
-                    .isManualQuery(true)
-                    .serviceInstanceIdentifierTag("pod_name")
-                    .build()))
-            .build();
+        createAndpopulateCVConfig("docker.cpu.usage{cluster-name:chi-play}.rollup(avg, 60)",
+            "docker.cpu.usage{cluster-name:chi-play} by {pod_name}.rollup(avg, 60)");
+
     datadogMetricCVConfig.setMetricPack(metricPacks.get(0));
     DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfo =
         dataCollectionInfoMapper.toDataCollectionInfo(datadogMetricCVConfig, TaskType.LIVE_MONITORING);
@@ -122,11 +102,58 @@ public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBas
                                               .otherEnvVariables(params)
                                               .baseUrl(BASE_URL)
                                               .build();
-    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
-        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, System.out::println);
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(
             readJson("expected-datadog-dsl-output.json"), new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+    DatadogMetricCVConfig datadogMetricCVConfigWithNull =
+        createAndpopulateCVConfig("docker.cpu.usage{cluster-null:null}.rollup(avg, 60)",
+            "docker.cpu.usage{cluster-null:null} by {pod_name}.rollup(avg, 60)");
+    datadogMetricCVConfigWithNull.setMetricPack(metricPacks.get(0));
+    DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfoNull =
+        dataCollectionInfoMapper.toDataCollectionInfo(datadogMetricCVConfigWithNull, TaskType.LIVE_MONITORING);
+    datadogMetricsDataCollectionInfoNull.setCollectHostData(false);
+    params = datadogMetricsDataCollectionInfoNull.getDslEnvVariables(datadogConnectorDTO);
+    headers = datadogMetricsDataCollectionInfoNull.collectionHeaders(datadogConnectorDTO);
+    runtimeParameters = RuntimeParameters.builder()
+                            .startTime(instant.minus(Duration.ofMinutes(5)))
+                            .endTime(instant)
+                            .commonHeaders(headers)
+                            .otherEnvVariables(params)
+                            .baseUrl(BASE_URL)
+                            .build();
+    List<TimeSeriesRecord> timeSeriesRecordsWithNull =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, System.out::println);
+    assertThat(timeSeriesRecordsWithNull.size()).isEqualTo(8);
+    System.out.println();
+  }
+
+  private DatadogMetricCVConfig createAndpopulateCVConfig(String query, String groupingQuery) {
+    DatadogMetricCVConfig datadogMetricCVConfig =
+        builderFactory.datadogMetricCVConfigBuilder()
+            .metricInfoList(Arrays.asList(DatadogMetricCVConfig.MetricInfo.builder()
+                                              .query(query)
+                                              .groupingQuery(groupingQuery)
+                                              .metric("docker.cpu.usage")
+                                              .metricType(TimeSeriesMetricType.RESP_TIME)
+                                              .identifier("cpu")
+                                              .metricName("cpu")
+                                              .isManualQuery(true)
+                                              .serviceInstanceIdentifierTag("pod_name")
+                                              .build(),
+                DatadogMetricCVConfig.MetricInfo.builder()
+                    .query("kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60)")
+                    .groupingQuery("kubernetes.memory.usage{cluster-name:chi-play} by {pod_name}.rollup(avg, 60)")
+                    .metric("kubernetes.memory.usage")
+                    .metricType(TimeSeriesMetricType.RESP_TIME)
+                    .identifier("memory")
+                    .metricName("memory")
+                    .isManualQuery(true)
+                    .serviceInstanceIdentifierTag("pod_name")
+                    .build()))
+            .build();
+    return datadogMetricCVConfig;
   }
 
   @Test

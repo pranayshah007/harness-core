@@ -17,6 +17,7 @@
 package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -27,7 +28,9 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
@@ -523,9 +526,21 @@ public class TerragruntStepHelper {
         AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance));
 
-    return SecretManagerConfigMapper.fromDTO(secretManagerClientService.getSecretManager(
-        identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
-        identifierRef.getIdentifier(), false));
+    SecretManagerConfig secretManagerConfig =
+        SecretManagerConfigMapper.fromDTO(secretManagerClientService.getSecretManager(
+            identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+            identifierRef.getProjectIdentifier(), identifierRef.getIdentifier(), false));
+
+    if (cdFeatureFlagHelper.isEnabled(
+            identifierRef.getAccountIdentifier(), FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG)
+        && isHarnessSecretManager(secretManagerConfig)) {
+      secretManagerConfig.maskSecrets();
+    }
+    return secretManagerConfig;
+  }
+
+  public boolean isHarnessSecretManager(SecretManagerConfig secretManagerConfig) {
+    return secretManagerConfig != null && secretManagerConfig.isGlobalKms();
   }
 
   public void saveTerragruntInheritOutput(TerragruntPlanStepParameters planStepParameters,
@@ -891,5 +906,10 @@ public class TerragruntStepHelper {
             .build();
 
     terragruntConfigDAL.saveTerragruntConfig(terragruntConfig);
+  }
+
+  public boolean tfPlanEncryptionOnManager(String accountId, EncryptionConfig encryptionConfig) {
+    return cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG)
+        && isHarnessSecretManager((SecretManagerConfig) encryptionConfig);
   }
 }

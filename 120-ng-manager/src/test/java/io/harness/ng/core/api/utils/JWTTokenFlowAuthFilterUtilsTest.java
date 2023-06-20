@@ -198,7 +198,7 @@ public class JWTTokenFlowAuthFilterUtilsTest {
     List<SettingResponseDTO> responseDtoList = Arrays.asList(keySettingResponseDTO, valueSettingResponseDTO,
         publicKeysUrlSettingResponseDTO, serviceAccountSettingResponseDTO);
 
-    doReturn(responseDtoList).when(settingsService).list(any(), any(), any(), any(), any());
+    doReturn(responseDtoList).when(settingsService).list(any(), any(), any(), any(), any(), any());
 
     List<SettingDTO> resultSettingList =
         jwtTokenAuthFilterUtils.getSettingListResponseByAccountForSCIMAndJWT(TEST_ACCOUNT_ID);

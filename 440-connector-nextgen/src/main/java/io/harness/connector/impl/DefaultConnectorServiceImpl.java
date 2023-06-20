@@ -229,6 +229,15 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public Page<Connector> listAll(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    return listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
+        searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, version);
+  }
+
+  @Override
   public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
       Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
@@ -359,11 +368,40 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds) {
+    Page<Connector> connectors = listAllHelper(page, size, accountIdentifier, orgIdentifier, projectIdentifier,
+        searchTerm, type, category, sourceCategory, version, connectorIds);
+    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+  }
+
+  public Page<Connector> listAll(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
       ConnectorCategory sourceCategory, String version) {
+    return listAllHelper(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category,
+        sourceCategory, version, emptyList());
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria =
+        where(ConnectorKeys.accountIdentifier)
+            .is(accountIdentifier)
+            .and(ConnectorKeys.orgIdentifier)
+            .is(orgIdentifier)
+            .and(ConnectorKeys.projectIdentifier)
+            .is(projectIdentifier)
+            .orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
+
+    return connectorRepository.findAll(criteria, Pageable.ofSize(50000));
+  }
+
+  private Page<Connector> listAllHelper(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds) {
     Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(accountIdentifier, orgIdentifier,
-        projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled, version);
+        projectIdentifier, searchTerm, type, category, sourceCategory, isBuiltInSMDisabled, version, connectorIds);
     Pageable pageable = getPageRequest(
         PageRequest.builder()
             .pageIndex(page)
@@ -371,9 +409,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             .sortOrders(Collections.singletonList(
                 SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
             .build());
-    Page<Connector> connectors =
-        connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
-    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+    return connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
   }
 
   @VisibleForTesting
@@ -793,7 +829,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   @Override
   public long count(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = filterService.createCriteriaFromConnectorFilter(
-        accountIdentifier, orgIdentifier, projectIdentifier, null, null, null, null, false, null);
+        accountIdentifier, orgIdentifier, projectIdentifier, null, null, null, null, false, null, emptyList());
     return connectorRepository.count(criteria);
   }
 
@@ -1020,8 +1056,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   @Override
   public ConnectorStatistics getConnectorStatistics(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    ConnectorStatistics stats = connectorStatisticsHelper.getStats(accountIdentifier, orgIdentifier, projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
+    ConnectorStatistics stats =
+        connectorStatisticsHelper.getStats(accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
     changeTheNullStatusToUnknown(stats);
     return stats;
   }

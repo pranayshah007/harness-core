@@ -15,6 +15,8 @@ import io.harness.git.model.AuthRequest;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.ListRemoteRequest;
+import io.harness.git.model.ListRemoteResult;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
@@ -24,6 +26,9 @@ public interface NGGitService {
   void validate(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig);
 
   void validateOrThrow(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig);
+
+  ListRemoteResult listRemote(GitConfigDTO gitConfig, ListRemoteRequest gitBaseRequest, String accountId,
+      SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig);
 
   CommitAndPushResult commitAndPush(GitConfigDTO gitConfig, CommitAndPushRequest commitAndPushRequest, String accountId,
       SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig);

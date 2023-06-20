@@ -37,7 +37,6 @@ public class UserInfo {
   String defaultAccountId;
   String intent;
   List<GatewayAccountRequestDTO> accounts;
-  List<GatewayAccountRequestDTO> supportAccounts;
   boolean admin;
   boolean twoFactorAuthenticationEnabled;
   boolean emailVerified;

@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +43,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -252,5 +254,40 @@ public class NGTriggerElementMapperTest extends CategoryTest {
     ngTriggerElementMapper.updateEntityYmlWithEnabledValue(ngTriggerEntity1);
     assertThat(ngTriggerEntity1.getYaml()).startsWith("trigger");
     assertThat(ngTriggerEntity1.getYaml()).doesNotStartWith("---");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testToNGTriggerDetailsResponseDTOPlanExecutionId() throws IOException {
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId("account")
+                                          .orgIdentifier("org")
+                                          .projectIdentifier("project")
+                                          .targetIdentifier("pipeline3")
+                                          .identifier("id1")
+                                          .build();
+    TriggerEventHistory triggerEventHistory = TriggerEventHistory.builder()
+                                                  .accountId("account")
+                                                  .orgIdentifier("org")
+                                                  .projectIdentifier("project")
+                                                  .triggerIdentifier("identifier")
+                                                  .planExecutionId("planExecutionId")
+                                                  .build();
+    when(triggerEventHistoryRepository
+             .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
+                 anyString(), anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(Collections.singletonList(triggerEventHistory));
+    assertThat(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false, false)
+                   .getLastTriggerExecutionDetails()
+                   .getPlanExecutionId())
+        .isEqualTo("planExecutionId");
+    triggerEventHistory.setPlanExecutionId(null);
+
+    // planExecutionId is null
+    assertThat(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false, false)
+                   .getLastTriggerExecutionDetails()
+                   .getPlanExecutionId())
+        .isNull();
   }
 }

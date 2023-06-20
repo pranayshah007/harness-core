@@ -92,8 +92,8 @@ public class BusinessMappingSharedCostHelper {
       unionQuery.addQueries(sharedCostUnionQuery);
     }
 
-    return viewBillingServiceHelper.getSharedCostOuterQuery(filters, groupBy, aggregateFunction, sort,
-        isClusterPerspective, unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
+    return viewBillingServiceHelper.getSharedCostOuterQuery(groupBy, aggregateFunction, sort, isClusterPerspective,
+        unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
   }
 
   public SelectQuery getEntityStatsSharedCostDataQueryForCostTrend(final List<QLCEViewFilterWrapper> filters,
@@ -125,7 +125,7 @@ public class BusinessMappingSharedCostHelper {
       unionQuery.addQueries(sharedCostUnionQuery);
     }
 
-    return viewBillingServiceHelper.getSharedCostOuterQuery(modifiedFilters, groupBy, modifiedAggregateFunctions, sort,
+    return viewBillingServiceHelper.getSharedCostOuterQuery(groupBy, modifiedAggregateFunctions, sort,
         isClusterPerspective, unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
   }
 
@@ -155,8 +155,8 @@ public class BusinessMappingSharedCostHelper {
       unionQuery.addQueries(sharedCostUnionQuery);
     }
 
-    return viewBillingServiceHelper.getSharedCostOuterQuery(filters, groupBy, aggregateFunction, sort,
-        isClusterPerspective, unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
+    return viewBillingServiceHelper.getSharedCostOuterQuery(groupBy, aggregateFunction, sort, isClusterPerspective,
+        unionQuery, cloudProviderTableName, queryParams, labelsKeyAndColumnMapping);
   }
 
   public SelectQuery getTotalCountSharedCostDataQuery(final List<QLCEViewFilterWrapper> filters,
@@ -187,8 +187,8 @@ public class BusinessMappingSharedCostHelper {
       unionQuery.addQueries(sharedCostUnionQuery);
     }
 
-    return viewBillingServiceHelper.getTotalCountSharedCostOuterQuery(filters, groupBy, unionQuery,
-        cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping);
+    return viewBillingServiceHelper.getTotalCountSharedCostOuterQuery(
+        groupBy, unionQuery, cloudProviderTableName, isClusterPerspective, queryParams, labelsKeyAndColumnMapping);
   }
 
   private UnionQuery getFilterValueSharedCostUnionQuery(final List<QLCEViewFilterWrapper> filters,

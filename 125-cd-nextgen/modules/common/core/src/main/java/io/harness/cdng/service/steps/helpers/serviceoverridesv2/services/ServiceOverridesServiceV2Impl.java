@@ -30,8 +30,10 @@ import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideAuditEventDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverrideEventDTOMapper;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.YamlConfig;
@@ -122,7 +124,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   }
 
   @Override
-  public NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) {
+  public NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) throws IOException {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
@@ -134,12 +136,14 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
 
     if (existingEntityInDb.isPresent()) {
       overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntityInDb.get(), requestedEntity);
+      ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO =
+          ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntityInDb.get());
 
       return Failsafe.with(transactionRetryPolicy)
           .get(
               ()
                   -> transactionTemplate.execute(
-                      status -> updateAndSendOutboxEvent(requestedEntity, equalityCriteria, existingEntityInDb.get())));
+                      status -> updateAndSendOutboxEvent(requestedEntity, equalityCriteria, oldOverrideAuditEventDTO)));
     } else {
       throw new InvalidRequestException(String.format(
           "ServiceOverride [%s] under Project[%s], Organization [%s] doesn't exist.", requestedEntity.getIdentifier(),
@@ -168,7 +172,8 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   }
 
   @Override
-  public Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedEntity) {
+  public Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedEntity)
+      throws IOException {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
@@ -186,6 +191,8 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     }
 
     overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntityInDb.get(), requestedEntity);
+    ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO =
+        ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntityInDb.get());
     NGServiceOverridesEntity mergedOverrideEntity =
         mergeRequestedAndExistingOverrides(requestedEntity, existingEntityInDb.get());
 
@@ -194,7 +201,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
             .get(
                 ()
                     -> transactionTemplate.execute(status
-                        -> updateAndSendOutboxEvent(mergedOverrideEntity, equalityCriteria, existingEntityInDb.get())));
+                        -> updateAndSendOutboxEvent(mergedOverrideEntity, equalityCriteria, oldOverrideAuditEventDTO)));
     return new ImmutablePair<>(updateOverrideEntity, false);
   }
 
@@ -416,20 +423,26 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
           requestedEntity.getEnvironmentRef(), requestedEntity.getServiceRef()));
     }
 
-    outboxService.save(EnvironmentUpdatedEvent.builder()
-                           .accountIdentifier(tempCreateResult.getAccountId())
-                           .orgIdentifier(tempCreateResult.getOrgIdentifier())
-                           .status(EnvironmentUpdatedEvent.Status.CREATED)
-                           .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
-                           .projectIdentifier(tempCreateResult.getProjectIdentifier())
-                           .newServiceOverridesEntity(tempCreateResult)
-                           .build());
+    try {
+      outboxService.save(
+          EnvironmentUpdatedEvent.builder()
+              .accountIdentifier(tempCreateResult.getAccountId())
+              .orgIdentifier(tempCreateResult.getOrgIdentifier())
+              .status(EnvironmentUpdatedEvent.Status.CREATED)
+              .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+              .projectIdentifier(tempCreateResult.getProjectIdentifier())
+              .newOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(tempCreateResult))
+              .overrideAuditV2(true)
+              .build());
+    } catch (IOException e) {
+      log.error("Failed to save event for override with identifier: " + requestedEntity.getIdentifier(), e);
+    }
 
     return tempCreateResult;
   }
 
   private NGServiceOverridesEntity updateAndSendOutboxEvent(@NonNull NGServiceOverridesEntity requestedEntity,
-      Criteria equalityCriteria, NGServiceOverridesEntity existingEntityInDb) {
+      Criteria equalityCriteria, ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO) {
     NGServiceOverridesEntity updatedServiceOverride =
         serviceOverrideRepositoryV2.update(equalityCriteria, requestedEntity);
     if (updatedServiceOverride == null) {
@@ -437,15 +450,21 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
           "ServiceOverride [%s] under Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
           requestedEntity.getIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getOrgIdentifier()));
     }
-    outboxService.save(EnvironmentUpdatedEvent.builder()
-                           .accountIdentifier(updatedServiceOverride.getAccountId())
-                           .orgIdentifier(updatedServiceOverride.getOrgIdentifier())
-                           .projectIdentifier(updatedServiceOverride.getProjectIdentifier())
-                           .newServiceOverridesEntity(updatedServiceOverride)
-                           .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
-                           .status(EnvironmentUpdatedEvent.Status.UPDATED)
-                           .oldServiceOverridesEntity(existingEntityInDb)
-                           .build());
+    try {
+      outboxService.save(
+          EnvironmentUpdatedEvent.builder()
+              .accountIdentifier(updatedServiceOverride.getAccountId())
+              .orgIdentifier(updatedServiceOverride.getOrgIdentifier())
+              .projectIdentifier(updatedServiceOverride.getProjectIdentifier())
+              .newOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(updatedServiceOverride))
+              .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+              .status(EnvironmentUpdatedEvent.Status.UPDATED)
+              .oldOverrideAuditEventDTO(oldOverrideAuditEventDTO)
+              .overrideAuditV2(true)
+              .build());
+    } catch (IOException e) {
+      log.error("Failed to save event for override with identifier: " + requestedEntity.getIdentifier(), e);
+    }
     return updatedServiceOverride;
   }
 
@@ -554,14 +573,21 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
             String.format("Service Override [%s], Project[%s], Organization [%s] couldn't be deleted.", identifier,
                 projectIdentifier, orgIdentifier));
       }
-      outboxService.save(EnvironmentUpdatedEvent.builder()
-                             .accountIdentifier(accountId)
-                             .orgIdentifier(orgIdentifier)
-                             .projectIdentifier(projectIdentifier)
-                             .status(EnvironmentUpdatedEvent.Status.DELETED)
-                             .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
-                             .oldServiceOverridesEntity(existingEntity)
-                             .build());
+      try {
+        outboxService.save(
+            EnvironmentUpdatedEvent.builder()
+                .accountIdentifier(accountId)
+                .orgIdentifier(orgIdentifier)
+                .projectIdentifier(projectIdentifier)
+                .status(EnvironmentUpdatedEvent.Status.DELETED)
+                .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                .oldOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntity))
+                .overrideAuditV2(true)
+                .build());
+      } catch (IOException e) {
+        throw new InvalidRequestException(
+            "Failed to save event for override with identifier: " + existingEntity.getIdentifier(), e);
+      }
       return true;
     }));
   }
@@ -665,7 +691,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     ApplicationSettingsConfiguration finalApplicationSetting = ApplicationSettingsConfiguration.builder().build();
     ConnectionStringsConfiguration finalConnectionStrings = ConnectionStringsConfiguration.builder().build();
 
-    Map<Scope, NGServiceOverridesEntity> overridesGroupByScope = getOverridesGroupByType(overridesEntities);
+    Map<Scope, NGServiceOverridesEntity> overridesGroupByScope = getOverridesGroupByScope(overridesEntities);
     if (overridesGroupByScope.containsKey(Scope.ACCOUNT)) {
       ServiceOverridesSpec accOverridesSpec = overridesGroupByScope.get(Scope.ACCOUNT).getSpec();
       updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, accOverridesSpec);
@@ -694,7 +720,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
         .build();
   }
 
-  private Map<Scope, NGServiceOverridesEntity> getOverridesGroupByType(
+  private Map<Scope, NGServiceOverridesEntity> getOverridesGroupByScope(
       @NonNull List<NGServiceOverridesEntity> overridesEntities) {
     Map<Scope, NGServiceOverridesEntity> overrideGroupByScope = new HashMap<>();
     overridesEntities.forEach(entity
@@ -711,8 +737,13 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       overridesSpec.getVariables().forEach(ngVar -> finalNGVariables.put(ngVar.getName(), ngVar));
     }
     if (isNotEmpty(overridesSpec.getManifests())) {
-      overridesSpec.getManifests().forEach(
-          manifest -> finalManifests.put(manifest.getManifest().getIdentifier(), manifest));
+      overridesSpec.getManifests().forEach(manifest -> {
+        if (finalManifests.containsKey(manifest.getManifest().getIdentifier())) {
+          throw new InvalidRequestException(
+              "Found duplicate manifest identifier:" + manifest.getManifest().getIdentifier());
+        }
+        finalManifests.put(manifest.getManifest().getIdentifier(), manifest);
+      });
     }
     if (isNotEmpty(overridesSpec.getConfigFiles())) {
       overridesSpec.getConfigFiles().forEach(

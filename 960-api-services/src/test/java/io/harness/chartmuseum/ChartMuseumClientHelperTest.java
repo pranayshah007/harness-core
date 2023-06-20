@@ -12,14 +12,18 @@ import static io.harness.chartmuseum.ChartMuseumConstants.AWS_ACCESS_KEY_ID;
 import static io.harness.chartmuseum.ChartMuseumConstants.AWS_SECRET_ACCESS_KEY;
 import static io.harness.chartmuseum.ChartMuseumConstants.VERSION;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.MLUKIC;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -29,18 +33,24 @@ import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.config.K8sGlobalConfigService;
+import io.harness.network.Http;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.zeroturnaround.exec.ProcessOutput;
@@ -56,6 +66,14 @@ public class ChartMuseumClientHelperTest extends CategoryTest {
   @Mock private K8sGlobalConfigService k8sGlobalConfigService;
 
   @InjectMocks @Spy private ChartMuseumClientHelper clientHelper;
+
+  @Rule
+  public WireMockRule wireMockRule =
+      new WireMockRule(WireMockConfiguration.wireMockConfig()
+                           .usingFilesUnderClasspath("960-api-services/src/test/resources")
+                           .disableRequestJournal()
+                           .bindAddress("127.0.0.1")
+                           .port(0));
 
   @Before
   public void setup() throws Exception {
@@ -107,6 +125,49 @@ public class ChartMuseumClientHelperTest extends CategoryTest {
     testGetVersion(cliPath, "ChartMuseum version v0.14.0 (build cc297af)", Version.parse("0.14.0"));
     testGetVersion(cliPath, "ChartMuseum version v0.13.0 (build 3a24659)", Version.parse("0.13.0"));
     testGetVersion(cliPath, "ChartMuseum version 0.8.2 (build 47d5c19", Version.parse("0.8.2"));
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testIsServiceUpAndRunning() {
+    try (MockedStatic<Http> mockedStatic = mockStatic(Http.class)) {
+      mockedStatic.when(() -> Http.connectableHost(any(), anyInt(), anyInt())).thenReturn(true);
+
+      wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/health")).willReturn(aResponse().withStatus(200)));
+
+      boolean serviceReady = ChartMuseumClientHelper.waitForServiceReady(wireMockRule.port());
+
+      assertThat(serviceReady).isEqualTo(true);
+    }
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testIsServiceUpAndRunningFailOnSocketConnect() {
+    try (MockedStatic<Http> mockedStatic = mockStatic(Http.class)) {
+      mockedStatic.when(() -> Http.connectableHost(any(), anyInt(), anyInt())).thenReturn(false);
+
+      boolean serviceReady = ChartMuseumClientHelper.waitForServiceReady(wireMockRule.port());
+
+      assertThat(serviceReady).isEqualTo(false);
+    }
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testIsServiceUpAndRunningFailOnHealthCheck() {
+    try (MockedStatic<Http> mockedStatic = mockStatic(Http.class)) {
+      mockedStatic.when(() -> Http.connectableHost(any(), anyInt(), anyInt())).thenReturn(true);
+
+      wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/health")).willReturn(aResponse().withStatus(404)));
+
+      boolean serviceReady = ChartMuseumClientHelper.waitForServiceReady(wireMockRule.port());
+
+      assertThat(serviceReady).isEqualTo(false);
+    }
   }
 
   private void testGetEnvForAwsConfigWithIRSA() {

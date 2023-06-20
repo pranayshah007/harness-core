@@ -67,14 +67,18 @@ public class Http {
   private static TrustManager[] trustAllCerts = getTrustManagers();
   private static final SSLContext sc = createSslContext();
 
-  public static boolean connectableHost(String host, int port) {
+  public static boolean connectableHost(String host, int port, int timeout) {
     try (Socket socket = new Socket()) {
-      socket.connect(new InetSocketAddress(host, port), 5000); // 5 sec timeout
+      socket.connect(new InetSocketAddress(host, port), timeout);
       return true;
     } catch (IOException ignored) {
       // Do nothing
     }
     return false; // Either timeout or unreachable or failed DNS lookup.
+  }
+
+  public static boolean connectableHost(String host, int port) {
+    return connectableHost(host, port, 5000); // 5 sec timeout
   }
 
   public static boolean connectableHost(String urlString) {

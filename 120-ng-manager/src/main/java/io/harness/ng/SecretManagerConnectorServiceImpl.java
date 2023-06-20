@@ -23,6 +23,7 @@ import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.services.ConnectorService;
@@ -399,8 +400,9 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
 
   @Override
   public ConnectorStatistics getConnectorStatistics(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return defaultConnectorService.getConnectorStatistics(accountIdentifier, orgIdentifier, projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIds) {
+    return defaultConnectorService.getConnectorStatistics(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIds);
   }
 
   @Override
@@ -446,8 +448,31 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory, String version) {
+      ConnectorCategory sourceCategory, String version, List<String> connectorIds) {
     throw new UnsupportedOperationException("Cannot call list api on secret manager");
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    return defaultConnectorService.listAll(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable,
+        version);
+  }
+
+  @Override
+  public Page<Connector> listAll(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
+      ConnectorCategory sourceCategory, String version) {
+    return defaultConnectorService.listAll(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        type, category, sourceCategory, version);
+  }
+
+  @Override
+  public Page<Connector> listAll(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return defaultConnectorService.listAll(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   @Override

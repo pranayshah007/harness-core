@@ -489,6 +489,7 @@ paths:
           in: query
           name: module_type
           description: Project's module type
+        - $ref: '#/components/parameters/onlyFavorites'
         - $ref: '#/components/parameters/SearchTerm'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
@@ -1761,6 +1762,9 @@ components:
           type: integer
           format: int64
           description: Updated timestamp for the project
+        isFavorite:
+          type: boolean
+          description: True if its your favorite project
     OrganizationResponse:
       title: OrganizationResponse
       type: object
@@ -2569,6 +2573,7 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+                isFavorite: true
         application/yaml:
           schema:
             $ref: '#/components/schemas/ProjectResponse'
@@ -2588,6 +2593,7 @@ components:
                     property2: value2
                 created: 1234567890
                 updated: 1234567890
+                isFavorite: true
     FavoriteResponse:
       description: Favorite response
       content:
@@ -2660,6 +2666,7 @@ components:
                       property2: value2
                   created: 1234567890
                   updated: 1234567890
+                  isFavorite: true
         application/yaml:
           schema:
             type: array
@@ -2681,6 +2688,7 @@ components:
                       property2: value2
                   created: 1234567890
                   updated: 1234567890
+                  isFavorite: true
       headers:
         X-Total-Elements:
           schema:
@@ -3528,6 +3536,14 @@ components:
         default: 30
         maximum: 1000
       description: Number of items to return per page.
+    onlyFavorites:
+      name: only_favorite
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: >-
+        Enable this field to fetch only the entities that are marked as favorites.
     SearchTerm:
       name: search_term
       in: query

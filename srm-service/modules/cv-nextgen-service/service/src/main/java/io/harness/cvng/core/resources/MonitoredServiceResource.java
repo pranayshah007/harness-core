@@ -306,7 +306,7 @@ public class MonitoredServiceResource {
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
       @QueryParam("filter") String filter,
       @QueryParam("monitoredServiceType") MonitoredServiceType monitoredServiceType,
-      @QueryParam("hideNotConfiguredServices") @NotNull boolean hideNotConfiguredServices) {
+      @QueryParam("hideNotConfiguredServices") @ApiParam(defaultValue = "false") boolean hideNotConfiguredServices) {
     return ResponseDTO.newResponse(monitoredServiceService.getMSPlatformList(projectParams.getProjectParams(),
         environmentIdentifiers, offset, pageSize, filter, monitoredServiceType, hideNotConfiguredServices));
   }

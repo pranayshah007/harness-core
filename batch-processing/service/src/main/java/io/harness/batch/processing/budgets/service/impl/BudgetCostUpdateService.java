@@ -10,6 +10,7 @@ package io.harness.batch.processing.budgets.service.impl;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
@@ -39,12 +40,12 @@ public class BudgetCostUpdateService {
   @Autowired private BudgetService budgetService;
   @Autowired private BudgetGroupService budgetGroupService;
 
-  public void updateCosts() {
+  public void updateCosts(List<BudgetPeriod> budgetPeriods) {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     log.info("ceEnabledAccounts ids list {}", accountIds);
 
     accountIds.forEach(accountId -> {
-      List<Budget> budgets = budgetDao.list(accountId);
+      List<Budget> budgets = budgetDao.list(accountId, budgetPeriods, Integer.MAX_VALUE - 1, 0);
       budgets.forEach(budget -> {
         updateBudgetHistory(budget);
         updateBudgetAmount(budget);
@@ -52,7 +53,7 @@ public class BudgetCostUpdateService {
         budgetDao.update(budget.getUuid(), budget);
       });
 
-      List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
+      List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, budgetPeriods, Integer.MAX_VALUE - 1, 0);
       budgetGroups.forEach(budgetGroup -> {
         updateBudgetGroupAmount(budgetGroup, accountId);
         budgetGroupService.updateBudgetGroupCosts(budgetGroup, accountId);

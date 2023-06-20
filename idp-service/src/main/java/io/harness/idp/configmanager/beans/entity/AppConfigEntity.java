@@ -9,12 +9,11 @@ package io.harness.idp.configmanager.beans.entity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.configmanager.ConfigType;
+import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
-import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;

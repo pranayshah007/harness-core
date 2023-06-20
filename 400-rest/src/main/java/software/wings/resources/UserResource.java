@@ -64,6 +64,7 @@ import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.BugsnagTab;
+import software.wings.beans.CannySsoLoginResponse;
 import software.wings.beans.ErrorData;
 import software.wings.beans.LoginRequest;
 import software.wings.beans.LoginTypeRequest;
@@ -1406,6 +1407,13 @@ public class UserResource {
   @Path("sso/zendesk")
   public RestResponse<ZendeskSsoLoginResponse> zendDesk(@QueryParam("returnTo") @NotEmpty String returnTo) {
     return new RestResponse(userService.generateZendeskSsoJwt(returnTo));
+  }
+
+  @POST
+  @Path("sso/canny")
+  public RestResponse<CannySsoLoginResponse> generateCannySsoJwt(@QueryParam("returnTo") @NotEmpty String returnTo,
+      @QueryParam("companyID") @NotEmpty String companyID) throws Exception {
+    return new RestResponse(userService.generateCannySsoJwt(returnTo, companyID));
   }
 
   /**

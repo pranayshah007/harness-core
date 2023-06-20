@@ -8,6 +8,7 @@
 package io.harness.connector.apis.resource;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -20,6 +21,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,6 +31,7 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -235,7 +239,9 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     Page<ConnectorResponseDTO> pages = new PageImpl<>(Collections.singletonList(connectorResponseDTO));
     when(connectorService.list(eq(account), any(), eq(org), any(), any(), any(), eq(false), any(), any()))
         .thenReturn(pages);
-
+    when(accessControlClient.hasAccess(ResourceScope.of(account, org, null), Resource.of(ResourceTypes.CONNECTOR, null),
+             VIEW_CONNECTOR_PERMISSION))
+        .thenReturn(true);
     Response response =
         orgConnectorApi.getOrgScopedConnectors(org, false, null, 0, 10, "name", Sort.Direction.ASC.toString(), account);
 
@@ -257,7 +263,9 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     Page<ConnectorResponseDTO> pages = Page.empty();
     when(connectorService.list(eq(account), any(), any(), any(), any(), any(), eq(false), any(), any()))
         .thenReturn(pages);
-
+    when(accessControlClient.hasAccess(ResourceScope.of(account, org, null), Resource.of(ResourceTypes.CONNECTOR, null),
+             VIEW_CONNECTOR_PERMISSION))
+        .thenReturn(true);
     Response response =
         orgConnectorApi.getOrgScopedConnectors(org, false, null, 0, 10, "name", Sort.Direction.ASC.toString(), account);
 

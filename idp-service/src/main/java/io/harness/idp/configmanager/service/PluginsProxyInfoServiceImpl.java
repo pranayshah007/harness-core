@@ -47,10 +47,6 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   public List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier)
       throws ExecutionException {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = getPluginProxyInfoEntities(appConfig, accountIdentifier);
-    if (pluginsProxyInfoEntities.isEmpty()) {
-      log.info(NO_PROXY_HOST_ASSOCIATED_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier);
-      return new ArrayList<>();
-    }
     List<String> errorMessageForProxyDetails = getErrorMessageIfHostIsAlreadyInUse(accountIdentifier, appConfig);
     if (!errorMessageForProxyDetails.isEmpty()) {
       throw new InvalidRequestException(new Gson().toJson(errorMessageForProxyDetails));
@@ -88,11 +84,13 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   public void deleteProxyHostDetailsForPlugin(String accountIdentifier, String pluginId) throws ExecutionException {
     List<PluginsProxyInfoEntity> existingPluginProxies =
         pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
-    Set<String> hostsToBeRemoved =
-        existingPluginProxies.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toSet());
-    delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
-    proxyEnvVariableUtils.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
-    pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    if (!existingPluginProxies.isEmpty()) {
+      Set<String> hostsToBeRemoved =
+          existingPluginProxies.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toSet());
+      delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
+      proxyEnvVariableUtils.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
+      pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
+    }
   }
 
   @Override

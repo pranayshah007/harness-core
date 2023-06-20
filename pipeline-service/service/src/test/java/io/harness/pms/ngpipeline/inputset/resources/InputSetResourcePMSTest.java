@@ -70,6 +70,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -102,6 +103,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock InputSetsApiUtils inputSetsApiUtils;
   @Mock PMSExecutionService executionService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -138,7 +140,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService);
+        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);

@@ -142,6 +142,7 @@
 1205:io.harness.exception.FailureType
 1206:io.harness.context.MdcGlobalContextData
 1207:java.util.HashMap.KeySet
+1400:io.harness.git.model.ListRemoteRequest
 1401:io.harness.security.encryption.EncryptedRecordData
 1402:io.harness.pcf.model.ManifestType
 1403:com.amazonaws.services.ec2.model.HibernationOptions
@@ -151,6 +152,7 @@
 1407:io.harness.deployment.InstanceDetails.PCF
 1408:io.harness.deployment.InstanceDetails.AWS
 1409:io.harness.deployment.InstanceDetails.InstanceType
+1410:io.harness.git.model.ListRemoteResult
 1411:io.harness.deployment.InstanceDetails.PHYSICAL_HOST
 1412:io.harness.deployment.InstanceDetails.K8s
 1413:io.harness.security.encryption.EncryptedDataParams
@@ -2706,8 +2708,11 @@
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
 10000116:io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO
+10000117:io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO
 10000120:io.harness.exception.AdfsAuthException
 10000121:io.harness.adfs.AdfsAccessTokenResponse
+10000122:io.harness.exception.ServiceNowOIDCException
+10000123:io.harness.servicenow.auth.refreshtoken.AccessTokenResponse
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO

@@ -30,6 +30,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServi
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverrideEventDTOMapper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
@@ -161,24 +162,37 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
             requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef()));
       }
       if (serviceOverrideOptional.isPresent()) {
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(requestServiceOverride.getAccountId())
-                               .orgIdentifier(requestServiceOverride.getOrgIdentifier())
-                               .status(EnvironmentUpdatedEvent.Status.UPDATED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
-                               .projectIdentifier(requestServiceOverride.getProjectIdentifier())
-                               .newServiceOverridesEntity(requestServiceOverride)
-                               .oldServiceOverridesEntity(serviceOverrideOptional.get())
-                               .build());
+        try {
+          outboxService.save(EnvironmentUpdatedEvent.builder()
+                                 .accountIdentifier(requestServiceOverride.getAccountId())
+                                 .orgIdentifier(requestServiceOverride.getOrgIdentifier())
+                                 .status(EnvironmentUpdatedEvent.Status.UPDATED)
+                                 .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                                 .projectIdentifier(requestServiceOverride.getProjectIdentifier())
+                                 .newOverrideAuditEventDTO(
+                                     ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(requestServiceOverride))
+                                 .oldOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(
+                                     serviceOverrideOptional.get()))
+                                 .overrideAuditV2(true)
+                                 .build());
+        } catch (IOException e) {
+          throw new InvalidRequestException("Failed to save event for override", e);
+        }
       } else {
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(requestServiceOverride.getAccountId())
-                               .orgIdentifier(requestServiceOverride.getOrgIdentifier())
-                               .status(EnvironmentUpdatedEvent.Status.CREATED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
-                               .projectIdentifier(requestServiceOverride.getProjectIdentifier())
-                               .newServiceOverridesEntity(requestServiceOverride)
-                               .build());
+        try {
+          outboxService.save(EnvironmentUpdatedEvent.builder()
+                                 .accountIdentifier(requestServiceOverride.getAccountId())
+                                 .orgIdentifier(requestServiceOverride.getOrgIdentifier())
+                                 .status(EnvironmentUpdatedEvent.Status.CREATED)
+                                 .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                                 .projectIdentifier(requestServiceOverride.getProjectIdentifier())
+                                 .newOverrideAuditEventDTO(
+                                     ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(requestServiceOverride))
+                                 .overrideAuditV2(true)
+                                 .build());
+        } catch (IOException e) {
+          throw new InvalidRequestException("Failed to save event for override", e);
+        }
       }
 
       return tempResult;
@@ -263,14 +277,20 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
               "Service Override for Service [%s], Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
               serviceRef, environmentRef, projectIdentifier, orgIdentifier));
         }
-        outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(accountId)
-                               .orgIdentifier(orgIdentifier)
-                               .projectIdentifier(projectIdentifier)
-                               .status(EnvironmentUpdatedEvent.Status.DELETED)
-                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
-                               .oldServiceOverridesEntity(entityOptional.get())
-                               .build());
+        try {
+          outboxService.save(
+              EnvironmentUpdatedEvent.builder()
+                  .accountIdentifier(accountId)
+                  .orgIdentifier(orgIdentifier)
+                  .projectIdentifier(projectIdentifier)
+                  .status(EnvironmentUpdatedEvent.Status.DELETED)
+                  .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                  .oldOverrideAuditEventDTO(ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(entityOptional.get()))
+                  .overrideAuditV2(true)
+                  .build());
+        } catch (IOException e) {
+          throw new InvalidRequestException("Failed to save event for override", e);
+        }
         return true;
       }));
     } else {

@@ -300,6 +300,7 @@ public enum FeatureName {
   CV_FAIL_ON_EMPTY_NODES,
   HELM_VERSION_3_8_0,
   DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
+  DELEGATE_TASK_CAPACITY_CHECK("Enable delegate task capacity check", HarnessTeam.DEL),
   YAML_GIT_CONNECTOR_NAME,
   STOP_SHOWING_RUNNING_EXECUTIONS,
   ARTIFACT_STREAM_METADATA_ONLY,
@@ -473,8 +474,6 @@ public enum FeatureName {
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
-  SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER(
-      "Optimizes environment view builder queries for workflowExecutions", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
@@ -529,7 +528,6 @@ public enum FeatureName {
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
-  CDS_TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
@@ -631,13 +629,14 @@ public enum FeatureName {
   PL_NEW_SCIM_STANDARDS("Changes required for being SCIM 2 compliant API calls", HarnessTeam.PL),
   PL_ENABLE_MULTIPLE_IDP_SUPPORT("Enable support for multiple SSO IDP in an account", HarnessTeam.PL),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
+  PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT(
+      "Support for disabling returning complex objects as json", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_CONCATENATION(
       "Support for new string concatenation support in expression engine", HarnessTeam.PIPELINE),
   GITOPS_SYNC_STEP("Enable sync step in GitOps", HarnessTeam.GITOPS),
   FETCH_PIPELINE_HEALTH_FROM_NEW_TABLE(
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
       HarnessTeam.PIPELINE),
-  CD_TERRAFORM_CLOUD_CLI_NG("FF to enable terraform cloud backend cli in NG", HarnessTeam.CDP),
   PIE_ASYNC_VALIDATION("Validate Pipelines asynchronously on Get calls in Pipeline Studio", HarnessTeam.PIPELINE),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
@@ -794,9 +793,9 @@ public enum FeatureName {
       "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
       PIPELINE),
   PL_ENABLE_JIT_USER_PROVISION("Enable support for Just in time user provision", HarnessTeam.PL),
-  STATIC_YAML_SCHEMA("Enable support for static schema", PIPELINE),
+  PIE_STATIC_YAML_SCHEMA("Enable support for static schema", PIPELINE),
   PIE_WEBHOOK_NOTIFICATION("Enable the webhook notifications for the pipeline execution events", PIPELINE),
-  AZURE_WEBAPP_LISTING_APP_NAMES_AND_SLOTS(
+  CDS_AZURE_WEBAPP_NG_LISTING_APP_NAMES_AND_SLOTS(
       "Support for listing Azure Web App names and slots on Slot Deployment and Swap Slot steps", HarnessTeam.CDP),
   CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC),
   CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG(
@@ -811,7 +810,12 @@ public enum FeatureName {
 
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
   PL_FAVORITES("To enable favorites marking support on entities", HarnessTeam.PL),
-  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI);
+  CI_OUTPUT_VARIABLES_AS_ENV("For enabling output variables as env variables in CI stages", HarnessTeam.CI),
+  SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS(
+      "This is used make prometheus Health source run with promQL by clause", HarnessTeam.CV),
+  CCM_COMM_SETUP("It is used for enabling the setup flow of commitment orchestrator in CCM.", HarnessTeam.CE),
+  CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
+      "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

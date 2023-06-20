@@ -83,6 +83,7 @@ public class TerraformTaskNGParameters
   EncryptionConfig encryptionConfig;
   EncryptedRecordData encryptedTfPlan;
   String planName;
+  boolean encryptDecryptPlanForHarnessSMOnManager;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

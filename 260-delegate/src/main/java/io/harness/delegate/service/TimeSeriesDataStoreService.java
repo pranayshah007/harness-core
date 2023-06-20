@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -97,8 +98,14 @@ public class TimeSeriesDataStoreService {
           "TimeseriesRecords is empty. So we will not be saving anything from the delegate for {}", verificationTaskId);
       return true;
     }
+    // adding filter
+    List<TimeSeriesRecord> filteredTimeseriesRecords =
+        timeSeriesRecords.stream()
+            .filter(timeSeriesRecord
+                -> timeSeriesRecord.getTimestamp() != null && timeSeriesRecord.getMetricValue() != null)
+            .collect(Collectors.toList());
     List<TimeSeriesDataCollectionRecord> dataCollectionRecords =
-        convertToCollectionRecords(accountId, verificationTaskId, timeSeriesRecords);
+        convertToCollectionRecords(accountId, verificationTaskId, filteredTimeseriesRecords);
     // Sorting them so that DB Save can be optimised on CVNG Side
     dataCollectionRecords.sort(
         Comparator

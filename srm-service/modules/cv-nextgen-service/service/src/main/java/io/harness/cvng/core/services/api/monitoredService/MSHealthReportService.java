@@ -12,4 +12,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 
 public interface MSHealthReportService {
   MSHealthReport getMSHealthReport(ProjectParams projectParams, String monitoredServiceIdentifier);
+
+  void handleNotification(
+      ProjectParams projectParams, MSHealthReport msHealthReport, String webhookUrl, String monitoredServiceIdentifier);
 }

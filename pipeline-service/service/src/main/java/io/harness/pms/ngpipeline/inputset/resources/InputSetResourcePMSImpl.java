@@ -21,6 +21,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
@@ -73,6 +74,7 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 import io.harness.utils.PipelineGitXHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -99,6 +101,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private final ValidateAndMergeHelper validateAndMergeHelper;
   private final InputSetsApiUtils inputSetsApiUtils;
   private final PMSExecutionService executionService;
+  private final PmsFeatureFlagService pmsFeatureFlagService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
@@ -269,7 +272,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     if (pipelineBranch == null && gitEntityBasicInfo != null) {
       pipelineBranch = gitEntityBasicInfo.getBranch();
     }
-    if (mergeInputSetRequestDTO.isGetOnlyFileContent()) {
+    if (mergeInputSetRequestDTO.isGetOnlyFileContent()
+        && pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_GET_FILE_CONTENT_ONLY)) {
       PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();

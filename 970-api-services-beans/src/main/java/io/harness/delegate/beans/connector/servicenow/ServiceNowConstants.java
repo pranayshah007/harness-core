@@ -16,4 +16,5 @@ public class ServiceNowConstants {
   // auth types
   public static final String USERNAME_PASSWORD = "UsernamePassword";
   public static final String ADFS = "AdfsClientCredentialsWithCertificate";
+  public static final String REFRESH_TOKEN = "RefreshTokenGrantType";
 }

@@ -33,7 +33,7 @@ public class CatalogueHelper {
   public List<ConnectorCatalogueItem> getConnectorTypeToCategoryMapping(String accountIdentifier) {
     final Map<ConnectorCategory, List<ConnectorType>> connectorCategoryListMap =
         Arrays.stream(ConnectorType.values())
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_TAS_NG))
+            .filter(enumFilter.filter(accountIdentifier, FeatureName.NG_SVC_ENV_REDESIGN))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.BAMBOO_ARTIFACT_NG))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_RANCHER_SUPPORT_NG))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));

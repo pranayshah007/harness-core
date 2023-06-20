@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.network.SafeHttpCall.execute;
 
 import static java.lang.Boolean.TRUE;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedRecord;
@@ -33,6 +34,7 @@ import com.google.inject.Inject;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ReaderInputStream;
@@ -44,70 +46,68 @@ public class HarnessSMEncryptionDecryptionHandler {
   @Inject private DelegateManagerEncryptionDecryptionHarnessSMClient delegateManagerEncryptionDecryptionHarnessSMClient;
   public static final String ON_FILE_STORAGE = "onFileStorage";
 
-  public EncryptedRecord encryptContent(byte[] content, EncryptionConfig config, boolean isNG) {
+  public EncryptedRecord encryptContent(byte[] content, EncryptionConfig config) throws IOException {
+    long startTime = Instant.now().getEpochSecond();
+    log.info("Making api call for encryption of TF plan for Harness SM");
     EncryptedRecordData record;
     try {
       EncryptData encryptData = EncryptData.builder().content(content).build();
-      if (isNG) {
-        record = execute(delegateManagerEncryptionDecryptionHarnessSMClient.encryptHarnessSMSecretNG(
-                             config.getAccountId(), encryptData))
-                     .getResource();
-      } else {
-        record = execute(delegateManagerEncryptionDecryptionHarnessSMClient.encryptHarnessSMSecret(
-                             config.getAccountId(), encryptData))
-                     .getResource();
-      }
+      record = execute(
+          delegateManagerEncryptionDecryptionHarnessSMClient.encryptHarnessSMSecret(config.getAccountId(), encryptData))
+                   .getResource();
     } catch (Exception e) {
       log.error("Not able to encrypt harness SM secrets", e);
-      record = EncryptedRecordData.builder().build();
+      throw e;
     }
+    long endTime = Instant.now().getEpochSecond();
+    log.info(format("Encryption of TF plan completed with total time taken in seconds : %s", endTime - startTime));
+
     record.setUuid(generateUuid());
     return record;
   }
 
-  public EncryptedRecord encryptFile(byte[] content, EncryptionConfig config, DelegateFile delegateFile, boolean isNG)
+  public EncryptedRecord encryptFile(byte[] content, EncryptionConfig config, DelegateFile delegateFile)
       throws IOException {
-    EncryptedRecord encryptedRecord = encryptContent(content, config, isNG);
+    EncryptedRecord encryptedRecord = encryptContent(content, config);
     uploadEncryptedValueToFileStorage((EncryptedRecordData) encryptedRecord, delegateFile);
     return encryptedRecord;
   }
 
-  public byte[] getDecryptedContent(EncryptionConfig config, EncryptedRecordData record, boolean isNG) {
-    char[] decryptedContent = decryptDataInManager(record, config, isNG).getDecryptedValue();
+  public byte[] getDecryptedContent(EncryptionConfig config, EncryptedRecordData record) throws IOException {
+    char[] decryptedContent = decryptDataInManager(record, config).getDecryptedValue();
     return decodeBase64(decryptedContent);
   }
 
-  private DecryptedRecord decryptDataInManager(EncryptedRecordData record, EncryptionConfig config, boolean isNG) {
+  private DecryptedRecord decryptDataInManager(EncryptedRecordData record, EncryptionConfig config) throws IOException {
+    log.info("Making api call for decryption of TF plan for Harness SM");
+    long startTime = Instant.now().getEpochSecond();
+    DecryptedRecord decryptedRecord;
     try {
       EncryptedSMData encryptedSMData = EncryptedRecordDataToEncryptedSMDataMapper.toEncryptedSMData(record);
-
-      if (isNG) {
-        return execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecretNG(
-                           config.getAccountId(), encryptedSMData))
-            .getResource();
-      } else {
-        return execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecret(
-                           config.getAccountId(), encryptedSMData))
-            .getResource();
-      }
+      decryptedRecord = execute(delegateManagerEncryptionDecryptionHarnessSMClient.decryptHarnessSMSecret(
+                                    config.getAccountId(), encryptedSMData))
+                            .getResource();
     } catch (Exception e) {
-      log.error("Not able to decrypt harness SM secrets");
-      return DecryptedRecord.builder().decryptedValue(new char[0]).build();
+      log.error("Not able to decrypt harness SM secrets", e);
+      throw e;
     }
+    long endTime = Instant.now().getEpochSecond();
+    log.info(format("Encryption of TF plan completed with total time taken in seconds : %s", endTime - startTime));
+    return decryptedRecord;
   }
 
-  public byte[] getDecryptedContent(EncryptionConfig config, EncryptedRecordData record, String accountId, boolean isNG)
+  public byte[] getDecryptedContent(EncryptionConfig config, EncryptedRecordData record, String accountId)
       throws IOException {
     if (record.getAdditionalMetadata() != null
         && record.getAdditionalMetadata().getValues().get(ON_FILE_STORAGE).equals(TRUE)) {
       String fileId = new String(record.getEncryptedValue());
       InputStream inputStream = delegateFileManager.downloadByFileId(FileBucket.TERRAFORM_PLAN, fileId, accountId);
       record.setEncryptedValue(IOUtils.toCharArray(inputStream, Charsets.UTF_8));
-      byte[] decryptedContent = getDecryptedContent(config, record, isNG);
+      byte[] decryptedContent = getDecryptedContent(config, record);
       record.setEncryptedValue(fileId.toCharArray());
       return decryptedContent;
     } else {
-      return getDecryptedContent(config, record, isNG);
+      return getDecryptedContent(config, record);
     }
   }
 

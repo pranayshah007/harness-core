@@ -53,6 +53,7 @@ public class UpdateVersionInfoTask {
   private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
   public static final String CHAOS_MANAGER_API = "manager/api/";
   private static final String PLATFORM = "Platform";
+  public static final String FEATURE_FLAGS_ENDPOINT = "cf/";
   @Inject private MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration nextGenConfiguration;
   List<ModuleVersionInfo> moduleVersionInfos;
@@ -100,8 +101,11 @@ public class UpdateVersionInfoTask {
     } else if (ModuleType.CHAOS.name().equalsIgnoreCase(moduleName)) {
       StringBuilder chaosManagerUrl = new StringBuilder();
       chaosManagerUrl.append(nextGenConfiguration.getChaosServiceClientConfig().getBaseUrl()).append(CHAOS_MANAGER_API);
-
       return chaosManagerUrl.toString();
+    } else if (ModuleType.CF.name().equals(moduleName)) {
+      StringBuilder ffApiUrl = new StringBuilder();
+      ffApiUrl.append(nextGenConfiguration.getFfServerClientConfig().getBaseUrl()).append(FEATURE_FLAGS_ENDPOINT);
+      return ffApiUrl.toString();
     } else {
       return "";
     }
@@ -167,6 +171,9 @@ public class UpdateVersionInfoTask {
     }
     log.info("Request: {} and Response Body: {}", request, response.body());
     JSONObject jsonObject = new JSONObject(response.body().toString().trim());
+    if (serviceName.equals(ModuleType.CF.name())) {
+      return jsonObject.get("versionInfo").toString();
+    }
     JSONObject resourceJsonObject = (JSONObject) jsonObject.get("resource");
     JSONObject versionInfoJsonObject = (JSONObject) resourceJsonObject.get("versionInfo");
 

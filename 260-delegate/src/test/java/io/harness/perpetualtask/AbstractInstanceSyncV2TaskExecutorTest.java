@@ -12,7 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +35,7 @@ import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
 import io.harness.perpetualtask.instancesync.ResponseBatchConfig;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -58,6 +61,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
@@ -177,5 +182,56 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
     ArgumentCaptor<InstanceSyncResponseV2> captor = ArgumentCaptor.forClass(InstanceSyncResponseV2.class);
     verify(delegateAgentManagerClient).processInstanceSyncNGResultV2(anyString(), anyString(), captor.capture());
     assertThat(captor.getValue().getStatus().getExecutionStatus()).isEqualTo(CommandExecutionStatus.SKIPPED.name());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void runOnceFailureTestRetryLogic() throws Exception {
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
+    PerpetualTaskExecutionParams params =
+        PerpetualTaskExecutionParams.newBuilder()
+            .setCustomizedParams(
+                Any.pack(K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
+                             .setAccountId(ACCOUNT_IDENTIFIER)
+                             .setOrgId(ORG_IDENTIFIER)
+                             .setProjectId(PROJECT_IDENTIFIER)
+                             .setEncryptedData(encryptionDetailsBytes)
+                             .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(
+                                 ConnectorInfoDTO.builder()
+                                     .connectorConfig(KubernetesClusterConfigDTO.builder()
+                                                          .credential(KubernetesCredentialDTO.builder().build())
+                                                          .build())
+
+                                     .build())))
+                             .build()))
+            .build();
+
+    InstanceSyncTaskDetails instanceSyncTaskDetails =
+        InstanceSyncTaskDetails.builder()
+            .details(PageResponse.<DeploymentReleaseDetails>builder().totalPages(1).empty(true).build())
+            .responseBatchConfig(ResponseBatchConfig.builder()
+                                     .releaseCount(RELEASE_COUNT_LIMIT)
+                                     .instanceCount(INSTANCE_COUNT_LIMIT)
+                                     .build())
+            .build();
+    Call<InstanceSyncTaskDetails> ffcall = mock(Call.class);
+    when(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(anyString(), anyInt(), anyInt(), anyString()))
+        .thenReturn(ffcall);
+    Response<InstanceSyncTaskDetails> response = Response.success(instanceSyncTaskDetails);
+    when(ffcall.execute()).thenReturn(response);
+    Call<RestResponse<Boolean>> call = mock(Call.class);
+    when(delegateAgentManagerClient.processInstanceSyncNGResultV2(
+             anyString(), anyString(), any(InstanceSyncResponseV2.class)))
+        .thenReturn(call);
+    when(call.execute()).thenThrow(IOException.class);
+    when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(
+             any(K8sInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest.class)))
+        .thenReturn(
+            Arrays.asList(K8sServerInstanceInfo.builder().namespace("namespace1").releaseName("releaseName").build()));
+
+    k8sInstanceSyncPerpetualTaskV2Executor.runOnce(
+        PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK).build(), params, Instant.now());
+    verify(delegateAgentManagerClient, times(3)).processInstanceSyncNGResultV2(anyString(), anyString(), any());
   }
 }
