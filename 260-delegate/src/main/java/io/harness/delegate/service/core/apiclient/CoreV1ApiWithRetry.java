@@ -20,11 +20,11 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 
 @Slf4j
-public class RetryingResourceReplacingCoreV1Api extends CoreV1Api {
+public class CoreV1ApiWithRetry extends CoreV1Api {
   private static final Duration RETRY_DELAY = Duration.ofSeconds(2);
   private static final int MAX_ATTEMPTS = 3;
 
-  public RetryingResourceReplacingCoreV1Api(final ApiClient apiClient) {
+  public CoreV1ApiWithRetry(final ApiClient apiClient) {
     super(apiClient);
   }
 
