@@ -52,6 +52,7 @@ public class UserInfo {
   String externalId;
   long createdAt;
   long lastUpdatedAt;
+  // All user's account level preferences will be part of below property
   UserPreferenceDataDTO userPreference;
 
   public boolean isLocked() {
