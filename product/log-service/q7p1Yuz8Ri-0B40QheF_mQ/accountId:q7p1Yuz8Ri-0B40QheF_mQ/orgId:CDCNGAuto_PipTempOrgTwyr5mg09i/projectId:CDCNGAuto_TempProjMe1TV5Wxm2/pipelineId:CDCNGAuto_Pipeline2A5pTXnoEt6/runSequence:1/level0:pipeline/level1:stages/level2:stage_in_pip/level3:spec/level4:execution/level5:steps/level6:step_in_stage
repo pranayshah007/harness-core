@@ -1,3 +1,0 @@
-{"level":"INFO","pos":0,"out":"Successfully executed the http request http://google.com .","time":"2022-07-06T13:29:29.803722Z","args":null}
-{"level":"INFO","pos":0,"out":"Validating the assertions...","time":"2022-07-06T13:29:29.885318Z","args":null}
-{"level":"INFO","pos":0,"out":"Assertions passed","time":"2022-07-06T13:29:29.972919Z","args":null}

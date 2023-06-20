@@ -7,7 +7,6 @@ package handler
 
 import (
 	"archive/zip"
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/harness/harness-core/product/log-service/stream"
@@ -210,7 +209,6 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 			logger.WithContext(internal, logger.FromRequest(&r))
 
 			pipeRead, pipeWrite := io.Pipe()
-			br := bufio.NewReader(pipeRead)
 
 			zipWriter := zip.NewWriter(pipeWrite)
 
@@ -256,7 +254,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 
 			go func() {
 				fmt.Println("Start upload")
-				err := s.Upload(internal, zipPrefix, br)
+				err := s.Upload(internal, zipPrefix, pipeRead)
 				if err != nil {
 					fmt.Println("erro ao fazer o upload do arquivo zip")
 					cancel()
