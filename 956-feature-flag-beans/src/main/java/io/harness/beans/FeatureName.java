@@ -25,6 +25,9 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE(
+      "Set the reject status to have higher priority over other failed statuses when handling responses inside a fork state",
+      HarnessTeam.SPG),
   SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT(
       "Disable evaluation of first deployment condition to avoid unoptimized query execution on each completed deployment",
       HarnessTeam.SPG),
