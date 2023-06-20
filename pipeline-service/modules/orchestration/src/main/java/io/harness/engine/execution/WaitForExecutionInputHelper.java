@@ -72,7 +72,8 @@ public class WaitForExecutionInputHelper {
       Long currentTime = System.currentTimeMillis();
       String inputInstanceId = UUIDGenerator.generateUuid();
       EngineExpressionEvaluator evaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
-      JsonNode fieldJsonNode = YamlNode.getNodeYaml(planExecutionMetadataOptional.get().getYaml(), ambiance);
+      JsonNode fieldJsonNode = YamlNode.getNodeYaml(
+          YamlUtils.readYamlTree(planExecutionMetadataOptional.get().getYaml()).getNode(), ambiance.getLevelsList());
       // Resolve any expression in fieldYaml that can be resolved so far.
       fieldJsonNode = (JsonNode) pmsEngineExpressionService.resolve(
           ambiance, fieldJsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);

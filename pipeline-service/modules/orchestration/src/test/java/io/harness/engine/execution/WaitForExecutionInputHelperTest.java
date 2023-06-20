@@ -40,7 +40,6 @@ import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
-import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Optional;
 import org.junit.Before;
@@ -70,7 +69,7 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testWaitForExecutionInput() throws IOException {
+  public void testWaitForExecutionInput() {
     String nodeExecutionId = "nodeExecutionId";
     String template = "template";
     NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).build();
@@ -88,9 +87,9 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
                             .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
                             .putSetupAbstractions("accountId", "accountId")
                             .build();
-    doReturn(YamlUtils.readTree(resolvedFieldYaml).getNode().getCurrJsonNode())
+    doReturn(YamlUtils.readYamlTree(resolvedFieldYaml).getNode().getCurrJsonNode())
         .when(pmsEngineExpressionService)
-        .resolve(ambiance, YamlNode.getNodeYaml(fieldYaml, ambiance),
+        .resolve(ambiance, YamlNode.getNodeYaml(YamlUtils.readYamlTree(fieldYaml).getNode(), ambiance.getLevelsList()),
             ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     waitForExecutionInputHelper.waitForExecutionInput(
         ambiance, nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());
