@@ -3245,3 +3245,10 @@
 20000607:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO
 20000608:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO
 20000609:io.harness.delegate.beans.connector.rancher.RancherConnectorDTO
+20000610:io.harness.delegate.task.serverless.request.ServerlessRollbackV2Request
+20000611:io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackV2Config
+20000612:io.harness.delegate.beans.serverless.StackDetails
+20000613:io.harness.delegate.beans.serverless.Parameter
+20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
+20000615:io.harness.delegate.beans.serverless.RollbackTrigger
+20000616:io.harness.delegate.beans.serverless.Tag
