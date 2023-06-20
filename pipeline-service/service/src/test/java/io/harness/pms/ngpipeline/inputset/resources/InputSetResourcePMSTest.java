@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -35,6 +36,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -727,5 +729,49 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
             .stageIdentifiers(Collections.emptyList())
             .build());
     assertEquals("mergedYaml", responseDTO.getData().getPipelineYaml());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetMergeInputSetFromPipelineForRemoteBranchTemplate() {
+    doReturn(pipelineYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), "remote", null, null, null, false);
+    doReturn(pipelineYaml)
+        .when(validateAndMergeHelper)
+        .mergeInputSetIntoPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineYaml,
+            "remote", null, null, false);
+    MergeInputSetRequestDTOPMS inputSetRequestDTOPMS = MergeInputSetRequestDTOPMS.builder()
+                                                           .withMergedPipelineYaml(true)
+                                                           .inputSetReferences(Collections.emptyList())
+                                                           .build();
+    GitEntityFindInfoDTO gitEntityFindInfoDTO = GitEntityFindInfoDTO.builder().branch("remote").build();
+    ResponseDTO<MergeInputSetResponseDTOPMS> mergeInputSetResponseDTOPMSResponseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, gitEntityFindInfoDTO, inputSetRequestDTOPMS, "false");
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getCompletePipelineYaml(), pipelineYaml);
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
+
+    doReturn(pipelineYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), "remote", null, stages, null, false);
+
+    MergeInputSetRequestDTOPMS inputSetRequestDTOPMSWithStages = MergeInputSetRequestDTOPMS.builder()
+                                                                     .withMergedPipelineYaml(false)
+                                                                     .inputSetReferences(Collections.emptyList())
+                                                                     .stageIdentifiers(stages)
+                                                                     .build();
+    mergeInputSetResponseDTOPMSResponseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, gitEntityFindInfoDTO, inputSetRequestDTOPMSWithStages, "false");
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
+    assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
+    verify(validateAndMergeHelper, times(1))
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), "remote", null, stages, null, false);
   }
 }
