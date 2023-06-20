@@ -120,7 +120,7 @@ func (s *Store) DownloadLink(ctx context.Context, key string, expire time.Durati
 // Upload uploads the log stream from Reader r to the
 // S3 datastore.
 func (s *Store) Upload(ctx context.Context, key string, r io.Reader) error {
-	_ = manager.NewUploader(s.service, func(u *manager.Uploader) {
+	uploader := manager.NewUploader(s.service, func(u *manager.Uploader) {
 		u.PartSize = 32 * 1024 * 1024 // 32MB per part
 	})
 	keyWithPrefix := path.Join("/", s.prefix, key)
@@ -130,24 +130,8 @@ func (s *Store) Upload(ctx context.Context, key string, r io.Reader) error {
 		Body:   r,
 		ACL:    types.ObjectCannedACL(s.acl),
 	}
-	buf := make([]byte, 1024)
-
-	for {
-		n, err := input.Body.Read(buf)
-		if err == io.EOF {
-			// there is no more data to read
-			break
-		}
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		if n > 0 {
-			fmt.Print(buf[:n])
-		}
-	}
-	//_, err := uploader.Upload(ctx, input)
-	return nil
+	_, err := uploader.Upload(ctx, input)
+	return err
 }
 
 // UploadLink creates a pre-signed link that can be used to
