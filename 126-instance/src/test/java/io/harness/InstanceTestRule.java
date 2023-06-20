@@ -9,10 +9,16 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import static org.mockito.Mockito.mock;
+
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.callback.DelegateCallbackToken;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.MongoConfig;
@@ -21,7 +27,9 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 import io.harness.service.instancedashboardservice.InstanceDashboardService;
@@ -32,6 +40,7 @@ import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -39,12 +48,16 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
@@ -68,6 +81,17 @@ public class InstanceTestRule implements InjectorRuleMixin, MethodRule, MongoRul
       @Override
       protected void configure() {
         bind(HPersistence.class).to(MongoPersistence.class);
+        bind(CDFeatureFlagHelper.class).toInstance(mock(CDFeatureFlagHelper.class));
+        bind(DelegateGrpcClientWrapper.class).toInstance(mock(DelegateGrpcClientWrapper.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(BooleanSupplier.class)
+            .annotatedWith(Names.named("driver-installed-in-ng-service"))
+            .toInstance(mock(BooleanSupplier.class));
+        bind(new TypeLiteral<Supplier<DelegateCallbackToken>>() {
+        }).toInstance(Suppliers.ofInstance(DelegateCallbackToken.newBuilder().build()));
+        bind(KryoSerializer.class).toInstance(mock(KryoSerializer.class));
+        bind(Boolean.class).annotatedWith(Names.named("disableDeserialization")).toInstance(false);
+        bind(DelegateServiceGrpcClient.class).toInstance(mock(DelegateServiceGrpcClient.class));
         bind(InstanceSyncHandlerFactoryService.class).to(InstanceSyncHandlerFactoryServiceImpl.class);
         bind(InstanceDashboardService.class).to(InstanceDashboardServiceImpl.class);
         bind(InstanceService.class).to(InstanceServiceImpl.class);

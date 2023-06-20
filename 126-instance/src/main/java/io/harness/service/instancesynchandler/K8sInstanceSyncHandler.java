@@ -12,11 +12,15 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DI
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.delegate.AccountId;
+import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -35,7 +39,9 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
+import io.harness.service.DelegateGrpcClientWrapper;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -49,6 +55,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 @Slf4j
 public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Override
   public String getPerpetualTaskType() {
     return PerpetualTaskType.K8S_INSTANCE_SYNC;
@@ -69,8 +77,11 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return KUBERNETES_DIRECT;
   }
 
-  public boolean isInstanceSyncV2Enabled() {
-    return false;
+  // todo: add INSTANCE_SYNC_V2_NG_SUPPORT to TaskType INSTANCE_SYNC_V2_NG_SUPPORT
+  public boolean isInstanceSyncV2EnabledAndSupported(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_HELM_INSTANCE_SYNC_V2_NG)
+        && delegateGrpcClientWrapper.isTaskTypeSupported(AccountId.newBuilder().setId(accountId).build(),
+            TaskType.newBuilder().setType("INSTANCE_SYNC_V2_NG_SUPPORT").build());
   }
 
   @Override

@@ -815,7 +815,9 @@ public enum FeatureName {
   CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
       "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
   CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
-      "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP);
+      "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
+  CDS_K8S_HELM_INSTANCE_SYNC_V2_NG(
+      "FF for enabling Instance Sync V2 for K8s and Native Helm swimlanes in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
