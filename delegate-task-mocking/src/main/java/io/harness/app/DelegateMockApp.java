@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 @Slf4j
@@ -40,26 +41,20 @@ public class DelegateMockApp implements Runnable{
             throw new IllegalStateException("Failed to set environment variable", e);
         }
     }
-
     public static void main(final String... args) throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(obj.size()*obj.get(0).getDelegateCount());
-        for (DataConfiguration delegateData: obj) {
-            for (int i = 0; i < delegateData.getDelegateCount(); i++) {
-                Runnable worker = new DelegateMockApp();
-                executor.execute(worker);
-            }
-        }
+    ExecutorService executor = Executors.newFixedThreadPool(1);
+        configuration = CSVParser.readConfigFile("config.yaml");
+        configuration.setImmutable(true);
+        configuration.setLocalNgDelegate(true);
+        Runnable worker = new DelegateMockApp();
+        executor.execute(worker);
         executor.shutdown();
-    }
+}
 
 
     @Override
     public void run() {
-        configuration = CSVParser.readConfigFile("config.yaml");
-        configuration.setImmutable(true);
         Injector injector = Guice.createInjector(new MockDelegateAppModule(configuration));
         injector.getInstance(DelegateAgentService.class).run(false, true);
     }
-
-
 }

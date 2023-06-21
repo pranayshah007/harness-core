@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateParams.DelegateParamsBuilder;
 import static io.harness.delegate.beans.DelegateParams.builder;
+import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.metrics.DelegateMetric.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -118,11 +119,11 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
-  private static final String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
+  private static String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
   private static final String DELEGATE_GROUP_NAME = System.getenv("DELEGATE_GROUP_NAME");
-  private static final boolean DELEGATE_NG =
+  private static boolean DELEGATE_NG =
       isNotBlank(System.getenv("DELEGATE_SESSION_IDENTIFIER")) || Boolean.parseBoolean(System.getenv("NEXT_GEN"));
   private static final long HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
   private static final String DELEGATE_ORG_IDENTIFIER = System.getenv("DELEGATE_ORG_IDENTIFIER");
@@ -385,6 +386,10 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
   private void initDelegateProcess() {
     try {
+      if (delegateConfiguration.isLocalNgDelegate()) {
+        DELEGATE_NG = true;
+        DELEGATE_TYPE = KUBERNETES;
+      }
       log.info("Delegate will start running on JRE {}", System.getProperty("java.version"));
       log.info("The deploy mode for delegate is [{}]", System.getenv("DEPLOY_MODE"));
 
@@ -959,7 +964,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
   }
 
   private String getDelegateGroupName() {
-    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : DELEGATE_GROUP_NAME;
+    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID + System.currentTimeMillis(): DELEGATE_GROUP_NAME;
   }
 
   private String getDelegateHostname() {

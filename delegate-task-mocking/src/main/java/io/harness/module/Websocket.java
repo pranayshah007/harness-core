@@ -9,7 +9,6 @@ import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.service.mock.MockDelegateAgentService;
 import io.harness.security.TokenGenerator;
 import io.harness.security.X509TrustManagerBuilder;
 
@@ -50,7 +49,7 @@ import java.util.concurrent.Future;
 
 
 @Slf4j
-public class Websocket extends MockDelegateAgentService {
+public class Websocket  {
     private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
     private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
     private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
@@ -223,7 +222,7 @@ public class Websocket extends MockDelegateAgentService {
         try {
         currentlyAcquiringTasks.add(delegateTaskId);
 
-        acquireTask(delegateTaskId);
+
         //executeTask(delegateTaskEvent);
         System.out.println("threadPoolExecutor.getCompletedTaskCount() : " + threadPoolExecutor.getCompletedTaskCount());
     } catch (Exception ex) {

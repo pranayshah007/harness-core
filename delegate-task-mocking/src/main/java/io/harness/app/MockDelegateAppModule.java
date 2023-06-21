@@ -27,8 +27,6 @@ public class MockDelegateAppModule extends AbstractModule {
         bind(DelegateConfiguration.class).toInstance(configuration);
         install(new DelegateTokensModule(configuration));
         install(KryoModule.getInstance());
-//        install(new DelegateKryoModule());
-//        install(new DelegateManagerClientModule());
         install(new MockDelegateKryoModule());
         install(
                 new DelegateExecutorsModule(configuration.isDynamicHandlingOfRequestEnabled())); // Check if some can be removed

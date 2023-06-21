@@ -17,4 +17,3 @@ grpcServiceConnectorPort:
 logStreamingServiceBaseUrl: https://qa.harness.io/log-service/
 clientToolsDownloadDisabled: false
 installClientToolsInBackground: true
-isLocalNgDelegate: true
