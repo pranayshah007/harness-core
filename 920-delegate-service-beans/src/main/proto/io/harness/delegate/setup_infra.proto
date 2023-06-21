@@ -23,15 +23,13 @@ message ExecutionInfrastructure {
 
 message K8sInfraSpec {
   repeated K8sTaskContainer tasks = 1;
-  Resource resource = 2;     // Global resource requirements for infra types that need it (e.g. K8S CPU/Mem)
   map<string, string> env = 3;           // Any global env variables. These envs will be applied to all containers
   SecurityContext security_context = 4;  // Startup user id for the execution infra
-  string working_dir = 5;                // Working dir that all tasks have read/write access to
-  repeated Resource resources = 6;       // Any global resources like shared volumes
+  repeated Resource resources = 5;       // Any global resources like shared volumes
 }
 
 message K8sTaskContainer {
-  string id = 1;           // Id for the step
+  // TODO: should we add step id here ?
   ContainerSpec container_spec = 2;      // Spec for the container environment
   SecurityContext security_context = 3;  // Startup user id for the execution infra
 }
@@ -43,7 +41,6 @@ message ContainerSpec {
   map<string, string> env = 4;        // Env variables
   repeated string command = 5;        // Commands to be executed
   repeated string arg = 6;            // Args to be passed
-  string working_dir = 7;             // Working dir that all tasks have read/write access to
 }
 
 /*
