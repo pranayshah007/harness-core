@@ -122,12 +122,15 @@ func main() {
 func logKubMetrics(logger *zap.SugaredLogger) {
 	logger.Infow("Starting memory profiling")
 
+	profileCount := 0
 	sleepSecs := time.Second * 5
 	cpuUsagePrev := 0
 	lastTime := time.Now()
 	go func() {
 		for {
-			time.Sleep(sleepSecs)
+			if profileCount != 0 {
+				time.Sleep(sleepSecs)
+			}
 
 			memoryUsage, memoryMaxUsage, memoryLimit, memErr := getMemoryStat(logger)
 			logger.Infow(
