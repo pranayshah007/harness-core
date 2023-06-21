@@ -23,7 +23,6 @@ public interface StepGroupInfra {
   @TypeAlias("infrastructure_type")
   enum Type {
     @JsonProperty("KubernetesDirect") KUBERNETES_DIRECT("KubernetesDirect"),
-    @JsonProperty("Delegate") DELEGATE("Delegate"),
     @JsonProperty("Noop") NO_OP("Noop");
     private final String yamlName;
 

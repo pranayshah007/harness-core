@@ -3112,30 +3112,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "DelegateInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepGroupInfra"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "Delegate",
-                "Noop"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "DependencyElement": {
       "type": "object",
       "required": [
@@ -12048,9 +12024,6 @@
         },
         "stepGroupInfra": {
           "oneOf": [
-            {
-              "$ref": "#/definitions/DelegateInfra"
-            },
             {
               "$ref": "#/definitions/K8sDirectInfra"
             }
