@@ -9,6 +9,7 @@ package io.harness.delegate;
 
 import "google/protobuf/duration.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/setup_infra.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/execute.proto";
 
@@ -23,7 +24,6 @@ message SetupExecutionInfrastructureRequest {
 
 message ScheduleTaskRequest {
   Execution execution = 1;
-  string infraRef = 1;
   SchedulingConfig config = 2;
 }
 

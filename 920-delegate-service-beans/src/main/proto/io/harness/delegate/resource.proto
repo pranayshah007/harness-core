@@ -7,19 +7,20 @@ syntax = "proto3";
 
 package io.harness.delegate;
 import "google/protobuf/any.proto";
+
 option java_multiple_files = true;
 option go_package = "920_delegate_service_beans";
 
 /*
   Any data about resource requirements (e.g. for container)
  */
-message RuntimeResource {
+message ComputingResource {
   string memory = 1;
   string cpu = 2;
 }
 
 /*
-  Intended for defining any additional resources the plugin should use, e.g. additional volume
+  Intended for defining any additional resources the container should use, e.g. additional volume
  */
 message Resource {
   google.protobuf.Any spec = 1;

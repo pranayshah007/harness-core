@@ -14,7 +14,6 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
 import "955-delegate-beans/src/main/proto/io/harness/delegate/capability.proto";
 import "955-delegate-beans/src/main/proto/io/harness/perpetualtask/perpetual_task.proto";
 
-import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_task_apis.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/progress.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";

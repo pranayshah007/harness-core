@@ -7,9 +7,7 @@ syntax = "proto3";
 
 package io.harness.delegate;
 
-import "google/protobuf/duration.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/resource.proto";
-import "920-delegate-service-beans/src/main/proto/io/harness/delegate/secrets.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/log_config.proto";
 option go_package = "920_delegate_service_beans";
 
@@ -17,40 +15,35 @@ option java_multiple_files = true;
 
 message ExecutionInfrastructure {
   LogConfig log_config = 1;
-  repeated Secret secret = 2;
-  oneof {
+  oneof infraSpec {
     K8sInfraSpec k8Infraspec = 3;
     // VMInfraSpec vmInfraSpec = 4;
   }
 }
 
-message ContainerSpec {
-  string type = 1;  // Type of the plugin, can be anything from enum TaskType or any additional 3rd party plugins. It
-                    // can be left out if plugin can execute a single type of task
-  string image_tag = 3;               // Docker image tag
-  repeated int64 port = 4;            // Port exposed for the container
-  ResourceRequirements resource = 5;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
-  map<string, string> env = 6;        // Env variables
-  repeated string command = 7;        // Commands to be executed
-  repeated string arg = 8;            // Args to be passed
-  string working_dir = 9;             // Working dir that all tasks have read/write access to
-}
-
 message K8sInfraSpec {
-  repeated K8SStep steps = 1;
-  repeated Secret infra_secrets = 2;     // Secret needed to setup execution environment (e.g. imagePullSecrets)
-  ResourceRequirements resource = 3;     // Global resource requirements for infra types that need it (e.g. K8S CPU/Mem)
-  map<string, string> env = 4;           // Any global env variables
-  SecurityContext security_context = 5;  // Startup user id for the execution infra
-  string working_dir = 6;                // Working dir that all tasks have read/write access to
-  repeated Resource resources = 7;       // Any global resources like shared volumes
-  map<string, ContainerSpec> aux_container_specs = 8;  // Spec for auxiliary containers that facilitate task execution
+  repeated K8sTaskContainer tasks = 1;
+  Resource resource = 2;     // Global resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  map<string, string> env = 3;           // Any global env variables. These envs will be applied to all containers
+  SecurityContext security_context = 4;  // Startup user id for the execution infra
+  string working_dir = 5;                // Working dir that all tasks have read/write access to
+  repeated Resource resources = 6;       // Any global resources like shared volumes
 }
 
-message K8SStep {
+message K8sTaskContainer {
   string id = 1;           // Id for the step
-  ContainerSpec container_spec = 5;      // Spec for the container environment
-  SecurityContext security_context = 6;  // Startup user id for the execution infra
+  ContainerSpec container_spec = 2;      // Spec for the container environment
+  SecurityContext security_context = 3;  // Startup user id for the execution infra
+}
+
+message ContainerSpec {
+  string image = 1;                   // Docker image tag
+  repeated int64 port = 2;            // Port exposed for the container
+  ComputingResource resource = 3;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
+  map<string, string> env = 4;        // Env variables
+  repeated string command = 5;        // Commands to be executed
+  repeated string arg = 6;            // Args to be passed
+  string working_dir = 7;             // Working dir that all tasks have read/write access to
 }
 
 /*
