@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
@@ -43,7 +44,7 @@ public class GithubPackageUtils {
   public static GithubPackagesArtifactDelegateConfig getGithubPackagesArtifactDelegateConfig(
       SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
     if (!(artifactDelegateConfig instanceof GithubPackagesArtifactDelegateConfig)) {
-      log.error(
+      log.warn(
           "Wrong artifact delegate config submitted. Expecting GithubPackagesArtifactDelegateConfig, but provided: {}",
           artifactDelegateConfig.getClass());
       throw new InvalidRequestException("Invalid artifact delegate config submitted, expected GithubPackages config");
@@ -78,6 +79,11 @@ public class GithubPackageUtils {
   }
 
   public String getBasicAuthHeader(GithubPackagesInternalConfig githubPackagesInternalConfig) {
+    // only API token is used
+    if (EmptyPredicate.isEmpty(githubPackagesInternalConfig.getToken())) {
+      throw new InvalidRequestException("Github Api access token can't be empty");
+    }
+
     return ArtifactUtilities.getBasicAuthHeader(githubPackagesInternalConfig.hasCredentials(),
         githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken().toCharArray());
   }

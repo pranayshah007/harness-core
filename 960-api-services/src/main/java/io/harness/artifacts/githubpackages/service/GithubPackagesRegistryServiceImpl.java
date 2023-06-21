@@ -31,6 +31,7 @@ import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -46,6 +47,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +56,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import okhttp3.Credentials;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
@@ -68,6 +71,7 @@ import retrofit2.Response;
 @Slf4j
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
   private static final int HTTP_CLIENT_TIMEOUT_SECONDS = 600;
+  private static int EXECUTE_REST_CALL_MAX_ATTEMPTS = 3;
 
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
   @Inject private DockerRegistryUtils dockerRegistryUtils;
@@ -229,23 +233,30 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   public Pair<String, InputStream> downloadArtifactByUrl(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String artifactName, String artifactUrl) {
     try {
-      if (githubPackagesInternalConfig.hasCredentials()) {
-        OkHttpClient okHttpClient =
-            Http.getUnsafeOkHttpClient(artifactUrl, HTTP_CLIENT_TIMEOUT_SECONDS, HTTP_CLIENT_TIMEOUT_SECONDS);
-        Request request = new Request.Builder()
-                              .url(artifactUrl)
-                              .header("Authorization",
-                                  Credentials.basic(githubPackagesInternalConfig.getUsername(),
-                                      new String(githubPackagesInternalConfig.getToken())))
-                              .build();
+      net.jodah.failsafe.RetryPolicy<okhttp3.Response> retryPolicy =
+          new net.jodah.failsafe.RetryPolicy<okhttp3.Response>()
+              .withBackoff(1, 10, ChronoUnit.SECONDS)
+              .withMaxAttempts(EXECUTE_REST_CALL_MAX_ATTEMPTS)
+              .handle(IOException.class)
+              .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
+              .onRetry(e -> log.warn("Failure #{}. Retrying. Exception {}", e.getAttemptCount(), e.getLastFailure()))
+              .onRetriesExceeded(e -> log.warn("Failed to connect. Max retries exceeded"));
 
-        return ImmutablePair.of(artifactName, okHttpClient.newCall(request).execute().body().byteStream());
+      OkHttpClient okHttpClient =
+          Http.getUnsafeOkHttpClient(artifactUrl, HTTP_CLIENT_TIMEOUT_SECONDS, HTTP_CLIENT_TIMEOUT_SECONDS);
+      Request.Builder requestBuilder = new Request.Builder().url(artifactUrl);
+
+      if (githubPackagesInternalConfig.hasCredentials()) {
+        requestBuilder.header("Authorization",
+            Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken()));
       }
 
-      return ImmutablePair.of(artifactName,
-          Http.getResponseStreamFromUrl(artifactUrl, HTTP_CLIENT_TIMEOUT_SECONDS, HTTP_CLIENT_TIMEOUT_SECONDS));
+      okhttp3.Response response =
+          Failsafe.with(retryPolicy).get(() -> okHttpClient.newCall(requestBuilder.build()).execute());
+
+      return ImmutablePair.of(artifactName, response.body().byteStream());
     } catch (Exception ex) {
-      throw new InvalidRequestException(ExceptionUtils.getMessage(ex), ex);
+      throw new HintException("Some problems occurred during downloading Github package artifact", ex.getCause());
     }
   }
 
@@ -673,5 +684,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       log.error(COULD_NOT_FETCH_IMAGE_MANIFEST, e);
     }
     return artifactMetaInfo;
+  }
+
+  private boolean isRetryableHttpCode(int httpCode) {
+    // https://stackoverflow.com/questions/51770071/what-are-the-http-codes-to-automatically-retry-the-request
+    return httpCode == 408 || httpCode == 502 || httpCode == 503 || httpCode == 504;
   }
 }
