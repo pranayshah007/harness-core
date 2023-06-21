@@ -71,7 +71,7 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
   @Category(UnitTests.class)
   public void testProcess() {
     Instant startTime = clock.instant();
-    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, BAD, BAD, BAD, BAD, SKIP_DATA);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, BAD, BAD, BAD, BAD);
     doReturn(getPrevSLIRecords(
