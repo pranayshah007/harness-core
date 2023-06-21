@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -21,6 +22,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -29,7 +32,6 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -204,6 +206,15 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProviderTest extends Category
 
     doReturn(access).when(serverlessAwsLambdaPackageV2PluginInfoProvider).getKey(ambiance, awsAccess);
     doReturn(secret).when(serverlessAwsLambdaPackageV2PluginInfoProvider).getKey(ambiance, awsSecret);
+
+    ArtifactOutcome artifactOutcome = mock(ArtifactOutcome.class);
+    ArtifactsOutcome artifactsOutcome = ArtifactsOutcome.builder().primary(artifactOutcome).build();
+    doReturn(Optional.of(artifactsOutcome))
+        .when(serverlessAwsLambdaPackageV2PluginInfoProvider)
+        .getArtifactsOutcome(any());
+    doNothing()
+        .when(serverlessAwsLambdaPackageV2PluginInfoProvider)
+        .populateArtifactEnvironmentVariables(any(), any(), any());
 
     Map<String, String> response = serverlessAwsLambdaPackageV2PluginInfoProvider.getEnvironmentVariables(
         ambiance, serverlessAwsLambdaPackageV2StepInfo);

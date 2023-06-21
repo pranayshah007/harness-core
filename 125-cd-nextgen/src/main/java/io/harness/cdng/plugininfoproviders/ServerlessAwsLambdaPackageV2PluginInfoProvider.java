@@ -19,6 +19,11 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -32,7 +37,6 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -40,6 +44,10 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
@@ -247,10 +255,19 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
       }
     }
 
+    HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap = new HashMap<>();
+
+    Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
+    if (artifactsOutcome.isPresent()) {
+      if (artifactsOutcome.get().getPrimary() != null) {
+        populateArtifactEnvironmentVariables(
+            artifactsOutcome.get().getPrimary(), ambiance, serverlessPrepareRollbackEnvironmentVariablesMap);
+      }
+    }
+
     ParameterField<List<String>> packageCommandOptions =
         serverlessAwsLambdaPackageV2StepInfo.getPackageCommandOptions();
 
-    HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap = new HashMap<>();
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_DIR", gitPaths.get(0));
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH", configOverridePath);
     serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_SERVERLESS_STAGE", stageName);
@@ -320,6 +337,92 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 
+  public void populateArtifactEnvironmentVariables(ArtifactOutcome artifactOutcome, Ambiance ambiance,
+      HashMap<String, String> serverlessPrepareRollbackEnvironmentVariablesMap) {
+    ConnectorInfoDTO connectorDTO;
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    if (artifactOutcome instanceof ArtifactoryGenericArtifactOutcome) {
+      String artifactoryUserName = null;
+      String artifactoryPassword = null;
+
+      ArtifactoryGenericArtifactOutcome artifactoryGenericArtifactOutcome =
+          (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+      connectorDTO =
+          serverlessEntityHelper.getConnectorInfoDTO(artifactoryGenericArtifactOutcome.getConnectorRef(), ngAccess);
+      ConnectorConfigDTO connectorConfigDTO = connectorDTO.getConnectorConfig();
+      ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectorConfigDTO;
+      ArtifactoryAuthenticationDTO artifactoryAuthenticationDTO = artifactoryConnectorDTO.getAuth();
+      ArtifactoryAuthCredentialsDTO artifactoryAuthCredentialsDTO = artifactoryAuthenticationDTO.getCredentials();
+
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_REPOSITORY_NAME", artifactoryGenericArtifactOutcome.getRepositoryName());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_FILE_PATH", artifactoryGenericArtifactOutcome.getArtifactPath());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_ARTIFACT_IDENTIFIER", artifactoryGenericArtifactOutcome.getIdentifier());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_ARTIFACT_DIRECTORY", artifactoryGenericArtifactOutcome.getArtifactDirectory());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_ARTIFACTORY_URL", artifactoryConnectorDTO.getArtifactoryServerUrl());
+
+      if (artifactoryAuthCredentialsDTO instanceof ArtifactoryUsernamePasswordAuthDTO) {
+        ArtifactoryUsernamePasswordAuthDTO artifactoryUsernamePasswordAuthDTO =
+            (ArtifactoryUsernamePasswordAuthDTO) artifactoryAuthCredentialsDTO;
+
+        if (!StringUtils.isEmpty(artifactoryUsernamePasswordAuthDTO.getUsername())) {
+          artifactoryUserName = artifactoryUsernamePasswordAuthDTO.getUsername();
+        } else {
+          artifactoryUserName = getKey(ambiance, artifactoryUsernamePasswordAuthDTO.getUsernameRef());
+        }
+
+        artifactoryPassword = getKey(ambiance, artifactoryUsernamePasswordAuthDTO.getPasswordRef());
+      }
+
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACTORY_USERNAME", artifactoryUserName);
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACTORY_PASSWORD", artifactoryPassword);
+
+    } else if (artifactOutcome instanceof EcrArtifactOutcome) {
+      EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_IMAGE_PATH", ecrArtifactOutcome.getImage());
+
+    } else if (artifactOutcome instanceof S3ArtifactOutcome) {
+      String s3AwsAccessKey = null;
+      String s3AwsSecretKey = null;
+
+      S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
+      connectorDTO = serverlessEntityHelper.getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
+      ConnectorConfigDTO connectorConfigDTO = connectorDTO.getConnectorConfig();
+      AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorConfigDTO;
+      AwsCredentialDTO awsCredentialDTO = awsConnectorDTO.getCredential();
+      AwsCredentialSpecDTO awsCredentialSpecDTO = awsCredentialDTO.getConfig();
+
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_BUCKET_NAME", s3ArtifactOutcome.getBucketName());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_FILE_PATH", s3ArtifactOutcome.getFilePath());
+      serverlessPrepareRollbackEnvironmentVariablesMap.put(
+          "PLUGIN_ARTIFACT_IDENTIFIER", s3ArtifactOutcome.getIdentifier());
+
+      if (awsCredentialSpecDTO instanceof AwsManualConfigSpecDTO) {
+        AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO) awsCredentialSpecDTO;
+
+        if (!StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())) {
+          s3AwsAccessKey = awsManualConfigSpecDTO.getAccessKey();
+        } else {
+          s3AwsAccessKey = getKey(ambiance, awsManualConfigSpecDTO.getAccessKeyRef());
+        }
+
+        s3AwsSecretKey = getKey(ambiance, awsManualConfigSpecDTO.getSecretKeyRef());
+      }
+
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ACCESS_KEY", s3AwsAccessKey);
+      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_SECRET_KEY", s3AwsSecretKey);
+
+    } else {
+      throw new UnsupportedOperationException(
+          format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
+    }
+  }
+
   public String getKey(Ambiance ambiance, SecretRefData secretRefData) {
     return NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
         secretRefData.toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
@@ -337,6 +440,16 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
       throw new InvalidRequestException("There can be only a single manifest for Serverless Aws Lambda step", USER);
     }
     return serverlessManifests.get(0);
+  }
+
+  public Optional<ArtifactsOutcome> getArtifactsOutcome(Ambiance ambiance) {
+    OptionalOutcome artifactsOutcomeOption = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (artifactsOutcomeOption.isFound()) {
+      ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
+      return Optional.of(artifactsOutcome);
+    }
+    return Optional.empty();
   }
 
   public IdentifierRef getIdentifierRef(String awsConnectorRef, NGAccess ngAccess) {
