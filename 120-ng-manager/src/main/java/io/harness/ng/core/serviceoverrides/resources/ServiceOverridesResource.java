@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.serviceoverrides.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
@@ -56,6 +57,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -181,6 +183,7 @@ public class ServiceOverridesResource {
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be created") @NonNull
       @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    checkNonEmptyIdentifierAndThrow(requestDTOV2.getIdentifier());
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity serviceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -200,7 +203,7 @@ public class ServiceOverridesResource {
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -221,7 +224,7 @@ public class ServiceOverridesResource {
   upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the ServiceOverride to be updated")
-      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -417,5 +420,12 @@ public class ServiceOverridesResource {
         serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
             accountId, orgIdentifier, projectIdentifier, updateChildren, false);
     return ResponseDTO.newResponse(overrideV2SettingsUpdateResponseDTO);
+  }
+
+  private void checkNonEmptyIdentifierAndThrow(String identifier) {
+    if (isNotEmpty(identifier)) {
+      throw new InvalidRequestException(
+          "Service Override Identifier field is harness internal, should not be given in request");
+    }
   }
 }

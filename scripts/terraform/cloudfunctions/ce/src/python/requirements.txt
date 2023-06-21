@@ -16,3 +16,4 @@ azure-monitor-query
 azure-mgmt-resource
 bigquery-schema-generator==1.5
 requests
+azure-mgmt-compute

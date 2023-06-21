@@ -8,6 +8,7 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.KubernetesHelperService.toDisplayYaml;
 import static io.harness.k8s.model.HarnessLabelValues.bgPrimaryEnv;
 import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
@@ -21,6 +22,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
+import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.logging.CommandExecutionStatus;
@@ -107,11 +109,27 @@ public class K8sSwapServiceSelectorsBaseHandler {
     return false;
   }
 
-  public void updateReleaseHistory(IK8sRelease release) {
-    if (release != null && bgStageEnv.equals(release.getBgEnvironment())) {
-      release.setBgEnvironment(bgPrimaryEnv);
-    } else if (release != null && bgPrimaryEnv.equals(release.getBgEnvironment())) {
-      release.setBgEnvironment(bgStageEnv);
+  public void updateReleaseHistory(IK8sRelease primaryRelease, IK8sRelease stageRelease) {
+    if (primaryRelease != null) {
+      swapBgEnvironment(primaryRelease);
     }
+    if (stageRelease != null) {
+      swapBgEnvironment(stageRelease);
+    }
+  }
+
+  public void swapBgEnvironment(IK8sRelease release) {
+    if (isNotEmpty(release.getBgEnvironment())) {
+      if (bgStageEnv.equals(release.getBgEnvironment())) {
+        release.setBgEnvironment(bgPrimaryEnv);
+      } else {
+        release.setBgEnvironment(bgStageEnv);
+      }
+    }
+  }
+
+  public String getColorOfService(KubernetesConfig kubernetesConfig, String service) {
+    V1Service primaryService = kubernetesContainerService.getService(kubernetesConfig, service);
+    return primaryService.getSpec().getSelector().get(HarnessLabels.color);
   }
 }

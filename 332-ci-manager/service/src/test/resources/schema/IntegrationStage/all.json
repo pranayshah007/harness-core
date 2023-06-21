@@ -12286,7 +12286,8 @@
             "format": {
               "type": "string",
               "enum": [
-                "spdx-json"
+                "spdx-json",
+                "cyclonedx-json"
               ]
             }
           }

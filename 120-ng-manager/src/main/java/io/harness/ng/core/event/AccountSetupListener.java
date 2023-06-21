@@ -12,6 +12,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUN
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 
@@ -79,6 +80,8 @@ public class AccountSetupListener implements MessageListener {
         return processAccountRestoreEvent(accountEntityChangeDTO);
       case UPDATE_ACTION:
         return processAccountUpdateEvent(accountEntityChangeDTO);
+      case NG_USER_CLEANUP_ACTION:
+        return processNGUserCleanupEvent(accountEntityChangeDTO);
       default:
     }
     return true;
@@ -92,6 +95,14 @@ public class AccountSetupListener implements MessageListener {
       log.info("Starting to setup account- {} for NG", accountEntityChangeDTO.getAccountId());
       ngAccountSetupService.setupAccountForNG(accountEntityChangeDTO.getAccountId());
     }
+    return true;
+  }
+
+  private boolean processNGUserCleanupEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    log.info(String.format(
+        "[AccountSetupListener]: Received account cleanup event for account %s. Staring the cleanUp event",
+        accountEntityChangeDTO.getAccountId()));
+    ngAccountSetupService.cleanUsersFromAccountForNg(accountEntityChangeDTO.getAccountId());
     return true;
   }
 

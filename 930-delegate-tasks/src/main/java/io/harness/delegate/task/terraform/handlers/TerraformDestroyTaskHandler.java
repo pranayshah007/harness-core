@@ -181,6 +181,8 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
               .skipTerraformRefresh(taskParameters.isSkipTerraformRefresh())
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
+              .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
+              .isNG(true)
               .build();
 
       TerraformStepResponse terraformStepResponse =

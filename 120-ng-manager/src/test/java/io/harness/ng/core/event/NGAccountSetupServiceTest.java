@@ -11,6 +11,7 @@ import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getManagedAdminRole;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 
 import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -205,5 +206,22 @@ public class NGAccountSetupServiceTest extends CategoryTest {
     assertThat(users.size()).isEqualTo(2);
     assertThat(users.contains(FIRST_ADMIN_USER)).isTrue();
     assertThat(users.contains(SECOND_ADMIN_USER)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testCleanUpForNG() {
+    when(featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)).thenReturn(false);
+    when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
+        .thenReturn(true);
+    ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    verify(ngUserService, times(3)).addUserToScope(captor.capture(), any(), any(), any(), any());
+    List<String> users = captor.getAllValues();
+    assertThat(users.size()).isEqualTo(3);
+    ngAccountSetupService.cleanUsersFromAccountForNg(ACCOUNT_ID);
+    verify(ngUserService, times(1)).listUserIds(any());
+    verify(ngUserService, times(2)).listUsersHavingRole(any(), any());
   }
 }

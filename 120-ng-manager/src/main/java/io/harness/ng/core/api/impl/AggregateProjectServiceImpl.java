@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.favorites.entities.Favorite;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.ng.core.api.AggregateProjectService;
 import io.harness.ng.core.dto.ProjectAggregateDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
@@ -22,6 +24,7 @@ import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.utils.UserHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,12 +32,14 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -50,14 +55,19 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
   private final OrganizationService organizationService;
   private final NgUserService ngUserService;
   private final ExecutorService executorService;
+  private final UserHelperService userHelperService;
+  private final FavoritesService favoritesService;
 
   @Inject
   public AggregateProjectServiceImpl(ProjectService projectService, OrganizationService organizationService,
-      NgUserService ngUserService, @Named("aggregate-projects") ExecutorService executorService) {
+      NgUserService ngUserService, @Named("aggregate-projects") ExecutorService executorService,
+      UserHelperService userHelperService, FavoritesService favoritesService) {
     this.projectService = projectService;
     this.organizationService = organizationService;
     this.ngUserService = ngUserService;
     this.executorService = executorService;
+    this.userHelperService = userHelperService;
+    this.favoritesService = favoritesService;
   }
 
   @Override
@@ -72,11 +82,11 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
 
   @Override
   public Page<ProjectAggregateDTO> listProjectAggregateDTO(
-      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO) {
+      String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO, Boolean onlyFavorites) {
     Page<Project> permittedProjects =
-        projectService.listPermittedProjects(accountIdentifier, pageable, projectFilterDTO);
+        projectService.listPermittedProjects(accountIdentifier, pageable, projectFilterDTO, onlyFavorites);
     List<Project> projectList = permittedProjects.getContent();
-
+    Set<String> favoriteProjectIds = fetchFavoriteProjectIds(accountIdentifier, projectFilterDTO);
     List<Callable<ProjectAggregateDTO>> tasks = new ArrayList<>();
     projectList.forEach(project -> tasks.add(() -> buildAggregateDTO(project)));
 
@@ -96,7 +106,11 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
         Project project = projectList.get(i);
         log.error("Project aggregate task cancelled for project [{}/{}/{}]", project.getAccountIdentifier(),
             project.getOrgIdentifier(), project.getIdentifier(), e);
-        aggregates.add(ProjectAggregateDTO.builder().projectResponse(ProjectMapper.toResponseWrapper(project)).build());
+        aggregates.add(ProjectAggregateDTO.builder()
+                           .projectResponse(ProjectMapper.toProjectResponseBuilder(project)
+                                                .isFavorite(favoriteProjectIds.contains(project.getIdentifier()))
+                                                .build())
+                           .build());
       } catch (InterruptedException interruptedException) {
         Thread.currentThread().interrupt();
         return Page.empty();
@@ -104,7 +118,11 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
         Project project = projectList.get(i);
         log.error("Error occurred while computing aggregate for project [{}/{}/{}]", project.getAccountIdentifier(),
             project.getOrgIdentifier(), project.getIdentifier(), e);
-        aggregates.add(ProjectAggregateDTO.builder().projectResponse(ProjectMapper.toResponseWrapper(project)).build());
+        aggregates.add(ProjectAggregateDTO.builder()
+                           .projectResponse(ProjectMapper.toProjectResponseBuilder(project)
+                                                .isFavorite(favoriteProjectIds.contains(project.getIdentifier()))
+                                                .build())
+                           .build());
       }
     }
 
@@ -125,11 +143,20 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
     collaborators.removeAll(projectAdmins);
 
     return ProjectAggregateDTO.builder()
-        .projectResponse(ProjectMapper.toResponseWrapper(project))
+        .projectResponse(ProjectMapper.toProjectResponseBuilder(project)
+                             .isFavorite(projectService.isFavorite(project, userHelperService.getUserId()))
+                             .build())
         .organization(organizationOptional.map(OrganizationMapper::writeDto).orElse(null))
         .harnessManagedOrg(organizationOptional.map(Organization::getHarnessManaged).orElse(Boolean.FALSE))
         .admins(projectAdmins)
         .collaborators(collaborators)
         .build();
+  }
+
+  private Set<String> fetchFavoriteProjectIds(String accountIdentifier, ProjectFilterDTO projectFilterDTO) {
+    return projectService.getProjectFavorites(accountIdentifier, projectFilterDTO, userHelperService.getUserId())
+        .stream()
+        .map(Favorite::getResourceIdentifier)
+        .collect(Collectors.toSet());
   }
 }

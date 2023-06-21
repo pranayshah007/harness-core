@@ -20,6 +20,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -568,6 +569,12 @@ public class AccountServiceImpl implements AccountService {
     account.setNextGenEnabled(enabled);
     update(account);
     publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
+  public Boolean cleanUpNextGen(String accountId) {
+    publishAccountChangeEventViaEventFramework(accountId, NG_USER_CLEANUP_ACTION);
     return true;
   }
 

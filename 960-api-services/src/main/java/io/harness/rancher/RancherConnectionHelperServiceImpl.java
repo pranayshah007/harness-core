@@ -60,4 +60,11 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
     }
     return clustersData.stream().map(RancherClusterItem::getName).collect(Collectors.toList());
   }
+
+  @Override
+  public String generateKubeconfig(String rancherUrl, String bearerToken, String clusterName) {
+    RancherGenerateKubeconfigResponse generateKubeConfigResponse =
+        rancherClusterClient.generateKubeconfig(bearerToken, rancherUrl, clusterName);
+    return generateKubeConfigResponse.getConfig();
+  }
 }

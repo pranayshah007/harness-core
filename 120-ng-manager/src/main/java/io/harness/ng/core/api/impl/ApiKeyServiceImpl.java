@@ -9,7 +9,6 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_API_KEY_LIMIT;
@@ -64,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.dao.DuplicateKeyException;
@@ -316,23 +314,21 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
         if (!userId.get().equals(parentIdentifier)) {
           throw new InvalidArgumentsException(String.format(
-              "User [%s] not authenticated to create api key for user [%s]", userId.get(), parentIdentifier));
+              "User [%s] not authenticated to create or list api key for user [%s]", userId.get(), parentIdentifier));
         }
-        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get(), true);
+        Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
         if (userInfo.isEmpty()) {
           throw new InvalidArgumentsException(String.format("No user found with id: [%s]", userId.get()));
         }
 
-        List<GatewayAccountRequestDTO> userAccounts = new ArrayList<>(userInfo.get().getAccounts());
-        if (isNotEmpty(userInfo.get().getSupportAccounts())) {
-          userAccounts.addAll(userInfo.get().getSupportAccounts());
-        }
+        List<GatewayAccountRequestDTO> userAccounts = userInfo.get().getAccounts();
+
         if (userAccounts == null
             || userAccounts.stream()
                    .filter(account -> account.getUuid().equals(accountIdentifier))
                    .findFirst()
                    .isEmpty()) {
-          throw new NotAuthorizedException(String.format(
+          throw new InvalidArgumentsException(String.format(
               "User [%s] is not authorized to create ApiKey for account: [%s]", userId.get(), accountIdentifier));
         }
 

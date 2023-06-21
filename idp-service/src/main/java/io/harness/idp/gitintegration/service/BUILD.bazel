@@ -16,7 +16,8 @@ java_library(
         "//:lombok",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/utils:module",
-        "//idp-service/src/main/java/io/harness/idp/configmanager:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/service:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/utils:module",
         "//idp-service/src/main/java/io/harness/idp/envvariable:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/beans:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/entities:module",
@@ -24,7 +25,6 @@ java_library(
         "//idp-service/src/main/java/io/harness/idp/gitintegration/processor:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/repositories:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/utils:module",
-        "//idp-service/src/main/java/io/harness/idp/proxy:module",
         "@maven//:com_google_inject_guice",
     ],
 )

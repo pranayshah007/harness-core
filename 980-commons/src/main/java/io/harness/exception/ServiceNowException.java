@@ -13,13 +13,27 @@ import io.harness.eraro.Level;
 import java.util.EnumSet;
 
 public class ServiceNowException extends WingsException {
+  private static final String MESSAGE_ARG = "message";
+
   public ServiceNowException(String message, ErrorCode code, EnumSet<ReportTarget> reportTargets) {
     super(message, null, code, Level.ERROR, reportTargets, null);
-    super.getParams().put("message", message);
+    super.getParams().put(MESSAGE_ARG, message);
   }
 
   public ServiceNowException(String message, ErrorCode code, EnumSet<ReportTarget> reportTargets, Throwable cause) {
     super(message, cause, code, Level.ERROR, reportTargets, null);
-    super.getParams().put("message", message);
+    super.getParams().put(MESSAGE_ARG, message);
+  }
+
+  public ServiceNowException(
+      String message, ErrorCode code, EnumSet<ReportTarget> reportTargets, EnumSet<FailureType> failureTypes) {
+    super(message, null, code, Level.ERROR, reportTargets, failureTypes);
+    super.getParams().put(MESSAGE_ARG, message);
+  }
+
+  public ServiceNowException(String message, ErrorCode code, EnumSet<ReportTarget> reportTargets, Throwable cause,
+      EnumSet<FailureType> failureTypes) {
+    super(message, cause, code, Level.ERROR, reportTargets, failureTypes);
+    super.getParams().put(MESSAGE_ARG, message);
   }
 }

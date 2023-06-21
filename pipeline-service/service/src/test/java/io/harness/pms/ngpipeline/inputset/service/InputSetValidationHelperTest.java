@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +34,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.manage.GlobalContextManager;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
@@ -63,6 +65,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Mock PMSInputSetService inputSetService;
   @Mock PMSPipelineService pipelineService;
   @Mock GitSyncSdkService gitSyncSdkService;
+  @Mock InputSetsApiUtils inputSetsApiUtils;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
 
   String accountId = "accountId";
@@ -206,9 +209,11 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doThrow(new InvalidRequestException("InputSet with the given ID: inputSetId does not exist or has been deleted"))
         .when(inputSetService)
         .getMetadata(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, true);
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, null, null,
-                               accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null))
+    doReturn(false).when(inputSetsApiUtils).isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId);
+    assertThatThrownBy(
+        ()
+            -> InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, null, null, accountId, orgId,
+                projectId, pipelineId, "inputSetId", "pipelineBranch", null, inputSetsApiUtils))
         .hasMessageContaining("does not exist or has been deleted")
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -237,8 +242,10 @@ public class InputSetValidationHelperTest extends CategoryTest {
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
-    InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null);
+    doReturn(false).when(inputSetsApiUtils).isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId);
+    InputSetYamlDiffDTO yamlDiffDTO =
+        InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, pipelineService, null, accountId,
+            orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, inputSetsApiUtils);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     mockSettings.close();
@@ -268,8 +275,10 @@ public class InputSetValidationHelperTest extends CategoryTest {
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
-    InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "defaultBranch", null);
+    doReturn(true).when(inputSetsApiUtils).isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId);
+    InputSetYamlDiffDTO yamlDiffDTO =
+        InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, pipelineService, null, accountId,
+            orgId, projectId, pipelineId, "inputSetId", "defaultBranch", null, inputSetsApiUtils);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     mockSettings.close();
@@ -300,11 +309,13 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
+    doReturn(false).when(inputSetsApiUtils).isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
-    InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null);
+    InputSetYamlDiffDTO yamlDiffDTO =
+        InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, pipelineService, null, accountId,
+            orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, inputSetsApiUtils);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     assertThat(yamlDiffDTO.getGitDetails().getBranch()).isEqualTo("thisBranch");
@@ -409,5 +420,61 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .build();
     // no exception should be thrown
     InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category({UnitTests.class})
+  public void testGetInputSetEntity1() {
+    GitAwareContextHelper.updateGitEntityContextWithBranch("branch");
+    InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
+    PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo1").build();
+    assertThatThrownBy(()
+                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
+                               "branch", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("InputSet with the given ID: inputSetId does not exist or has been deleted");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category({UnitTests.class})
+  public void testGetInputSetEntity2() {
+    GitAwareContextHelper.updateGitEntityContextWithBranch("branch");
+    InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
+    PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo1").build();
+    assertThatThrownBy(()
+                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
+                               "branch1", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Reconciliation is not allowed for the given input set. Pipeline and InputSet must be present on the same branch when they are in the same repository");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category({UnitTests.class})
+  public void testGetInputSetEntity4() {
+    InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
+    PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo2").build();
+    assertThatThrownBy(()
+                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
+                               "branch", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Reconciliation is not allowed for the given input set. Pipeline and input set must be in same repository. Please enable account level default setting : 'Allow different repo for Pipeline and InputSets' if its intended to keep pipeline and input set in different repository.");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category({UnitTests.class})
+  public void testGetInputSetEntity5() {
+    InputSetEntity inputSetMetadata = InputSetEntity.builder().repo("repo1").connectorRef("connectorRef").build();
+    PipelineEntity pipelineMetadata = PipelineEntity.builder().repo("repo2").build();
+    assertThatThrownBy(()
+                           -> InputSetValidationHelper.getInputSetEntity(accountId, orgId, projectId, pipelineId,
+                               "branch", pipelineMetadata, inputSetMetadata, "inputSetId", inputSetService, true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("InputSet with the given ID: inputSetId does not exist or has been deleted");
   }
 }

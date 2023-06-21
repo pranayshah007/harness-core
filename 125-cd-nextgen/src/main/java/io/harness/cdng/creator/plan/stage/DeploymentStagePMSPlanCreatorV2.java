@@ -9,7 +9,6 @@ package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -98,10 +97,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Stage plan graph V1 -
@@ -118,7 +115,6 @@ import org.jetbrains.annotations.NotNull;
  *            infraDefinition
  *              spec
  *          execution
- *
  * Stage plan graph V2 -
  *  Stage
  *      spec (1 children, service)
@@ -255,7 +251,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
           Optional<String> provisionerIdOptional =
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
-          String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
+          String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
           String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
         }
@@ -268,7 +264,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       }
 
       addCDExecutionDependencies(planCreationResponseMap, executionField);
-      addMultiDeploymentDependency(planCreationResponseMap, stageNode, ctx);
+      addMultiDeploymentDependency(planCreationResponseMap, stageNode, ctx, specField);
 
       StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
           stageNode.getIdentifier(), planCreationResponseMap, metadataMap,
@@ -287,7 +283,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     String infraNodeId = addGitOpsClustersNode(ctx, planCreationResponseMap, stageNode, executionField);
     Optional<String> provisionerIdOptional =
         addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
-    String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
+    String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
     String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
@@ -398,7 +394,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private void addMultiDeploymentDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, PlanCreationContext ctx) {
+      DeploymentStageNode stageNode, PlanCreationContext ctx, YamlField specField) {
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
     MultiDeploymentSpawnerUtils.validateMultiServiceInfra(stageConfig);
     if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
@@ -425,6 +421,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && EmptyPredicate.isNotEmpty(stageConfig.getEnvironment().getServicesOverrides())) {
       servicesOverrides = stageConfig.getEnvironment().getServicesOverrides();
     }
+
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
             .strategyType(StrategyType.MATRIX)
@@ -432,7 +429,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .environments(stageConfig.getEnvironments())
             .environmentGroup(stageConfig.getEnvironmentGroup())
             .services(stageConfig.getServices())
-            .serviceYamlV2(stageConfig.getService())
+            .serviceYamlV2(getServiceYaml(specField, stageConfig))
             .subType(subType)
             .servicesOverrides(servicesOverrides)
             .deploymentType(stageConfig.getDeploymentType())
@@ -441,41 +438,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);
   }
 
-  @NotNull
-  private static List<EnvironmentYamlV2> getFinalEnvsList(
-      List<EnvironmentYamlV2> envsFromYaml, List<EnvironmentYamlV2> mergedFilteredEnvs) {
-    List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
-    if (isNotEmpty(envsFromYaml)) {
-      for (EnvironmentYamlV2 e : envsFromYaml) {
-        List<EnvironmentYamlV2> list = mergedFilteredEnvs.stream()
-                                           .filter(in -> in.getEnvironmentRef().equals(e.getEnvironmentRef()))
-                                           .collect(Collectors.toList());
-        if (isNotEmpty(list) || ParameterField.isNull(e.getInfrastructureDefinitions())
-            || isEmpty(e.getInfrastructureDefinitions().getValue())) {
-          continue;
-        }
-        finalyamlV2List.add(e);
-      }
+  private ServiceYamlV2 getServiceYaml(YamlField specField, DeploymentStageConfig stageConfig) {
+    if (stageConfig.getService() != null && ServiceAllInOnePlanCreatorUtils.useFromStage(stageConfig.getService())) {
+      return ServiceAllInOnePlanCreatorUtils.useServiceYamlFromStage(
+          stageConfig.getService().getUseFromStage(), specField);
     }
-    finalyamlV2List.addAll(mergedFilteredEnvs);
-    return finalyamlV2List;
-  }
 
-  @NotNull
-  private static List<EnvironmentYamlV2> getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(
-      Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2, Set<EnvironmentYamlV2> individualEnvironmentYamlV2) {
-    List<EnvironmentYamlV2> mergedFilteredEnvs = new ArrayList<>();
-    for (EnvironmentYamlV2 envYamlV2 : envsLevelEnvironmentYamlV2) {
-      List<EnvironmentYamlV2> eV2 = individualEnvironmentYamlV2.stream()
-                                        .filter(e -> e.getEnvironmentRef().equals(envYamlV2.getEnvironmentRef()))
-                                        .collect(Collectors.toList());
-      if (isNotEmpty(eV2)) {
-        continue;
-      }
-      mergedFilteredEnvs.add(envYamlV2);
-    }
-    mergedFilteredEnvs.addAll(individualEnvironmentYamlV2);
-    return mergedFilteredEnvs;
+    return stageConfig.getService();
   }
 
   /**

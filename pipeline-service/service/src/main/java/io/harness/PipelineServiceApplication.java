@@ -129,6 +129,7 @@ import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.gitsync.PipelineEntityGitSyncHelper;
+import io.harness.pms.pipeline.labels.OrchestrationEndLabelsResolveHandler;
 import io.harness.pms.pipeline.observer.PipelineEntityCrudObserver;
 import io.harness.pms.pipeline.observer.PipelineMetadataObserver;
 import io.harness.pms.plan.creation.PipelineServiceFilterCreationResponseMerger;
@@ -576,6 +577,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(InstrumentationPipelineEndEventHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(OrchestrationEndTagsResolveHandler.class)));
+    planExecutionStrategy.getOrchestrationEndSubject().register(
+        injector.getInstance(Key.get(OrchestrationEndLabelsResolveHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(

@@ -135,6 +135,7 @@ public class IdentityNodeExecutionStrategyHelper {
         .ambiance(finalAmbiance)
         .oldRetry(true)
         .retryIds(originalNodeExecution.getRetryIds())
+        .executableResponses(originalNodeExecution.getExecutableResponses())
         .levelCount(finalAmbiance.getLevelsCount())
         .status(originalNodeExecution.getStatus())
         .unitProgresses(new ArrayList<>())

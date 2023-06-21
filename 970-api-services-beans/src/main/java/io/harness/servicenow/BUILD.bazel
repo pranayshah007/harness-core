@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//970-api-services-beans/src/main/java/io/harness/jira:module",
+        "//970-api-services-beans/src/main/java/io/harness/servicenow/auth/refreshtoken:module",
         "//970-api-services-beans/src/main/java/io/harness/servicenow/misc:module",
         "//980-commons/src/main/java/io/harness/eraro:module",
         "//980-commons/src/main/java/io/harness/exception:module",

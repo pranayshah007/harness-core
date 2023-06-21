@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pubsub.message.BigQueryUpdateMessage;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
@@ -146,16 +147,14 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         currentMonth = currentMonth.plusMonths(1);
         continue;
       }
-      insertCostCategoriesToBigQuery(message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
-      // Todo: Use this commented code once we enable flattened labels for all cloud providers
-      /*boolean shouldUseFlattenedLabelsColumn =
+      boolean shouldUseFlattenedLabelsColumn =
           featureFlagService.isEnabled(FeatureName.CCM_LABELS_FLATTENING, message.getAccountId());
-      if (!shouldUseFlattenedLabelsColumn) {
-        insertCostCategoriesToBigQuery(message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
-      } else {
+      if (shouldUseFlattenedLabelsColumn) {
         insertCostCategoriesToBigQueryUsingFlattenedLabels(
             message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
-      }*/
+      } else {
+        insertCostCategoriesToBigQuery(message, tableName, queryStartTime, queryEndTime, businessMappingHistories);
+      }
 
       currentMonth = currentMonth.plusMonths(1);
 
@@ -184,7 +183,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       String tableName, Instant queryStartTime, Instant queryEndTime,
       List<BusinessMappingHistory> businessMappingHistories) {
     Map<String, String> labelsKeyAndColumnMapping =
-        labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId(), Collections.emptyList());
+        labelFlattenedService.getLabelsKeyAndColumnMapping(message.getAccountId());
     // Accounts for which a single update query for all cost categories is too much to handle
     bigQueryHelperService.removeAllCostCategories(tableName, formattedTime(Date.from(queryStartTime)),
         formattedTime(Date.from(queryEndTime)), message.getCloudProvider(), message.getCloudProviderAccountIds());

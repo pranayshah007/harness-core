@@ -374,6 +374,7 @@ ngAuthUIEnabled: false
 portal:
   url: https://localhost:8000
   zendeskBaseUrl: "https://harnesssupport.zendesk.com"
+  cannyBaseUrl: "https://canny.io/api/redirects/sso"
   gatewayPathPrefix: "gateway/"
   allowedOrigins: http://localhost:8000, https://localhost:8000, https://127.0.0.1:8000, https://localhost:8181, https://127.0.0.1:8181, http://127.0.0.1:8000
   companyName: Harness Inc
@@ -381,6 +382,7 @@ portal:
   jwtPasswordSecret: a8SGF1CQMHN6pnCJgz32kLn1tebrXnw6MtWto8xI
   jwtExternalServiceSecret: nhUmut2NMcUnsR01OgOz0e51MZ51AqUwrOATJ3fJ
   jwtZendeskSecret: RdL7j9ZdCz6TVSHO7obJRS6ywYLJjH8tdfPP39i4MbevKjVo
+  jwtCannySecret: yv7TV4NsP4fps8pLdGuVdV8CHgJT3wCaFgTEg7dKcanzKN7C
   jwtMultiAuthSecret: 5E1YekVGldTSS5Kt0GHlyWrJ6fJHmee9nXSBssefAWSOgdMwAvvbvJalnYENZ0H0EealN0CxHh34gUCN
   jwtSsoRedirectSecret: qY4GXZAlPJQPEV8JCPTNhgmDmnHZSAgorzGxvOY03Xptr8N9xDfAYbwGohr2pCRLfFG69vBQaNpeTjcV
   jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq

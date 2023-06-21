@@ -20,7 +20,7 @@ spec:
     - {{ . }}
     {{- end }}
   http:
-    - name: pipeline-service
+  - name: pipeline-service
     match:
     - uri:
         prefix: /pipeline/

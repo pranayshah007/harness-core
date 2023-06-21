@@ -252,7 +252,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+  public void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {

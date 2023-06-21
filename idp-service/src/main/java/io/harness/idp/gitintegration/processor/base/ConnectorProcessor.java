@@ -68,6 +68,7 @@ import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
 import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
 import io.harness.gitsync.common.helper.UserPrincipalMapper;
+import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -109,6 +110,8 @@ public abstract class ConnectorProcessor {
   @Inject ExceptionManager exceptionManager;
   @Inject public GitClientV2Impl gitClientV2;
   @Inject public HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub harnessToGitPushInfoService;
+
+  @Inject public ConfigManagerService configManagerService;
 
   public abstract String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO);
 

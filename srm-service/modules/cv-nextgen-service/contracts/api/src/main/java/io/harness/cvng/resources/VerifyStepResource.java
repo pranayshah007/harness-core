@@ -13,6 +13,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.cdng.beans.v2.Baseline;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
+import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries;
 import io.harness.cvng.cdng.beans.v2.VerificationOverview;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.ng.beans.PageRequest;
@@ -83,4 +84,13 @@ public interface VerifyStepResource {
       @QueryParam("healthSource") List<String> healthSources,
       @QueryParam("transactionGroup") List<String> transactionGroups, @QueryParam("node") List<String> nodes,
       @BeanParam @Valid PageRequest pageRequest);
+
+  @GET
+  @Path("/debug/metrics/time-series")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get metrics time-series for given verifyStepExecutionId",
+      nickname = "getMetricsTimeSeriesForVerifyStepExecutionId")
+  VerificationMetricsTimeSeries
+  getMetricsTimeSeriesForVerifyStepExecutionId(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
 }

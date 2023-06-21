@@ -1,0 +1,119 @@
+{
+	"blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "SRM Insights for the incident"
+			}
+		},
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "*Monitored Service*\n${MONITORED_SERVICE_NAME}"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Account name*\n${ACCOUNT_NAME}"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Organization name*\n${ORG_NAME}"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Project name*\n${PROJECT_NAME}"
+				}
+			]
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "*Change events (${TOTAL_CE_COUNT})*"
+				}
+			]
+		},
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "Deployments (${DEPLOYMENT})"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "Infra events (${INFRASTRUCTURE})"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "Alerts (${ALERTS})"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "Feature flag (${FEATURE_FLAG})"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "Chaos events (${CHAOS_EXPERIMENT})"
+				}
+			]
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "section",
+			"text": {
+                "type": "mrkdwn",
+                    "text": "*Service Health*"
+            }
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "The service remained healthy with a score of ${CURRENT_HEALTH_SCORE}%"
+			}
+		},
+        {
+          	"type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*SLO Performance*"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "${SLO_PERFORMANCE}"
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Anomalous Metrics and Logs"
+                    },
+                    "url": "${URL}"
+                }
+            ]
+        }
+	]
+}

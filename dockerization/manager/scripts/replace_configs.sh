@@ -365,6 +365,10 @@ if [[ "" != "$jwtZendeskSecret" ]]; then
   export jwtZendeskSecret; yq -i '.portal.jwtZendeskSecret=env(jwtZendeskSecret)' $CONFIG_FILE
 fi
 
+if [[ "" != "$jwtCannySecret" ]]; then
+  export jwtCannySecret; yq -i '.portal.jwtCannySecret=env(jwtCannySecret)' $CONFIG_FILE
+fi
+
 if [[ "" != "$jwtMultiAuthSecret" ]]; then
   export jwtMultiAuthSecret; yq -i '.portal.jwtMultiAuthSecret=env(jwtMultiAuthSecret)' $CONFIG_FILE
 fi
@@ -1144,6 +1148,7 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value ngAuthUIEnabled "$HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER"
 replace_key_value portal.zendeskBaseUrl "$ZENDESK_BASE_URL"
+replace_key_value portal.cannyBaseUrl "$CANNY_BASE_URL"
 replace_key_value deployVariant "$DEPLOY_VERSION"
 
 if [[ "" != ${GATEWAY_PATH_PREFIX+x} ]]; then

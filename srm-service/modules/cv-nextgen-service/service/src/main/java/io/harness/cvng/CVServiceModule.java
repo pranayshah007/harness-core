@@ -336,6 +336,7 @@ import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.FireHydrantTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
 import io.harness.cvng.notification.services.impl.RemainingMinutesTemplateDataGenerator;
@@ -1294,6 +1295,10 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.CODE_ERRORS)
         .to(ErrorTrackingTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.FIRE_HYDRANT_REPORT)
+        .to(FireHydrantTemplateDataGenerator.class)
         .in(Scopes.SINGLETON);
 
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();

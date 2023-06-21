@@ -40,6 +40,7 @@ import io.harness.cvng.cdng.beans.v2.ControlDataType;
 import io.harness.cvng.cdng.beans.v2.MetricType;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.client.NextGenService;
+import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
@@ -49,6 +50,8 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.models.VerificationType;
+import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
+import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rule.Owner;
@@ -823,6 +826,94 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                    .get(0)
                    .getDisplayName())
         .isEqualTo("Unhealthy");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetControlDataTimeRange_verificationTypeIsCanary_analysisIsNull() {
+    VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    Optional<TimeRange> maybeControlDataTimeRange = deploymentTimeSeriesAnalysisService.getControlDataTimeRange(
+        AppliedDeploymentAnalysisType.CANARY, verificationJobInstance, null);
+    assertThat(maybeControlDataTimeRange).isPresent();
+    assertThat(maybeControlDataTimeRange.get().getStartTime()).isEqualTo(verificationJobInstance.getStartTime());
+    assertThat(maybeControlDataTimeRange.get().getEndTime()).isNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetControlDataTimeRange_verificationTypeIsCanary() {
+    VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    DeploymentTimeSeriesAnalysis timeSeriesAnalysis =
+        DeploymentTimeSeriesAnalysis.builder().endTime(Instant.ofEpochMilli(999999999)).build();
+    Optional<TimeRange> maybeControlDataTimeRange = deploymentTimeSeriesAnalysisService.getControlDataTimeRange(
+        AppliedDeploymentAnalysisType.CANARY, verificationJobInstance, timeSeriesAnalysis);
+    assertThat(maybeControlDataTimeRange).isPresent();
+    assertThat(maybeControlDataTimeRange.get().getStartTime()).isEqualTo(verificationJobInstance.getStartTime());
+    assertThat(maybeControlDataTimeRange.get().getEndTime()).isEqualTo(timeSeriesAnalysis.getEndTime());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetControlDataTimeRange_verificationTypeIsSimple() {
+    Optional<TimeRange> maybeControlDataTimeRange =
+        deploymentTimeSeriesAnalysisService.getControlDataTimeRange(AppliedDeploymentAnalysisType.SIMPLE, null, null);
+    assertThat(maybeControlDataTimeRange).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetControlDataTimeRange_verificationTypeIsRolling() {
+    VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    verificationJobInstance.setResolvedJob(BlueGreenVerificationJob.builder()
+                                               .serviceIdentifier(RuntimeParameter.builder().value("s").build())
+                                               .envIdentifier(RuntimeParameter.builder().value("v").build())
+                                               .duration(RuntimeParameter.builder().value("5m").build())
+                                               .sensitivity(RuntimeParameter.builder().value("HIGH").build())
+                                               .identifier("id")
+                                               .build());
+    DeploymentTimeSeriesAnalysis timeSeriesAnalysis =
+        DeploymentTimeSeriesAnalysis.builder().endTime(Instant.ofEpochMilli(999999999)).build();
+    Optional<TimeRange> maybeControlDataTimeRange = deploymentTimeSeriesAnalysisService.getControlDataTimeRange(
+        AppliedDeploymentAnalysisType.ROLLING, verificationJobInstance, timeSeriesAnalysis);
+    assertThat(maybeControlDataTimeRange).isPresent();
+    assertThat(maybeControlDataTimeRange.get().getStartTime())
+        .isEqualTo(verificationJobInstance.getResolvedJob()
+                       .getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime())
+                       .get()
+                       .getStartTime());
+    assertThat(maybeControlDataTimeRange.get().getEndTime())
+        .isEqualTo(verificationJobInstance.getResolvedJob()
+                       .getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime())
+                       .get()
+                       .getEndTime());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetTestDataTimeRange() {
+    VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    DeploymentTimeSeriesAnalysis timeSeriesAnalysis =
+        DeploymentTimeSeriesAnalysis.builder().endTime(Instant.ofEpochMilli(999999999)).build();
+    TimeRange testlDataTimeRange =
+        deploymentTimeSeriesAnalysisService.getTestDataTimeRange(verificationJobInstance, timeSeriesAnalysis);
+    assertThat(testlDataTimeRange.getStartTime()).isEqualTo(verificationJobInstance.getStartTime());
+    assertThat(testlDataTimeRange.getEndTime()).isEqualTo(timeSeriesAnalysis.getEndTime());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetTestDataTimeRange_analysisIsNull() {
+    VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    TimeRange testlDataTimeRange =
+        deploymentTimeSeriesAnalysisService.getTestDataTimeRange(verificationJobInstance, null);
+    assertThat(testlDataTimeRange.getStartTime()).isEqualTo(verificationJobInstance.getStartTime());
+    assertThat(testlDataTimeRange.getEndTime()).isNull();
   }
 
   @Test

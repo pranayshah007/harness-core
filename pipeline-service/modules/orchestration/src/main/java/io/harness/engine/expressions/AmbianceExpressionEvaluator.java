@@ -131,7 +131,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
       addToContext("regex", new RegexFunctor());
       // Todo(Archit): revisit NGJsonFunctor(PIE-9772)
       if (contextMapProvided) {
-        addToContext("json", new JsonFunctor());
+        addToContext("json", new JsonFunctor(getContextMap()));
       } else {
         addToContext("json", new NGJsonFunctor());
       }

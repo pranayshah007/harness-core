@@ -11,15 +11,20 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.ExecutionSweepingOutputInstance;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -37,6 +42,7 @@ import java.util.Set;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -204,6 +210,35 @@ public class PmsSweepingOutputServiceImplTest extends OrchestrationTestBase {
     assertThat(instance.getPlanExecutionId()).isEqualTo(AmbianceTestUtils.PLAN_EXECUTION_ID);
     assertThat(instance.getName()).isEqualTo(outcomeName);
     assertThat(instance.getGroupName()).isEqualTo("PHASE");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testResolveForFQNCreation() {
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    String outputName = ".outcomeName";
+    pmsSweepingOutputService.consume(ambiance, outputName, null, null);
+    MockedStatic<EngineExpressionEvaluator> evaluatorMockedStatic = mockStatic(EngineExpressionEvaluator.class);
+    evaluatorMockedStatic.when(() -> EngineExpressionEvaluator.createExpression(any())).thenReturn(null);
+
+    Document output = resolve(ambiance, outputName);
+    assertThat(output).isNull();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testResolveOptional() {
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    String outputName = ".outcomeName";
+    pmsSweepingOutputService.consume(ambiance, outputName, null, null);
+    MockedStatic<EngineExpressionEvaluator> evaluatorMockedStatic = mockStatic(EngineExpressionEvaluator.class);
+    evaluatorMockedStatic.when(() -> EngineExpressionEvaluator.createExpression(any())).thenReturn(null);
+
+    assertThatCode(
+        () -> pmsSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(outputName)))
+        .doesNotThrowAnyException();
   }
 
   private Document resolve(Ambiance ambiance, String outputName) {

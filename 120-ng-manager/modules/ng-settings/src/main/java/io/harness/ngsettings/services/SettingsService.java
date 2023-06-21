@@ -20,7 +20,7 @@ import java.util.List;
 
 public interface SettingsService {
   List<SettingResponseDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      SettingCategory category, String groupIdentifier);
+      SettingCategory category, String groupIdentifier, Boolean includeParentScope);
   List<SettingUpdateResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTO);
   SettingValueResponseDTO get(

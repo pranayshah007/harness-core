@@ -13,6 +13,7 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.DELETE_CONNECTOR_PERMISSION;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.EDIT_CONNECTOR_PERMISSION;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 import static io.harness.utils.PageUtils.getPageRequest;
@@ -26,10 +27,12 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
+import io.harness.connector.entities.Connector;
 import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -50,9 +53,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import org.springframework.data.domain.Page;
 
 @NextGenManagerAuth
 public class AccountConnectorApiImpl implements AccountConnectorApi {
@@ -113,13 +118,28 @@ public class AccountConnectorApiImpl implements AccountConnectorApi {
     return Response.ok().entity(connectorResponse).build();
   }
 
-  @NGAccessControlCheck(resourceType = ResourceTypes.CONNECTOR, permission = VIEW_CONNECTOR_PERMISSION)
   @Override
   public Response getAccountScopedConnectors(Boolean recursive, String searchTerm, Integer page, Integer limit,
       String sort, String order, @AccountIdentifier String account) {
-    PageResponse<ConnectorResponseDTO> pageResponse = getNGPageResponse(connectorService.list(account, null, null, null,
-        null, searchTerm, recursive, null, getPageRequest(ApiUtils.getPageRequest(page, limit, sort, order))));
-
+    PageResponse<ConnectorResponseDTO> pageResponse = null;
+    if (accessControlClient.hasAccess(ResourceScope.of(account, null, null), Resource.of(ResourceTypes.CONNECTOR, null),
+            VIEW_CONNECTOR_PERMISSION)) {
+      pageResponse = getNGPageResponse(connectorService.list(account, null, null, null, null, searchTerm, recursive,
+          null, getPageRequest(ApiUtils.getPageRequest(page, limit, sort, order))));
+    } else {
+      Page<Connector> allConnectors = connectorService.listAll(account, null, null, null, null, searchTerm, recursive,
+          null, getPageRequest(ApiUtils.getPageRequest(page, limit, sort, order)), null);
+      List<Connector> permittedConnectors = connectorRbacHelper.getPermitted(allConnectors.getContent());
+      if (isEmpty(permittedConnectors)) {
+        pageResponse = getNGPageResponse(Page.empty());
+      } else {
+        List<String> connectorIds = permittedConnectors.stream().map(Connector::getId).collect(Collectors.toList());
+        ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+            ConnectorFilterPropertiesDTO.builder().connectorIds(connectorIds).build();
+        pageResponse = getNGPageResponse(connectorService.list(account, connectorFilterPropertiesDTO, null, null, null,
+            searchTerm, recursive, null, getPageRequest(ApiUtils.getPageRequest(page, limit, sort, order))));
+      }
+    }
     List<ConnectorResponseDTO> connectorResponseDTOS = pageResponse.getContent();
 
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);

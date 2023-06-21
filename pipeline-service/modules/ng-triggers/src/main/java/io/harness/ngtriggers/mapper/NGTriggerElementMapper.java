@@ -607,6 +607,10 @@ public class NGTriggerElementMapper {
               .planExecutionId(triggerEventHistory.get().getPlanExecutionId())
               .lastExecutionTime(triggerEventHistory.get().getCreatedAt())
               .build();
+      if (triggerEventHistory.get().getTargetExecutionSummary() != null) {
+        lastTriggerExecutionDetails.setPlanExecutionId(
+            triggerEventHistory.get().getTargetExecutionSummary().getPlanExecutionId());
+      }
       ngTriggerDetailsResponseDTO.lastTriggerExecutionDetails(lastTriggerExecutionDetails);
     }
 

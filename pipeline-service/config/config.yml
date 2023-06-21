@@ -326,6 +326,10 @@ orchestrationStepConfig:
         image: harness/ssca-plugin:latest
         entrypoint:
           - /bin/ssca-plugin
+    #Todo: Move to config Management Service
+    moduleToSupportedSteps:
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy" ]
+      ci: [ "Background", "background", "GitClone" ]
 
 
 shouldDeployWithGitSync: true
