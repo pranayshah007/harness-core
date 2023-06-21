@@ -280,7 +280,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                                     .collect(Collectors.toSet());
     final Set<String> orgLevelClustersIds = individualClusters.keySet()
                                                 .stream()
-                                                .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "organization."))
+                                                .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "org."))
                                                 .collect(Collectors.toSet());
 
     final Map<String, List<IndividualClusterInternal>> accountLevelClusters = new HashMap<>();
