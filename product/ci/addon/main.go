@@ -137,7 +137,7 @@ func logKubMetrics(logger *zap.SugaredLogger) {
 				"memory_limit", memoryLimit,
 				"error", memErr)
 
-			cpuPct, cpuUsageCurr, err := getCPUStat(cpuUsagePrev, time.Since(lastTime))
+			cpuPct, cpuUsageCurr, err := getCPUStat(cpuUsagePrev, time.Since(lastTime), logger)
 			if err == nil {
 				logger.Infow(
 					"cpu profiling",
