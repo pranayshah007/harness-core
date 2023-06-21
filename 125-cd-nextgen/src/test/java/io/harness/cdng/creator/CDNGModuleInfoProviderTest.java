@@ -21,6 +21,7 @@ import io.harness.cdng.artifact.GcrArtifactSummary;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.Metadata;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -31,6 +32,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.gitops.models.Application;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -48,6 +50,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -564,6 +567,36 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                        .envGroupId("eg1")
                        .scope(ScopeLevel.PROJECT.name())
                        .build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MANAVJOT)
+  @Category(UnitTests.class)
+  public void shouldPopulateGitOpsAppNamesInStageModuleInfo() {
+    Ambiance ambiance = buildAmbiance(StepType.newBuilder()
+                                          .setType(ExecutionNodeType.GITOPS_FETCH_LINKED_APPS.getYamlType())
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build());
+
+    Application app1 = Application.builder().name("TEST1").identifier("TEST1").url("URL1").build();
+
+    Application app2 = Application.builder().name("TEST2").identifier("TEST2").url("URL2").build();
+
+    Application app3 = Application.builder().name("TEST3").identifier("TEST3").url("URL3").build();
+
+    GitOpsLinkedAppsOutcome gitOpsLinkedAppsOutcome =
+        GitOpsLinkedAppsOutcome.builder().apps(Arrays.asList(app1, app2, app3)).build();
+
+    doReturn(OptionalOutcome.builder().found(true).outcome(gitOpsLinkedAppsOutcome).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("GITOPS_LINKED_APPS_OUTCOME"));
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
+
+    List<String> appNames = pipelineLevelModuleInfo.getGitOpsAppNames();
+    assertThat(appNames).hasSize(3);
+    assertThat(appNames).containsExactlyInAnyOrder("TEST1", "TEST2", "TEST3");
   }
 
   public Ambiance buildAmbiance(StepType stepType) {

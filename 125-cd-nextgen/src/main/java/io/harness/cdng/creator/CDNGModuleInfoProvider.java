@@ -46,6 +46,7 @@ import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
+import io.harness.gitops.models.Application;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -238,6 +239,20 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
             .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toSet())
             .forEach(cdPipelineModuleInfoBuilder::envGroupIdentifier);
+      }
+    } else if (isFetchLinkedAppsNodeAndCompleted(stepType, event.getStatus())) {
+      OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(FetchLinkedAppsStep.GITOPS_LINKED_APPS_OUTCOME));
+      if (optionalOutcome != null && optionalOutcome.isFound()) {
+        GitOpsLinkedAppsOutcome linkedAppsOutcome = (GitOpsLinkedAppsOutcome) optionalOutcome.getOutcome();
+        GitOpsAppSummary gitOpsAppSummary =
+            GitOpsAppSummary.builder().applications(linkedAppsOutcome.getApps()).build();
+        gitOpsAppSummary.getApplications()
+            .stream()
+            .map(Application::getName)
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toSet())
+            .forEach(cdPipelineModuleInfoBuilder::gitOpsAppName);
       }
     }
     return cdPipelineModuleInfoBuilder.build();
