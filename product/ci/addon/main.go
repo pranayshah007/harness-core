@@ -131,6 +131,7 @@ func logKubMetrics(logger *zap.SugaredLogger) {
 			if profileCount != 0 {
 				time.Sleep(sleepSecs)
 			}
+			profileCount += 1
 
 			memoryUsage, memoryMaxUsage, memoryLimit, memErr := getMemoryStat(logger)
 			logger.Infow(
