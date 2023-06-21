@@ -132,6 +132,12 @@ public class NGGitServiceImpl implements NGGitService {
   }
 
   @Override
+  public CommitAndPushResult revertCommitAndPush(GitConfigDTO gitConfig, CommitAndPushRequest commitAndPushRequest,
+      String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig) {
+    return CommitAndPushResult.builder().build();
+  }
+
+  @Override
   public FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
     return fetchFilesByPath(

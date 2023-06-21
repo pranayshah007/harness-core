@@ -18,6 +18,8 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 
 import java.io.IOException;
 import javax.annotation.Nullable;
@@ -36,6 +38,7 @@ public interface GitClientV2 {
   DiffResult diff(DiffRequest request);
 
   CommitAndPushResult commitAndPush(CommitAndPushRequest request);
+  RevertAndPushResult revertAndPush(RevertAndPushRequest request);
 
   FetchFilesResult fetchFilesBetweenCommits(FetchFilesBwCommitsRequest request);
 

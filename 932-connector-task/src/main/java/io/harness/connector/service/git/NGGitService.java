@@ -43,4 +43,7 @@ public interface NGGitService {
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 
   AuthRequest getAuthRequest(GitConfigDTO gitConfig, SshSessionConfig sshSessionConfig);
+
+  CommitAndPushResult revertCommitAndPush(GitConfigDTO gitConfig, CommitAndPushRequest commitAndPushRequest,
+      String accountId, SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig);
 }

@@ -68,6 +68,8 @@ import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.git.model.ListRemoteRequest;
 import io.harness.git.model.ListRemoteResult;
 import io.harness.git.model.PushResultGit;
+import io.harness.git.model.RevertAndPushRequest;
+import io.harness.git.model.RevertAndPushResult;
 
 import software.wings.misc.CustomUserGitConfigSystemReader;
 
@@ -119,10 +121,14 @@ import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.TransportCommand;
+import org.eclipse.jgit.api.errors.ConcurrentRefUpdateException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.api.errors.UnmergedPathsException;
+import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.NoRemoteRepositoryException;
 import org.eclipse.jgit.lib.ObjectId;
@@ -617,6 +623,36 @@ public class GitClientV2Impl implements GitClientV2 {
           commitAndPushRequest);
     }
     return gitCommitAndPushResult;
+  }
+
+  @Override
+  public RevertAndPushResult revertAndPush(RevertAndPushRequest request) {
+    CommitResult commitResult = revert(request);
+    RevertAndPushResult revertAndPushResult =
+        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push()).build();
+    return RevertAndPushResult.builder().build();
+  }
+
+  CommitResult revert(RevertAndPushRequest request) {
+    boolean pushOnlyIfHeadSeen = request.isPushOnlyIfHeadSeen();
+
+    ensureRepoLocallyClonedAndUpdated(request);
+
+    try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
+      ensureLastProcessedCommitIsHead(pushOnlyIfHeadSeen, request.getCommitId(), git);
+      ObjectId commitId = git.getRepository().resolve(request.getCommitId());
+      RevCommit commitToRevert = git.getRepository().parseCommit(commitId);
+
+      RevCommit revertCommit = git.revert().include(commitToRevert).call();
+
+      return CommitResult.builder()
+          .commitId(revertCommit.getName())
+          .commitTime(revertCommit.getCommitTime())
+          .commitMessage("Harness revert of commit: " + commitToRevert.getId())
+          .build();
+    } catch (IOException | GitAPIException e) {
+      throw new WingsException(e);
+    }
   }
 
   @VisibleForTesting
