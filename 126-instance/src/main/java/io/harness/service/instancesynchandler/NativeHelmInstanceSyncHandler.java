@@ -14,6 +14,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -113,9 +114,10 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
     if (!((infrastructureOutcome instanceof K8sDirectInfrastructureOutcome)
             || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome)
             || (infrastructureOutcome instanceof K8sAwsInfrastructureOutcome)
-            || (infrastructureOutcome instanceof K8sAzureInfrastructureOutcome))) {
+            || (infrastructureOutcome instanceof K8sAzureInfrastructureOutcome)
+            || (infrastructureOutcome instanceof K8sRancherInfrastructureOutcome))) {
       throw new InvalidArgumentsException(Pair.of("infrastructureOutcome",
-          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome, K8sAwsInfrastructureOutcome or K8sAzureInfrastructureOutcome"));
+          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome, K8sAwsInfrastructureOutcome, K8sAzureInfrastructureOutcome or K8sRancherInfrastructureOutcome"));
     }
 
     if (serverInstanceInfoList.get(0) instanceof NativeHelmServerInstanceInfo) {
