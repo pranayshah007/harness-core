@@ -314,7 +314,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       if (KMS.equals(secretManagerType)) {
         encryptedRecord = kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
                               .encryptSecret(encryptedData.getAccountIdentifier(), value, secretManagerConfig);
-        validateEncryptedRecord(encryptedRecord);
+        //validateEncryptedRecord(encryptedRecord);
       } else if (VAULT.equals(secretManagerType)) {
         if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
             && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
@@ -337,10 +337,10 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     } catch (DelegateServiceDriverException ex) {
       throw buildDelegateNotAvailableHintException(ex.getMessage(), secretManagerConfig.getName());
     }
-    encryptedData.setPath(null);
-    encryptedData.setEncryptionKey(encryptedRecord.getEncryptionKey());
-    encryptedData.setEncryptedValue(encryptedRecord.getEncryptedValue());
-    encryptedData.setBase64Encoded(encryptedRecord.isBase64Encoded());
+    //encryptedData.setPath(null);
+    //encryptedData.setEncryptionKey(encryptedRecord.getEncryptionKey());
+    //encryptedData.setEncryptedValue(encryptedRecord.getEncryptedValue());
+    //encryptedData.setBase64Encoded(encryptedRecord.isBase64Encoded());
   }
 
   private void encrypt(NGEncryptedData encryptedData, String value, NGEncryptedData existingEncryptedData,

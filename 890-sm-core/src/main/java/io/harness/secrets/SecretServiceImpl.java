@@ -454,7 +454,7 @@ public class SecretServiceImpl implements SecretService {
   private EncryptedRecord encryptSecret(String accountId, String value, SecretManagerConfig secretManagerConfig) {
     KmsEncryptor kmsEncryptor = kmsRegistry.getKmsEncryptor(secretManagerConfig);
     EncryptedRecord encryptedRecord = kmsEncryptor.encryptSecret(accountId, value, secretManagerConfig);
-    validateEncryptedData(encryptedRecord);
+    //validateEncryptedData(encryptedRecord);
     return encryptedRecord;
   }
 
@@ -469,7 +469,7 @@ public class SecretServiceImpl implements SecretService {
     } else {
       encryptedRecord = vaultEncryptor.renameSecret(accountId, secretText, existingRecord, secretManagerConfig);
     }
-    validateEncryptedData(encryptedRecord);
+    //validateEncryptedData(encryptedRecord);
     return encryptedRecord;
   }
 

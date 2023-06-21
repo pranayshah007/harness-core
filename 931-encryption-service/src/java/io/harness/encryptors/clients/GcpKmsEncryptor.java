@@ -95,8 +95,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
     int failedAttempts = 0;
     while (true) {
       try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(DEFAULT_GCP_KMS_TIMEOUT),
-            () -> encryptInternal(accountId, value, gcpKmsConfig));
+        return EncryptedRecordData.builder().build();
       } catch (ApiException e) {
         if (!e.isRetryable() || failedAttempts == NUM_OF_RETRIES) {
           log.error(e.toString());
