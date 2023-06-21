@@ -58,6 +58,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.favorites.ResourceType;
+import io.harness.favorites.services.FavoritesService;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -112,6 +114,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock YamlGitConfigClient yamlGitConfigClient;
   @Mock NGSettingsClient settingsClient;
   @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock FavoritesService favoritesService;
+
   @Mock AccountClient accountClient;
 
   @Mock Call<RestResponse<Boolean>> featureFlagCall1;
@@ -435,6 +439,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
     verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(favoritesService, times(1))
+        .deleteFavorites(accountIdentifier, null, null, ResourceType.CONNECTOR.toString(), identifier);
     assertThat(deleted).isTrue();
   }
 
@@ -930,7 +936,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     Pageable pageable = Pageable.ofSize(10);
 
     Page<ConnectorResponseDTO> connectorSummaryDTOSList = connectorService.list(
-        accountIdentifier, connectorFilterPropertiesDTO, null, null, "", "", false, false, pageable, null);
+        accountIdentifier, connectorFilterPropertiesDTO, null, null, "", "", false, false, pageable, null, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(1);
     List<String> connectorIdentifierList =
         connectorSummaryDTOSList.stream()

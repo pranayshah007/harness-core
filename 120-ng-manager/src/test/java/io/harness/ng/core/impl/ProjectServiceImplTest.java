@@ -85,6 +85,7 @@ import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -618,6 +619,8 @@ public class ProjectServiceImplTest extends CategoryTest {
     assertEquals(projectIdentifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());
+    verify(favoritesService, times(1))
+        .deleteFavorites(accountIdentifier, orgIdentifier, null, ResourceType.PROJECT.toString(), projectIdentifier);
   }
 
   @Test(expected = EntityNotFoundException.class)
@@ -649,6 +652,46 @@ public class ProjectServiceImplTest extends CategoryTest {
     verify(projectRepository, times(1))
         .findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
             accountIdentifier, orgIdentifier, projectIdentifier, true);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldReturnProjectFavoritesFromAllOrgs() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String userid = randomAlphabetic(10);
+    when(userHelperService.getUserId()).thenReturn(userid);
+    ProjectDTO projectDTO = createProjectDTO(orgIdentifier, randomAlphabetic(10));
+    Project project = toProject(projectDTO);
+    project.setAccountIdentifier(accountIdentifier);
+    project.setOrgIdentifier(orgIdentifier);
+    Set<String> permittedOrgs = new HashSet<>();
+    permittedOrgs.add(project.getIdentifier());
+    when(organizationService.getPermittedOrganizations(accountIdentifier, null))
+        .thenReturn(Collections.singleton(orgIdentifier));
+    projectService.getProjectFavorites(accountIdentifier, null, userid);
+    verify(favoritesService, times(1))
+        .getFavorites(accountIdentifier, orgIdentifier, null, userid, ResourceType.PROJECT.toString());
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldReturnProjectFavoritesFromAllOrgsInFilter() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String userid = randomAlphabetic(10);
+    when(userHelperService.getUserId()).thenReturn(userid);
+    ProjectDTO projectDTO = createProjectDTO(orgIdentifier, randomAlphabetic(10));
+    Project project = toProject(projectDTO);
+    project.setAccountIdentifier(accountIdentifier);
+    project.setOrgIdentifier(orgIdentifier);
+    ProjectFilterDTO projectFilterDTO =
+        ProjectFilterDTO.builder().orgIdentifiers(Collections.singleton(orgIdentifier)).build();
+    projectService.getProjectFavorites(accountIdentifier, projectFilterDTO, userid);
+    verify(favoritesService, times(1))
+        .getFavorites(accountIdentifier, orgIdentifier, null, userid, ResourceType.PROJECT.toString());
   }
 
   private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {

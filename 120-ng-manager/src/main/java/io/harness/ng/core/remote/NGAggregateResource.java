@@ -129,7 +129,7 @@ public class NGAggregateResource {
       @QueryParam("hasModule") @DefaultValue("true") boolean hasModule,
       @QueryParam(NGResourceFilterConstants.MODULE_TYPE_KEY) ModuleType moduleType,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @QueryParam("isFavorite") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
+      @QueryParam("onlyFavorites") @DefaultValue("false") Boolean onlyFavorites, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
