@@ -39,8 +39,8 @@ message ContainerSpec {
   repeated int64 port = 2;            // Port exposed for the container
   ComputingResource resource = 3;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem)
   map<string, string> env = 4;        // Env variables
-  repeated string command = 5;        // Commands to be executed
-  repeated string arg = 6;            // Args to be passed
+  repeated string command = 5;         // Command to be executed
+  repeated string args = 6;            // Args to be passed
 }
 
 /*
