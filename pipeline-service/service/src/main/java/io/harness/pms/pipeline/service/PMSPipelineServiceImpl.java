@@ -798,6 +798,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     for (StepPalleteModuleInfo request : stepPalleteFilterWrapper.getStepPalleteModuleInfos()) {
       String module = request.getModule();
       String category = request.getCategory();
+
       StepPalleteInfo stepPalleteInfo = serviceInstanceNameToSupportedSteps.get(module);
       if (stepPalleteInfo == null) {
         continue;
