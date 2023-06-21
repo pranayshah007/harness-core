@@ -51,6 +51,7 @@ import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
 import static io.harness.ng.core.k8s.ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -1341,7 +1342,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Deploy")
             .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath("AWS SAM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1350,7 +1352,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Download Manifests")
             .setType(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
             .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("DownloadManifests").setFolderPath("AWS SAM").build())
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1358,7 +1360,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Build")
             .setType(StepSpecTypeConstants.AWS_SAM_BUILD)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_SAM).setFolderPath("AWS SAM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
