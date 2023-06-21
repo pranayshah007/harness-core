@@ -181,18 +181,22 @@ public class NGSecretResourceV2 {
       @QueryParam("privateSecret") @DefaultValue("false") boolean privateSecret,
       @RequestBody(required = true,
           description = "Details required to create the Secret") @Valid @NotNull SecretRequestWrapper dto) {
+    log.info("[jen] Received create secret {}, proj identifier {}, org identifier {}", dto.getSecret(), projectIdentifier, orgIdentifier);
     if (!Objects.equals(orgIdentifier, dto.getSecret().getOrgIdentifier())
         || !Objects.equals(projectIdentifier, dto.getSecret().getProjectIdentifier())) {
+      log.info("[jen] Wrong scope value, org mismatch {} with {}", orgIdentifier, dto.getSecret().getOrgIdentifier());
+      log.info("[jen] Wrong scope value, project mismatch {} with {}", projectIdentifier, dto.getSecret().getProjectIdentifier());
       throw new InvalidRequestException("Invalid request, scope in payload and params do not match.", USER);
     }
 
     secretPermissionValidator.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
-
+    log.info("[jen]: permission validated");
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    log.info("[jen]: permission validated 2");
     ngSecretService.validateSecretDtoSpec(dto.getSecret());
-
+    log.info("[jen]: permission validated 3");
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
