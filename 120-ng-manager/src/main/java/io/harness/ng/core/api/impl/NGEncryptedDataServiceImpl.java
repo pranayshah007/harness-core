@@ -882,13 +882,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     if (identifier == null) {
       return getLocalEncryptionConfig(accountIdentifier);
     }
-    // abstract scope from secret identifier
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getConnectorIdentifierRef(identifier, accountIdentifier, orgIdentifier, projectIdentifier);
-
-    return ngConnectorSecretManagerService.getUsingIdentifier(connectorRef.getAccountIdentifier(),
-        connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier(),
-        maskSecrets);
+    return ngConnectorSecretManagerService.getUsingIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, maskSecrets);
   }
 
   private boolean isReadOnlySecretManager(SecretManagerConfigDTO secretManager) {

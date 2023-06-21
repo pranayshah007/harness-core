@@ -15,6 +15,7 @@ import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -32,6 +33,7 @@ import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.NameValuePairWithDefault;
@@ -71,7 +73,12 @@ public class NGConnectorSecretManagerServiceImpl implements NGConnectorSecretMan
   @Override
   public SecretManagerConfigDTO getUsingIdentifier(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, boolean maskSecrets) {
-    ConnectorDTO connectorDTO = getConnectorDTO(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    // abstract scope from secret identifier
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getConnectorIdentifierRef(identifier, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    ConnectorDTO connectorDTO = getConnectorDTO(connectorRef.getAccountIdentifier(), connectorRef.getOrgIdentifier(),
+        connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
 
     if (!maskSecrets) {
       connectorDTO = decrypt(accountIdentifier, orgIdentifier, projectIdentifier, connectorDTO);
