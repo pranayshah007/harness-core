@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/harness/harness-core/product/log-service/stream"
+	"github.com/harness/harness-core/product/log-service/cache"
 	"io"
 	"net/http"
 	"sync"
@@ -181,7 +181,7 @@ func HandleDelete(store store.Store) http.HandlerFunc {
 
 // HandleDownload returns an http.HandlerFunc that downloads
 // a blob from the datastore and copies to the http.Response.
-func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerFunc {
+func HandleListBlobWithPrefix(s store.Store, cache cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -196,7 +196,8 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 
 		out, _ := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix))
 
-		zipPrefix := uuid.NewString() + "_logs.zip"
+		uid := uuid.NewString()
+		zipPrefix := uid + "_logs.zip"
 
 		go func(s store.Store, r http.Request) {
 			var wg sync.WaitGroup
@@ -206,7 +207,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 			logger.FromRequest(&r).
 				WithField("prefix", prefix).
 				WithField("time", time.Now().Format(time.RFC3339)).
-				Infoln("ziplog: starting zip and upload log files")
+				Debug("ziplog: starting zip and upload log files")
 
 			pipeRead, pipeWrite := io.Pipe()
 
@@ -220,7 +221,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 					logger.FromRequest(&r).
 						WithField("prefix", prefix).
 						WithField("time", time.Now().Format(time.RFC3339)).
-						Infoln("ziplog: start zip files")
+						Debug("ziplog: start zip files")
 
 					err := zipFile(cancel, internal, keys, zipWriter, s, &wg)
 					if err != nil {
@@ -234,7 +235,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 					logger.FromRequest(&r).
 						WithField("prefix", prefix).
 						WithField("time", time.Now().Format(time.RFC3339)).
-						Infoln("ziplog: successfully zip created")
+						Debug("ziplog: successfully zip created")
 				}()
 			}
 
@@ -243,7 +244,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 				logger.FromRequest(&r).
 					WithField("prefix", prefix).
 					WithField("time", time.Now().Format(time.RFC3339)).
-					Infoln("ziplog: start upload to zip")
+					Debug("ziplog: start upload to zip")
 
 				err := s.Upload(internal, zipPrefix, pipeRead)
 				if err != nil {
@@ -260,7 +261,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 				logger.FromRequest(&r).
 					WithField("prefix", prefix).
 					WithField("time", time.Now().Format(time.RFC3339)).
-					Infoln("ziplog: successfully zip file updated to s3")
+					Debug("ziplog: successfully zip file updated to s3")
 			}()
 
 			go func() {
@@ -270,7 +271,7 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 				logger.FromRequest(&r).
 					WithField("prefix", prefix).
 					WithField("time", time.Now().Format(time.RFC3339)).
-					Infoln("ziplog: zip and pipe closed")
+					Debug("ziplog: zip and pipe closed")
 			}()
 
 			return
@@ -284,6 +285,13 @@ func HandleListBlobWithPrefix(s store.Store, stream stream.Stream) http.HandlerF
 				WithField("prefix", prefix).
 				Errorln("api: cannot generate the download url")
 		} else {
+			req, _ := cache.Get(ctx, r.URL.String())
+			if req == "" {
+				fmt.Println("caching the req")
+				err := cache.Create(ctx, r.URL.String(), link)
+				fmt.Println(err)
+			}
+
 			WriteJSON(w, struct {
 				Link    string        `json:"link"`
 				Expires time.Duration `json:"expires"`

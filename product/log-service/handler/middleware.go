@@ -9,11 +9,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/dchest/authcookie"
+	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
+	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/platform/client"
+	"net/http"
+	"time"
 )
 
 const authHeader = "X-Harness-Token"
@@ -118,4 +120,30 @@ func AuthMiddleware(config config.Config, ngClient *client.HTTPClient) func(http
 func doApiKeyAuthentication(inputApiKey, accountID, routingId string, ngClient *client.HTTPClient) error {
 	err := ngClient.ValidateApiKey(context.Background(), accountID, routingId, inputApiKey)
 	return err
+}
+
+func CacheRequest(cache cache.Cache) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			link, _ := cache.Get(context.Background(), r.URL.String())
+			if link != "" {
+				logger.WithContext(context.Background(), logger.FromRequest(r))
+
+				logger.FromRequest(r).
+					WithField("url", r.URL.String()).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					Debug("middleware cache: return response from cache")
+
+				WriteJSON(w, struct {
+					Link    string        `json:"link"`
+					Expires time.Duration `json:"expires"`
+				}{
+					link, time.Hour,
+				}, 200)
+
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

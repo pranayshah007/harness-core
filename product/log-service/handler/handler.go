@@ -6,6 +6,7 @@
 package handler
 
 import (
+	"github.com/harness/harness-core/product/log-service/cache"
 	"io"
 	"net/http"
 	"net/http/pprof"
@@ -21,9 +22,10 @@ import (
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
+func Handler(cache cache.Cache, stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
+	r.Use(CacheRequest(cache))
 
 	// Token generation endpoints
 	// Format: /token?accountID=
@@ -114,7 +116,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config, ngCl
 
 		sr.Post("/", HandleUpload(store))
 		sr.Delete("/", HandleDelete(store))
-		sr.Get("/", HandleListBlobWithPrefix(store, stream))
+		sr.Get("/", HandleListBlobWithPrefix(store, cache))
 		sr.Post("/link/upload", HandleUploadLink(store))
 		sr.Post("/link/download", HandleDownloadLink(store))
 

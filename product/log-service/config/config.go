@@ -40,6 +40,7 @@ type Config struct {
 		Bucket          string `envconfig:"LOG_SERVICE_S3_BUCKET"`
 		Acl             string `envconfig:"LOG_SERVICE_S3_ACL"`
 		Prefix          string `envconfig:"LOG_SERVICE_S3_PREFIX"`
+		LogPrefix       string `envconfig:"LOG_SERVICE_S3_LOG_PREFIX" default:"logs-zip"`
 		Endpoint        string `envconfig:"LOG_SERVICE_S3_ENDPOINT"`
 		PathStyle       bool   `envconfig:"LOG_SERVICE_S3_PATH_STYLE"`
 		Region          string `envconfig:"LOG_SERVICE_S3_REGION"`

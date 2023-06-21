@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/harness/harness-core/product/log-service/cache"
+	redis2 "github.com/harness/harness-core/product/log-service/cache/redis"
 	"os"
 	"os/signal"
 
@@ -94,12 +96,16 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	// create the stream server.
 	var stream stream.Stream
+	// create the cache client.
+	var cache cache.Cache
 	if config.Redis.Endpoint != "" {
 		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
+		cache = redis2.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
 		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
 	} else {
 		// create the in-memory stream
 		stream = memory.New()
+		cache = nil
 		logrus.Infoln("configuring log stream to use in-memory stream")
 	}
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
@@ -108,7 +114,7 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(stream, store, config, ngClient),
+		Handler: handler.Handler(cache, stream, store, config, ngClient),
 	}
 
 	// trap the os signal to gracefully shutdown the
