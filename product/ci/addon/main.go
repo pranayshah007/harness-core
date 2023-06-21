@@ -122,60 +122,29 @@ func main() {
 func logKubMetrics(logger *zap.SugaredLogger) {
 	logger.Infow("Starting memory profiling")
 
-	duration := time.Second * 5
-	profileCount := 0
-
-	memoryBaseDir := "/sys/fs/cgroup/memory/"
-	memoryUsageFile := "memory.usage_in_bytes"
-	memoryMaxUsageFile := "memory.max_usage_in_bytes"
-	memoryLimitFile := "memory.limit_in_bytes"
-
-	cpuBaseDir := "/sys/fs/cgroup/cpu/"
-	cpuUsageFile := "cpuacct.usage"
+	sleepSecs := time.Second * 5
 	cpuUsagePrev := 0
-	cpuUsageCurr := 0
-
+	lastTime := time.Now()
 	go func() {
 		for {
-			if profileCount != 0 {
-				time.Sleep(duration)
-			}
-			profileCount += 1
+			time.Sleep(sleepSecs)
 
-			memoryUsage, err := readLogFile(memoryBaseDir + memoryUsageFile)
-			if err != nil {
-				logger.Errorw("Unable to read memory usage file", zap.Error(err))
-			}
-			memoryMaxUsage, err := readLogFile(memoryBaseDir + memoryMaxUsageFile)
-			if err != nil {
-				logger.Errorw("Unable to read memory max usage file", zap.Error(err))
-			}
-			memoryLimit, err := readLogFile(memoryBaseDir + memoryLimitFile)
-			if err != nil {
-				logger.Errorw("Unable to read memory limit file", zap.Error(err))
-			}
+			memoryUsage, memoryMaxUsage, memoryLimit, memErr := getMemoryStat(logger)
 			logger.Infow(
 				"memory profiling",
 				"memory_usage", memoryUsage,
 				"memory_max_usage", memoryMaxUsage,
-				"memory_limit", memoryLimit)
+				"memory_limit", memoryLimit,
+				"error", memErr)
 
-			cpuUsageStr, err := readLogFile(cpuBaseDir + cpuUsageFile)
-			if err != nil {
-				logger.Errorw("Unable to read cpu usage file", zap.Error(err))
-				continue
+			cpuPct, cpuUsageCurr, err := getCPUStat(cpuUsagePrev, time.Since(lastTime))
+			if err == nil {
+				logger.Infow(
+					"cpu profiling",
+					"cpu_percentage", cpuPct)
+				cpuUsagePrev = cpuUsageCurr
+				lastTime = time.Now()
 			}
-			cpuUsageCurr, err = strconv.Atoi(cpuUsageStr)
-			if err != nil {
-				logger.Errorw("Unable to parse cpu usage", zap.Error(err))
-				continue
-			}
-			usageDiff := cpuUsageCurr - cpuUsagePrev
-			cpuPercentage := (float64(usageDiff) / (float64(duration) * 1e9)) * 100
-			logger.Infow(
-				"cpu profiling",
-				"cpu_percentage", cpuPercentage)
-			cpuUsagePrev = cpuUsageCurr
 		}
 	}()
 }
@@ -231,4 +200,48 @@ func getSvcRemoteLogger() *logs.RemoteLogger {
 	lc.Add(remoteLogger)
 
 	return remoteLogger
+}
+
+func getMemoryStat(logger *zap.SugaredLogger) (string, string, string, error) {
+	memoryBaseDir := "/sys/fs/cgroup/memory/"
+	memoryUsageFile := "memory.usage_in_bytes"
+	memoryMaxUsageFile := "memory.max_usage_in_bytes"
+	memoryLimitFile := "memory.limit_in_bytes"
+
+	var memErr error
+
+	memoryUsage, err := readLogFile(memoryBaseDir + memoryUsageFile)
+	if err != nil {
+		memErr = err
+		logger.Errorw("Unable to read memory usage file", zap.Error(err))
+	}
+	memoryMaxUsage, err := readLogFile(memoryBaseDir + memoryMaxUsageFile)
+	if err != nil {
+		memErr = err
+		logger.Errorw("Unable to read memory max usage file", zap.Error(err))
+	}
+	memoryLimit, err := readLogFile(memoryBaseDir + memoryLimitFile)
+	if err != nil {
+		memErr = err
+		logger.Errorw("Unable to read memory limit file", zap.Error(err))
+	}
+	return memoryUsage, memoryMaxUsage, memoryLimit, memErr
+}
+
+func getCPUStat(cpuUsagePrev int, d time.Duration, logger *zap.SugaredLogger) (float64, int, error) {
+	cpuUsageFile := "/sys/fs/cgroup/cpu/cpuacct.usage"
+
+	cpuUsageStr, err := readLogFile(cpuUsageFile)
+	if err != nil {
+		logger.Errorw("Unable to read cpu usage file", zap.Error(err))
+		return 0, 0, err
+	}
+	cpuUsageCurr, err := strconv.Atoi(cpuUsageStr)
+	if err != nil {
+		logger.Errorw("Unable to parse cpu usage", zap.Error(err))
+		return 0, 0, err
+	}
+	usageDiff := cpuUsageCurr - cpuUsagePrev
+	cpuPercentage := (float64(usageDiff) / float64(d)) * 100
+	return cpuPercentage, cpuUsageCurr, nil
 }
