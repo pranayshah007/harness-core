@@ -9,6 +9,7 @@ package io.harness.cdng.k8s;
 
 import static io.harness.cdng.k8s.K8sBGSwapServicesStep.BG_STEP_MISSING_ERROR;
 import static io.harness.cdng.k8s.K8sBGSwapServicesStep.SKIP_BG_SWAP_SERVICES_STEP_EXECUTION;
+import static io.harness.cdng.k8s.K8sBGSwapServicesStep.SKIP_BG_SWAP_WHEN_STAGE_DEPLOYMENT_SKIPPED;
 import static io.harness.cdng.k8s.K8sStepHelper.MISSING_INFRASTRUCTURE_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -17,6 +18,7 @@ import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -87,6 +89,8 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
   final String stageService = "k8s-svc-stage";
   final K8sBlueGreenOutcome blueGreenOutcome =
       K8sBlueGreenOutcome.builder().primaryServiceName(primaryService).stageServiceName(stageService).build();
+  final K8sBlueGreenOutcome blueGreenOutcomeWhenSkip =
+      K8sBlueGreenOutcome.builder().stageDeploymentSkipped(Boolean.TRUE).build();
   final TaskRequest createdTaskRequest = TaskRequest.newBuilder().build();
   final String bgStepFqn = "bgStep";
   final String bgSwapServicesStepFqn = "bgSwapServicesStep";
@@ -119,6 +123,18 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
   }
 
+  private void setupPreConditionsForSkipStageDeployment(Ambiance ambiance) {
+    doReturn(TaskChainResponse.builder().taskRequest(createdTaskRequest).build())
+        .when(k8sStepHelper)
+        .queueK8sTask(eq(stepElementParameters), any(K8sDeployRequest.class), eq(ambiance),
+            eq(K8sExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build()));
+    doReturn(OptionalSweepingOutput.builder().found(true).output(blueGreenOutcomeWhenSkip).build())
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                bgStepFqn + "." + OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+  }
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
@@ -223,6 +239,27 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getSkipTaskRequest()).isNotNull();
     assertThat(taskRequest.getSkipTaskRequest().getMessage()).isEqualTo(SKIP_BG_SWAP_SERVICES_STEP_EXECUTION);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testObtainTaskInSwapServicesWhenNoStageDeployment() {
+    setupPreConditionsForSkipStageDeployment(ambiance);
+    K8sBGSwapServicesStepParameters stepParams =
+        K8sBGSwapServicesStepParameters.infoBuilder().blueGreenStepFqn(bgStepFqn).build();
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(stepParams).timeout(ParameterField.createValueField("10m")).build();
+    OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(false).build();
+    doReturn(optionalOutcome)
+        .when(outcomeService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getOutcomeRefObject("null." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
+
+    TaskRequest taskRequest = k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParams, stepInputPackage);
+    assertThat(taskRequest).isNotNull();
+    assertThat(taskRequest.getSkipTaskRequest()).isNotNull();
+    assertThat(taskRequest.getSkipTaskRequest().getMessage()).isEqualTo(SKIP_BG_SWAP_WHEN_STAGE_DEPLOYMENT_SKIPPED);
   }
 
   @SneakyThrows

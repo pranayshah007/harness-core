@@ -24,23 +24,24 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.logging.LogCallback;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.util.List;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
-@UtilityClass
+@Singleton
 @Slf4j
 @OwnedBy(CDP)
 public class K8sManifestHashGenerator {
+  @Inject K8sTaskHelperBase k8sTaskHelperBase;
   private static final String MANIFEST_FOR_HASH = "manifest-hash.yaml";
 
   public String manifestHash(List<KubernetesResource> resources, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback, long timeoutInMillis, Kubectl client, K8sTaskHelperBase k8sTaskHelperBase)
-      throws Exception {
+      LogCallback executionLogCallback, long timeoutInMillis, Kubectl client) throws Exception {
     FileIo.writeUtf8StringToFile(
         k8sDelegateTaskParams.getWorkingDirectory() + "/" + MANIFEST_FOR_HASH, ManifestHelper.toYaml(resources));
     String output = "";

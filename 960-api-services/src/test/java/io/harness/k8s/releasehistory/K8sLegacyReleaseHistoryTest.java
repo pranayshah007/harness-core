@@ -176,15 +176,18 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     releaseHistory.addReleaseToReleaseHistory(k8sLegacyRelease);
     K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
     release.setBgEnvironment(HarnessLabelValues.bgStageEnv);
+    release.setManifestHash("sampleManifestHash");
     assertThat(release).isNotNull();
     assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
     assertThat(release.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
+    assertThat(release.getManifestHash()).isEqualTo("sampleManifestHash");
     release.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);
-
+    release.setManifestHash("differentManifestHash");
     assertThat(releaseHistory.getReleases().size()).isEqualTo(2);
     assertThat(releaseHistory.getReleases().get(1)).isEqualTo(release);
     assertThat(releaseHistory.getReleases().get(1).getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
     assertThat(releaseHistory.getReleases().get(0)).isEqualTo(k8sLegacyRelease);
+    assertThat(releaseHistory.getReleases().get(1).getManifestHash()).isEqualTo("differentManifestHash");
   }
 
   @Test
