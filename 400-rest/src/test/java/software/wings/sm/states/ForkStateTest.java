@@ -79,6 +79,22 @@ public class ForkStateTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  public void shouldResponseStatusBeTheLastMapElementWhenFFisDisabled_2() {
+    when(ffService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, ACCOUNT_ID)).thenReturn(false);
+
+    Map<String, ResponseData> inputResponse = new HashMap<>();
+    inputResponse.put("A", createExecutionStatusResponse(ExecutionStatus.FAILED));
+    inputResponse.put("B", createExecutionStatusResponse(ExecutionStatus.REJECTED));
+    inputResponse.put("C", createExecutionStatusResponse(ExecutionStatus.EXPIRED));
+
+    final ExecutionResponse response = state.handleAsyncResponse(context, inputResponse);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldResponseStatusBeRejectedWhenRejectIsPresentAndFFisEnabled() {
     when(ffService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, ACCOUNT_ID)).thenReturn(true);
 
@@ -90,6 +106,70 @@ public class ForkStateTest {
     final ExecutionResponse response = state.handleAsyncResponse(context, inputResponse);
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.REJECTED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldResponseStatusBeExpireddWhenExpiredIsPresentAndFFisEnabled() {
+    when(ffService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, ACCOUNT_ID)).thenReturn(true);
+
+    Map<String, ResponseData> inputResponse = new HashMap<>();
+    inputResponse.put("A", createExecutionStatusResponse(ExecutionStatus.FAILED));
+    inputResponse.put("B", createExecutionStatusResponse(ExecutionStatus.EXPIRED));
+    inputResponse.put("C", createExecutionStatusResponse(ExecutionStatus.FAILED));
+
+    final ExecutionResponse response = state.handleAsyncResponse(context, inputResponse);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldResponseStatusBeAbortedWhenAbortedIsPresentAndFFisEnabled() {
+    when(ffService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, ACCOUNT_ID)).thenReturn(true);
+
+    Map<String, ResponseData> inputResponse = new HashMap<>();
+    inputResponse.put("A", createExecutionStatusResponse(ExecutionStatus.FAILED));
+    inputResponse.put("B", createExecutionStatusResponse(ExecutionStatus.ABORTED));
+    inputResponse.put("C", createExecutionStatusResponse(ExecutionStatus.FAILED));
+
+    final ExecutionResponse response = state.handleAsyncResponse(context, inputResponse);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.ABORTED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldResponseStatusBeTheLastMapElementWhenFFisEnabled_ERROR() {
+    when(ffService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, ACCOUNT_ID)).thenReturn(true);
+
+    Map<String, ResponseData> inputResponse = new HashMap<>();
+    inputResponse.put("A", createExecutionStatusResponse(ExecutionStatus.FAILED));
+    inputResponse.put("B", createExecutionStatusResponse(ExecutionStatus.ERROR));
+    inputResponse.put("C", createExecutionStatusResponse(ExecutionStatus.FAILED));
+
+    final ExecutionResponse response = state.handleAsyncResponse(context, inputResponse);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldResponseStatusBeTheLastMapElementWhenFFisEnabled_DISCONTINUING() {
+    when(ffService.isEnabled(SPG_CG_REJECT_PRIORITY_WHEN_FORK_STATE, ACCOUNT_ID)).thenReturn(true);
+
+    Map<String, ResponseData> inputResponse = new HashMap<>();
+    inputResponse.put("A", createExecutionStatusResponse(ExecutionStatus.FAILED));
+    inputResponse.put("B", createExecutionStatusResponse(ExecutionStatus.DISCONTINUING));
+    inputResponse.put("C", createExecutionStatusResponse(ExecutionStatus.FAILED));
+
+    final ExecutionResponse response = state.handleAsyncResponse(context, inputResponse);
+    assertThat(response).isNotNull();
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
   }
 
   @Test
