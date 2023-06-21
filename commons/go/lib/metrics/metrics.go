@@ -34,7 +34,7 @@ func Log(pid int32, id string, log *zap.SugaredLogger) {
 				return
 			}
 
-			log.Infow("resources utilized", "pid", pid, "id", id, "rss_memory_mb", memInfo.RSS/(1024*1024), "cpu_percent", cpu)
+			log.Infow("[step] resources utilized", "pid", pid, "id", id, "rss_memory_mb", memInfo.RSS/(1024*1024), "cpu_percent", cpu)
 			time.Sleep(time.Second * 30)
 		}
 	}()

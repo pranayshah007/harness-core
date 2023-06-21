@@ -41,6 +41,9 @@ func (lc *logCloser) Run() {
 		sig := <-ch
 		fmt.Printf("Received signal: %s. Closing all the remote loggers", sig)
 		for _, rl := range lc.rls {
+			if rl.BaseLogger != nil {
+				rl.BaseLogger.Infow(fmt.Sprintf("Received signal to close remote logger: %s", sig))
+			}
 			if err := rl.Writer.Close(); err != nil {
 				fmt.Printf("failed to close remote logger with err: %v", err)
 			}

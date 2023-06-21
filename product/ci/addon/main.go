@@ -9,10 +9,13 @@ package main
 	CI-addon is an entrypoint for run step & plugin step container images. It executes a step on receiving GRPC.
 */
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
-	"github.com/alexflint/go-arg"
+	arg "github.com/alexflint/go-arg"
 	"github.com/harness/harness-core/commons/go/lib/logs"
 	"github.com/harness/harness-core/commons/go/lib/metrics"
 	"github.com/harness/harness-core/product/ci/addon/grpc"
@@ -83,6 +86,7 @@ func main() {
 
 	if args.LogMetrics {
 		metrics.Log(int32(os.Getpid()), "addon", log)
+		logKubMetrics(log)
 	}
 
 	var serviceLogger *logs.RemoteLogger
@@ -113,6 +117,86 @@ func main() {
 		addonlogs.LogState().ClosePendingLogs()
 		os.Exit(1) // Exit addon with exit code 1
 	}
+}
+
+func logKubMetrics(logger *zap.SugaredLogger) {
+	logger.Infow("Starting memory profiling")
+
+	duration := time.Second * 5
+	profileCount := 0
+
+	memoryBaseDir := "/sys/fs/cgroup/memory/"
+	memoryUsageFile := "memory.usage_in_bytes"
+	memoryMaxUsageFile := "memory.max_usage_in_bytes"
+	memoryLimitFile := "memory.limit_in_bytes"
+
+	cpuBaseDir := "/sys/fs/cgroup/cpu/"
+	cpuUsageFile := "cpuacct.usage"
+	cpuUsagePrev := 0
+	cpuUsageCurr := 0
+
+	go func() {
+		for {
+			if profileCount != 0 {
+				time.Sleep(duration)
+			}
+			profileCount += 1
+
+			memoryUsage, err := readLogFile(memoryBaseDir + memoryUsageFile)
+			if err != nil {
+				logger.Errorw("Unable to read memory usage file", zap.Error(err))
+			}
+			memoryMaxUsage, err := readLogFile(memoryBaseDir + memoryMaxUsageFile)
+			if err != nil {
+				logger.Errorw("Unable to read memory max usage file", zap.Error(err))
+			}
+			memoryLimit, err := readLogFile(memoryBaseDir + memoryLimitFile)
+			if err != nil {
+				logger.Errorw("Unable to read memory limit file", zap.Error(err))
+			}
+			logger.Infow(
+				"memory profiling",
+				"memory_usage", memoryUsage,
+				"memory_max_usage", memoryMaxUsage,
+				"memory_limit", memoryLimit)
+
+			cpuUsageStr, err := readLogFile(cpuBaseDir + cpuUsageFile)
+			if err != nil {
+				logger.Errorw("Unable to read cpu usage file", zap.Error(err))
+				continue
+			}
+			cpuUsageCurr, err = strconv.Atoi(cpuUsageStr)
+			if err != nil {
+				logger.Errorw("Unable to parse cpu usage", zap.Error(err))
+				continue
+			}
+			usageDiff := cpuUsageCurr - cpuUsagePrev
+			cpuPercentage := (float64(usageDiff) / (float64(duration) * 1e9)) * 100
+			logger.Infow(
+				"cpu profiling",
+				"cpu_percentage", cpuPercentage)
+			cpuUsagePrev = cpuUsageCurr
+		}
+	}()
+}
+
+func readLogFile(filename string) (string, error) {
+	result := "-1"
+	file, err := os.Open(filename)
+	if err != nil {
+		return "-1", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	if scanner.Scan() {
+		result = scanner.Text()
+	}
+	// Check for any errors during scanning
+	if err := scanner.Err(); err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 func getRemoteLogger(keyID string) *logs.RemoteLogger {
