@@ -190,6 +190,7 @@ func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	}
 
 	prompt := generatePrompt(r, logs, promptTmpl)
+	logger.FromRequest(r).Debugln(prompt)
 	client := genAIClient{endpoint: endpoint, secret: secret}
 
 	response, isBlocked, err := predict(ctx, client, provider, prompt)
