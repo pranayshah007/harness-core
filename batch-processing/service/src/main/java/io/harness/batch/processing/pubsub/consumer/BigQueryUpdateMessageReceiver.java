@@ -168,7 +168,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
     List<String> sqlCaseStatements = businessMappingHistories.stream()
                                          .map(businessMappingHistory
                                              -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                                                 viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                                                 viewsQueryBuilder.getSQLCaseStatementBusinessMapping(null,
                                                      BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE,
                                                      false, Collections.emptyMap())))
                                          .collect(Collectors.toList());
@@ -191,7 +191,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       try {
         String costCategoriesStatement = "["
             + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-                viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                viewsQueryBuilder.getSQLCaseStatementBusinessMapping(null,
                     BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, true,
                     labelsKeyAndColumnMapping))
             + "]";

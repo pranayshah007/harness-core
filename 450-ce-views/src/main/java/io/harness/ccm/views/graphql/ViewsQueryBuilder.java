@@ -329,8 +329,8 @@ public class ViewsQueryBuilder {
       String tableIdentifier, boolean shouldUseFlattenedLabelsColumn, Map<String, String> labelsKeyAndColumnMapping) {
     if (!groupByEntity.isEmpty()) {
       for (QLCEViewFieldInput groupBy : groupByEntity) {
-        CustomSql sqlObjectFromField =
-            getSQLObjectFromField(groupBy, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
+        CustomSql sqlObjectFromField = getSQLObjectFromField(
+            null, groupBy, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
         if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM && groupBy.getIdentifier() != BUSINESS_MAPPING
             && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
           selectQuery.addCustomColumns(sqlObjectFromField);
@@ -363,8 +363,8 @@ public class ViewsQueryBuilder {
       final boolean shouldUseFlattenedLabelsColumn, final Map<String, String> labelsKeyAndColumnMapping) {
     if (!groupByEntity.isEmpty()) {
       for (final QLCEViewFieldInput groupBy : groupByEntity) {
-        final CustomSql sqlObjectFromField =
-            getSQLObjectFromField(groupBy, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
+        final CustomSql sqlObjectFromField = getSQLObjectFromField(
+            null, groupBy, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
         if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM && groupBy.getIdentifier() != BUSINESS_MAPPING
             && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
           selectQuery.addCustomColumns(sqlObjectFromField);
@@ -384,8 +384,8 @@ public class ViewsQueryBuilder {
       final Map<String, String> labelsKeyAndColumnMapping) {
     if (!groupByEntity.isEmpty()) {
       for (final QLCEViewFieldInput groupBy : groupByEntity) {
-        final CustomSql sqlObjectFromField =
-            getSQLObjectFromField(groupBy, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
+        final CustomSql sqlObjectFromField = getSQLObjectFromField(
+            null, groupBy, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
         if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM && groupBy.getIdentifier() != BUSINESS_MAPPING
             && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
           selectQuery.addCustomGroupings(sqlObjectFromField);
@@ -1046,12 +1046,13 @@ public class ViewsQueryBuilder {
             }
             query.addAliasedColumn(new CustomSql(String.format(DISTINCT,
                                        getSQLCaseStatementBusinessMapping(
-                                           businessMapping, tableIdentifier, false, Collections.emptyMap()))),
+                                           filter, businessMapping, tableIdentifier, false, Collections.emptyMap()))),
                 modifyStringToComplyRegex(businessMapping.getName()));
-            query.addCondition(new CustomCondition(getSearchCondition(
-                getSQLCaseStatementBusinessMapping(businessMapping, tableIdentifier, false, Collections.emptyMap())
-                    .toString(),
-                searchString)));
+            query.addCondition(
+                new CustomCondition(getSearchCondition(getSQLCaseStatementBusinessMapping(filter, businessMapping,
+                                                           tableIdentifier, false, Collections.emptyMap())
+                                                           .toString(),
+                    searchString)));
           }
           sortKey = modifyStringToComplyRegex(businessMapping.getName());
           break;
@@ -1772,7 +1773,7 @@ public class ViewsQueryBuilder {
     final Optional<QLCEInExpressionFilter> filter = filters.stream().filter(Objects::nonNull).findFirst();
     if (filter.isPresent() && groupBy.isPresent()) {
       final CustomSql sqlObjectFromField = getSQLObjectFromField(
-          groupBy.get(), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
+          null, groupBy.get(), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
       final ViewFieldIdentifier groupByIdentifier = groupBy.get().getIdentifier();
       if (groupByIdentifier == BUSINESS_MAPPING) {
         selectQuery.addCondition(getCondition(filter.get(), sqlObjectFromField));
@@ -1792,15 +1793,8 @@ public class ViewsQueryBuilder {
   private Condition getCondition(QLCEViewFilter filter, String tableIdentifier, boolean shouldUseFlattenedLabelsColumn,
       Map<String, String> labelsKeyAndColumnMapping) {
     Condition condition;
-    CustomSql conditionKey;
-    ViewFieldIdentifier viewFieldIdentifier = filter.getField().getIdentifier();
-    if (viewFieldIdentifier == BUSINESS_MAPPING) {
-      conditionKey = getSQLObjectFromBusinessMapping(
-          filter, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
-    } else {
-      conditionKey = getSQLObjectFromField(
-          filter.getField(), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
-    }
+    CustomSql conditionKey = getSQLObjectFromField(
+        filter, filter.getField(), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
     if (conditionKey.toString().equals(ViewsMetaDataFields.LABEL_VALUE.getFieldName())) {
       String labelKey = filter.getField().getFieldName();
       String labelSubQuery = getLabelSubQuery(shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping, labelKey);
@@ -1824,6 +1818,7 @@ public class ViewsQueryBuilder {
     }
 
     BusinessMapping businessMapping = null;
+    ViewFieldIdentifier viewFieldIdentifier = filter.getField().getIdentifier();
     if (viewFieldIdentifier == BUSINESS_MAPPING) {
       businessMapping = businessMappingService.get(filter.getField().getFieldId());
     }
@@ -1887,7 +1882,7 @@ public class ViewsQueryBuilder {
   private Condition getCondition(
       QLCEViewTimeFilter timeFilter, boolean addLongValueConditions, String tableIdentifier) {
     CustomSql conditionKey =
-        getSQLObjectFromField(timeFilter.getField(), tableIdentifier, false, Collections.emptyMap());
+        getSQLObjectFromField(null, timeFilter.getField(), tableIdentifier, false, Collections.emptyMap());
     QLCEViewTimeFilterOperator operator = timeFilter.getOperator();
 
     switch (operator) {
@@ -1930,19 +1925,7 @@ public class ViewsQueryBuilder {
     return condition;
   }
 
-  private CustomSql getSQLObjectFromBusinessMapping(QLCEViewFilter filter, String tableIdentifier,
-      boolean shouldUseFlattenedLabelsColumn, Map<String, String> labelsKeyAndColumnMapping) {
-    BusinessMapping businessMapping = businessMappingService.get(filter.getField().getFieldId());
-    if (!isClickHouseQuery()) {
-      return getSQLCaseStatementBusinessMapping(
-          filter, businessMapping, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
-    } else {
-      return getClickHouseSQLCaseStatementBusinessMapping(
-          businessMapping, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
-    }
-  }
-
-  private CustomSql getSQLObjectFromField(QLCEViewFieldInput field, String tableIdentifier,
+  private CustomSql getSQLObjectFromField(QLCEViewFilter filter, QLCEViewFieldInput field, String tableIdentifier,
       boolean shouldUseFlattenedLabelsColumn, Map<String, String> labelsKeyAndColumnMapping) {
     switch (field.getIdentifier()) {
       case CLUSTER:
@@ -1953,12 +1936,13 @@ public class ViewsQueryBuilder {
       case LABEL:
         return new CustomSql(getColumnNameForField(tableIdentifier, field.getFieldId()));
       case BUSINESS_MAPPING:
+        BusinessMapping businessMapping = businessMappingService.get(field.getFieldId());
         if (!isClickHouseQuery()) {
-          return getSQLCaseStatementBusinessMapping(businessMappingService.get(field.getFieldId()), tableIdentifier,
-              shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
+          return getSQLCaseStatementBusinessMapping(
+              filter, businessMapping, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
         } else {
-          return getClickHouseSQLCaseStatementBusinessMapping(businessMappingService.get(field.getFieldId()),
-              tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
+          return getClickHouseSQLCaseStatementBusinessMapping(
+              filter, businessMapping, tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping);
         }
       case CUSTOM:
         return new CustomSql(viewCustomFieldDao.getById(field.getFieldId()).getSqlFormula());
@@ -1969,40 +1953,25 @@ public class ViewsQueryBuilder {
 
   public CustomSql getSQLCaseStatementBusinessMapping(QLCEViewFilter filter, BusinessMapping businessMapping,
       String tableIdentifier, boolean shouldUseFlattenedLabelsColumn, Map<String, String> labelsKeyAndColumnMapping) {
-    QLCEViewFilterOperator operator = filter.getOperator();
-
-    if (filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
-      operator = QLCEViewFilterOperator.IN;
+    QLCEViewFilterOperator operator = null;
+    Set<String> selectedCostTargets = null;
+    if (Objects.nonNull(filter)) {
+      operator = filter.getOperator();
+      if (filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
+        operator = QLCEViewFilterOperator.IN;
+      }
+      selectedCostTargets = new HashSet<>(Arrays.asList(filter.getValues()));
     }
-
-    Set<String> selectedCostTargets = new HashSet<>(Arrays.asList(filter.getValues()));
 
     CaseStatement caseStatement = new CaseStatement();
     if (Objects.nonNull(businessMapping.getCostTargets())) {
       for (CostTarget costTarget : businessMapping.getCostTargets()) {
-        boolean shouldIncludeInCaseStatement;
-        switch (operator) {
-          case EQUALS:
-          case IN:
-            shouldIncludeInCaseStatement = selectedCostTargets.contains(costTarget.getName());
-            break;
-          case NOT_IN:
-            shouldIncludeInCaseStatement = !selectedCostTargets.contains(costTarget.getName());
-            break;
-          case NOT_NULL:
-            shouldIncludeInCaseStatement = true;
-            break;
-          case NULL:
-            shouldIncludeInCaseStatement = false;
-            break;
-          case LIKE:
-            shouldIncludeInCaseStatement =
-                costTarget.getName().toLowerCase(Locale.ROOT).contains(filter.getValues()[0].toLowerCase(Locale.ROOT));
-            break;
-          default:
-            throw new InvalidRequestException("Invalid View Filter operator: " + operator);
-        }
-        if (shouldIncludeInCaseStatement) {
+        boolean shouldIncludeCostTargetCaseStatement =
+            shouldIncludeCostTargetCaseStatement(filter, operator, selectedCostTargets, costTarget)
+            || (Objects.nonNull(businessMapping.getUnallocatedCost())
+                && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME
+                && selectedCostTargets.contains(businessMapping.getUnallocatedCost().getLabel()));
+        if (shouldIncludeCostTargetCaseStatement) {
           caseStatement.addWhen(getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier,
                                     shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping),
               costTarget.getName());
@@ -2025,44 +1994,65 @@ public class ViewsQueryBuilder {
     return new CustomSql(caseStatement);
   }
 
-  public CustomSql getSQLCaseStatementBusinessMapping(BusinessMapping businessMapping, String tableIdentifier,
-      boolean shouldUseFlattenedLabelsColumn, Map<String, String> labelsKeyAndColumnMapping) {
-    CaseStatement caseStatement = new CaseStatement();
-    if (Objects.nonNull(businessMapping.getCostTargets())) {
-      for (CostTarget costTarget : businessMapping.getCostTargets()) {
-        caseStatement.addWhen(getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier,
-                                  shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping),
-            costTarget.getName());
-      }
-      if (Objects.nonNull(businessMapping.getUnallocatedCost())
-          && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
-        caseStatement.addElse(businessMapping.getUnallocatedCost().getLabel());
-      } else {
-        caseStatement.addElse(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName());
-      }
-    } else {
-      String unallocatedCostLabel = ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName();
-      if (Objects.nonNull(businessMapping.getUnallocatedCost())
-          && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
-        unallocatedCostLabel = businessMapping.getUnallocatedCost().getLabel();
-      }
-      return new CustomSql(String.format("'%s'", unallocatedCostLabel));
+  private boolean shouldIncludeCostTargetCaseStatement(
+      QLCEViewFilter filter, QLCEViewFilterOperator operator, Set<String> selectedCostTargets, CostTarget costTarget) {
+    if (Objects.isNull(filter)) {
+      return true;
     }
-    return new CustomSql(caseStatement);
+    boolean shouldIncludeCostTargetCaseStatement;
+    switch (operator) {
+      case EQUALS:
+      case IN:
+        shouldIncludeCostTargetCaseStatement = selectedCostTargets.contains(costTarget.getName());
+        break;
+      case NOT_IN:
+        shouldIncludeCostTargetCaseStatement = !selectedCostTargets.contains(costTarget.getName());
+        break;
+      case NOT_NULL:
+        shouldIncludeCostTargetCaseStatement = true;
+        break;
+      case NULL:
+        shouldIncludeCostTargetCaseStatement = false;
+        break;
+      case LIKE:
+        shouldIncludeCostTargetCaseStatement =
+            costTarget.getName().toLowerCase(Locale.ROOT).contains(filter.getValues()[0].toLowerCase(Locale.ROOT));
+        break;
+      default:
+        throw new InvalidRequestException("Invalid View Filter operator: " + operator);
+    }
+    return shouldIncludeCostTargetCaseStatement;
   }
 
-  private CustomSql getClickHouseSQLCaseStatementBusinessMapping(BusinessMapping businessMapping,
+  private CustomSql getClickHouseSQLCaseStatementBusinessMapping(QLCEViewFilter filter, BusinessMapping businessMapping,
       String tableIdentifier, boolean shouldUseFlattenedLabelsColumn, Map<String, String> labelsKeyAndColumnMapping) {
+    QLCEViewFilterOperator operator = null;
+    Set<String> selectedCostTargets = null;
+    if (Objects.nonNull(filter)) {
+      operator = filter.getOperator();
+      if (filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
+        operator = QLCEViewFilterOperator.IN;
+      }
+      selectedCostTargets = new HashSet<>(Arrays.asList(filter.getValues()));
+    }
+
     StringBuilder multiIfStatement = new StringBuilder();
     multiIfStatement.append(MULTI_IF_STATEMENT_OPENING);
     if (Objects.nonNull(businessMapping.getCostTargets())) {
       for (CostTarget costTarget : businessMapping.getCostTargets()) {
-        multiIfStatement
-            .append(getConsolidatedRuleCondition(
-                costTarget.getRules(), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping))
-            .append(',')
-            .append(String.format("'%s'", costTarget.getName()))
-            .append(',');
+        boolean shouldIncludeCostTargetCaseStatement =
+            shouldIncludeCostTargetCaseStatement(filter, operator, selectedCostTargets, costTarget)
+            || (Objects.nonNull(businessMapping.getUnallocatedCost())
+                && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME
+                && selectedCostTargets.contains(businessMapping.getUnallocatedCost().getLabel()));
+        if (shouldIncludeCostTargetCaseStatement) {
+          multiIfStatement
+              .append(getConsolidatedRuleCondition(
+                  costTarget.getRules(), tableIdentifier, shouldUseFlattenedLabelsColumn, labelsKeyAndColumnMapping))
+              .append(',')
+              .append(String.format("'%s'", costTarget.getName()))
+              .append(',');
+        }
       }
       if (Objects.nonNull(businessMapping.getUnallocatedCost())
           && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
