@@ -84,9 +84,7 @@ public class NGAccountSetupService {
   private final NGAccountSettingService accountSettingService;
   private final FeatureFlagService featureFlagService;
   private final DefaultUserGroupService defaultUserGroupService;
-
   private final SampleManifestFileService sampleManifestFileService;
-
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
       AccountOrgProjectValidator accountOrgProjectValidator,
@@ -196,18 +194,16 @@ public class NGAccountSetupService {
         cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
-    if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
-        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
-      } else {
-        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
-      }
-      assignAdminRoleToUsers(accountScope, cgAdmins);
-      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
-        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
-      }
-      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
+    if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
+      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+    } else {
+      cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
     }
+    assignAdminRoleToUsers(accountScope, cgAdmins);
+    if (shouldAssignAdmins && !hasAdmin(accountScope)) {
+      throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
+    }
+    accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
 
     Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
     if (!hasAdmin(orgScope)) {
@@ -242,18 +238,16 @@ public class NGAccountSetupService {
         cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
-    if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
-        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
-      } else {
-        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
-      }
-      assignAdminRoleToUsers(accountScope, cgAdmins);
-      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
-        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
-      }
-      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
+    if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
+      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+    } else {
+      cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
     }
+    assignAdminRoleToUsers(accountScope, cgAdmins);
+    if (shouldAssignAdmins && !hasAdmin(accountScope)) {
+      throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
+    }
+    accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
 
     Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
     if (!hasAdmin(orgScope)) {
@@ -346,5 +340,20 @@ public class NGAccountSetupService {
       Thread.currentThread().interrupt();
       log.warn("Thread Interrupted", ex);
     }
+  }
+
+  public void cleanUsersFromAccountForNg(String accountIdentifier) {
+    Scope scope =
+        Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
+    List<String> ngUsers = ngUserService.listUserIds(scope);
+    log.info("Number of NG users in account {} : {}", accountIdentifier, ngUsers.size());
+    List<String> ngNonAdmins = ngUsers.stream()
+                                   .filter(user -> !ngUserService.isAccountAdmin(user, accountIdentifier))
+                                   .collect(Collectors.toList());
+    log.info("Number of Non Admin users in account {} : {}", accountIdentifier, ngNonAdmins.size());
+    if (!ngNonAdmins.isEmpty()) {
+      ngUserService.cleanUsersFromAccountForNg(ngNonAdmins, accountIdentifier);
+    }
+    log.info("CleanUp for accountId {} is completed", accountIdentifier);
   }
 }
